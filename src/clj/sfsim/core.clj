@@ -295,7 +295,7 @@
         (reset! coords c)
         (reset! mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0)))
         (jolt/set-friction @mesh 0.5)
-        (jolt/set-restitution @mesh 0.4)
+        (jolt/set-restitution @mesh 0.2)
         (jolt/optimize-broad-phase)))))
 
 
