@@ -260,7 +260,7 @@
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 1000.0 0.1))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
 (jolt/set-angular-velocity body (vec3 0 0 0))
-(jolt/set-friction body 0.5)
+(jolt/set-friction body 1.0)
 (jolt/set-restitution body 0.2)
 (def mass (jolt/get-mass body))
 
@@ -295,7 +295,7 @@
         (when @mesh (jolt/remove-and-destroy-body @mesh))
         (reset! coords c)
         (reset! mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0)))
-        (jolt/set-friction @mesh 0.5)
+        (jolt/set-friction @mesh 1.0)
         (jolt/set-restitution @mesh 0.2)
         (jolt/optimize-broad-phase)))))
 
