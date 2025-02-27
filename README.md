@@ -108,6 +108,7 @@ cd ..
   * [Jolt Physics](https://github.com/jrouwe/JoltPhysics)
   * [Project Chrono physics engine](https://projectchrono.org/)
   * [Open Space Program](https://github.com/TheOpenSpaceProgram/osp-magnum)
+  * [JSBSim](https://github.com/JSBSim-Team/jsbsim)
 * LWJGL
   * [LWJGL](https://www.lwjgl.org/)
   * [LWJGL Wiki](https://github.com/LWJGL/lwjgl3-wiki/wiki)
@@ -129,6 +130,7 @@ cd ..
   * [How to calculate your horizon distance](https://darkskydiary.wordpress.com/2015/05/25/how-to-calculate-your-horizon-distance/)
   * [Java native interface example](https://www.baeldung.com/jni)
   * [Earth explorer data](https://earthexplorer.usgs.gov/)
+  * [Simple Physics-based Flight Simulation with C++](https://www.jakobmaier.at/posts/flight-simulation/)
   * [Wedesoft blog](https://www.wedesoft.de/)
 * Videos
   * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)

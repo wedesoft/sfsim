@@ -1,4 +1,5 @@
 # TODO
+* venturestar trajectory pdf: 166
 * simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
   good position of wheels for takeoff (with low fuel) and landing
   gear/terrain physics with stationary Earth (ground collisions)
