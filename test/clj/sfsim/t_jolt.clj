@@ -92,6 +92,14 @@
          (remove-and-destroy-body box)))
 
 
+(facts "Get mass and inertial matrix of body"
+       (let [box (create-and-add-dynamic-body (box-settings (vec3 0.25 0.25 0.25) 1000.0) (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
+             inertia (* (/ 125 12) (+ (* 0.5 0.5) (* 0.5 0.5)))]
+         (get-mass box) => 125.0
+         (get-inertia box) => (roughly-matrix (mat3x3 inertia 0 0, 0 inertia 0, 0 0 inertia) 1e-6)
+         (remove-and-destroy-body box)))
+
+
 (fact "Test restitution of sphere"
       (let [sphere1 (create-and-add-dynamic-body (sphere-settings 1.0 1000.0) (vec3 0.0  2.0 0.0) (q/->Quaternion 1 0 0 0))
             sphere2 (create-and-add-dynamic-body (sphere-settings 1.0 1000.0) (vec3 0.0 -2.0 0.0) (q/->Quaternion 1 0 0 0))]
@@ -164,6 +172,7 @@
                                                     (vec3 0.0 -0.5 0.0) (q/->Quaternion 1 0 0 0))
             hulls       (create-and-add-dynamic-body (compound-of-convex-hulls-settings model 0.01 1000.0)
                                                      (vec3 0.0 1.0 0.0) (q/->Quaternion 1 0 0 0))]
+        (get-center-of-mass hulls) => (vec3 0.0 0.5 0.0)
         (set-gravity (vec3 0 -1 0))
         (set-friction hulls 0.5)
         (set-restitution hulls 0.1)
@@ -188,6 +197,7 @@
                        (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0))
             box      (create-and-add-dynamic-body (box-settings (vec3 0.5 0.5 0.5) 1000.0)
                                                   (vec3 -4.0 0.0 0.0) (q/->Quaternion 1 0 0 0))]
+        (get-center-of-mass compound) => (vec3 0.0 0.0 0.0)
         (set-gravity (vec3 0 0 0))
         (set-friction compound 0.5)
         (set-restitution compound 1.0)

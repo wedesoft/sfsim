@@ -1,11 +1,11 @@
 # TODO
 * simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
   good position of wheels for takeoff (with low fuel) and landing
+  gear/terrain physics with stationary Earth (ground collisions)
 * define wheel positions in Blender
   animate wheel rotation and suspension, bake gear animation and name actions the same
 * hover thruster locations
 * threads for rendering, simulation, and loading of data
-* gear/terrain physics with stationary Earth (ground collisions)
 * takeoff physics
   * atmospheric flight with stationary atmosphere in rotating coordinate system
   * rotating Earth coordinate system (centrifugal and coriolis force),

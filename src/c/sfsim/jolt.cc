@@ -312,6 +312,42 @@ void set_restitution(int id, float restitution)
   body_interface->SetRestitution(body_id, restitution);
 }
 
+float get_mass(int id)
+{
+  JPH::BodyID body_id(id);
+  JPH::RefConst<JPH::Shape> shape = body_interface->GetShape(body_id);
+  return shape->GetMassProperties().mMass;
+}
+
+Mat3x3 get_inertia(int id)
+{
+  JPH::BodyID body_id(id);
+  JPH::RefConst<JPH::Shape> shape = body_interface->GetShape(body_id);
+  JPH::Mat44 inertia = shape->GetMassProperties().mInertia;
+  JPH::Vec3 x = inertia.GetAxisX();
+  JPH::Vec3 y = inertia.GetAxisY();
+  JPH::Vec3 z = inertia.GetAxisZ();
+  return (Mat3x3){
+    .m00 = x.GetX(),
+    .m01 = y.GetX(),
+    .m02 = z.GetX(),
+    .m10 = x.GetY(),
+    .m11 = y.GetY(),
+    .m12 = z.GetY(),
+    .m20 = x.GetZ(),
+    .m21 = y.GetZ(),
+    .m22 = z.GetZ()
+  };
+}
+
+Vec3 get_center_of_mass(int id)
+{
+  JPH::BodyID body_id(id);
+  JPH::RefConst<JPH::Shape> shape = body_interface->GetShape(body_id);
+  JPH::Vec3 center_of_mass = shape->GetCenterOfMass();
+  return (Vec3){ .x = center_of_mass.GetX(), .y = center_of_mass.GetY(), .z = center_of_mass.GetZ() };
+}
+
 void add_force(int id, Vec3 force)
 {
   JPH::BodyID body_id(id);
