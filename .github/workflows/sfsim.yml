@@ -22,7 +22,7 @@ jobs:
         cli: 1.12.0.1479
     - name: Install APT packages
       run: |
-        apt -y update
-        apt -y install xvfb
+        sudo apt -y update
+        sudo apt -y install xvfb
     - name: Run tests
       run: clj -M:test
