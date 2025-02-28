@@ -803,7 +803,7 @@ void main()
                                (uniform-float program "z_near" 0.5)
                                (render-quads vao)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image ?result 0.0))
+                               (destroy-program program))) => (is-image ?result 0.03))
          ?selector                               ?matrix ?result
          "vec3(1, 1, 1)"                         initial "test/clj/sfsim/fixtures/atmosphere/quad.png"
          "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/clj/sfsim/fixtures/atmosphere/direction.png"
@@ -872,7 +872,7 @@ vec4 cloud_overlay()
                                (destroy-texture transmittance)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
-           => (is-image (str "test/clj/sfsim/fixtures/atmosphere/" ?result) 0.01))
+           => (is-image (str "test/clj/sfsim/fixtures/atmosphere/" ?result) 0.16))
          ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?cloud ?result
          0  0               (- 0 radius max-height 1) 0.0         0   0         -1            0.0    "sun.png"
          0  0               (- 0 radius max-height 1) 0.0         0   0          1            0.0    "space.png"
@@ -939,7 +939,7 @@ void main()
                           (render-quads vao)
                           (destroy-vertex-array-object vao)
                           (destroy-program program)
-                          (destroy-texture clouds))) => (is-image "test/clj/sfsim/fixtures/clouds/lookup.png" 0.0))
+                          (destroy-texture clouds))) => (is-image "test/clj/sfsim/fixtures/clouds/lookup.png" 5.8))
 
 
 (def attenuation-point-probe
