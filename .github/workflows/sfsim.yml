@@ -1,0 +1,42 @@
+name: SFsim CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  ubuntu-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install APT packages
+      run: |
+        sudo apt -qy update
+        sudo apt -qy install build-essential
+        sudo apt -qy install xvfb
+        sudo apt -qy install rlwrap
+    - name: Install JoltPhysics
+      run: |
+        wget -q -O JoltPhysics-5.2.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.2.0.tar.gz
+        tar xzf JoltPhysics-5.2.0.tar.gz
+        cd JoltPhysics-5.2.0/Build
+        ./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
+        cd Linux_Release
+        make
+        sudo make install
+        cd ../..
+    - name: Install Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'oracle'
+        java-version: '23'
+    - name: Install Clojure
+      uses: DeLaGuardo/setup-clojure@13.0
+      with:
+        cli: 1.12.0.1479
+    - name: Build Jolt bindings
+      run: make
+    - name: Run tests
+      run: xvfb-run clj -M:test

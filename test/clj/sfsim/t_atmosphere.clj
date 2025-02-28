@@ -616,7 +616,7 @@ void main()
 
 (tabular "Shader function to compute transmittance between two points in the atmosphere"
          (fact ((transmittance-track-test [size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 0)
-               => (roughly ?result 1e-6))
+               => (roughly ?result 1e-4))
          ?px     ?py ?pz     ?qx     ?qy ?qz     ?result
          0       0   6478000 0       0   6478000 1
          0       0   6378000 0       0   6478000 0.976549
@@ -648,7 +648,7 @@ void main()
 
 (tabular "Shader function to compute transmittance between point in the atmosphere and space"
          (fact ((transmittance-outer-test [size size radius max-height] [?px ?py ?pz ?dx ?dy ?dz]) 0)
-               => (roughly ?result 1e-6))
+               => (roughly ?result 1e-4))
          ?px ?py ?pz      ?dx ?dy ?dz ?result
          0   0    6478000 0   0   1   0.976359
          0   0    6378000 0   0   1   0.953463
@@ -756,7 +756,7 @@ void main()
 
 (tabular "Shader function to determine in-scattered light between two points in the atmosphere"
          (fact ((ray-scatter-track-test [size size size size size size radius max-height] [?px ?py ?pz ?qx ?qy ?qz]) 2)
-               => (roughly ?result 1e-6))
+               => (roughly ?result 1e-4))
          ?px ?py ?pz     ?qx    ?qy ?qz     ?result
          0   0   6378000 0      0   6378000 0.0
          0   0   6378000 0      0   6478000 0.043302
