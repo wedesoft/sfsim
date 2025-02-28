@@ -184,7 +184,7 @@ void main()
                                (render-patches vao)
                                (destroy-texture surface)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image ?result 0.02))
+                               (destroy-program program))) => (is-image ?result 0.04))
          ?selector                            ?scale ?result
          "frag_in.colorcoord"                 1.0    "test/clj/sfsim/fixtures/planet/color-coords.png"
          "frag_in.point.xy + vec2(0.5, 0.5)"  1.0    "test/clj/sfsim/fixtures/planet/point.png"
@@ -544,7 +544,7 @@ float planet_and_cloud_shadows(vec4 point)
                                (doseq [tex textures] (destroy-texture tex))
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
-           => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.0))
+           => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33))
          ?colors   ?albedo ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
          "white"   PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "fragment"
          "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "colors"

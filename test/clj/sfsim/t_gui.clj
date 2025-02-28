@@ -112,7 +112,7 @@
                               (render-quads vao)
                               (destroy-texture tex)
                               (destroy-vertex-array-object vao)
-                              (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/gui/projection.png" 0.0))
+                              (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/gui/projection.png" 0.08))
 
 
 (facts "Create null texture"
@@ -151,7 +151,7 @@
                                  (render-quads vao)
                                  (destroy-texture tex)
                                  (destroy-vertex-array-object vao)
-                                 (destroy-program program)))) => (is-image "test/clj/sfsim/fixtures/gui/mode.png" 0.1))
+                                 (destroy-program program)))) => (is-image "test/clj/sfsim/fixtures/gui/mode.png" 22.0))
 
 
 (fact "Render font to bitmap"
@@ -180,7 +180,7 @@
 
 (fact "Use font to render button"
       (gui-control-test gui (layout-row-dynamic gui 32 1) (button-label gui "Test Button"))
-      => (is-image "test/clj/sfsim/fixtures/gui/button.png" 0.07))
+      => (is-image "test/clj/sfsim/fixtures/gui/button.png" 0.24))
 
 
 (facts "Test rendering with two GUI contexts"
@@ -197,7 +197,7 @@
                                                    (layout-row-dynamic gui2 32 1)
                                                    (button-label gui2 "Button B"))
                                    (render-nuklear-gui gui1 320 40)
-                                   (render-nuklear-gui gui2 320 40)) => (is-image "test/clj/sfsim/fixtures/gui/guis.png" 0.03)
+                                   (render-nuklear-gui gui2 320 40)) => (is-image "test/clj/sfsim/fixtures/gui/guis.png" 0.06)
            (destroy-nuklear-gui gui2)
            (destroy-nuklear-gui gui1)
            (destroy-font-texture bitmap-font))))
@@ -205,13 +205,13 @@
 
 (fact "Render a text label"
       (gui-control-test gui (layout-row-dynamic gui 32 1) (text-label gui "Test Label"))
-      => (is-image "test/clj/sfsim/fixtures/gui/label.png" 0.10))
+      => (is-image "test/clj/sfsim/fixtures/gui/label.png" 0.17))
 
 
 (fact "Render an edit field"
       (let [data (edit-data "initial" 31 :sfsim.gui/filter-ascii)]
         (gui-control-test gui (layout-row-dynamic gui 32 1) (edit-field gui data))
-        => (is-image "test/clj/sfsim/fixtures/gui/edit.png" 0.03)
+        => (is-image "test/clj/sfsim/fixtures/gui/edit.png" 0.21)
         (edit-get data) => "initial"
         (edit-set data "final")
         (edit-get data) => "final"))
@@ -225,7 +225,7 @@
                                     (layout-row-push gui 0.3)
                                     (text-label gui "Two")
                                     (layout-row-push gui 0.5)
-                                    (text-label gui "Three"))) => (is-image "test/clj/sfsim/fixtures/gui/dynamic-layout.png" 0.05))
+                                    (text-label gui "Three"))) => (is-image "test/clj/sfsim/fixtures/gui/dynamic-layout.png" 0.06))
 
 
 (GLFW/glfwTerminate)

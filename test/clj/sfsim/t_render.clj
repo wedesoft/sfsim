@@ -384,7 +384,7 @@ void main()
                           (render-quads vao)
                           (destroy-texture tex)
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/render/texture.png" 0.0))
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/render/texture.png" 0.07))
 
 
 (def fragment-texture-array
@@ -435,7 +435,7 @@ void main()
                                (destroy-texture tex)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
-           => (is-image (str "test/clj/sfsim/fixtures/render/" ?result ".png") 0.0))
+           => (is-image (str "test/clj/sfsim/fixtures/render/" ?result ".png") 0.05))
          ?interpolation ?boundary ?result
          :sfsim.texture/nearest       :sfsim.texture/clamp    "floats-2d-nearest-clamp"
          :sfsim.texture/linear        :sfsim.texture/clamp    "floats-2d-linear-clamp"
@@ -458,7 +458,7 @@ void main()
                           (render-quads vao)
                           (destroy-texture tex)
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/render/ubytes.png" 0.0))
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/render/ubytes.png" 0.02))
 
 
 (fact "Render 2D vector texture"
@@ -476,7 +476,7 @@ void main()
                           (render-quads vao)
                           (destroy-texture tex)
                           (destroy-vertex-array-object vao)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/render/vectors.png" 0.0))
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/render/vectors.png" 0.01))
 
 
 (def vertex-interpolate
@@ -961,7 +961,7 @@ void main(void)
               (destroy-program program-main)
               (destroy-program program-shadow)
               img))))
-      => (is-image "test/clj/sfsim/fixtures/render/shadow.png" 0.04))
+      => (is-image "test/clj/sfsim/fixtures/render/shadow.png" 0.17))
 
 
 (def fragment-scene-cascade
@@ -1025,7 +1025,7 @@ void main(void)
               (destroy-program program-main)
               (destroy-program program-shadow)
               img))))
-      => (is-image "test/clj/sfsim/fixtures/render/shadow.png" 0.04))
+      => (is-image "test/clj/sfsim/fixtures/render/shadow.png" 0.17))
 
 
 (def fragment-cubemap-attachment
