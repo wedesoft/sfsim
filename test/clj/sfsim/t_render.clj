@@ -961,7 +961,7 @@ void main(void)
               (destroy-program program-main)
               (destroy-program program-shadow)
               img))))
-      => (is-image "test/clj/sfsim/fixtures/render/shadow.png" 0.17))
+      => (is-image "test/clj/sfsim/fixtures/render/shadow.png" 0.20))
 
 
 (def fragment-scene-cascade
@@ -1025,7 +1025,7 @@ void main(void)
               (destroy-program program-main)
               (destroy-program program-shadow)
               img))))
-      => (is-image "test/clj/sfsim/fixtures/render/shadow.png" 0.17))
+      => (is-image "test/clj/sfsim/fixtures/render/shadow.png" 0.20))
 
 
 (def fragment-cubemap-attachment

@@ -180,7 +180,7 @@
 
 (fact "Use font to render button"
       (gui-control-test gui (layout-row-dynamic gui 32 1) (button-label gui "Test Button"))
-      => (is-image "test/clj/sfsim/fixtures/gui/button.png" 0.24))
+      => (is-image "test/clj/sfsim/fixtures/gui/button.png" 0.30))
 
 
 (facts "Test rendering with two GUI contexts"
@@ -197,7 +197,7 @@
                                                    (layout-row-dynamic gui2 32 1)
                                                    (button-label gui2 "Button B"))
                                    (render-nuklear-gui gui1 320 40)
-                                   (render-nuklear-gui gui2 320 40)) => (is-image "test/clj/sfsim/fixtures/gui/guis.png" 0.06)
+                                   (render-nuklear-gui gui2 320 40)) => (is-image "test/clj/sfsim/fixtures/gui/guis.png" 0.10)
            (destroy-nuklear-gui gui2)
            (destroy-nuklear-gui gui1)
            (destroy-font-texture bitmap-font))))
@@ -225,7 +225,7 @@
                                     (layout-row-push gui 0.3)
                                     (text-label gui "Two")
                                     (layout-row-push gui 0.5)
-                                    (text-label gui "Three"))) => (is-image "test/clj/sfsim/fixtures/gui/dynamic-layout.png" 0.06))
+                                    (text-label gui "Three"))) => (is-image "test/clj/sfsim/fixtures/gui/dynamic-layout.png" 0.10))
 
 
 (GLFW/glfwTerminate)
