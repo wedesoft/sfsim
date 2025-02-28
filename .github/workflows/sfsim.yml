@@ -24,5 +24,6 @@ jobs:
       run: |
         sudo apt -y update
         sudo apt -y install xvfb
+        sudo apt -y install rlwrap
     - name: Run tests
       run: clj -M:test
