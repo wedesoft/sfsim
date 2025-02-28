@@ -13,10 +13,10 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install APT packages
       run: |
-        sudo apt -y update
-        sudo apt -y install build-essential
-        sudo apt -y install xvfb
-        sudo apt -y install rlwrap
+        sudo apt -qy update
+        sudo apt -qy install build-essential
+        sudo apt -qy install xvfb
+        sudo apt -qy install rlwrap
     - name: Install JoltPhysics
       run: |
         wget -q -O JoltPhysics-5.2.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.2.0.tar.gz
