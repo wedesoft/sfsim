@@ -10,6 +10,7 @@ jobs:
   ubuntu-build-and-test:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
     - name: Install APT packages
       run: |
         sudo apt -y update
@@ -18,7 +19,7 @@ jobs:
         sudo apt -y install rlwrap
     - name: Install JoltPhysics
       run: |
-        wget https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.2.0.tar.gz -O JoltPhysics-5.2.0.tar.gz
+        wget -q -O JoltPhysics-5.2.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.2.0.tar.gz
         tar xzf JoltPhysics-5.2.0.tar.gz
         cd JoltPhysics-5.2.0/Build
         ./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
@@ -26,7 +27,6 @@ jobs:
         make
         sudo make install
         cd ../..
-    - uses: actions/checkout@v4
     - name: Install Java
       uses: actions/setup-java@v3
       with:
