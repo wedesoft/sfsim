@@ -25,8 +25,7 @@
  :paths ["src/clj"]
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED"]
                  :main-opts ["-m" "sfsim.core"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.6"
-                                                         :git/sha "52cf7d6"}
+           :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.7"}
                           sfsim/sfsim {:local/root "."}}
                    :ns-default build
                    :exec-fn all
@@ -37,5 +36,5 @@
                   :extra-paths ["test/clj"]
                   :main-opts ["-m" "midje-runner.runner"]
                   :jvm-opts ["--enable-native-access=ALL-UNNAMED"]}
-           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.6.0"}}
+           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.6.1"}}
                      :jvm-opts ["-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"]}}}
