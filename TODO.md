@@ -1,6 +1,6 @@
 # TODO
 * implement aerodynamics and thrust,
-  simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters,
+  simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
   venturestar trajectory pdf: 166
   good position of wheels for takeoff (with low fuel) and landing
   gear/terrain physics with stationary Earth (ground collisions)
