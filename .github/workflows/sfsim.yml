@@ -11,22 +11,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Cache JoltPhysics build
+      id: cache-joltphysics
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/JoltPhysics-5.2.0
+        key: ${{ runner.os }}-joltphysics-5.2.0
+        restore-keys: |
+          ${{ runner.os }}-joltphysics-5.2.0
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/deps.edn') }}
+        restore-keys: ${{ runner.os }}-m2-
     - name: Install APT packages
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: build-essential xvfb rlwrap
+        version: 1.0
+    - if: ${{ steps.cache-joltphysics.outputs.cache-hit != 'true' }}
+      name: Build JoltPhysics
       run: |
-        sudo apt -qy update
-        sudo apt -qy install build-essential
-        sudo apt -qy install xvfb
-        sudo apt -qy install rlwrap
-    - name: Install JoltPhysics
-      run: |
+        cd ~
         wget -q -O JoltPhysics-5.2.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.2.0.tar.gz
         tar xzf JoltPhysics-5.2.0.tar.gz
         cd JoltPhysics-5.2.0/Build
         ./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
         cd Linux_Release
         make
+        cd ../../..
+    - name: Install JoltPhysics
+      run: |
+        cd ~/JoltPhysics-5.2.0/Build/Linux_Release
         sudo make install
-        cd ../..
+        cd ../../..
     - name: Install Java
       uses: actions/setup-java@v4
       with:
