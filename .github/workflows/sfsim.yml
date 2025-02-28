@@ -17,9 +17,9 @@ jobs:
       with:
         path: |
           ~/JoltPhysics-5.2.0
-        key: ${{ runner.os }}-joltphysics
+        key: ${{ runner.os }}-joltphysics-5.2.0
         restore-keys: |
-          ${{ runner.os }}-joltphysics
+          ${{ runner.os }}-joltphysics-5.2.0
     - name: Install APT packages
       run: |
         sudo apt -qy update
@@ -29,6 +29,7 @@ jobs:
     - if: ${{ steps.cache-joltphysics.outputs.cache-hit != 'true' }}
       name: Build JoltPhysics
       run: |
+        cd ~
         wget -q -O JoltPhysics-5.2.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.2.0.tar.gz
         tar xzf JoltPhysics-5.2.0.tar.gz
         cd JoltPhysics-5.2.0/Build
@@ -38,7 +39,7 @@ jobs:
         cd ../../..
     - name: Install JoltPhysics
       run: |
-        cd JoltPhysics-5.2.0/Build/Linux_Release
+        cd ~/JoltPhysics-5.2.0/Build/Linux_Release
         sudo make install
         cd ../../..
     - name: Install Java
