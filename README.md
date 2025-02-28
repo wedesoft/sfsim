@@ -123,7 +123,7 @@ cd ..
 * Webpages
   * [NVidia article on atmospheric scattering](https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering)
   * [Cascaded Shadow Maps](https://web.archive.org/web/20220526080455/https://dev.theomader.com/cascaded-shadow-mapping-1/)
-  * [Shadow mapping improvements] http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/)
+  * [Shadow mapping improvements](http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/)
   * [improved Perlin noise](https://adrianb.io/2014/08/09/perlinnoise.html)
   * [Normal vectors of ellipsoid](https://math.stackexchange.com/questions/2931909/normal-of-a-point-on-the-surface-of-an-ellipsoid/2931931)
   * [Clojure performance flame graphs](https://github.com/clojure-goes-fast/clj-async-profiler)

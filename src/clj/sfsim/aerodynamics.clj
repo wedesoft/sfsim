@@ -1,8 +1,6 @@
 (ns sfsim.aerodynamics
     (:require
-      [clojure.math :refer (cos sin)]
-      [fastmath.matrix :as fm]
-      [fastmath.vector :as fv]))
+      [clojure.math :refer (cos sin)]))
 
 
 (set! *unchecked-math* true)
