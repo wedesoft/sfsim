@@ -4,6 +4,8 @@
   venturestar trajectory pdf: 166
   good position of wheels for takeoff (with low fuel) and landing
   gear/terrain physics with stationary Earth (ground collisions)
+* non-linear sampling for clouds
+* incremental rendering of opacity maps
 * define wheel positions in Blender
   animate wheel rotation and suspension, bake gear animation and name actions the same
 * hover thruster locations
