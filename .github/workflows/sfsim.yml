@@ -1,0 +1,26 @@
+name: SFsim CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  ubuntu-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'oracle'
+        java-version: '23'
+    - name: Install Clojure
+      uses: DeLaGuardo/setup-clojure@13.0
+      with:
+        cli: 1.12.0
+    - name: Install depdendencies
+      run: |
+        apt -y update
+        apt -y install xvfb
