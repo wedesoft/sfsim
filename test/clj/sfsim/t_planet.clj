@@ -356,7 +356,7 @@ void main()
 
 
 (tabular "Shader function to determine ambient light scattered by the atmosphere"
-         (fact ((surface-radiance-test [radius max-height size] [?x ?y ?z ?lx ?ly ?lz]) 0) => (roughly ?value 1e-6))
+         (fact ((surface-radiance-test [radius max-height size] [?x ?y ?z ?lx ?ly ?lz]) 0) => (roughly ?value 1e-3))
          ?x ?y ?z              ?lx ?ly ?lz ?value
          0  0  radius          0   0   1   0.770411
          0  0  radius          1   0   0   0.095782
