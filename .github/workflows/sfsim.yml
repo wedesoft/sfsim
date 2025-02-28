@@ -20,6 +20,12 @@ jobs:
         key: ${{ runner.os }}-joltphysics-5.2.0
         restore-keys: |
           ${{ runner.os }}-joltphysics-5.2.0
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/deps.edn') }}
+        restore-keys: ${{ runner.os }}-m2-
     - name: Install APT packages
       run: |
         sudo apt -qy update
