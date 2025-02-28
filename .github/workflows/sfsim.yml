@@ -10,16 +10,16 @@ jobs:
   ubuntu-build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Cache JoltPhysics build
-        id: cache-joltphysics
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/JoltPhysics-5.2.0
-          key: ${{ runner.os }}-joltphysics
-          restore-keys: |
-            ${{ runner.os }}-joltphysics
+    - uses: actions/checkout@v4
+    - name: Cache JoltPhysics build
+      id: cache-joltphysics
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/JoltPhysics-5.2.0
+        key: ${{ runner.os }}-joltphysics
+        restore-keys: |
+          ${{ runner.os }}-joltphysics
     - name: Install APT packages
       run: |
         sudo apt -qy update
