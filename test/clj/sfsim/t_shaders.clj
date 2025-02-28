@@ -1,6 +1,6 @@
 (ns sfsim.t-shaders
   (:require
-    [clojure.math :refer (cos sin PI sqrt)]
+    [clojure.math :refer (PI sqrt)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye)]
     [fastmath.vector :refer (vec3 div ediv dot mag cross)]
@@ -8,7 +8,7 @@
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.conftest :refer (roughly-vector shader-test)]
-    [sfsim.image :refer (get-float get-vector3 convert-4d-to-2d)]
+    [sfsim.image :refer (get-vector3 convert-4d-to-2d)]
     [sfsim.matrix :refer (orthogonal transformation-matrix)]
     [sfsim.render :refer :all]
     [sfsim.shaders :refer :all]

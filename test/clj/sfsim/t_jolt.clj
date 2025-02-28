@@ -1,7 +1,6 @@
 (ns sfsim.t-jolt
   (:require
     [clojure.math :refer (PI)]
-    [coffi.mem :as mem]
     [fastmath.matrix :refer (mat3x3 mat4x4)]
     [fastmath.vector :refer (vec3)]
     [midje.sweet :refer :all]

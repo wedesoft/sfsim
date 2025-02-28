@@ -3,14 +3,13 @@
     [clojure.math :refer (PI exp pow)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye diagonal inverse)]
-    [fastmath.vector :refer (vec3 mult dot mag)]
+    [fastmath.vector :refer (vec3 dot mag)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.atmosphere :as atmosphere]
-    [sfsim.bluenoise :as bluenoise]
     [sfsim.clouds :as clouds]
-    [sfsim.conftest :refer (shader-test roughly-vector is-image)]
+    [sfsim.conftest :refer (is-image)]
     [sfsim.cubemap :as cubemap]
     [sfsim.image :refer :all]
     [sfsim.interpolate :refer :all]
@@ -22,8 +21,6 @@
     [sfsim.texture :refer :all]
     [sfsim.util :refer :all])
   (:import
-    (fastmath.matrix
-      Mat4x4)
     (org.lwjgl.glfw
       GLFW)))
 

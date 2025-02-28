@@ -1,7 +1,7 @@
 (ns sfsim.t-util
   (:require
     [clojure.math :refer (PI)]
-    [fastmath.vector :refer (vec3 vec4)]
+    [fastmath.vector :refer (vec3)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]

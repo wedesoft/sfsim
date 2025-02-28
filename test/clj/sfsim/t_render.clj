@@ -1,8 +1,8 @@
 (ns sfsim.t-render
   (:require
-    [clojure.math :refer (to-radians cos asin sin sqrt PI)]
+    [clojure.math :refer (to-radians asin sin sqrt PI)]
     [comb.template :as template]
-    [fastmath.matrix :refer (eye diagonal) :as m]
+    [fastmath.matrix :refer (eye) :as m]
     [fastmath.vector :refer (vec3 vec4 normalize)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -10,7 +10,6 @@
     [sfsim.conftest :refer (is-image roughly-vector)]
     [sfsim.image :refer :all]
     [sfsim.matrix :refer :all :as matrix]
-    [sfsim.quaternion :as q]
     [sfsim.quaternion :as q]
     [sfsim.render :refer :all :as render]
     [sfsim.shaders :as s]
@@ -23,9 +22,7 @@
       GLFW)
     (org.lwjgl.opengl
       GL11
-      GL12
-      GL30
-      GL42)))
+      GL12)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -943,24 +940,24 @@ void main(void)
                                 (clear)
                                 (use-program program-shadow)
                                 (uniform-matrix4 program-shadow "world_to_shadow_ndc" (:sfsim.matrix/world-to-shadow-ndc shadow-mat))
-                                (render-quads vao))]
-          (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
-                tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
-            (framebuffer-render 320 240 :sfsim.render/cullback depth [tex]
-                                (clear (vec3 0 0 0))
-                                (use-program program-main)
-                                (uniform-sampler program-main "shadow_map" 0)
-                                (uniform-int program-main "shadow_size" 128)
-                                (uniform-matrix4 program-main "projection" projection)
-                                (uniform-matrix4 program-main "world_to_shadow_map" (:sfsim.matrix/world-to-shadow-map shadow-mat))
-                                (use-textures {0 shadow-map})
                                 (render-quads vao))
-            (let [img (texture->image tex)]
-              (destroy-texture shadow-map)
-              (destroy-vertex-array-object vao)
-              (destroy-program program-main)
-              (destroy-program program-shadow)
-              img))))
+              depth           (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
+              tex             (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
+          (framebuffer-render 320 240 :sfsim.render/cullback depth [tex]
+                              (clear (vec3 0 0 0))
+                              (use-program program-main)
+                              (uniform-sampler program-main "shadow_map" 0)
+                              (uniform-int program-main "shadow_size" 128)
+                              (uniform-matrix4 program-main "projection" projection)
+                              (uniform-matrix4 program-main "world_to_shadow_map" (:sfsim.matrix/world-to-shadow-map shadow-mat))
+                              (use-textures {0 shadow-map})
+                              (render-quads vao))
+          (let [img (texture->image tex)]
+            (destroy-texture shadow-map)
+            (destroy-vertex-array-object vao)
+            (destroy-program program-main)
+            (destroy-program program-shadow)
+            img)))
       => (is-image "test/clj/sfsim/fixtures/render/shadow.png" 0.20))
 
 
@@ -1001,30 +998,30 @@ void main(void)
               vao             (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-maps     (shadow-cascade 128 shadow-mats program-shadow
                                               (fn [world-to-shadow-ndc]
-                                                (uniform-matrix4 program-shadow "world_to_shadow_ndc" world-to-shadow-ndc)
-                                                (render-quads vao)))]
-          (let [depth (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
-                tex   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
-            (framebuffer-render 320 240 :sfsim.render/cullback depth [tex]
-                                (clear (vec3 0 0 0))
-                                (use-program program-main)
-                                (uniform-sampler program-main "shadow_map0" 0)
-                                (uniform-float program-main "split0" 0.0)
-                                (uniform-float program-main "split1" 50.0)
-                                (uniform-int program-main "shadow_size" 128)
-                                (uniform-matrix4 program-main "projection" projection)
-                                (uniform-matrix4 program-main "world_to_camera" (eye 4))
-                                (uniform-matrix4 program-main "world_to_shadow_map0"
-                                                 (:sfsim.matrix/world-to-shadow-map (shadow-mats 0)))
-                                (use-textures (zipmap (range) shadow-maps))
-                                (render-quads vao))
-            (let [img (texture->image tex)]
-              (doseq [shadow-map shadow-maps]
-                (destroy-texture shadow-map))
-              (destroy-vertex-array-object vao)
-              (destroy-program program-main)
-              (destroy-program program-shadow)
-              img))))
+                                                  (uniform-matrix4 program-shadow "world_to_shadow_ndc" world-to-shadow-ndc)
+                                                  (render-quads vao)))
+              depth           (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp 320 240)
+              tex             (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGBA8 320 240)]
+          (framebuffer-render 320 240 :sfsim.render/cullback depth [tex]
+                              (clear (vec3 0 0 0))
+                              (use-program program-main)
+                              (uniform-sampler program-main "shadow_map0" 0)
+                              (uniform-float program-main "split0" 0.0)
+                              (uniform-float program-main "split1" 50.0)
+                              (uniform-int program-main "shadow_size" 128)
+                              (uniform-matrix4 program-main "projection" projection)
+                              (uniform-matrix4 program-main "world_to_camera" (eye 4))
+                              (uniform-matrix4 program-main "world_to_shadow_map0"
+                                               (:sfsim.matrix/world-to-shadow-map (shadow-mats 0)))
+                              (use-textures (zipmap (range) shadow-maps))
+                              (render-quads vao))
+          (let [img (texture->image tex)]
+            (doseq [shadow-map shadow-maps]
+                   (destroy-texture shadow-map))
+            (destroy-vertex-array-object vao)
+            (destroy-program program-main)
+            (destroy-program program-shadow)
+            img)))
       => (is-image "test/clj/sfsim/fixtures/render/shadow.png" 0.20))
 
 

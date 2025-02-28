@@ -1,6 +1,5 @@
 (ns sfsim.t-image
   (:require
-    [clojure.math :refer (PI)]
     [fastmath.vector :refer (vec3 vec4)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
