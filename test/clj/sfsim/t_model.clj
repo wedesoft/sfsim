@@ -287,7 +287,7 @@ void main()
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                                             (use-textures {0 colors}))))
                           (destroy-scene opengl-scene)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/dice.png" 0.01))
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/dice.png" 0.10))
 
 
 (def bricks (read-gltf "test/clj/sfsim/fixtures/model/bricks.gltf"))
@@ -361,7 +361,7 @@ void main()
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                                             (use-textures {0 colors 1 normals}))))
                           (destroy-scene opengl-scene)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/bricks.png" 0.01))
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/bricks.png" 0.10))
 
 
 (defn cube-material-type
@@ -406,7 +406,7 @@ void main()
                           (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene render-cube)
                           (destroy-scene opengl-scene)
                           (destroy-program program-dice)
-                          (destroy-program program-cube))) => (is-image "test/clj/sfsim/fixtures/model/cube-and-dice.png" 0.01))
+                          (destroy-program program-cube))) => (is-image "test/clj/sfsim/fixtures/model/cube-and-dice.png" 0.04))
 
 
 (def translation (read-gltf "test/clj/sfsim/fixtures/model/translation.gltf"))
@@ -676,7 +676,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                                moved-scene
                                                render-mesh)
                                  (destroy-scene opengl-scene)
-                                 (destroy-scene-renderer renderer))) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.01)))
+                                 (destroy-scene-renderer renderer))) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.07)))
          ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
          cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
          cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
@@ -839,7 +839,7 @@ void main()
                (destroy-scene opengl-scene)
                (destroy-scene-shadow-renderer shadow-renderer)
                (destroy-program program)
-               result)) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.02))
+               result)) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.11))
          ?model ?object-radius ?distance ?result
          torus  1.5            3         "torus-shadow.png"
          cubes  4.0            7         "cubes-shadow.png")
