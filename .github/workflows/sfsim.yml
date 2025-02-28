@@ -27,11 +27,10 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/deps.edn') }}
         restore-keys: ${{ runner.os }}-m2-
     - name: Install APT packages
-      run: |
-        sudo apt -qy update
-        sudo apt -qy install build-essential
-        sudo apt -qy install xvfb
-        sudo apt -qy install rlwrap
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: build-essential xvfb rlwrap
+        version: 1.0
     - if: ${{ steps.cache-joltphysics.outputs.cache-hit != 'true' }}
       name: Build JoltPhysics
       run: |
