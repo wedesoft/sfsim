@@ -1,6 +1,6 @@
 (ns sfsim.aerodynamics
     (:require
-      [clojure.math :refer (cos sin sqrt)]
+      [clojure.math :refer (PI cos sin sqrt)]
       [sfsim.util :refer (sqr)]))
 
 
@@ -24,11 +24,11 @@
 
 (defn fall-off
   "Ellipse-like fall-off function"
-  [reduced-increase interval]
+  [max-increase interval]
   (fn [angle-of-attack]
       (let [relative-position (/ (- interval angle-of-attack) interval)]
         (if (>= relative-position 0.0)
-          (* reduced-increase (- 1.0 (sqrt (- 1.0 (sqr relative-position)))))
+          (* max-increase (- 1.0 (sqrt (- 1.0 (sqr relative-position)))))
           0.0))))
 
 
@@ -41,6 +41,16 @@
         (if (<= angle-of-attack stall-angle)
           (* (/ max-increase stall-angle) angle-of-attack)
           ((fall-off reduced-increase fall-off-interval) (- angle-of-attack stall-angle))))))
+
+
+(defn bumps
+  "Bumps to add to drag before 180 and -180 degrees"
+  [interval max-increase]
+  (fn [angle-of-attack]
+      (let [relative-pos (/ (- (abs angle-of-attack) (- PI interval)) interval)]
+        (if (pos? relative-pos)
+          (* 0.5 max-increase (- 1 (cos (* 2 PI relative-pos))))
+          0.0))))
 
 
 (set! *warn-on-reflection* false)
