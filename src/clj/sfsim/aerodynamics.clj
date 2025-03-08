@@ -67,5 +67,11 @@
             0.0)))))
 
 
+(defn compose
+  "Compose an aerodynamic curve"
+  [& funs]
+  (comp (partial apply +) (apply juxt funs)))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

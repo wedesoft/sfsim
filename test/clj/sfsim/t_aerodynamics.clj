@@ -59,3 +59,10 @@
        ((tail 0.4 0.1 0.2) (- 0.2 PI)) => (roughly 0.2 1e-6)
        ((tail 0.4 0.1 0.2) (- PI 0.25)) => (roughly -0.1 1e-6)
        ((tail 0.4 0.1 0.2) (- 0.25 PI)) => (roughly 0.1 1e-6))
+
+
+(facts "Compose an aerodynamic curve"
+       ((compose (fn [x] 0.0)) 0.0) => 0.0
+       ((compose (fn [x] 1.0)) 0.0) => 1.0
+       ((compose (fn [x] x)) 2.0) => 2.0
+       ((compose (fn [x] 1.0) (fn [x] 2.0)) 0.0) => 3.0)
