@@ -45,12 +45,26 @@
 
 (defn bumps
   "Bumps to add to drag before 180 and -180 degrees"
-  [interval max-increase]
+  [max-increase interval]
   (fn [angle-of-attack]
       (let [relative-pos (/ (- (abs angle-of-attack) (- PI interval)) interval)]
         (if (pos? relative-pos)
           (* 0.5 max-increase (- 1 (cos (* 2 PI relative-pos))))
           0.0))))
+
+
+(defn tail
+  "Lift increase to add near 180 and -180 degrees"
+  [max-increase ramp-up ramp-down]
+  (fn [angle-of-attack]
+      (let [relative-pos (if (pos? angle-of-attack) (- angle-of-attack PI) (+ angle-of-attack PI))]
+        (if (<= (abs relative-pos) ramp-up)
+          (/ (* max-increase relative-pos) ramp-up)
+          (if (<= (abs relative-pos) (+ ramp-up ramp-down))
+            (if (pos? angle-of-attack)
+              (- (* max-increase (/ (- ramp-down (- PI angle-of-attack ramp-up)) ramp-down)))
+              (* max-increase (/ (- ramp-down (- (+ angle-of-attack PI) ramp-up)) ramp-down)))
+            0.0)))))
 
 
 (set! *warn-on-reflection* false)
