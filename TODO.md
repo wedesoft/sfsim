@@ -1,5 +1,8 @@
 # TODO
-* implement aerodynamics and thrust,
+* increased drag for sideways wind (gnuplot)
+  mix parts of cl for increased sideways wind direction
+  implement angle dependent sideways forces
+  implement aerodynamics and thrust,
   simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
   venturestar trajectory pdf: 166
   good position of wheels for takeoff (with low fuel) and landing
