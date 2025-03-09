@@ -73,5 +73,11 @@
   (comp (partial apply +) (apply juxt funs)))
 
 
+(def c-lift (compose (basic-lift 1.1) (glide 0.8 (to-radians 13) 0.5 (to-radians 12)) (tail 0.5 (to-radians 8) (to-radians 12))))
+
+
+(def c-drag (compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

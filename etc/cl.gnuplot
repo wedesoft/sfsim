@@ -13,8 +13,8 @@ bumps(alpha) = abs(alpha - 180) < 20 ? 0.02 * (1 - cos((alpha - 180) * 360 / 20)
 CD(alpha) = 0.1 + 0.5 * 1.9 * (1 - cos(2 * alpha)) + bumps(alpha)
 CL(alpha) = 1.1 * sin(2 * alpha) + glide(alpha) - glide(360 - alpha) + tail(alpha)
 
-plot [alpha=0:360] CL(alpha), CD(alpha), CL(alpha) / CD(alpha)
+# plot [alpha=0:360] CL(alpha), CD(alpha), CL(alpha) / CD(alpha)
 
-# plot [alpha=-180:180] "etc/cl.dat" with lines
+plot [alpha=-180:180] "etc/cl.dat" with lines, "etc/cd.dat" with lines
 
 pause -1
