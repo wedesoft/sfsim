@@ -1,6 +1,6 @@
 (ns sfsim.aerodynamics
     (:require
-      [clojure.math :refer (PI cos sin sqrt)]
+      [clojure.math :refer (PI cos sin sqrt to-radians)]
       [sfsim.util :refer (sqr)]))
 
 
