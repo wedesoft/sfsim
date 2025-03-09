@@ -15,4 +15,6 @@ CL(alpha) = 1.1 * sin(2 * alpha) + glide(alpha) - glide(360 - alpha) + tail(alph
 
 plot [alpha=0:360] CL(alpha), CD(alpha), CL(alpha) / CD(alpha)
 
+# plot [alpha=-180:180] "etc/cl.dat" with lines
+
 pause -1
