@@ -19,14 +19,13 @@ CLmirror(alpha) = alpha < 180 ? CL(180 - alpha) : CL(540 - alpha)
 
 CLmix(alpha, beta) = 0.5 * (CL(alpha) * (1 + cos(beta)) - CLmirror(alpha) * (1 - cos(beta)))
 
-CDmix(alpha, beta) = 0.1 * 0.5 * (1 + cos(2 * alpha)) + 2.0 * 0.5 * (1 - cos(2 * alpha))
+CDmix(alpha, beta) = (0.1 * 0.5 * (1 + cos(beta)) + 0.5 * 0.5 * (1 - cos(beta))) * 0.5 * (1 + cos(2 * alpha)) + 2.0 * 0.5 * (1 - cos(2 * alpha))
 
 # use 3D angle to wind instead of beta?
 
 # plot [alpha=0:360] CL(alpha), CD(alpha), CL(alpha) / CD(alpha)
 # plot [alpha=0:360] CLmix(alpha, 0), CLmix(alpha, 45), CLmix(alpha, 90), CLmix(alpha, 135), CLmix(alpha, 180), CLmix(alpha, 225), CLmix(alpha, 270), CLmix(alpha, 315)
-plot [alpha=0:360] CDmix(alpha, 0)
-# plot [beta=-180:180] CDmix(0, beta)
+plot [alpha=0:360] CDmix(alpha, 0), CDmix(alpha, 45), CDmix(alpha, 90), CDmix(alpha, 135), CDmix(alpha, 180), CDmix(alpha, 225), CDmix(alpha, 270), CDmix(alpha, 315)
 
 # plot [alpha=-180:180] "etc/cl.dat" with lines, "etc/cd.dat" with lines
 
