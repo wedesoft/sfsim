@@ -9,7 +9,7 @@ set angles degrees
 set samples 10000
 
 # alpha: angle of attack
-# beta: side slip angle
+# beta: sideslip angle
 # Cl: coefficient of lift
 # Cd: coefficient of drag
 # Cy: coefficient of side force
@@ -27,8 +27,6 @@ CLmirror(alpha) = alpha < 180 ? CL(180 - alpha) : CL(540 - alpha)
 CLmix(alpha, beta) = 0.5 * (CL(alpha) * (1 + cos(beta)) - CLmirror(alpha) * (1 - cos(beta)))
 
 CDmix(alpha, beta) = (0.1 * 0.5 * (1 + cos(beta)) + 0.5 * 0.5 * (1 - cos(beta))) * 0.5 * (1 + cos(2 * alpha)) + 2.0 * 0.5 * (1 - cos(2 * alpha))
-
-# use 3D angle to wind instead of beta?
 
 plot [alpha=0:360] CL(alpha), CD(alpha), CL(alpha) / CD(alpha)
 pause -1
