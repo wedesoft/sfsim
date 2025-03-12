@@ -7,9 +7,18 @@
   venturestar trajectory pdf: 166
   good position of wheels for takeoff (with low fuel) and landing
   gear/terrain physics with stationary Earth (ground collisions)
-* fix planet tessellation tests
 * non-linear sampling for clouds
 * incremental rendering of opacity maps
+* thrust graphics
+* sound effects
+* steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
+  show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes),
+  capsule art (recognisable), first 4 screenshots important (1920x1080) bright ones and dark ones, show the UI,
+  use alpha for steam icons,
+  good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
+  add steam page url to long description, add animated GIFs, section banners, revisit tags regularly,
+  https://partner.steamgames.com/doc/store/assets/libraryassets
+* fix planet tessellation tests
 * define wheel positions in Blender
   animate wheel rotation and suspension, bake gear animation and name actions the same
 * hover thruster locations
@@ -21,7 +30,6 @@
   * implement two-step Runge-Kutta wrapper alignment
   * docking physics
   * moon landing physics
-* sound effects
 * problem with neighbouring resolution levels being to different
 * Check out poliastro and hapsira
 * use components and core.async for physics and loading of data, rendering main thread as component?
