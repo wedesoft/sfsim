@@ -27,6 +27,8 @@ CLmix(alpha, beta) = 0.5 * (CL(alpha) * (1 + cos(beta)) - CLmirror(alpha) * (1 -
 
 CDmix(alpha, beta) = (0.1 * 0.5 * (1 + cos(beta)) + 0.5 * 0.5 * (1 - cos(beta))) * 0.5 * (1 + cos(2 * alpha)) + 2.0 * 0.5 * (1 - cos(2 * alpha))
 
+CYmix(alpha, beta) = 0.4 * sin(2 * beta) * cos(alpha)
+
 plot [alpha=0:360] CL(alpha), CD(alpha), CL(alpha) / CD(alpha)
 pause -1
 
@@ -34,6 +36,9 @@ plot [alpha=0:360] CLmix(alpha, 0), CLmix(alpha, 45), CLmix(alpha, 90), CLmix(al
 pause -1
 
 plot [alpha=0:360] CDmix(alpha, 0), CDmix(alpha, 45), CDmix(alpha, 90), CDmix(alpha, 135), CDmix(alpha, 180), CDmix(alpha, 225), CDmix(alpha, 270), CDmix(alpha, 315)
+pause -1
+
+plot [beta=0:360] CYmix(-90, beta), CYmix(-60, beta), CYmix(-30, beta), CYmix(0, beta), CYmix(30, beta), CYmix(60, beta), CYmix(90, beta)
 pause -1
 
 # plot [alpha=-180:180] "etc/cl.dat" with lines, "etc/cd.dat" with lines
