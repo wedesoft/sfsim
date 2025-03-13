@@ -1,6 +1,6 @@
 set terminal x11
 
-set title "lift, drag, and lift to drag ratio"
+set title "aerodynamic coefficients"
 
 set xlabel "alpha"
 set ylabel "amount"
