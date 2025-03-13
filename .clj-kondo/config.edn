@@ -1,5 +1,5 @@
 {:linters
- {:unresolved-symbol
-  {:level :off}
-  :type-mismatch {:level :off}}
+ {:unresolved-symbol {:level :off}
+  :type-mismatch {:level :off}
+  :unused-value {:level :off}}
  :output {:linter-name true}}

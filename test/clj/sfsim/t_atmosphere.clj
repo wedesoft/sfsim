@@ -7,11 +7,11 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.atmosphere :refer (atmosphere-intersection attenuation-outer attenuation-track elevation-to-index
+    [sfsim.atmosphere :refer (atmosphere-intersection attenuation-outer elevation-to-index
                                                       extinction fragment-atmosphere height-to-index index-to-elevation horizon-distance
                                                       index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
                                                       phase phase-function point-scatter point-scatter-base point-scatter-component
-                                                      point-scatter-space ray-extremity ray-scatter ray-scatter-outer ray-scatter-space
+                                                      ray-extremity ray-scatter ray-scatter-space
                                                       ray-scatter-track scattering strength-component sun-angle-to-index cloud-overlay
                                                       sun-elevation-to-index surface-intersection surface-point? surface-radiance
                                                       surface-radiance-base surface-radiance-space transmittance transmittance-outer
@@ -326,25 +326,25 @@
                            (vec3 2e-5 3e-5 5e-5))]
              (point-scatter earth [mie] ray-scatter1 surface-radiance intensity 64 10 x1 (vec3 0 1 0) light-direction true)
              => (roughly-vector (vec3 2e-5 3e-5 5e-5) 1e-10))
-           (with-redefs (atmosphere/ray-extremity
-                          (fn [planet ray]
-                            (facts planet => earth
-                                   ray => #:sfsim.ray{:origin x2 :direction (vec3 0 -1 0)})
-                            (vec3 0 radius 0))
-                          atmosphere/transmittance
-                          (fn [planet scatter steps x x0]
-                            (facts planet => earth
-                                   steps => 10
-                                   x => x2
-                                   x0 => (vec3 0 radius 0))
-                            (vec3 0.9 0.8 0.7))
-                          sphere/integral-sphere
-                          (fn [steps normal fun]
-                            (facts steps => 64
-                                   normal => (roughly-vector (vec3 0 1 0) 1e-6)
-                                   (fun (vec3 0 -1 0)) =>
-                                   (roughly-vector (mult (emult (vec3 0.9 0.8 0.7) (vec3 3 4 5)) (* 0.5 (/ 2e-5 E) 0.3)) 1e-10))
-                            (vec3 2e-5 3e-5 5e-5)))
+           (with-redefs [atmosphere/ray-extremity
+                         (fn [planet ray]
+                             (facts planet => earth
+                                    ray => #:sfsim.ray{:origin x2 :direction (vec3 0 -1 0)})
+                             (vec3 0 radius 0))
+                         atmosphere/transmittance
+                         (fn [planet scatter steps x x0]
+                             (facts planet => earth
+                                    steps => 10
+                                    x => x2
+                                    x0 => (vec3 0 radius 0))
+                             (vec3 0.9 0.8 0.7))
+                         sphere/integral-sphere
+                         (fn [steps normal fun]
+                             (facts steps => 64
+                                    normal => (roughly-vector (vec3 0 1 0) 1e-6)
+                                    (fun (vec3 0 -1 0)) =>
+                                    (roughly-vector (mult (emult (vec3 0.9 0.8 0.7) (vec3 3 4 5)) (* 0.5 (/ 2e-5 E) 0.3)) 1e-10))
+                             (vec3 2e-5 3e-5 5e-5))]
              (point-scatter earth [mie] ray-scatter2 surface-radiance intensity 64 10 x2 (vec3 0 1 0) light-direction true)
              => (roughly-vector (vec3 2e-5 3e-5 5e-5) 1e-10)))))
 

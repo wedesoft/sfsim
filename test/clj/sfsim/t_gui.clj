@@ -16,31 +16,9 @@
       BufferUtils)
     (org.lwjgl.glfw
       GLFW)
-    (org.lwjgl.nuklear
-      NkAllocator
-      NkBuffer
-      NkContext
-      NkConvertConfig
-      NkDrawVertexLayoutElement
-      NkPluginAllocI
-      NkPluginFreeI
-      NkRect
-      NkUserFont
-      Nuklear)
     (org.lwjgl.opengl
       GL11
-      GL12
-      GL14
-      GL15
-      GL30)
-    (org.lwjgl.stb
-      STBTTFontinfo
-      STBTTPackContext
-      STBTTPackedchar
-      STBTruetype)
-    (org.lwjgl.system
-      MemoryStack
-      MemoryUtil)))
+      GL12)))
 
 
 (mi/collect! {:ns (all-ns)})

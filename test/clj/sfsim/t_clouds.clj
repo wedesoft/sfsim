@@ -10,7 +10,7 @@
     [sfsim.atmosphere :refer (vertex-atmosphere)]
     [sfsim.clouds :refer :all]
     [sfsim.conftest :refer (roughly-vector shader-test is-image)]
-    [sfsim.image :refer (get-vector3 get-float get-float-3d)]
+    [sfsim.image :refer (get-vector3 get-float-3d)]
     [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
     [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
     [sfsim.render :refer :all]
@@ -494,20 +494,20 @@ float lookup_mock(vec3 point)
           warped   (cubemap-warp 3 warp
                                  (uniform-sampler warp "current" 0)
                                  (uniform-int warp "selector" selector)
-                                 (use-textures {0 current}))]
-      (let [tex (texture-render-color 1 1 true
-                                      (use-program program)
-                                      (uniform-sampler program "cubemap" 0)
-                                      (use-textures {0 warped})
-                                      (render-quads vao))
-            img (rgb-texture->vectors3 tex)]
-        (destroy-texture tex)
-        (destroy-texture warped)
-        (destroy-texture current)
-        (destroy-program warp)
-        (destroy-vertex-array-object vao)
-        (destroy-program program)
-        ((get-vector3 img 0 0) 0)))))
+                                 (use-textures {0 current}))
+          tex      (texture-render-color 1 1 true
+                                         (use-program program)
+                                         (uniform-sampler program "cubemap" 0)
+                                         (use-textures {0 warped})
+                                         (render-quads vao))
+          img      (rgb-texture->vectors3 tex)]
+      (destroy-texture tex)
+      (destroy-texture warped)
+      (destroy-texture current)
+      (destroy-program warp)
+      (destroy-vertex-array-object vao)
+      (destroy-program program)
+      ((get-vector3 img 0 0) 0))))
 
 
 (tabular "Lookup floating-point values using cubemap warp vector field"
@@ -681,24 +681,24 @@ void main()
                                                 :sfsim.clouds/curl-scale 1.0
                                                 :sfsim.clouds/cover-scale 2.0
                                                 :sfsim.clouds/num-iterations 50
-                                                :sfsim.clouds/flow-scale 1.5e-3)]
-          (let [tex (texture-render-color 128 128 false
-                                          (clear (vec3 1 0 0))
-                                          (use-program program)
-                                          (uniform-sampler program "cubemap" 0)
-                                          (uniform-float program "threshold" 0.3)
-                                          (uniform-float program "multiplier" 4.0)
-                                          (use-textures {0 cubemap})
-                                          (render-quads vao))
-                img (texture->image tex)]
-            (destroy-texture cubemap)
-            (destroy-vertex-array-object vao)
-            (destroy-program program)
-            (destroy-texture worley-cover)
-            (destroy-texture worley-south)
-            (destroy-texture worley-north)
-            (destroy-texture tex)
-            img)))
+                                                :sfsim.clouds/flow-scale 1.5e-3)
+              tex          (texture-render-color 128 128 false
+                                                 (clear (vec3 1 0 0))
+                                                 (use-program program)
+                                                 (uniform-sampler program "cubemap" 0)
+                                                 (uniform-float program "threshold" 0.3)
+                                                 (uniform-float program "multiplier" 4.0)
+                                                 (use-textures {0 cubemap})
+                                                 (render-quads vao))
+              img          (texture->image tex)]
+          (destroy-texture cubemap)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (destroy-texture worley-cover)
+          (destroy-texture worley-south)
+          (destroy-texture worley-north)
+          (destroy-texture tex)
+          img))
       => (is-image "test/clj/sfsim/fixtures/clouds/cover.png" 0.13))
 
 

@@ -20,3 +20,49 @@
        ((basic-lift 1.1) 0.0) => 0.0
        ((basic-lift 1.1) (/ PI 4)) => 1.1
        ((basic-lift 1.1) (/ PI 2)) => (roughly 0.0 1e-6))
+
+
+(facts "Ellipse-like fall-off function"
+       ((fall-off 0.8 0.5) 0.0) => 0.8
+       ((fall-off 0.8 0.5) 0.5) => 0.0
+       ((fall-off 0.8 0.5) 0.2) => (roughly 0.16 1e-6)
+       ((fall-off 0.8 0.6) 1.0) => 0.0)
+
+(facts "Increase of lift for small angles of attack before stall"
+       ((glide 0.8 0.6 0.4 0.5) 0.0) => 0.0
+       ((glide 0.8 0.6 0.4 0.5) 0.6) => 0.8
+       ((glide 0.8 0.6 0.4 0.5) 1.1) => 0.0
+       ((glide 0.8 0.6 0.4 0.5) 0.8) => (roughly 0.08 1e-6)
+       ((glide 0.8 0.6 0.4 0.5) -0.6) => -0.8
+       ((glide 0.8 0.6 0.4 0.5) -1.1) => 0.0
+       ((glide 0.8 0.6 0.4 0.5) -0.8) => (roughly -0.08 1e-6))
+
+(facts "Bumps to add to drag before 180 and -180 degrees"
+       ((bumps 0.1 0.4) 0.0) => 0.0
+       ((bumps 0.1 0.4) (- PI 0.2)) => 0.1
+       ((bumps 0.1 0.4) (- 0.2 PI)) => 0.1
+       ((bumps 0.1 0.4) (- PI)) => 0.0
+       ((bumps 0.1 0.4) (+ PI)) => 0.0
+       ((bumps 0.1 0.4) (- PI 0.4)) => 0.0
+       ((bumps 0.1 0.4) (- 0.4 PI)) => 0.0)
+
+
+(facts "Lift increase to add near 180 and -180 degrees"
+       ((tail 0.4 0.1 0.2) PI) => 0.0
+       ((tail 0.4 0.1 0.2) 0.1) => 0.0
+       ((tail 0.4 0.1 0.2) -0.1) => 0.0
+       ((tail 0.4 0.1 0.2) (- PI 0.1)) => (roughly -0.4 1e-6)
+       ((tail 0.4 0.1 0.2) (- 0.1 PI)) => (roughly 0.4 1e-6)
+       ((tail 0.4 0.1 0.2) (- PI 0.05)) => (roughly -0.2 1e-6)
+       ((tail 0.4 0.1 0.2) (- 0.05 PI)) => (roughly 0.2 1e-6)
+       ((tail 0.4 0.1 0.2) (- PI 0.2)) => (roughly -0.2 1e-6)
+       ((tail 0.4 0.1 0.2) (- 0.2 PI)) => (roughly 0.2 1e-6)
+       ((tail 0.4 0.1 0.2) (- PI 0.25)) => (roughly -0.1 1e-6)
+       ((tail 0.4 0.1 0.2) (- 0.25 PI)) => (roughly 0.1 1e-6))
+
+
+(facts "Compose an aerodynamic curve"
+       ((compose (fn [x] 0.0)) 0.0) => 0.0
+       ((compose (fn [x] 1.0)) 0.0) => 1.0
+       ((compose (fn [x] x)) 2.0) => 2.0
+       ((compose (fn [x] 1.0) (fn [x] 2.0)) 0.0) => 3.0)

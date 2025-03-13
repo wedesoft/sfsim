@@ -30,7 +30,7 @@
   "Compare quaternion with expected value."
   [expected error]
   (fn [actual]
-    (and (<= (sqrt (apply + (mapv (comp #(* % %) #(- (% actual) (% expected))) [:real :imag :jmag :kmag]))) error))))
+    (<= (sqrt (apply + (mapv (comp #(* % %) #(- (% actual) (% expected))) [:real :imag :jmag :kmag]))) error)))
 
 
 (defn rgba-dist
