@@ -4,6 +4,8 @@ set title "aerodynamic coefficients"
 
 set xlabel "alpha"
 set ylabel "amount"
+set grid
+set xtics 45
 
 set angles degrees
 set samples 10000
