@@ -32,7 +32,7 @@
                    :jvm-opts ["-Xms2g" "-Xmx4g"]}
            :test {:extra-deps {midje/midje {:mvn/version "1.10.10"}
                                midje-runner/midje-runner {:git/url "https://github.com/wedesoft/midje-runner.git"
-                                                          :git/sha "8ceb29d5781b9fc43ad4116fc645ade797342fad"}}
+                                                          :git/sha "47c2e6c0f002ac15dc9acfeeb4e83d1ac30457aa"}}
                   :extra-paths ["test/clj"]
                   :main-opts ["-m" "midje-runner.runner"]
                   :jvm-opts ["--enable-native-access=ALL-UNNAMED"]}
