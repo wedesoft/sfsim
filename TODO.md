@@ -1,11 +1,11 @@
 # TODO
+* non-linear sampling for clouds
+* incremental rendering of opacity maps
 * implement aerodynamics and thrust,
   simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
   good position of wheels for takeoff (with low fuel) and landing
   gear <-> terrain physics with stationary Earth (ground collisions)
 * orbitting Earth
-* non-linear sampling for clouds
-* incremental rendering of opacity maps
 * thrust graphics, opengl rocket plume
   flame: https://www.shadertoy.com/view/XsXSWS
   mach diamonds: https://www.shadertoy.com/view/wdjGRz
