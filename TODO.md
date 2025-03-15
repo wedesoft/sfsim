@@ -6,7 +6,13 @@
 * orbitting Earth
 * non-linear sampling for clouds
 * incremental rendering of opacity maps
-* thrust graphics
+* thrust graphics, opengl rocket plume
+  flame: https://www.shadertoy.com/view/XsXSWS
+  mach diamonds: https://www.shadertoy.com/view/wdjGRz
+  mach diamonds: https://www.shadertoy.com/view/WdGBDc
+  blender cone: https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume
+  blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
+  particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
 * sound effects
 * UI overlays for third person view
 * at least 3 environments/biomes before publishing steam page (or mock ups): day earth, day orbit, sunset orbit, clouds, landing
