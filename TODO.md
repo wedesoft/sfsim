@@ -1,4 +1,6 @@
 # TODO
+* also update initial step size for exponential sampling
+* try increased stepping between clouds
 * non-linear sampling for clouds
 * incremental rendering of opacity maps
 * implement aerodynamics and thrust,

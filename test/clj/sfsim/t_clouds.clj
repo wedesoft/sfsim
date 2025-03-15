@@ -130,6 +130,22 @@ void main()
          100.0       5.0       5.0)
 
 
+(def exponential-sampling-test
+  (shader-test
+    (fn [program linear-range stepsize-factor]
+        (uniform-float program "linear_range" linear-range)
+        (uniform-float program "stepsize_factor" stepsize-factor))
+    sampling-probe
+    exponential-sampling))
+
+
+(tabular "Shader functions for updating exponential sampling stepsize"
+         (fact ((exponential-sampling-test [?linear-range ?stepsize-factor] [?distance ?stepsize]) 0) => (roughly ?result 1e-5))
+         ?linear-range ?stepsize-factor ?distance ?stepsize ?result
+         100.0         2.0              50.0      10.0       10.0
+         100.0         2.0              120.0     10.0       20.0)
+
+
 (def ray-shell-mock
   "#version 410 core
 uniform int num_shell_intersections;

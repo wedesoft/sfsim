@@ -39,6 +39,11 @@
   (slurp "resources/shaders/clouds/linear-sampling.glsl"))
 
 
+(def exponential-sampling
+  "Shader functions for defining exponential sampling"
+  (slurp "resources/shaders/clouds/exponential-sampling.glsl"))
+
+
 (def opacity-lookup
   "Shader function for looking up transmittance value from deep opacity map"
   [shaders/convert-2d-index shaders/convert-3d-index (slurp "resources/shaders/clouds/opacity-lookup.glsl")])
@@ -234,7 +239,7 @@
   "Fragment shader for creating deep opacity map consisting of offset texture and 3D opacity texture"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-layers perlin-octaves cloud-octaves]
-  [shaders/ray-shell (cloud-density perlin-octaves cloud-octaves) linear-sampling
+  [shaders/ray-shell (cloud-density perlin-octaves cloud-octaves)
    (template/eval (slurp "resources/shaders/clouds/opacity-fragment.glsl") {:num-layers num-layers})])
 
 
@@ -271,7 +276,7 @@
   "Shader to sample the cloud layer and apply cloud scattering update steps"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [linear-sampling lod-at-distance bluenoise/sampling-offset atmosphere/phase-function
+  [exponential-sampling lod-at-distance bluenoise/sampling-offset atmosphere/phase-function
    (cloud-density perlin-octaves cloud-octaves) (cloud-transfer num-steps) (slurp "resources/shaders/clouds/sample-cloud.glsl")])
 
 
@@ -349,7 +354,7 @@
              [::cloud-bottom :double] [::cloud-top :double] [::detail-scale :double]
              [::cloud-scale :double] [::cloud-multiplier :double] [::cover-multiplier :double]
              [::threshold :double] [::cap :double] [::anisotropic :double] [::cloud-step :double]
-             [::opacity-cutoff :double]]))
+             [::linear-range :double] [::stepsize-factor :double] [::opacity-cutoff :double]]))
 
 
 (def cloud-data
@@ -422,6 +427,8 @@
   (uniform-int program "noise_size" (:sfsim.texture/width (::bluenoise cloud-data)))
   (uniform-float program "anisotropic" (::anisotropic cloud-data))
   (uniform-float program "cloud_step" (::cloud-step cloud-data))
+  (uniform-float program "linear_range" (::linear-range cloud-data))
+  (uniform-float program "stepsize_factor" (::stepsize-factor cloud-data))
   (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
 
 

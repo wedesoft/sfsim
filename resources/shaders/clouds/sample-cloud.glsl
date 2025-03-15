@@ -8,6 +8,7 @@ uniform float opacity_cutoff;
 
 float sampling_offset();
 float phase(float g, float mu);
+float update_stepsize(float dist, float stepsize);
 float lod_at_distance(float dist, float lod_offset);
 float cloud_density(vec3 point, float lod);
 vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density);
@@ -17,6 +18,7 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
   float noise = sampling_offset();
   float scatter_amount = anisotropic * phase(0.76, dot(direction, light_direction)) + 1 - anisotropic;
   float l = cloud_shell.x + noise * cloud_step;
+  float s = cloud_step;
   while (l < cloud_shell.x + cloud_shell.y) {
     if (cloud_scatter.a <= opacity_cutoff)
       break;
@@ -24,8 +26,9 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
     float lod = lod_at_distance(l, lod_offset);
     float density = cloud_density(point, lod);
     if (density > 0)
-      cloud_scatter = cloud_transfer(start, point, scatter_amount, cloud_step, cloud_scatter, density);
-    l += cloud_step;
+      cloud_scatter = cloud_transfer(start, point, scatter_amount, s, cloud_scatter, density);
+    s = update_stepsize(l, s);
+    l += s;
   };
   return cloud_scatter;
 }
