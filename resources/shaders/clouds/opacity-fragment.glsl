@@ -33,8 +33,9 @@ void main()
   opacity_layer_0 = 1.0;
   if (extent_segment > 0) {
     float s = start_segment;
+    vec3 sample_point = fs_in.origin - start_segment * light_direction;
+    vec3 light_step = opacity_step * light_direction;
     while (s < start_segment + extent_segment) {
-      vec3 sample_point = fs_in.origin - s * light_direction;
       float density = cloud_density(sample_point, level_of_detail);
       float transmittance;
       // Compute this on the CPU: scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic)
@@ -59,6 +60,7 @@ void main()
       if (current_layer >= <%= (dec num-layers ) %>)
         break;
       s += opacity_step;
+      sample_point -= light_step;
     };
   };
   if (previous_transmittance == 1.0)

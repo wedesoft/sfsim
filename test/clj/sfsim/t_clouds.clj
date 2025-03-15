@@ -106,13 +106,13 @@ void main()
 
 
 (def sampling-probe
-  (template/fn [term]
+  (template/fn [distance stepsize]
     "#version 410 core
 out vec3 fragColor;
-float sample_point(float a, float idx, float step_size);
+float update_stepsize(float dist, float stepsize);
 void main()
 {
-  fragColor = vec3(<%= term %>, 0, 0);
+  fragColor = vec3(update_stepsize(<%= distance %>, <%= stepsize %>), 0, 0);
 }"))
 
 
@@ -123,12 +123,11 @@ void main()
     linear-sampling))
 
 
-(tabular "Shader functions for defining linear sampling"
-         (fact ((linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
-         ?term                          ?result
-         "sample_point(20, 0, 2)"       20
-         "sample_point(20, 3, 2)"       26
-         "sample_point(20, 0.5, 2)"     21)
+(tabular "Trivial shader functions for updating linear sampling stepsize"
+         (fact ((linear-sampling-test [] [?distance ?stepsize]) 0) => (roughly ?result 1e-5))
+         ?distance ?stepsize ?result
+         100.0       2.0       2.0
+         100.0       5.0       5.0)
 
 
 (def ray-shell-mock

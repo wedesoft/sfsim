@@ -7,7 +7,6 @@ uniform float anisotropic;
 uniform float opacity_cutoff;
 
 float sampling_offset();
-float sample_point(float a, float idx, float step_size);
 float phase(float g, float mu);
 float lod_at_distance(float dist, float lod_offset);
 float cloud_density(vec3 point, float lod);
