@@ -29,6 +29,11 @@
    (slurp "resources/shaders/clouds/cloud-noise.glsl")])
 
 
+(def lod-at-distance
+  "Shader function for determining LOD at given distance"
+  (slurp "resources/shaders/clouds/lod-at-distance.glsl"))
+
+
 (def linear-sampling
   "Shader functions for defining linear sampling"
   (slurp "resources/shaders/clouds/linear-sampling.glsl"))
@@ -266,8 +271,8 @@
   "Shader to sample the cloud layer and apply cloud scattering update steps"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [linear-sampling bluenoise/sampling-offset atmosphere/phase-function (cloud-density perlin-octaves cloud-octaves)
-   (cloud-transfer num-steps) (slurp "resources/shaders/clouds/sample-cloud.glsl")])
+  [linear-sampling lod-at-distance bluenoise/sampling-offset atmosphere/phase-function
+   (cloud-density perlin-octaves cloud-octaves) (cloud-transfer num-steps) (slurp "resources/shaders/clouds/sample-cloud.glsl")])
 
 
 (defn cloud-point

@@ -79,14 +79,37 @@ void main()
          2.0    [1.0]    0.5  0.5  0.5  1.0)
 
 
+(def lod-at-distance-probe
+  (template/fn [distance lod-offset]
+"#version 410 core
+out vec3 fragColor;
+float lod_at_distance(float dist, float lod_offset);
+void main()
+{
+  fragColor = vec3(lod_at_distance(<%= distance %>, <%= lod-offset %>), 0, 0);
+}"))
+
+
+(def lod-at-distance-test
+  (shader-test
+    (fn [program])
+    lod-at-distance-probe
+    lod-at-distance))
+
+
+(tabular "Shader function for determining level of detail at a distance"
+         (fact ((lod-at-distance-test [] [?distance ?lod-offset]) 0) => (roughly ?result 1e-5))
+         ?distance ?lod-offset ?result
+         1.0       0.0         0.0
+         1.0       3.0         3.0
+         2.0       3.0         4.0)
+
+
 (def sampling-probe
   (template/fn [term]
     "#version 410 core
 out vec3 fragColor;
-int number_of_samples(float a, float b, float max_step);
-float step_size(float a, float b, int num_samples);
 float sample_point(float a, float idx, float step_size);
-float lod_at_distance(float dist, float lod_offset);
 void main()
 {
   fragColor = vec3(<%= term %>, 0, 0);
@@ -95,9 +118,7 @@ void main()
 
 (def linear-sampling-test
   (shader-test
-    (fn [program]
-      (uniform-float program "cloud_scale" 100.0)
-      (uniform-int program "cloud_size" 20))
+    (fn [program])
     sampling-probe
     linear-sampling))
 
@@ -105,17 +126,9 @@ void main()
 (tabular "Shader functions for defining linear sampling"
          (fact ((linear-sampling-test [] [?term]) 0) => (roughly ?result 1e-5))
          ?term                          ?result
-         "number_of_samples(10, 20, 5)"  2
-         "number_of_samples(10, 20, 3)"  4
-         "number_of_samples(10, 10, 5)"  1
-         "step_size(10, 20, 2)"          5
-         "step_size(10, 20, 4)"          2.5
          "sample_point(20, 0, 2)"       20
          "sample_point(20, 3, 2)"       26
-         "sample_point(20, 0.5, 2)"     21
-         "lod_at_distance(1, 0)"         0
-         "lod_at_distance(1, 3)"         3
-         "lod_at_distance(2, 3)"         4)
+         "sample_point(20, 0.5, 2)"     21)
 
 
 (def ray-shell-mock
@@ -1022,7 +1035,7 @@ void main()
       (uniform-float program "opacity_cutoff" opacity-cutoff))
     sample-cloud-probe
     (last (sample-cloud 3 [] []))
-    linear-sampling))
+    linear-sampling lod-at-distance))
 
 
 (tabular "Shader to sample the cloud layer and apply cloud scattering update steps"
