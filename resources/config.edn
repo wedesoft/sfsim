@@ -29,7 +29,7 @@
                                     :threshold 18.2
                                     :cap 0.01
                                     :anisotropic 0.25
-                                    :cloud-step 500.0
+                                    :cloud-step 1000.0
                                     :linear-range 20000.0
                                     :stepsize-factor 1.005
                                     :opacity-cutoff 0.01}
