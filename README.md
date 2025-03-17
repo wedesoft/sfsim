@@ -1,4 +1,4 @@
-# [sfsim][1] [![EPL-2.0](https://img.shields.io/badge/License-EPL_2.0-orange)](https://www.eclipse.org/legal/epl-2.0/) [![Build Status](https://github.com/wedesoft/sfsim/actions/workflows/sfsim.yml/badge.svg)](https://github.com/wedesoft/sfsim/actions/workflows/sfsim.yml) [![Donate](https://img.shields.io/badge/Donate-The%20Water%20Project-green)](https://thewaterproject.org/)
+# [sfsim][1] [![EPL-1.0](https://img.shields.io/badge/License-EPL_1.0-orange)](https://www.eclipse.org/legal/epl/epl-v10.html) [![Build Status](https://github.com/wedesoft/sfsim/actions/workflows/sfsim.yml/badge.svg)](https://github.com/wedesoft/sfsim/actions/workflows/sfsim.yml) [![Donate](https://img.shields.io/badge/Donate-The%20Water%20Project-green)](https://thewaterproject.org/)
 
 This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
