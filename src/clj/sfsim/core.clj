@@ -28,6 +28,7 @@
       Vec3)
     (org.lwjgl.glfw
       GLFW
+      GLFWVidMode
       GLFWCharCallbackI
       GLFWCursorPosCallbackI
       GLFWKeyCallbackI
@@ -65,8 +66,11 @@
 
 (jolt/jolt-init)
 
-(def window-width (quot 1920 3))
-(def window-height (quot 1080 3))
+(def monitor (GLFW/glfwGetPrimaryMonitor))
+(def mode (GLFW/glfwGetVideoMode monitor))
+
+(def window-width (.width ^GLFWVidMode mode))
+(def window-height (.height ^GLFWVidMode mode))
 (def window (make-window "sfsim" window-width window-height))
 (GLFW/glfwShowWindow window)
 

@@ -114,6 +114,7 @@
   "Set GLFW window hints"
   [visible]
   (GLFW/glfwDefaultWindowHints)
+  (GLFW/glfwWindowHint GLFW/GLFW_DECORATED GLFW/GLFW_FALSE)
   (GLFW/glfwWindowHint GLFW/GLFW_DEPTH_BITS 24)
   (GLFW/glfwWindowHint GLFW/GLFW_STENCIL_BITS 8)
   (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE (if visible GLFW/GLFW_TRUE GLFW/GLFW_FALSE)))
