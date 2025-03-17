@@ -494,8 +494,8 @@
               moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
               clouds             (texture-render-color-depth
-                                   (:sfsim.render/window-width planet-render-vars)
-                                   (:sfsim.render/window-height planet-render-vars)
+                                   (/ (:sfsim.render/window-width planet-render-vars) 2)
+                                   (/ (:sfsim.render/window-height planet-render-vars) 2)
                                    true
                                    (clear (vec3 0 0 0) 1.0)
                                    ;; Render clouds in front of planet
