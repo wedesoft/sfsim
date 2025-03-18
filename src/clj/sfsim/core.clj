@@ -77,6 +77,8 @@
 (def window (make-window "sfsim" window-width window-height (not fullscreen)))
 (GLFW/glfwShowWindow window)
 
+(def fix-fps 10)
+
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
 (def shadow-data (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data))
@@ -452,7 +454,7 @@
             s       (min @speed max-speed)]
           (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) s)))
       (let [t1     (System/currentTimeMillis)
-            dt     (- t1 @t0)
+            dt     (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn     (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
             ra     (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0.0))
             rb     (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0.0))
@@ -554,7 +556,7 @@
         (when (zero? (mod @n 10))
           (print (format "\ro.-step (t/g) %.0f, dist (r/f) %.0f dt %.3f" @opacity-base @dist (* dt 0.001)))
           (flush))
-        (swap! t0 + dt))))
+        (if fix-fps (reset! t0 (System/currentTimeMillis)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)
   (model/destroy-scene scene)
   (model/destroy-scene-shadow-renderer scene-shadow-renderer)
