@@ -2,7 +2,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI)]
+    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI sqrt)]
     [clojure.string :refer (trim)]
     [fastmath.matrix :refer (inverse mulv)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize)]
@@ -57,7 +57,7 @@
 
 
 ;; (def height 30.0)
-(def speed (atom (/ 7800 1000.0)))
+(def speed (atom 7800.0))
 
 (def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
 (def earth-moon (astro/make-spk-segment-interpolator spk 0 3))
@@ -264,8 +264,8 @@
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 1000.0 0.1))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
 (jolt/set-angular-velocity body (vec3 0 0 0))
-(jolt/set-friction body 1.0)
-(jolt/set-restitution body 0.2)
+(jolt/set-friction body 1.5)
+(jolt/set-restitution body 0.15)
 (def mass (jolt/get-mass body))
 
 (jolt/optimize-broad-phase)
@@ -299,8 +299,8 @@
         (when @mesh (jolt/remove-and-destroy-body @mesh))
         (reset! coords c)
         (reset! mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0)))
-        (jolt/set-friction @mesh 1.0)
-        (jolt/set-restitution @mesh 0.2)
+        (jolt/set-friction @mesh 1.5)
+        (jolt/set-restitution @mesh 0.15)
         (jolt/optimize-broad-phase)))))
 
 
@@ -343,7 +343,7 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (astro/now) 0.3 (/ @t0 1000 86400.0))))
+(def time-delta (atom (- (astro/now) 0.0 (/ @t0 1000 86400.0))))
 
 
 (defn datetime-dialog-get
@@ -425,7 +425,7 @@
                         (GLFW/glfwSetWindowShouldClose window true))))
 
 
-(def unpause (atom 0))
+(def slew (atom true))
 
 
 (defn -main
@@ -437,42 +437,47 @@
     (while (not (GLFW/glfwWindowShouldClose window))
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
       (planet/update-tile-tree planet-renderer tile-tree (aget w 0) (:position @pose))
-      (when (@keystates GLFW/GLFW_KEY_P) (reset! unpause 1))
+      (when (@keystates GLFW/GLFW_KEY_P)
+        (reset! slew true))
+      (when (@keystates GLFW/GLFW_KEY_O)
+        (jolt/set-orientation body (:orientation @pose))
+        (jolt/set-translation body (:position @pose))
+        (jolt/set-angular-velocity body (vec3 0 0 0))
+        (reset! slew false))
+      (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+            max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
+            s       (min @speed max-speed)]
+          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) s)))
       (let [t1     (System/currentTimeMillis)
             dt     (- t1 @t0)
-            ; mn     (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
-            ; ra     (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0.0))
-            ; rb     (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0.0))
-            ; rc     (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0.0))
-            ; d      (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
-            ; to     (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))
-            ; u      (if (@keystates GLFW/GLFW_KEY_S) 1 (if (@keystates GLFW/GLFW_KEY_W) -1 0))
-            ; r      (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
-            ; t      (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
-            ; thrust (if (@keystates GLFW/GLFW_KEY_SPACE) (* 20.0 mass) 0.0)
-            mn (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
-            u  (if (@keystates GLFW/GLFW_KEY_S) 0.001 (if (@keystates GLFW/GLFW_KEY_W) -0.001 0.0))
-            r  (if (@keystates GLFW/GLFW_KEY_A) 0.001 (if (@keystates GLFW/GLFW_KEY_D) -0.001 0.0))
-            t  (if (@keystates GLFW/GLFW_KEY_E) 0.001 (if (@keystates GLFW/GLFW_KEY_Q) -0.001 0.0))
-            ra (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0.0))
-            rb (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0.0))
-            rc (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0.0))
+            mn     (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
+            ra     (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0.0))
+            rb     (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0.0))
+            rc     (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0.0))
+            u      (if (@keystates GLFW/GLFW_KEY_S) 1 (if (@keystates GLFW/GLFW_KEY_W) -1 0))
+            r      (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
+            t      (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
+            thrust (if (@keystates GLFW/GLFW_KEY_SPACE) (* 20.0 mass) 0.0)
             v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
             to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
         (when mn (reset! menu main-dialog))
-        ;(jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
-        ;(jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
-        ;(jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* u 20.0 mass))))
-        ;(jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* r 20.0 mass) 0)))
-        ;(jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t 20.0 mass) 0 0)))
-        ;(update-mesh! (:position @pose))
-        ;(jolt/update-system (* dt @unpause 0.001) 10)
-        ;(reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
-        (swap! pose update :orientation q/* (q/rotation (* dt u) (vec3 0 0 1)))
-        (swap! pose update :orientation q/* (q/rotation (* dt r) (vec3 0 1 0)))
-        (swap! pose update :orientation q/* (q/rotation (* dt t) (vec3 1 0 0)))
-        (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt v)))
+        (if @slew
+          (do
+            (swap! pose update :orientation q/* (q/rotation (* dt 0.001 u) (vec3 0 0 1)))
+            (swap! pose update :orientation q/* (q/rotation (* dt 0.001 r) (vec3 0 1 0)))
+            (swap! pose update :orientation q/* (q/rotation (* dt 0.001 t) (vec3 1 0 0)))
+            (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
+          (do
+            ; (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+            (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
+            (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
+            (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* u 20.0 mass))))
+            (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* r 20.0 mass) 0)))
+            (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t 20.0 mass) 0 0)))
+            (update-mesh! (:position @pose))
+            (jolt/update-system (* dt 0.001) 10)
+            (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))
         (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
         (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
         (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
