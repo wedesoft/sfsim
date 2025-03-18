@@ -20,9 +20,10 @@
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                                      write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering
-                                      quad-splits-orientations)]
-    [sfsim.texture :refer (destroy-texture)])
+                                      texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
+                                      setup-rendering quad-splits-orientations)]
+    [sfsim.image :refer (spit-png)]
+    [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
     (fastmath.vector
       Vec3)
@@ -33,6 +34,8 @@
       GLFWCursorPosCallbackI
       GLFWKeyCallbackI
       GLFWMouseButtonCallbackI)
+    (org.lwjgl.opengl
+      GL11)
     (org.lwjgl.nuklear
       Nuklear)
     (org.lwjgl.system
@@ -432,6 +435,17 @@
 
 (def slew (atom true))
 
+(def record false)
+(def frame-index (atom 0))
+
+(defmacro render-frame
+  [window & body]
+  `(let [tex# (texture-render-color 1920 1080 true ~@body)
+         img# (texture->image tex#)]
+     (spit-png (format "%06d.png" @frame-index) img#)
+     (swap! frame-index inc)
+     (destroy-texture tex#)))
+
 
 (defn -main
   "Space flight simulator main function"
@@ -548,7 +562,16 @@
                              (gui/render-nuklear-gui gui window-width window-height)))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
-          (opacity/destroy-opacity-and-shadow shadow-vars))
+          (opacity/destroy-opacity-and-shadow shadow-vars)
+          ; create ByteBuffer to read pixels
+          (if record
+            (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 window-width window-height))
+                  data   (byte-array (* 4 window-width window-height))]
+              ; read pixels into buffer
+              (GL11/glReadPixels 0 0 window-width window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
+              (.get buffer data)
+              (spit-png (format "%06d.png" @frame-index) {:sfsim.image/data data :sfsim.image/width window-width :sfsim.image/height window-height :sfsim.image/channels 4} true)
+              (swap! frame-index inc))))
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
