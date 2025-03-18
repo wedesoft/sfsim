@@ -69,9 +69,12 @@
 (def monitor (GLFW/glfwGetPrimaryMonitor))
 (def mode (GLFW/glfwGetVideoMode monitor))
 
-(def window-width (.width ^GLFWVidMode mode))
-(def window-height (.height ^GLFWVidMode mode))
-(def window (make-window "sfsim" window-width window-height))
+(def fullscreen false)
+(def desktop-width (.width ^GLFWVidMode mode))
+(def desktop-height (.height ^GLFWVidMode mode))
+(def window-width (if fullscreen desktop-width 1024))
+(def window-height (if fullscreen desktop-height 768))
+(def window (make-window "sfsim" window-width window-height (not fullscreen)))
 (GLFW/glfwShowWindow window)
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
@@ -343,7 +346,7 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (astro/now) 0.0 (/ @t0 1000 86400.0))))
+(def time-delta (atom (- (+ (int (astro/now)) 0.1) (/ @t0 1000 86400.0))))
 
 
 (defn datetime-dialog-get

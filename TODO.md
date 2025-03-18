@@ -1,5 +1,4 @@
 # TODO
-* try fullscreen and disabling 3D desktop
 * implement aerodynamics and thrust,
   simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
   good position of wheels for takeoff (with low fuel) and landing
