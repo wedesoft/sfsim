@@ -69,18 +69,31 @@
 
 (jolt/jolt-init)
 
+(def slew (atom true))
+
+(def recording
+  (atom (mapv (fn [{:keys [timedelta position orientation camera-orientation dist]}]
+                  {:timedelta timedelta
+                   :position (apply vec3 position)
+                   :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
+                   :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation) (:jmag camera-orientation) (:kmag camera-orientation))
+                  :dist dist})
+             (clojure.edn/read-string (slurp "recording.edn")))))
+
+(def playback false)
+
 (def monitor (GLFW/glfwGetPrimaryMonitor))
 (def mode (GLFW/glfwGetVideoMode monitor))
 
-(def fullscreen false)
+(def fullscreen playback)
 (def desktop-width (.width ^GLFWVidMode mode))
 (def desktop-height (.height ^GLFWVidMode mode))
-(def window-width (if fullscreen desktop-width 1024))
-(def window-height (if fullscreen desktop-height 768))
+(def window-width (if fullscreen desktop-width 640))
+(def window-height (if fullscreen desktop-height 480))
 (def window (make-window "sfsim" window-width window-height (not fullscreen)))
 (GLFW/glfwShowWindow window)
 
-(def fix-fps 10)
+(def fix-fps 30)
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
@@ -432,10 +445,6 @@
                       (when (gui/button-label gui "Quit")
                         (GLFW/glfwSetWindowShouldClose window true))))
 
-
-(def slew (atom true))
-
-(def record false)
 (def frame-index (atom 0))
 
 (defmacro render-frame
@@ -453,7 +462,7 @@
   (let [n  (atom 0)
         w  (int-array 1)
         h  (int-array 1)]
-    (while (not (GLFW/glfwWindowShouldClose window))
+    (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< @n (count @recording))))
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
       (planet/update-tile-tree planet-renderer tile-tree (aget w 0) (:position @pose))
       (when (@keystates GLFW/GLFW_KEY_P)
@@ -470,9 +479,9 @@
       (let [t1     (System/currentTimeMillis)
             dt     (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn     (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
-            ra     (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0.0))
-            rb     (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0.0))
-            rc     (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0.0))
+            ra     (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
+            rb     (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
+            rc     (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
             u      (if (@keystates GLFW/GLFW_KEY_S) 1 (if (@keystates GLFW/GLFW_KEY_W) -1 0))
             r      (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
             t      (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
@@ -481,27 +490,40 @@
             d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
             to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
         (when mn (reset! menu main-dialog))
-        (if @slew
+        (if playback
+          (let [frame (nth @recording @n)]
+            (reset! time-delta (:timedelta frame))
+            (reset! pose {:position (:position frame) :orientation (:orientation frame)})
+            (reset! camera-orientation (:camera-orientation frame))
+            (reset! dist (:dist frame)))
           (do
-            (swap! pose update :orientation q/* (q/rotation (* dt 0.001 u) (vec3 0 0 1)))
-            (swap! pose update :orientation q/* (q/rotation (* dt 0.001 r) (vec3 0 1 0)))
-            (swap! pose update :orientation q/* (q/rotation (* dt 0.001 t) (vec3 1 0 0)))
-            (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
-          (do
-            ; (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
-            (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
-            (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
-            (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* u 20.0 mass))))
-            (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* r 20.0 mass) 0)))
-            (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t 20.0 mass) 0 0)))
-            (update-mesh! (:position @pose))
-            (jolt/update-system (* dt 0.001) 10)
-            (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))
-        (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
-        (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
-        (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
-        (swap! opacity-base + (* dt to))
-        (swap! dist * (exp d))
+            (if @slew
+              (do
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 u) (vec3 0 0 1)))
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 r) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 t) (vec3 1 0 0)))
+                (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
+              (do
+                (when @recording
+                  (swap! recording conj {:timedelta @time-delta
+                                         :position (:position @pose)
+                                         :orientation (:orientation @pose)
+                                         :camera-orientation @camera-orientation
+                                         :dist @dist}))
+                ; (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+                (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
+                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
+                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* u 20.0 mass))))
+                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* r 20.0 mass) 0)))
+                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t 20.0 mass) 0 0)))
+                (update-mesh! (:position @pose))
+                (jolt/update-system (* dt 0.001) 10)
+                (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))
+            (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
+            (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
+            (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
+            (swap! opacity-base + (* dt to))
+            (swap! dist * (exp d))))
         (let [object-position    (:position @pose)
               origin             (add object-position (mult (q/rotate-vector @camera-orientation (vec3 0 0 -1)) (* -1.0 @dist)))
               jd-ut              (+ @time-delta (/ @t0 1000 86400.0) astro/T0)
@@ -563,14 +585,15 @@
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
-          ; create ByteBuffer to read pixels
-          (if record
+          (if playback
             (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 window-width window-height))
                   data   (byte-array (* 4 window-width window-height))]
-              ; read pixels into buffer
-              (GL11/glReadPixels 0 0 window-width window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
+              (GL11/glReadPixels 0 0 ^long window-width ^long window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
               (.get buffer data)
-              (spit-png (format "%06d.png" @frame-index) {:sfsim.image/data data :sfsim.image/width window-width :sfsim.image/height window-height :sfsim.image/channels 4} true)
+              (spit-png (format "frame%06d.png" @frame-index) {:sfsim.image/data data
+                                                               :sfsim.image/width window-width
+                                                               :sfsim.image/height window-height
+                                                               :sfsim.image/channels 4} true)
               (swap! frame-index inc))))
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
@@ -597,4 +620,6 @@
   (destroy-window window)
   (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
+  (if @recording
+    (spit "recording.edn" (with-out-str (clojure.pprint/pprint @recording))))
   (System/exit 0))
