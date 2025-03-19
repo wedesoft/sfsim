@@ -505,11 +505,12 @@
                 (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
               (do
                 (when @recording
-                  (swap! recording conj {:timedelta @time-delta
-                                         :position (:position @pose)
-                                         :orientation (:orientation @pose)
-                                         :camera-orientation @camera-orientation
-                                         :dist @dist}))
+                  (let [frame {:timedelta @time-delta
+                               :position (:position @pose)
+                               :orientation (:orientation @pose)
+                               :camera-orientation @camera-orientation
+                               :dist @dist}]
+                    (swap! recording conj frame)))
                 ; (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
                 (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
                 (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
@@ -588,6 +589,8 @@
           (if playback
             (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 window-width window-height))
                   data   (byte-array (* 4 window-width window-height))]
+              (GL11/glFlush)
+              (GL11/glFinish)
               (GL11/glReadPixels 0 0 ^long window-width ^long window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
               (.get buffer data)
               (spit-png (format "frame%06d.png" @frame-index) {:sfsim.image/data data
