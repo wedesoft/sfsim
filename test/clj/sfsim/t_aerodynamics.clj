@@ -92,4 +92,6 @@
 
 (facts "Sanity check for the 3D aerodynamic coefficient functions"
        (coefficient-of-lift (to-radians 30) (to-radians 0))
-       => (roughly (coefficient-of-lift (to-radians 30) (to-radians 180)) 1e-6))
+       => (roughly (coefficient-of-lift (to-radians 30) (to-radians 180)) 1e-6)
+       (coefficient-of-lift (to-radians 5) (to-radians 0))
+       => (roughly (coefficient-of-lift (to-radians -175) (to-radians 180)) 1e-6))
