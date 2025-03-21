@@ -3,7 +3,7 @@
       [midje.sweet :refer :all]
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
-      [clojure.math :refer (PI)]
+      [clojure.math :refer (PI to-radians)]
       [sfsim.aerodynamics :refer :all]))
 
 
@@ -66,3 +66,17 @@
        ((compose (fn [x] 1.0)) 0.0) => 1.0
        ((compose (fn [x] x)) 2.0) => 2.0
        ((compose (fn [x] 1.0) (fn [x] 2.0)) 0.0) => 3.0)
+
+
+(facts "Sanity check for the aerodynamic coefficient functions"
+       (coefficient-of-lift (to-radians 10)) => #(>= % 0.1)
+       (coefficient-of-lift (to-radians -10)) => #(<= % -0.1)
+       (coefficient-of-drag (to-radians 0)) => #(>= % 0.1)
+       (coefficient-of-drag (to-radians 180)) => #(>= % 0.1)
+       (coefficient-of-drag (to-radians 90)) => #(>= % (* 2 (coefficient-of-drag (to-radians 0))))
+       (coefficient-of-drag (to-radians 90)) => #(>= % (* 2 (coefficient-of-drag (to-radians 180))))
+       (coefficient-of-side-force (to-radians 0)) => zero?
+       (coefficient-of-side-force (to-radians 45)) => #(>= % 0.1)
+       (coefficient-of-side-force (to-radians -45)) => #(<= % -0.1)
+       (coefficient-of-side-force (to-radians 135)) => #(<= % -0.1)
+       (coefficient-of-side-force (to-radians -135)) => #(>= % 0.1))
