@@ -3,6 +3,8 @@
   (:gen-class)
   (:require
     [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI sqrt)]
+    [clojure.edn :refer (read-string)]
+    [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
     [fastmath.matrix :refer (inverse mulv)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize)]
@@ -71,14 +73,21 @@
 
 (def slew (atom true))
 
+; check file recording.edn exists
+(when (.exists (java.io.File. "recording.edn"))
+  (spit "recording.edn" ""))
+
 (def recording
-  (atom (mapv (fn [{:keys [timedelta position orientation camera-orientation dist]}]
-                  {:timedelta timedelta
-                   :position (apply vec3 position)
-                   :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
-                   :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation) (:jmag camera-orientation) (:kmag camera-orientation))
-                  :dist dist})
-             (clojure.edn/read-string (slurp "recording.edn")))))
+  (atom (if (.exists (java.io.File. "recording.edn"))
+          (mapv (fn [{:keys [timedelta position orientation camera-orientation dist]}]
+                    {:timedelta timedelta
+                     :position (apply vec3 position)
+                     :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
+                     :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation)
+                                                         (:jmag camera-orientation) (:kmag camera-orientation))
+                     :dist dist})
+                (read-string (slurp "recording.edn")))
+          false)))
 
 (def playback false)
 
@@ -448,7 +457,7 @@
 (def frame-index (atom 0))
 
 (defmacro render-frame
-  [window & body]
+  [_window & body]
   `(let [tex# (texture-render-color 1920 1080 true ~@body)
          img# (texture->image tex#)]
      (spit-png (format "%06d.png" @frame-index) img#)
@@ -586,7 +595,7 @@
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
-          (if playback
+          (when playback
             (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 window-width window-height))
                   data   (byte-array (* 4 window-width window-height))]
               (GL11/glFlush)
@@ -623,6 +632,6 @@
   (destroy-window window)
   (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
-  (if @recording
-    (spit "recording.edn" (with-out-str (clojure.pprint/pprint @recording))))
+  (when @recording
+    (spit "recording.edn" (with-out-str (pprint @recording))))
   (System/exit 0))

@@ -73,8 +73,24 @@
   (comp (partial apply +) (apply juxt funs)))
 
 
-(def coefficient-of-lift
-  (compose (basic-lift 1.1) (glide 0.8 (to-radians 13) 0.5 (to-radians 12)) (tail 0.5 (to-radians 8) (to-radians 12))))
+(defn mirror
+  "Mirror values at 90 degrees"
+  [angle]
+  (if (>= angle 0.0)
+    (- PI angle)
+    (- (- PI) angle)))
+
+
+(defn coefficient-of-lift
+  "Determine coefficient of lift depending on angle of attack and optionally angle of sideslip"
+  ([angle-of-attack]
+   ((compose (basic-lift 1.1)
+             (glide 0.8 (to-radians 13) 0.5 (to-radians 12))
+             (tail 0.5 (to-radians 8) (to-radians 12)))
+    angle-of-attack))
+  ([angle-of-attack angle-of-sideslip]
+   (* 0.5 (- (* (coefficient-of-lift (identity angle-of-attack)) (+ 1 (cos angle-of-sideslip)))
+             (* (coefficient-of-lift (mirror angle-of-attack)) (- 1 (cos angle-of-sideslip)))))))
 
 
 (def coefficient-of-drag

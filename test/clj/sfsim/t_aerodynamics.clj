@@ -80,3 +80,16 @@
        (coefficient-of-side-force (to-radians -45)) => #(<= % -0.1)
        (coefficient-of-side-force (to-radians 135)) => #(<= % -0.1)
        (coefficient-of-side-force (to-radians -135)) => #(>= % 0.1))
+
+
+(facts "Mirror values at 90 degrees"
+       (mirror (to-radians 90)) => (roughly (to-radians 90) 1e-6)
+       (mirror (to-radians 0)) => (roughly (to-radians 180) 1e-6)
+       (mirror (to-radians 180)) => (roughly (to-radians 0) 1e-6)
+       (mirror (to-radians -90)) => (roughly (to-radians -90) 1e-6)
+       (mirror (to-radians -180)) => (roughly (to-radians 0) 1e-6))
+
+
+(facts "Sanity check for the 3D aerodynamic coefficient functions"
+       (coefficient-of-lift (to-radians 30) (to-radians 0))
+       => (roughly (coefficient-of-lift (to-radians 30) (to-radians 180)) 1e-6))
