@@ -93,7 +93,7 @@
 (def window (make-window "sfsim" window-width window-height (not fullscreen)))
 (GLFW/glfwShowWindow window)
 
-(def fix-fps 30)
+(def fix-fps false)
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))

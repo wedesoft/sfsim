@@ -19,7 +19,7 @@
   "Basic sinus shaped lift function"
   {:malli/schema [:=> [:cat :double] [:=> [:cat :double] :double]]}
   [max-lift]
-  (fn [angle-of-attack] (* max-lift (sin (* 2 angle-of-attack)))))
+  (fn [angle] (* max-lift (sin (* 2 angle)))))
 
 
 (defn fall-off
@@ -73,10 +73,16 @@
   (comp (partial apply +) (apply juxt funs)))
 
 
-(def c-lift (compose (basic-lift 1.1) (glide 0.8 (to-radians 13) 0.5 (to-radians 12)) (tail 0.5 (to-radians 8) (to-radians 12))))
+(def coefficient-of-lift
+  (compose (basic-lift 1.1) (glide 0.8 (to-radians 13) 0.5 (to-radians 12)) (tail 0.5 (to-radians 8) (to-radians 12))))
 
 
-(def c-drag (compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))))
+(def coefficient-of-drag
+  (compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))))
+
+
+(def coefficient-of-side-force
+  (basic-lift 0.4))
 
 
 (set! *warn-on-reflection* false)
