@@ -8,11 +8,17 @@
 (set! *warn-on-reflection* true)
 
 
+(defn mix
+  "Mix two values depending on angle"
+  [a b angle]
+  (* 0.5 (+ (* a (+ 1 (cos (* 2 angle)))) (* b (- 1 (cos (* 2 angle)))))))
+
+
 (defn basic-drag
   "Basic cosine shaped drag function"
   {:malli/schema [:=> [:cat :double :double] [:=> [:cat :double] :double]]}
   [min-drag max-drag]
-  (fn [angle-of-attack] (+ min-drag (* 0.5 (- max-drag min-drag) (- 1 (cos (* 2 angle-of-attack)))))))
+  (fn [angle-of-attack] (mix min-drag max-drag angle-of-attack)))
 
 
 (defn basic-lift
@@ -93,8 +99,11 @@
              (* (coefficient-of-lift (mirror angle-of-attack)) (- 1 (cos angle-of-sideslip)))))))
 
 
-(def coefficient-of-drag
-  (compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))))
+(defn coefficient-of-drag
+  "Determine coefficient of drag depending on angle of attack and optionally angle of sideslip"
+  ([angle-of-attack] ((compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))) angle-of-attack))
+  ([angle-of-attack angle-of-sideslip]
+   (mix (coefficient-of-drag angle-of-attack) ((basic-drag 0.5 2.0) angle-of-attack) angle-of-sideslip)))
 
 
 (def coefficient-of-side-force

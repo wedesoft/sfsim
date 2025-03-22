@@ -11,15 +11,21 @@
 (mi/instrument! {:report (pretty/thrower)})
 
 
+(facts "Mix two values depending on angle"
+       (mix 0.1 0.4 (to-radians 0)) => 0.1
+       (mix 0.1 0.4 (to-radians 90)) => 0.4
+       (mix 0.1 0.4 (to-radians 180)) => 0.1)
+
+
 (facts "Basic drag function"
        ((basic-drag 0.1 2.0) 0.0) => 0.1
-       ((basic-drag 0.1 2.0) (/ PI 2)) => 2.0
-       ((basic-drag 0.1 2.0) PI) => 0.1)
+       ((basic-drag 0.1 2.0) (to-radians 90)) => 2.0
+       ((basic-drag 0.1 2.0) (to-radians 180)) => 0.1)
 
 (facts "Basic lift function"
        ((basic-lift 1.1) 0.0) => 0.0
-       ((basic-lift 1.1) (/ PI 4)) => 1.1
-       ((basic-lift 1.1) (/ PI 2)) => (roughly 0.0 1e-6))
+       ((basic-lift 1.1) (to-radians 45)) => 1.1
+       ((basic-lift 1.1) (to-radians 90)) => (roughly 0.0 1e-6))
 
 
 (facts "Ellipse-like fall-off function"
@@ -94,4 +100,12 @@
        (coefficient-of-lift (to-radians 30) (to-radians 0))
        => (roughly (coefficient-of-lift (to-radians 30) (to-radians 180)) 1e-6)
        (coefficient-of-lift (to-radians 5) (to-radians 0))
-       => (roughly (coefficient-of-lift (to-radians -175) (to-radians 180)) 1e-6))
+       => (roughly (coefficient-of-lift (to-radians -175) (to-radians 180)) 1e-6)
+       (coefficient-of-drag (to-radians 0) (to-radians 0))
+       => (roughly (coefficient-of-drag (to-radians 0) (to-radians 180)) 1e-6)
+       (coefficient-of-drag (to-radians 0) (to-radians 90))
+       => #(>= % (+ (coefficient-of-drag (to-radians 0) (to-radians 0)) 0.1))
+       (coefficient-of-drag (to-radians 0) (to-radians -90))
+       => (roughly (coefficient-of-drag (to-radians 0) (to-radians 90)) 1e-6)
+       (coefficient-of-drag (to-radians 90) (to-radians 0))
+       => #(>= % (+ (coefficient-of-drag (to-radians 0) (to-radians 90)) 0.1)))
