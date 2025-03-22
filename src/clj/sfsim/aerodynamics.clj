@@ -11,7 +11,8 @@
 (defn mix
   "Mix two values depending on angle"
   [a b angle]
-  (* 0.5 (+ (* a (+ 1 (cos angle))) (* b (- 1 (cos angle))))))
+  (let [cos-angle (cos angle)]
+    (* 0.5 (+ (* a (+ 1 cos-angle)) (* b (- 1 cos-angle))))))
 
 
 (defn basic-drag
