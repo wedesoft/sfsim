@@ -25,7 +25,7 @@ CY(beta) = 0.4 * sin(2 * beta)
 CLmirror(alpha) = alpha < 180 ? CL(180 - alpha) : CL(540 - alpha)
 CLmix(alpha, beta) = 0.5 * (CL(alpha) * (1 + cos(beta)) - CLmirror(alpha) * (1 - cos(beta)))
 
-CDmix(alpha, beta) = (0.1 * 0.5 * (1 + cos(beta)) + 0.5 * 0.5 * (1 - cos(beta))) * 0.5 * (1 + cos(2 * alpha)) + 2.0 * 0.5 * (1 - cos(2 * alpha))
+CDmix(alpha, beta) = (0.1 * 0.5 * (1 + cos(2 * beta)) + 0.5 * 0.5 * (1 - cos(2 * beta))) * 0.5 * (1 + cos(2 * alpha)) + 2.0 * 0.5 * (1 - cos(2 * alpha))
 
 CYmix(alpha, beta) = 0.4 * sin(2 * beta) * cos(alpha)
 
