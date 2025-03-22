@@ -18,14 +18,16 @@ glide(alpha) = alpha < 13 ? alpha * 0.8 / 13 : alpha <= 25 ? 0.5 * (1 - sqrt(1 -
 tail(alpha) = abs(alpha - 180) < 8 ? (alpha - 180) * 0.5 / 8 : abs(alpha - 180) < 20 ? 0.5 * (alpha > 180 ? 200 - alpha : 160 - alpha) / (20 - 8) : 0.0
 bumps(alpha) = abs(alpha - 180) < 20 ? 0.02 * (1 - cos((alpha - 180) * 360 / 20)) : 0.0
 
-CD(alpha) = 0.1 + 0.5 * 1.9 * (1 - cos(2 * alpha)) + bumps(alpha)
+mix(a, b, angle) = 0.5 * (a * (1 + cos(angle)) + b * (1 - cos(angle)))
+
+CD(alpha) = mix(0.1, 2.0, 2 * alpha) + bumps(alpha)
 CL(alpha) = 1.1 * sin(2 * alpha) + glide(alpha) - glide(360 - alpha) + tail(alpha)
 CY(beta) = 0.4 * sin(2 * beta)
 
 CLmirror(alpha) = alpha < 180 ? CL(180 - alpha) : CL(540 - alpha)
 CLmix(alpha, beta) = 0.5 * (CL(alpha) * (1 + cos(beta)) - CLmirror(alpha) * (1 - cos(beta)))
 
-CDmix(alpha, beta) = (0.1 * 0.5 * (1 + cos(2 * beta)) + 0.5 * 0.5 * (1 - cos(2 * beta))) * 0.5 * (1 + cos(2 * alpha)) + 2.0 * 0.5 * (1 - cos(2 * alpha))
+CDmix(alpha, beta) = mix(mix(0.1, 0.5, 2 * beta), 2.0, 2 * alpha)
 
 CYmix(alpha, beta) = 0.4 * sin(2 * beta) * cos(alpha)
 
