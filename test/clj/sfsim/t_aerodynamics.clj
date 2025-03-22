@@ -13,8 +13,8 @@
 
 (facts "Mix two values depending on angle"
        (mix 0.1 0.4 (to-radians 0)) => 0.1
-       (mix 0.1 0.4 (to-radians 90)) => 0.4
-       (mix 0.1 0.4 (to-radians 180)) => 0.1)
+       (mix 0.1 0.4 (to-radians 180)) => 0.4
+       (mix 0.1 0.4 (to-radians 360)) => 0.1)
 
 
 (facts "Basic drag function"
