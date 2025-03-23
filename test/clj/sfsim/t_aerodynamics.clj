@@ -3,7 +3,7 @@
       [midje.sweet :refer :all]
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
-      [clojure.math :refer (PI to-radians)]
+      [clojure.math :refer (PI to-radians sqrt)]
       [sfsim.aerodynamics :refer :all]))
 
 
@@ -121,3 +121,14 @@
        => (roughly 0.0 1e-6)
        (coefficient-of-side-force (to-radians 90) (to-radians 45))
        => (roughly 0.0 1e-6))
+
+
+(facts "Spike function with linear and sinusoidal ramp"
+       ((spike 2.0 0.5 0.4) 0.0) => 0.0
+       ((spike 2.0 0.5 0.4) 0.25) => 1.0
+       ((spike 2.0 0.5 0.4) 0.5) => 2.0
+       ((spike 2.0 0.5 0.4) 0.9) => 0.0
+       ((spike 2.0 0.5 0.4) 1.0) => 0.0
+       ((spike 2.0 0.5 0.4) 0.7) => (roughly (- 2 (sqrt 2)) 1e-6)
+       ((spike 2.0 0.5 0.4) -0.25) => -1.0
+       ((spike 2.0 0.5 0.4) -0.7) => (roughly (- (sqrt 2) 2) 1e-6))

@@ -112,5 +112,19 @@
   ([angle-of-attack angle-of-sideslip] (* (cos angle-of-attack) (coefficient-of-side-force angle-of-sideslip))))
 
 
+(defn spike
+  "Spike function with linear and sinusoidal ramp"
+  [max-increase ramp-up ramp-down]
+  (fn spike-fn [angle]
+      (if (>= angle 0)
+        (* max-increase
+           (if (<= angle ramp-up)
+             (/ angle ramp-up)
+             (if (<= angle (+ ramp-up ramp-down))
+               (- 1.0 (sin (/ (* 0.5 PI (- angle ramp-up)) ramp-down)))
+               0.0)))
+        (- (spike-fn (- angle))))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
