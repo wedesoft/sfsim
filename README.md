@@ -4,7 +4,7 @@ This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
 Requires OpenGL 4.5.
 
-[![Texturized spaceship](https://i.ytimg.com/vi/7XTcEoaFaJg/hqdefault.jpg)](https://www.youtube.com/watch?v=7XTcEoaFaJg)
+[![Texturized spaceship](https://i.ytimg.com/vi/dUmnc-b6gZA/hqdefault.jpg)](https://www.youtube.com/watch?v=dUmnc-b6gZA)
 
 [![Object shadows on ground](https://i.ytimg.com/vi/H7_tqJ6VAUw/hqdefault.jpg)](https://www.youtube.com/watch?v=H7_tqJ6VAUw)
 
