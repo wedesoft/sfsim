@@ -106,8 +106,10 @@
    (mix (coefficient-of-drag angle-of-attack) ((basic-drag 0.5 2.0) angle-of-attack) (* 2 angle-of-sideslip))))
 
 
-(def coefficient-of-side-force
-  (basic-lift 0.4))
+(defn coefficient-of-side-force
+  "Determine coefficient of side force depending on angle of attack and optionally angle of sideslip"
+  ([angle-of-side-slip] ((basic-lift 0.4) angle-of-side-slip))
+  ([angle-of-attack angle-of-sideslip] (* (cos angle-of-attack) (coefficient-of-side-force angle-of-sideslip))))
 
 
 (set! *warn-on-reflection* false)
