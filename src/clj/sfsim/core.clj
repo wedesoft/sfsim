@@ -3,7 +3,7 @@
   (:gen-class)
   (:require
     [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI sqrt)]
-    [clojure.edn :refer (read-string)]
+    [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
     [fastmath.matrix :refer (inverse mulv)]
@@ -73,10 +73,6 @@
 
 (def slew (atom true))
 
-; check file recording.edn exists
-(when (.exists (java.io.File. "recording.edn"))
-  (spit "recording.edn" ""))
-
 (def recording
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timedelta position orientation camera-orientation dist]}]
@@ -86,23 +82,22 @@
                      :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation)
                                                          (:jmag camera-orientation) (:kmag camera-orientation))
                      :dist dist})
-                (read-string (slurp "recording.edn")))
+                (clojure.edn/read-string (slurp "recording.edn")))
           false)))
 
 (def playback false)
+(def fix-fps false)
+(def fullscreen playback)
 
 (def monitor (GLFW/glfwGetPrimaryMonitor))
 (def mode (GLFW/glfwGetVideoMode monitor))
 
-(def fullscreen playback)
 (def desktop-width (.width ^GLFWVidMode mode))
 (def desktop-height (.height ^GLFWVidMode mode))
 (def window-width (if fullscreen desktop-width 640))
 (def window-height (if fullscreen desktop-height 480))
 (def window (make-window "sfsim" window-width window-height (not fullscreen)))
 (GLFW/glfwShowWindow window)
-
-(def fix-fps false)
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
