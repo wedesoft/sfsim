@@ -77,6 +77,7 @@
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
 * cockpit and scene rendering looking downward so that horizon is in upper half of screen
 * 3D cockpit
+  * EF2000-like zoom into individual MFDs
   * Open Glass Cockpit: https://opengc.sourceforge.net/screenshots.html
   * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
   * SpaceX cockpit: https://iss-sim.spacex.com/

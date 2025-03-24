@@ -132,3 +132,12 @@
        ((spike 2.0 0.5 0.4) 0.7) => (roughly (- 2 (sqrt 2)) 1e-6)
        ((spike 2.0 0.5 0.4) -0.25) => -1.0
        ((spike 2.0 0.5 0.4) -0.7) => (roughly (- (sqrt 2) 2) 1e-6))
+
+
+(facts "Sanity checks for the aerodynamic moment coefficients"
+       (coefficient-of-pitch-moment 0.0) => 0.0
+       (coefficient-of-pitch-moment (to-radians 90)) => #(<= % -0.5)
+       (coefficient-of-pitch-moment (to-radians 180)) => (roughly 0.0 1e-6)
+       (coefficient-of-pitch-moment (to-radians -90)) => #(>= % 0.5)
+       (coefficient-of-pitch-moment (to-radians 170)) => #(<= % (- (coefficient-of-pitch-moment (to-radians 10)) 0.1))
+       (coefficient-of-pitch-moment (to-radians -170)) => #(>= % (+ (coefficient-of-pitch-moment (to-radians -10)) 0.1)))

@@ -126,5 +126,13 @@
         (- (spike-fn (- angle))))))
 
 
+(defn coefficient-of-pitch-moment
+  "Determine coefficient of pitch moment depending on angle of attack and optionally angle of sideslip"
+  [angle-of-attack]
+  (+ (* -0.6 (sin angle-of-attack))
+     ((spike 0.2 (to-radians 10) (to-radians 15)) (- angle-of-attack (to-radians 180)))
+     ((spike 0.2 (to-radians 10) (to-radians 15)) (+ angle-of-attack (to-radians 180)))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
