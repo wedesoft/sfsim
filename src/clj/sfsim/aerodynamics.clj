@@ -127,19 +127,19 @@
 
 
 (defn speed-x
-  "Airplane x-coordinate of speed vector in body system for angle of attack and side slip angle"
+  "Airplane x-coordinate (forward) of speed vector in body system for angle of attack and side slip angle"
   [angle-of-attack angle-of-sideslip]
   (* (cos angle-of-attack) (cos angle-of-sideslip)))
 
 
 (defn speed-y
-  "Airplane y-coordinate of speed vector in body system for angle of attack and side slip angle"
+  "Airplane y-coordinate (right) of speed vector in body system for angle of attack and side slip angle"
   [angle-of-attack angle-of-sideslip]
   (sin angle-of-sideslip))
 
 
 (defn speed-z
-  "Airplane z-coordinate of speed vector in body system for angle of attack and side slip angle"
+  "Airplane z-coordinate (down) of speed vector in body system for angle of attack and side slip angle"
   [angle-of-attack angle-of-sideslip]
   (* (sin angle-of-attack) (cos angle-of-sideslip)))
 
