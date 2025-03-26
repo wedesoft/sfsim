@@ -134,10 +134,27 @@
        ((spike 2.0 0.5 0.4) -0.7) => (roughly (- (sqrt 2) 2) 1e-6))
 
 
+(facts "Airplane coordinates of speed vector in body system for angle of attack and side slip angle"
+       (speed-x (to-radians 0.0) (to-radians 0.0)) => 1.0
+       (speed-y (to-radians 0.0) (to-radians 0.0)) => 0.0
+       (speed-z (to-radians 0.0) (to-radians 0.0)) => 0.0
+       (speed-x (to-radians 90.0) (to-radians 0.0)) => (roughly 0.0 1e-6)
+       (speed-z (to-radians 90.0) (to-radians 0.0)) => 1.0
+       (speed-y (to-radians 0.0) (to-radians 90.0)) => 1.0
+       (speed-x (to-radians 0.0) (to-radians 90.0)) => (roughly 0.0 1e-6)
+       (speed-z (to-radians 90.0) (to-radians 90.0)) => (roughly 0.0 1e-6))
+
+
 (facts "Sanity checks for the aerodynamic moment coefficients"
-       (coefficient-of-pitch-moment 0.0) => 0.0
+       (coefficient-of-pitch-moment (to-radians 0.0)) => 0.0
        (coefficient-of-pitch-moment (to-radians 90)) => #(<= % -0.5)
        (coefficient-of-pitch-moment (to-radians 180)) => (roughly 0.0 1e-6)
        (coefficient-of-pitch-moment (to-radians -90)) => #(>= % 0.5)
        (coefficient-of-pitch-moment (to-radians 170)) => #(<= % (- (coefficient-of-pitch-moment (to-radians 10)) 0.1))
-       (coefficient-of-pitch-moment (to-radians -170)) => #(>= % (+ (coefficient-of-pitch-moment (to-radians -10)) 0.1)))
+       (coefficient-of-pitch-moment (to-radians -170)) => #(>= % (+ (coefficient-of-pitch-moment (to-radians -10)) 0.1))
+       (coefficient-of-yaw-moment (to-radians 0.0)) => 0.0
+       (coefficient-of-yaw-moment (to-radians 90)) => #(>= % 1.5)
+       (coefficient-of-yaw-moment (to-radians 180)) => (roughly 0.0 1e-6)
+       (coefficient-of-roll-moment (to-radians 0.0)) => 0.0
+       (coefficient-of-roll-moment (to-radians 90.0)) => #(<= % -0.5)
+       (coefficient-of-roll-moment (to-radians 180.0)) => (roughly 0.0 1e-6))

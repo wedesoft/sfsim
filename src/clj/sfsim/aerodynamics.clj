@@ -126,12 +126,42 @@
         (- (spike-fn (- angle))))))
 
 
+(defn speed-x
+  "Airplane x-coordinate of speed vector in body system for angle of attack and side slip angle"
+  [angle-of-attack angle-of-sideslip]
+  (* (cos angle-of-attack) (cos angle-of-sideslip)))
+
+
+(defn speed-y
+  "Airplane y-coordinate of speed vector in body system for angle of attack and side slip angle"
+  [angle-of-attack angle-of-sideslip]
+  (sin angle-of-sideslip))
+
+
+(defn speed-z
+  "Airplane z-coordinate of speed vector in body system for angle of attack and side slip angle"
+  [angle-of-attack angle-of-sideslip]
+  (* (sin angle-of-attack) (cos angle-of-sideslip)))
+
+
 (defn coefficient-of-pitch-moment
   "Determine coefficient of pitch moment depending on angle of attack and optionally angle of sideslip"
   [angle-of-attack]
   (+ (* -0.6 (sin angle-of-attack))
      ((spike 0.2 (to-radians 10) (to-radians 15)) (- angle-of-attack (to-radians 180)))
      ((spike 0.2 (to-radians 10) (to-radians 15)) (+ angle-of-attack (to-radians 180)))))
+
+
+(defn coefficient-of-yaw-moment
+  "Determine coefficient of yaw moment depending on angle of sideslip and optionally angle of attack"
+  [angle-of-side-slip]
+  (* 2.0 (sin angle-of-side-slip)))
+
+
+(defn coefficient-of-roll-moment
+  "Determine coefficient of roll moment depending on angle of sideslip and optionally angle of attack"
+  [angle-of-side-slip]
+  (* -0.5 (sin angle-of-side-slip)))
 
 
 (set! *warn-on-reflection* false)
