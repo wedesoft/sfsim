@@ -17,15 +17,17 @@ set samples 10000
 maximum(a, b) = a > b ? a : b
 spike(alpha) = alpha < 10 ? alpha / 10 : alpha <= 25 ? 1 - sin(90 * (alpha - 10) / (25 - 10)) : 0.0
 
+# airplane nose vector in wind system
 dx(alpha, beta) = cos(alpha) * cos(beta)
 dy(alpha, beta) = sin(beta)
 dz(alpha, beta) = sin(alpha) * cos(beta)
 
 angle(y, x) = atan2(y, x) >= 0 ? atan2(y, x) : atan2(y, x) + 360
 length(y, x) = sqrt(y * y + x * x)
+mirror(alpha) = alpha < 180 ? 180 - alpha : 540 - alpha
 
 Cm(alpha) = -0.6 * sin(alpha) + 0.2 * (spike(maximum(alpha - 180, 0)) - spike(maximum(180 - alpha, 0)))
-Cmmix(alpha, beta) = Cm(angle(-dz(alpha, beta), dx(alpha, beta))) * length(-dz(alpha, beta), dx(alpha, beta))
+Cmmix(alpha, beta) = (0.5 * Cm(alpha) * (1 + cos(beta)) + 0.5 * Cm(mirror(alpha)) * (1 - cos(beta))) * cos(beta)
 
 Cn(beta) = -2.0 * sin(beta)
 Cnmix(alpha, beta) = Cn(angle(dy(alpha, beta), dx(alpha, beta))) * length(dy(alpha, beta), dx(alpha, beta))
