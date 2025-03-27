@@ -33,7 +33,7 @@ Cn(beta) = -2.0 * sin(beta)
 Cnmix(alpha, beta) = Cn(angle(dy(alpha, beta), dx(alpha, beta))) * length(dy(alpha, beta), dx(alpha, beta))
 
 Cl(beta) = -0.5 * sin(beta)
-Cl(alpha, beta) = Cl(beta)
+Clmix(alpha, beta) = Cl(beta)
 
 set title "coefficient of pitch moment"
 plot [alpha=0:360] Cmmix(alpha, 0), Cmmix(alpha, 30), Cmmix(alpha, 60), Cmmix(alpha, 90), Cmmix(alpha, 120), Cmmix(alpha, 150), Cmmix(alpha, 180), Cmmix(alpha, 210), Cmmix(alpha, 240), Cmmix(alpha, 270), Cmmix(alpha, 300), Cmmix(alpha, 330)
