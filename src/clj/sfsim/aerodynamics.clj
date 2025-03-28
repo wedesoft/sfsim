@@ -1,6 +1,7 @@
 (ns sfsim.aerodynamics
     (:require
       [clojure.math :refer (PI cos sin sqrt to-radians)]
+      [fastmath.matrix :refer (mat3x3 mulv)]
       [sfsim.util :refer (sqr)]))
 
 
@@ -134,7 +135,7 @@
 
 (defn speed-y
   "Airplane y-coordinate (right) of speed vector in body system for angle of attack and side slip angle"
-  [angle-of-attack angle-of-side-slip]
+  [_angle-of-attack angle-of-side-slip]
   (sin angle-of-side-slip))
 
 
@@ -167,6 +168,12 @@
   "Determine coefficient of roll moment depending on angle of side-slip and optionally angle of attack"
   [angle-of-side-slip]
   (* -0.5 (sin angle-of-side-slip)))
+
+
+(defn aerodynamic-coordinates
+  "Convert glTF model coordinates (x: forward, y: up, z:right) to aerodynamic body ones (x: forward, y: right, z: down)"
+  [gltf-vector]
+  (mulv (mat3x3 1 0 0, 0 0 1, 0 -1 0) gltf-vector))
 
 
 (set! *warn-on-reflection* false)

@@ -47,7 +47,7 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-
+; clj -M:nrepl -m sfsim.core
 ;; (require '[nrepl.server :refer [start-server stop-server]])
 ;; (defonce server (start-server :port 7888))
 

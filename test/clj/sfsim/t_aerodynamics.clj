@@ -4,6 +4,7 @@
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [clojure.math :refer (PI to-radians sqrt)]
+      [fastmath.vector :refer (vec3)]
       [sfsim.aerodynamics :refer :all]))
 
 
@@ -166,3 +167,9 @@
        (coefficient-of-pitch-moment (to-radians 90) (to-radians 90)) => (roughly 0.0 1e-6)
        (coefficient-of-pitch-moment (to-radians 10) (to-radians 180))
        => (coefficient-of-pitch-moment (to-radians 190) (to-radians 0)))
+
+
+(facts "Convert glTF model coordinates to aerodynamic body coordinates"
+       (aerodynamic-coordinates (vec3 1 0 0)) => (vec3 1 0 0)
+       (aerodynamic-coordinates (vec3 0 0 1)) => (vec3 0 1 0)
+       (aerodynamic-coordinates (vec3 0 1 0)) => (vec3 0 0 -1))
