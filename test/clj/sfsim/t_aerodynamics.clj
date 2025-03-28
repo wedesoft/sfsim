@@ -158,3 +158,11 @@
        (coefficient-of-roll-moment (to-radians 0.0)) => 0.0
        (coefficient-of-roll-moment (to-radians 90.0)) => #(<= % -0.5)
        (coefficient-of-roll-moment (to-radians 180.0)) => (roughly 0.0 1e-6))
+
+
+(facts "Tests for 3D version of pitch moment"
+       (coefficient-of-pitch-moment (to-radians 0) (to-radians 0)) => 0.0
+       (coefficient-of-pitch-moment (to-radians 90) (to-radians 0)) => (coefficient-of-pitch-moment (to-radians 90))
+       (coefficient-of-pitch-moment (to-radians 90) (to-radians 90)) => (roughly 0.0 1e-6)
+       (coefficient-of-pitch-moment (to-radians 10) (to-radians 180))
+       => (coefficient-of-pitch-moment (to-radians 190) (to-radians 0)))

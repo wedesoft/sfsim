@@ -89,27 +89,27 @@
 
 
 (defn coefficient-of-lift
-  "Determine coefficient of lift depending on angle of attack and optionally angle of sideslip"
+  "Determine coefficient of lift depending on angle of attack and optionally angle of side-slip"
   ([angle-of-attack]
    ((compose (basic-lift 1.1)
              (glide 0.8 (to-radians 13) 0.5 (to-radians 12))
              (tail 0.5 (to-radians 8) (to-radians 12)))
     angle-of-attack))
-  ([angle-of-attack angle-of-sideslip]
-   (mix (coefficient-of-lift angle-of-attack) (- (coefficient-of-lift (mirror angle-of-attack))) angle-of-sideslip)))
+  ([angle-of-attack angle-of-side-slip]
+   (mix (coefficient-of-lift angle-of-attack) (- (coefficient-of-lift (mirror angle-of-attack))) angle-of-side-slip)))
 
 
 (defn coefficient-of-drag
-  "Determine coefficient of drag depending on angle of attack and optionally angle of sideslip"
+  "Determine coefficient of drag depending on angle of attack and optionally angle of side-slip"
   ([angle-of-attack] ((compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))) angle-of-attack))
-  ([angle-of-attack angle-of-sideslip]
-   (mix (coefficient-of-drag angle-of-attack) ((basic-drag 0.5 2.0) angle-of-attack) (* 2 angle-of-sideslip))))
+  ([angle-of-attack angle-of-side-slip]
+   (mix (coefficient-of-drag angle-of-attack) ((basic-drag 0.5 2.0) angle-of-attack) (* 2 angle-of-side-slip))))
 
 
 (defn coefficient-of-side-force
-  "Determine coefficient of side force depending on angle of attack and optionally angle of sideslip"
+  "Determine coefficient of side force depending on angle of attack and optionally angle of side-slip"
   ([angle-of-side-slip] ((basic-lift 0.4) angle-of-side-slip))
-  ([angle-of-attack angle-of-sideslip] (* (cos angle-of-attack) (coefficient-of-side-force angle-of-sideslip))))
+  ([angle-of-attack angle-of-side-slip] (* (cos angle-of-attack) (coefficient-of-side-force angle-of-side-slip))))
 
 
 (defn spike
@@ -128,38 +128,43 @@
 
 (defn speed-x
   "Airplane x-coordinate (forward) of speed vector in body system for angle of attack and side slip angle"
-  [angle-of-attack angle-of-sideslip]
-  (* (cos angle-of-attack) (cos angle-of-sideslip)))
+  [angle-of-attack angle-of-side-slip]
+  (* (cos angle-of-attack) (cos angle-of-side-slip)))
 
 
 (defn speed-y
   "Airplane y-coordinate (right) of speed vector in body system for angle of attack and side slip angle"
-  [angle-of-attack angle-of-sideslip]
-  (sin angle-of-sideslip))
+  [angle-of-attack angle-of-side-slip]
+  (sin angle-of-side-slip))
 
 
 (defn speed-z
   "Airplane z-coordinate (down) of speed vector in body system for angle of attack and side slip angle"
-  [angle-of-attack angle-of-sideslip]
-  (* (sin angle-of-attack) (cos angle-of-sideslip)))
+  [angle-of-attack angle-of-side-slip]
+  (* (sin angle-of-attack) (cos angle-of-side-slip)))
 
 
 (defn coefficient-of-pitch-moment
-  "Determine coefficient of pitch moment depending on angle of attack and optionally angle of sideslip"
-  [angle-of-attack]
-  (+ (* -0.6 (sin angle-of-attack))
-     ((spike 0.2 (to-radians 10) (to-radians 15)) (- angle-of-attack (to-radians 180)))
-     ((spike 0.2 (to-radians 10) (to-radians 15)) (+ angle-of-attack (to-radians 180)))))
+  "Determine coefficient of pitch moment depending on angle of attack and optionally angle of side-slip"
+  ([angle-of-attack]
+   (+ (* -0.6 (sin angle-of-attack))
+      ((spike 0.2 (to-radians 10) (to-radians 15)) (- angle-of-attack (to-radians 180)))
+      ((spike 0.2 (to-radians 10) (to-radians 15)) (+ angle-of-attack (to-radians 180)))))
+  ([angle-of-attack angle-of-side-slip]
+   (* 0.5
+      (+ (* (coefficient-of-pitch-moment (identity angle-of-attack)) (+ 1 (cos angle-of-side-slip)))
+         (* (coefficient-of-pitch-moment (mirror   angle-of-attack)) (- 1 (cos angle-of-side-slip))))
+      (cos angle-of-side-slip))))
 
 
 (defn coefficient-of-yaw-moment
-  "Determine coefficient of yaw moment depending on angle of sideslip and optionally angle of attack"
+  "Determine coefficient of yaw moment depending on angle of side-slip and optionally angle of attack"
   [angle-of-side-slip]
   (* 2.0 (sin angle-of-side-slip)))
 
 
 (defn coefficient-of-roll-moment
-  "Determine coefficient of roll moment depending on angle of sideslip and optionally angle of attack"
+  "Determine coefficient of roll moment depending on angle of side-slip and optionally angle of attack"
   [angle-of-side-slip]
   (* -0.5 (sin angle-of-side-slip)))
 
