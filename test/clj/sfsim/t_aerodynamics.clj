@@ -5,6 +5,7 @@
       [malli.instrument :as mi]
       [clojure.math :refer (PI to-radians sqrt)]
       [fastmath.vector :refer (vec3)]
+      [sfsim.conftest :refer (roughly-vector)]
       [sfsim.aerodynamics :refer :all]))
 
 
@@ -136,14 +137,36 @@
 
 
 (facts "Airplane coordinates of speed vector in body system for angle of attack and side slip angle"
-       (speed-x (to-radians 0.0) (to-radians 0.0)) => 1.0
-       (speed-y (to-radians 0.0) (to-radians 0.0)) => 0.0
-       (speed-z (to-radians 0.0) (to-radians 0.0)) => 0.0
-       (speed-x (to-radians 90.0) (to-radians 0.0)) => (roughly 0.0 1e-6)
-       (speed-z (to-radians 90.0) (to-radians 0.0)) => 1.0
-       (speed-y (to-radians 0.0) (to-radians 90.0)) => 1.0
-       (speed-x (to-radians 0.0) (to-radians 90.0)) => (roughly 0.0 1e-6)
-       (speed-z (to-radians 90.0) (to-radians 90.0)) => (roughly 0.0 1e-6))
+       (speed-x (to-radians 0) (to-radians 0)) => 1.0
+       (speed-y (to-radians 0) (to-radians 0)) => 0.0
+       (speed-z (to-radians 0) (to-radians 0)) => 0.0
+       (speed-x (to-radians 90) (to-radians 0)) => (roughly 0.0 1e-6)
+       (speed-z (to-radians 90) (to-radians 0)) => 1.0
+       (speed-y (to-radians 0) (to-radians 90)) => 1.0
+       (speed-x (to-radians 0) (to-radians 90)) => (roughly 0.0 1e-6)
+       (speed-z (to-radians 90) (to-radians 90)) => (roughly 0.0 1e-6))
+
+
+(fact "Get speed vector in aircraft body system"
+      (let [angle-of-attack (to-radians 20)
+            angle-of-side-slip (to-radians 30)]
+        (speed-vector angle-of-attack angle-of-side-slip)
+        => (roughly-vector (vec3 (speed-x angle-of-attack angle-of-side-slip)
+                                 (speed-y angle-of-attack angle-of-side-slip)
+                                 (speed-z angle-of-attack angle-of-side-slip))
+                           1e-6)))
+
+
+(facts "Get angle of attack and side slip angles from speed vector in aircraft body system"
+       (angle-of-attack (vec3 1 0 0)) => 0.0
+       (angle-of-attack (vec3 0 0 1)) => (roughly (to-radians 90) 1e-6)
+       (angle-of-attack (speed-vector (to-radians 20) (to-radians 30))) => (roughly (to-radians 20) 1e-6))
+
+
+(facts "Get angle of side-slip from speed vector in aircraft body system"
+       (angle-of-side-slip (vec3 1 0 0)) => 0.0
+       (angle-of-side-slip (vec3 0 1 0)) => (roughly (to-radians 90) 1e-6)
+       (angle-of-side-slip (speed-vector (to-radians 20) (to-radians 30))) => (roughly (to-radians 30) 1e-6))
 
 
 (facts "Sanity checks for the aerodynamic moment coefficients"

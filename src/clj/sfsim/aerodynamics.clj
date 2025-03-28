@@ -1,7 +1,8 @@
 (ns sfsim.aerodynamics
     (:require
-      [clojure.math :refer (PI cos sin sqrt to-radians)]
+      [clojure.math :refer (PI cos sin sqrt to-radians atan2 hypot)]
       [fastmath.matrix :refer (mat3x3 mulv)]
+      [fastmath.vector :refer (vec3)]
       [sfsim.util :refer (sqr)]))
 
 
@@ -143,6 +144,26 @@
   "Airplane z-coordinate (down) of speed vector in body system for angle of attack and side slip angle"
   [angle-of-attack angle-of-side-slip]
   (* (sin angle-of-attack) (cos angle-of-side-slip)))
+
+
+(defn speed-vector
+  "Speed vector in aircraft body system for given angle of attack and side slip angle"
+  [angle-of-attack angle-of-side-slip]
+  (vec3 (speed-x angle-of-attack angle-of-side-slip)
+        (speed-y angle-of-attack angle-of-side-slip)
+        (speed-z angle-of-attack angle-of-side-slip)))
+
+
+(defn angle-of-attack
+  "Get angle of attack from speed vector in aircraft body system"
+  [speed-vector]
+  (atan2 (speed-vector 2) (speed-vector 0)))
+
+
+(defn angle-of-side-slip
+  "Get angle of side-slip from speed vector in aircraft body system"
+  [speed-vector]
+  (atan2 (speed-vector 1) (hypot (speed-vector 2) (speed-vector 0))))
 
 
 (defn coefficient-of-pitch-moment
