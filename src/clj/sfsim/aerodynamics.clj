@@ -3,6 +3,7 @@
       [clojure.math :refer (PI cos sin sqrt to-radians atan2 hypot)]
       [fastmath.matrix :refer (mat3x3 mulv)]
       [fastmath.vector :refer (vec3)]
+      [sfsim.matrix :refer [fvec3]]
       [sfsim.util :refer (sqr)]))
 
 
@@ -12,6 +13,7 @@
 
 (defn mix
   "Mix two values depending on angle"
+  {:malli/schema [:=> [:cat :double :double :double] :double]}
   [a b angle]
   (let [cos-angle (cos angle)]
     (* 0.5 (+ (* a (+ 1 cos-angle)) (* b (- 1 cos-angle))))))
@@ -33,6 +35,7 @@
 
 (defn fall-off
   "Ellipse-like fall-off function"
+  {:malli/schema [:=> [:cat :double :double] [:=> [:cat :double] :double]]}
   [max-increase interval]
   (fn [angle-of-attack]
       (let [relative-position (/ (- interval angle-of-attack) interval)]
@@ -43,6 +46,7 @@
 
 (defn glide
   "Increase of lift for small angles of attack before stall"
+  {:malli/schema [:=> [:cat :double :double :double :double] [:=> [:cat :double] :double]]}
   [max-increase stall-angle reduced-increase fall-off-interval]
   (fn glide-fn [angle-of-attack]
       (if (neg? angle-of-attack)
@@ -54,6 +58,7 @@
 
 (defn bumps
   "Bumps to add to drag before 180 and -180 degrees"
+  {:malli/schema [:=> [:cat :double :double] [:=> [:cat :double] :double]]}
   [max-increase interval]
   (fn [angle-of-attack]
       (let [relative-pos (/ (- (abs angle-of-attack) (- PI interval)) interval)]
@@ -64,6 +69,7 @@
 
 (defn tail
   "Lift increase to add near 180 and -180 degrees"
+  {:malli/schema [:=> [:cat :double :double :double] [:=> [:cat :double] :double]]}
   [max-increase ramp-up ramp-down]
   (fn [angle-of-attack]
       (let [relative-pos (if (pos? angle-of-attack) (- angle-of-attack PI) (+ angle-of-attack PI))]
@@ -78,12 +84,14 @@
 
 (defn compose
   "Compose an aerodynamic curve"
+  {:malli/schema [:=> [:cat [:* fn?]] fn?]}
   [& funs]
   (comp (partial apply +) (apply juxt funs)))
 
 
 (defn mirror
   "Mirror values at 90 degrees"
+  {:malli/schema [:=> [:cat :double] :double]}
   [angle]
   (if (>= angle 0.0)
     (- PI angle)
@@ -92,6 +100,7 @@
 
 (defn coefficient-of-lift
   "Determine coefficient of lift depending on angle of attack and optionally angle of side-slip"
+  {:malli/schema [:=> [:cat :double [:? :double]] :double]}
   ([angle-of-attack]
    ((compose (basic-lift 1.1)
              (glide 0.8 (to-radians 13) 0.5 (to-radians 12))
@@ -103,6 +112,7 @@
 
 (defn coefficient-of-drag
   "Determine coefficient of drag depending on angle of attack and optionally angle of side-slip"
+  {:malli/schema [:=> [:cat :double [:? :double]] :double]}
   ([angle-of-attack] ((compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))) angle-of-attack))
   ([angle-of-attack angle-of-side-slip]
    (mix (coefficient-of-drag angle-of-attack) ((basic-drag 0.5 2.0) angle-of-attack) (* 2 angle-of-side-slip))))
@@ -110,12 +120,14 @@
 
 (defn coefficient-of-side-force
   "Determine coefficient of side force depending on angle of attack and optionally angle of side-slip"
+  {:malli/schema [:=> [:cat :double [:? :double]] :double]}
   ([angle-of-side-slip] ((basic-lift 0.4) angle-of-side-slip))
   ([angle-of-attack angle-of-side-slip] (* (cos angle-of-attack) (coefficient-of-side-force angle-of-side-slip))))
 
 
 (defn spike
   "Spike function with linear and sinusoidal ramp"
+  {:malli/schema [:=> [:cat :double :double :double] [:=> [:cat :double] :double]]}
   [max-increase ramp-up ramp-down]
   (fn spike-fn [angle]
       (if (>= angle 0)
@@ -130,24 +142,28 @@
 
 (defn speed-x
   "Airplane x-coordinate (forward) of speed vector in body system for angle of attack and side slip angle"
+  {:malli/schema [:=> [:cat :double :double] :double]}
   [angle-of-attack angle-of-side-slip]
   (* (cos angle-of-attack) (cos angle-of-side-slip)))
 
 
 (defn speed-y
   "Airplane y-coordinate (right) of speed vector in body system for angle of attack and side slip angle"
+  {:malli/schema [:=> [:cat :double :double] :double]}
   [_angle-of-attack angle-of-side-slip]
   (sin angle-of-side-slip))
 
 
 (defn speed-z
   "Airplane z-coordinate (down) of speed vector in body system for angle of attack and side slip angle"
+  {:malli/schema [:=> [:cat :double :double] :double]}
   [angle-of-attack angle-of-side-slip]
   (* (sin angle-of-attack) (cos angle-of-side-slip)))
 
 
 (defn speed-vector
   "Speed vector in aircraft body system for given angle of attack and side slip angle"
+  {:malli/schema [:=> [:cat :double :double] fvec3]}
   [angle-of-attack angle-of-side-slip]
   (vec3 (speed-x angle-of-attack angle-of-side-slip)
         (speed-y angle-of-attack angle-of-side-slip)
@@ -156,18 +172,21 @@
 
 (defn angle-of-attack
   "Get angle of attack from speed vector in aircraft body system"
+  {:malli/schema [:=> [:cat fvec3] :double]}
   [speed-vector]
   (atan2 (speed-vector 2) (speed-vector 0)))
 
 
 (defn angle-of-side-slip
   "Get angle of side-slip from speed vector in aircraft body system"
+  {:malli/schema [:=> [:cat fvec3] :double]}
   [speed-vector]
   (atan2 (speed-vector 1) (hypot (speed-vector 2) (speed-vector 0))))
 
 
 (defn coefficient-of-pitch-moment
   "Determine coefficient of pitch moment depending on angle of attack and optionally angle of side-slip"
+  {:malli/schema [:=> [:cat :double [:? :double]] :double]}
   ([angle-of-attack]
    (+ (* -0.6 (sin angle-of-attack))
       ((spike 0.2 (to-radians 10) (to-radians 15)) (- angle-of-attack (to-radians 180)))
@@ -181,12 +200,14 @@
 
 (defn coefficient-of-yaw-moment
   "Determine coefficient of yaw moment depending on angle of side-slip and optionally angle of attack"
+  {:malli/schema [:=> [:cat :double] :double]}
   [angle-of-side-slip]
   (* 2.0 (sin angle-of-side-slip)))
 
 
 (defn coefficient-of-roll-moment
   "Determine coefficient of roll moment depending on angle of side-slip and optionally angle of attack"
+  {:malli/schema [:=> [:cat :double] :double]}
   [angle-of-side-slip]
   (* -0.5 (sin angle-of-side-slip)))
 
@@ -196,6 +217,7 @@
 
 (defn gltf->aerodynamic
   "Convert glTF model coordinates (x: forward, y: up, z:right) to aerodynamic body ones (x: forward, y: right, z: down)"
+  {:malli/schema [:=> [:cat fvec3] fvec3]}
   [gltf-vector]
   (mulv gltf-to-aerodynamic gltf-vector))
 
@@ -205,6 +227,7 @@
 
 (defn aerodynamic->gltf
   "Convert aerodynamic body coordinates (x: forward, y: right, z: down) to glTF model ones (x: forward, y: up, z:right)"
+  {:malli/schema [:=> [:cat fvec3] fvec3]}
   [aerodynamic-vector]
   (mulv aerodynamic-to-gltf aerodynamic-vector))
 
