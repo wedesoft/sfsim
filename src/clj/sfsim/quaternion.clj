@@ -134,6 +134,7 @@
 
 (defn vector-to-vector-rotation
   "Create quaternion for rotating u to v"
+  {:malli/schema [:=> [:cat fvec3 fvec3] quaternion]}
   [u v]
   (let [axis (cross u v)
         w    (c/+ (c/* (mag u) (mag v)) (dot u v))]
