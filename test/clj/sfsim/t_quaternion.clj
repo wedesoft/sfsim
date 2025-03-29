@@ -121,3 +121,9 @@
 (facts "Rotate a vector using a rotation quaternion"
        (rotate-vector (rotation 0.0 (vec3 1 0 0)) (vec3 2 4 8))        => (roughly-vector (vec3 2  4 8) 1e-6)
        (rotate-vector (rotation (/ PI 2) (vec3 1 0 0)) (vec3 2 4 8)) => (roughly-vector (vec3 2 -8 4) 1e-6))
+
+
+(fact "Rotate vector u onto vector b"
+      (rotate-vector (vector-to-vector-rotation (vec3 1 0 0) (vec3 1 0 0)) (vec3 1 0 0)) => (roughly-vector (vec3 1 0 0) 1e-6)
+      (rotate-vector (vector-to-vector-rotation (vec3 1 0 0) (vec3 0 1 0)) (vec3 1 0 0)) => (roughly-vector (vec3 0 1 0) 1e-6)
+      (rotate-vector (vector-to-vector-rotation (vec3 2 0 0) (vec3 0 3 0)) (vec3 2 0 0)) => (roughly-vector (vec3 0 2 0) 1e-6))

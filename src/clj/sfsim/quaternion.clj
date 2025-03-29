@@ -4,7 +4,7 @@
   (:require
     [clojure.core :as c]
     [clojure.math :refer (cos sqrt) :as m]
-    [fastmath.vector :refer (vec3 mag mult)]
+    [fastmath.vector :refer (vec3 mag mult cross dot)]
     [malli.core :as mc]
     [sfsim.util :refer (sinc sqr)]))
 
@@ -130,6 +130,14 @@
   {:malli/schema [:=> [:cat quaternion fvec3] fvec3]}
   [q v]
   (quaternion->vector (* (* q (vector->quaternion v)) (conjugate q))))
+
+
+(defn vector-to-vector-rotation
+  "Create quaternion for rotating u to v"
+  [u v]
+  (let [axis (cross u v)
+        w    (c/+ (c/* (mag u) (mag v)) (dot u v))]
+    (normalize (->Quaternion w (axis 0) (axis 1) (axis 2)))))
 
 
 (set! *warn-on-reflection* false)
