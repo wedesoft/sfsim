@@ -86,6 +86,13 @@
              0       0       0       1))
 
 
+(defn rotation-matrix
+  "Create 4x4 rotation matrix from 3x3 rotation matrix"
+  {:malli/schema [:=> [:cat fmat3] fmat4]}
+  [m]
+  (transformation-matrix m (fv/vec3 0.0 0.0 0.0)))
+
+
 (defn projection-matrix
   "Compute OpenGL projection matrix (frustum)"
   {:malli/schema [:=> [:cat :int :int :double :double :double] fmat4]}

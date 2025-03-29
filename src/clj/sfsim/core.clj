@@ -2,36 +2,43 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI)]
+    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI sqrt)]
+    [clojure.edn]
+    [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
-    [fastmath.matrix :refer (inverse mulv)]
+    [fastmath.matrix :refer (inverse mulv mulm)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize)]
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
+    [sfsim.aerodynamics :as aerodynamics]
     [sfsim.clouds :as clouds]
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
-    [sfsim.matrix :refer (transformation-matrix quaternion->matrix)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                                      write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering
-                                      quad-splits-orientations)]
-    [sfsim.texture :refer (destroy-texture)])
+                                      texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
+                                      setup-rendering quad-splits-orientations)]
+    [sfsim.image :refer (spit-png)]
+    [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
     (fastmath.vector
       Vec3)
     (org.lwjgl.glfw
       GLFW
+      GLFWVidMode
       GLFWCharCallbackI
       GLFWCursorPosCallbackI
       GLFWKeyCallbackI
       GLFWMouseButtonCallbackI)
+    (org.lwjgl.opengl
+      GL11)
     (org.lwjgl.nuklear
       Nuklear)
     (org.lwjgl.system
@@ -41,13 +48,16 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-
+; clj -M:nrepl -m sfsim.core
 ;; (require '[nrepl.server :refer [start-server stop-server]])
 ;; (defonce server (start-server :port 7888))
 
 ;; (require '[malli.dev :as dev])
 ;; (require '[malli.dev.pretty :as pretty])
 ;; (dev/start! {:report (pretty/thrower)})
+
+; Ensure floating point numbers use a dot as decimal separator
+(java.util.Locale/setDefault java.util.Locale/US)
 
 (def opacity-base (atom 100.0))
 (def longitude (to-radians -1.3747))
@@ -56,7 +66,7 @@
 
 
 ;; (def height 30.0)
-(def speed (atom (/ 7800 1000.0)))
+(def speed (atom 7800.0))
 
 (def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
 (def earth-moon (astro/make-spk-segment-interpolator spk 0 3))
@@ -65,9 +75,32 @@
 
 (jolt/jolt-init)
 
-(def window-width (quot 1920 3))
-(def window-height (quot 1080 3))
-(def window (make-window "sfsim" window-width window-height))
+(def slew (atom true))
+
+(def recording
+  (atom (if (.exists (java.io.File. "recording.edn"))
+          (mapv (fn [{:keys [timedelta position orientation camera-orientation dist]}]
+                    {:timedelta timedelta
+                     :position (apply vec3 position)
+                     :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
+                     :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation)
+                                                         (:jmag camera-orientation) (:kmag camera-orientation))
+                     :dist dist})
+                (clojure.edn/read-string (slurp "recording.edn")))
+          false)))
+
+(def playback false)
+(def fix-fps false)
+(def fullscreen playback)
+
+(def monitor (GLFW/glfwGetPrimaryMonitor))
+(def mode (GLFW/glfwGetVideoMode monitor))
+
+(def desktop-width (.width ^GLFWVidMode mode))
+(def desktop-height (.height ^GLFWVidMode mode))
+(def window-width (if fullscreen desktop-width 640))
+(def window-height (if fullscreen desktop-height 480))
+(def window (make-window "sfsim" window-width window-height (not fullscreen)))
 (GLFW/glfwShowWindow window)
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
@@ -116,7 +149,9 @@
 
 (def model (model/read-gltf "venturestar.glb"))
 (def scene (model/load-scene scene-renderer model))
-(def convex-hulls (model/empty-meshes-to-points model))
+(def convex-hulls (update (model/empty-meshes-to-points model)
+                          :sfsim.model/transform
+                          #(mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic) %)))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -245,8 +280,8 @@
 
 (defn orientation-from-lon-lat
   [longitude latitude]
-  (q/* (q/* (q/rotation longitude (vec3 0 0 1)) (q/rotation (- latitude) (vec3 0 1 0)))
-       (q/rotation (/ (- PI) 2) (vec3 0 0 1))))
+  (let [radius-vector (position-from-lon-lat longitude latitude 1.0)]
+    (q/vector-to-vector-rotation (vec3 0 0 1) (sub radius-vector))))
 
 
 (def pose
@@ -254,14 +289,15 @@
          :orientation (orientation-from-lon-lat longitude latitude)}))
 
 
-(def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
+(def camera-orientation (atom (q/* (orientation-from-lon-lat longitude latitude)
+                                   (q/rotation (to-radians -90) (vec3 1 0 0)))))
 (def dist (atom 200.0))
 
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 1000.0 0.1))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
 (jolt/set-angular-velocity body (vec3 0 0 0))
-(jolt/set-friction body 1.0)
-(jolt/set-restitution body 0.2)
+(jolt/set-friction body 1.5)
+(jolt/set-restitution body 0.15)
 (def mass (jolt/get-mass body))
 
 (jolt/optimize-broad-phase)
@@ -295,8 +331,8 @@
         (when @mesh (jolt/remove-and-destroy-body @mesh))
         (reset! coords c)
         (reset! mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0)))
-        (jolt/set-friction @mesh 1.0)
-        (jolt/set-restitution @mesh 0.2)
+        (jolt/set-friction @mesh 1.5)
+        (jolt/set-restitution @mesh 0.15)
         (jolt/optimize-broad-phase)))))
 
 
@@ -333,13 +369,14 @@
                       (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
                       (when (gui/button-label gui "Set")
                         (reset! pose (location-dialog-get position-data))
-                        (reset! camera-orientation (:orientation @pose)))
+                        (reset! camera-orientation (q/* (:orientation @pose)
+                                                        (q/rotation (to-radians -90) (vec3 1 0 0)))))
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (astro/now) 0.3 (/ @t0 1000 86400.0))))
+(def time-delta (atom (- (+ (int (astro/now)) 0.1) (/ @t0 1000 86400.0))))
 
 
 (defn datetime-dialog-get
@@ -420,8 +457,15 @@
                       (when (gui/button-label gui "Quit")
                         (GLFW/glfwSetWindowShouldClose window true))))
 
+(def frame-index (atom 0))
 
-(def unpause (atom 0))
+(defmacro render-frame
+  [_window & body]
+  `(let [tex# (texture-render-color 1920 1080 true ~@body)
+         img# (texture->image tex#)]
+     (spit-png (format "%06d.png" @frame-index) img#)
+     (swap! frame-index inc)
+     (destroy-texture tex#)))
 
 
 (defn -main
@@ -430,37 +474,69 @@
   (let [n  (atom 0)
         w  (int-array 1)
         h  (int-array 1)]
-    (while (not (GLFW/glfwWindowShouldClose window))
+    (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< @n (count @recording))))
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
       (planet/update-tile-tree planet-renderer tile-tree (aget w 0) (:position @pose))
-      (when (@keystates GLFW/GLFW_KEY_P) (reset! unpause 1))
+      (when (@keystates GLFW/GLFW_KEY_P)
+        (reset! slew true))
+      (when (@keystates GLFW/GLFW_KEY_O)
+        (jolt/set-orientation body (:orientation @pose))
+        (jolt/set-translation body (:position @pose))
+        (jolt/set-angular-velocity body (vec3 0 0 0))
+        (reset! slew false))
+      (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+            max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
+            s       (min @speed max-speed)]
+          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) s)))
       (let [t1     (System/currentTimeMillis)
-            dt     (- t1 @t0)
+            dt     (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn     (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
-            ra     (if (@keystates GLFW/GLFW_KEY_KP_2) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.001 0.0))
-            rb     (if (@keystates GLFW/GLFW_KEY_KP_4) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.001 0.0))
-            rc     (if (@keystates GLFW/GLFW_KEY_KP_1) 0.001 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.001 0.0))
-            d      (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
-            to     (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))
+            ra     (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
+            rb     (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
+            rc     (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
             u      (if (@keystates GLFW/GLFW_KEY_S) 1 (if (@keystates GLFW/GLFW_KEY_W) -1 0))
-            r      (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
+            r      (if (@keystates GLFW/GLFW_KEY_A) -1 (if (@keystates GLFW/GLFW_KEY_D) 1 0))
             t      (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
-            thrust (if (@keystates GLFW/GLFW_KEY_SPACE) (* 20.0 mass) 0.0)]
+            thrust (if (@keystates GLFW/GLFW_KEY_SPACE) (* 20.0 mass) 0.0)
+            v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
+            d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
+            to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
         (when mn (reset! menu main-dialog))
-        (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
-        (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
-        (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* u 20.0 mass))))
-        (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* r 20.0 mass) 0)))
-        (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t 20.0 mass) 0 0)))
-        (update-mesh! (:position @pose))
-        (jolt/update-system (* dt @unpause 0.001) 10)
-        ; (println (q/rotate-vector (q/conjugate (:orientation @pose)) (jolt/get-linear-velocity body)))
-        (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
-        (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
-        (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
-        (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
-        (swap! opacity-base + (* dt to))
-        (swap! dist * (exp d))
+        (if playback
+          (let [frame (nth @recording @n)]
+            (reset! time-delta (:timedelta frame))
+            (reset! pose {:position (:position frame) :orientation (:orientation frame)})
+            (reset! camera-orientation (:camera-orientation frame))
+            (reset! dist (:dist frame)))
+          (do
+            (if @slew
+              (do
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 u) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 r) (vec3 0 0 1)))
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 t) (vec3 1 0 0)))
+                (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
+              (do
+                (when @recording
+                  (let [frame {:timedelta @time-delta
+                               :position (:position @pose)
+                               :orientation (:orientation @pose)
+                               :camera-orientation @camera-orientation
+                               :dist @dist}]
+                    (swap! recording conj frame)))
+                ; (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+                (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
+                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
+                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* u 20.0 mass) 0)))
+                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* r 20.0 mass))))
+                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t 20.0 mass) 0 0)))
+                (update-mesh! (:position @pose))
+                (jolt/update-system (* dt 0.001) 10)
+                (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))
+            (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
+            (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
+            (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
+            (swap! opacity-base + (* dt to))
+            (swap! dist * (exp d))))
         (let [object-position    (:position @pose)
               origin             (add object-position (mult (q/rotate-vector @camera-orientation (vec3 0 0 -1)) (* -1.0 @dist)))
               jd-ut              (+ @time-delta (/ @t0 1000 86400.0) astro/T0)
@@ -478,11 +554,12 @@
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
-              moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
+              moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform]
+                                           (mulm object-to-world (rotation-matrix aerodynamics/gltf-to-aerodynamic)))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
               clouds             (texture-render-color-depth
-                                   (:sfsim.render/window-width planet-render-vars)
-                                   (:sfsim.render/window-height planet-render-vars)
+                                   (/ (:sfsim.render/window-width planet-render-vars) 2)
+                                   (/ (:sfsim.render/window-height planet-render-vars) 2)
                                    true
                                    (clear (vec3 0 0 0) 1.0)
                                    ;; Render clouds in front of planet
@@ -521,7 +598,19 @@
                              (gui/render-nuklear-gui gui window-width window-height)))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
-          (opacity/destroy-opacity-and-shadow shadow-vars))
+          (opacity/destroy-opacity-and-shadow shadow-vars)
+          (when playback
+            (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 window-width window-height))
+                  data   (byte-array (* 4 window-width window-height))]
+              (GL11/glFlush)
+              (GL11/glFinish)
+              (GL11/glReadPixels 0 0 ^long window-width ^long window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
+              (.get buffer data)
+              (spit-png (format "frame%06d.png" @frame-index) {:sfsim.image/data data
+                                                               :sfsim.image/width window-width
+                                                               :sfsim.image/height window-height
+                                                               :sfsim.image/channels 4} true)
+              (swap! frame-index inc))))
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
@@ -529,7 +618,7 @@
         (when (zero? (mod @n 10))
           (print (format "\ro.-step (t/g) %.0f, dist (r/f) %.0f dt %.3f" @opacity-base @dist (* dt 0.001)))
           (flush))
-        (swap! t0 + dt))))
+        (if fix-fps (reset! t0 (System/currentTimeMillis)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)
   (model/destroy-scene scene)
   (model/destroy-scene-shadow-renderer scene-shadow-renderer)
@@ -547,4 +636,6 @@
   (destroy-window window)
   (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
+  (when @recording
+    (spit "recording.edn" (with-out-str (pprint @recording))))
   (System/exit 0))

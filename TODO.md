@@ -1,23 +1,40 @@
 # TODO
-* increased drag for sideways wind (gnuplot)
-  mix parts of cl for increased sideways wind direction
-  implement angle dependent sideways forces
+* fix coefficient of lift, drag, and side-force for different angle definitions
   implement aerodynamics and thrust,
+  convert speed vector (aerodynamic body coordinates) to angles
+  bugfix all forces and moments using correct definitions of alpha and beta
   simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
-  venturestar trajectory pdf: 166
   good position of wheels for takeoff (with low fuel) and landing
-  gear/terrain physics with stationary Earth (ground collisions)
-* non-linear sampling for clouds
-* incremental rendering of opacity maps
-* thrust graphics
+  gear <-> terrain physics with stationary Earth (ground collisions)
+* orbitting Earth
+* thrust graphics, opengl rocket plume
+  flame: https://www.shadertoy.com/view/XsXSWS
+  mach diamonds: https://www.shadertoy.com/view/wdjGRz
+  mach diamonds: https://www.shadertoy.com/view/WdGBDc
+  blender cone: https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume
+  blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
+  particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
 * sound effects
+* UI overlays for third person view
+* at least 3 environments/biomes before publishing steam page (or mock ups): day earth, day orbit, sunset orbit, clouds, landing
 * steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
-  show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes),
-  capsule art (recognisable), first 4 screenshots important (1920x1080) bright ones and dark ones, show the UI,
-  use alpha for steam icons,
+  show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
+  (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
+  first 4 screenshots important  bright ones and dark ones,
+  show the UI, use alpha for steam icons, provide desktop icon (32x32 ico),
   good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
   add steam page url to long description, add animated GIFs, section banners, revisit tags regularly,
   https://partner.steamgames.com/doc/store/assets/libraryassets
+  create application with https://partner.steamgames.com/doc/sdk
+* render stars
+  * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
+  * Skydome scaled to ZFAR * 0.5
+  * no skydome and just stars as pixels?
+* space station model, station lights
+* render moonlight and moon
+* launch complex, lights
+* moon base, lights
+* cockpit
 * fix planet tessellation tests
 * define wheel positions in Blender
   animate wheel rotation and suspension, bake gear animation and name actions the same
@@ -44,8 +61,6 @@
 * GLL parsing https://pure.uva.nl/ws/files/36086100/Thesis.pdf
 * cloud shadow flickering at large distance?
 * animate flaps
-* space station model, station lights
-* launch complex, station lights
 * compute earth barycenter and sun in separate thread (use future)
 * microtexture for normal map, microtextures, bump maps
 * shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
@@ -65,6 +80,7 @@
 * render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
 * cockpit and scene rendering looking downward so that horizon is in upper half of screen
 * 3D cockpit
+  * EF2000-like zoom into individual MFDs
   * Open Glass Cockpit: https://opengc.sourceforge.net/screenshots.html
   * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
   * SpaceX cockpit: https://iss-sim.spacex.com/
@@ -136,10 +152,6 @@
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d\_e.htm
   * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30\_e.htm
 * how to render water, waves, https://www.shadertoy.com/view/Ms2SD1
-* render stars
-  * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
-  * Skydome scaled to ZFAR * 0.5
-  * no skydome and just stars as pixels?
 * when building maps put intermediate files into a common subdirectory (tmp?)
 * uniform random offsets for Worley noises to generate different cloud cover for each game
 * render building on top of ground
@@ -147,7 +159,6 @@
 * improve rendering of sun
   only render sun glare when sun is above horizon, use single (normalised?) color from transmittance, bloom?
   amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-* render moonlight and moon
 * organize fixtures using subdirectories
 * You need to ensure that the ByteBuffer passed to stbtt\_InitFont is not garbage collected
 * use ZGC (short pause garbage collector for Java)

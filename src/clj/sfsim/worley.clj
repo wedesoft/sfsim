@@ -11,7 +11,7 @@
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
 
-(def worley-size 64)
+(def worley-size 16)
 
 (def grid (m/schema [:vector [:vector [:vector fvec3]]]))
 

@@ -21,9 +21,6 @@ layout (location = <%= (inc i) %>) out float opacity_layer_<%= i %>;
 
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 float cloud_density(vec3 point, float lod);
-int number_of_samples(float a, float b, float max_step);
-float step_size(float a, float b, int num_samples);
-float sample_point(float a, float idx, float step_size);
 
 void main()
 {
@@ -35,21 +32,20 @@ void main()
   int current_layer = 0;
   opacity_layer_0 = 1.0;
   if (extent_segment > 0) {
-    int steps = number_of_samples(start_segment, start_segment + extent_segment, opacity_step);
-    float stepsize = step_size(start_segment, start_segment + extent_segment, steps);
-    for (int i=0; i<steps; i++) {
-      float s = sample_point(start_segment, i, stepsize);
-      vec3 sample_point = fs_in.origin - s * light_direction;
+    float s = start_segment;
+    vec3 sample_point = fs_in.origin - start_segment * light_direction;
+    vec3 light_step = opacity_step * light_direction;
+    while (s < start_segment + extent_segment) {
       float density = cloud_density(sample_point, level_of_detail);
       float transmittance;
       // Compute this on the CPU: scatter_amount = (anisotropic * phase(0.76, -1) + 1 - anisotropic)
       if (density > 0.0) {
-        float transmittance_step = exp((scatter_amount - 1) * density * stepsize);
+        float transmittance_step = exp((scatter_amount - 1) * density * opacity_step);
         transmittance = previous_transmittance * transmittance_step;
       } else
         transmittance = previous_transmittance;
       if (previous_transmittance == 1.0) {
-        start_depth = start_segment + i * stepsize;
+        start_depth = s;
       };
       if (transmittance < 1.0) {
         current_layer = current_layer + 1;
@@ -63,6 +59,8 @@ void main()
       previous_transmittance = transmittance;
       if (current_layer >= <%= (dec num-layers ) %>)
         break;
+      s += opacity_step;
+      sample_point -= light_step;
     };
   };
   if (previous_transmittance == 1.0)

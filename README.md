@@ -1,10 +1,10 @@
-# [sfsim][1] [![EPL-2.0](https://img.shields.io/badge/License-EPL_2.0-orange)](https://www.eclipse.org/legal/epl-2.0/) [![Build Status](https://github.com/wedesoft/sfsim/actions/workflows/sfsim.yml/badge.svg)](https://github.com/wedesoft/sfsim/actions/workflows/sfsim.yml) [![Donate](https://img.shields.io/badge/Donate-The%20Water%20Project-green)](https://thewaterproject.org/)
+# [sfsim][1] [![EPL-1.0](https://img.shields.io/badge/License-EPL_1.0-orange)](https://www.eclipse.org/legal/epl/epl-v10.html) [![Build Status](https://github.com/wedesoft/sfsim/actions/workflows/sfsim.yml/badge.svg)](https://github.com/wedesoft/sfsim/actions/workflows/sfsim.yml) [![Donate](https://img.shields.io/badge/Donate-The%20Water%20Project-green)](https://thewaterproject.org/)
 
 This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
 Requires OpenGL 4.5.
 
-[![Texturized spaceship](https://i.ytimg.com/vi/7XTcEoaFaJg/hqdefault.jpg)](https://www.youtube.com/watch?v=7XTcEoaFaJg)
+[![Texturized spaceship](https://i.ytimg.com/vi/dUmnc-b6gZA/hqdefault.jpg)](https://www.youtube.com/watch?v=dUmnc-b6gZA)
 
 [![Object shadows on ground](https://i.ytimg.com/vi/H7_tqJ6VAUw/hqdefault.jpg)](https://www.youtube.com/watch?v=H7_tqJ6VAUw)
 
@@ -84,7 +84,7 @@ cd ..
 
 # Run
 
-* Run tests: `clj -M:test`
+* Run tests (recommended to use xvfb-run): `xvfb-run clj -M:test`
 * Run test for specific module (rendering for example): `clj -M:test sfsim.t-render`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run main program: `clj -M:run`
@@ -92,8 +92,8 @@ cd ..
 # External Links
 
 * Simulators
-  * [Reentry](https://reentrygame.com/)
   * [Orbiter 2016](https://github.com/mschweiger/orbiter)
+  * [Reentry](https://reentrygame.com/)
   * [Kerbal Space Program](https://www.kerbalspaceprogram.com/)
   * [Flight of Nova](https://flight-of-nova.com/)
   * [Lunar Flight](http://www.shovsoft.com/lunarflight/)
@@ -102,13 +102,13 @@ cd ..
   * [Rogue System](http://imagespaceinc.com/rogsys/)
   * [UniVoyager](https://www.univoyager.com/)
 * Engines
+  * [Jolt Physics](https://github.com/jrouwe/JoltPhysics)
+  * [Project Chrono physics engine](https://projectchrono.org/)
+  * [JSBSim](https://github.com/JSBSim-Team/jsbsim)
   * [Skybolt Engine](https://github.com/Piraxus/Skybolt/) ([article](https://piraxus.com/2021/07/28/rendering-planetwide-volumetric-clouds-in-skybolt/))
   * [Oreon Engine](https://github.com/fynnfluegge/oreon-engine)
   * [Emulating double precision in Godot](https://godotengine.org/article/emulating-double-precision-gpu-render-large-worlds)
-  * [Jolt Physics](https://github.com/jrouwe/JoltPhysics)
-  * [Project Chrono physics engine](https://projectchrono.org/)
   * [Open Space Program](https://github.com/TheOpenSpaceProgram/osp-magnum)
-  * [JSBSim](https://github.com/JSBSim-Team/jsbsim)
 * LWJGL
   * [LWJGL](https://www.lwjgl.org/)
   * [LWJGL Wiki](https://github.com/LWJGL/lwjgl3-wiki/wiki)

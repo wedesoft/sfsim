@@ -24,13 +24,13 @@
 
 (defn worley
   "Generate 3D Worley noise textures"
-  [& {:keys [size divisions] :or {size 64 divisions 8}}]
+  [& {:keys [size divisions] :or {size 16 divisions 4}}]
   (doseq [filename ["worley-north.raw" "worley-south.raw" "worley-cover.raw"]]
          (u/spit-floats (str "data/clouds/" filename) (float-array (w/worley-noise divisions size true)))))
 
 (defn perlin
   "Generate 3D Perlin noise textures"
-  [& {:keys [size divisions] :or {size 64 divisions 8}}]
+  [& {:keys [size divisions] :or {size 16 divisions 4}}]
   (u/spit-floats "data/clouds/perlin.raw" (float-array (p/perlin-noise divisions size true))))
 
 (defn bluenoise

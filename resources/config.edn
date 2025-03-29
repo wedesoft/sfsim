@@ -18,7 +18,7 @@
                                      :water-threshold 0.8
                                      :water-color [0.09 0.11 0.34]}
 
- :sfsim.cloud-config #:sfsim.clouds{:cloud-octaves [0.67 0.33]  ; (sfsim.util/octaves 2 0.5)
+ :sfsim.cloud-config #:sfsim.clouds{:cloud-octaves [0.46 0.32 0.22]  ; (sfsim.util/octaves 3 0.7)
                                     :perlin-octaves [0.57 0.28 0.15]  ; (sfsim.util/octaves 3 0.5)
                                     :cloud-bottom 1500.0
                                     :cloud-top 5000.0
@@ -27,15 +27,17 @@
                                     :cloud-multiplier 10.0
                                     :cover-multiplier 26.0
                                     :threshold 18.2
-                                    :cap 0.01
+                                    :cap 0.005
                                     :anisotropic 0.25
-                                    :cloud-step 1000.0
+                                    :cloud-step 500.0
+                                    :linear-range 20000.0
+                                    :stepsize-factor 1.005
                                     :opacity-cutoff 0.01}
 
  :sfsim.shadow-config #:sfsim.opacity{:num-opacity-layers 7
                                       :shadow-size 1024
                                       :num-steps 2
-                                      :opacity-biases [300.0 900.0 2000.0]
+                                      :opacity-biases [0.0 2000.0]
                                       :scene-shadow-size 512
                                       :scene-shadow-counts [0 1]
                                       :mix 0.6

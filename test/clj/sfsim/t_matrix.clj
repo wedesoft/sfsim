@@ -41,6 +41,11 @@
       => (fm/mat4x4 1 2 3 4, 5 6 7 8, 9 10 11 12, 0 0 0 1))
 
 
+(fact "Create a 4x4 matrix from a 3x3 rotation matrix"
+      (rotation-matrix (fm/mat3x3 1 2 3, 5 6 7, 9 10 11))
+      => (fm/mat4x4 1 2 3 0, 5 6 7 0, 9 10 11 0, 0 0 0 1))
+
+
 (facts "OpenGL projection matrix"
        (let [m (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))]
          (project (fm/mulv m (fv/vec4    0    0    -5 1))) => (roughly-vector (fv/vec3 0 0 1) 1e-6)
