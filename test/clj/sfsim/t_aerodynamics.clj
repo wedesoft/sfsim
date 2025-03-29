@@ -193,12 +193,12 @@
 
 
 (facts "Convert glTF model coordinates to aerodynamic body coordinates"
-       (object->aerodynamic (vec3 1 0 0)) => (vec3 1 0 0)
-       (object->aerodynamic (vec3 0 0 1)) => (vec3 0 1 0)
-       (object->aerodynamic (vec3 0 1 0)) => (vec3 0 0 -1))
+       (gltf->aerodynamic (vec3 1 0 0)) => (vec3 1 0 0)
+       (gltf->aerodynamic (vec3 0 0 1)) => (vec3 0 1 0)
+       (gltf->aerodynamic (vec3 0 1 0)) => (vec3 0 0 -1))
 
 
 (facts "Convert aerodynamic body coordinates to glTF model coordinates"
-       (aerodynamic->object (vec3 1 0 0)) => (vec3 1 0 0)
-       (aerodynamic->object (vec3 0 1 0)) => (vec3 0 0 1)
-       (aerodynamic->object (vec3 0 0 -1)) => (vec3 0 1 0))
+       (aerodynamic->gltf (vec3 1 0 0)) => (vec3 1 0 0)
+       (aerodynamic->gltf (vec3 0 1 0)) => (vec3 0 0 1)
+       (aerodynamic->gltf (vec3 0 0 -1)) => (vec3 0 1 0))

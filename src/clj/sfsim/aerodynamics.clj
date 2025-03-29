@@ -191,16 +191,22 @@
   (* -0.5 (sin angle-of-side-slip)))
 
 
-(defn object->aerodynamic
+(def gltf-to-aerodynamic (mat3x3 1 0 0, 0 0 1, 0 -1 0))
+
+
+(defn gltf->aerodynamic
   "Convert glTF model coordinates (x: forward, y: up, z:right) to aerodynamic body ones (x: forward, y: right, z: down)"
   [gltf-vector]
-  (mulv (mat3x3 1 0 0, 0 0 1, 0 -1 0) gltf-vector))
+  (mulv gltf-to-aerodynamic gltf-vector))
 
 
-(defn aerodynamic->object
+(def aerodynamic-to-gltf (mat3x3 1 0 0, 0 0 -1, 0 1 0))
+
+
+(defn aerodynamic->gltf
   "Convert aerodynamic body coordinates (x: forward, y: right, z: down) to glTF model ones (x: forward, y: up, z:right)"
   [aerodynamic-vector]
-  (mulv (mat3x3 1 0 0, 0 0 -1, 0 1 0) aerodynamic-vector))
+  (mulv aerodynamic-to-gltf aerodynamic-vector))
 
 
 (set! *warn-on-reflection* false)
