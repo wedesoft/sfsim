@@ -1,6 +1,5 @@
 # TODO
-* use aircraft coordinate system instead of glTF system
-  fix coefficient of lift, drag, and side-force for different angle definitions
+* fix coefficient of lift, drag, and side-force for different angle definitions
   implement aerodynamics and thrust,
   convert speed vector (aerodynamic body coordinates) to angles
   bugfix all forces and moments using correct definitions of alpha and beta

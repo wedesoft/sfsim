@@ -6,16 +6,17 @@
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
-    [fastmath.matrix :refer (inverse mulv)]
+    [fastmath.matrix :refer (inverse mulv mulm)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize)]
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
+    [sfsim.aerodynamics :as aerodynamics]
     [sfsim.clouds :as clouds]
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
-    [sfsim.matrix :refer (transformation-matrix quaternion->matrix)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
@@ -54,6 +55,9 @@
 ;; (require '[malli.dev :as dev])
 ;; (require '[malli.dev.pretty :as pretty])
 ;; (dev/start! {:report (pretty/thrower)})
+
+; Ensure floating point numbers use a dot as decimal separator
+(java.util.Locale/setDefault java.util.Locale/US)
 
 (def opacity-base (atom 100.0))
 (def longitude (to-radians -1.3747))
@@ -145,7 +149,9 @@
 
 (def model (model/read-gltf "venturestar.glb"))
 (def scene (model/load-scene scene-renderer model))
-(def convex-hulls (model/empty-meshes-to-points model))
+(def convex-hulls (update (model/empty-meshes-to-points model)
+                          :sfsim.model/transform
+                          #(mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic) %)))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -274,8 +280,8 @@
 
 (defn orientation-from-lon-lat
   [longitude latitude]
-  (q/* (q/* (q/rotation longitude (vec3 0 0 1)) (q/rotation (- latitude) (vec3 0 1 0)))
-       (q/rotation (/ (- PI) 2) (vec3 0 0 1))))
+  (let [radius-vector (position-from-lon-lat longitude latitude 1.0)]
+    (q/vector-to-vector-rotation (vec3 0 0 1) (sub radius-vector))))
 
 
 (def pose
@@ -283,7 +289,8 @@
          :orientation (orientation-from-lon-lat longitude latitude)}))
 
 
-(def camera-orientation (atom (orientation-from-lon-lat longitude latitude)))
+(def camera-orientation (atom (q/* (orientation-from-lon-lat longitude latitude)
+                                   (q/rotation (to-radians -90) (vec3 1 0 0)))))
 (def dist (atom 200.0))
 
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 1000.0 0.1))
@@ -362,7 +369,8 @@
                       (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
                       (when (gui/button-label gui "Set")
                         (reset! pose (location-dialog-get position-data))
-                        (reset! camera-orientation (:orientation @pose)))
+                        (reset! camera-orientation (q/* (:orientation @pose)
+                                                        (q/rotation (to-radians -90) (vec3 1 0 0)))))
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))
 
@@ -487,7 +495,7 @@
             rb     (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
             rc     (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
             u      (if (@keystates GLFW/GLFW_KEY_S) 1 (if (@keystates GLFW/GLFW_KEY_W) -1 0))
-            r      (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
+            r      (if (@keystates GLFW/GLFW_KEY_A) -1 (if (@keystates GLFW/GLFW_KEY_D) 1 0))
             t      (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
             thrust (if (@keystates GLFW/GLFW_KEY_SPACE) (* 20.0 mass) 0.0)
             v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
@@ -503,8 +511,8 @@
           (do
             (if @slew
               (do
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 u) (vec3 0 0 1)))
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 r) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 u) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 r) (vec3 0 0 1)))
                 (swap! pose update :orientation q/* (q/rotation (* dt 0.001 t) (vec3 1 0 0)))
                 (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
               (do
@@ -518,8 +526,8 @@
                 ; (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
                 (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
                 (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
-                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* u 20.0 mass))))
-                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* r 20.0 mass) 0)))
+                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* u 20.0 mass) 0)))
+                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* r 20.0 mass))))
                 (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t 20.0 mass) 0 0)))
                 (update-mesh! (:position @pose))
                 (jolt/update-system (* dt 0.001) 10)
@@ -546,7 +554,8 @@
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
-              moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
+              moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform]
+                                           (mulm object-to-world (rotation-matrix aerodynamics/gltf-to-aerodynamic)))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
               clouds             (texture-render-color-depth
                                    (/ (:sfsim.render/window-width planet-render-vars) 2)
