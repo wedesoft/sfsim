@@ -29,10 +29,10 @@ Cm(alpha) = -0.6 * sin(alpha) + 0.2 * (spike(maximum(alpha - 180, 0)) - spike(ma
 Cmmix(alpha, beta) = (0.5 * Cm(alpha) * (1 + cos(beta)) + 0.5 * Cm(mirror(alpha)) * (1 - cos(beta))) * cos(beta)
 
 Cn(beta) = -2.0 * sin(beta)
-Cnmix(alpha, beta) = Cn(beta) * cos(alpha)
+Cnmix(alpha, beta) = Cn(beta)
 
 Cl(beta) = -0.5 * sin(beta)
-Clmix(alpha, beta) = Cl(beta) * cos(alpha)
+Clmix(alpha, beta) = Cl(beta)
 
 set title "coefficient of pitch moment"
 set xlabel "alpha"
