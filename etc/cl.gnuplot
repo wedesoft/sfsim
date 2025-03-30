@@ -24,11 +24,11 @@ CD(alpha) = mix(0.1, 2.0, 2 * alpha) + bumps(alpha)
 CL(alpha) = 1.1 * sin(2 * alpha) + glide(alpha) - glide(360 - alpha) + tail(alpha)
 CY(beta) = 0.4 * sin(2 * beta)
 
-CLmix(alpha, beta) = 0.5 * CL(alpha) * (1 + cos(beta)) - 0.5 * CL(mirror(alpha)) * (1 - cos(beta))
+CLmix(alpha, beta) = (0.5 * CL(alpha) * (1 + cos(beta)) - 0.5 * CL(mirror(alpha)) * (1 - cos(beta))) * cos(beta)
 
-CDmix(alpha, beta) = mix(mix(0.1, 0.5, 2 * beta), 2.0, 2 * alpha)
+CDmix(alpha, beta) = mix(mix(0.1, 2.0, 2 * alpha), 0.5, 2 * beta)
 
-CYmix(alpha, beta) = 0.4 * sin(2 * beta) * cos(alpha)
+CYmix(alpha, beta) = 0.4 * sin(2 * beta) * cos(alpha) - 2.0 * sin(2 * beta) * sin(alpha)
 
 set title "lift, drag, and lift to drag ratio"
 set xlabel "alpha"
