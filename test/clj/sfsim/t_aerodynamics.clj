@@ -84,10 +84,10 @@
        (coefficient-of-drag (to-radians 90)) => #(>= % (* 2 (coefficient-of-drag (to-radians 0))))
        (coefficient-of-drag (to-radians 90)) => #(>= % (* 2 (coefficient-of-drag (to-radians 180))))
        (coefficient-of-side-force (to-radians 0)) => zero?
-       (coefficient-of-side-force (to-radians 45)) => #(>= % 0.1)
-       (coefficient-of-side-force (to-radians -45)) => #(<= % -0.1)
-       (coefficient-of-side-force (to-radians 135)) => #(<= % -0.1)
-       (coefficient-of-side-force (to-radians -135)) => #(>= % 0.1))
+       (coefficient-of-side-force (to-radians 45)) => #(<= % -0.1)
+       (coefficient-of-side-force (to-radians -45)) => #(>= % 0.1)
+       (coefficient-of-side-force (to-radians 135)) => #(>= % 0.1)
+       (coefficient-of-side-force (to-radians -135)) => #(<= % -0.1))
 
 
 (facts "Mirror values at 90 degrees"
@@ -122,11 +122,11 @@
        (coefficient-of-side-force (to-radians 0) (to-radians 0))
        => (roughly 0.0 1e-6)
        (coefficient-of-side-force (to-radians 0) (to-radians 45))
-       => #(>= % 0.1)
+       => #(<= % -0.1)
        (coefficient-of-side-force (to-radians 0) (to-radians 90))
        => (roughly 0.0 1e-6)
        (coefficient-of-side-force (to-radians 90) (to-radians 45))
-       => #(<= % -1.0)
+       => #(>= % 1.0)
        (coefficient-of-side-force (to-radians 90) (to-radians 45))
        => (roughly (- (coefficient-of-side-force (to-radians 90) (to-radians -45))) 1e-6))
 
