@@ -192,9 +192,9 @@
       ((spike 0.2 (to-radians 10) (to-radians 15)) (- angle-of-attack (to-radians 180)))
       ((spike 0.2 (to-radians 10) (to-radians 15)) (+ angle-of-attack (to-radians 180)))))
   ([angle-of-attack angle-of-side-slip]
-   (* 0.5
-      (+ (* (coefficient-of-pitch-moment (identity angle-of-attack)) (+ 1 (cos angle-of-side-slip)))
-         (* (coefficient-of-pitch-moment (mirror   angle-of-attack)) (- 1 (cos angle-of-side-slip))))
+   (* (mix (coefficient-of-pitch-moment (identity angle-of-attack))
+           (coefficient-of-pitch-moment (mirror   angle-of-attack))
+           angle-of-side-slip)
       (cos angle-of-side-slip))))
 
 

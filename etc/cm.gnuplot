@@ -28,7 +28,7 @@ mirror(alpha) = alpha < 180 ? 180 - alpha : 540 - alpha
 Cm(alpha) = -0.6 * sin(alpha) + 0.2 * (spike(maximum(alpha - 180, 0)) - spike(maximum(180 - alpha, 0)))
 Cmmix(alpha, beta) = (0.5 * Cm(alpha) * (1 + cos(beta)) + 0.5 * Cm(mirror(alpha)) * (1 - cos(beta))) * cos(beta)
 
-Cn(beta) = -2.0 * sin(beta)
+Cn(beta) = 2.0 * sin(beta)
 Cnmix(alpha, beta) = Cn(beta)
 
 Cl(beta) = -0.5 * sin(beta)

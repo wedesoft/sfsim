@@ -2,7 +2,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI sqrt)]
+    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp sqrt)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
