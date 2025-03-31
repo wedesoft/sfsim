@@ -1,5 +1,6 @@
 # TODO
 * fix coefficient of lift, drag, and side-force for different angle definitions
+  check signs of functions,
   implement aerodynamics and thrust,
   convert speed vector (aerodynamic body coordinates) to angles
   bugfix all forces and moments using correct definitions of alpha and beta

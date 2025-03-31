@@ -102,12 +102,11 @@
   "Determine coefficient of lift depending on angle of attack and optionally angle of side-slip"
   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
   ([angle-of-attack]
-   ((compose (basic-lift 1.1)
-             (glide 0.8 (to-radians 13) 0.5 (to-radians 12))
-             (tail 0.5 (to-radians 8) (to-radians 12)))
+   ((compose (basic-lift 1.1) (glide 0.8 (to-radians 13) 0.5 (to-radians 12)) (tail 0.5 (to-radians 8) (to-radians 12)))
     angle-of-attack))
   ([angle-of-attack angle-of-side-slip]
-   (mix (coefficient-of-lift angle-of-attack) (- (coefficient-of-lift (mirror angle-of-attack))) angle-of-side-slip)))
+   (* (mix (coefficient-of-lift angle-of-attack) (- (coefficient-of-lift (mirror angle-of-attack))) angle-of-side-slip)
+      (cos angle-of-side-slip))))
 
 
 (defn coefficient-of-drag
@@ -115,14 +114,15 @@
   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
   ([angle-of-attack] ((compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))) angle-of-attack))
   ([angle-of-attack angle-of-side-slip]
-   (mix (coefficient-of-drag angle-of-attack) ((basic-drag 0.5 2.0) angle-of-attack) (* 2 angle-of-side-slip))))
+   (mix (coefficient-of-drag angle-of-attack) 0.5 (* 2 angle-of-side-slip))))
 
 
 (defn coefficient-of-side-force
   "Determine coefficient of side force depending on angle of attack and optionally angle of side-slip"
   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
   ([angle-of-side-slip] ((basic-lift 0.4) angle-of-side-slip))
-  ([angle-of-attack angle-of-side-slip] (* (cos angle-of-attack) (coefficient-of-side-force angle-of-side-slip))))
+  ([angle-of-attack angle-of-side-slip] (- (* (cos angle-of-attack) (coefficient-of-side-force angle-of-side-slip))
+                                           (* (sin angle-of-attack) ((basic-lift 2.0) angle-of-side-slip)))))
 
 
 (defn spike

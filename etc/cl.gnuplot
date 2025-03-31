@@ -20,8 +20,8 @@ bumps(alpha) = abs(alpha - 180) < 20 ? 0.02 * (1 - cos((alpha - 180) * 360 / 20)
 mix(a, b, angle) = 0.5 * (a * (1 + cos(angle)) + b * (1 - cos(angle)))
 mirror(alpha) = alpha < 180 ? 180 - alpha : 540 - alpha
 
-CD(alpha) = mix(0.1, 2.0, 2 * alpha) + bumps(alpha)
 CL(alpha) = 1.1 * sin(2 * alpha) + glide(alpha) - glide(360 - alpha) + tail(alpha)
+CD(alpha) = mix(0.1, 2.0, 2 * alpha) + bumps(alpha)
 CY(beta) = 0.4 * sin(2 * beta)
 
 CLmix(alpha, beta) = (0.5 * CL(alpha) * (1 + cos(beta)) - 0.5 * CL(mirror(alpha)) * (1 - cos(beta))) * cos(beta)
