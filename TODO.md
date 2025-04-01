@@ -12,7 +12,7 @@
   volumetric engine exhaust?
   blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
   particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
-* stars, volumetric clouds https://www.shadertoy.com/view/ttcSD8, Beer's law (see downloaded video FMX2017\*)
+* stars, volumetric clouds https://www.shadertoy.com/view/ttcSD8, Beer's Powder effect law (see downloaded video FMX2017\*)
 * sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
 * sound effects
 * UI overlays for third person view
