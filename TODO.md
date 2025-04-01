@@ -11,6 +11,7 @@
   mach diamonds: https://www.shadertoy.com/view/wdjGRz
   mach diamonds: https://www.shadertoy.com/view/WdGBDc
   blender cone: https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume
+  volumetric engine exhaust?
   blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
   particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
 * sound effects
