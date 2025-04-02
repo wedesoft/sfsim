@@ -30,7 +30,7 @@
                                     :cap 0.005
                                     :powder-decay 12.0
                                     :anisotropic 0.25
-                                    :cloud-step 500.0
+                                    :cloud-step 250.0
                                     :opacity-cutoff 0.01}
 
  :sfsim.shadow-config #:sfsim.opacity{:num-opacity-layers 7
