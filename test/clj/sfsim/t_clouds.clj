@@ -960,6 +960,10 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
   return (q - p) * in_scatter;
 }
+float powder (float d)
+{
+  return 1.0;
+}
 vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density);
 out vec3 fragColor;
 void main()

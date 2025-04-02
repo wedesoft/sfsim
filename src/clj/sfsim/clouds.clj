@@ -273,7 +273,7 @@
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
   [(planet-and-cloud-shadows num-steps) atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
-   (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
+   powder-shader (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
 
 
 (defn sample-cloud
