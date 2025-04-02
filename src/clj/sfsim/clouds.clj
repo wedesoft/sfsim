@@ -18,6 +18,10 @@
     [sfsim.worley :refer (worley-size)]))
 
 
+(set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
+
+
 (def cover-size 512)
 
 
@@ -443,3 +447,12 @@
   [num-steps parameters]
   [(environmental-shading num-steps)
    (template/eval (slurp "resources/shaders/clouds/overall-shading.glsl") {:parameters parameters})])
+
+
+(def powder-shader
+  "Shader function for making low density areas of clouds darker"
+  (slurp "resources/shaders/clouds/powder.glsl"))
+
+
+(set! *warn-on-reflection* false)
+(set! *unchecked-math* false)
