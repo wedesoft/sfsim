@@ -13,7 +13,7 @@ vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize
   vec3 light_received = planet_and_cloud_shadows(vec4(point, 1)) * transmittance_outer(point, light_direction) * transmittance_track(start, point) * scatter_amount;
   vec3 in_scatter = ray_scatter_track(light_direction, start, point) * amplification;
   float cloud_transmittance = exp(-density * stepsize);
-  float powder = (1 - exp(-density * stepsize * 12));
+  float powder = 1.0 - exp(-density * stepsize * 12);
   cloud_scatter.rgb += cloud_scatter.a * (1 - cloud_transmittance) * (light_received + in_scatter) * powder;
   cloud_scatter.a *= cloud_transmittance;
   return cloud_scatter;
