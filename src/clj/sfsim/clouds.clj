@@ -276,7 +276,7 @@
   "Shader to sample the cloud layer and apply cloud scattering update steps"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [exponential-sampling lod-at-distance bluenoise/sampling-offset atmosphere/phase-function
+  [linear-sampling lod-at-distance bluenoise/sampling-offset atmosphere/phase-function
    (cloud-density perlin-octaves cloud-octaves) (cloud-transfer num-steps) (slurp "resources/shaders/clouds/sample-cloud.glsl")])
 
 
@@ -354,7 +354,7 @@
              [::cloud-bottom :double] [::cloud-top :double] [::detail-scale :double]
              [::cloud-scale :double] [::cloud-multiplier :double] [::cover-multiplier :double]
              [::threshold :double] [::cap :double] [::anisotropic :double] [::cloud-step :double]
-             [::linear-range :double] [::stepsize-factor :double] [::opacity-cutoff :double]]))
+             [::opacity-cutoff :double]]))
 
 
 (def cloud-data
@@ -427,8 +427,6 @@
   (uniform-int program "noise_size" (:sfsim.texture/width (::bluenoise cloud-data)))
   (uniform-float program "anisotropic" (::anisotropic cloud-data))
   (uniform-float program "cloud_step" (::cloud-step cloud-data))
-  (uniform-float program "linear_range" (::linear-range cloud-data))
-  (uniform-float program "stepsize_factor" (::stepsize-factor cloud-data))
   (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
 
 
