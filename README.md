@@ -6,17 +6,9 @@ Requires OpenGL 4.5.
 
 [![Rendering of volumetric clouds](https://i.ytimg.com/vi/ierGCAhkxAU/hqdefault.jpg)](https://www.youtube.com/watch?v=ierGCAhkxAU)
 
-[![Object shadows on ground](https://i.ytimg.com/vi/H7_tqJ6VAUw/hqdefault.jpg)](https://www.youtube.com/watch?v=H7_tqJ6VAUw)
-
-[![Object self-shadowing](https://i.ytimg.com/vi/kB60RsGGlpM/hqdefault.jpg)](https://www.youtube.com/watch?v=kB60RsGGlpM)
-
-[![Spaceship rendering with planet, atmosphere, and clouds](https://i.ytimg.com/vi/0yNRZwNjFqc/hqdefault.jpg)](https://www.youtube.com/watch?v=0yNRZwNjFqc)
-
 [![Planet rendering with volumetric clouds and night time textures](https://i.ytimg.com/vi/2v3VOJMnPBI/hqdefault.jpg)](https://www.youtube.com/watch?v=2v3VOJMnPBI)
 
 [![Atmospheric scattering and planet level-of-detail rendering](https://i.ytimg.com/vi/Ce3oWQflYOY/hqdefault.jpg)](https://www.youtube.com/watch?v=Ce3oWQflYOY)
-
-[![Planetary cloud cover with volumetric clouds with shadows using deep opacity maps](https://i.ytimg.com/vi/NKnfXzeLr7I/hqdefault.jpg)](https://www.youtube.com/watch?v=NKnfXzeLr7I)
 
 # Installation
 

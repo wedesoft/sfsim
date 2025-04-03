@@ -24,6 +24,7 @@
   show the UI, use alpha for steam icons, provide desktop icon (32x32 ico),
   good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
   add steam page url to long description, add animated GIFs, section banners, revisit tags regularly,
+  steam tags (see games at https://store.steampowered.com/tags/en/Space%20Sim)
   https://partner.steamgames.com/doc/store/assets/libraryassets
   create application with https://partner.steamgames.com/doc/sdk
 * render stars
