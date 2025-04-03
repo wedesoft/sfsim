@@ -4,7 +4,7 @@ This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
 Requires OpenGL 4.5.
 
-[![Texturized spaceship](https://i.ytimg.com/vi/dUmnc-b6gZA/hqdefault.jpg)](https://www.youtube.com/watch?v=dUmnc-b6gZA)
+[![Rendering of volumetric clouds](https://i.ytimg.com/vi/ierGCAhkxAU/hqdefault.jpg)](https://www.youtube.com/watch?v=ierGCAhkxAU)
 
 [![Object shadows on ground](https://i.ytimg.com/vi/H7_tqJ6VAUw/hqdefault.jpg)](https://www.youtube.com/watch?v=H7_tqJ6VAUw)
 
@@ -13,8 +13,6 @@ Requires OpenGL 4.5.
 [![Spaceship rendering with planet, atmosphere, and clouds](https://i.ytimg.com/vi/0yNRZwNjFqc/hqdefault.jpg)](https://www.youtube.com/watch?v=0yNRZwNjFqc)
 
 [![Planet rendering with volumetric clouds and night time textures](https://i.ytimg.com/vi/2v3VOJMnPBI/hqdefault.jpg)](https://www.youtube.com/watch?v=2v3VOJMnPBI)
-
-[![Rendering of volumetric clouds](https://i.ytimg.com/vi/ierGCAhkxAU/hqdefault.jpg)](https://www.youtube.com/watch?v=ierGCAhkxAU)
 
 [![Atmospheric scattering and planet level-of-detail rendering](https://i.ytimg.com/vi/Ce3oWQflYOY/hqdefault.jpg)](https://www.youtube.com/watch?v=Ce3oWQflYOY)
 
