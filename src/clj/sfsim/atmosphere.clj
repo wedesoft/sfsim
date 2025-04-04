@@ -7,6 +7,7 @@
     [malli.core :as m]
     [sfsim.interpolate :refer (interpolation-space)]
     [sfsim.matrix :refer (fvec3)]
+    [sfsim.units :refer (rankin foot)]
     [sfsim.ray :refer (integral-ray ray)]
     [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
                                        uniform-vector3 destroy-program make-vertex-array-object use-textures
@@ -414,6 +415,34 @@
 
 
 (def point-scatter-space ray-scatter-space)
+
+
+(defn temperature-troposphere
+  "Compute temperature in troposphere (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [height]
+  (* (- 518.69 (* 3.5662e-3 (/ height foot))) rankin))
+
+
+(defn temperature-lower-stratosphere
+  "Compute temperature in lower stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [_height]
+  (* 389.99 rankin))
+
+
+(defn temperature-upper-stratosphere
+  "Compute temperature in upper stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [height]
+  (* (+ 389.99 (* 5.4864e-4 (- (/ height foot) 65617))) rankin))
+
+
+(defn temperature-at-height
+  "Compute temperature as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [height]
+  (let [height-in-foot (/ height foot)]
+    (cond
+      (<= height-in-foot 36089) (temperature-troposphere height)
+      (<= height-in-foot 65617) (temperature-lower-stratosphere height)
+      :else                     (temperature-upper-stratosphere height))))
 
 
 (def phase-function

@@ -1,5 +1,6 @@
 # TODO
 * implement aerodynamics and thrust,
+  drag: 1/2 * Cd * rho * v^2 * A
   simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
   good position of wheels for takeoff (with low fuel) and landing
   gear <-> terrain physics with stationary Earth (ground collisions)
@@ -27,6 +28,7 @@
   steam tags (see games at https://store.steampowered.com/tags/en/Space%20Sim)
   https://partner.steamgames.com/doc/store/assets/libraryassets
   create application with https://partner.steamgames.com/doc/sdk
+  post on https://www.reddit.com/r/spacesimgames/
 * render stars
   * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
   * Skydome scaled to ZFAR * 0.5
