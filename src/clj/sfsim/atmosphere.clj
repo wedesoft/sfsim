@@ -7,7 +7,7 @@
     [malli.core :as m]
     [sfsim.interpolate :refer (interpolation-space)]
     [sfsim.matrix :refer (fvec3)]
-    [sfsim.units :refer (rankin foot)]
+    [sfsim.units :refer (rankin foot pound)]
     [sfsim.ray :refer (integral-ray ray)]
     [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
                                        uniform-vector3 destroy-program make-vertex-array-object use-textures
@@ -443,6 +443,34 @@
       (<= height-in-foot 36089) (temperature-troposphere height)
       (<= height-in-foot 65617) (temperature-lower-stratosphere height)
       :else                     (temperature-upper-stratosphere height))))
+
+
+(defn pressure-troposphere
+  "Compute pressure in troposphere (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [height]
+  (* 1.1376e-11 (pow (/ (temperature-troposphere height) rankin) 5.2560) (/ pound foot foot)))
+
+
+(defn pressure-lower-stratosphere
+  "Compute pressure in lower stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [height]
+  (* 2678.4 (exp (* -4.8063e-5 (/ height foot))) (/ pound foot foot)))
+
+
+(defn pressure-upper-stratosphere
+  "Compute pressure in upper stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [height]
+  (* 3.7930e+90 (pow (/ (temperature-upper-stratosphere height) rankin) -34.164) (/ pound foot foot)))
+
+
+(defn pressure-at-height
+  "Compute pressure as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [height]
+  (let [height-in-foot (/ height foot)]
+    (cond
+      (<= height-in-foot 36089) (pressure-troposphere height)
+      (<= height-in-foot 65617) (pressure-lower-stratosphere height)
+      :else                     (pressure-upper-stratosphere height))))
 
 
 (def phase-function

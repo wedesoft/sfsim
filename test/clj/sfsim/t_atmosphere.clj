@@ -16,7 +16,7 @@
                               sun-elevation-to-index surface-intersection surface-point? surface-radiance
                               surface-radiance-base surface-radiance-space transmittance transmittance-outer
                               transmittance-space transmittance-track transmittance-point vertex-atmosphere extinction
-                              attenuation-point temperature-at-height)
+                              attenuation-point temperature-at-height pressure-at-height)
      :as atmosphere]
     [sfsim.conftest :refer (roughly-vector is-image shader-test)]
     [sfsim.image :refer (convert-4d-to-2d get-vector3)]
@@ -994,6 +994,15 @@ void main()
        (temperature-at-height (* 65617 foot)) => (roughly (* 389.99 rankin) 1e-2)
        (temperature-at-height (* 80000 foot)) => (roughly (* 397.88 rankin) 1e-2)
        (temperature-at-height (* 104990 foot)) => (roughly (* 411.59 rankin) 1e-2))
+
+
+(facts "Atmospheric pressure as a function of height"
+       (pressure-at-height (* 0 foot)) => (roughly (* 2116.1 (/ pound foot foot)) 1e+1)
+       (pressure-at-height (* 36089 foot)) => (roughly (* 472.68 (/ pound foot foot)) 1e+0)
+       (pressure-at-height (* 50000 foot)) => (roughly (* 242.2 (/ pound foot foot)) 1e+0)
+       (pressure-at-height (* 65617 foot)) => (roughly (* 114.35 (/ pound foot foot)) 1e+0)
+       (pressure-at-height (* 80000 foot)) => (roughly (* 57.7 (/ pound foot foot)) 1e+1)
+       (pressure-at-height (* 104990 foot)) => (roughly (* 18.12 (/ pound foot foot)) 1e+0))
 
 
 (GLFW/glfwTerminate)
