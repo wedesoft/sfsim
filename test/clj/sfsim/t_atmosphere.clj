@@ -16,7 +16,7 @@
                               sun-elevation-to-index surface-intersection surface-point? surface-radiance
                               surface-radiance-base surface-radiance-space transmittance transmittance-outer
                               transmittance-space transmittance-track transmittance-point vertex-atmosphere extinction
-                              attenuation-point temperature-at-height pressure-at-height)
+                              attenuation-point temperature-at-height pressure-at-height density-at-height)
      :as atmosphere]
     [sfsim.conftest :refer (roughly-vector is-image shader-test)]
     [sfsim.image :refer (convert-4d-to-2d get-vector3)]
@@ -1003,6 +1003,15 @@ void main()
        (pressure-at-height (* 65617 foot)) => (roughly (* 114.35 (/ pound foot foot)) 1e+0)
        (pressure-at-height (* 80000 foot)) => (roughly (* 57.7 (/ pound foot foot)) 1e+1)
        (pressure-at-height (* 104990 foot)) => (roughly (* 18.12 (/ pound foot foot)) 1e+0))
+
+
+(facts "Atmospheric density as a function of heigh"
+       (density-at-height (* 0 foot)) => (roughly (* 2.3769e-3 (/ slugs foot foot foot)) 1e-3)
+       (density-at-height (* 36089 foot)) => (roughly (* 7.0613e-4 (/ slugs foot foot foot)) 1e-4)
+       (density-at-height (* 50000 foot)) => (roughly (* 3.6184e-4 (/ slugs foot foot foot)) 1e-4)
+       (density-at-height (* 65617 foot)) => (roughly (* 1.7083e-4 (/ slugs foot foot foot)) 1e-5)
+       (density-at-height (* 80000 foot)) => (roughly (* 8.4459e-5 (/ slugs foot foot foot)) 1e-5)
+       (density-at-height (* 104990 foot)) => (roughly (* 2.5660E-5 (/ slugs foot foot foot)) 1e-5))
 
 
 (GLFW/glfwTerminate)

@@ -7,7 +7,7 @@
     [malli.core :as m]
     [sfsim.interpolate :refer (interpolation-space)]
     [sfsim.matrix :refer (fvec3)]
-    [sfsim.units :refer (rankin foot pound)]
+    [sfsim.units :refer (rankin foot pound slugs)]
     [sfsim.ray :refer (integral-ray ray)]
     [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
                                        uniform-vector3 destroy-program make-vertex-array-object use-textures
@@ -436,7 +436,7 @@
 
 
 (defn temperature-at-height
-  "Compute temperature as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
+  "Compute atmospheric temperature as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
   [height]
   (let [height-in-foot (/ height foot)]
     (cond
@@ -464,13 +464,41 @@
 
 
 (defn pressure-at-height
-  "Compute pressure as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
+  "Compute atmospheric pressure as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
   [height]
   (let [height-in-foot (/ height foot)]
     (cond
       (<= height-in-foot 36089) (pressure-troposphere height)
       (<= height-in-foot 65617) (pressure-lower-stratosphere height)
       :else                     (pressure-upper-stratosphere height))))
+
+
+(defn density-troposphere
+  "Compute density in troposphere (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [height]
+  (* 6.6277e-15 (pow (/ (temperature-troposphere height) rankin) 4.2560) (/ slugs foot foot foot)))
+
+
+(defn density-lower-stratosphere
+  "Compute density in lower stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [height]
+  (* 1.4939e-6 (/ (pressure-lower-stratosphere height) (/ pound foot foot)) (/ slugs foot foot foot)))
+
+
+(defn density-upper-stratosphere
+  [height]
+  (* 2.2099e+87 (pow (/ (temperature-upper-stratosphere height) rankin) -35.164) (/ slugs foot foot foot)))
+
+
+(defn density-at-height
+  "Compute atmospheric density as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
+  [height]
+  (let [height-in-foot (/ height foot)]
+    (cond
+      (<= height-in-foot 36089) (density-troposphere height)
+      (<= height-in-foot 65617) (density-lower-stratosphere height)
+      :else                     (density-upper-stratosphere height))))
+
 
 
 (def phase-function
