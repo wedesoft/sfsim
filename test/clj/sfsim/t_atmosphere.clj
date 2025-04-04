@@ -997,12 +997,12 @@ void main()
 
 
 (facts "Atmospheric pressure as a function of height"
-       (pressure-at-height (* 0 foot)) => (roughly (* 2116.1 (/ pound foot foot)) 1e+1)
-       (pressure-at-height (* 36089 foot)) => (roughly (* 472.68 (/ pound foot foot)) 1e+0)
-       (pressure-at-height (* 50000 foot)) => (roughly (* 242.2 (/ pound foot foot)) 1e+0)
-       (pressure-at-height (* 65617 foot)) => (roughly (* 114.35 (/ pound foot foot)) 1e+0)
-       (pressure-at-height (* 80000 foot)) => (roughly (* 57.7 (/ pound foot foot)) 1e+1)
-       (pressure-at-height (* 104990 foot)) => (roughly (* 18.12 (/ pound foot foot)) 1e+0))
+       (pressure-at-height (* 0 foot)) => (roughly (* 2116.1 (/ pound-force foot foot)) 1e+1)
+       (pressure-at-height (* 36089 foot)) => (roughly (* 472.68 (/ pound-force foot foot)) 1e+0)
+       (pressure-at-height (* 50000 foot)) => (roughly (* 242.2 (/ pound-force foot foot)) 1e+0)
+       (pressure-at-height (* 65617 foot)) => (roughly (* 114.35 (/ pound-force foot foot)) 1e+0)
+       (pressure-at-height (* 80000 foot)) => (roughly (* 57.7 (/ pound-force foot foot)) 1e+1)
+       (pressure-at-height (* 104990 foot)) => (roughly (* 18.12 (/ pound-force foot foot)) 1e+0))
 
 
 (facts "Atmospheric density as a function of heigh"

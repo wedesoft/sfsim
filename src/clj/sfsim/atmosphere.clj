@@ -7,7 +7,7 @@
     [malli.core :as m]
     [sfsim.interpolate :refer (interpolation-space)]
     [sfsim.matrix :refer (fvec3)]
-    [sfsim.units :refer (rankin foot pound slugs)]
+    [sfsim.units :refer (rankin foot pound-force slugs)]
     [sfsim.ray :refer (integral-ray ray)]
     [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
                                        uniform-vector3 destroy-program make-vertex-array-object use-textures
@@ -448,19 +448,19 @@
 (defn pressure-troposphere
   "Compute pressure in troposphere (Hull: Fundamentals of Airplane Flight Mechanics)"
   [height]
-  (* 1.1376e-11 (pow (/ (temperature-troposphere height) rankin) 5.2560) (/ pound foot foot)))
+  (* 1.1376e-11 (pow (/ (temperature-troposphere height) rankin) 5.2560) (/ pound-force foot foot)))
 
 
 (defn pressure-lower-stratosphere
   "Compute pressure in lower stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
   [height]
-  (* 2678.4 (exp (* -4.8063e-5 (/ height foot))) (/ pound foot foot)))
+  (* 2678.4 (exp (* -4.8063e-5 (/ height foot))) (/ pound-force foot foot)))
 
 
 (defn pressure-upper-stratosphere
   "Compute pressure in upper stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
   [height]
-  (* 3.7930e+90 (pow (/ (temperature-upper-stratosphere height) rankin) -34.164) (/ pound foot foot)))
+  (* 3.7930e+90 (pow (/ (temperature-upper-stratosphere height) rankin) -34.164) (/ pound-force foot foot)))
 
 
 (defn pressure-at-height
@@ -482,7 +482,7 @@
 (defn density-lower-stratosphere
   "Compute density in lower stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
   [height]
-  (* 1.4939e-6 (/ (pressure-lower-stratosphere height) (/ pound foot foot)) (/ slugs foot foot foot)))
+  (* 1.4939e-6 (/ (pressure-lower-stratosphere height) (/ pound-force foot foot)) (/ slugs foot foot foot)))
 
 
 (defn density-upper-stratosphere
