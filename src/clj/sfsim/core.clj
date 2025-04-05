@@ -2,7 +2,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp PI sqrt)]
+    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp sqrt)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -79,8 +79,8 @@
 
 (def recording
   (atom (if (.exists (java.io.File. "recording.edn"))
-          (mapv (fn [{:keys [timedelta position orientation camera-orientation dist]}]
-                    {:timedelta timedelta
+          (mapv (fn [{:keys [timemillis position orientation camera-orientation dist]}]
+                    {:timemillis timemillis
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
                      :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation)
@@ -504,7 +504,7 @@
         (when mn (reset! menu main-dialog))
         (if playback
           (let [frame (nth @recording @n)]
-            (reset! time-delta (:timedelta frame))
+            (reset! time-delta (/ (- (:timemillis frame) @t0) 1000 86400.0))
             (reset! pose {:position (:position frame) :orientation (:orientation frame)})
             (reset! camera-orientation (:camera-orientation frame))
             (reset! dist (:dist frame)))
@@ -517,7 +517,7 @@
                 (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
               (do
                 (when @recording
-                  (let [frame {:timedelta @time-delta
+                  (let [frame {:timemillis (+ (* @time-delta 1000 86400.0) @t0)
                                :position (:position @pose)
                                :orientation (:orientation @pose)
                                :camera-orientation @camera-orientation

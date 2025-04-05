@@ -18,6 +18,10 @@
     [sfsim.worley :refer (worley-size)]))
 
 
+(set! *unchecked-math* true)
+(set! *warn-on-reflection* true)
+
+
 (def cover-size 512)
 
 
@@ -264,19 +268,24 @@
    (slurp "resources/shaders/clouds/environmental-shading.glsl")])
 
 
+(def powder-shader
+  "Shader function for making low density areas of clouds darker"
+  (slurp "resources/shaders/clouds/powder.glsl"))
+
+
 (defn cloud-transfer
   "Single cloud scattering update step"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
   [(planet-and-cloud-shadows num-steps) atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
-   (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
+   powder-shader (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
 
 
 (defn sample-cloud
   "Shader to sample the cloud layer and apply cloud scattering update steps"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [exponential-sampling lod-at-distance bluenoise/sampling-offset atmosphere/phase-function
+  [linear-sampling lod-at-distance bluenoise/sampling-offset atmosphere/phase-function
    (cloud-density perlin-octaves cloud-octaves) (cloud-transfer num-steps) (slurp "resources/shaders/clouds/sample-cloud.glsl")])
 
 
@@ -353,8 +362,8 @@
   (m/schema [:map [::cloud-octaves [:vector :double]] [::perlin-octaves [:vector :double]]
              [::cloud-bottom :double] [::cloud-top :double] [::detail-scale :double]
              [::cloud-scale :double] [::cloud-multiplier :double] [::cover-multiplier :double]
-             [::threshold :double] [::cap :double] [::anisotropic :double] [::cloud-step :double]
-             [::linear-range :double] [::stepsize-factor :double] [::opacity-cutoff :double]]))
+             [::threshold :double] [::cap :double] [::powder-decay :double] [::anisotropic :double]
+             [::cloud-step :double] [::opacity-cutoff :double]]))
 
 
 (def cloud-data
@@ -416,6 +425,7 @@
   (uniform-float program "cloud_multiplier" (::cloud-multiplier cloud-data))
   (uniform-float program "cover_multiplier" (::cover-multiplier cloud-data))
   (uniform-float program "cap" (::cap cloud-data))
+  (uniform-float program "powder_decay" (::powder-decay cloud-data))
   (uniform-float program "cloud_threshold" (::threshold cloud-data)))
 
 
@@ -427,8 +437,6 @@
   (uniform-int program "noise_size" (:sfsim.texture/width (::bluenoise cloud-data)))
   (uniform-float program "anisotropic" (::anisotropic cloud-data))
   (uniform-float program "cloud_step" (::cloud-step cloud-data))
-  (uniform-float program "linear_range" (::linear-range cloud-data))
-  (uniform-float program "stepsize_factor" (::stepsize-factor cloud-data))
   (uniform-float program "opacity_cutoff" (::opacity-cutoff cloud-data)))
 
 
@@ -443,3 +451,7 @@
   [num-steps parameters]
   [(environmental-shading num-steps)
    (template/eval (slurp "resources/shaders/clouds/overall-shading.glsl") {:parameters parameters})])
+
+
+(set! *warn-on-reflection* false)
+(set! *unchecked-math* false)

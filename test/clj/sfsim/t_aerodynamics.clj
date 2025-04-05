@@ -84,10 +84,10 @@
        (coefficient-of-drag (to-radians 90)) => #(>= % (* 2 (coefficient-of-drag (to-radians 0))))
        (coefficient-of-drag (to-radians 90)) => #(>= % (* 2 (coefficient-of-drag (to-radians 180))))
        (coefficient-of-side-force (to-radians 0)) => zero?
-       (coefficient-of-side-force (to-radians 45)) => #(>= % 0.1)
-       (coefficient-of-side-force (to-radians -45)) => #(<= % -0.1)
-       (coefficient-of-side-force (to-radians 135)) => #(<= % -0.1)
-       (coefficient-of-side-force (to-radians -135)) => #(>= % 0.1))
+       (coefficient-of-side-force (to-radians 45)) => #(<= % -0.1)
+       (coefficient-of-side-force (to-radians -45)) => #(>= % 0.1)
+       (coefficient-of-side-force (to-radians 135)) => #(>= % 0.1)
+       (coefficient-of-side-force (to-radians -135)) => #(<= % -0.1))
 
 
 (facts "Mirror values at 90 degrees"
@@ -102,9 +102,11 @@
        (coefficient-of-lift (to-radians 30) (to-radians 0))
        => #(>= % 0.3)
        (coefficient-of-lift (to-radians 30) (to-radians 0))
-       => (roughly (coefficient-of-lift (to-radians 30) (to-radians 180)) 1e-6)
+       => (roughly (- (coefficient-of-lift (to-radians 30) (to-radians 180))) 1e-6)
        (coefficient-of-lift (to-radians 5) (to-radians 0))
-       => (roughly (coefficient-of-lift (to-radians -175) (to-radians 180)) 1e-6)
+       => (roughly (- (coefficient-of-lift (to-radians -175) (to-radians 180))) 1e-6)
+       (coefficient-of-lift (to-radians 10) (to-radians 90))
+       => (roughly 0.0 1e-6)
        (coefficient-of-drag (to-radians 0) (to-radians 0))
        => #(>= % 0.05)
        (coefficient-of-drag (to-radians 0) (to-radians 0))
@@ -115,14 +117,18 @@
        => (roughly (coefficient-of-drag (to-radians 0) (to-radians 90)) 1e-6)
        (coefficient-of-drag (to-radians 90) (to-radians 0))
        => #(>= % (+ (coefficient-of-drag (to-radians 0) (to-radians 90)) 0.1))
+       (coefficient-of-drag (to-radians 20) (to-radians 90))
+       => (roughly (coefficient-of-drag (to-radians 45) (to-radians 90)))
        (coefficient-of-side-force (to-radians 0) (to-radians 0))
        => (roughly 0.0 1e-6)
        (coefficient-of-side-force (to-radians 0) (to-radians 45))
-       => #(>= % 0.1)
+       => #(<= % -0.1)
        (coefficient-of-side-force (to-radians 0) (to-radians 90))
        => (roughly 0.0 1e-6)
        (coefficient-of-side-force (to-radians 90) (to-radians 45))
-       => (roughly 0.0 1e-6))
+       => #(>= % 1.0)
+       (coefficient-of-side-force (to-radians 90) (to-radians 45))
+       => (roughly (- (coefficient-of-side-force (to-radians 90) (to-radians -45))) 1e-6))
 
 
 (facts "Spike function with linear and sinusoidal ramp"

@@ -1,8 +1,6 @@
 # TODO
-* fix coefficient of lift, drag, and side-force for different angle definitions
-  implement aerodynamics and thrust,
-  convert speed vector (aerodynamic body coordinates) to angles
-  bugfix all forces and moments using correct definitions of alpha and beta
+* implement aerodynamics and thrust,
+  drag: 1/2 * Cd * rho * v^2 * A
   simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
   good position of wheels for takeoff (with low fuel) and landing
   gear <-> terrain physics with stationary Earth (ground collisions)
@@ -12,8 +10,11 @@
   mach diamonds: https://www.shadertoy.com/view/wdjGRz
   mach diamonds: https://www.shadertoy.com/view/WdGBDc
   blender cone: https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume
+  volumetric engine exhaust?
   blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
   particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
+* stars, volumetric clouds https://www.shadertoy.com/view/ttcSD8
+* sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
 * sound effects
 * UI overlays for third person view
 * at least 3 environments/biomes before publishing steam page (or mock ups): day earth, day orbit, sunset orbit, clouds, landing
@@ -24,8 +25,10 @@
   show the UI, use alpha for steam icons, provide desktop icon (32x32 ico),
   good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
   add steam page url to long description, add animated GIFs, section banners, revisit tags regularly,
+  steam tags (see games at https://store.steampowered.com/tags/en/Space%20Sim)
   https://partner.steamgames.com/doc/store/assets/libraryassets
   create application with https://partner.steamgames.com/doc/sdk
+  post on https://www.reddit.com/r/spacesimgames/
 * render stars
   * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
   * Skydome scaled to ZFAR * 0.5

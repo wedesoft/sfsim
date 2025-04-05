@@ -8,20 +8,21 @@
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.atmosphere :refer (atmosphere-intersection attenuation-outer elevation-to-index
-                                                      extinction fragment-atmosphere height-to-index index-to-elevation horizon-distance
-                                                      index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
-                                                      phase phase-function point-scatter point-scatter-base point-scatter-component
-                                                      ray-extremity ray-scatter ray-scatter-space
-                                                      ray-scatter-track scattering strength-component sun-angle-to-index cloud-overlay
-                                                      sun-elevation-to-index surface-intersection surface-point? surface-radiance
-                                                      surface-radiance-base surface-radiance-space transmittance transmittance-outer
-                                                      transmittance-space transmittance-track transmittance-point vertex-atmosphere extinction
-                                                      attenuation-point)
+                              extinction fragment-atmosphere height-to-index index-to-elevation horizon-distance
+                              index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
+                              phase phase-function point-scatter point-scatter-base point-scatter-component
+                              ray-extremity ray-scatter ray-scatter-space
+                              ray-scatter-track scattering strength-component sun-angle-to-index cloud-overlay
+                              sun-elevation-to-index surface-intersection surface-point? surface-radiance
+                              surface-radiance-base surface-radiance-space transmittance transmittance-outer
+                              transmittance-space transmittance-track transmittance-point vertex-atmosphere extinction
+                              attenuation-point temperature-at-height pressure-at-height density-at-height)
      :as atmosphere]
     [sfsim.conftest :refer (roughly-vector is-image shader-test)]
     [sfsim.image :refer (convert-4d-to-2d get-vector3)]
     [sfsim.interpolate :refer (make-lookup-table)]
     [sfsim.matrix :refer (pack-matrices projection-matrix rotation-x transformation-matrix)]
+    [sfsim.units :refer :all]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
     [sfsim.sphere :as sphere]
@@ -983,6 +984,34 @@ void main()
          +4.0  6.0 1.0       0.1        4.0     1.0         0.9
          -5.0 -4.0 1.0       0.1        4.0     1.0         0.9
          -7.0 -6.0 1.0       0.1        4.0     1.0         1.0)
+
+
+(facts "Temperature of atmosphere as a function of height"
+       (temperature-at-height (* 0 foot)) => (roughly (* 518.69 rankin) 1e-2)
+       (temperature-at-height (* 10000 foot)) => (roughly (* 483.03 rankin) 1e-2)
+       (temperature-at-height (* 36089 foot)) => (roughly (* 389.99 rankin) 1e-2)
+       (temperature-at-height (* 50000 foot)) => (roughly (* 389.99 rankin) 1e-2)
+       (temperature-at-height (* 65617 foot)) => (roughly (* 389.99 rankin) 1e-2)
+       (temperature-at-height (* 80000 foot)) => (roughly (* 397.88 rankin) 1e-2)
+       (temperature-at-height (* 104990 foot)) => (roughly (* 411.59 rankin) 1e-2))
+
+
+(facts "Atmospheric pressure as a function of height"
+       (pressure-at-height (* 0 foot)) => (roughly (* 2116.1 (/ pound-force foot foot)) 1e+1)
+       (pressure-at-height (* 36089 foot)) => (roughly (* 472.68 (/ pound-force foot foot)) 1e+0)
+       (pressure-at-height (* 50000 foot)) => (roughly (* 242.2 (/ pound-force foot foot)) 1e+0)
+       (pressure-at-height (* 65617 foot)) => (roughly (* 114.35 (/ pound-force foot foot)) 1e+0)
+       (pressure-at-height (* 80000 foot)) => (roughly (* 57.7 (/ pound-force foot foot)) 1e+1)
+       (pressure-at-height (* 104990 foot)) => (roughly (* 18.12 (/ pound-force foot foot)) 1e+0))
+
+
+(facts "Atmospheric density as a function of heigh"
+       (density-at-height (* 0 foot)) => (roughly (* 2.3769e-3 (/ slugs foot foot foot)) 1e-3)
+       (density-at-height (* 36089 foot)) => (roughly (* 7.0613e-4 (/ slugs foot foot foot)) 1e-4)
+       (density-at-height (* 50000 foot)) => (roughly (* 3.6184e-4 (/ slugs foot foot foot)) 1e-4)
+       (density-at-height (* 65617 foot)) => (roughly (* 1.7083e-4 (/ slugs foot foot foot)) 1e-5)
+       (density-at-height (* 80000 foot)) => (roughly (* 8.4459e-5 (/ slugs foot foot foot)) 1e-5)
+       (density-at-height (* 104990 foot)) => (roughly (* 2.5660E-5 (/ slugs foot foot foot)) 1e-5))
 
 
 (GLFW/glfwTerminate)

@@ -1,6 +1,6 @@
 (ns sfsim.t-clouds
   (:require
-    [clojure.math :refer (exp log sin cos asin atan to-radians PI)]
+    [clojure.math :refer (exp log sin cos asin atan to-radians PI E)]
     [comb.template :as template]
     [fastmath.matrix :refer (mat3x3 eye inverse)]
     [fastmath.vector :refer (vec3)]
@@ -960,6 +960,10 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
   return (q - p) * in_scatter;
 }
+float powder (float d)
+{
+  return 1.0;
+}
 vec4 cloud_transfer(vec3 start, vec3 point, float scatter_amount, float stepsize, vec4 cloud_scatter, float density);
 out vec3 fragColor;
 void main()
@@ -1512,7 +1516,7 @@ void main()
 
 (def overall-shading-probe
   (template/fn [x y z sx sy sz]
-    "#version 410 core
+"#version 410 core
 out vec3 fragColor;
 vec3 environmental_shading(vec3 point)
 {
@@ -1542,6 +1546,34 @@ void main()
          0   0  0  1   0   0   0.0
          1   0  0  0   0   0   0.0
          0.5 0  0  0.5 0   0   0.25)
+
+
+(def powder-probe
+  (template/fn [d]
+"#version 410 core
+out vec3 fragColor;
+float powder(float d);
+void main()
+{
+  fragColor = vec3(powder(<%= d %>), 0, 0);
+}"))
+
+
+(def powder-test
+  (shader-test
+    (fn [program powder-decay]
+        (uniform-float program "powder_decay" powder-decay))
+    powder-probe
+    powder-shader))
+
+
+(tabular "Shader function for making low density areas of clouds darker"
+         (fact ((powder-test [?powder-decay] [?d]) 0) => (roughly ?result 1e-5))
+         ?powder-decay ?d  ?result
+         1.0           0.0 0.0
+         1.0           1.0 (- 1 (/ 1 E))
+         1.0           2.0 (- 1 (/ 1 E E))
+         2.0           1.0 (- 1 (/ 1 E E)))
 
 
 (GLFW/glfwTerminate)
