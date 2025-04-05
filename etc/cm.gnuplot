@@ -1,4 +1,5 @@
 set terminal x11 size 1024, 768
+# set terminal png font arial 14 size 800,600
 
 set ylabel "amount"
 set grid
@@ -34,16 +35,19 @@ Cnmix(alpha, beta) = Cn(beta)
 Cl(beta) = -0.5 * sin(beta)
 Clmix(alpha, beta) = Cl(beta)
 
+# set output "5-coefficient-of-pitch-moment.png"
 set title "coefficient of pitch moment"
 set xlabel "alpha"
 plot [alpha=0:360] Cmmix(alpha, 0), Cmmix(alpha, 30), Cmmix(alpha, 60), Cmmix(alpha, 90), Cmmix(alpha, 120), Cmmix(alpha, 150), Cmmix(alpha, 180), Cmmix(alpha, 210), Cmmix(alpha, 240), Cmmix(alpha, 270), Cmmix(alpha, 300), Cmmix(alpha, 330)
 pause -1
 
+# set output "6-coefficient-of-yaw-moment.png"
 set title "coefficient of yaw moment"
 set xlabel "beta"
 plot [beta=0:360] Cnmix(-90, beta), Cnmix(-60, beta), Cnmix(-30, beta), Cnmix(0, beta), Cnmix(30, beta), Cnmix(60, beta), Cnmix(90, beta)
 pause -1
 
+# set output "7-coefficient-of-roll-moment.png"
 set title "coefficient of roll moment"
 set xlabel "beta"
 plot [beta=0:360] Clmix(-90, beta), Clmix(-60, beta), Clmix(-30, beta), Clmix(0, beta), Clmix(30, beta), Clmix(60, beta), Clmix(90, beta)
