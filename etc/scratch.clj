@@ -10,15 +10,14 @@
 
 (def radius 6378000.0)
 
-(def position (vec3 0 0 6379000))
+(def height 2000)
+(def position (vec3 0 0 (+ radius height)))
 
 (def surface 198.0)
 (def chord 10.0)
 (def wingspan 20.75)
 
 (def weight 100000)
-
-(def height (- (mag position) radius))
 
 (def approach (to-radians 18))
 
@@ -58,4 +57,3 @@
 
 (def moment-body-system (vec3 roll-moment pitch-moment yaw-moment))
 (def moment-world (q/rotate-vector orientation moment-body-system))
-
