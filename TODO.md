@@ -1,5 +1,10 @@
 # TODO
 * implement aerodynamics and thrust,
+  https://www.spaceflighthistories.com/post/x-33-venturestar
+  thrust: 3,010,000 lbf
+  weight: payload 25000 kg. vehicle 100t-135t
+  fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
+  [section4.2.pdf](http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf)
   drag: 1/2 * Cd * rho * v^2 * A
   simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
   good position of wheels for takeoff (with low fuel) and landing
