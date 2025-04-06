@@ -42,6 +42,8 @@
 (def cn (coefficient-of-yaw-moment beta))
 (def cr (coefficient-of-roll-moment beta))
 
+(def rho (density-at-height height))
+
 (def lift (* 0.5 cl rho (sqr speed-mag) surface))
 (def drag (* 0.5 cd rho (sqr speed-mag) surface))
 (def side-force (* 0.5 cy rho (sqr speed-mag) surface))
@@ -57,4 +59,3 @@
 (def moment-body-system (vec3 roll-moment pitch-moment yaw-moment))
 (def moment-world (q/rotate-vector orientation moment-body-system))
 
-(def rho (density-at-height height))
