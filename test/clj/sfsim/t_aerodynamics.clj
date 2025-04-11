@@ -245,3 +245,33 @@
          (side-force (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0) => 0.25
          (side-force (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0) => 2.5
          (side-force (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0) => 2.0))
+
+
+(facts "Compute pitch moment for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-pitch-moment
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
+         (pitch-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 1.0) => 0.5
+         (pitch-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0 1.0) => 0.25
+         (pitch-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0 1.0) => 2.5
+         (pitch-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0 1.0) => 2.0
+         (pitch-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 0.5) => 0.25))
+
+
+(facts "Compute yaw moment for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-yaw-moment
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
+         (yaw-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 1.0) => 0.5
+         (yaw-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0 1.0) => 0.25
+         (yaw-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0 1.0) => 2.5
+         (yaw-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0 1.0) => 2.0
+         (yaw-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 0.5) => 0.25))
+
+
+(facts "Compute roll moment for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-roll-moment
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
+         (roll-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 1.0) => 0.5
+         (roll-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0 1.0) => 0.25
+         (roll-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0 1.0) => 2.5
+         (roll-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0 1.0) => 2.0
+         (roll-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 0.5) => 0.25))

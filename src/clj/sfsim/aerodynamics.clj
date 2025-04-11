@@ -261,5 +261,23 @@
   (* 0.5 (coefficient-of-side-force alpha beta) density (sqr speed) surface))
 
 
+(defn pitch-moment
+  "Compute pitch moment for given speed in body system"
+  [{::keys [alpha beta speed]} density surface chord]
+  (* 0.5 (coefficient-of-pitch-moment alpha beta) density (sqr speed) surface chord))
+
+
+(defn yaw-moment
+  "Compute yaw moment for given speed in body system"
+  [{::keys [alpha beta speed]} density surface wingspan]
+  (* 0.5 (coefficient-of-yaw-moment alpha beta) density (sqr speed) surface wingspan))
+
+
+(defn roll-moment
+  "Compute roll moment for given speed in body system"
+  [{::keys [alpha beta speed]} density surface wingspan]
+  (* 0.5 (coefficient-of-roll-moment alpha beta) density (sqr speed) surface wingspan))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
