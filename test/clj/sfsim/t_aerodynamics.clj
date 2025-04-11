@@ -7,7 +7,7 @@
       [fastmath.vector :refer (vec3)]
       [sfsim.conftest :refer (roughly-vector)]
       [sfsim.quaternion :as q]
-      [sfsim.aerodynamics :refer :all]))
+      [sfsim.aerodynamics :refer :all :as aerodynamics]))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -218,3 +218,30 @@
        (:sfsim.aerodynamics/alpha (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 1))) => (roughly (/ PI 4) 1e-6)
        (:sfsim.aerodynamics/beta  (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 1 0))) => (roughly (/ PI 4) 1e-6)
        (:sfsim.aerodynamics/alpha (speed-in-body-system (q/->Quaternion 0 1 0 0) (vec3 1 0 -1))) => (roughly (/ PI 4) 1e-6))
+
+
+(facts "Compute lift for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-lift
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
+         (lift (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0) => 0.5
+         (lift (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0) => 0.25
+         (lift (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0) => 2.5
+         (lift (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0) => 2.0))
+
+
+(facts "Compute drag for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-drag
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
+         (drag (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0) => 0.5
+         (drag (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0) => 0.25
+         (drag (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0) => 2.5
+         (drag (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0) => 2.0))
+
+
+(facts "Compute side force for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-side-force
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
+         (side-force (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0) => 0.5
+         (side-force (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0) => 0.25
+         (side-force (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0) => 2.5
+         (side-force (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0) => 2.0))

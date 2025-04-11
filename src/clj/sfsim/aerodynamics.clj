@@ -243,5 +243,23 @@
      ::speed (mag speed-vector)}))
 
 
+(defn lift
+  "Compute lift for given speed in body system"
+  [{::keys [alpha beta speed]} density surface]
+  (* 0.5 (coefficient-of-lift alpha beta) density (sqr speed) surface))
+
+
+(defn drag
+  "Compute drag for given speed in body system"
+  [{::keys [alpha beta speed]} density surface]
+  (* 0.5 (coefficient-of-drag alpha beta) density (sqr speed) surface))
+
+
+(defn side-force
+  "Compute side force for given speed in body system"
+  [{::keys [alpha beta speed]} density surface]
+  (* 0.5 (coefficient-of-side-force alpha beta) density (sqr speed) surface))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
