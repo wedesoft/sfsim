@@ -6,6 +6,7 @@
       [clojure.math :refer (PI to-radians sqrt)]
       [fastmath.vector :refer (vec3)]
       [sfsim.conftest :refer (roughly-vector)]
+      [sfsim.quaternion :as q]
       [sfsim.aerodynamics :refer :all]))
 
 
@@ -208,3 +209,12 @@
        (aerodynamic->gltf (vec3 1 0 0)) => (vec3 1 0 0)
        (aerodynamic->gltf (vec3 0 1 0)) => (vec3 0 0 1)
        (aerodynamic->gltf (vec3 0 0 -1)) => (vec3 0 1 0))
+
+
+(facts "Get angle of attack, side slip angle, and speed magnitude"
+       (:sfsim.aerodynamics/speed (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 5 0 0))) => 5.0
+       (:sfsim.aerodynamics/alpha (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 5 0 0))) => 0.0
+       (:sfsim.aerodynamics/beta  (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 5 0 0))) => 0.0
+       (:sfsim.aerodynamics/alpha (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 1))) => (roughly (/ PI 4) 1e-6)
+       (:sfsim.aerodynamics/beta  (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 1 0))) => (roughly (/ PI 4) 1e-6)
+       (:sfsim.aerodynamics/alpha (speed-in-body-system (q/->Quaternion 0 1 0 0) (vec3 1 0 -1))) => (roughly (/ PI 4) 1e-6))

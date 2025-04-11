@@ -2,8 +2,9 @@
     (:require
       [clojure.math :refer (PI cos sin sqrt to-radians atan2 hypot)]
       [fastmath.matrix :refer (mat3x3 mulv)]
-      [fastmath.vector :refer (vec3)]
+      [fastmath.vector :refer (vec3 mag)]
       [sfsim.matrix :refer [fvec3]]
+      [sfsim.quaternion :as q]
       [sfsim.util :refer (sqr)]))
 
 
@@ -230,6 +231,16 @@
   {:malli/schema [:=> [:cat fvec3] fvec3]}
   [aerodynamic-vector]
   (mulv aerodynamic-to-gltf aerodynamic-vector))
+
+
+(defn speed-in-body-system
+  "Convert airplane speed vector to angle of attack, side slip angle, and speed magnitude"
+  {:malli/schema [:=> [:cat q/quaternion fvec3] [:map [::alpha :double] [::beta :double] [::speed :double]]]}
+  [orientation speed-vector]
+  (let [speed-rotated (q/rotate-vector orientation speed-vector)]
+    {::alpha (angle-of-attack speed-rotated)
+     ::beta  (angle-of-side-slip speed-rotated)
+     ::speed (mag speed-vector)}))
 
 
 (set! *warn-on-reflection* false)
