@@ -1,5 +1,6 @@
 # TODO
 * implement aerodynamics (damping moments),
+  moments -> torques
   add thrust,
   https://www.spaceflighthistories.com/post/x-33-venturestar
   thrust: 3,010,000 lbf

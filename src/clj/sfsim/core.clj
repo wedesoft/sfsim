@@ -293,12 +293,15 @@
                                    (q/rotation (to-radians -90) (vec3 1 0 0)))))
 (def dist (atom 200.0))
 
-(def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 1000.0 0.1))
+(def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 26.87036336765512))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
 (jolt/set-angular-velocity body (vec3 0 0 0))
 (jolt/set-friction body 1.5)
-(jolt/set-restitution body 0.15)
+(jolt/set-restitution body 0.25)
 (def mass (jolt/get-mass body))
+(def surface 198.0)
+(def chord 10.0)
+(def wingspan 20.75)
 
 (jolt/optimize-broad-phase)
 
@@ -332,7 +335,7 @@
         (reset! coords c)
         (reset! mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0)))
         (jolt/set-friction @mesh 1.5)
-        (jolt/set-restitution @mesh 0.15)
+        (jolt/set-restitution @mesh 0.25)
         (jolt/optimize-broad-phase)))))
 
 
@@ -484,10 +487,10 @@
         (jolt/set-translation body (:position @pose))
         (jolt/set-angular-velocity body (vec3 0 0 0))
         (reset! slew false))
-      (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-            max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
-            s       (min @speed max-speed)]
-          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) s)))
+      ;(let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+      ;      max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
+      ;      s       (min @speed max-speed)]
+      ;    (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) s)))
       (let [t1     (System/currentTimeMillis)
             dt     (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn     (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
@@ -523,12 +526,16 @@
                                :camera-orientation @camera-orientation
                                :dist @dist}]
                     (swap! recording conj frame)))
-                ; (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
-                (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
+                (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+                ; (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
                 (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
                 (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* u 20.0 mass) 0)))
                 (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* r 20.0 mass))))
                 (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t 20.0 mass) 0 0)))
+                (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+                      loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body) surface wingspan chord)]
+                  (jolt/add-force body (:sfsim.aerodynamics/forces loads))
+                  (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
                 (update-mesh! (:position @pose))
                 (jolt/update-system (* dt 0.001) 10)
                 (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))
