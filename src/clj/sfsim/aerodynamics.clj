@@ -3,8 +3,10 @@
       [clojure.math :refer (PI cos sin sqrt to-radians atan2 hypot)]
       [fastmath.matrix :refer (mat3x3 mulv)]
       [fastmath.vector :refer (vec3 mag)]
+      [malli.core :as m]
       [sfsim.matrix :refer [fvec3]]
       [sfsim.quaternion :as q]
+      [sfsim.atmosphere :refer (density-at-height)]
       [sfsim.util :refer (sqr)]))
 
 
@@ -233,11 +235,14 @@
   (mulv aerodynamic-to-gltf aerodynamic-vector))
 
 
+(def speed-data (m/schema [:map [::alpha :double] [::beta :double] [::speed :double]]))
+
+
 (defn speed-in-body-system
   "Convert airplane speed vector to angle of attack, side slip angle, and speed magnitude"
-  {:malli/schema [:=> [:cat q/quaternion fvec3] [:map [::alpha :double] [::beta :double] [::speed :double]]]}
+  {:malli/schema [:=> [:cat q/quaternion fvec3] speed-data]}
   [orientation speed-vector]
-  (let [speed-rotated (q/rotate-vector orientation speed-vector)]
+  (let [speed-rotated (q/rotate-vector (q/inverse orientation) speed-vector)]
     {::alpha (angle-of-attack speed-rotated)
      ::beta  (angle-of-side-slip speed-rotated)
      ::speed (mag speed-vector)}))
@@ -245,38 +250,60 @@
 
 (defn lift
   "Compute lift for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
   [{::keys [alpha beta speed]} density surface]
   (* 0.5 (coefficient-of-lift alpha beta) density (sqr speed) surface))
 
 
 (defn drag
   "Compute drag for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
   [{::keys [alpha beta speed]} density surface]
   (* 0.5 (coefficient-of-drag alpha beta) density (sqr speed) surface))
 
 
 (defn side-force
   "Compute side force for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
   [{::keys [alpha beta speed]} density surface]
   (* 0.5 (coefficient-of-side-force alpha beta) density (sqr speed) surface))
 
 
 (defn pitch-moment
   "Compute pitch moment for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
   [{::keys [alpha beta speed]} density surface chord]
   (* 0.5 (coefficient-of-pitch-moment alpha beta) density (sqr speed) surface chord))
 
 
 (defn yaw-moment
   "Compute yaw moment for given speed in body system"
-  [{::keys [alpha beta speed]} density surface wingspan]
-  (* 0.5 (coefficient-of-yaw-moment alpha beta) density (sqr speed) surface wingspan))
+  {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
+  [{::keys [beta speed]} density surface wingspan]
+  (* 0.5 (coefficient-of-yaw-moment beta) density (sqr speed) surface wingspan))
 
 
 (defn roll-moment
   "Compute roll moment for given speed in body system"
-  [{::keys [alpha beta speed]} density surface wingspan]
-  (* 0.5 (coefficient-of-roll-moment alpha beta) density (sqr speed) surface wingspan))
+  {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
+  [{::keys [beta speed]} density surface wingspan]
+  (* 0.5 (coefficient-of-roll-moment beta) density (sqr speed) surface wingspan))
+
+
+(defn aerodynamic-loads
+  "Determine aerodynamic forces and moments"
+  {:malli/schema [:=> [:cat :double q/quaternion fvec3 :double :double :double] :some]}
+  [height orientation speed-vector surface wingspan chord]
+  (let [density    (density-at-height height)
+        speed-data (speed-in-body-system orientation speed-vector)
+        forces     (vec3 (- (drag speed-data density surface))
+                         (side-force speed-data density surface)
+                         (- (lift speed-data density surface)))
+        moments    (vec3 (roll-moment speed-data density surface wingspan)
+                         (pitch-moment speed-data density surface chord)
+                         (yaw-moment speed-data density surface wingspan))]
+    {::forces (q/rotate-vector orientation forces)
+     ::moments (q/rotate-vector orientation moments)}))
 
 
 (set! *warn-on-reflection* false)

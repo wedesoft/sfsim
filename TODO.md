@@ -1,5 +1,6 @@
 # TODO
-* implement aerodynamics and thrust,
+* implement aerodynamics (damping moments),
+  add thrust,
   https://www.spaceflighthistories.com/post/x-33-venturestar
   thrust: 3,010,000 lbf
   weight: payload 25000 kg. vehicle 100t-135t
