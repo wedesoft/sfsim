@@ -1,5 +1,5 @@
 # TODO
-* implement aerodynamics (damping moments),
+* implement aerodynamics (damping moments), https://chatgpt.com/share/67fd6eb2-b660-8000-a213-067085f0550e
   moments -> torques
   add thrust,
   https://www.spaceflighthistories.com/post/x-33-venturestar
