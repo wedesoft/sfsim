@@ -280,6 +280,36 @@
          (roll-moment (speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 0.5) => 0.25))
 
 
+(facts "Compute pitch damping moment for given pitch rate in body system"
+       (let [speed-data {:sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/alpha 0.0}]
+         (with-redefs [aerodynamics/coefficient-of-pitch-damping -1.0]
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
+
+
+(facts "Compute yaw damping moment for given yaw rate in body system"
+       (let [speed-data {:sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/alpha 0.0}]
+         (with-redefs [aerodynamics/coefficient-of-yaw-damping -1.0]
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
+
+
+(facts "Compute roll damping moment for given roll rate in body system"
+       (let [speed-data {:sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/alpha 0.0}]
+         (with-redefs [aerodynamics/coefficient-of-roll-damping -1.0]
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
+
+
 (facts "Determine aerodynamic forces and moments"
        (let [height      1000.0
              orientation (q/->Quaternion 1.0 0.0 0.0 0.0)
