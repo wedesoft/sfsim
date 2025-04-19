@@ -62,7 +62,7 @@
 (def opacity-base (atom 100.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def height 800.0)
+(def height 4000.0)
 
 
 ;; (def height 30.0)
@@ -528,10 +528,11 @@
                     (swap! recording conj frame)))
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
                 ; (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
-                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
-                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* u 20.0 mass) 0)))
-                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* r 20.0 mass))))
-                (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t 20.0 mass) 0 0)))
+                (let [speed (mag (jolt/get-linear-velocity body))]
+                  (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
+                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* u speed 1.0 mass) 0)))
+                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* r speed 0.5 mass))))
+                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t speed 0.25 mass) 0 0))))
                 (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body) surface wingspan chord)]
