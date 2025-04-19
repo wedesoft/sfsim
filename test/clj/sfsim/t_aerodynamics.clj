@@ -285,6 +285,7 @@
          (with-redefs [aerodynamics/coefficient-of-pitch-damping -1.0]
            (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
            (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 2.0 1.0 1.0 1.0) => -0.5
            (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
            (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
            (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
@@ -295,6 +296,7 @@
          (with-redefs [aerodynamics/coefficient-of-yaw-damping -1.0]
            (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
            (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 2.0 1.0 1.0 1.0) => -0.5
            (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
            (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
            (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
@@ -305,6 +307,7 @@
          (with-redefs [aerodynamics/coefficient-of-roll-damping -1.0]
            (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
            (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 2.0 1.0 1.0 1.0) => -0.5
            (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
            (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
            (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))

@@ -533,11 +533,10 @@
                 (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* r 20.0 mass))))
                 (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t 20.0 mass) 0 0)))
                 (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-                      loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body) surface wingspan chord)
-                      damping  (mult (jolt/get-angular-velocity body) (* mass -50.0))]
+                      loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
+                                                             (jolt/get-angular-velocity body) surface wingspan chord)]
                   (jolt/add-force body (:sfsim.aerodynamics/forces loads))
-                  (jolt/add-torque body (:sfsim.aerodynamics/moments loads))
-                  (jolt/add-torque body damping))
+                  (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
                 (update-mesh! (:position @pose))
                 (jolt/update-system (* dt 0.001) 10)
                 (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))

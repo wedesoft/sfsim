@@ -297,30 +297,30 @@
   (* 0.5 (coefficient-of-roll-moment beta) density (sqr speed) surface wingspan))
 
 
-(def coefficient-of-pitch-damping -1.0)
-(def coefficient-of-yaw-damping -1.0)
-(def coefficient-of-roll-damping -1.0)
+(def coefficient-of-pitch-damping -0.5)
+(def coefficient-of-yaw-damping -0.2)
+(def coefficient-of-roll-damping -0.5)
 
 
 (defn pitch-damping
   "Compute pitch damping moment for given pitch rate in body system"
   {:malli/schema [:=> [:cat speed-data :double :double :double :double] :double]}
   [{::keys [speed]} pitch-rate density surface chord]
-  (* 0.25 density speed surface (sqr chord) coefficient-of-pitch-damping))
+  (* 0.25 density speed surface pitch-rate (sqr chord) coefficient-of-pitch-damping))
 
 
 (defn yaw-damping
   "Compute yaw damping moment for given yaw rate in body system"
   {:malli/schema [:=> [:cat speed-data :double :double :double :double] :double]}
   [{::keys [speed]} yaw-rate density surface wingspan]
-  (* 0.25 density speed surface (sqr wingspan) coefficient-of-yaw-damping))
+  (* 0.25 density speed surface yaw-rate (sqr wingspan) coefficient-of-yaw-damping))
 
 
 (defn roll-damping
   "Compute roll damping moment for given roll rate in body system"
   {:malli/schema [:=> [:cat speed-data :double :double :double :double] :double]}
   [{::keys [speed]} roll-rate density surface wingspan]
-  (* 0.25 density speed surface (sqr wingspan) coefficient-of-roll-damping))
+  (* 0.25 density speed surface roll-rate (sqr wingspan) coefficient-of-roll-damping))
 
 
 (defn aerodynamic-loads
