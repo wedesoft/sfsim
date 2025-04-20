@@ -1,9 +1,8 @@
 # TODO
-* choose reasonable size for damping moments
-  moments -> torques
-  add thrust,
+* test Euler integration of aerodynamic and damping torques
+  choose reasonable size for damping moments
   https://www.spaceflighthistories.com/post/x-33-venturestar
-  thrust: 3,010,000 lbf
+  add thrust: 3,010,000 lbf
   weight: payload 25000 kg. vehicle 100t-135t
   fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
   [section4.2.pdf](http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf)
