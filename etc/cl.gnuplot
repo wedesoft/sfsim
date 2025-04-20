@@ -1,4 +1,5 @@
 set terminal x11 size 1024, 768
+# set terminal png font arial 14 size 800,600
 
 set ylabel "amount"
 set grid
@@ -30,21 +31,25 @@ CDmix(alpha, beta) = mix(mix(0.1, 2.0, 2 * alpha), 0.5, 2 * beta)
 
 CYmix(alpha, beta) = -0.4 * sin(2 * beta) * cos(alpha) + 2.0 * sin(2 * beta) * sin(alpha)
 
+# set output "1-lift-to-drag.png"
 set title "lift, drag, and lift to drag ratio"
 set xlabel "alpha"
 plot [alpha=0:360] CL(alpha), CD(alpha), CL(alpha) / CD(alpha)
 pause -1
 
+# set output "2-coefficient-of-lift.png"
 set title "coefficient of lift"
 set xlabel "alpha"
 plot [alpha=0:360] CLmix(alpha, 0), CLmix(alpha, 45), CLmix(alpha, 90), CLmix(alpha, 135), CLmix(alpha, 180), CLmix(alpha, 225), CLmix(alpha, 270), CLmix(alpha, 315)
 pause -1
 
+# set output "3-coefficient-of-drag.png"
 set title "coefficient of drag"
 set xlabel "alpha"
 plot [alpha=0:360] CDmix(alpha, 0), CDmix(alpha, 45), CDmix(alpha, 90), CDmix(alpha, 135), CDmix(alpha, 180), CDmix(alpha, 225), CDmix(alpha, 270), CDmix(alpha, 315)
 pause -1
 
+# set output "4-coefficient-of-side-force.png"
 set title "coefficient of side force"
 set xlabel "beta"
 plot [beta=0:360] CYmix(-90, beta), CYmix(-60, beta), CYmix(-30, beta), CYmix(0, beta), CYmix(30, beta), CYmix(60, beta), CYmix(90, beta)

@@ -6,7 +6,9 @@
       [clojure.math :refer (PI to-radians sqrt)]
       [fastmath.vector :refer (vec3)]
       [sfsim.conftest :refer (roughly-vector)]
-      [sfsim.aerodynamics :refer :all]))
+      [sfsim.quaternion :as q]
+      [sfsim.atmosphere :as atmosphere]
+      [sfsim.aerodynamics :refer :all :as aerodynamics]))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -208,3 +210,166 @@
        (aerodynamic->gltf (vec3 1 0 0)) => (vec3 1 0 0)
        (aerodynamic->gltf (vec3 0 1 0)) => (vec3 0 0 1)
        (aerodynamic->gltf (vec3 0 0 -1)) => (vec3 0 1 0))
+
+
+(facts "Get angle of attack, side slip angle, and speed magnitude"
+       (:sfsim.aerodynamics/speed (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 5 0 0))) => 5.0
+       (:sfsim.aerodynamics/alpha (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 5 0 0))) => 0.0
+       (:sfsim.aerodynamics/beta  (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 5 0 0))) => 0.0
+       (:sfsim.aerodynamics/alpha (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 1))) => (roughly (/ PI 4) 1e-6)
+       (:sfsim.aerodynamics/beta  (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 1 0))) => (roughly (/ PI 4) 1e-6)
+       (:sfsim.aerodynamics/alpha (linear-speed-in-body-system (q/->Quaternion 0 1 0 0) (vec3 1 0 -1))) => (roughly (/ PI 4) 1e-6)
+       (:sfsim.aerodynamics/beta  (linear-speed-in-body-system (q/rotation (/ PI 2) (vec3 0 0 -1)) (vec3 5 0 0)))
+       => (roughly (/ PI 2) 1e-6))
+
+
+(facts "Compute lift for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-lift
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
+         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0) => 0.5
+         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0) => 0.25
+         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0) => 2.5
+         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0) => 2.0))
+
+
+(facts "Compute drag for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-drag
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
+         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0) => 0.5
+         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0) => 0.25
+         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0) => 2.5
+         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0) => 2.0))
+
+
+(facts "Compute side force for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-side-force
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
+         (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0) => 0.5
+         (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0) => 0.25
+         (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0) => 2.5
+         (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0) => 2.0))
+
+
+(facts "Compute pitch moment for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-pitch-moment
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
+         (pitch-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 1.0) => 0.5
+         (pitch-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0 1.0) => 0.25
+         (pitch-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0 1.0) => 2.5
+         (pitch-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0 1.0) => 2.0
+         (pitch-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 0.5) => 0.25))
+
+
+(facts "Compute yaw moment for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-yaw-moment
+                     (fn [beta] (facts beta => 0.0) 1.0)]
+         (yaw-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 1.0) => 0.5
+         (yaw-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0 1.0) => 0.25
+         (yaw-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0 1.0) => 2.5
+         (yaw-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0 1.0) => 2.0
+         (yaw-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 0.5) => 0.25))
+
+
+(facts "Compute roll moment for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-roll-moment
+                     (fn [beta] (facts beta => 0.0) 1.0)]
+         (roll-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 1.0) => 0.5
+         (roll-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0 1.0) => 0.25
+         (roll-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0 1.0) => 2.5
+         (roll-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0 1.0) => 2.0
+         (roll-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 0.5) => 0.25))
+
+
+(facts "Compute pitch damping moment for given pitch rate in body system"
+       (let [speed-data {:sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/alpha 0.0}]
+         (with-redefs [aerodynamics/coefficient-of-pitch-damping -1.0]
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 2.0 1.0 1.0 1.0) => -0.5
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
+           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
+
+
+(facts "Compute yaw damping moment for given yaw rate in body system"
+       (let [speed-data {:sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/alpha 0.0}]
+         (with-redefs [aerodynamics/coefficient-of-yaw-damping -1.0]
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 2.0 1.0 1.0 1.0) => -0.5
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
+           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
+
+
+(facts "Compute roll damping moment for given roll rate in body system"
+       (let [speed-data {:sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/alpha 0.0}]
+         (with-redefs [aerodynamics/coefficient-of-roll-damping -1.0]
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 2.0 1.0 1.0 1.0) => -0.5
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
+           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
+
+
+(facts "Determine aerodynamic forces and moments"
+       (let [height       1000.0
+             orientation  (q/->Quaternion 1.0 0.0 0.0 0.0)
+             linear-speed (vec3 5.0 0.0 0.0)
+             angular-speed (vec3 3.0 1.0 2.0)]
+         (with-redefs [atmosphere/density-at-height
+                       (fn [height] (facts height => 1000.0) :density)
+                       aerodynamics/linear-speed-in-body-system
+                       (fn [orientation speed] (facts orientation => (q/->Quaternion 1.0 0.0 0.0 0.0) speed => (vec3 5 0 0))
+                           :speed-body)
+                       aerodynamics/lift
+                       (fn [speed-body density surface]
+                           (facts speed-body => :speed-body density => :density surface => 100.0)
+                           2.0)
+                       aerodynamics/drag
+                       (fn [speed-body density surface]
+                           (facts speed-body => :speed-body density => :density surface => 100.0)
+                           3.0)
+                       aerodynamics/side-force
+                       (fn [speed-body density surface]
+                           (facts speed-body => :speed-body density => :density surface => 100.0)
+                           5.0)
+                       aerodynamics/pitch-moment
+                       (fn [speed-body density surface chord]
+                           (facts speed-body => :speed-body density => :density surface => 100.0 chord => 25.0)
+                           0.125)
+                       aerodynamics/yaw-moment
+                       (fn [speed-body density surface wingspan]
+                           (facts speed-body => :speed-body density => :density surface => 100.0 wingspan => 30.0)
+                           0.25)
+                       aerodynamics/roll-moment
+                       (fn [speed-body density surface wingspan]
+                           (facts speed-body => :speed-body density => :density surface => 100.0 wingspan => 30.0)
+                           0.5)
+                       aerodynamics/pitch-damping
+                       (fn [speed-body rate density surface chord]
+                           (facts speed-body => :speed-body (abs rate) => 1.0 density => :density surface => 100.0 chord => 25.0)
+                           -0.25)
+                       aerodynamics/yaw-damping
+                       (fn [speed-body rate density surface wingspan]
+                           (facts speed-body => :speed-body (abs rate) => 2.0 density => :density surface => 100.0
+                                  wingspan => 30.0)
+                           -0.5)
+                       aerodynamics/roll-damping
+                       (fn [speed-body rate density surface wingspan]
+                           (facts speed-body => :speed-body rate => 3.0 density => :density surface => 100.0 wingspan => 30.0)
+                           -1.0)]
+           (:sfsim.aerodynamics/forces (aerodynamic-loads height orientation linear-speed angular-speed 100.0 30.0 25.0))
+           => (vec3 -3.0 5.0 -2.0)
+           (:sfsim.aerodynamics/moments (aerodynamic-loads height orientation linear-speed angular-speed 100.0 30.0 25.0))
+           => (vec3 -0.5 -0.125 -0.25)
+           (with-redefs [aerodynamics/linear-speed-in-body-system
+                         (fn [orientation speed] (facts orientation => (q/->Quaternion 0.0 1.0 0.0 0.0) speed => (vec3 5 0 0))
+                             :speed-body)]
+             (:sfsim.aerodynamics/forces (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed
+                                                            100.0 30.0 25.0))
+             => (q/rotate-vector (q/->Quaternion 0.0 1.0 0.0 0.0) (vec3 -3.0 5.0 -2.0))
+             (:sfsim.aerodynamics/moments (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed
+                                                             100.0 30.0 25.0))
+             => (q/rotate-vector (q/->Quaternion 0.0 1.0 0.0 0.0) (vec3 -0.5 -0.125 -0.25))))))
