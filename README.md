@@ -45,7 +45,7 @@ cd ..
 
 # Build
 
-* Build Jolt wrapper library: `make`
+* Build Jolt wrapper library: `make jolt`
 * Build Worley noise: `clj -T:build worley`
 * Build Perlin noise: `clj -T:build perlin`
 * Build blue noise: `clj -T:build bluenoise`

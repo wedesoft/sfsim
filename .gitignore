@@ -10,6 +10,7 @@ blackmarble.*.png
 elevation.*.raw
 recording.edn
 venturestar.glb
+index.html
 .cache
 .clj-kondo/metosin
 .cpcache

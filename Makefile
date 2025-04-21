@@ -4,7 +4,11 @@ JOLTFLAGS = -DJPH_DOUBLE_PRECISION -DJPH_OBJECT_STREAM -DJPH_USE_AVX -DJPH_USE_S
 CCFLAGS = -g -O3 -fPIC -Wall -Werror -DNDEBUG $(JOLTFLAGS) -pthread -I/usr/local/include -Isrc/c
 LDFLAGS = -L/usr/local/lib -lJolt -pthread
 
-all: src/c/sfsim/libjolt.so
+all: jolt page
+
+jolt: src/c/sfsim/libjolt.so
+
+page: index.html
 
 src/c/sfsim/libjolt.so: src/c/sfsim/jolt.o
 	$(CC) -shared -flto=auto -o $@ $^ $(LDFLAGS)
@@ -14,6 +18,9 @@ src/c/sfsim/libjolt.so: src/c/sfsim/jolt.o
 	$(CC) $(CCFLAGS) -c $< -o $@
 
 src/c/sfsim/jolt.o: src/c/sfsim/jolt.cc src/c/sfsim/jolt.hh
+
+index.html: index.md
+	pandoc -s --metadata title='sfsim' -o $@ $<
 
 clean:
 	rm -f src/c/sfsim/libjolt.so src/c/sfsim/*.o
