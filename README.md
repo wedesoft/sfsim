@@ -92,6 +92,7 @@ cd ..
   * [Tungsten Moon](https://tungstenmoon.com/)
   * [Rogue System](http://imagespaceinc.com/rogsys/)
   * [UniVoyager](https://www.univoyager.com/)
+  * [Space Nerds in Space](https://smcameron.github.io/space-nerds-in-space/)
 * Engines
   * [Jolt Physics](https://github.com/jrouwe/JoltPhysics)
   * [Project Chrono physics engine](https://projectchrono.org/)

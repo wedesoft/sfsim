@@ -381,6 +381,8 @@
 (def t0 (atom (System/currentTimeMillis)))
 (def time-delta (atom (- (+ (int (astro/now)) 0.1) (/ @t0 1000 86400.0))))
 
+(def camera-dx (atom 0.0))
+(def camera-dy (atom 0.0))
 
 (defn datetime-dialog-get
   [time-data t0]
@@ -501,9 +503,11 @@
             r      (if (@keystates GLFW/GLFW_KEY_A) -1 (if (@keystates GLFW/GLFW_KEY_D) 1 0))
             t      (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
             thrust (if (@keystates GLFW/GLFW_KEY_SPACE) (* 20.0 mass) 0.0)
-            v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
-            d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
-            to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
+            v      (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
+            d      (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
+            dcy    (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
+            dcx    (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))
+            to     (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
         (when mn (reset! menu main-dialog))
         (if playback
           (let [frame (nth @recording @n)]
@@ -541,13 +545,15 @@
                 (update-mesh! (:position @pose))
                 (jolt/update-system (* dt 0.001) 10)
                 (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))
+            (swap! camera-dx + (* dt dcx 0.0001))
+            (swap! camera-dy + (* dt dcy 0.0001))
             (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
             (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
             (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
             (swap! opacity-base + (* dt to))
             (swap! dist * (exp d))))
         (let [object-position    (:position @pose)
-              origin             (add object-position (mult (q/rotate-vector @camera-orientation (vec3 0 0 -1)) (* -1.0 @dist)))
+              origin             (add object-position (mult (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy -1)) (* -1.0 @dist)))
               jd-ut              (+ @time-delta (/ @t0 1000 86400.0) astro/T0)
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (sub (earth-moon jd-ut))
