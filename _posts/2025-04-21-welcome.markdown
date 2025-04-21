@@ -1,0 +1,9 @@
+---
+layout: post
+title:  "Welcome to the sfsim homepage!"
+date:   2025-04-21 21:48:15 +0100
+categories: jekyll update
+---
+
+Welcome to the sfsim homepage.
+There is not much to see here yet but checkout the videos.

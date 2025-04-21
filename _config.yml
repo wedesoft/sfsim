@@ -1,0 +1,19 @@
+title: sfsim
+email: jan@wedesoft.de
+description: >-
+  sfsim is a space flight simulator under development.
+baseurl: "/sfsim" # the subpath of your site, e.g. /blog
+url: "https://wedesoft.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+twitter_username: wedesoft
+github_username: wedesoft
+
+theme: minima
+plugins:
+  - jekyll-feed
+
+exclude:
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
