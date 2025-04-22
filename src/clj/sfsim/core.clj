@@ -63,10 +63,13 @@
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
 (def height 4000.0)
+;(def longitude (to-radians 2.23323))
+;(def latitude (to-radians 56.04026))
+;(def height 1155949.9)
 
 
 ;; (def height 30.0)
-(def speed (atom 7800.0))
+(def speed (atom (* 1 7800.0)))
 
 (def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
 (def earth-moon (astro/make-spk-segment-interpolator spk 0 3))
@@ -92,6 +95,7 @@
 (def playback false)
 (def fix-fps false)
 (def fullscreen playback)
+; (def fullscreen true)
 
 (def monitor (GLFW/glfwGetPrimaryMonitor))
 (def mode (GLFW/glfwGetVideoMode monitor))
@@ -100,6 +104,8 @@
 (def desktop-height (.height ^GLFWVidMode mode))
 (def window-width (if fullscreen desktop-width 854))
 (def window-height (if fullscreen desktop-height 480))
+;(def window-width (if fullscreen desktop-width 1920))
+;(def window-height (if fullscreen desktop-height 620))
 (def window (make-window "sfsim" window-width window-height (not fullscreen)))
 (GLFW/glfwShowWindow window)
 
@@ -379,7 +385,7 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (+ (int (astro/now)) 0.1) (/ @t0 1000 86400.0))))
+(def time-delta (atom (- (+ (int (astro/now)) (+ (/ 5.0 24.0) (/ 27.0 60.0 24.0))) (/ @t0 1000 86400.0))))
 
 (def camera-dx (atom 0.0))
 (def camera-dy (atom 0.0))
