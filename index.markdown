@@ -9,6 +9,8 @@ Master orbital mechanics within a true-to-scale Earth-Moon system.
 
 See [github.com/wedesoft/sfsim][1] for source code and build instructions.
 
+[![Aerodynamics prototype](https://i.ytimg.com/vi/vmg0p5jawnY/hqdefault.jpg)](https://www.youtube.com/watch?v=vmg0p5jawnY)
+
 [![Rendering of volumetric clouds](https://i.ytimg.com/vi/ierGCAhkxAU/hqdefault.jpg)](https://www.youtube.com/watch?v=ierGCAhkxAU)
 
 [![Planet rendering with volumetric clouds and night time textures](https://i.ytimg.com/vi/2v3VOJMnPBI/hqdefault.jpg)](https://www.youtube.com/watch?v=2v3VOJMnPBI)
