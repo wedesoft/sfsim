@@ -493,12 +493,16 @@
       (when (@keystates GLFW/GLFW_KEY_O)
         (jolt/set-orientation body (:orientation @pose))
         (jolt/set-translation body (:position @pose))
+        (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+              max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
+              s       (min @speed max-speed)]
+          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) s)))
         (jolt/set-angular-velocity body (vec3 0 0 0))
         (reset! slew false))
-      ;(let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-      ;      max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
-      ;      s       (min @speed max-speed)]
-      ;    (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) s)))
+      (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+            max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
+            s       (min @speed max-speed)]
+          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) s)))
       (let [t1     (System/currentTimeMillis)
             dt     (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn     (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
