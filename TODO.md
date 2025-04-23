@@ -1,7 +1,7 @@
 # TODO
 * post on https://www.reddit.com/r/spacesimgames/
 * good position of wheels for takeoff (with low fuel) and landing (tail end),
-  gear animations (deploy, rotating wheel)
+  gear animations (deploy, suspension, rotating wheel)
   gear <-> terrain physics with stationary Earth (ground collisions)
 * https://www.spaceflighthistories.com/post/x-33-venturestar
   add thrust: 3,010,000 lbf
@@ -197,6 +197,7 @@
 * event-based radio (triggers as in Operation Flashpoint)
 * missions and high scores
 * beep-beep sound, paraglider audio?
+* normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
 
 Future description (only allowed on Steam when implemented):
 
