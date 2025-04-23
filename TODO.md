@@ -203,6 +203,8 @@
 * missions and high scores
 * beep-beep sound, paraglider audio?
 
+Future description (only allowed on Steam when implemented):
+
 sfsim (space flight simulator) is an upcoming space simulator with realistic physics and a true-to-scale Earth-Moon system.
 Take off, dock with a space station, land on the moon, perform atmospheric reentry, and finish with a touchdown.
 
