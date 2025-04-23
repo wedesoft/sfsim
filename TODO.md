@@ -1,15 +1,13 @@
 # TODO
-* test Euler integration of aerodynamic and damping torques
-  choose reasonable size for damping moments
-  https://www.spaceflighthistories.com/post/x-33-venturestar
+* post on https://www.reddit.com/r/spacesimgames/
+* good position of wheels for takeoff (with low fuel) and landing (tail end),
+  gear animations (deploy, rotating wheel)
+  gear <-> terrain physics with stationary Earth (ground collisions)
+* https://www.spaceflighthistories.com/post/x-33-venturestar
   add thrust: 3,010,000 lbf
   weight: payload 25000 kg. vehicle 100t-135t
   fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
   [section4.2.pdf](http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf)
-  drag: 1/2 * Cd * rho * v^2 * A
-  simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
-  good position of wheels for takeoff (with low fuel) and landing
-  gear <-> terrain physics with stationary Earth (ground collisions)
 * integration test powder function
 * arycama: limit darkness of cloud shadow (exponential approaching a base level)
 * orbitting Earth
@@ -24,19 +22,16 @@
 * stars, volumetric clouds https://www.shadertoy.com/view/ttcSD8
 * sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
 * sound effects
+* controller, HOTAS support
 * UI overlays for third person view
-* at least 3 environments/biomes before publishing steam page (or mock ups): day earth, day orbit, sunset orbit, clouds, landing
-* steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
+* at least 3 environments/biomes before publishing steam page (or mock ups): day earth, day orbit, sunset orbit, clouds, landing,
+  steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
   show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
   (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
   first 4 screenshots important  bright ones and dark ones,
-  show the UI, use alpha for steam icons, provide desktop icon (32x32 ico),
   good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
-  add steam page url to long description, add animated GIFs, section banners, revisit tags regularly,
-  steam tags (see games at https://store.steampowered.com/tags/en/Space%20Sim)
-  https://partner.steamgames.com/doc/store/assets/libraryassets
+  add steam page url to long description, add animated GIFs, section banners
   create application with https://partner.steamgames.com/doc/sdk
-  post on https://www.reddit.com/r/spacesimgames/
 * render stars
   * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
   * Skydome scaled to ZFAR * 0.5
