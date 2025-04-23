@@ -4,8 +4,9 @@ title: sfsim
 permalink: /
 ---
 
-*sfsim* is an upcoming realistic space flight simulator where you take control of every mission phase - from liftoff and orbital docking to lunar landings, atmospheric reentry, and final touchdown.
-Master orbital mechanics within a true-to-scale Earth-Moon system.
+*sfsim* is an upcoming realistic space flight simulator where you take control of every mission phase.
+Planned features are liftoff, orbital docking, lunar landings, atmospheric reentry, and final touchdown.
+The plan is to include a true-to-scale Earth-Moon system.
 
 See [github.com/wedesoft/sfsim][1] for source code and build instructions.
 
