@@ -4,7 +4,7 @@ title: about
 permalink: /about/
 ---
 
-*sfsim* (space flight simulator) is an upcoming space simulator with realistic physics and a true-to-scale Earth.
+*sfsim* (space flight simulator) is a space simulator with realistic physics and a true-to-scale Earth.
 
 Current key Features:
 

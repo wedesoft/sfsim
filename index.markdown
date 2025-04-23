@@ -4,7 +4,7 @@ title: sfsim
 permalink: /
 ---
 
-*sfsim* is an upcoming realistic space flight simulator where you take control of a space craft.
+*sfsim* is a realistic space flight simulator where you take control of a space craft.
 Fly in and out of atmosphere over a true-to-scale Earth.
 
 See [github.com/wedesoft/sfsim][1] for source code and build instructions.
