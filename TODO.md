@@ -23,14 +23,6 @@
 * sound effects
 * controller, HOTAS support
 * UI overlays for third person view
-* at least 3 environments/biomes before publishing steam page (or mock ups): day earth, day orbit, sunset orbit, clouds, landing,
-  steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
-  show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
-  (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
-  first 4 screenshots important  bright ones and dark ones,
-  good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
-  add steam page url to long description, add animated GIFs, section banners
-  create application with https://partner.steamgames.com/doc/sdk
 * post on https://www.reddit.com/r/spacesimgames/
 * render stars
   * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
@@ -198,3 +190,11 @@
 * missions and high scores
 * beep-beep sound, paraglider audio?
 * normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
+  create application with https://partner.steamgames.com/doc/sdk
+* at least 3 environments/biomes before publishing steam page,
+  steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
+  show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
+  (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
+  first 4 screenshots important - bright ones and dark ones,
+  good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
+  add steam page url to long description, add animated GIFs, section banners
