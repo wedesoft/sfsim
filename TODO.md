@@ -1,5 +1,4 @@
 # TODO
-* post on https://www.reddit.com/r/spacesimgames/
 * good position of wheels for takeoff (with low fuel) and landing (tail end),
   gear animations (deploy, suspension, rotating wheel)
   gear <-> terrain physics with stationary Earth (ground collisions)
@@ -32,6 +31,7 @@
   good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
   add steam page url to long description, add animated GIFs, section banners
   create application with https://partner.steamgames.com/doc/sdk
+* post on https://www.reddit.com/r/spacesimgames/
 * render stars
   * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
   * Skydome scaled to ZFAR * 0.5
@@ -40,7 +40,7 @@
 * render moonlight and moon
 * launch complex, lights
 * moon base, lights
-* cockpit
+* cockpit, flight assistance tools
 * fix planet tessellation tests
 * define wheel positions in Blender
   animate wheel rotation and suspension, bake gear animation and name actions the same
@@ -198,19 +198,3 @@
 * missions and high scores
 * beep-beep sound, paraglider audio?
 * normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
-
-Future description (only allowed on Steam when implemented):
-
-sfsim (space flight simulator) is an upcoming space simulator with realistic physics and a true-to-scale Earth-Moon system.
-Take off, dock with a space station, land on the moon, perform atmospheric reentry, and finish with a touchdown.
-
-Key Features:
-*  Realistic Physics: Simulate spaceflight with accurate orbital mechanics and aerodynamics.
-* Real-Scale Earth-Moon System: Navigate a true-to-scale environment based on NASA celestial dynamics data that demands real-world planning and precision.
-* Complete Mission Phases: Take control from liftoff to landing, including:
-  * Atmospheric launch
-  * Orbital rendezvous and docking
-  * Trans-lunar injection and lunar landings
-  * Reentry through Earth's atmosphere
-  * Final descent and safe touchdown
-* Manual and Assisted Controls: Fly by hand or with the help of flight assistance tools — perfect for both veterans and newcomers.
