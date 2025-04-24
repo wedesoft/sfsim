@@ -8,10 +8,10 @@ permalink: /
 Experience the thrill of both atmospheric and space flight as you navigate a true-to-scale Earth.
 sfsim delivers an authentic aerospace experience grounded in real physics and flight dynamics.
 
-<iframe width="800" height="600" src="http://www.youtube.com/embed/vmg0p5jawnY" frameborder="0"></iframe>
+[![Aerodynamics prototype](https://i.ytimg.com/vi/vmg0p5jawnY/hqdefault.jpg)](https://www.youtube.com/watch?v=vmg0p5jawnY)
 
-<iframe width="800" height="600" src="http://www.youtube.com/embed/ierGCAhkxAU" frameborder="0"></iframe>
+[![Rendering of volumetric clouds](https://i.ytimg.com/vi/ierGCAhkxAU/hqdefault.jpg)](https://www.youtube.com/watch?v=ierGCAhkxAU)
 
-<iframe width="800" height="600" src="http://www.youtube.com/embed/2v3VOJMnPBI" frameborder="0"></iframe>
+[![Planet rendering with volumetric clouds and night time textures](https://i.ytimg.com/vi/2v3VOJMnPBI/hqdefault.jpg)](https://www.youtube.com/watch?v=2v3VOJMnPBI)
 
-<iframe width="800" height="600" src="http://www.youtube.com/embed/Ce3oWQflYOY" frameborder="0"></iframe>
+[![Atmospheric scattering and planet level-of-detail rendering](https://i.ytimg.com/vi/Ce3oWQflYOY/hqdefault.jpg)](https://www.youtube.com/watch?v=Ce3oWQflYOY)
