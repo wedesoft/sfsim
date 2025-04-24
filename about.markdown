@@ -4,9 +4,14 @@ title: about
 permalink: /about/
 ---
 
-*sfsim* (space flight simulator) is a space simulator with realistic physics and a true-to-scale Earth.
+*sfsim* is a space flight simulator with realistic physics and a true-to-scale Earth using NASA Bluemarble data.
 
-Current key Features:
+Current key features:
+* Realistic Physics: Simulate space flight and aerodynamics.
+* True-to-scale Earth: Earth model based on NASA Bluemarble data.
+* Realistic atmosphere: Atmosphere with realistic temperature and density as well as procedurally generated volumetric clouds.
+* Real celestial body positions: Position of Earth and Sun based on NASA data.
 
-* Realistic Physics: Simulate spaceflight and aerodynamics.
-* Real-Scale Earth: Navigate a true-to-scale Earth with dynamic sun position based on NASA data.
+Wishlist it on Steam to get notified when it gets released:
+
+<iframe src="https://store.steampowered.com/widget/3687560/" frameborder="0" width="646" height="190"></iframe>
