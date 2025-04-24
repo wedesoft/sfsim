@@ -7,10 +7,7 @@ url: "https://wedesoft.github.io" # the base hostname & protocol for your site, 
 twitter_username: wedesoft
 github_username: wedesoft
 
-theme: minimal-mistakes-jekyll
-
-minimal_mistakes_skin: "dark"
-
+theme: minima
 plugins:
   - jekyll-feed
 
