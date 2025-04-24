@@ -7,6 +7,8 @@ permalink: /
 *sfsim* is a realistic space flight simulator where you take control of a space craft.
 Fly in and out of atmosphere over a true-to-scale Earth.
 
+<iframe src="https://store.steampowered.com/widget/3687560/" frameborder="0" width="646" height="190"></iframe>
+
 See [github.com/wedesoft/sfsim][1] for source code and build instructions.
 
 [![Aerodynamics prototype](https://i.ytimg.com/vi/vmg0p5jawnY/hqdefault.jpg)](https://www.youtube.com/watch?v=vmg0p5jawnY)
