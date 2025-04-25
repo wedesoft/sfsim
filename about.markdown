@@ -14,4 +14,6 @@ Current key features:
 
 Wishlist it on Steam to get notified when it gets released:
 
-<iframe src="https://store.steampowered.com/widget/3687560/" frameborder="0" width="646" height="190"></iframe>
+<div class="embed-container">
+  <iframe src="https://store.steampowered.com/widget/3687560/" frameborder="0" width="646" height="190"></iframe>
+</div>
