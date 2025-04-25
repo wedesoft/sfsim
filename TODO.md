@@ -1,12 +1,10 @@
 # TODO
-* https://www.usgs.gov/landsat-missions/landsat-data-access
-* https://worldwind.arc.nasa.gov/web/examples/ LANDSAT  https://earthexplorer.usgs.gov/
-  https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/11/716/1078
 * good position of wheels for takeoff (with low fuel) and landing (tail end),
   gear animations (deploy, suspension, rotating wheel)
   gear <-> terrain physics with stationary Earth (ground collisions)
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different
+* get high-res Florida data
 * https://www.spaceflighthistories.com/post/x-33-venturestar
   add thrust: 3,010,000 lbf
   weight: payload 25000 kg. vehicle 100t-135t
