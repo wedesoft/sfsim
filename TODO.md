@@ -1,7 +1,12 @@
 # TODO
+* https://www.usgs.gov/landsat-missions/landsat-data-access
+* https://worldwind.arc.nasa.gov/web/examples/ LANDSAT  https://earthexplorer.usgs.gov/
+  https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/11/716/1078
 * good position of wheels for takeoff (with low fuel) and landing (tail end),
   gear animations (deploy, suspension, rotating wheel)
   gear <-> terrain physics with stationary Earth (ground collisions)
+* fix problem with resolution of neighbouring tiles in planetary cubemap
+  problem with neighbouring resolution levels being to different
 * https://www.spaceflighthistories.com/post/x-33-venturestar
   add thrust: 3,010,000 lbf
   weight: payload 25000 kg. vehicle 100t-135t
@@ -45,11 +50,8 @@
   * implement two-step Runge-Kutta wrapper alignment
   * docking physics
   * moon landing physics
-* problem with neighbouring resolution levels being to different
 * Check out poliastro and hapsira
 * use components and core.async for physics and loading of data, rendering main thread as component?
-* fix problem with resolution of neighbouring tiles in planetary cubemap
-* shift and update opacity and planet shadow maps for improved performance
 * quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
   deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
