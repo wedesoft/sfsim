@@ -86,11 +86,34 @@
              0       0       0       1))
 
 
+(defn translation-matrix
+  "Create a 4x4 matrix from a translation vector"
+  {:malli/schema [:=> [:cat fvec3] fmat4]}
+  [v]
+  (transformation-matrix (fm/eye 3) v))
+
+
 (defn rotation-matrix
   "Create 4x4 rotation matrix from 3x3 rotation matrix"
   {:malli/schema [:=> [:cat fmat3] fmat4]}
   [m]
   (transformation-matrix m (fv/vec3 0.0 0.0 0.0)))
+
+
+(defn get-rotation
+  "Extract 3x3 rotation part from 4x4 matrix"
+  {:malli/schema [:=> [:cat fmat4] fmat3]}
+  [m]
+  (fm/mat3x3 (m 0 0) (m 0 1) (m 0 2)
+             (m 1 0) (m 1 1) (m 1 2)
+             (m 2 0) (m 2 1) (m 2 2)))
+
+
+(defn get-translation
+  "Extract translation vector from 4x4 matrix"
+  {:malli/schema [:=> [:cat fmat4] fvec3]}
+  [m]
+  (fv/vec3 (m 0 3) (m 1 3) (m 2 3)))
 
 
 (defn projection-matrix
