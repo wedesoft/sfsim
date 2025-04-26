@@ -51,7 +51,7 @@ extern "C" {
   void set_angular_velocity(int id, Vec3 velocity);
   void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, float suspension_min_length, float suspension_max_length);
   void destroy_wheel_settings(void *wheel_settings);
-  void *make_vehicle_constraint_settings(void);
+  void *make_vehicle_constraint_settings(Vec3 up, Vec3 forward);
   void vehicle_constraint_settings_add_wheel(void *constraint, void *wheel_settings);
   void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_settings);
   void remove_and_destroy_constraint(void *constraint);

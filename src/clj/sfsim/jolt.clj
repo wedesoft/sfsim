@@ -344,7 +344,7 @@
 
 (defcfn make-vehicle-constraint-settings
   "Create vehicle constraint settings object"
-  make_vehicle_constraint_settings [] ::mem/pointer)
+  make_vehicle_constraint_settings [::vec3 ::vec3] ::mem/pointer)
 
 
 (defcfn vehicle-constraint-settings-add-wheel
@@ -359,8 +359,8 @@
 
 (defn create-and-add-vehicle-constraint
   "Create and add vehicle constraint"
-  [body wheels]
-  (let [constraint-settings (make-vehicle-constraint-settings)]
+  [body up forward wheels]
+  (let [constraint-settings (make-vehicle-constraint-settings up forward)]
     (doseq [wheel wheels] (vehicle-constraint-settings-add-wheel constraint-settings (make-wheel-settings wheel)))
     (create-and-add-vehicle-constraint- body constraint-settings)))
 

@@ -475,13 +475,13 @@ void destroy_wheel_settings(void *wheel_settings)
   delete (JPH::WheelSettingsWV *)wheel_settings;
 }
 
-void *make_vehicle_constraint_settings(void)
+void *make_vehicle_constraint_settings(Vec3 up, Vec3 forward)
 {
   JPH::WheeledVehicleControllerSettings *vehicle_controller_settings = new JPH::WheeledVehicleControllerSettings;
   JPH::VehicleConstraintSettings *vehicle_constraint_settings = new JPH::VehicleConstraintSettings;
   vehicle_constraint_settings->mController = vehicle_controller_settings;
-  vehicle_constraint_settings->mUp = JPH::Vec3(0.0f, 0.0f, 1.0f);
-  vehicle_constraint_settings->mForward = JPH::Vec3(1.0f, 0.0f, 0.0f);
+  vehicle_constraint_settings->mUp = JPH::Vec3(up.x, up.y, up.z);
+  vehicle_constraint_settings->mForward = JPH::Vec3(forward.x, forward.y, forward.z);
   return vehicle_constraint_settings;
 }
 
