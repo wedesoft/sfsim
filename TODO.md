@@ -4,7 +4,7 @@
   gear animations (deploy, suspension, rotating wheel)
   wheel diameter: 1.1303, wheel width: 0.4064
 * fix problem with resolution of neighbouring tiles in planetary cubemap
-  problem with neighbouring resolution levels being to different
+  problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 * get high-res Florida data
 * https://www.spaceflighthistories.com/post/x-33-venturestar
   add thrust: 3,010,000 lbf
