@@ -151,3 +151,8 @@
 (facts "Create octaves summing to one"
        (octaves 4 1.0) => [0.25 0.25 0.25 0.25]
        (octaves 2 0.25) => [0.8 0.2])
+
+(facts "Fetch first element matching a predicate"
+       (find-if odd? [2 4 6]) => nil
+       (find-if odd? [2 3 4]) => 3
+       (find-if odd? [2 4 5]) => 5)
