@@ -6,4 +6,4 @@ categories: jekyll update
 ---
 
 Welcome to the sfsim homepage.
-There is not much to see here yet but check out the videos.
+There is not much to see here yet but check out the video.
