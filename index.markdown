@@ -23,5 +23,7 @@ Wishlist it on Steam to get notified when it gets released:
   <iframe src="https://store.steampowered.com/widget/3687560/" frameborder="0" width="646" height="190"></iframe>
 </div>
 
+# News
+
 [1]: https://wedesoft.github.io/sfsim/
 [2]: https://freesound.org/people/Andrewkn/
