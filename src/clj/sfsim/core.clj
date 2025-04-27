@@ -16,7 +16,7 @@
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation rotation-matrix)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation rotation-matrix get-translation)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
@@ -63,7 +63,7 @@
 (def opacity-base (atom 100.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def height 4000.0)
+(def height 23.0)
 ;(def longitude (to-radians 2.23323))
 ;(def latitude (to-radians 56.04026))
 ;(def height 1155949.9)
@@ -160,18 +160,19 @@
                           :sfsim.model/transform
                           #(mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic) %)))
 
-(def main-wheel-left-pos (get-translation
-                           (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
-                                 (:sfsim.model/transform (util/find-if (fn [node] (= (:sfsim.model/name node) "Main Wheel Left"))
-                                                                       (:sfsim.model/children (:sfsim.model/root model)))))))
-(def main-wheel-right-pos (get-translation
-                            (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
-                                  (:sfsim.model/transform (util/find-if (fn [node] (= (:sfsim.model/name node) "Main Wheel Right"))
-                                                                        (:sfsim.model/children (:sfsim.model/root model)))))))
-(def nose-wheel-pos (get-translation
-                      (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
-                            (:sfsim.model/transform (util/find-if (fn [node] (= (:sfsim.model/name node) "Nose Wheel"))
-                                                                  (:sfsim.model/children (:sfsim.model/root model)))))))
+(def node-names (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root model))))
+
+(def main-wheel-left-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Left")])
+(def main-wheel-right-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Right")])
+(def nose-wheel-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Nose Wheel")])
+
+(def main-wheel-left-pos (get-translation (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                                (:sfsim.model/transform (get-in model main-wheel-left-path)))))
+(def main-wheel-right-pos (get-translation (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                                 (:sfsim.model/transform (get-in model main-wheel-right-path)))))
+(def nose-wheel-pos (get-translation (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                           (:sfsim.model/transform (get-in model nose-wheel-path)))))
+
 (def wheel-base {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
                  :sfsim.jolt/width 0.4064
                  :sfsim.jolt/radius (/ 1.1303 2.0)
@@ -181,6 +182,7 @@
 (def main-wheel-left (assoc wheel-base :sfsim.jolt/position main-wheel-left-pos))
 (def main-wheel-right (assoc wheel-base :sfsim.jolt/position main-wheel-right-pos))
 (def nose-wheel (assoc wheel-base :sfsim.jolt/position nose-wheel-pos))
+(def wheels [main-wheel-left main-wheel-right nose-wheel])
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -331,6 +333,8 @@
 (def surface 198.0)
 (def chord 10.0)
 (def wingspan 20.75)
+
+(def vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels))
 
 (jolt/optimize-broad-phase)
 

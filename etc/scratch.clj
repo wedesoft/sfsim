@@ -14,11 +14,18 @@
                           #(mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic) %)))
 
 (keys model)
-(map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root model)))
-(def main-wheel-left-pos (matrix/get-translation
-                           (mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
-                                 (:sfsim.model/transform (util/find-if (fn [node] (= (:sfsim.model/name node) "Main Wheel Left"))
-                                                                       (:sfsim.model/children (:sfsim.model/root model)))))))
+(def node-names (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root model))))
+(def main-wheel-left-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Left")])
+(def main-wheel-right-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Right")])
+(def nose-wheel-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Nose Wheel")])
+
+(def main-wheel-left-pos (matrix/get-translation (mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                                       (:sfsim.model/transform (get-in model main-wheel-left-path)))))
+(def main-wheel-right-pos (matrix/get-translation (mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                                        (:sfsim.model/transform (get-in model main-wheel-right-path)))))
+(def nose-wheel-pos (matrix/get-translation (mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                                  (:sfsim.model/transform (get-in model nose-wheel-path)))))
+
 (def main-wheel-right-pos (matrix/get-translation
                             (mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
                                   (:sfsim.model/transform (util/find-if (fn [node] (= (:sfsim.model/name node) "Main Wheel Right"))
