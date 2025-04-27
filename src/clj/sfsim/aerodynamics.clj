@@ -304,9 +304,9 @@
   (* 0.5 (coefficient-of-roll-moment beta) density (sqr speed) surface wingspan))
 
 
-(def coefficient-of-pitch-damping -4.0)
-(def coefficient-of-yaw-damping -1.0)
-(def coefficient-of-roll-damping -2.0)
+(def coefficient-of-pitch-damping -8.0)
+(def coefficient-of-yaw-damping -4.0)
+(def coefficient-of-roll-damping -4.0)
 
 
 (defn pitch-damping
