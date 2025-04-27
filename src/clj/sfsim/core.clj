@@ -549,7 +549,7 @@
                   (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                   (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
                 (update-mesh! (:position @pose))
-                (jolt/update-system (* dt 0.001) 10)
+                (jolt/update-system (* dt 0.001) 32)
                 (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))
             (swap! camera-dx + (* dt dcx 0.0001))
             (swap! camera-dy + (* dt dcy 0.0001))
