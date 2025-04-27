@@ -16,7 +16,7 @@
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation rotation-matrix)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
@@ -26,6 +26,7 @@
                                       texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
                                       setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
+    [sfsim.util :refer (find-if)]
     [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
     (fastmath.vector
@@ -158,6 +159,28 @@
 (def convex-hulls (update (model/empty-meshes-to-points model)
                           :sfsim.model/transform
                           #(mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic) %)))
+
+(def main-wheel-left-pos (get-translation
+                           (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                 (:sfsim.model/transform (util/find-if (fn [node] (= (:sfsim.model/name node) "Main Wheel Left"))
+                                                                       (:sfsim.model/children (:sfsim.model/root model)))))))
+(def main-wheel-right-pos (get-translation
+                            (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                  (:sfsim.model/transform (util/find-if (fn [node] (= (:sfsim.model/name node) "Main Wheel Right"))
+                                                                        (:sfsim.model/children (:sfsim.model/root model)))))))
+(def nose-wheel-pos (get-translation
+                      (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                            (:sfsim.model/transform (util/find-if (fn [node] (= (:sfsim.model/name node) "Nose Wheel"))
+                                                                  (:sfsim.model/children (:sfsim.model/root model)))))))
+(def wheel-base {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
+                 :sfsim.jolt/width 0.4064
+                 :sfsim.jolt/radius (/ 1.1303 2.0)
+                 :sfsim.jolt/inertia 16.3690
+                 :sfsim.jolt/suspension-min-length 0.4572
+                 :sfsim.jolt/suspension-max-length 0.8128})
+(def main-wheel-left (assoc wheel-base :sfsim.jolt/position main-wheel-left-pos))
+(def main-wheel-right (assoc wheel-base :sfsim.jolt/position main-wheel-right-pos))
+(def nose-wheel (assoc wheel-base :sfsim.jolt/position nose-wheel-pos))
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -549,7 +572,7 @@
                   (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                   (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
                 (update-mesh! (:position @pose))
-                (jolt/update-system (* dt 0.001) 32)
+                (jolt/update-system (* dt 0.001) 16)
                 (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))
             (swap! camera-dx + (* dt dcx 0.0001))
             (swap! camera-dy + (* dt dcy 0.0001))

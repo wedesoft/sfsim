@@ -31,9 +31,9 @@
 (def wheel-base {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
                  :sfsim.jolt/width 0.4064
                  :sfsim.jolt/radius (/ 1.1303 2.0)
-                 :sfsim.jolt/inertia 0.1
-                 :sfsim.jolt/suspension-min-length 0.5
-                 :sfsim.jolt/suspension-max-length 1.5})
+                 :sfsim.jolt/inertia 16.3690
+                 :sfsim.jolt/suspension-min-length 0.4572
+                 :sfsim.jolt/suspension-max-length 0.8128})
 
 (def main-wheel-left (assoc wheel-base :sfsim.jolt/position main-wheel-left-pos))
 (def main-wheel-right (assoc wheel-base :sfsim.jolt/position main-wheel-right-pos))

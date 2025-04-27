@@ -510,6 +510,36 @@ void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_se
     return NULL;
 }
 
+Mat4x4 get_wheel_local_transform(void *constraint, int wheel_index, Vec3 right, Vec3 up)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  JPH::Vec3 wheel_right(right.x, right.y, right.z);
+  JPH::Vec3 wheel_up(up.x, up.y, up.z);
+  JPH::Mat44 transform = vehicle_constraint->GetWheelLocalTransform(wheel_index, wheel_right, wheel_up);
+  JPH::Vec3 x = transform.GetAxisX();
+  JPH::Vec3 y = transform.GetAxisY();
+  JPH::Vec3 z = transform.GetAxisZ();
+  JPH::Vec3 t = transform.GetTranslation();
+  return (Mat4x4){
+    .m00 = x.GetX(),
+    .m01 = y.GetX(),
+    .m02 = z.GetX(),
+    .m03 = t.GetX(),
+    .m10 = x.GetY(),
+    .m11 = y.GetY(),
+    .m12 = z.GetY(),
+    .m13 = t.GetY(),
+    .m20 = x.GetZ(),
+    .m21 = y.GetZ(),
+    .m22 = z.GetZ(),
+    .m23 = t.GetZ(),
+    .m30 = 0.0f,
+    .m31 = 0.0f,
+    .m32 = 0.0f,
+    .m33 = 1.0f
+  };
+}
+
 void remove_and_destroy_constraint(void *constraint)
 {
   JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;

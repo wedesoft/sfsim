@@ -4,7 +4,7 @@
     [clojure.spec.alpha :as s]
     [coffi.ffi :refer (defcfn) :as ffi]
     [coffi.mem :as mem]
-    [fastmath.matrix :refer (mat3x3 mulm mulv)]
+    [fastmath.matrix :refer (mat3x3 mulm mulv mat4x4)]
     [fastmath.vector :refer (vec3)]
     [sfsim.matrix :refer (vec3->vec4 vec4->vec3)]
     [sfsim.quaternion :as q]))
@@ -132,6 +132,50 @@
       (result :m00) (result :m01) (result :m02)
       (result :m10) (result :m11) (result :m12)
       (result :m20) (result :m21) (result :m22))))
+
+
+(def mat4x4-struct
+  [::mem/struct
+   [[:m00 ::mem/double]
+    [:m01 ::mem/double]
+    [:m02 ::mem/double]
+    [:m03 ::mem/double]
+    [:m10 ::mem/double]
+    [:m11 ::mem/double]
+    [:m12 ::mem/double]
+    [:m13 ::mem/double]
+    [:m20 ::mem/double]
+    [:m21 ::mem/double]
+    [:m22 ::mem/double]
+    [:m23 ::mem/double]
+    [:m30 ::mem/double]
+    [:m31 ::mem/double]
+    [:m32 ::mem/double]
+    [:m33 ::mem/double]]])
+
+
+(defmethod mem/c-layout ::mat4x4
+  [_mat4x4]
+  (mem/c-layout mat4x4-struct))
+
+
+(defmethod mem/serialize-into ::mat4x4
+  [obj _mat4x4 segment arena]
+  (mem/serialize-into {:m00 (obj 0 0) :m01 (obj 0 1) :m02 (obj 0 2) :m03 (obj 0 3)
+                       :m10 (obj 1 0) :m11 (obj 1 1) :m12 (obj 1 2) :m13 (obj 1 3)
+                       :m20 (obj 2 0) :m21 (obj 2 1) :m22 (obj 2 2) :m23 (obj 2 3)
+                       :m30 (obj 3 0) :m31 (obj 3 1) :m32 (obj 3 2) :m33 (obj 3 3)}
+                      mat4x4-struct segment arena))
+
+
+(defmethod mem/deserialize-from ::mat4x4
+  [segment _mat4x4]
+  (let [result (mem/deserialize-from segment mat4x4-struct)]
+    (mat4x4
+      (result :m00) (result :m01) (result :m02) (result :m03)
+      (result :m10) (result :m11) (result :m12) (result :m13)
+      (result :m20) (result :m21) (result :m22) (result :m23)
+      (result :m30) (result :m31) (result :m32) (result :m33))))
 
 
 (defcfn set-gravity
@@ -363,6 +407,11 @@
   (let [constraint-settings (make-vehicle-constraint-settings up forward)]
     (doseq [wheel wheels] (vehicle-constraint-settings-add-wheel constraint-settings (make-wheel-settings wheel)))
     (create-and-add-vehicle-constraint- body constraint-settings)))
+
+
+(defcfn get-wheel-local-transform
+  "Get wheel pose in local coordinate system"
+  get_wheel_local_transform [::mem/pointer ::mem/int ::vec3 ::vec3] ::mat4x4)
 
 
 (defcfn remove-and-destroy-constraint
