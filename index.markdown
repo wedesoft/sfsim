@@ -11,7 +11,7 @@ Current key features:
 * Realistic Physics: Simulate space flight and aerodynamics.
 * True-to-scale Earth: Earth model based on NASA Bluemarble data.
 * Realistic atmosphere: Atmosphere with realistic temperature and density as well as procedurally generated volumetric clouds.
-* Real celestial body positions: Position of Earth and Sun based on NASA data.
+* Real celestial body positions: Position of Earth and Sun based on NASA SPICE data.
 
 {% include youtube.html id="vmg0p5jawnY" %}
 
