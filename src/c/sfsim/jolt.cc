@@ -450,14 +450,15 @@ void set_angular_velocity(int id, Vec3 velocity)
   body_interface->SetAngularVelocity(body_id, angular_velocity);
 }
 
-void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, float suspension_min_length, float suspension_max_length)
+void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, Vec3 up, Vec3 forward,
+    float suspension_min_length, float suspension_max_length)
 {
   JPH::WheelSettingsWV *result = new JPH::WheelSettingsWV;
   result->mPosition = JPH::Vec3(position.x, position.y, position.z);
-  result->mSuspensionDirection = JPH::Vec3(0.0f, 0.0f, -1.0f);
-  result->mSteeringAxis = JPH::Vec3(0.0f, 0.0f, +1.0f);
-  result->mWheelUp = JPH::Vec3(0.0f, 0.0f, 1.0f);
-  result->mWheelForward = JPH::Vec3(1.0f, 0.0f, 0.0f);
+  result->mSuspensionDirection = JPH::Vec3(-up.x, -up.y, -up.z);
+  result->mSteeringAxis = JPH::Vec3(up.x, up.y, up.z);
+  result->mWheelUp = JPH::Vec3(up.x, up.y, up.z);
+  result->mWheelForward = JPH::Vec3(forward.x, forward.y, forward.z);
   result->mWidth = width;
   result->mRadius = radius;
   result->mInertia = inertia;

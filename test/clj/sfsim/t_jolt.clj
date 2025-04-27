@@ -253,15 +253,21 @@
         (remove-and-destroy-body body)))
 
 
-(fact "Vehicle constraint should work with mesh"
+(def wheel1 (assoc wheel-base :sfsim.jolt/position (vec3 -0.5 -0.5 +0.5)))
+(def wheel2 (assoc wheel-base :sfsim.jolt/position (vec3 +0.5 -0.5 +0.5)))
+(def wheel3 (assoc wheel-base :sfsim.jolt/position (vec3 -0.5 +0.5 +0.5)))
+(def wheel4 (assoc wheel-base :sfsim.jolt/position (vec3 +0.5 +0.5 +0.5)))
+
+
+(fact "Vehicle constraint should work with mesh and vehicle with -z up vector"
       (let [floor   (create-and-add-static-body
                       (mesh-settings #:sfsim.quadtree {:vertices [(vec3 -100 -100 0) (vec3 100 -100 0)
                                                                   (vec3 100 100 0) (vec3 -100 100 0)]
                                                        :triangles [[0 1 3] [1 2 3]]} 1e+6)
                                                 (vec3 0.0 0.0 -2.0) (q/->Quaternion 1 0 0 0))
             body    (create-and-add-dynamic-body (box-settings (vec3 0.5 0.5 0.3) 1000.0)
-                                                 (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0))
-            vehicle (create-and-add-vehicle-constraint body (vec3 0 0 1) (vec3 1 0 0) [wheel1 wheel2 wheel3 wheel4])]
+                                                 (vec3 0.0 0.0 0.0) (q/->Quaternion 0 1 0 0))
+            vehicle (create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) [wheel1 wheel2 wheel3 wheel4])]
         (set-gravity (vec3 0 0 -1))
         (set-friction floor 0.3)
         (set-restitution floor 0.2)

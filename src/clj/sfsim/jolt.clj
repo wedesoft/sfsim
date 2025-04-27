@@ -372,13 +372,13 @@
 
 (defcfn make-wheel-settings-
   "Create wheel settings object for wheeled vehicle (private)"
-  make_wheel_settings [::vec3 ::mem/float ::mem/float ::mem/float ::mem/float ::mem/float] ::mem/pointer)
+  make_wheel_settings [::vec3 ::mem/float ::mem/float ::mem/float ::vec3 ::vec3 ::mem/float ::mem/float] ::mem/pointer)
 
 
 (defn make-wheel-settings
   "Create wheel settings object for wheeled vehicle"
-  [{::keys [position width radius inertia suspension-min-length suspension-max-length]}]
-  (make-wheel-settings- position width radius inertia suspension-min-length suspension-max-length))
+  [{::keys [position width radius inertia suspension-min-length suspension-max-length]} up forward]
+  (make-wheel-settings- position width radius inertia up forward suspension-min-length suspension-max-length))
 
 
 (defcfn destroy-wheel-settings
@@ -405,7 +405,7 @@
   "Create and add vehicle constraint"
   [body up forward wheels]
   (let [constraint-settings (make-vehicle-constraint-settings up forward)]
-    (doseq [wheel wheels] (vehicle-constraint-settings-add-wheel constraint-settings (make-wheel-settings wheel)))
+    (doseq [wheel wheels] (vehicle-constraint-settings-add-wheel constraint-settings (make-wheel-settings wheel up forward)))
     (create-and-add-vehicle-constraint- body constraint-settings)))
 
 

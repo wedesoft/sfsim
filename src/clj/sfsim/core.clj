@@ -63,7 +63,7 @@
 (def opacity-base (atom 100.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def height 23.0)
+(def height 28.0)
 ;(def longitude (to-radians 2.23323))
 ;(def latitude (to-radians 56.04026))
 ;(def height 1155949.9)
@@ -179,9 +179,9 @@
                  :sfsim.jolt/inertia 16.3690
                  :sfsim.jolt/suspension-min-length 0.4572
                  :sfsim.jolt/suspension-max-length 0.8128})
-(def main-wheel-left (assoc wheel-base :sfsim.jolt/position (add main-wheel-left-pos (vec3 0 0 0))))
-(def main-wheel-right (assoc wheel-base :sfsim.jolt/position (add main-wheel-right-pos (vec3 0 0 0))))
-(def nose-wheel (assoc wheel-base :sfsim.jolt/position (add nose-wheel-pos (vec3 0 0 0))))
+(def main-wheel-left (assoc wheel-base :sfsim.jolt/position (add main-wheel-left-pos (vec3 0 0 -0.4))))
+(def main-wheel-right (assoc wheel-base :sfsim.jolt/position (add main-wheel-right-pos (vec3 0 0 -0.4))))
+(def nose-wheel (assoc wheel-base :sfsim.jolt/position (add nose-wheel-pos (vec3 0 0 -0.4))))
 (def wheels [main-wheel-left main-wheel-right nose-wheel])
 
 (def tile-tree (planet/make-tile-tree))
