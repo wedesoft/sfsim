@@ -249,6 +249,27 @@
         (matrix/get-translation (get-wheel-local-transform vehicle 3 (vec3 0 1 0) (vec3 0 0 1)))
         => (roughly-vector (vec3 +0.5 +0.5 -0.789) 1e-3)
         (remove-and-destroy-constraint vehicle)
+        (remove-and-destroy-body floor)
+        (remove-and-destroy-body body)))
+
+
+(fact "Vehicle constraint should work with mesh"
+      (let [floor   (create-and-add-static-body
+                      (mesh-settings #:sfsim.quadtree {:vertices [(vec3 -100 -100 0) (vec3 100 -100 0)
+                                                                  (vec3 100 100 0) (vec3 -100 100 0)]
+                                                       :triangles [[0 1 3] [1 2 3]]} 1e+6)
+                                                (vec3 0.0 0.0 -2.0) (q/->Quaternion 1 0 0 0))
+            body    (create-and-add-dynamic-body (box-settings (vec3 0.5 0.5 0.3) 1000.0)
+                                                 (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0))
+            vehicle (create-and-add-vehicle-constraint body (vec3 0 0 1) (vec3 1 0 0) [wheel1 wheel2 wheel3 wheel4])]
+        (set-gravity (vec3 0 0 -1))
+        (set-friction floor 0.3)
+        (set-restitution floor 0.2)
+        (optimize-broad-phase)
+        (dotimes [i 25] (update-system 0.1 1))
+        (get-translation body) => (roughly-vector (vec3 0 0 -1.111) 1e-3)
+        (remove-and-destroy-constraint vehicle)
+        (remove-and-destroy-body floor)
         (remove-and-destroy-body body)))
 
 

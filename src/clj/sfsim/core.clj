@@ -179,9 +179,9 @@
                  :sfsim.jolt/inertia 16.3690
                  :sfsim.jolt/suspension-min-length 0.4572
                  :sfsim.jolt/suspension-max-length 0.8128})
-(def main-wheel-left (assoc wheel-base :sfsim.jolt/position main-wheel-left-pos))
-(def main-wheel-right (assoc wheel-base :sfsim.jolt/position main-wheel-right-pos))
-(def nose-wheel (assoc wheel-base :sfsim.jolt/position nose-wheel-pos))
+(def main-wheel-left (assoc wheel-base :sfsim.jolt/position (add main-wheel-left-pos (vec3 0 0 0))))
+(def main-wheel-right (assoc wheel-base :sfsim.jolt/position (add main-wheel-right-pos (vec3 0 0 0))))
+(def nose-wheel (assoc wheel-base :sfsim.jolt/position (add nose-wheel-pos (vec3 0 0 0))))
 (def wheels [main-wheel-left main-wheel-right nose-wheel])
 
 (def tile-tree (planet/make-tile-tree))
@@ -523,7 +523,7 @@
         (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
               max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
               s       (min @speed max-speed)]
-          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) s)))
+          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0))))
         (jolt/set-angular-velocity body (vec3 0 0 0))
         (reset! slew false))
       (let [t1     (System/currentTimeMillis)
