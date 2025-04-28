@@ -274,6 +274,8 @@
         (optimize-broad-phase)
         (dotimes [i 25] (update-system 0.1 1))
         (get-translation body) => (roughly-vector (vec3 0 0 -1.111) 1e-3)
+        (matrix/get-translation (get-wheel-local-transform vehicle 0 (vec3 0 1 0) (vec3 0 0 -1)))
+        => (roughly-vector (vec3 -0.5 -0.5 0.792) 1e-3)
         (remove-and-destroy-constraint vehicle)
         (remove-and-destroy-body floor)
         (remove-and-destroy-body body)))
