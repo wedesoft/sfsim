@@ -16,7 +16,7 @@
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation rotation-matrix get-translation)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
@@ -154,34 +154,35 @@
                                     config/object-radius))
 
 
+(def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
+(def aerodynamic-to-gltf (rotation-matrix (inverse aerodynamics/gltf-to-aerodynamic)))
+
 (def model (model/read-gltf "venturestar.glb"))
 (def scene (model/load-scene scene-renderer model))
-(def convex-hulls (update (model/empty-meshes-to-points model)
-                          :sfsim.model/transform
-                          #(mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic) %)))
+(def convex-hulls (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 
-(def node-names (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root model))))
+(def node-names (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root scene))))
 
 (def main-wheel-left-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Left")])
 (def main-wheel-right-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Right")])
 (def nose-wheel-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Nose Wheel")])
 
-(def main-wheel-left-pos (get-translation (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
-                                                (:sfsim.model/transform (get-in model main-wheel-left-path)))))
-(def main-wheel-right-pos (get-translation (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
-                                                 (:sfsim.model/transform (get-in model main-wheel-right-path)))))
-(def nose-wheel-pos (get-translation (mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic)
-                                           (:sfsim.model/transform (get-in model nose-wheel-path)))))
+(def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic
+                                                (:sfsim.model/transform (get-in scene main-wheel-left-path)))))
+(def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic
+                                                 (:sfsim.model/transform (get-in scene main-wheel-right-path)))))
+(def nose-wheel-pos (get-translation (mulm gltf-to-aerodynamic
+                                           (:sfsim.model/transform (get-in scene nose-wheel-path)))))
 
 (def wheel-base {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
                  :sfsim.jolt/width 0.4064
-                 :sfsim.jolt/radius (/ 1.1303 2.0)
+                 :sfsim.jolt/radius (* 0.5 1.1303)
                  :sfsim.jolt/inertia 16.3690
                  :sfsim.jolt/suspension-min-length 0.4572
                  :sfsim.jolt/suspension-max-length 0.8128})
-(def main-wheel-left (assoc wheel-base :sfsim.jolt/position (add main-wheel-left-pos (vec3 0 0 -0.4))))
-(def main-wheel-right (assoc wheel-base :sfsim.jolt/position (add main-wheel-right-pos (vec3 0 0 -0.4))))
-(def nose-wheel (assoc wheel-base :sfsim.jolt/position (add nose-wheel-pos (vec3 0 0 -0.4))))
+(def main-wheel-left (assoc wheel-base :sfsim.jolt/position (add main-wheel-left-pos (vec3 0 0 0))))
+(def main-wheel-right (assoc wheel-base :sfsim.jolt/position (add main-wheel-right-pos (vec3 0 0 0))))
+(def nose-wheel (assoc wheel-base :sfsim.jolt/position (add nose-wheel-pos (vec3 0 0 0))))
 (def wheels [main-wheel-left main-wheel-right nose-wheel])
 
 (def tile-tree (planet/make-tile-tree))
@@ -340,6 +341,17 @@
 
 (def coords (atom nil))
 (def mesh (atom nil))
+
+
+(defn update-wheels [scene]
+  (let [updates
+        [[(conj main-wheel-left-path :sfsim.model/transform)
+          (mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 0 (vec3 0 1 0) (vec3 0 0 -1)))]
+         [(conj main-wheel-right-path :sfsim.model/transform)
+          (mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 1 (vec3 0 1 0) (vec3 0 0 -1)))]
+         [(conj nose-wheel-path :sfsim.model/transform)
+          (mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 2 (vec3 0 1 0) (vec3 0 0 -1)))]]]
+    (reduce (fn [scene [path transform]] (assoc-in scene path transform)) scene updates)))
 
 
 (defn update-mesh!
@@ -602,8 +614,8 @@
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
-              moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform]
-                                           (mulm object-to-world (rotation-matrix aerodynamics/gltf-to-aerodynamic)))
+              moved-scene        (assoc-in (update-wheels scene) [:sfsim.model/root :sfsim.model/transform]
+                                           (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
               clouds             (texture-render-color-depth
                                    (/ (:sfsim.render/window-width planet-render-vars) 2)
