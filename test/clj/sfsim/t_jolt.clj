@@ -221,7 +221,9 @@
                  :sfsim.jolt/radius 0.1
                  :sfsim.jolt/inertia 0.1
                  :sfsim.jolt/suspension-min-length 0.1
-                 :sfsim.jolt/suspension-max-length 0.3})
+                 :sfsim.jolt/suspension-max-length 0.3
+                 :sfsim.jolt/stiffness 3200.0
+                 :sfsim.jolt/damping 250.0})
 (def wheel1 (assoc wheel-base :sfsim.jolt/position (vec3 -0.5 -0.5 -0.5)))
 (def wheel2 (assoc wheel-base :sfsim.jolt/position (vec3 +0.5 -0.5 -0.5)))
 (def wheel3 (assoc wheel-base :sfsim.jolt/position (vec3 -0.5 +0.5 -0.5)))
@@ -239,15 +241,15 @@
         (set-restitution floor 0.2)
         (optimize-broad-phase)
         (dotimes [i 25] (update-system 0.1 1))
-        (get-translation body) => (roughly-vector (vec3 0 0 -0.613) 1e-3)
+        (get-translation body) => (roughly-vector (vec3 0 0 -0.631) 1e-3)
         (matrix/get-translation (get-wheel-local-transform vehicle 0 (vec3 0 1 0) (vec3 0 0 1)))
-        => (roughly-vector (vec3 -0.5 -0.5 -0.789) 1e-3)
+        => (roughly-vector (vec3 -0.5 -0.5 -0.780) 1e-3)
         (matrix/get-translation (get-wheel-local-transform vehicle 1 (vec3 0 1 0) (vec3 0 0 1)))
-        => (roughly-vector (vec3 +0.5 -0.5 -0.789) 1e-3)
+        => (roughly-vector (vec3 +0.5 -0.5 -0.780) 1e-3)
         (matrix/get-translation (get-wheel-local-transform vehicle 2 (vec3 0 1 0) (vec3 0 0 1)))
-        => (roughly-vector (vec3 -0.5 +0.5 -0.789) 1e-3)
+        => (roughly-vector (vec3 -0.5 +0.5 -0.780) 1e-3)
         (matrix/get-translation (get-wheel-local-transform vehicle 3 (vec3 0 1 0) (vec3 0 0 1)))
-        => (roughly-vector (vec3 +0.5 +0.5 -0.789) 1e-3)
+        => (roughly-vector (vec3 +0.5 +0.5 -0.780) 1e-3)
         (remove-and-destroy-constraint vehicle)
         (remove-and-destroy-body floor)
         (remove-and-destroy-body body)))
@@ -273,9 +275,9 @@
         (set-restitution floor 0.2)
         (optimize-broad-phase)
         (dotimes [i 25] (update-system 0.1 1))
-        (get-translation body) => (roughly-vector (vec3 0 0 -1.111) 1e-3)
+        (get-translation body) => (roughly-vector (vec3 0 0 -1.102) 1e-3)
         (matrix/get-translation (get-wheel-local-transform vehicle 0 (vec3 0 1 0) (vec3 0 0 -1)))
-        => (roughly-vector (vec3 -0.5 -0.5 0.792) 1e-3)
+        => (roughly-vector (vec3 -0.5 -0.5 0.798) 1e-3)
         (remove-and-destroy-constraint vehicle)
         (remove-and-destroy-body floor)
         (remove-and-destroy-body body)))
