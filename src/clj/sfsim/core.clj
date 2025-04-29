@@ -174,15 +174,23 @@
 (def nose-wheel-pos (get-translation (mulm gltf-to-aerodynamic
                                            (:sfsim.model/transform (get-in scene nose-wheel-path)))))
 
-(def wheel-base {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
-                 :sfsim.jolt/width 0.4064
-                 :sfsim.jolt/radius (* 0.5 1.1303)
-                 :sfsim.jolt/inertia 16.3690
-                 :sfsim.jolt/suspension-min-length 0.4572
-                 :sfsim.jolt/suspension-max-length 0.8128})
-(def main-wheel-left (assoc wheel-base :sfsim.jolt/position (add main-wheel-left-pos (vec3 0 0 0))))
-(def main-wheel-right (assoc wheel-base :sfsim.jolt/position (add main-wheel-right-pos (vec3 0 0 0))))
-(def nose-wheel (assoc wheel-base :sfsim.jolt/position (add nose-wheel-pos (vec3 0 0 0))))
+; k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke = maxlength - minlength)
+; k = 4448351
+; c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
+; c = 632733
+(def main-wheel-base {:sfsim.jolt/width 0.4064
+                      :sfsim.jolt/radius (* 0.5 1.1303)
+                      :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
+                      :sfsim.jolt/suspension-min-length 0.4572
+                      :sfsim.jolt/suspension-max-length 0.8128})
+(def nose-wheel-base {:sfsim.jolt/width 0.22352
+                      :sfsim.jolt/radius (* 0.5 0.8128)
+                      :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
+                      :sfsim.jolt/suspension-min-length 0.2371
+                      :sfsim.jolt/suspension-max-length 0.5419})
+(def main-wheel-left (assoc main-wheel-base :sfsim.jolt/position (add main-wheel-left-pos (vec3 0 0 0))))
+(def main-wheel-right (assoc main-wheel-base :sfsim.jolt/position (add main-wheel-right-pos (vec3 0 0 0))))
+(def nose-wheel (assoc nose-wheel-base :sfsim.jolt/position (add nose-wheel-pos (vec3 0 0 0))))
 (def wheels [main-wheel-left main-wheel-right nose-wheel])
 
 (def tile-tree (planet/make-tile-tree))

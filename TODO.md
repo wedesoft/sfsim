@@ -1,9 +1,6 @@
 # TODO
-* good position of wheels for takeoff (with low fuel) and landing (tail end),
-  gear <-> terrain physics with stationary Earth (ground collisions)
+* gear spring constants and damping coefficients
   gear animations (deploy, suspension, rotating wheel)
-  wheel diameter: 1.1303, wheel width: 0.4064
-  wheel weight: 205 pounds, inertia = 0.5 * m * r^2 = 16.3690
   nose wheel: 0.8128m diameter, width: 0.22352
   * Main Landing Gear:
     * Minimum (compressed): Approximately 18–20 inches of travel.
