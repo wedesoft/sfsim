@@ -451,7 +451,7 @@ void set_angular_velocity(int id, Vec3 velocity)
 }
 
 void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, Vec3 up, Vec3 forward,
-    float suspension_min_length, float suspension_max_length)
+    float suspension_min_length, float suspension_max_length, float stiffness, float damping)
 {
   JPH::WheelSettingsWV *result = new JPH::WheelSettingsWV;
   result->mPosition = JPH::Vec3(position.x, position.y, position.z);
@@ -468,6 +468,7 @@ void *make_wheel_settings(Vec3 position, float width, float radius, float inerti
   result->mMaxSteerAngle = 0.0f;
   result->mMaxBrakeTorque = 0.0f;
   result->mMaxHandBrakeTorque = 0.0f;
+  result->mSuspensionSpring = JPH::SpringSettings(JPH::ESpringMode::StiffnessAndDamping, stiffness, damping);
   return result;
 }
 

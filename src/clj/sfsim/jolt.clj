@@ -372,13 +372,14 @@
 
 (defcfn make-wheel-settings-
   "Create wheel settings object for wheeled vehicle (private)"
-  make_wheel_settings [::vec3 ::mem/float ::mem/float ::mem/float ::vec3 ::vec3 ::mem/float ::mem/float] ::mem/pointer)
+  make_wheel_settings [::vec3 ::mem/float ::mem/float ::mem/float ::vec3 ::vec3 ::mem/float ::mem/float ::mem/float ::mem/float]
+                      ::mem/pointer)
 
 
 (defn make-wheel-settings
   "Create wheel settings object for wheeled vehicle"
-  [{::keys [position width radius inertia suspension-min-length suspension-max-length]} up forward]
-  (make-wheel-settings- position width radius inertia up forward suspension-min-length suspension-max-length))
+  [{::keys [position width radius inertia suspension-min-length suspension-max-length stiffness damping]} up forward]
+  (make-wheel-settings- position width radius inertia up forward suspension-min-length suspension-max-length stiffness damping))
 
 
 (defcfn destroy-wheel-settings
