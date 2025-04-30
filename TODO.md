@@ -1,15 +1,5 @@
 # TODO
-* gear spring constants and damping coefficients
-  gear animations (deploy, suspension, rotating wheel)
-  nose wheel: 0.8128m diameter, width: 0.22352
-  * Main Landing Gear:
-    * Minimum (compressed): Approximately 18–20 inches of travel.
-    * Maximum (extended): Around 30–32 inches total length.
-    * This gives about 12–14 inches of suspension travel.
-  * Nose Landing Gear:
-    * Slightly shorter due to lower load.
-    * Roughly 10–12 inches of suspension travel.
-* control surface effectiveness should depend on air density and speed
+* gear animations (deploy, suspension, rotating wheel)
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 * get high-res Florida data

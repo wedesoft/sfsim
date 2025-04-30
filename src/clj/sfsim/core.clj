@@ -26,7 +26,7 @@
                                       texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
                                       setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
-    [sfsim.util :refer (find-if)]
+    [sfsim.util :refer (find-if sqr)]
     [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
     (fastmath.vector
@@ -183,14 +183,14 @@
 (def main-wheel-base {:sfsim.jolt/width 0.4064
                       :sfsim.jolt/radius (* 0.5 1.1303)
                       :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
-                      :sfsim.jolt/suspension-min-length 0.4572
-                      :sfsim.jolt/suspension-max-length 0.8128
+                      :sfsim.jolt/suspension-min-length 0.4572  ; 12-14 inches suspension travel
+                      :sfsim.jolt/suspension-max-length 0.8128  ; 30-32 inches total length
                       :sfsim.jolt/stiffness 4448351.0
                       :sfsim.jolt/damping 632733.0})
 (def nose-wheel-base {:sfsim.jolt/width 0.22352
                       :sfsim.jolt/radius (* 0.5 0.8128)
                       :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
-                      :sfsim.jolt/suspension-min-length 0.2371
+                      :sfsim.jolt/suspension-min-length 0.2371  ; 10-12 inches suspension travel
                       :sfsim.jolt/suspension-max-length 0.5419
                       :sfsim.jolt/stiffness 1210940.0
                       :sfsim.jolt/damping 147638.0})
@@ -601,11 +601,12 @@
                     (swap! recording conj frame)))
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
                 ; (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
-                (let [speed (mag (jolt/get-linear-velocity body))]
+                (let [speed   (mag (jolt/get-linear-velocity body))
+                      density (atmosphere/density-at-height height)]
                   (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
-                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* u speed 1.0 mass) 0)))
-                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* r speed 0.5 mass))))
-                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t speed 0.25 mass) 0 0))))
+                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* 0.5 u 0.25 (sqr speed) density 1.0 surface chord) 0)))
+                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* 0.5 r 0.25 (sqr speed) density 0.5 surface chord))))
+                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* 0.5 t 0.25 (sqr speed) density 0.25 surface wingspan) 0 0))))
                 (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body) surface wingspan chord)]
