@@ -1,5 +1,7 @@
 # TODO
-* gear animations (deploy, suspension, rotating wheel)
+* gears and doors animations (deploy, suspension, rotating wheel), use pairs of wheels
+  use rotation and suspension length to update wheel 3D armature
+* wheel brakes, steering
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 * get high-res Florida data
@@ -10,6 +12,7 @@
   [section4.2.pdf](http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf)
 * integration test powder function
 * arycama: limit darkness of cloud shadow (exponential approaching a base level)
+* increase ambient light (surface radiance)
 * orbitting Earth
 * thrust graphics, opengl rocket plume
   flame: https://www.shadertoy.com/view/XsXSWS
