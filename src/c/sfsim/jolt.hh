@@ -20,6 +20,10 @@ extern "C" {
     double m00, m01, m02, m10, m11, m12, m20, m21, m22;
   } Mat3x3;
 
+  typedef struct {
+    double m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33;
+  } Mat4x4;
+
   void set_gravity(Vec3 gravity);
   void optimize_broad_phase();
   void update_system(double dt, int collision_steps);
@@ -49,11 +53,13 @@ extern "C" {
   void set_linear_velocity(int id, Vec3 velocity);
   Vec3 get_angular_velocity(int id);
   void set_angular_velocity(int id, Vec3 velocity);
-  void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, float suspension_min_length, float suspension_max_length);
+  void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, Vec3 up, Vec3 forward,
+      float suspension_min_length, float suspension_max_length, float stiffness, float damping);
   void destroy_wheel_settings(void *wheel_settings);
-  void *make_vehicle_constraint_settings(void);
+  void *make_vehicle_constraint_settings(Vec3 up, Vec3 forward);
   void vehicle_constraint_settings_add_wheel(void *constraint, void *wheel_settings);
   void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_settings);
+  Mat4x4 get_wheel_local_transform(void *constraint, int wheel_index, Vec3 right, Vec3 up);
   void remove_and_destroy_constraint(void *constraint);
 #ifdef __cplusplus
 }

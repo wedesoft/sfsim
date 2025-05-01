@@ -1,59 +1,49 @@
-; height dependent formula for atmospheric temperature
-; Hull: Fundamentals of Airplane Flight Mechanics
-(require '[clojure.math :refer (exp cos sin pow to-radians to-degrees)])
-(require '[sfsim.quaternion :as q])
-(require '[sfsim.util :refer :all])
-(require '[sfsim.units :refer :all])
-(require '[sfsim.aerodynamics :refer :all])
-(require '[sfsim.atmosphere :refer :all])
-(require '[fastmath.vector :refer (vec3 mag)])
+(require '[sfsim.matrix :as matrix])
+(require '[fastmath.matrix :refer (mulm)])
+(require '[fastmath.vector :refer (vec3)])
+(require '[sfsim.aerodynamics :as aerodynamics])
+(require '[sfsim.model :as model])
+(require '[sfsim.jolt :as jolt])
+(require '[sfsim.util :as util])
 
-(def radius 6378000.0)
+(jolt/jolt-init)
 
-(def height 2000)
-(def position (vec3 0 0 (+ radius height)))
+(def model (model/read-gltf "venturestar.glb"))
+(def convex-hulls (update (model/empty-meshes-to-points model)
+                          :sfsim.model/transform
+                          #(mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic) %)))
 
-(def surface 198.0)
-(def chord 10.0)
-(def wingspan 20.75)
+(keys model)
+(def node-names (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root model))))
+(def main-wheel-left-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Left")])
+(def main-wheel-right-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Right")])
+(def nose-wheel-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Nose Wheel")])
 
-(def weight 100000)
+(def main-wheel-left-pos (matrix/get-translation (mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                                       (:sfsim.model/transform (get-in model main-wheel-left-path)))))
+(def main-wheel-right-pos (matrix/get-translation (mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                                        (:sfsim.model/transform (get-in model main-wheel-right-path)))))
+(def nose-wheel-pos (matrix/get-translation (mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                                  (:sfsim.model/transform (get-in model nose-wheel-path)))))
 
-(def approach (to-radians 18))
+(def main-wheel-right-pos (matrix/get-translation
+                            (mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                                  (:sfsim.model/transform (util/find-if (fn [node] (= (:sfsim.model/name node) "Main Wheel Right"))
+                                                                        (:sfsim.model/children (:sfsim.model/root model)))))))
+(def nose-wheel-pos (matrix/get-translation
+                      (mulm (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                            (:sfsim.model/transform (util/find-if (fn [node] (= (:sfsim.model/name node) "Nose Wheel"))
+                                                                  (:sfsim.model/children (:sfsim.model/root model)))))))
 
-(def orientation (q/rotation (to-radians 8) (vec3 0 -1 0)))
+(def wheel-base {:sfsim.jolt/position (vec3 0.0 0.0 0.0)
+                 :sfsim.jolt/width 0.4064
+                 :sfsim.jolt/radius (/ 1.1303 2.0)
+                 :sfsim.jolt/inertia 16.3690
+                 :sfsim.jolt/suspension-min-length 0.4572
+                 :sfsim.jolt/suspension-max-length 0.8128})
 
-(def speed-mag 100.0)
-(def speed (vec3 (* (cos approach) speed-mag) 0 (* (sin approach) speed-mag)))
-(def speed-body-system (q/rotate-vector (q/inverse orientation) speed))
+(def main-wheel-left (assoc wheel-base :sfsim.jolt/position main-wheel-left-pos))
+(def main-wheel-right (assoc wheel-base :sfsim.jolt/position main-wheel-right-pos))
+(def nose-wheel (assoc wheel-base :sfsim.jolt/position nose-wheel-pos))
 
-(def alpha (angle-of-attack speed-body-system))
-(def beta (angle-of-side-slip speed-body-system))
-(to-degrees alpha)
-
-(def wind-to-body (q/* (q/rotation alpha (vec3 0 0 1)) (q/rotation (- beta) (vec3 0 1 0))))
-
-(def cl (coefficient-of-lift alpha beta))
-(def cd (coefficient-of-drag alpha beta))
-(def cy (coefficient-of-side-force alpha beta))
-
-(def cm (coefficient-of-pitch-moment alpha beta))
-(def cn (coefficient-of-yaw-moment beta))
-(def cr (coefficient-of-roll-moment beta))
-
-(def rho (density-at-height height))
-
-(def lift (* 0.5 cl rho (sqr speed-mag) surface))
-(def drag (* 0.5 cd rho (sqr speed-mag) surface))
-(def side-force (* 0.5 cy rho (sqr speed-mag) surface))
-
-(def pitch-moment (* 0.5 cm rho (sqr speed-mag) surface chord))
-(def yaw-moment (* 0.5 cn rho (sqr speed-mag) surface wingspan))
-(def roll-moment (* 0.5 cr rho (sqr speed-mag) surface wingspan))
-
-(def force-wind-system (vec3 (- drag) side-force (- lift)))
-(def force-body-system (q/rotate-vector wind-to-body force-wind-system))
-(def force-world (q/rotate-vector orientation force-body-system))
-
-(def moment-body-system (vec3 roll-moment pitch-moment yaw-moment))
-(def moment-world (q/rotate-vector orientation moment-body-system))
+(jolt/jolt-destroy)

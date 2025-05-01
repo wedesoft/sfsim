@@ -4,11 +4,7 @@ This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
 Requires OpenGL 4.5.
 
-[![Rendering of volumetric clouds](https://i.ytimg.com/vi/ierGCAhkxAU/hqdefault.jpg)](https://www.youtube.com/watch?v=ierGCAhkxAU)
-
-[![Planet rendering with volumetric clouds and night time textures](https://i.ytimg.com/vi/2v3VOJMnPBI/hqdefault.jpg)](https://www.youtube.com/watch?v=2v3VOJMnPBI)
-
-[![Atmospheric scattering and planet level-of-detail rendering](https://i.ytimg.com/vi/Ce3oWQflYOY/hqdefault.jpg)](https://www.youtube.com/watch?v=Ce3oWQflYOY)
+[![Aerodynamic prototype](https://i.ytimg.com/vi/vmg0p5jawnY/hqdefault.jpg)](https://www.youtube.com/watch?v=vmg0p5jawnY)
 
 # Installation
 
@@ -45,7 +41,7 @@ cd ..
 
 # Build
 
-* Build Jolt wrapper library: `make`
+* Build Jolt wrapper library: `make jolt`
 * Build Worley noise: `clj -T:build worley`
 * Build Perlin noise: `clj -T:build perlin`
 * Build blue noise: `clj -T:build bluenoise`
@@ -92,6 +88,7 @@ cd ..
   * [Tungsten Moon](https://tungstenmoon.com/)
   * [Rogue System](http://imagespaceinc.com/rogsys/)
   * [UniVoyager](https://www.univoyager.com/)
+  * [Space Nerds in Space](https://smcameron.github.io/space-nerds-in-space/)
 * Engines
   * [Jolt Physics](https://github.com/jrouwe/JoltPhysics)
   * [Project Chrono physics engine](https://projectchrono.org/)
@@ -134,4 +131,4 @@ cd ..
   * [nREPL](https://nrepl.org/) server and [REPL-y](https://github.com/trptcolin/reply) client
   * [rebel-readline](https://github.com/bhauman/rebel-readline) REPL with colors :)
 
-  [1]: https://github.com/wedesoft/sfsim
+  [1]: https://wedesoft.github.io/sfsim/

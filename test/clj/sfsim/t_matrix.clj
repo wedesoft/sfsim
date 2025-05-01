@@ -41,9 +41,24 @@
       => (fm/mat4x4 1 2 3 4, 5 6 7 8, 9 10 11 12, 0 0 0 1))
 
 
+(facts "Create a 4x4 matrix from a translation vector"
+       (translation-matrix (fv/vec3 2 3 5))
+       => (fm/mat4x4 1 0 0 2, 0 1 0 3, 0 0 1 5, 0 0 0 1))
+
+
 (fact "Create a 4x4 matrix from a 3x3 rotation matrix"
       (rotation-matrix (fm/mat3x3 1 2 3, 5 6 7, 9 10 11))
       => (fm/mat4x4 1 2 3 0, 5 6 7 0, 9 10 11 0, 0 0 0 1))
+
+
+(fact "Extract 3x3 roation part from 4x4 matrix"
+      (get-rotation (fm/mat4x4 1 2 3 4, 5 6 7 8, 9 10 11 12, 0 0 0 1))
+      => (fm/mat3x3 1 2 3, 5 6 7, 9 10 11))
+
+
+(fact "Extract translation vector from 4x4 matrix"
+      (get-translation (fm/mat4x4 1 0 0 2, 0 1 0 3, 0 0 1 5, 0 0 0 1))
+      => (fv/vec3 2 3 5))
 
 
 (facts "OpenGL projection matrix"

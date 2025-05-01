@@ -297,5 +297,12 @@
     (mapv #(/ % sum) series)))
 
 
+(defn find-if
+  "Fetch first element matching a predicate"
+  {:malli/schema [:=> [:cat fn? [:sequential :some]] :any]}
+  [pred coll]
+  (first (filter pred coll)))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

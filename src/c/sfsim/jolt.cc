@@ -450,14 +450,15 @@ void set_angular_velocity(int id, Vec3 velocity)
   body_interface->SetAngularVelocity(body_id, angular_velocity);
 }
 
-void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, float suspension_min_length, float suspension_max_length)
+void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, Vec3 up, Vec3 forward,
+    float suspension_min_length, float suspension_max_length, float stiffness, float damping)
 {
   JPH::WheelSettingsWV *result = new JPH::WheelSettingsWV;
   result->mPosition = JPH::Vec3(position.x, position.y, position.z);
-  result->mSuspensionDirection = JPH::Vec3(0.0f, 0.0f, -1.0f);
-  result->mSteeringAxis = JPH::Vec3(0.0f, 0.0f, +1.0f);
-  result->mWheelUp = JPH::Vec3(0.0f, 0.0f, 1.0f);
-  result->mWheelForward = JPH::Vec3(1.0f, 0.0f, 0.0f);
+  result->mSuspensionDirection = JPH::Vec3(-up.x, -up.y, -up.z);
+  result->mSteeringAxis = JPH::Vec3(up.x, up.y, up.z);
+  result->mWheelUp = JPH::Vec3(up.x, up.y, up.z);
+  result->mWheelForward = JPH::Vec3(forward.x, forward.y, forward.z);
   result->mWidth = width;
   result->mRadius = radius;
   result->mInertia = inertia;
@@ -465,7 +466,9 @@ void *make_wheel_settings(Vec3 position, float width, float radius, float inerti
   result->mSuspensionMaxLength = suspension_max_length;
   result->mAngularDamping = 0.0f;
   result->mMaxSteerAngle = 0.0f;
+  result->mMaxBrakeTorque = 0.0f;
   result->mMaxHandBrakeTorque = 0.0f;
+  result->mSuspensionSpring = JPH::SpringSettings(JPH::ESpringMode::StiffnessAndDamping, stiffness, damping);
   return result;
 }
 
@@ -474,13 +477,13 @@ void destroy_wheel_settings(void *wheel_settings)
   delete (JPH::WheelSettingsWV *)wheel_settings;
 }
 
-void *make_vehicle_constraint_settings(void)
+void *make_vehicle_constraint_settings(Vec3 up, Vec3 forward)
 {
   JPH::WheeledVehicleControllerSettings *vehicle_controller_settings = new JPH::WheeledVehicleControllerSettings;
   JPH::VehicleConstraintSettings *vehicle_constraint_settings = new JPH::VehicleConstraintSettings;
   vehicle_constraint_settings->mController = vehicle_controller_settings;
-  vehicle_constraint_settings->mUp = JPH::Vec3(0.0f, 0.0f, 1.0f);
-  vehicle_constraint_settings->mForward = JPH::Vec3(1.0f, 0.0f, 0.0f);
+  vehicle_constraint_settings->mUp = JPH::Vec3(up.x, up.y, up.z);
+  vehicle_constraint_settings->mForward = JPH::Vec3(forward.x, forward.y, forward.z);
   return vehicle_constraint_settings;
 }
 
@@ -507,6 +510,36 @@ void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_se
     return constraint;
   } else
     return NULL;
+}
+
+Mat4x4 get_wheel_local_transform(void *constraint, int wheel_index, Vec3 right, Vec3 up)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  JPH::Vec3 wheel_right(right.x, right.y, right.z);
+  JPH::Vec3 wheel_up(up.x, up.y, up.z);
+  JPH::Mat44 transform = vehicle_constraint->GetWheelLocalTransform(wheel_index, wheel_right, wheel_up);
+  JPH::Vec3 x = transform.GetAxisX();
+  JPH::Vec3 y = transform.GetAxisY();
+  JPH::Vec3 z = transform.GetAxisZ();
+  JPH::Vec3 t = transform.GetTranslation();
+  return (Mat4x4){
+    .m00 = x.GetX(),
+    .m01 = y.GetX(),
+    .m02 = z.GetX(),
+    .m03 = t.GetX(),
+    .m10 = x.GetY(),
+    .m11 = y.GetY(),
+    .m12 = z.GetY(),
+    .m13 = t.GetY(),
+    .m20 = x.GetZ(),
+    .m21 = y.GetZ(),
+    .m22 = z.GetZ(),
+    .m23 = t.GetZ(),
+    .m30 = 0.0f,
+    .m31 = 0.0f,
+    .m32 = 0.0f,
+    .m33 = 1.0f
+  };
 }
 
 void remove_and_destroy_constraint(void *constraint)

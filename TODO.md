@@ -1,18 +1,18 @@
 # TODO
-* choose reasonable size for damping moments
-  moments -> torques
-  add thrust,
-  https://www.spaceflighthistories.com/post/x-33-venturestar
-  thrust: 3,010,000 lbf
+* gears and doors animations (deploy, suspension, rotating wheel), use pairs of wheels
+  use rotation and suspension length to update wheel 3D armature
+* wheel brakes, steering
+* fix problem with resolution of neighbouring tiles in planetary cubemap
+  problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
+* get high-res Florida data
+* https://www.spaceflighthistories.com/post/x-33-venturestar
+  add thrust: 3,010,000 lbf
   weight: payload 25000 kg. vehicle 100t-135t
   fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
   [section4.2.pdf](http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf)
-  drag: 1/2 * Cd * rho * v^2 * A
-  simulate gliding, taking off, landing (wheels, tail end), different speeds, thrusters
-  good position of wheels for takeoff (with low fuel) and landing
-  gear <-> terrain physics with stationary Earth (ground collisions)
 * integration test powder function
 * arycama: limit darkness of cloud shadow (exponential approaching a base level)
+* increase ambient light (surface radiance)
 * orbitting Earth
 * thrust graphics, opengl rocket plume
   flame: https://www.shadertoy.com/view/XsXSWS
@@ -25,19 +25,9 @@
 * stars, volumetric clouds https://www.shadertoy.com/view/ttcSD8
 * sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
 * sound effects
+* controller, HOTAS support
 * UI overlays for third person view
-* at least 3 environments/biomes before publishing steam page (or mock ups): day earth, day orbit, sunset orbit, clouds, landing
-* steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
-  show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
-  (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
-  first 4 screenshots important  bright ones and dark ones,
-  show the UI, use alpha for steam icons, provide desktop icon (32x32 ico),
-  good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
-  add steam page url to long description, add animated GIFs, section banners, revisit tags regularly,
-  steam tags (see games at https://store.steampowered.com/tags/en/Space%20Sim)
-  https://partner.steamgames.com/doc/store/assets/libraryassets
-  create application with https://partner.steamgames.com/doc/sdk
-  post on https://www.reddit.com/r/spacesimgames/
+* post on https://www.reddit.com/r/spacesimgames/
 * render stars
   * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
   * Skydome scaled to ZFAR * 0.5
@@ -46,7 +36,7 @@
 * render moonlight and moon
 * launch complex, lights
 * moon base, lights
-* cockpit
+* cockpit, flight assistance tools
 * fix planet tessellation tests
 * define wheel positions in Blender
   animate wheel rotation and suspension, bake gear animation and name actions the same
@@ -59,11 +49,8 @@
   * implement two-step Runge-Kutta wrapper alignment
   * docking physics
   * moon landing physics
-* problem with neighbouring resolution levels being to different
 * Check out poliastro and hapsira
 * use components and core.async for physics and loading of data, rendering main thread as component?
-* fix problem with resolution of neighbouring tiles in planetary cubemap
-* shift and update opacity and planet shadow maps for improved performance
 * quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
   deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
@@ -203,3 +190,15 @@
 * event-based radio (triggers as in Operation Flashpoint)
 * missions and high scores
 * beep-beep sound, paraglider audio?
+* normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
+  create application with https://partner.steamgames.com/doc/sdk
+* at least 3 environments/biomes before publishing steam page,
+  steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
+  show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
+  (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
+  first 4 screenshots important - bright ones and dark ones,
+  good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
+  add steam page url to long description, add animated GIFs, section banners
+* targeted game description:
+  * go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
+  * breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs

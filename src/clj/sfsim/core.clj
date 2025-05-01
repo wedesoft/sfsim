@@ -6,7 +6,7 @@
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
-    [fastmath.matrix :refer (inverse mulv mulm)]
+    [fastmath.matrix :refer (inverse mulv mulm mat4x4)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize)]
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
@@ -16,7 +16,7 @@
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
@@ -26,6 +26,7 @@
                                       texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
                                       setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
+    [sfsim.util :refer (find-if sqr)]
     [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
     (fastmath.vector
@@ -62,11 +63,14 @@
 (def opacity-base (atom 100.0))
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
-(def height 4000.0)
+(def height 40.0)
+;(def longitude (to-radians 2.23323))
+;(def latitude (to-radians 56.04026))
+;(def height 1155949.9)
 
 
 ;; (def height 30.0)
-(def speed (atom 7800.0))
+(def speed (atom (* 1 7800.0)))
 
 (def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
 (def earth-moon (astro/make-spk-segment-interpolator spk 0 3))
@@ -79,12 +83,13 @@
 
 (def recording
   (atom (if (.exists (java.io.File. "recording.edn"))
-          (mapv (fn [{:keys [timemillis position orientation camera-orientation dist]}]
+          (mapv (fn [{:keys [timemillis position orientation camera-orientation dist wheels]}]
                     {:timemillis timemillis
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
                      :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation)
                                                          (:jmag camera-orientation) (:kmag camera-orientation))
+                     :wheels (mapv #(apply mat4x4 %) wheels)
                      :dist dist})
                 (clojure.edn/read-string (slurp "recording.edn")))
           false)))
@@ -92,6 +97,7 @@
 (def playback false)
 (def fix-fps false)
 (def fullscreen playback)
+; (def fullscreen true)
 
 (def monitor (GLFW/glfwGetPrimaryMonitor))
 (def mode (GLFW/glfwGetVideoMode monitor))
@@ -100,6 +106,8 @@
 (def desktop-height (.height ^GLFWVidMode mode))
 (def window-width (if fullscreen desktop-width 854))
 (def window-height (if fullscreen desktop-height 480))
+;(def window-width (if fullscreen desktop-width 1920))
+;(def window-height (if fullscreen desktop-height 620))
 (def window (make-window "sfsim" window-width window-height (not fullscreen)))
 (GLFW/glfwShowWindow window)
 
@@ -147,11 +155,49 @@
                                     config/object-radius))
 
 
+(def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
+(def aerodynamic-to-gltf (rotation-matrix (inverse aerodynamics/gltf-to-aerodynamic)))
+
 (def model (model/read-gltf "venturestar.glb"))
 (def scene (model/load-scene scene-renderer model))
-(def convex-hulls (update (model/empty-meshes-to-points model)
-                          :sfsim.model/transform
-                          #(mulm (rotation-matrix aerodynamics/gltf-to-aerodynamic) %)))
+(def convex-hulls (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
+
+(def node-names (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root scene))))
+
+(def main-wheel-left-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Left")])
+(def main-wheel-right-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Right")])
+(def nose-wheel-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Nose Wheel")])
+
+(def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic
+                                                (:sfsim.model/transform (get-in scene main-wheel-left-path)))))
+(def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic
+                                                 (:sfsim.model/transform (get-in scene main-wheel-right-path)))))
+(def nose-wheel-pos (get-translation (mulm gltf-to-aerodynamic
+                                           (:sfsim.model/transform (get-in scene nose-wheel-path)))))
+
+; m = mass (100t) plus payload (25t)
+; k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke = maxlength - minlength)
+; k = 4448351
+; c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
+; c = 632733
+(def main-wheel-base {:sfsim.jolt/width 0.4064
+                      :sfsim.jolt/radius (* 0.5 1.1303)
+                      :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
+                      :sfsim.jolt/suspension-min-length 0.4572  ; 12-14 inches suspension travel
+                      :sfsim.jolt/suspension-max-length 0.8128  ; 30-32 inches total length
+                      :sfsim.jolt/stiffness 4448351.0
+                      :sfsim.jolt/damping 632733.0})
+(def nose-wheel-base {:sfsim.jolt/width 0.22352
+                      :sfsim.jolt/radius (* 0.5 0.8128)
+                      :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
+                      :sfsim.jolt/suspension-min-length 0.2371  ; 10-12 inches suspension travel
+                      :sfsim.jolt/suspension-max-length 0.5419
+                      :sfsim.jolt/stiffness 1210940.0
+                      :sfsim.jolt/damping 147638.0})
+(def main-wheel-left (assoc main-wheel-base :sfsim.jolt/position (add main-wheel-left-pos (vec3 0 0 0))))
+(def main-wheel-right (assoc main-wheel-base :sfsim.jolt/position (add main-wheel-right-pos (vec3 0 0 0))))
+(def nose-wheel (assoc nose-wheel-base :sfsim.jolt/position (add nose-wheel-pos (vec3 0 0 0))))
+(def wheels [main-wheel-left main-wheel-right nose-wheel])
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -291,9 +337,9 @@
 
 (def camera-orientation (atom (q/* (orientation-from-lon-lat longitude latitude)
                                    (q/rotation (to-radians -90) (vec3 1 0 0)))))
-(def dist (atom 200.0))
+(def dist (atom 60.0))
 
-(def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 26.87036336765512))
+(def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
 (jolt/set-angular-velocity body (vec3 0 0 0))
 (jolt/set-friction body 1.5)
@@ -303,10 +349,27 @@
 (def chord 10.0)
 (def wingspan 20.75)
 
+(def vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels))
+
 (jolt/optimize-broad-phase)
 
 (def coords (atom nil))
 (def mesh (atom nil))
+
+
+(defn update-wheels
+  ([scene wheelposes]
+   (let [updates
+         [[(conj main-wheel-left-path :sfsim.model/transform) (nth wheelposes 0)]
+          [(conj main-wheel-right-path :sfsim.model/transform) (nth wheelposes 1)]
+          [(conj nose-wheel-path :sfsim.model/transform) (nth wheelposes 2)]]]
+     (reduce (fn [scene [path transform]] (assoc-in scene path transform)) scene updates)))
+  ([scene]
+   (let [wheelposes
+         [(mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 0 (vec3 0 1 0) (vec3 0 0 -1)))
+          (mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 1 (vec3 0 1 0) (vec3 0 0 -1)))
+          (mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 2 (vec3 0 1 0) (vec3 0 0 -1)))]]
+     (update-wheels scene wheelposes))))
 
 
 (defn update-mesh!
@@ -379,8 +442,10 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (+ (int (astro/now)) 0.1) (/ @t0 1000 86400.0))))
+(def time-delta (atom (- (+ (int (astro/now)) (+ (/ 1.0 24.0) (/ 27.0 60.0 24.0))) (/ @t0 1000 86400.0))))
 
+(def camera-dx (atom 0.0))
+(def camera-dy (atom 0.0))
 
 (defn datetime-dialog-get
   [time-data t0]
@@ -461,6 +526,7 @@
                         (GLFW/glfwSetWindowShouldClose window true))))
 
 (def frame-index (atom 0))
+(def wheelposes (atom nil))
 
 (defmacro render-frame
   [_window & body]
@@ -485,12 +551,12 @@
       (when (@keystates GLFW/GLFW_KEY_O)
         (jolt/set-orientation body (:orientation @pose))
         (jolt/set-translation body (:position @pose))
+        (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+              max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
+              s       (min @speed max-speed)]
+          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.3))))
         (jolt/set-angular-velocity body (vec3 0 0 0))
         (reset! slew false))
-      ;(let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-      ;      max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
-      ;      s       (min @speed max-speed)]
-      ;    (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) s)))
       (let [t1     (System/currentTimeMillis)
             dt     (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn     (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
@@ -501,14 +567,17 @@
             r      (if (@keystates GLFW/GLFW_KEY_A) -1 (if (@keystates GLFW/GLFW_KEY_D) 1 0))
             t      (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
             thrust (if (@keystates GLFW/GLFW_KEY_SPACE) (* 20.0 mass) 0.0)
-            v  (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
-            d  (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
-            to (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
+            v      (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
+            d      (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
+            dcy    (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
+            dcx    (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))
+            to     (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
         (when mn (reset! menu main-dialog))
         (if playback
           (let [frame (nth @recording @n)]
             (reset! time-delta (/ (- (:timemillis frame) @t0) 1000 86400.0))
             (reset! pose {:position (:position frame) :orientation (:orientation frame)})
+            (reset! wheelposes (:wheels frame))
             (reset! camera-orientation (:camera-orientation frame))
             (reset! dist (:dist frame)))
           (do
@@ -524,30 +593,37 @@
                                :position (:position @pose)
                                :orientation (:orientation @pose)
                                :camera-orientation @camera-orientation
-                               :dist @dist}]
+                               :dist @dist
+                               :wheels
+                               [(vec (seq (mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 0 (vec3 0 1 0) (vec3 0 0 -1)))))
+                                (vec (seq (mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 1 (vec3 0 1 0) (vec3 0 0 -1)))))
+                                (vec (seq (mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 2 (vec3 0 1 0) (vec3 0 0 -1)))))]}]
                     (swap! recording conj frame)))
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
                 ; (jolt/set-gravity (mult (normalize (:position @pose)) 0.0))
-                (let [speed (mag (jolt/get-linear-velocity body))]
+                (let [speed   (mag (jolt/get-linear-velocity body))
+                      density (atmosphere/density-at-height height)]
                   (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
-                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* u speed 1.0 mass) 0)))
-                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* r speed 0.5 mass))))
-                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* t speed 0.25 mass) 0 0))))
+                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* 0.5 u 0.25 (sqr speed) density 1.0 surface chord) 0)))
+                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* 0.5 r 0.25 (sqr speed) density 0.5 surface chord))))
+                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* 0.5 t 0.25 (sqr speed) density 0.25 surface wingspan) 0 0))))
                 (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body) surface wingspan chord)]
                   (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                   (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
                 (update-mesh! (:position @pose))
-                (jolt/update-system (* dt 0.001) 10)
+                (jolt/update-system (* dt 0.001) 16)
                 (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))
+            (swap! camera-dx + (* dt dcx 0.0001))
+            (swap! camera-dy + (* dt dcy 0.0001))
             (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
             (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
             (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
             (swap! opacity-base + (* dt to))
             (swap! dist * (exp d))))
         (let [object-position    (:position @pose)
-              origin             (add object-position (mult (q/rotate-vector @camera-orientation (vec3 0 0 -1)) (* -1.0 @dist)))
+              origin             (add object-position (mult (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy -1)) (* -1.0 @dist)))
               jd-ut              (+ @time-delta (/ @t0 1000 86400.0) astro/T0)
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (sub (earth-moon jd-ut))
@@ -563,8 +639,9 @@
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
-              moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform]
-                                           (mulm object-to-world (rotation-matrix aerodynamics/gltf-to-aerodynamic)))
+              wheels-scene       (if playback (update-wheels scene @wheelposes) (update-wheels scene))
+              moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
+                                           (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
               clouds             (texture-render-color-depth
                                    (/ (:sfsim.render/window-width planet-render-vars) 2)
@@ -645,6 +722,6 @@
   (destroy-window window)
   (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
-  (when @recording
+  (when (and (not playback) @recording)
     (spit "recording.edn" (with-out-str (pprint @recording))))
   (System/exit 0))

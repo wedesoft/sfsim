@@ -4,7 +4,9 @@ JOLTFLAGS = -DJPH_DOUBLE_PRECISION -DJPH_OBJECT_STREAM -DJPH_USE_AVX -DJPH_USE_S
 CCFLAGS = -g -O3 -fPIC -Wall -Werror -DNDEBUG $(JOLTFLAGS) -pthread -I/usr/local/include -Isrc/c
 LDFLAGS = -L/usr/local/lib -lJolt -pthread
 
-all: src/c/sfsim/libjolt.dll
+all: jolt
+
+jolt: src/c/sfsim/libjolt.dll
 
 src/c/sfsim/libjolt.dll: src/c/sfsim/jolt.o
 	$(CC) -shared -flto=auto -o $@ $^ $(LDFLAGS)

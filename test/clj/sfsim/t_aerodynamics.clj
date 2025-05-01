@@ -313,6 +313,17 @@
            (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
 
 
+(facts "Convert vector from wind system to body system"
+       (wind-to-body-system (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) (vec3 1 0 0))
+       => (roughly-vector (vec3 1 0 0) 1e-6)
+       (wind-to-body-system (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 0 1 0)) (vec3 1 0 0))
+       => (roughly-vector (vec3 0 1 0) 1e-6)
+       (wind-to-body-system (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 0 0 1)) (vec3 1 0 0))
+       => (roughly-vector (vec3 0 0 1) 1e-6)
+       (wind-to-body-system (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 1 1)) (vec3 (sqrt 3) 0 0))
+       => (roughly-vector (vec3 1 1 1) 1e-6))
+
+
 (facts "Determine aerodynamic forces and moments"
        (let [height       1000.0
              orientation  (q/->Quaternion 1.0 0.0 0.0 0.0)
@@ -323,6 +334,10 @@
                        aerodynamics/linear-speed-in-body-system
                        (fn [orientation speed] (facts orientation => (q/->Quaternion 1.0 0.0 0.0 0.0) speed => (vec3 5 0 0))
                            :speed-body)
+                       wind-to-body-system
+                       (fn [speed-body force-vector]
+                           (facts speed-body => :speed-body)
+                           force-vector)
                        aerodynamics/lift
                        (fn [speed-body density surface]
                            (facts speed-body => :speed-body density => :density surface => 100.0)
