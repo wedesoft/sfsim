@@ -626,7 +626,9 @@
         (let [v (mulv (::transform node) (vec4 0 0 0 1))]
           (vec3 (.x ^Vec4 v) (.y ^Vec4 v) (.z ^Vec4 v)))
         nil)
-      (assoc (select-keys node [::transform ::name]) ::children children))))
+      (if (or (not (vector? (first children))) (> (count children) 3))
+        (assoc (select-keys node [::transform ::name]) ::children children)
+        nil))))
 
 
 (defn empty-meshes-to-points
