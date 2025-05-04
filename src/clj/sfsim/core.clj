@@ -442,7 +442,7 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (+ (int (astro/now)) (+ (/ 1.0 24.0) (/ 27.0 60.0 24.0))) (/ @t0 1000 86400.0))))
+(def time-delta (atom (- (+ (int (astro/now)) (+ (/ -5.0 24.0) (/ 27.0 60.0 24.0))) (/ @t0 1000 86400.0))))
 
 (def camera-dx (atom 0.0))
 (def camera-dy (atom 0.0))
