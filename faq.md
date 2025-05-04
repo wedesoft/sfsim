@@ -6,7 +6,7 @@ permalink: /faq
 
 ### When will the game be released?
 
-I hope to release a demo in 2025, but for the full game there is no fixed release date and there is still a lot of work left to do.
+I hope to release a demo in 2025, but for the full game there is no fixed release date yet since there is still some work left to do.
 You can [wishlist it on Steam][1] to get notified of the release.
 
 ### What operating systems are supported?
@@ -37,7 +37,7 @@ Note that building the project assets takes several days on a modern computer.
 ### Who made the music?
 
 The free music is made by [Andrewkn][7]!
-Andrewkn makes beautiful ambient music.
+Andrewkn's main styles are ambient, сhillout, drone, and cinematic.
 
 ### Will there be support for virtual reality headsets?
 
@@ -56,6 +56,12 @@ The relevant interpolation software was translated from [Skyfield][14].
 
 The spacecraft model was created using [Blender][15] and is inspired by the real-life Venturestar single-stage-to-orbit project which was never launched.
 
+### When did development of this game start?
+
+The first commit to the [sfsim repository][16] happened in September 2020.
+There also is prior work on model rendering in 2017.
+Also I made two attempts at implementing a physics engine using sequential impulses in 2017 and 2020.
+
 [1]: https://store.steampowered.com/app/3687560/sfsim/
 [2]: https://github.com/wedesoft/sfsim
 [3]: https://www.eclipse.org/legal/epl/epl-v10.html
@@ -71,3 +77,4 @@ The spacecraft model was created using [Blender][15] and is inspired by the real
 [13]: https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/
 [14]: https://rhodesmill.org/skyfield/
 [15]: https://www.blender.org/
+[16]: https://github.com/wedesoft/sfsim

@@ -16,7 +16,7 @@ Current key features:
 
 {% include youtube.html id="vmg0p5jawnY" %}
 
-Music by [Andrewkn][2]!
+The beautiful ambient music was made by [Andrewkn][2]!
 
 Wishlist it on Steam to get notified when it gets released:
 
