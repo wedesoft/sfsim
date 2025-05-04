@@ -16,7 +16,7 @@ Steam Deck has not been tested, but the graphics are likely to be too demanding 
 
 ### What are the system requirements?
 
-You need at least a graphics card with passmark 10000 such as the Nvidia GeForce GTX 1060.
+You need at least a graphics card with [passmark][17] 10000 such as the Nvidia GeForce GTX 1060.
 The hardware requirements might still change, but the main bottleneck are the volumetric clouds.
 
 Also ideally you will use a joystick or a game controller for controlling the space craft.
@@ -78,3 +78,4 @@ Also I made two attempts at implementing a physics engine using sequential impul
 [14]: https://rhodesmill.org/skyfield/
 [15]: https://www.blender.org/
 [16]: https://github.com/wedesoft/sfsim
+[17]: https://www.videocardbenchmark.net/high_end_gpus.html
