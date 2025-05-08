@@ -420,6 +420,11 @@
   get_suspension_length [::mem/pointer ::mem/int] ::mem/float)
 
 
+(defcfn get-rotation-angle
+  "Get wheel rotation angle"
+  get_rotation_angle [::mem/pointer ::mem/int] ::mem/float)
+
+
 (defcfn remove-and-destroy-constraint
   "Remove and destroy vehicle constraint"
   remove_and_destroy_constraint [::mem/pointer] ::mem/void)

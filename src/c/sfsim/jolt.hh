@@ -61,6 +61,7 @@ extern "C" {
   void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_settings);
   Mat4x4 get_wheel_local_transform(void *constraint, int wheel_index, Vec3 right, Vec3 up);
   float get_suspension_length(void *constraint, int wheel_index);
+  float get_rotation_angle(void *constraint, int wheel_index);
   void remove_and_destroy_constraint(void *constraint);
 #ifdef __cplusplus
 }

@@ -549,6 +549,13 @@ float get_suspension_length(void *constraint, int wheel_index)
   return wheel->GetSuspensionLength();
 }
 
+float get_rotation_angle(void *constraint, int wheel_index)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  JPH::Wheel *wheel = vehicle_constraint->GetWheel(wheel_index);
+  return wheel->GetRotationAngle();
+}
+
 void remove_and_destroy_constraint(void *constraint)
 {
   JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
