@@ -62,6 +62,7 @@ extern "C" {
   Mat4x4 get_wheel_local_transform(void *constraint, int wheel_index, Vec3 right, Vec3 up);
   float get_suspension_length(void *constraint, int wheel_index);
   float get_rotation_angle(void *constraint, int wheel_index);
+  char has_hit_hard_point(void *constraint, int wheel_index);
   void remove_and_destroy_constraint(void *constraint);
 #ifdef __cplusplus
 }

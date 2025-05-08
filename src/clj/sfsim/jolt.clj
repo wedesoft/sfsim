@@ -425,6 +425,17 @@
   get_rotation_angle [::mem/pointer ::mem/int] ::mem/float)
 
 
+(defcfn has-hit-hard-point-
+  "Check if wheel suspension has hit its upper limit"
+  has_hit_hard_point [::mem/pointer ::mem/int] ::mem/byte)
+
+
+(defn has-hit-hard-point
+  "Check if wheel suspension has hit its upper limit"
+  [constraint wheel]
+  (not (zero? (has-hit-hard-point- constraint wheel))))
+
+
 (defcfn remove-and-destroy-constraint
   "Remove and destroy vehicle constraint"
   remove_and_destroy_constraint [::mem/pointer] ::mem/void)

@@ -1,7 +1,6 @@
 # TODO
 * gears and doors animations (deploy, suspension, rotating wheel), use pairs of wheels
   use rotation and suspension length to update wheel 3D armature
-  wrap HasHitHardPoint and GetSuspensionLength and GetRotationAngle
 * wheel brakes, steering
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
