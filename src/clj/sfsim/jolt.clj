@@ -415,6 +415,11 @@
   get_wheel_local_transform [::mem/pointer ::mem/int ::vec3 ::vec3] ::mat4x4)
 
 
+(defcfn get-suspension-length
+  "Get wheel suspension length"
+  get_suspension_length [::mem/pointer ::mem/int] ::mem/float)
+
+
 (defcfn remove-and-destroy-constraint
   "Remove and destroy vehicle constraint"
   remove_and_destroy_constraint [::mem/pointer] ::mem/void)
