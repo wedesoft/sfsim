@@ -1,6 +1,7 @@
 # TODO
 * gears and doors animations (deploy, suspension, rotating wheel), use pairs of wheels
   use rotation and suspension length to update wheel 3D armature
+  wrap HasHitHardPoint and GetSuspensionLength and GetRotationAngle
 * wheel brakes, steering
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
@@ -23,20 +24,21 @@
   blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
   particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
 * stars, volumetric clouds https://www.shadertoy.com/view/ttcSD8
+  * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
+  * Skydome scaled to ZFAR * 0.5
+  * no skydome and just stars as pixels?
 * sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
 * sound effects
 * controller, HOTAS support
 * UI overlays for third person view
 * post on https://www.reddit.com/r/spacesimgames/
-* render stars
-  * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
-  * Skydome scaled to ZFAR * 0.5
-  * no skydome and just stars as pixels?
-* space station model, station lights
-* render moonlight and moon
 * launch complex, lights
-* moon base, lights
+* space station model, station lights
 * cockpit, flight assistance tools
+* steam description with 616x150px heading images
+* release demo
+* render moonlight and moon
+* moon base, lights
 * fix planet tessellation tests
 * define wheel positions in Blender
   animate wheel rotation and suspension, bake gear animation and name actions the same
