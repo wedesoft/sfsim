@@ -6,7 +6,7 @@ permalink: /
 
 [![sfsim header image](sfsim.jpg)][1]
 
-[sfsim][1] is a realistic 3D space flight simulator with realistic celestial positions of Earth and Sun from NASA.
+[sfsim][1] is a realistic 3D space flight simulator with true celestial positions of Earth and Sun from NASA.
 Use an advanced single-stage-to-orbit space craft to take off, orbit the planet, perform reentry, and land back on Earth.
 sfsim features a true to scale Earth planet using NOAA elevation data and procedurally generated volumetric clouds.
 
