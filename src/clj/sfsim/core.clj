@@ -26,7 +26,7 @@
                                       texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
                                       setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
-    [sfsim.util :refer (find-if sqr)]
+    [sfsim.util :refer (sqr)]
     [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
     (fastmath.vector
