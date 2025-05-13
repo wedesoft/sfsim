@@ -16,7 +16,7 @@ Make sure you don't loose to much energy to air friction but also gather enough 
 <!-- insert take off animation -->
 
 ### Orbit the planet
-Perform a controlled burn for orbital insertion burn.
+Perform a controlled burn for orbital insertion.
 Your orbit should be nearly circular and above the atmosphere.
 If you get it wrong, you might enter the atmosphere unprepared and might even burn up!
 <!-- insert animation of orbital insertion burn -->
