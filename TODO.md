@@ -1,6 +1,8 @@
 # TODO
-* gears and doors animations (deploy, suspension, rotating wheel), use pairs of wheels
-  use rotation and suspension length to update wheel 3D armature
+* gears and doors animations (deploy, suspension, rotating wheel, steering),
+  bake animations,
+  use rotation, suspension length, and steering to animate wheel 3D armatures
+* update aerodynamics with expert data
 * wheel brakes, steering
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
