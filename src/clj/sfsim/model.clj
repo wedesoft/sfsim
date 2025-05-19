@@ -630,11 +630,30 @@
         (assoc (select-keys node [::transform ::name]) ::children children)
         nil))))
 
+(defn- extract-empty
+  "Convert empty node to vector"
+  [node]
+  (let [v (mulv (::transform node) (vec4 0 0 0 1))]
+    (vec3 (.x ^Vec4 v) (.y ^Vec4 v) (.z ^Vec4 v))))
+
+(defn- extract-hull
+  "Get empty coordinate systems from empty meshes"
+  [node]
+  (if (and (empty? (::mesh-indices node)) (every? #(empty? (::children %)) (::children node)) (> (count (::children node)) 3))
+    (assoc (select-keys node [::transform ::name]) ::children (mapv extract-empty (::children node)))
+    nil))
+
+(defn- extract-hulls
+  "Convert empty meshes to convex hulls"
+  [root]
+  (let [children (map extract-hull (::children root))]
+    (assoc (select-keys root [::transform ::name]) ::children (vec (remove nil? children)))))
+
 
 (defn empty-meshes-to-points
   "Convert empty meshes to points of for convex hulls"
   [scene]
-  (extract-points (::root scene)))
+  (extract-hulls (::root scene)))
 
 
 (defn load-scene
