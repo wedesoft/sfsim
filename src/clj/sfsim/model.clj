@@ -617,24 +617,12 @@
   (update scene ::root remove-empty-children))
 
 
-(defn- extract-points
-  "Recursively convert empty meshes to points"
-  [node]
-  (let [children (vec (remove nil? (map extract-points (::children node))))]
-    (if (empty? children)
-      (if (empty? (::mesh-indices node))
-        (let [v (mulv (::transform node) (vec4 0 0 0 1))]
-          (vec3 (.x ^Vec4 v) (.y ^Vec4 v) (.z ^Vec4 v)))
-        nil)
-      (if (or (not (vector? (first children))) (> (count children) 3))
-        (assoc (select-keys node [::transform ::name]) ::children children)
-        nil))))
-
 (defn- extract-empty
   "Convert empty node to vector"
   [node]
   (let [v (mulv (::transform node) (vec4 0 0 0 1))]
     (vec3 (.x ^Vec4 v) (.y ^Vec4 v) (.z ^Vec4 v))))
+
 
 (defn- extract-hull
   "Get empty coordinate systems from empty meshes"
@@ -642,6 +630,7 @@
   (if (and (empty? (::mesh-indices node)) (every? #(empty? (::children %)) (::children node)) (> (count (::children node)) 3))
     (assoc (select-keys node [::transform ::name]) ::children (mapv extract-empty (::children node)))
     nil))
+
 
 (defn- extract-hulls
   "Convert empty meshes to convex hulls"
