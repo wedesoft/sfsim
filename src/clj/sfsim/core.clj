@@ -648,7 +648,7 @@
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
               ; wheels-scene       (if playback (update-wheels scene @wheelposes) (update-wheels scene))
-              wheels-scene       (model/apply-transforms scene (model/animations-frame model {"DeployGearLeft" @gear}))
+              wheels-scene       (model/apply-transforms scene (model/animations-frame model {"DeployGearLeft" @gear "DeployGearRight" @gear}))
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
