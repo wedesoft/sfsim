@@ -1,4 +1,5 @@
 # TODO
+* determine overall transform of a node
 * gears and doors animations (deploy, suspension, rotating wheel, steering),
   bake animations,
   use rotation, suspension length, and steering to animate wheel 3D armatures
