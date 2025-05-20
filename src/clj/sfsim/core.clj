@@ -83,13 +83,14 @@
 
 (def recording
   (atom (if (.exists (java.io.File. "recording.edn"))
-          (mapv (fn [{:keys [timemillis position orientation camera-orientation dist wheels]}]
+          (mapv (fn [{:keys [timemillis position orientation camera-orientation dist gear]}]
                     {:timemillis timemillis
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
                      :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation)
                                                          (:jmag camera-orientation) (:kmag camera-orientation))
-                     :wheels (mapv #(apply mat4x4 %) wheels)
+                     ; :wheels (mapv #(apply mat4x4 %) wheels)
+                     :gear gear
                      :dist dist})
                 (clojure.edn/read-string (slurp "recording.edn")))
           false)))
@@ -580,7 +581,8 @@
             (reset! pose {:position (:position frame) :orientation (:orientation frame)})
             (reset! wheelposes (:wheels frame))
             (reset! camera-orientation (:camera-orientation frame))
-            (reset! dist (:dist frame)))
+            (reset! dist (:dist frame))
+            (reset! gear (:gear frame)))
           (do
             (if @slew
               (do
@@ -595,6 +597,7 @@
                                :orientation (:orientation @pose)
                                :camera-orientation @camera-orientation
                                :dist @dist
+                               :gear @gear
                                ; :wheels
                                ; [(vec (seq (mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 0 (vec3 0 1 0) (vec3 0 0 -1)))))
                                ;  (vec (seq (mulm aerodynamic-to-gltf (jolt/get-wheel-local-transform vehicle 1 (vec3 0 1 0) (vec3 0 0 -1)))))
