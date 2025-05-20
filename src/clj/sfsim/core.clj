@@ -162,11 +162,9 @@
 (def scene (model/load-scene scene-renderer model))
 (def convex-hulls (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 
-(def node-names (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root scene))))
-
-; (def main-wheel-left-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Left")])
-; (def main-wheel-right-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Right")])
-; (def nose-wheel-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Nose Wheel")])
+(def main-wheel-left-path (model/get-node-path scene "Main Wheel Left"))
+(def main-wheel-right-path (model/get-node-path scene "Main Wheel Right"))
+(def front-wheel-path (model/get-node-path scene "Front Wheel"))
 
 ; (def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic
 ;                                                 (:sfsim.model/transform (get-in scene main-wheel-left-path)))))
@@ -538,7 +536,6 @@
 
 
 (def gear (atom 0.0))
-(def gear-duration 4.16666666)
 
 (defn -main
   "Space flight simulator main function"
@@ -563,7 +560,7 @@
       (let [t1     (System/currentTimeMillis)
             dt     (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn     (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
-            dg     (if (@keystates GLFW/GLFW_KEY_N) 0.001 (if (@keystates GLFW/GLFW_KEY_M) -0.001 0.0))
+            dg     (if (@keystates GLFW/GLFW_KEY_N) 0.00025 (if (@keystates GLFW/GLFW_KEY_M) -0.00025 0.0))
             ra     (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
             rb     (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
             rc     (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
@@ -621,7 +618,7 @@
                 (jolt/update-system (* dt 0.001) 16)
                 (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})))
             (swap! gear + (* dt dg))
-            (swap! gear min gear-duration)
+            (swap! gear min 1.0)
             (swap! gear max 0.0)
             (swap! camera-dx + (* dt dcx 0.0001))
             (swap! camera-dy + (* dt dcy 0.0001))
@@ -648,7 +645,7 @@
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
               ; wheels-scene       (if playback (update-wheels scene @wheelposes) (update-wheels scene))
-              wheels-scene       (model/apply-transforms scene (model/animations-frame model {"DeployGearLeft" @gear "DeployGearRight" @gear}))
+              wheels-scene       (model/apply-transforms scene (model/animations-frame model {"DeployGearLeft" @gear "DeployGearRight" @gear "DeployGearFront" @gear}))
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)

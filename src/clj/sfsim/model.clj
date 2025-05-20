@@ -299,6 +299,27 @@
     result))
 
 
+(defn- get-node-path-subtree
+  "Get path in sub-tree of model to node with given name"
+  {:malli/schema [:=> [:cat [:map-of :keyword :some] :string] [:maybe [:vector :some]]]}
+  [node path-prefix node-name]
+  (if (= (::name node) node-name)
+    path-prefix
+    (let [children (::children node)
+          indices  (range (count children))]
+      (some identity
+            (map (fn [child index] (get-node-path-subtree child (conj (conj path-prefix ::children) index) node-name))
+                 children
+                 indices)))))
+
+
+(defn get-node-path
+  "Get path in model to node with given name"
+  {:malli/schema [:=> [:cat [:map [::root :some]] :string] [:maybe [:vector :some]]]}
+  [scene node-name]
+  (get-node-path-subtree (::root scene) [::root] node-name))
+
+
 (defn- load-mesh-into-opengl
   "Load index and vertex data into OpenGL buffer"
   {:malli/schema [:=> [:cat fn? mesh material] [:map [:vao vertex-array-object]]]}

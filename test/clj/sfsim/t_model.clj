@@ -937,20 +937,35 @@ vec4 cloud_point(vec3 point)
       (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root (remove-empty-meshes cube-with-hull)))) => ["Cube"])
 
 
-(fact "Convert empty meshes to points of for convex hulls"
-      (map :sfsim.model/name (:sfsim.model/children (empty-meshes-to-points cube-with-hull))) => ["Hull"]
-      (:sfsim.model/children (first (:sfsim.model/children (empty-meshes-to-points cube-with-hull))))
-      => [(vec3 1 1 -1) (vec3 -1 1 -1) (vec3 -1 1 1) (vec3 1 1 1)
-          (vec3 1 -1 -1) (vec3 -1 -1 -1) (vec3 -1 -1 1) (vec3 1 -1 1) (vec3 0 0 0)]
-      (:sfsim.model/transform (first (:sfsim.model/children (empty-meshes-to-points hull-with-offset))))
-      => (mat4x4 1 0 0 1, 0 1 0 0, 0 0 1 0, 0 0 0 1)
-      (:sfsim.model/children (first (:sfsim.model/children (empty-meshes-to-points hull-with-offset))))
-      => [(vec3 1 0 0) (vec3 1 0 0) (vec3 1 0 0) (vec3 0 0 0)]
-      (:sfsim.model/children (empty-meshes-to-points cube-with-points)) => [])
+(facts "Convert empty meshes to points of for convex hulls"
+       (map :sfsim.model/name (:sfsim.model/children (empty-meshes-to-points cube-with-hull))) => ["Hull"]
+       (:sfsim.model/children (first (:sfsim.model/children (empty-meshes-to-points cube-with-hull))))
+       => [(vec3 1 1 -1) (vec3 -1 1 -1) (vec3 -1 1 1) (vec3 1 1 1)
+           (vec3 1 -1 -1) (vec3 -1 -1 -1) (vec3 -1 -1 1) (vec3 1 -1 1) (vec3 0 0 0)]
+       (:sfsim.model/transform (first (:sfsim.model/children (empty-meshes-to-points hull-with-offset))))
+       => (mat4x4 1 0 0 1, 0 1 0 0, 0 0 1 0, 0 0 0 1)
+       (:sfsim.model/children (first (:sfsim.model/children (empty-meshes-to-points hull-with-offset))))
+       => [(vec3 1 0 0) (vec3 1 0 0) (vec3 1 0 0) (vec3 0 0 0)]
+       (:sfsim.model/children (empty-meshes-to-points cube-with-points)) => [])
 
 
 (fact "Remove hulls with less than four points"
       (:sfsim.model/children (empty-meshes-to-points cube-with-incomplete-hull)) => [])
+
+
+(facts "Get path in model to node with given name"
+       (get-node-path {:sfsim.model/root {:sfsim.model/name "ROOT"}} "ROOT")
+       => [:sfsim.model/root]
+       (get-node-path {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/children [{:sfsim.model/name "Node"}]}} "Node")
+       => [:sfsim.model/root :sfsim.model/children 0]
+       (get-node-path {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/children [{:sfsim.model/name "Node"}]}} "Node")
+       => [:sfsim.model/root :sfsim.model/children 0]
+       (get-node-path {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/children [{:sfsim.model/name "Node"}]}} "Other")
+       => nil
+       (get-node-path {:sfsim.model/root {:sfsim.model/name "ROOT"
+                                          :sfsim.model/children [{:sfsim.model/name "Node1"} {:sfsim.model/name "Node2"}]}}
+                      "Node2")
+       => [:sfsim.model/root :sfsim.model/children 1])
 
 
 (GLFW/glfwTerminate)
