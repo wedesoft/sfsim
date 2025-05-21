@@ -968,4 +968,21 @@ vec4 cloud_point(vec3 point)
        => [:sfsim.model/root :sfsim.model/children 1])
 
 
+(facts "Get global transform of a node"
+       (let [translation (translation-matrix (vec3 1 2 3))
+             rotation    (rotation-matrix (rotation-x (to-radians 90)))]
+         (get-node-transform {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/transform translation}}
+                             "ROOT")
+         => translation
+         (get-node-transform {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/transform translation
+                                                 :sfsim.model/children [{:sfsim.model/name "Node"
+                                                                         :sfsim.model/transform rotation}]}}
+                             "Node")
+         => (mulm translation rotation)
+         (get-node-transform {:sfsim.model/root {:sfsim.model/name "ROOT" :sfsim.model/transform translation
+                                                 :sfsim.model/children []}}
+                             "Node")
+         => nil))
+
+
 (GLFW/glfwTerminate)

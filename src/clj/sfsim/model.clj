@@ -320,6 +320,23 @@
   (get-node-path-subtree (::root scene) [::root] node-name))
 
 
+(defn- get-node-transform-subtree
+  "Get sub-transform of a node"
+  {:malli/schema [:=> [:cat [:map-of :keyword :some] :string] [:maybe fmat4]]}
+  [node node-name]
+  (if (= (::name node) node-name)
+    (::transform node)
+    (let [sub-transform (some identity (map (fn [child] (get-node-transform-subtree child node-name)) (::children node)))]
+      (and sub-transform (mulm (::transform node) sub-transform)))))
+
+
+(defn get-node-transform
+  "Get global transform of a node"
+  {:malli/schema [:=> [:cat [:map [::root :some]] :string] [:maybe fmat4]]}
+  [scene node-name]
+  (get-node-transform-subtree (::root scene) node-name))
+
+
 (defn- load-mesh-into-opengl
   "Load index and vertex data into OpenGL buffer"
   {:malli/schema [:=> [:cat fn? mesh material] [:map [:vao vertex-array-object]]]}
