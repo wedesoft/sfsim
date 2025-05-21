@@ -163,40 +163,41 @@
 (def scene (model/load-scene scene-renderer model))
 (def convex-hulls (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 
-(def main-wheel-left-path (model/get-node-path scene "Main Wheel Left"))
-(def main-wheel-right-path (model/get-node-path scene "Main Wheel Right"))
-(def front-wheel-path (model/get-node-path scene "Front Wheel"))
+; (def main-wheel-left-path (model/get-node-path scene "Main Wheel Left"))
+; (def main-wheel-right-path (model/get-node-path scene "Main Wheel Right"))
+; (def front-wheel-path (model/get-node-path scene "Front Wheel"))
 
-; (def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic
-;                                                 (:sfsim.model/transform (get-in scene main-wheel-left-path)))))
-; (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic
-;                                                  (:sfsim.model/transform (get-in scene main-wheel-right-path)))))
-; (def nose-wheel-pos (get-translation (mulm gltf-to-aerodynamic
-;                                            (:sfsim.model/transform (get-in scene nose-wheel-path)))))
+(def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Left"))))
+(def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
+(def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Front Wheel"))))
 
 ; m = mass (100t) plus payload (25t)
-; k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke = maxlength - minlength)
-; k = 4448351
-; c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
-; c = 632733
+; stiffness: k = m * g * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring
+; damping: c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
 (def main-wheel-base {:sfsim.jolt/width 0.4064
                       :sfsim.jolt/radius (* 0.5 1.1303)
                       :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
-                      :sfsim.jolt/suspension-min-length 0.0
-                      :sfsim.jolt/suspension-max-length 0.8128
-                      :sfsim.jolt/stiffness 4448351.0
-                      :sfsim.jolt/damping 632733.0})
-(def nose-wheel-base {:sfsim.jolt/width 0.22352
-                      :sfsim.jolt/radius (* 0.5 0.8128)
-                      :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
-                      :sfsim.jolt/suspension-min-length 0.0
-                      :sfsim.jolt/suspension-max-length 0.5419
-                      :sfsim.jolt/stiffness 1210940.0
-                      :sfsim.jolt/damping 147638.0})
-; (def main-wheel-left (assoc main-wheel-base :sfsim.jolt/position (add main-wheel-left-pos (vec3 0 0 0))))
-; (def main-wheel-right (assoc main-wheel-base :sfsim.jolt/position (add main-wheel-right-pos (vec3 0 0 0))))
-; (def nose-wheel (assoc nose-wheel-base :sfsim.jolt/position (add nose-wheel-pos (vec3 0 0 0))))
-; (def wheels [main-wheel-left main-wheel-right nose-wheel])
+                      :sfsim.jolt/suspension-min-length (+ 0.8)
+                      :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
+                      :sfsim.jolt/stiffness 3515625.0
+                      :sfsim.jolt/damping 562500.0})
+(def front-wheel-base {:sfsim.jolt/width 0.22352
+                       :sfsim.jolt/radius (* 0.5 0.8128)
+                       :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
+                       :sfsim.jolt/suspension-min-length (+ 0.5)
+                       :sfsim.jolt/suspension-max-length (+ 0.5 0.5419)
+                       :sfsim.jolt/stiffness 3515625.0
+                       :sfsim.jolt/damping 562500.0})
+(def main-wheel-left (assoc main-wheel-base
+                            :sfsim.jolt/position
+                            (sub main-wheel-left-pos (vec3 0 0 (:sfsim.jolt/suspension-max-length main-wheel-base)))))
+(def main-wheel-right (assoc main-wheel-base
+                             :sfsim.jolt/position
+                             (sub main-wheel-right-pos (vec3 0 0 (:sfsim.jolt/suspension-max-length main-wheel-base)))))
+(def front-wheel (assoc front-wheel-base
+                        :sfsim.jolt/position
+                        (sub front-wheel-pos (vec3 0 0 (:sfsim.jolt/suspension-max-length front-wheel-base)))))
+(def wheels [main-wheel-left main-wheel-right front-wheel])
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -348,7 +349,7 @@
 (def chord 10.0)
 (def wingspan 20.75)
 
-; (def vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels))
+(def vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels))
 
 (jolt/optimize-broad-phase)
 
@@ -361,7 +362,7 @@
 ;    (let [updates
 ;          [[(conj main-wheel-left-path :sfsim.model/transform) (nth wheelposes 0)]
 ;           [(conj main-wheel-right-path :sfsim.model/transform) (nth wheelposes 1)]
-;           [(conj nose-wheel-path :sfsim.model/transform) (nth wheelposes 2)]]]
+;           [(conj front-wheel-path :sfsim.model/transform) (nth wheelposes 2)]]]
 ;      (reduce (fn [scene [path transform]] (assoc-in scene path transform)) scene updates)))
 ;   ([scene]
 ;    (let [wheelposes
