@@ -3,6 +3,8 @@
 * remove vehicle constraint when retracting gear
 * implement wheel brakes
 * physics and animation of steering
+* deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
+  https://samdriver.xyz/article/decal-render-intro
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 * get high-res Florida data
@@ -53,8 +55,6 @@
   * moon landing physics
 * Check out poliastro and hapsira
 * use components and core.async for physics and loading of data, rendering main thread as component?
-* quads with runway have to be flat (no saddle, same height for corner points)? increase all tessellation counts?
-  deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
 * introduce variation to cloud height
 * [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
