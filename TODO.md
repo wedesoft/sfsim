@@ -1,10 +1,8 @@
 # TODO
-* determine overall transform of a node
-* gears and doors animations (deploy, suspension, rotating wheel, steering),
-  bake animations,
-  use rotation, suspension length, and steering to animate wheel 3D armatures
 * update aerodynamics with expert data
-* wheel brakes, steering
+* remove vehicle constraint when retracting gear
+* implement wheel brakes
+* physics and animation of steering
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 * get high-res Florida data
