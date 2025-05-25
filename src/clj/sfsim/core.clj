@@ -507,29 +507,29 @@
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
+              _ (println "animate frame")
               animate            (model/animations-frame model {"GearLeft" (+ @gear 1.0)
                                                                 "GearRight" (+ @gear 1.0)
                                                                 "GearFront" (+ @gear 2.0)})
+              _ (println "done")
+              _ (println "apply transforms")
               wheels-scene       (model/apply-transforms scene animate)
+              _ (println "done")
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))]
           (onscreen-render window
                            (clear (vec3 0 1 0) 1.0)
                            ;; Render model
+                           (println "render model")
                            (model/render-scenes scene-renderer planet-render-vars shadow-vars [] [moved-scene])
-                           (when @menu
-                             (setup-rendering window-width window-height :sfsim.render/noculling false)
-                             (reset! focus-old nil)
-                             (@menu gui)
-                             (reset! focus-new nil)
-                             (gui/render-nuklear-gui gui window-width window-height)))
+                           (println "done"))
           (opacity/destroy-opacity-and-shadow shadow-vars))
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
         (swap! n inc)
-        (when (zero? (mod @n 10))
-          (print (format "\ro.-step (t/g) %.0f, dist (r/f) %.0f dt %.3f" @opacity-base @dist (* dt 0.001)))
+        (when (zero? (mod @n 1))
+          (println (format "o.-step (t/g) %.0f, dist (r/f) %.0f dt %.3f" @opacity-base @dist (* dt 0.001)))
           (flush))
         (if fix-fps (reset! t0 (System/currentTimeMillis)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)
