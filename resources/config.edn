@@ -33,9 +33,9 @@
                                     :cloud-step 250.0
                                     :opacity-cutoff 0.01}
 
- :sfsim.shadow-config #:sfsim.opacity{:num-opacity-layers 7
+ :sfsim.shadow-config #:sfsim.opacity{:num-opacity-layers 4
                                       :shadow-size 1024
-                                      :num-steps 2
+                                      :num-steps 1
                                       :opacity-biases [0.0 2000.0]
                                       :scene-shadow-size 1024
                                       :scene-shadow-counts [0 1]
