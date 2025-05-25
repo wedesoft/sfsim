@@ -41,6 +41,7 @@
 * steam description with 616x150px heading images
 * release demo
 * render moonlight and moon
+  https://svs.gsfc.nasa.gov/4720/
 * moon base, lights
 * fix planet tessellation tests
 * define wheel positions in Blender

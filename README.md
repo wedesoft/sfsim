@@ -56,6 +56,8 @@ cd ..
 * Convert night map sectors into pyramid of tiles: `clj -T:build map-sectors-night`
 * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
 * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
+* Download Moon color images: `clj -T:build download-lunar-color`
+* Download Moon elevation: `clj -T:build download-lunar-elevation`
 * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
 * Perform all build steps above: `clj -T:build all`
 * Enable integration tests (requiring results of above build steps): `touch .integration`
