@@ -620,9 +620,6 @@
             (swap! gear min 1.0)
             (swap! gear max 0.0)
             (reset! prev-gear-req gear-req)
-            ;(swap! gear + (* dt dg))
-            ;(swap! gear min 7.0)
-            ;(swap! gear max 0.0)
             (swap! camera-dx + (* dt dcx 0.0001))
             (swap! camera-dy + (* dt dcy 0.0001))
             (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
@@ -647,18 +644,9 @@
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
-              ; wheels-scene       (if playback (update-wheels scene @wheelposes) (update-wheels scene))
-              wheels-scene       (if (zero? @gear)
-                                   (model/apply-transforms
-                                     scene
-                                     (model/animations-frame
-                                       model
-                                       {"GearLeft" (/ (- (jolt/get-suspension-length vehicle 0) 0.8) 0.8128)
-                                        "GearRight" (/ (- (jolt/get-suspension-length vehicle 1) 0.8) 0.8128)
-                                        "GearFront" (+ 1 (/ (- (jolt/get-suspension-length vehicle 2) 0.5) 0.5419))}))
-                                   (model/apply-transforms scene (model/animations-frame model {"GearLeft" (+ @gear 1)
-                                                                                                "GearRight" (+ @gear 1)
-                                                                                                "GearFront" (+ @gear 2)})))
+              wheels-scene       (model/apply-transforms scene (model/animations-frame model {"GearLeft" (+ @gear 1.0)
+                                                                                              "GearRight" (+ @gear 1.0)
+                                                                                              "GearFront" (+ @gear 2.0)}))
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))]
           (onscreen-render window
