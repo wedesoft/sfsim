@@ -454,7 +454,9 @@
         h  (int-array 1)]
     (while (not (GLFW/glfwWindowShouldClose window))
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
+      (println "planet update tile tree")
       (planet/update-tile-tree planet-renderer tile-tree (aget w 0) (:position @pose))
+      (println "done")
       (let [t1       (System/currentTimeMillis)
             dt       (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn       (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
@@ -496,16 +498,22 @@
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (sub (earth-moon jd-ut))
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
+              _ (println "planet render vars")
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  (aget w 0) (aget h 0) origin @camera-orientation
                                                                  light-direction)
+              _ (println "done")
+              _ (println "scene render vars")
               scene-render-vars  (model/make-scene-render-vars config/render-config (aget w 0) (aget h 0) origin
                                                                @camera-orientation light-direction object-position
                                                                config/object-radius)
+              _ (println "done")
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
+              _ (println "opacity and shadow cascade")
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
+              _ (println "done")
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
               _ (println "animate frame")
               animate            (model/animations-frame model {"GearLeft" (+ @gear 1.0)
@@ -523,10 +531,14 @@
                            (println "render model")
                            (model/render-scenes scene-renderer planet-render-vars shadow-vars [] [moved-scene])
                            (println "done"))
-          (opacity/destroy-opacity-and-shadow shadow-vars))
+          (println "destroy opacity cascade")
+          (opacity/destroy-opacity-and-shadow shadow-vars)
+          (println "done"))
+        (println "nuklear input")
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
+        (println "done")
         (swap! n inc)
         (when (zero? (mod @n 1))
           (println (format "o.-step (t/g) %.0f, dist (r/f) %.0f dt %.3f" @opacity-base @dist (* dt 0.001)))
