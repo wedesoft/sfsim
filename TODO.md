@@ -1,4 +1,5 @@
 # TODO
+* wheel rotation
 * update aerodynamics with expert data
 * remove vehicle constraint when retracting gear
 * implement wheel brakes
