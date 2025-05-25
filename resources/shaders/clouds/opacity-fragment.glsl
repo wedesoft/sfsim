@@ -31,6 +31,7 @@ void main()
   float extent_segment = intersections.y;
   int current_layer = 0;
   opacity_layer_0 = 1.0;
+  extent_segment = 0.0;
   if (extent_segment > 0) {
     float s = start_segment;
     vec3 sample_point = fs_in.origin - start_segment * light_direction;
