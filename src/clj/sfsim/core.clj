@@ -559,8 +559,7 @@
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
-            dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))
-            to       (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
+            dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))]
         (when mn (reset! menu main-dialog))
         (if playback
           (let [frame (nth @recording @n)]
@@ -617,7 +616,7 @@
             (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
             (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
             (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
-            (swap! opacity-base + (* dt to))
+            ; (swap! opacity-base + (* dt to))
             (swap! dist * (exp d))))
         (let [object-position    (:position @pose)
               origin             (add object-position (mult (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy -1)) (* -1.0 @dist)))
