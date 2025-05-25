@@ -414,7 +414,7 @@
 
 (defn use-texture
   "Set texture with specified index"
-  {:malli/schema [:=> [:cat :int texture] :nil]}
+  {:malli/schema [:=> [:cat [:int {:min 0 :max 15}] texture] :nil]}
   [index texture]
   (GL13/glActiveTexture ^long (+ GL13/GL_TEXTURE0 index))
   (GL11/glBindTexture (:sfsim.texture/target texture) (:sfsim.texture/texture texture)))

@@ -299,6 +299,44 @@
     result))
 
 
+(defn- get-node-path-subtree
+  "Get path in sub-tree of model to node with given name"
+  {:malli/schema [:=> [:cat [:map-of :keyword :some] :string] [:maybe [:vector :some]]]}
+  [node path-prefix node-name]
+  (if (= (::name node) node-name)
+    path-prefix
+    (let [children (::children node)
+          indices  (range (count children))]
+      (some identity
+            (map (fn [child index] (get-node-path-subtree child (conj (conj path-prefix ::children) index) node-name))
+                 children
+                 indices)))))
+
+
+(defn get-node-path
+  "Get path in model to node with given name"
+  {:malli/schema [:=> [:cat [:map [::root :some]] :string] [:maybe [:vector :some]]]}
+  [scene node-name]
+  (get-node-path-subtree (::root scene) [::root] node-name))
+
+
+(defn- get-node-transform-subtree
+  "Get sub-transform of a node"
+  {:malli/schema [:=> [:cat [:map-of :keyword :some] :string] [:maybe fmat4]]}
+  [node node-name]
+  (if (= (::name node) node-name)
+    (::transform node)
+    (let [sub-transform (some identity (map (fn [child] (get-node-transform-subtree child node-name)) (::children node)))]
+      (and sub-transform (mulm (::transform node) sub-transform)))))
+
+
+(defn get-node-transform
+  "Get global transform of a node"
+  {:malli/schema [:=> [:cat [:map [::root :some]] :string] [:maybe fmat4]]}
+  [scene node-name]
+  (get-node-transform-subtree (::root scene) node-name))
+
+
 (defn- load-mesh-into-opengl
   "Load index and vertex data into OpenGL buffer"
   {:malli/schema [:=> [:cat fn? mesh material] [:map [:vao vertex-array-object]]]}
@@ -617,24 +655,32 @@
   (update scene ::root remove-empty-children))
 
 
-(defn- extract-points
-  "Recursively convert empty meshes to points"
+(defn- extract-empty
+  "Convert empty node to vector"
   [node]
-  (let [children (vec (remove nil? (map extract-points (::children node))))]
-    (if (empty? children)
-      (if (empty? (::mesh-indices node))
-        (let [v (mulv (::transform node) (vec4 0 0 0 1))]
-          (vec3 (.x ^Vec4 v) (.y ^Vec4 v) (.z ^Vec4 v)))
-        nil)
-      (if (or (not (vector? (first children))) (> (count children) 3))
-        (assoc (select-keys node [::transform ::name]) ::children children)
-        nil))))
+  (let [v (mulv (::transform node) (vec4 0 0 0 1))]
+    (vec3 (.x ^Vec4 v) (.y ^Vec4 v) (.z ^Vec4 v))))
+
+
+(defn- extract-hull
+  "Get empty coordinate systems from empty meshes"
+  [node]
+  (if (and (empty? (::mesh-indices node)) (every? #(empty? (::children %)) (::children node)) (> (count (::children node)) 3))
+    (assoc (select-keys node [::transform ::name]) ::children (mapv extract-empty (::children node)))
+    nil))
+
+
+(defn- extract-hulls
+  "Convert empty meshes to convex hulls"
+  [root]
+  (let [children (map extract-hull (::children root))]
+    (assoc (select-keys root [::transform ::name]) ::children (vec (remove nil? children)))))
 
 
 (defn empty-meshes-to-points
   "Convert empty meshes to points of for convex hulls"
   [scene]
-  (extract-points (::root scene)))
+  (extract-hulls (::root scene)))
 
 
 (defn load-scene

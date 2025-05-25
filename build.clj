@@ -118,6 +118,29 @@
       (io/input-stream url)
       (io/file filename))))
 
+
+(defn download-lunar-color
+  "Download CGI Moon Kit color image. Map centered on 0 degree longitude"
+  [_]
+  (let [filename "lroc_color_poles.tif"
+        url (str "https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/" filename)]
+    (.println *err* (str "Downloading " url " ..."))
+    (io/copy
+      (io/input-stream url)
+      (io/file filename))))
+
+
+(defn download-lunar-elevation
+  "Download CGI Moon Kit elevation image unsigned 16-bit TIFFs in half-meters, relative to a radius of 1727400 meters"
+  [_]
+  (let [filename "ldem_64_uint.tif"
+        url (str "https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/" filename)]
+    (.println *err* (str "Downloading " url " ..."))
+    (io/copy
+      (io/input-stream url)
+      (io/file filename))))
+
+
 (defn extract-elevation
   "Extract and concatenate elevation files"
   [_]

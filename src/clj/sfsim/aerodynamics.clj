@@ -1,6 +1,6 @@
 (ns sfsim.aerodynamics
     (:require
-      [clojure.math :refer (PI cos sin sqrt to-radians to-degrees atan2 hypot)]
+      [clojure.math :refer (PI cos sin sqrt to-radians atan2 hypot)]
       [fastmath.matrix :refer (mat3x3 mulv)]
       [fastmath.vector :refer (vec3 mag add)]
       [malli.core :as m]
@@ -251,7 +251,7 @@
 (defn wind-to-body-system
   "Convert vector from wind system into body system"
   {:malli/schema [:=> [:cat speed-data fvec3] fvec3]}
-  [{::keys [alpha beta speed]} force-vector]
+  [{::keys [alpha beta _speed]} force-vector]
   (q/rotate-vector (q/* (q/rotation alpha (vec3 0 -1 0)) (q/rotation beta (vec3 0 0 1))) force-vector))
 
 
