@@ -6,6 +6,8 @@
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
+    [malli.instrument :as mi]
+    [malli.dev.pretty :as pretty]
     [fastmath.matrix :refer (inverse mulv mulm)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize)]
     [sfsim.astro :as astro]
@@ -44,6 +46,10 @@
       Nuklear)
     (org.lwjgl.system
       MemoryStack)))
+
+
+(mi/collect! {:ns (all-ns)})
+(mi/instrument! {:report (pretty/thrower)})
 
 
 (set! *unchecked-math* true)
@@ -333,10 +339,15 @@
   (atom {:position (position-from-lon-lat longitude latitude height)
          :orientation (orientation-from-lon-lat longitude latitude)}))
 
+(def pose
+  (atom {:position (position-from-lon-lat longitude latitude height)
+         :orientation (q/->Quaternion 0.2814353323842392 -0.18141854626013024 -0.8246546977675215 -0.45587947333543516)}))
+
 
 (def camera-orientation (atom (q/* (orientation-from-lon-lat longitude latitude)
                                    (q/rotation (to-radians -90) (vec3 1 0 0)))))
 (def dist (atom 60.0))
+(def dist (atom 20.996264946669374))
 
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
@@ -650,7 +661,6 @@
                                                                                                 "GearFront" (+ @gear 2)})))
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
-              object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
               clouds             (texture-render-color-depth
                                    (/ (:sfsim.render/window-width planet-render-vars) 2)
                                    (/ (:sfsim.render/window-height planet-render-vars) 2)
@@ -662,28 +672,9 @@
                                    ;; Render clouds above the horizon
                                    (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
           (onscreen-render window
-                           (if (< (:sfsim.render/z-near scene-render-vars) (:sfsim.render/z-near planet-render-vars))
-                             (with-stencils
-                               (clear (vec3 0 1 0) 1.0 0)
-                               ;; Render model
-                               (write-to-stencil-buffer)
-                               (model/render-scenes scene-renderer scene-render-vars shadow-vars [object-shadow] [moved-scene])
-                               (clear)  ; Only clear depth buffer
-                               ;; Render planet with cloud overlay
-                               (mask-with-stencil-buffer)
-                               (planet/render-planet planet-renderer planet-render-vars shadow-vars [] clouds
-                                                     (planet/get-current-tree tile-tree))
-                               ;; Render atmosphere with cloud overlay
-                               (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))
-                             (do
-                               (clear (vec3 0 1 0) 1.0)
-                               ;; Render model
-                               (model/render-scenes scene-renderer planet-render-vars shadow-vars [object-shadow] [moved-scene])
-                               ;; Render planet with cloud overlay
-                               (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
-                                                     (planet/get-current-tree tile-tree))
-                               ;; Render atmosphere with cloud overlay
-                               (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
+                           (clear (vec3 0 1 0) 1.0)
+                           ;; Render model
+                           (model/render-scenes scene-renderer planet-render-vars shadow-vars [] [moved-scene])
                            (when @menu
                              (setup-rendering window-width window-height :sfsim.render/noculling false)
                              (reset! focus-old nil)
@@ -691,7 +682,6 @@
                              (reset! focus-new nil)
                              (gui/render-nuklear-gui gui window-width window-height)))
           (destroy-texture clouds)
-          (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (when playback
             (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 window-width window-height))
