@@ -8,6 +8,8 @@ world.*.png
 BlackMarble_2016_*.jpg
 blackmarble.*.png
 elevation.*.raw
+ldem*.tif
+lroc*.tif
 recording.edn
 venturestar.glb
 .cache
