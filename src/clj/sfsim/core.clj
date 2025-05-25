@@ -660,17 +660,7 @@
                                                                                                 "GearRight" (+ @gear 1)
                                                                                                 "GearFront" (+ @gear 2)})))
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
-                                           (mulm object-to-world gltf-to-aerodynamic))
-              clouds             (texture-render-color-depth
-                                   (/ (:sfsim.render/window-width planet-render-vars) 2)
-                                   (/ (:sfsim.render/window-height planet-render-vars) 2)
-                                   true
-                                   (clear (vec3 0 0 0) 1.0)
-                                   ;; Render clouds in front of planet
-                                   (planet/render-cloud-planet cloud-planet-renderer planet-render-vars shadow-vars
-                                                               (planet/get-current-tree tile-tree))
-                                   ;; Render clouds above the horizon
-                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
+                                           (mulm object-to-world gltf-to-aerodynamic))]
           (onscreen-render window
                            (clear (vec3 0 1 0) 1.0)
                            ;; Render model
@@ -681,7 +671,6 @@
                              (@menu gui)
                              (reset! focus-new nil)
                              (gui/render-nuklear-gui gui window-width window-height)))
-          (destroy-texture clouds)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (when playback
             (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 window-width window-height))
