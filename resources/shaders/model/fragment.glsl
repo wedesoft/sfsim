@@ -35,14 +35,9 @@ vec4 cloud_point(vec3 point);
 
 void main()
 {
-  vec3 light = overall_shading(fs_in.world_point<%= (apply str (map #(str ", fs_in.object_shadow_pos_" (inc %)) (range num-scene-shadows))) %>);
-  vec3 ambient_light = surface_radiance_function(fs_in.world_point, light_direction);
-<% (if bump %>
-  float cos_incidence_coarse = dot(light_direction, fs_in.normal);
-  vec3 normal = cos_incidence_coarse > 0.0 ? fs_in.surface * (2.0 * texture(normals, fs_in.texcoord).xyz - 1.0) : fs_in.normal;
-<% %>
+  vec3 light = vec3(1, 1, 1);
+  vec3 ambient_light = vec3(0.1, 0.1, 0.1);
   vec3 normal = fs_in.normal;
-<% ) %>
 <% (if textured %>
   vec3 diffuse_color = texture(colors, fs_in.texcoord).rgb;
 <% ) %>

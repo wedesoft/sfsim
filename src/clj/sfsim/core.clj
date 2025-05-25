@@ -2,9 +2,8 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp sqrt)]
+    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp)]
     [clojure.edn]
-    [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
     [malli.instrument :as mi]
     [malli.dev.pretty :as pretty]
@@ -15,7 +14,6 @@
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.clouds :as clouds]
     [sfsim.config :as config]
-    [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
     [sfsim.model :as model]
@@ -23,11 +21,8 @@
     [sfsim.planet :as planet]
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
-    [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                                      texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
-                                      setup-rendering quad-splits-orientations)]
+    [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color joined-render-vars setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
-    [sfsim.util :refer (sqr)]
     [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
     (fastmath.vector
@@ -39,8 +34,6 @@
       GLFWCursorPosCallbackI
       GLFWKeyCallbackI
       GLFWMouseButtonCallbackI)
-    (org.lwjgl.opengl
-      GL11)
     (org.lwjgl.nuklear
       Nuklear)
     (org.lwjgl.system
@@ -514,9 +507,10 @@
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
-              wheels-scene       (model/apply-transforms scene (model/animations-frame model {"GearLeft" (+ @gear 1.0)
-                                                                                              "GearRight" (+ @gear 1.0)
-                                                                                              "GearFront" (+ @gear 2.0)}))
+              animate            (model/animations-frame model {"GearLeft" (+ @gear 1.0)
+                                                                "GearRight" (+ @gear 1.0)
+                                                                "GearFront" (+ @gear 2.0)})
+              wheels-scene       (model/apply-transforms scene animate)
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))]
           (onscreen-render window
