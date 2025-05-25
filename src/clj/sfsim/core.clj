@@ -17,7 +17,6 @@
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
-    [sfsim.jolt :as jolt]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
@@ -82,8 +81,6 @@
 (def earth-moon (astro/make-spk-segment-interpolator spk 0 3))
 
 (GLFW/glfwInit)
-
-(jolt/jolt-init)
 
 (def fix-fps false)
 (def fullscreen false)
@@ -163,30 +160,6 @@
 ; m = mass (100t) plus payload (25t)
 ; stiffness: k = m * g * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring
 ; damping: c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
-(def main-wheel-base {:sfsim.jolt/width 0.4064
-                      :sfsim.jolt/radius (* 0.5 1.1303)
-                      :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
-                      :sfsim.jolt/suspension-min-length (+ 0.8)
-                      :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
-                      :sfsim.jolt/stiffness 3515625.0
-                      :sfsim.jolt/damping 562500.0})
-(def front-wheel-base {:sfsim.jolt/width 0.22352
-                       :sfsim.jolt/radius (* 0.5 0.8128)
-                       :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
-                       :sfsim.jolt/suspension-min-length (+ 0.5)
-                       :sfsim.jolt/suspension-max-length (+ 0.5 0.5419)
-                       :sfsim.jolt/stiffness 3515625.0
-                       :sfsim.jolt/damping 562500.0})
-(def main-wheel-left (assoc main-wheel-base
-                            :sfsim.jolt/position
-                            (sub main-wheel-left-pos (vec3 0 0 (- (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
-(def main-wheel-right (assoc main-wheel-base
-                             :sfsim.jolt/position
-                             (sub main-wheel-right-pos (vec3 0 0 (- (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
-(def front-wheel (assoc front-wheel-base
-                        :sfsim.jolt/position
-                        (sub front-wheel-pos (vec3 0 0 (- (:sfsim.jolt/suspension-max-length front-wheel-base) 0.5)))))
-(def wheels [main-wheel-left main-wheel-right front-wheel])
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -333,52 +306,12 @@
 (def dist (atom 60.0))
 (def dist (atom 20.996264946669374))
 
-(def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
-(def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
-(jolt/set-angular-velocity body (vec3 0 0 0))
-(jolt/set-friction body 1.5)
-(jolt/set-restitution body 0.25)
-(def mass (jolt/get-mass body))
 (def surface 198.0)
 (def chord 10.0)
 (def wingspan 20.75)
 
-(def vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels))
-
-(jolt/optimize-broad-phase)
-
 (def coords (atom nil))
 (def mesh (atom nil))
-
-
-(defn update-mesh!
-  [position]
-  (let [point  (cubemap/project-onto-cube position)
-        face   (cubemap/determine-face point)
-        j      (cubemap/cube-j face point)
-        i      (cubemap/cube-i face point)
-        c      (dissoc (quadtree/tile-coordinates j i
-                                                  (:sfsim.planet/level config/planet-config)
-                                                  (:sfsim.planet/tilesize config/planet-config))
-                       :sfsim.quadtree/dy :sfsim.quadtree/dx)]
-    (when (not= c @coords)
-      (let [b      (:sfsim.quadtree/row c)
-            a      (:sfsim.quadtree/column c)
-            tile-y (:sfsim.quadtree/tile-y c)
-            tile-x (:sfsim.quadtree/tile-x c)
-            center (cubemap/tile-center face
-                                        (:sfsim.planet/level config/planet-config) b a
-                                        (:sfsim.planet/radius config/planet-config))
-            m      (quadtree/create-local-mesh split-orientations face
-                                               (:sfsim.planet/level config/planet-config)
-                                               (:sfsim.planet/tilesize config/planet-config) b a tile-y tile-x
-                                               (:sfsim.planet/radius config/planet-config) center)]
-        (when @mesh (jolt/remove-and-destroy-body @mesh))
-        (reset! coords c)
-        (reset! mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0)))
-        (jolt/set-friction @mesh 1.5)
-        (jolt/set-restitution @mesh 0.25)
-        (jolt/optimize-broad-phase)))))
 
 
 (defn location-dialog-get
@@ -539,7 +472,6 @@
             u        (if (@keystates GLFW/GLFW_KEY_S) 1 (if (@keystates GLFW/GLFW_KEY_W) -1 0))
             r        (if (@keystates GLFW/GLFW_KEY_A) -1 (if (@keystates GLFW/GLFW_KEY_D) 1 0))
             t        (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
-            thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) (* 20.0 mass) 0.0)
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
@@ -621,6 +553,5 @@
   (gui/destroy-nuklear-gui gui)
   (gui/destroy-font-texture bitmap-font)
   (destroy-window window)
-  (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
   (System/exit 0))
