@@ -42,7 +42,5 @@ void main()
   vec3 diffuse_color = vec3(0.5, 1.0, 0.5);
 <% ) %>
   vec3 incoming = phong(ambient_light, light, fs_in.world_point, normal, diffuse_color, 0.0);
-  incoming = attenuation_point(fs_in.world_point, incoming);
-  vec4 cloud_scatter = cloud_point(fs_in.world_point);
-  fragColor = vec4(incoming, 1.0) * (1 - cloud_scatter.a) + cloud_scatter;
+  fragColor = vec4(incoming, 1.0);
 }
