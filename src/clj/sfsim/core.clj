@@ -522,7 +522,7 @@
 
 
 (def gear (atom 0.0))
-(def gear-down (atom false))
+(def gear-down (atom true))
 (def prev-gear-req (atom false))
 
 (defn -main
