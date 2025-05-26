@@ -542,7 +542,7 @@
         (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
               max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
               s       (min @speed max-speed)]
-          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.0))))
+          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.3))))
         (jolt/set-angular-velocity body (vec3 0 0 0))
         (reset! slew false))
       (let [t1       (System/currentTimeMillis)
