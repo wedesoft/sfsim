@@ -420,9 +420,9 @@
   get_suspension_length [::mem/pointer ::mem/int] ::mem/float)
 
 
-(defcfn get-rotation-angle
+(defcfn get-wheel-rotation-angle
   "Get wheel rotation angle"
-  get_rotation_angle [::mem/pointer ::mem/int] ::mem/float)
+  get_wheel_rotation_angle [::mem/pointer ::mem/int] ::mem/float)
 
 
 (defcfn has-hit-hard-point-
