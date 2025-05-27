@@ -170,8 +170,8 @@
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
 (def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
 
-; m = mass (100t) plus payload (25t)
-; stiffness: k = m * g * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring
+; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
+; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
 ; damping: c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
 (def main-wheel-base {:sfsim.jolt/width 0.4064
                       :sfsim.jolt/radius (* 0.5 1.1303)
@@ -179,16 +179,16 @@
                       :sfsim.jolt/angular-damping 0.2
                       :sfsim.jolt/suspension-min-length (+ 0.8)
                       :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
-                      :sfsim.jolt/stiffness 3515625.0
-                      :sfsim.jolt/damping 562500.0})
+                      :sfsim.jolt/stiffness 1915744.798
+                      :sfsim.jolt/damping 415231.299})
 (def front-wheel-base {:sfsim.jolt/width 0.22352
                        :sfsim.jolt/radius (* 0.5 0.8128)
                        :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
                        :sfsim.jolt/angular-damping 0.2
                        :sfsim.jolt/suspension-min-length (+ 0.5)
                        :sfsim.jolt/suspension-max-length (+ 0.5 0.5419)
-                       :sfsim.jolt/stiffness 3515625.0
-                       :sfsim.jolt/damping 562500.0})
+                       :sfsim.jolt/stiffness 1077473.882
+                       :sfsim.jolt/damping 155702.159})
 (def main-wheel-left (assoc main-wheel-base
                             :sfsim.jolt/position
                             (sub main-wheel-left-pos (vec3 0 0 (- (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
