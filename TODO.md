@@ -1,9 +1,10 @@
 # TODO
 * wheel damping
-* update aerodynamics with expert data
-* remove vehicle constraint when retracting gear
 * implement wheel brakes
+* remove vehicle constraint when retracting gear
+* update aerodynamics with expert data
 * physics and animation of steering
+* add micro textures
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://samdriver.xyz/article/decal-render-intro
 * fix problem with resolution of neighbouring tiles in planetary cubemap
