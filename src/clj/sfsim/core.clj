@@ -176,6 +176,7 @@
 (def main-wheel-base {:sfsim.jolt/width 0.4064
                       :sfsim.jolt/radius (* 0.5 1.1303)
                       :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
+                      :sfsim.jolt/angular-damping 0.2
                       :sfsim.jolt/suspension-min-length (+ 0.8)
                       :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
                       :sfsim.jolt/stiffness 3515625.0
@@ -183,6 +184,7 @@
 (def front-wheel-base {:sfsim.jolt/width 0.22352
                        :sfsim.jolt/radius (* 0.5 0.8128)
                        :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
+                       :sfsim.jolt/angular-damping 0.2
                        :sfsim.jolt/suspension-min-length (+ 0.5)
                        :sfsim.jolt/suspension-max-length (+ 0.5 0.5419)
                        :sfsim.jolt/stiffness 3515625.0

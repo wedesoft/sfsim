@@ -1,5 +1,4 @@
 # TODO
-* wheel damping
 * implement wheel brakes
 * remove vehicle constraint when retracting gear
 * update aerodynamics with expert data
