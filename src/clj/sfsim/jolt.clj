@@ -373,17 +373,17 @@
 (defcfn make-wheel-settings-
   "Create wheel settings object for wheeled vehicle (private)"
   make_wheel_settings [::vec3 ::mem/float ::mem/float ::mem/float ::mem/float ::vec3 ::vec3 ::mem/float ::mem/float ::mem/float
-                       ::mem/float]
-                      ::mem/pointer)
+                       ::mem/float ::mem/float] ::mem/pointer)
 
 
 (defn make-wheel-settings
   "Create wheel settings object for wheeled vehicle"
-  [{::keys [position width radius inertia angular-damping suspension-min-length suspension-max-length stiffness damping]
-    :or {angular-damping 0.0}}
+  [{::keys [position width radius inertia angular-damping suspension-min-length suspension-max-length stiffness damping
+            max-brake-torque]
+    :or {angular-damping 0.0 max-brake-torque 0.0}}
    up forward]
   (make-wheel-settings- position width radius inertia angular-damping up forward suspension-min-length suspension-max-length
-                        stiffness damping))
+                        stiffness damping max-brake-torque))
 
 
 (defcfn destroy-wheel-settings
@@ -412,6 +412,11 @@
   (let [constraint-settings (make-vehicle-constraint-settings up forward)]
     (doseq [wheel wheels] (vehicle-constraint-settings-add-wheel constraint-settings (make-wheel-settings wheel up forward)))
     (create-and-add-vehicle-constraint- body constraint-settings)))
+
+
+(defcfn set-brake-input
+  "Set brake input between 0 and 1"
+  set_brake_input [::mem/pointer ::mem/float] ::mem/void)
 
 
 (defcfn get-wheel-local-transform

@@ -451,7 +451,7 @@ void set_angular_velocity(int id, Vec3 velocity)
 }
 
 void *make_wheel_settings(Vec3 position, float width, float radius, float inertia, float angular_damping, Vec3 up, Vec3 forward,
-    float suspension_min_length, float suspension_max_length, float stiffness, float damping)
+    float suspension_min_length, float suspension_max_length, float stiffness, float damping, float max_brake_torque)
 {
   JPH::WheelSettingsWV *result = new JPH::WheelSettingsWV;
   result->mPosition = JPH::Vec3(position.x, position.y, position.z);
@@ -466,7 +466,7 @@ void *make_wheel_settings(Vec3 position, float width, float radius, float inerti
   result->mSuspensionMinLength = suspension_min_length;
   result->mSuspensionMaxLength = suspension_max_length;
   result->mMaxSteerAngle = 0.0f;
-  result->mMaxBrakeTorque = 0.0f;
+  result->mMaxBrakeTorque = max_brake_torque;
   result->mMaxHandBrakeTorque = 0.0f;
   result->mSuspensionSpring = JPH::SpringSettings(JPH::ESpringMode::StiffnessAndDamping, stiffness, damping);
   return result;
@@ -510,6 +510,14 @@ void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_se
     return constraint;
   } else
     return NULL;
+}
+
+void set_brake_input(void *constraint, float brake_input)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  JPH::WheeledVehicleController *vehicle_controller =
+    static_cast<JPH::WheeledVehicleController *>(vehicle_constraint->GetController());
+  vehicle_controller->SetBrakeInput(brake_input);
 }
 
 Mat4x4 get_wheel_local_transform(void *constraint, int wheel_index, Vec3 right, Vec3 up)
