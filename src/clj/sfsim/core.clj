@@ -173,6 +173,7 @@
 ; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
 ; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
 ; damping: c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
+; brake torque: m * a * r (use half mass, a = 1.5 m/s^2)
 (def main-wheel-base {:sfsim.jolt/width 0.4064
                       :sfsim.jolt/radius (* 0.5 1.1303)
                       :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
@@ -180,7 +181,8 @@
                       :sfsim.jolt/suspension-min-length (+ 0.8)
                       :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
                       :sfsim.jolt/stiffness 1915744.798
-                      :sfsim.jolt/damping 415231.299})
+                      :sfsim.jolt/damping 415231.299
+                      :sfsim.jolt/max-brake-torque 100000.0})
 (def front-wheel-base {:sfsim.jolt/width 0.22352
                        :sfsim.jolt/radius (* 0.5 0.8128)
                        :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
@@ -554,6 +556,7 @@
             ra       (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
             rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
             rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
+            brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.0)
             u        (if (@keystates GLFW/GLFW_KEY_S) 1 (if (@keystates GLFW/GLFW_KEY_W) -1 0))
             r        (if (@keystates GLFW/GLFW_KEY_A) -1 (if (@keystates GLFW/GLFW_KEY_D) 1 0))
             t        (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
@@ -588,6 +591,7 @@
                                :gear @gear}]
                     (swap! recording conj frame)))
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+                (jolt/set-brake-input vehicle brake)
                 (let [speed   (mag (jolt/get-linear-velocity body))
                       density (atmosphere/density-at-height height)]
                   (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
