@@ -1,5 +1,5 @@
 # TODO
-* remove vehicle constraint when retracting gear
+* refactor gear code
 * update aerodynamics with expert data
 * physics and animation of steering
 * add micro textures
