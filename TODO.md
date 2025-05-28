@@ -1,7 +1,7 @@
 # TODO
-* refactor gear code
 * update aerodynamics with expert data
-* physics and animation of steering
+* physics and animation of steering (apply difference of two animation time stamps)
+* refactor gear code
 * add micro textures
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://samdriver.xyz/article/decal-render-intro
