@@ -649,9 +649,9 @@
                                        {"GearLeft" (/ (- (jolt/get-suspension-length vehicle 0) 0.8) 0.8128)
                                         "GearRight" (/ (- (jolt/get-suspension-length vehicle 1) 0.8) 0.8128)
                                         "GearFront" (+ 1 (/ (- (jolt/get-suspension-length vehicle 2) 0.5) 0.5419))
-                                        "WheelLeft" (/ (jolt/get-wheel-rotation-angle vehicle 0) (* 2 PI))
-                                        "WheelRight" (/ (jolt/get-wheel-rotation-angle vehicle 1) (* 2 PI))
-                                        "WheelFront" (/ (jolt/get-wheel-rotation-angle vehicle 2) (* 2 PI))}))
+                                        "WheelLeft" (mod (/ (jolt/get-wheel-rotation-angle vehicle 0) (* 2 PI)) 1.0)
+                                        "WheelRight" (mod (/ (jolt/get-wheel-rotation-angle vehicle 1) (* 2 PI)) 1.0)
+                                        "WheelFront" (mod (/ (jolt/get-wheel-rotation-angle vehicle 2) (* 2 PI)) 1.0)}))
                                    (model/apply-transforms
                                      scene
                                      (model/animations-frame
