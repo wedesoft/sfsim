@@ -432,14 +432,24 @@ float planet_and_cloud_shadows(vec4 point)
 }")
 
 
+(def land-noise-mock
+  "#version 410 core
+uniform float land_noise_value;
+float land_noise(vec3 point)
+{
+  return land_noise_value;
+}")
+
+
 (defn make-mocked-planet-program
   []
   (make-program :sfsim.render/vertex [vertex-planet-probe]
                 :sfsim.render/fragment [(last (fragment-planet 3 0)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
                                         planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter shaders/ray-shell
                                         shaders/is-above-horizon atmosphere/transmittance-point surface-radiance-function
-                                        shaders/remap (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
-                                        (last atmosphere/attenuation-track) shaders/phong (last atmosphere/attenuation-point)]))
+                                        land-noise-mock shaders/remap (last (clouds/environmental-shading 3))
+                                        (last (clouds/overall-shading 3 [])) (last atmosphere/attenuation-track) shaders/phong
+                                        (last atmosphere/attenuation-point)]))
 
 
 (defn setup-static-uniforms
@@ -461,7 +471,7 @@ float planet_and_cloud_shadows(vec4 point)
 
 
 (defn setup-uniforms
-  [program size ?albedo ?refl ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
+  [program size ?albedo ?refl ?lnoise ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
   ;; Moved this code out of the test below, otherwise method is too large
   (use-program program)
   (uniform-int program "height_size" size)
@@ -474,6 +484,9 @@ float planet_and_cloud_shadows(vec4 point)
   (uniform-int program "surface_sun_elevation_size" size)
   (uniform-float program "albedo" ?albedo)
   (uniform-float program "reflectivity" ?refl)
+  (uniform-float program "land_noise_value" ?lnoise)
+  (uniform-float program "land_noise_scale" 1.0)
+  (uniform-float program "land_noise_strength" 0.5)
   (uniform-float program "clouds" ?clouds)
   (uniform-float program "shadow" ?shd)
   (uniform-float program "radius" radius)
@@ -535,30 +548,31 @@ float planet_and_cloud_shadows(vec4 point)
                                    textures  (planet-textures ?colors ?nx ?ny ?nz ?tr ?tg ?tb ?s ?ar ?ag ?ab ?water size)]
                                (clear (vec3 0 0 0))
                                (setup-static-uniforms program)
-                               (setup-uniforms program size ?albedo ?refl ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
+                               (setup-uniforms program size ?alb ?refl ?lnoise ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
                                (use-textures (zipmap (range) textures))
                                (render-quads vao)
                                (doseq [tex textures] (destroy-texture tex))
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
            => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33))
-         ?colors   ?albedo ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "fragment"
-         "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "colors"
-         "white"   PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9     1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "albedo"
-         "white"   0.9     2.0 1   1   1   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "amplify"
-         "white"   PI      1.0 1   0   0   0   0   0     0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "transmit"
-         "pattern" PI      1.0 1   1   1   0.2 0.3 0.5   0       100 0   0.0   0.0     1.0  0   0   1   0   0   1   "ambient"
-         "white"   PI      1.0 1   1   1   0   0   0   220       100 0   0.0   0.0     1.0  0   0   1   0   0   0   "water"
-         "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0   1   0   0   1   "reflection1"
-         "white"   PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
-         "pattern" PI      1.0 1   1   1   0   0   0   255       100 0   0.5   0.0     1.0  0   0  -1   0   0   1   "reflection3"
-         "white"   PI      1.0 1   1   1   0   0   0     0     10000 0   0.0   0.0     1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI      1.0 1   1   1   0   0   0     0    200000 0   0.0   0.0     1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI      1.0 1   1   1   0   0   0     0       100 0.5 0.0   0.0     1.0  0   0   1   0   0   1   "scatter"
-         "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.5     1.0  0   0   1   0   0   1   "clouds"
-         "pattern" PI      1.0 1   1   1   0   0   0     0       100 0   0.0   0.0     0.5  0   0   1   0   0   1   "shadow")
+         ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "fragment"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "colors"
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9  1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "albedo"
+         "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "amplify"
+         "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "transmit"
+         "pattern" PI   1.0  1   1   1   0.2 0.3 0.5   0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "ambient"
+         "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   0   "water"
+         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5  0.0  0.0     1.0  0   0   1   0   0   1   "reflection1"
+         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5  0.0  0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
+         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5  0.0  0.0     1.0  0   0  -1   0   0   1   "reflection3"
+         "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0.5 0.0  0.0  0.0     1.0  0   0   1   0   0   1   "scatter"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.5     1.0  0   0   1   0   0   1   "clouds"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     0.5  0   0   1   0   0   1   "shadow"
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  1.0  0.0     1.0  0   0   1   0   0   1   "noise")
 
 
 (def fragment-white-tree

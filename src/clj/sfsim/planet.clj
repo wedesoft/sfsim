@@ -6,25 +6,25 @@
     [fastmath.matrix :refer (mulm eye inverse)]
     [fastmath.vector :refer (mag)]
     [malli.core :as m]
-    [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere
-                                                atmosphere-luts)]
+    [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere atmosphere-luts)]
     [sfsim.clouds :refer (cloud-point lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
-                                      fragment-atmosphere-clouds cloud-data overall-shading overall-shading-parameters)]
+                          fragment-atmosphere-clouds cloud-data overall-shading overall-shading-parameters)]
     [sfsim.cubemap :refer (cube-map-corners)]
     [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box shadow-patch)]
     [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
-                                     quadtree-extract)]
+                            quadtree-extract)]
     [sfsim.quaternion :refer (quaternion)]
     [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
-                                      uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
-                                      destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
-                                      setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-quads render-config
-                                      render-vars diagonal-field-of-view make-render-vars)
+                          uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
+                          destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
+                          setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-quads render-config
+                          render-vars diagonal-field-of-view make-render-vars)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
-                                                  texture-2d texture-3d)]
-    [sfsim.util :refer (N N0 sqr)]))
+                           texture-2d texture-3d make-float-texture-3d generate-mipmap)]
+    [sfsim.worley :refer (worley-size)]
+    [sfsim.util :refer (N N0 sqr slurp-floats)]))
 
 
 (set! *unchecked-math* true)
@@ -88,7 +88,7 @@
    (shaders/percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size"
                                         [["sampler2DShadow" "shadow_map"]])
    (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size") surface-radiance-function shaders/remap shaders/phong
-   attenuation-point cloud-overlay
+   attenuation-point cloud-overlay (shaders/lookup-3d "land_noise" "worley")
    (template/eval (slurp "resources/shaders/planet/fragment.glsl") {:num-scene-shadows num-scene-shadows})])
 
 
@@ -363,12 +363,13 @@
     (uniform-sampler program "normals"   2)
     (uniform-sampler program "water"     3)
     (uniform-sampler program "clouds"    8)
+    (uniform-sampler program "worley"    9)
     (setup-atmosphere-uniforms program atmosphere-luts 4 true)
-    (setup-shadow-and-opacity-maps program shadow-data 9)
+    (setup-shadow-and-opacity-maps program shadow-data 10)
     (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
     (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
     (doseq [i (range num-scene-shadows)]
-      (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 9 (* 2 num-steps))))
+      (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 10 (* 2 num-steps))))
     (uniform-int program "high_detail" (dec tilesize))
     (uniform-int program "low_detail" (quot (dec tilesize) 2))
     (uniform-float program "dawn_start" (::dawn-start config))
@@ -377,6 +378,8 @@
     (uniform-float program "radius" (::radius config))
     (uniform-float program "albedo" (::albedo config))
     (uniform-float program "reflectivity" (::reflectivity config))
+    (uniform-float program "land_noise_scale" (::land-noise-scale config))
+    (uniform-float program "land_noise_strength" (::land-noise-strength config))
     (uniform-float program "water_threshold" (::water-threshold config))
     (uniform-vector3 program "water_color" (::water-color config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
@@ -395,8 +398,13 @@
         atmosphere-luts (:sfsim.atmosphere/luts data)
         shadow-data     (:sfsim.opacity/data data)
         variations      (:sfsim.opacity/scene-shadow-counts shadow-data)
-        programs        (mapv #(make-planet-program data %) variations)]
+        programs        (mapv #(make-planet-program data %) variations)
+        worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
+        worley-data          #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
+        worley               (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)]
+    (generate-mipmap worley)
     {::programs (zipmap variations programs)
+     ::worley worley
      :sfsim.atmosphere/luts atmosphere-luts
      ::config config}))
 
@@ -404,7 +412,7 @@
 (defn render-planet
   "Render planet"
   {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars [:vector scene-shadow] texture-2d [:maybe :map]] :nil]}
-  [{::keys [programs] :as other} render-vars shadow-vars scene-shadows clouds tree]
+  [{::keys [programs worley] :as other} render-vars shadow-vars scene-shadows clouds tree]
   (let [atmosphere-luts   (:sfsim.atmosphere/luts other)
         world-to-camera   (inverse (:sfsim.render/camera-to-world render-vars))
         num-steps         (count (:sfsim.opacity/shadows shadow-vars))
@@ -421,18 +429,19 @@
     (setup-shadow-matrices program shadow-vars)
     (use-textures {4 (:sfsim.atmosphere/transmittance atmosphere-luts) 5 (:sfsim.atmosphere/scatter atmosphere-luts)
                    6 (:sfsim.atmosphere/mie atmosphere-luts) 7 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                   8 clouds})
-    (use-textures (zipmap (drop 9 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
+                   8 clouds 9 worley})
+    (use-textures (zipmap (drop 10 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                    (:sfsim.opacity/opacities shadow-vars))))
     (doseq [i (range num-scene-shadows)]
-      (use-textures {(+ i 9 (* 2 num-steps)) (:sfsim.model/shadows (nth scene-shadows i))}))
+      (use-textures {(+ i 10 (* 2 num-steps)) (:sfsim.model/shadows (nth scene-shadows i))}))
     (render-tree program tree world-to-camera scene-shadows [::surf-tex ::day-night-tex ::normal-tex ::water-tex])))
 
 
 (defn destroy-planet-renderer
   "Destroy planet rendering program"
   {:malli/schema [:=> [:cat planet-renderer] :nil]}
-  [{::keys [programs]}]
+  [{::keys [programs worley]}]
+  (destroy-texture worley)
   (doseq [program (vals programs)] (destroy-program program)))
 
 

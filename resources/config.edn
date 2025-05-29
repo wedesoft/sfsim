@@ -15,6 +15,8 @@
                                      :level 7
                                      :color-tilesize 129
                                      :reflectivity 0.1
+                                     :land-noise-scale 32.0
+                                     :land-noise-strength 0.16
                                      :water-threshold 0.8
                                      :water-color [0.09 0.11 0.34]}
 

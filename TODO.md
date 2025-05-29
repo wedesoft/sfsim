@@ -1,6 +1,6 @@
 # TODO
 * physics and animation of steering (apply difference of two animation time stamps)
-* add micro textures
+* increase wheel friction
 * add joystick
 * make landing video and publish article
 * update aerodynamics with expert data
