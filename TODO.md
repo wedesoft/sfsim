@@ -1,6 +1,8 @@
 # TODO
 * physics and animation of steering (apply difference of two animation time stamps)
 * add micro textures
+* add joystick
+* make landing video and publish article
 * update aerodynamics with expert data
 * refactor gear code
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
