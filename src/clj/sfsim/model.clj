@@ -501,14 +501,14 @@
 
 (defn animations-frame
   "Create hash map with transforms for objects of scene given a hash map of animation times"
-  {:malli/schema [:=> [:cat [:map [::animations :map]] :map] [:map-of :string :some]]}
+  {:malli/schema [:=> [:cat [:map [::animations :map]] [:map :string :double]] [:map-of :string :some]]}
   [scene animation-times]
   (let [animations (::animations scene)]
     (or (apply merge
                (for [[animation-name animation-time] animation-times]
-                 (let [animation (animations animation-name)]
-                   (into {} (for [[object-name channel] (::channels animation)]
-                              [object-name (interpolate-transformation channel animation-time)])))))
+                    (let [animation (animations animation-name)]
+                      (into {} (for [[object-name channel] (::channels animation)]
+                                    [object-name (interpolate-transformation channel animation-time)])))))
         {})))
 
 

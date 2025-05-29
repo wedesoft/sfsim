@@ -546,7 +546,8 @@ void main()
        (animations-frame {:sfsim.model/animations {}} {}) => {}
        (with-redefs [model/interpolate-transformation
                      (fn [channel t] (facts channel => :mock-channel-data t => 1.0) :mock-transform)]
-         (animations-frame {:sfsim.model/animations {"Animation" {:sfsim.model/channels {"Object" :mock-channel-data}}}} {"Animation" 1.0}))
+         (animations-frame {:sfsim.model/animations {"Animation" {:sfsim.model/channels {"Object" :mock-channel-data}}}}
+                           {"Animation" 1.0}))
        => {"Object" :mock-transform})
 
 
