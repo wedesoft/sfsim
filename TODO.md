@@ -1,8 +1,8 @@
 # TODO
-* update aerodynamics with expert data
 * physics and animation of steering (apply difference of two animation time stamps)
-* refactor gear code
 * add micro textures
+* update aerodynamics with expert data
+* refactor gear code
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://samdriver.xyz/article/decal-render-intro
 * fix problem with resolution of neighbouring tiles in planetary cubemap
