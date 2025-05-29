@@ -182,7 +182,7 @@
                       :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
                       :sfsim.jolt/stiffness 1915744.798
                       :sfsim.jolt/damping 415231.299
-                      :sfsim.jolt/max-brake-torque 100000.0})
+                      :sfsim.jolt/max-brake-torque 50000.0})
 (def front-wheel-base {:sfsim.jolt/width 0.22352
                        :sfsim.jolt/radius (* 0.5 0.8128)
                        :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
@@ -556,7 +556,7 @@
             ra       (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
             rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
             rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
-            brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.01)
+            brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.0)
             u        (if (@keystates GLFW/GLFW_KEY_S) 1 (if (@keystates GLFW/GLFW_KEY_W) -1 0))
             r        (if (@keystates GLFW/GLFW_KEY_A) -1 (if (@keystates GLFW/GLFW_KEY_D) 1 0))
             t        (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
@@ -663,9 +663,9 @@
                                          {"GearLeft" (+ @gear 1)
                                           "GearRight" (+ @gear 1)
                                           "GearFront" (+ @gear 2)
-                                          "WheelLeft" (/ (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI))
-                                          "WheelRight" (/ (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI))
-                                          "WheelFront" (/ (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI))}))
+                                          "WheelLeft" (mod (/ (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
+                                          "WheelRight" (mod (/ (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
+                                          "WheelFront" (mod (/ (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)}))
                                      (model/apply-transforms
                                        scene
                                        (model/animations-frame
