@@ -1,5 +1,4 @@
 # TODO
-* add micro textures
 * physics and animation of steering (apply difference of two animation time stamps)
 * increase wheel friction
 * add joystick

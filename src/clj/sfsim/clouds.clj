@@ -8,12 +8,12 @@
     [sfsim.atmosphere :as atmosphere]
     [sfsim.bluenoise :refer (noise-size) :as bluenoise]
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
-                                          make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
-                                          uniform-matrix4 use-program) :as render]
+                          make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
+                          uniform-matrix4 use-program) :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
-                                                    make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
-                                                    texture-2d)]
+                           make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
+                           texture-2d)]
     [sfsim.util :refer (slurp-floats N N0)]
     [sfsim.worley :refer (worley-size)]))
 
