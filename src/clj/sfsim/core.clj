@@ -2,7 +2,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (cos sin atan2 hypot to-radians to-degrees exp sqrt)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -168,25 +168,29 @@
 
 (def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Left"))))
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
-(def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Front Wheel"))))
+(def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
 
-; m = mass (100t) plus payload (25t)
-; stiffness: k = m * g * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring
+; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
+; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
 ; damping: c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
+; brake torque: m * a * r (use half mass, a = 1.5 m/s^2)
 (def main-wheel-base {:sfsim.jolt/width 0.4064
                       :sfsim.jolt/radius (* 0.5 1.1303)
                       :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
+                      :sfsim.jolt/angular-damping 0.2
                       :sfsim.jolt/suspension-min-length (+ 0.8)
                       :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
-                      :sfsim.jolt/stiffness 3515625.0
-                      :sfsim.jolt/damping 562500.0})
+                      :sfsim.jolt/stiffness 1915744.798
+                      :sfsim.jolt/damping 415231.299
+                      :sfsim.jolt/max-brake-torque 100000.0})
 (def front-wheel-base {:sfsim.jolt/width 0.22352
                        :sfsim.jolt/radius (* 0.5 0.8128)
                        :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
+                       :sfsim.jolt/angular-damping 0.2
                        :sfsim.jolt/suspension-min-length (+ 0.5)
                        :sfsim.jolt/suspension-max-length (+ 0.5 0.5419)
-                       :sfsim.jolt/stiffness 3515625.0
-                       :sfsim.jolt/damping 562500.0})
+                       :sfsim.jolt/stiffness 1077473.882
+                       :sfsim.jolt/damping 155702.159})
 (def main-wheel-left (assoc main-wheel-base
                             :sfsim.jolt/position
                             (sub main-wheel-left-pos (vec3 0 0 (- (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
@@ -348,7 +352,7 @@
 (def chord 10.0)
 (def wingspan 20.75)
 
-(def vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels))
+(def vehicle (atom nil))
 
 (jolt/optimize-broad-phase)
 
@@ -542,7 +546,7 @@
         (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
               max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
               s       (min @speed max-speed)]
-          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.5))))
+          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.0))))
         (jolt/set-angular-velocity body (vec3 0 0 0))
         (reset! slew false))
       (let [t1       (System/currentTimeMillis)
@@ -552,6 +556,7 @@
             ra       (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
             rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
             rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
+            brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.01)
             u        (if (@keystates GLFW/GLFW_KEY_S) 1 (if (@keystates GLFW/GLFW_KEY_W) -1 0))
             r        (if (@keystates GLFW/GLFW_KEY_A) -1 (if (@keystates GLFW/GLFW_KEY_D) 1 0))
             t        (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
@@ -559,8 +564,7 @@
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
-            dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))
-            to       (if (@keystates GLFW/GLFW_KEY_T) 0.05 (if (@keystates GLFW/GLFW_KEY_G) -0.05 0))]
+            dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))]
         (when mn (reset! menu main-dialog))
         (if playback
           (let [frame (nth @recording @n)]
@@ -587,6 +591,7 @@
                                :gear @gear}]
                     (swap! recording conj frame)))
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+                (when @vehicle (jolt/set-brake-input @vehicle brake))
                 (let [speed   (mag (jolt/get-linear-velocity body))
                       density (atmosphere/density-at-height height)]
                   (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
@@ -609,18 +614,21 @@
             (swap! gear min 1.0)
             (swap! gear max 0.0)
             (reset! prev-gear-req gear-req)
-            ;(swap! gear + (* dt dg))
-            ;(swap! gear min 7.0)
-            ;(swap! gear max 0.0)
-            (swap! camera-dx + (* dt dcx 0.0001))
-            (swap! camera-dy + (* dt dcy 0.0001))
+            (if (zero? @gear)
+              (when (not @vehicle)
+                (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
+              (when @vehicle
+                (jolt/remove-and-destroy-constraint @vehicle)
+                (reset! vehicle nil)))
+            (swap! camera-dx + (* dt dcx 0.005))
+            (swap! camera-dy + (* dt dcy 0.005))
             (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
             (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
             (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
-            (swap! opacity-base + (* dt to))
+            ; (swap! opacity-base + (* dt to))
             (swap! dist * (exp d))))
         (let [object-position    (:position @pose)
-              origin             (add object-position (mult (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy -1)) (* -1.0 @dist)))
+              origin             (add object-position (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               jd-ut              (+ @time-delta (/ @t0 1000 86400.0) astro/T0)
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (sub (earth-moon jd-ut))
@@ -636,18 +644,35 @@
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
-              ; wheels-scene       (if playback (update-wheels scene @wheelposes) (update-wheels scene))
-              wheels-scene       (if (zero? @gear)
+              wheels-scene       (if (and (zero? @gear) @vehicle)
                                    (model/apply-transforms
                                      scene
                                      (model/animations-frame
                                        model
-                                       {"GearLeft" (/ (- (jolt/get-suspension-length vehicle 0) 0.8) 0.8128)
-                                        "GearRight" (/ (- (jolt/get-suspension-length vehicle 1) 0.8) 0.8128)
-                                        "GearFront" (+ 1 (/ (- (jolt/get-suspension-length vehicle 2) 0.5) 0.5419))}))
-                                   (model/apply-transforms scene (model/animations-frame model {"GearLeft" (+ @gear 1)
-                                                                                                "GearRight" (+ @gear 1)
-                                                                                                "GearFront" (+ @gear 2)})))
+                                       {"GearLeft" (/ (- (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                                        "GearRight" (/ (- (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                                        "GearFront" (+ 1 (/ (- (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))
+                                        "WheelLeft" (mod (/ (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
+                                        "WheelRight" (mod (/ (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
+                                        "WheelFront" (mod (/ (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)}))
+                                   (if @vehicle
+                                     (model/apply-transforms
+                                       scene
+                                       (model/animations-frame
+                                         model
+                                         {"GearLeft" (+ @gear 1)
+                                          "GearRight" (+ @gear 1)
+                                          "GearFront" (+ @gear 2)
+                                          "WheelLeft" (/ (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI))
+                                          "WheelRight" (/ (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI))
+                                          "WheelFront" (/ (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI))}))
+                                     (model/apply-transforms
+                                       scene
+                                       (model/animations-frame
+                                         model
+                                         {"GearLeft" (+ @gear 1)
+                                          "GearRight" (+ @gear 1)
+                                          "GearFront" (+ @gear 2)}))))
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)

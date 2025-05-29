@@ -72,8 +72,9 @@
       (t/destroy-texture worley-north)
       (GLFW/glfwTerminate))))
 
-(defn atmosphere-lut [_]
+(defn atmosphere-lut
   "Generate atmospheric lookup tables"
+  [& _]
   (al/generate-atmosphere-luts))
 
 (defn scale-image-file
@@ -88,7 +89,7 @@
 
 (defn download-bluemarble
   "Download some NASA Bluemarble data from https://visibleearth.nasa.gov/images/74017/april-blue-marble-next-generation/74037"
-  [_]
+  [& _]
   (doseq [sector ["A1" "A2" "B1" "B2" "C1" "C2" "D1" "D2"]]
          (let [filename (str "world.200404.3x21600x21600." sector ".png")
                url      (str "https://eoimages.gsfc.nasa.gov/images/imagerecords/74000/74017/" filename)]
@@ -99,7 +100,7 @@
 
 (defn download-blackmarble
   "Download some NASA Blackmarble data from https://earthobservatory.nasa.gov/features/NightLights/page3.php"
-  [_]
+  [& _]
   (doseq [sector ["A1" "A2" "B1" "B2" "C1" "C2" "D1" "D2"]]
          (let [filename (str "BlackMarble_2016_" sector ".jpg")
                url      (str "https://eoimages.gsfc.nasa.gov/images/imagerecords/144000/144898/" filename)]
@@ -110,7 +111,7 @@
 
 (defn download-elevation
   "Download NOAA elevation data from https://www.ngdc.noaa.gov/mgg/topo/gltiles.html"
-  [_]
+  [& _]
   (let [filename "all10g.zip"
         url      (str "https://www.ngdc.noaa.gov/mgg/topo/DATATILES/elev/" filename)]
     (.println *err* (str "Downloading " url " ..."))
@@ -121,7 +122,7 @@
 
 (defn download-lunar-color
   "Download CGI Moon Kit color image. Map centered on 0 degree longitude"
-  [_]
+  [& _]
   (let [filename "lroc_color_poles.tif"
         url (str "https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/" filename)]
     (.println *err* (str "Downloading " url " ..."))
@@ -132,7 +133,7 @@
 
 (defn download-lunar-elevation
   "Download CGI Moon Kit elevation image unsigned 16-bit TIFFs in half-meters, relative to a radius of 1727400 meters"
-  [_]
+  [& _]
   (let [filename "ldem_64_uint.tif"
         url (str "https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/" filename)]
     (.println *err* (str "Downloading " url " ..."))
@@ -143,7 +144,7 @@
 
 (defn extract-elevation
   "Extract and concatenate elevation files"
-  [_]
+  [& _]
   (b/unzip {:zip-file "all10g.zip" :target-dir "."})
   (with-open [out (io/output-stream "elevation.A1.raw")]
     (io/copy (io/file "all10/a10g") out) (io/copy (io/file "all10/e10g") out))
@@ -288,7 +289,7 @@
 
 (defn cube-maps
   "Create pyramid of cube maps"
-  [_]
+  [& _]
   (cube-map {:in-level -3 :out-level 0})
   (cube-map {:in-level -2 :out-level 1})
   (cube-map {:in-level -1 :out-level 2})
@@ -335,7 +336,7 @@
 
 (defn download-spaceship
   "Download Spaceship model"
-  [_]
+  [& _]
   (let [filename "venturestar.glb"
         url      (str "https://www.wedesoft.de/downloads/" filename)]
     (.println *err* (str "Downloading " url " ..."))
@@ -345,7 +346,7 @@
 
 (defn download-ephemeris
   "Download NASA JPL planet ephemeris data from https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/"
-  [_]
+  [& _]
   (let [filename "de430_1850-2150.bsp"
         url      (str "https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/" filename)]
     (.println *err* (str "Downloading " url " ..."))
@@ -355,7 +356,7 @@
 
 (defn download-reference-frames
   "Download NASA JPL reference frames specification kernel from https://naif.jpl.nasa.gov/pub/naif/pds/wgc/kernels/fk/"
-  [_]
+  [& _]
   (let [filename "moon_080317.tf"
         url      (str "https://naif.jpl.nasa.gov/pub/naif/pds/wgc/kernels/fk/" filename)]
     (.println *err* (str "Downloading " url " ..."))
@@ -365,7 +366,7 @@
 
 (defn download-lunar-pck-file
   "Download NASA JPL moon PCK file from https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/"
-  [_]
+  [& _]
   (let [filename "moon_pa_de421_1900-2050.bpc"
         url      (str "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/" filename)]
     (.println *err* (str "Downloading " url " ..."))
@@ -385,6 +386,8 @@
   (download-ephemeris)
   (download-reference-frames)
   (download-lunar-pck-file)
+  (download-lunar-color)
+  (download-lunar-elevation)
   (extract-elevation)
   (map-sectors-day)
   (map-sectors-night)

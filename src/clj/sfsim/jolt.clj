@@ -373,14 +373,18 @@
 
 (defcfn make-wheel-settings-
   "Create wheel settings object for wheeled vehicle (private)"
-  make_wheel_settings [::vec3 ::mem/float ::mem/float ::mem/float ::vec3 ::vec3 ::mem/float ::mem/float ::mem/float ::mem/float]
-                      ::mem/pointer)
+  make_wheel_settings [::vec3 ::mem/float ::mem/float ::mem/float ::mem/float ::vec3 ::vec3 ::mem/float ::mem/float ::mem/float
+                       ::mem/float ::mem/float] ::mem/pointer)
 
 
 (defn make-wheel-settings
   "Create wheel settings object for wheeled vehicle"
-  [{::keys [position width radius inertia suspension-min-length suspension-max-length stiffness damping]} up forward]
-  (make-wheel-settings- position width radius inertia up forward suspension-min-length suspension-max-length stiffness damping))
+  [{::keys [position width radius inertia angular-damping suspension-min-length suspension-max-length stiffness damping
+            max-brake-torque]
+    :or {angular-damping 0.0 max-brake-torque 0.0}}
+   up forward]
+  (make-wheel-settings- position width radius inertia angular-damping up forward suspension-min-length suspension-max-length
+                        stiffness damping max-brake-torque))
 
 
 (defcfn destroy-wheel-settings
@@ -411,6 +415,11 @@
     (create-and-add-vehicle-constraint- body constraint-settings)))
 
 
+(defcfn set-brake-input
+  "Set brake input between 0 and 1"
+  set_brake_input [::mem/pointer ::mem/float] ::mem/void)
+
+
 (defcfn get-wheel-local-transform
   "Get wheel pose in local coordinate system"
   get_wheel_local_transform [::mem/pointer ::mem/int ::vec3 ::vec3] ::mat4x4)
@@ -421,9 +430,9 @@
   get_suspension_length [::mem/pointer ::mem/int] ::mem/float)
 
 
-(defcfn get-rotation-angle
+(defcfn get-wheel-rotation-angle
   "Get wheel rotation angle"
-  get_rotation_angle [::mem/pointer ::mem/int] ::mem/float)
+  get_wheel_rotation_angle [::mem/pointer ::mem/int] ::mem/float)
 
 
 (defcfn has-hit-hard-point-

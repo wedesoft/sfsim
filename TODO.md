@@ -1,9 +1,10 @@
 # TODO
-* wheel rotation
+* physics and animation of steering (apply difference of two animation time stamps)
+* add micro textures
+* add joystick
+* make landing video and publish article
 * update aerodynamics with expert data
-* remove vehicle constraint when retracting gear
-* implement wheel brakes
-* physics and animation of steering
+* refactor gear code
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://samdriver.xyz/article/decal-render-intro
 * fix problem with resolution of neighbouring tiles in planetary cubemap
