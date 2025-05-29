@@ -501,7 +501,7 @@
 
 (defn animations-frame
   "Create hash map with transforms for objects of scene given a hash map of animation times"
-  {:malli/schema [:=> [:cat [:map [::animations :map]] [:map :string :double]] [:map-of :string :some]]}
+  {:malli/schema [:=> [:cat [:map [::animations :map]] [:map-of :string :double]] [:map-of :string :some]]}
   [scene animation-times]
   (let [animations (::animations scene)]
     (or (apply merge
