@@ -1,8 +1,8 @@
 # TODO
-* physics and animation of steering (apply difference of two animation time stamps)
+* make landing video and publish article
 * increase wheel friction
 * add joystick
-* make landing video and publish article
+* physics and animation of steering (apply difference of two animation time stamps)
 * update aerodynamics with expert data
 * refactor gear code
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
@@ -174,6 +174,7 @@
 * cockpit: frontal and side view of moon lander
 * XBox controller
 * 3D moon rendering
+* multitextures for land detail, microtextures or normal maps using octahedral mapping?
 * airport-like departure tables
 * render articulated objects with configuration
 * mp3 player, play different game music depending on situation

@@ -99,7 +99,8 @@
           false)))
 
 (def playback false)
-(def fix-fps 30.0)
+; (def fix-fps 30.0)
+(def fix-fps false)
 (def fullscreen playback)
 
 (def monitor (GLFW/glfwGetPrimaryMonitor))
@@ -545,13 +546,13 @@
       (when (@keystates GLFW/GLFW_KEY_P)
         (reset! slew true))
       (when (@keystates GLFW/GLFW_KEY_O)
-        ;(jolt/set-orientation body (:orientation @pose))
-        ;(jolt/set-translation body (:position @pose))
-        ;(let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-        ;      max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
-        ;      s       (min @speed max-speed)]
-        ;  (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.0))))
-        ; (jolt/set-angular-velocity body (vec3 0 0 0))
+        (jolt/set-orientation body (:orientation @pose))
+        (jolt/set-translation body (:position @pose))
+        (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+              max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
+              s       (min @speed max-speed)]
+          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.3))))
+         (jolt/set-angular-velocity body (vec3 0 0 0))
         (reset! slew false))
       (let [t1       (System/currentTimeMillis)
             dt       (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
@@ -587,10 +588,10 @@
           (do
             (if @slew
               (do
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.0 0.001 u) (vec3 0 1 0)))
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.0 0.001 r) (vec3 0 0 1)))
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.0 0.001 t) (vec3 1 0 0)))
-                (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.0 0.001 v))))
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 u) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 r) (vec3 0 0 1)))
+                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 t) (vec3 1 0 0)))
+                (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
               (do
                 (when @recording
                   (let [frame {:timemillis (+ (* @time-delta 1000 86400.0) @t0)
@@ -626,6 +627,7 @@
                     (reset! vehicle nil)))
                 (when @vehicle (jolt/set-brake-input @vehicle brake))
                 (let [speed   (mag (jolt/get-linear-velocity body))
+                      height  (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
                       density (atmosphere/density-at-height height)]
                   (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
                   (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* 0.5 u 0.25 (sqr speed) density 1.0 surface chord) 0)))
