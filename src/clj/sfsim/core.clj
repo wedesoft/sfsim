@@ -186,7 +186,7 @@
                       :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
                       :sfsim.jolt/stiffness 1915744.798
                       :sfsim.jolt/damping 415231.299
-                      :sfsim.jolt/max-brake-torque 50000.0})
+                      :sfsim.jolt/max-brake-torque 100000.0})
 (def front-wheel-base {:sfsim.jolt/width 0.22352
                        :sfsim.jolt/radius (* 0.5 0.8128)
                        :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
@@ -349,7 +349,7 @@
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
 (jolt/set-angular-velocity body (vec3 0 0 0))
-(jolt/set-friction body 1.5)
+(jolt/set-friction body 0.8)
 (jolt/set-restitution body 0.25)
 (def mass (jolt/get-mass body))
 (def surface 198.0)
@@ -389,7 +389,7 @@
         (when @mesh (jolt/remove-and-destroy-body @mesh))
         (reset! coords c)
         (reset! mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0)))
-        (jolt/set-friction @mesh 1.5)
+        (jolt/set-friction @mesh 0.8)
         (jolt/set-restitution @mesh 0.25)
         (jolt/optimize-broad-phase)))))
 
