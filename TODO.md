@@ -1,6 +1,5 @@
 # TODO
 * make landing video and publish article
-* increase wheel friction
 * add joystick
 * physics and animation of steering (apply difference of two animation time stamps)
 * update aerodynamics with expert data
