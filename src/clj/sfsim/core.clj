@@ -82,6 +82,7 @@
 (def slew (atom true))
 
 (def recording
+  ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timemillis position orientation camera-orientation dist gear wheel-angles suspension camera-dx camera-dy]}]
                     {:timemillis timemillis
@@ -545,14 +546,15 @@
       (planet/update-tile-tree planet-renderer tile-tree (aget w 0) (:position @pose))
       (when (@keystates GLFW/GLFW_KEY_P)
         (reset! slew true))
-      (when (@keystates GLFW/GLFW_KEY_O)
+      (when (@keystates GLFW/GLFW_KEY_X)
         (jolt/set-orientation body (:orientation @pose))
         (jolt/set-translation body (:position @pose))
         (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
               max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
               s       (min @speed max-speed)]
           (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.3))))
-         (jolt/set-angular-velocity body (vec3 0 0 0))
+         (jolt/set-angular-velocity body (vec3 0 0 0)))
+      (when (@keystates GLFW/GLFW_KEY_O)
         (reset! slew false))
       (let [t1       (System/currentTimeMillis)
             dt       (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
@@ -593,26 +595,6 @@
                 (swap! pose update :orientation q/* (q/rotation (* dt 0.001 t) (vec3 1 0 0)))
                 (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
               (do
-                (when @recording
-                  (let [frame {:timemillis (+ (* @time-delta 1000 86400.0) @t0)
-                               :position (:position @pose)
-                               :orientation (:orientation @pose)
-                               :camera-orientation @camera-orientation
-                               :camera-dx @camera-dx
-                               :camera-dy @camera-dy
-                               :dist @dist
-                               :gear @gear
-                               :wheel-angles (if @vehicle
-                                               [(mod (/ (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
-                                                (mod (/ (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
-                                                (mod (/ (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
-                                               [0.0 0.0 0.0])
-                               :suspension (if @vehicle
-                                             [(/ (- (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                              (/ (- (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                              (+ 1 (/ (- (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
-                                             [1.0 1.0 1.0])}]
-                    (swap! recording conj frame)))
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
                 (if @gear-down
                   (swap! gear - (* dt 0.0005))
@@ -650,7 +632,27 @@
                                      [(/ (- (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
                                       (/ (- (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
                                       (+ 1 (/ (- (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
-                                     [1.0 1.0 1.0]))))
+                                     [1.0 1.0 1.0]))
+                (when @recording
+                  (let [frame {:timemillis (+ (* @time-delta 1000 86400.0) @t0)
+                               :position (:position @pose)
+                               :orientation (:orientation @pose)
+                               :camera-orientation @camera-orientation
+                               :camera-dx @camera-dx
+                               :camera-dy @camera-dy
+                               :dist @dist
+                               :gear @gear
+                               :wheel-angles (if @vehicle
+                                               [(mod (/ (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
+                                                (mod (/ (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
+                                                (mod (/ (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
+                                               [0.0 0.0 0.0])
+                               :suspension (if @vehicle
+                                             [(/ (- (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                                              (/ (- (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                                              (+ 1 (/ (- (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                                             [1.0 1.0 1.0])}]
+                    (swap! recording conj frame)))))
             (swap! camera-dx + (* dt dcx 0.005))
             (swap! camera-dy + (* dt dcy 0.005))
             (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))

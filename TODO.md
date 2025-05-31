@@ -1,8 +1,7 @@
 # TODO
-* make landing video and publish article
+* update aerodynamics with expert data
 * add joystick
 * physics and animation of steering (apply difference of two animation time stamps)
-* update aerodynamics with expert data
 * refactor gear code
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://samdriver.xyz/article/decal-render-intro
