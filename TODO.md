@@ -1,10 +1,13 @@
 # TODO
 * update aerodynamics with expert data
 * add joystick
+* make new trailer
 * physics and animation of steering (apply difference of two animation time stamps)
 * refactor gear code
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://samdriver.xyz/article/decal-render-intro
+* make new trailer
+* use icosahedron for mapping 2D micro textures
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 * get high-res Florida data
