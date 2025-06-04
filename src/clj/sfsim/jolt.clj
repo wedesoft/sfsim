@@ -2,7 +2,7 @@
   "Interface with native Jolt physics library"
   (:require
     [clojure.spec.alpha :as s]
-    [coffi.ffi :refer (defcfn) :as ffi]
+    [coffi.ffi :refer (defcfn defconst) :as ffi]
     [coffi.mem :as mem]
     [fastmath.matrix :refer (mat3x3 mulm mulv mat4x4)]
     [fastmath.vector :refer (vec3)]
@@ -10,6 +10,7 @@
     [sfsim.quaternion :as q]))
 
 
+<<<<<<< HEAD
 (defn const
   [symbol-or-addr type]
   (mem/deserialize (ffi/ensure-symbol symbol-or-addr) [::mem/pointer type]))
