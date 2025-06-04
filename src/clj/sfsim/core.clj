@@ -3,6 +3,7 @@
   (:gen-class)
   (:require
     [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt)]
+    [clj-async-profiler.core :as prof]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -538,6 +539,7 @@
 (defn -main
   "Space flight simulator main function"
   [& _args]
+  (prof/profile
   (let [n  (atom 0)
         w  (int-array 1)
         h  (int-array 1)]
@@ -788,5 +790,5 @@
   (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
   (when (and (not playback) @recording)
-    (spit "recording.edn" (with-out-str (pprint @recording))))
-  (System/exit 0))
+    (spit "recording.edn" (with-out-str (pprint @recording)))))
+  (prof/serve-ui 8080))
