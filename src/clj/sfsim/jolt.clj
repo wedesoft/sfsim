@@ -2,41 +2,12 @@
   "Interface with native Jolt physics library"
   (:require
     [clojure.spec.alpha :as s]
-    [coffi.ffi :refer (defcfn) :as ffi]
+    [coffi.ffi :refer (defcfn defconst) :as ffi]
     [coffi.mem :as mem]
     [fastmath.matrix :refer (mat3x3 mulm mulv mat4x4)]
     [fastmath.vector :refer (vec3)]
     [sfsim.matrix :refer (vec3->vec4 vec4->vec3)]
     [sfsim.quaternion :as q]))
-
-
-(defn const
-  [symbol-or-addr type]
-  (mem/deserialize (ffi/ensure-symbol symbol-or-addr) [::mem/pointer type]))
-
-
-;; Temporarily keep a bugfixed implementation here.
-(s/def ::defconst-args
-  (s/cat :var-name simple-symbol?
-         :docstring (s/? string?)
-         :symbol-or-addr any?
-         :type ::mem/type))
-
-
-;; Temporarily implement macro using bugfixed const method.
-(defmacro defconst
-  {:arglists '([symbol docstring? symbol-or-addr type])}
-  [& args]
-  (let [args (s/conform ::defconst-args args)]
-    `(let [symbol# (ffi/ensure-symbol ~(:symbol-or-addr args))]
-       (def ~(:var-name args)
-         ~@(when-let [doc (:docstring args)]
-             (list doc))
-         (const symbol# ~(:type args))))))
-
-
-(s/fdef defconst
-        :args ::defconst-args)
 
 
 (ffi/load-library "src/c/sfsim/libjolt.so")
