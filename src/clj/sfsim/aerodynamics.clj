@@ -27,11 +27,13 @@
   [x0 y0 dy0 x1 y1 dy1]
   (let [h (- x1 x0)]
     (fn [x]
-        (let [t (/ (- x x0) h)]
-          (+ (* (+ (* 2 (cube t)) (* -3 (sqr t)) 1) y0)
-             (* (+ (cube t) (* -2 (sqr t)) t) h dy0)
-             (* (+ (* -2 (cube t)) (* 3 (sqr t))) y1)
-             (* (+ (cube t) (* -1 (sqr t))) h dy1))))))
+        (let [t (/ (- x x0) h)
+              t2 (sqr t)
+              t3 (cube t)]
+          (+ (* (+ (* 2 t3) (* -3 t2) 1) y0)
+             (* (+ t3 (* -2 t2) t) h dy0)
+             (* (+ (* -2 t3) (* 3 t2)) y1)
+             (* (+ t3 (* -1 t2)) h dy1))))))
 
 
 (defn mix
