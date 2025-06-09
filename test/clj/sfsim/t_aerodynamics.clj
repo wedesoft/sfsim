@@ -15,6 +15,26 @@
 (mi/instrument! {:report (pretty/thrower)})
 
 
+(facts "Linear segment"
+       ((linear 0.0 0.0 1.0 1.0) 0.0) => (roughly 0.0 1e-6)
+       ((linear 0.0 0.0 1.0 1.0) 1.0) => (roughly 1.0 1e-6)
+       ((linear 0.0 0.0 1.0 2.0) 1.0) => (roughly 2.0 1e-6)
+       ((linear 0.0 1.0 1.0 2.0) 0.0) => (roughly 1.0 1e-6)
+       ((linear 1.0 1.0 2.0 2.0) 1.0) => (roughly 1.0 1e-6)
+       ((linear 1.0 1.0 3.0 2.0) 3.0) => (roughly 2.0 1e-6))
+
+
+(facts "Cubic Hermite spline"
+       ((cubic-hermite-spline 0.0 0.0 0.0 1.0 1.0 0.0) 0.0) => (roughly 0.0 1e-6)
+       ((cubic-hermite-spline 0.0 0.0 0.0 1.0 1.0 0.0) 1.0) => (roughly 1.0 1e-6)
+       ((cubic-hermite-spline 0.0 0.0 0.0 1.0 2.0 0.0) 1.0) => (roughly 2.0 1e-6)
+       ((cubic-hermite-spline 0.0 1.0 0.0 1.0 2.0 0.0) 0.0) => (roughly 1.0 1e-6)
+       ((cubic-hermite-spline 1.0 1.0 0.0 2.0 2.0 0.0) 1.0) => (roughly 1.0 1e-6)
+       ((cubic-hermite-spline 1.0 1.0 0.0 3.0 2.0 0.0) 3.0) => (roughly 2.0 1e-6)
+       ((cubic-hermite-spline 0.0 0.0 1.0 2.0 0.0 -1.0) 1.0) => (roughly 0.5 1e-6)
+       ((cubic-hermite-spline 0.0 0.0 1.0 2.0 0.0 1.0) 1.0) => (roughly 0.0 1e-6))
+
+
 (facts "Mix two values depending on angle"
        (mix 0.1 0.4 (to-radians 0)) => 0.1
        (mix 0.1 0.4 (to-radians 180)) => 0.4
@@ -72,10 +92,10 @@
 
 
 (facts "Compose an aerodynamic curve"
-       ((compose (fn [x] 0.0)) 0.0) => 0.0
-       ((compose (fn [x] 1.0)) 0.0) => 1.0
+       ((compose (fn [_x] 0.0)) 0.0) => 0.0
+       ((compose (fn [_x] 1.0)) 0.0) => 1.0
        ((compose (fn [x] x)) 2.0) => 2.0
-       ((compose (fn [x] 1.0) (fn [x] 2.0)) 0.0) => 3.0)
+       ((compose (fn [_x] 1.0) (fn [_x] 2.0)) 0.0) => 3.0)
 
 
 (facts "Sanity check for the aerodynamic coefficient functions"

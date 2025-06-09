@@ -7,11 +7,31 @@
       [sfsim.matrix :refer [fvec3]]
       [sfsim.quaternion :as q]
       [sfsim.atmosphere :refer (density-at-height)]
-      [sfsim.util :refer (sqr)]))
+      [sfsim.util :refer (sqr cube)]))
 
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
+
+
+(defn linear
+  "Create linear function from two points"
+  {:malli/schema [:=> [:cat :double :double :double :double] [:=> [:cat :double] :double]]}
+  [x0 y0 x1 y1]
+  (fn [x] (/ (+ (* y0 (- x1 x)) (* y1 (- x x0))) (- x1 x0))))
+
+
+(defn cubic-hermite-spline
+  "Create a cubic Hermite spline from two points with derivative"
+  {:malli/schema [:=> [:cat :double :double :double :double :double :double] [:=> [:cat :double] :double]]}
+  [x0 y0 dy0 x1 y1 dy1]
+  (let [h (- x1 x0)]
+    (fn [x]
+        (let [t (/ (- x x0) h)]
+          (+ (* (+ (* 2 (cube t)) (* -3 (sqr t)) 1) y0)
+             (* (+ (cube t) (* -2 (sqr t)) t) h dy0)
+             (* (+ (* -2 (cube t)) (* 3 (sqr t))) y1)
+             (* (+ (cube t) (* -1 (sqr t))) h dy1))))))
 
 
 (defn mix

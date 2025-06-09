@@ -170,6 +170,13 @@
   (* x x))
 
 
+(defn cube
+  "Cube of x"
+  {:malli/schema [:=> [:cat number?] number?]}
+  [x]
+  (* x x x))
+
+
 (defn byte->ubyte
   "Convert byte to unsigned byte"
   {:malli/schema [:=> [:cat :int] N0]}

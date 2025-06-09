@@ -89,6 +89,12 @@
        (sqr 3) => 9)
 
 
+(facts "Cube values"
+       (cube 1) => 1
+       (cube 2) => 8
+       (cube 3) => 27)
+
+
 (facts "Converting unsigned byte to byte and back"
        (byte->ubyte    0) =>    0
        (byte->ubyte  127) =>  127
