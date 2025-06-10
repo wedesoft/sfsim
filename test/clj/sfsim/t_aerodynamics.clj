@@ -37,7 +37,8 @@
 
 (facts "Piecewise function"
        ((piecewise [0.0 1.0] (fn [x] x)) 0.5) => 0.5
-       ((piecewise [0.0 1.0] (constantly 1.0) [1.0 2.0] (constantly 2.0)) 1.5) => 2.0)
+       ((piecewise [0.0 1.0] (constantly 1.0) [1.0 2.0] (constantly 2.0)) 1.5) => 2.0
+       ((piecewise [0.0 1.0] (constantly 1.0) [1.0 2.0] (constantly 2.0)) 0.5) => 1.0)
 
 
 (facts "Mix two values depending on angle"
