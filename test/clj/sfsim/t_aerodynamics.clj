@@ -35,6 +35,11 @@
        ((cubic-hermite-spline 0.0 0.0 1.0 2.0 0.0 1.0) 1.0) => (roughly 0.0 1e-6))
 
 
+(facts "Piecewise function"
+       ((piecewise [0.0 1.0] (fn [x] x)) 0.5) => 0.5
+       ((piecewise [0.0 1.0] (constantly 1.0) [1.0 2.0] (constantly 2.0)) 1.5) => 2.0)
+
+
 (facts "Mix two values depending on angle"
        (mix 0.1 0.4 (to-radians 0)) => 0.1
        (mix 0.1 0.4 (to-radians 180)) => 0.4

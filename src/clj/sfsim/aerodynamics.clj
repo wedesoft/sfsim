@@ -36,6 +36,16 @@
              (* (+       t3  (* -1 t2)    ) h dy1))))))
 
 
+(defn piecewise
+  "Create piecewise function from intervals interleaved with functions"
+  {:malli/schema [:=> [:cat [:* [:cat [:tuple :double :double] [:=> [:cat :double] :double]]]] [:=> [:cat :double] :double]]}
+  [[start end] function & remaining]
+  (fn [x]
+      (if (<= start x end)
+        (function x)
+        ((apply piecewise remaining) x))))
+
+
 (defn mix
   "Mix two values depending on angle"
   {:malli/schema [:=> [:cat :double :double :double] :double]}
