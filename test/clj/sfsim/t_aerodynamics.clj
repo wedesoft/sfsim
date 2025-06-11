@@ -41,6 +41,11 @@
        ((piecewise [0.0 1.0] (constantly 1.0) [1.0 2.0] (constantly 2.0)) 0.5) => 1.0)
 
 
+(facts "Piecewise linear function"
+       ((piecewise-linear 2.0 3.0, 5.0 7.0) 3.5) => 5.0
+       ((piecewise-linear 2.0 3.0, 5.0 7.0, 11.0 13.0) 8.0) => 10.0)
+
+
 (facts "Mix two values depending on angle"
        (mix 0.1 0.4 (to-radians 0)) => 0.1
        (mix 0.1 0.4 (to-radians 180)) => 0.4

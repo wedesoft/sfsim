@@ -46,6 +46,16 @@
         ((apply piecewise remaining) x))))
 
 
+(defn piecewise-linear
+  "Create piecewise linear function from series of interleaved x and y coordinates"
+  {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
+  [x0 y0 x1 y1 & remaining]
+  (fn [x]
+      (if (<= x0 x x1)
+        ((linear x0 y0 x1 y1) x)
+        ((apply piecewise-linear x1 y1 remaining) x))))
+
+
 (defn mix
   "Mix two values depending on angle"
   {:malli/schema [:=> [:cat :double :double :double] :double]}
