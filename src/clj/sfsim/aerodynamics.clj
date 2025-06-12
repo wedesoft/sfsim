@@ -57,14 +57,14 @@
     (interpolation/linear-smile x y)))
 
 
-(defn cubic-spline
-  "Create cubic spline function from series of interleaved x and y coordinates"
+(defn akima-spline
+  "Create Akima spline function from series of interleaved x and y coordinates"
   {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
   [& args]
   (let [points (partition 2 args)
         x      (map first points)
         y      (map second points)]
-    (interpolation/cubic-spline x y)))
+    (interpolation/akima-spline x y)))
 
 
 (defn mix
