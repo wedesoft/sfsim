@@ -3,6 +3,7 @@
       [clojure.math :refer (PI cos sin sqrt to-radians atan2 hypot)]
       [fastmath.matrix :refer (mat3x3 mulv)]
       [fastmath.vector :refer (vec3 mag add)]
+      [fastmath.interpolation :as interpolation]
       [malli.core :as m]
       [sfsim.matrix :refer [fvec3]]
       [sfsim.quaternion :as q]
@@ -49,11 +50,21 @@
 (defn piecewise-linear
   "Create piecewise linear function from series of interleaved x and y coordinates"
   {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
-  [x0 y0 x1 y1 & remaining]
-  (fn [x]
-      (if (<= x0 x x1)
-        ((linear x0 y0 x1 y1) x)
-        ((apply piecewise-linear x1 y1 remaining) x))))
+  [& args]
+  (let [points (partition 2 args)
+        x      (map first points)
+        y      (map second points)]
+    (interpolation/linear-smile x y)))
+
+
+(defn cubic-spline
+  "Create cubic spline function from series of interleaved x and y coordinates"
+  {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
+  [& args]
+  (let [points (partition 2 args)
+        x      (map first points)
+        y      (map second points)]
+    (interpolation/cubic-spline x y)))
 
 
 (defn mix

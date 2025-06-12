@@ -1,4 +1,5 @@
 # TODO
+* move curves code into separate module
 * update aerodynamics with expert data
 * add joystick
 * make new trailer
