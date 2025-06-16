@@ -500,6 +500,12 @@
       :else                     (density-upper-stratosphere height))))
 
 
+(defn speed-of-sound
+  "Speed of sound in atmosphere as a function of temperature"
+  [temperature]
+  (* 331.3 (sqrt (/ temperature 273.15))))
+
+
 
 (def phase-function
   "Shader function for scattering phase function"
