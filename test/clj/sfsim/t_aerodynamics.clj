@@ -119,9 +119,28 @@
        ((compose (fn [_x] 1.0) (fn [_x] 2.0)) 0.0) => 3.0)
 
 
+(facts "Sanity check coefficient of lift"
+       (coefficient-of-lift 0.6 (to-radians 0.0)) => 0.0
+       (coefficient-of-lift 0.6 (to-radians 3.0)) => (roughly (* 2.7825 (to-radians 3.0)) 1e-6)
+       (coefficient-of-lift 0.6 (to-radians 33.0)) => (roughly 1.3 1e-6)
+       (coefficient-of-lift 0.6 (to-radians 90.0)) => 0.0
+       (coefficient-of-lift 0.6 (to-radians -3.0)) => (roughly (* 2.7825 (to-radians -3.0)) 1e-6)
+       (coefficient-of-lift 0.6 (to-radians -33.0)) => (roughly -1.3 1e-6)
+       (coefficient-of-lift 0.6 (to-radians -90.0)) => 0.0
+       (coefficient-of-lift 0.6 (to-radians 147.0)) => (roughly -1.3 1e-6)
+       (coefficient-of-lift 0.6 (to-radians 180.0)) => 0.0
+       (coefficient-of-lift 0.6 (to-radians -147.0)) => (roughly 1.3 1e-6)
+       (coefficient-of-lift 0.6 (to-radians -180.0)) => 0.0
+       (coefficient-of-lift 0.6 (to-radians 213.0)) => (roughly 1.3 1e-6)
+       (coefficient-of-lift 0.6 (to-radians -213.0)) => (roughly -1.3 1e-6)
+       (coefficient-of-lift 0.6 (to-radians 33.0) (to-radians 0.0)) => (roughly 1.3 1e-6)
+       (coefficient-of-lift 0.6 (to-radians 213.0) (to-radians 180.0)) => (roughly -1.3 1e-6)
+       (coefficient-of-lift 0.6 (to-radians 147.0) (to-radians 180.0)) => (roughly 1.3 1e-6)
+       (coefficient-of-lift 0.6 (to-radians 33.0) (to-radians 90.0)) => (roughly 0.0 1e-6)
+       (coefficient-of-lift 0.6 (to-radians 33.0) (to-radians -90.0)) => (roughly 0.0 1e-6))
+
+
 ; (facts "Sanity check for the aerodynamic coefficient functions"
-;        (coefficient-of-lift (to-radians 10)) => #(>= % 0.1)
-;        (coefficient-of-lift (to-radians -10)) => #(<= % -0.1)
 ;        (coefficient-of-drag (to-radians 0)) => #(>= % 0.1)
 ;        (coefficient-of-drag (to-radians 180)) => #(>= % 0.1)
 ;        (coefficient-of-drag (to-radians 90)) => #(>= % (* 2 (coefficient-of-drag (to-radians 0))))
@@ -142,14 +161,6 @@
 
 
 ; (facts "Sanity check for the 3D aerodynamic coefficient functions"
-;        (coefficient-of-lift (to-radians 30) (to-radians 0))
-;        => #(>= % 0.3)
-;        (coefficient-of-lift (to-radians 30) (to-radians 0))
-;        => (roughly (- (coefficient-of-lift (to-radians 30) (to-radians 180))) 1e-6)
-;        (coefficient-of-lift (to-radians 5) (to-radians 0))
-;        => (roughly (- (coefficient-of-lift (to-radians -175) (to-radians 180))) 1e-6)
-;        (coefficient-of-lift (to-radians 10) (to-radians 90))
-;        => (roughly 0.0 1e-6)
 ;        (coefficient-of-drag (to-radians 0) (to-radians 0))
 ;        => #(>= % 0.05)
 ;        (coefficient-of-drag (to-radians 0) (to-radians 0))
@@ -208,6 +219,7 @@
 
 (facts "Get angle of attack and side slip angles from speed vector in aircraft body system"
        (angle-of-attack (vec3 1 0 0)) => 0.0
+       (angle-of-attack (vec3 -1 0 0)) => (roughly (to-radians 180.0) 1e-6)
        (angle-of-attack (vec3 0 0 1)) => (roughly (to-radians 90) 1e-6)
        (angle-of-attack (speed-vector (to-radians 20) (to-radians 30))) => (roughly (to-radians 20) 1e-6))
 

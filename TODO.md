@@ -1,6 +1,6 @@
 # TODO
-* move curves code into separate module
 * update aerodynamics with expert data
+* move curves code into separate module
 * add joystick
 * make new trailer
 * spacecraft module with data transfer from state dictionary to Jolt physics, graphics, keyboard, ...

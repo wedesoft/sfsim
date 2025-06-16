@@ -243,17 +243,71 @@
   (mulv aerodynamic-to-gltf aerodynamic-vector))
 
 
-; (defn coefficient-of-lift
-;   "Determine coefficient of lift (negative z in wind system) depending on angle of attack and optionally angle of side-slip"
-;   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
-;   ([angle-of-attack]
-;    ((compose (basic-lift 1.1) (glide 0.8 (to-radians 13) 0.5 (to-radians 12)) (tail 0.5 (to-radians 8) (to-radians 12)))
-;     angle-of-attack))
-;   ([angle-of-attack angle-of-side-slip]
-;    (* (mix (coefficient-of-lift angle-of-attack) (- (coefficient-of-lift (mirror angle-of-attack))) angle-of-side-slip)
-;       (cos angle-of-side-slip))))
-;
-;
+(def c-l-alpha (akima-spline
+                 0.0 2.5596
+                 0.6 2.7825
+                 0.8 3.0453
+                 1.2 2.8237
+                 1.4 2.7156
+                 1.6 2.3735
+                 1.8 2.1063
+                 2.0 1.8934
+                 3.0 1.3273
+                 4.0 0.9907
+                 5.0 0.7816
+                 10.0 2.0000
+                 20.0 2.0000
+                 30.0 2.0000))
+
+
+(def c-l-lin (comp #(* 0.75 %) (akima-spline 0.0 20, 0.6 22, 0.8 24, 5.0 24, 10.0 30, 20.0 30, 30.0 30)))
+
+
+(def c-l-alpha-max (akima-spline 0.0 35 0.6 33 0.8 30 5.0 30 10.0 45, 20.0 45, 30.0 45))
+
+
+(def c-l-max (akima-spline
+               0.0  1.20
+               0.6  1.30
+               0.8  1.40
+               1.2  1.20
+               1.4  1.10
+               1.6  1.00
+               1.8  0.90
+               2.0  0.80
+               3.0  0.50
+               4.0  0.40
+               5.0  0.35
+               10.0 1.00
+               20.0 1.00
+               30.0 1.00))
+
+
+(defn coefficient-of-lift
+  "Determine coefficient of lift (negative z in wind system) depending on mach speed, angle of attack, and optional angle of side-slip"
+  ([speed-mach alpha]
+   (cond
+     (neg? alpha)
+     (- (coefficient-of-lift speed-mach (- alpha)))
+     (< (to-radians 90.0) alpha)
+     (- (coefficient-of-lift speed-mach (- (to-radians 180.0) alpha)))
+     :else
+     (let [[gradient linear alpha-peak peak] ((juxt c-l-alpha c-l-lin c-l-alpha-max c-l-max) speed-mach)]
+       (cond
+         (< alpha (to-radians linear))
+         (* gradient alpha)
+         (< alpha (to-radians alpha-peak))
+         ((cubic-hermite-spline (to-radians linear)     (* gradient (to-radians linear)) gradient
+                                (to-radians alpha-peak) peak                             0.0)
+          alpha)
+         (<= alpha (to-radians 90.0))
+         ((cubic-hermite-spline (to-radians alpha-peak) peak 0.0
+                                (to-radians 90)         0.0  (/ (- peak) 0.75 (to-radians (- 90 alpha-peak))))
+          alpha)))))
+  ([speed-mach alpha beta]
+   (* (mix (coefficient-of-lift speed-mach alpha) (- (coefficient-of-lift speed-mach (mirror alpha))) beta) (cos beta))))
+
+
 ; (defn coefficient-of-drag
 ;   "Determine coefficient of drag (negative x in wind system) depending on angle of attack and optionally angle of side-slip"
 ;   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
