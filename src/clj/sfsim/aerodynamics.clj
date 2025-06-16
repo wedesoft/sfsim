@@ -164,33 +164,6 @@
     (- (- PI) angle)))
 
 
-(defn coefficient-of-lift
-  "Determine coefficient of lift (negative z in wind system) depending on angle of attack and optionally angle of side-slip"
-  {:malli/schema [:=> [:cat :double [:? :double]] :double]}
-  ([angle-of-attack]
-   ((compose (basic-lift 1.1) (glide 0.8 (to-radians 13) 0.5 (to-radians 12)) (tail 0.5 (to-radians 8) (to-radians 12)))
-    angle-of-attack))
-  ([angle-of-attack angle-of-side-slip]
-   (* (mix (coefficient-of-lift angle-of-attack) (- (coefficient-of-lift (mirror angle-of-attack))) angle-of-side-slip)
-      (cos angle-of-side-slip))))
-
-
-(defn coefficient-of-drag
-  "Determine coefficient of drag (negative x in wind system) depending on angle of attack and optionally angle of side-slip"
-  {:malli/schema [:=> [:cat :double [:? :double]] :double]}
-  ([angle-of-attack] ((compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))) angle-of-attack))
-  ([angle-of-attack angle-of-side-slip]
-   (mix (coefficient-of-drag angle-of-attack) 0.5 (* 2 angle-of-side-slip))))
-
-
-(defn coefficient-of-side-force
-  "Determine coefficient of side force (positive y in wind system) depending on angle of attack and optionally angle of side-slip"
-  {:malli/schema [:=> [:cat :double [:? :double]] :double]}
-  ([angle-of-side-slip] ((basic-lift -0.4) angle-of-side-slip))
-  ([angle-of-attack angle-of-side-slip] (+ (* (sin angle-of-attack) ((basic-lift 2.0) angle-of-side-slip))
-                                           (* (cos angle-of-attack) (coefficient-of-side-force angle-of-side-slip)))))
-
-
 (defn spike
   "Spike function with linear and sinusoidal ramp"
   {:malli/schema [:=> [:cat :double :double :double] [:=> [:cat :double] :double]]}
@@ -250,34 +223,6 @@
   (atan2 (speed-vector 1) (hypot (speed-vector 2) (speed-vector 0))))
 
 
-(defn coefficient-of-pitch-moment
-  "Determine coefficient of pitch moment depending on angle of attack and optionally angle of side-slip"
-  {:malli/schema [:=> [:cat :double [:? :double]] :double]}
-  ([angle-of-attack]
-   (+ (* -0.6 (sin angle-of-attack))
-      ((spike 0.2 (to-radians 10) (to-radians 15)) (- angle-of-attack (to-radians 180)))
-      ((spike 0.2 (to-radians 10) (to-radians 15)) (+ angle-of-attack (to-radians 180)))))
-  ([angle-of-attack angle-of-side-slip]
-   (* (mix (coefficient-of-pitch-moment (identity angle-of-attack))
-           (coefficient-of-pitch-moment (mirror   angle-of-attack))
-           angle-of-side-slip)
-      (cos angle-of-side-slip))))
-
-
-(defn coefficient-of-yaw-moment
-  "Determine coefficient of yaw moment depending on angle of side-slip and optionally angle of attack"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [angle-of-side-slip]
-  (* 2.0 (sin angle-of-side-slip)))
-
-
-(defn coefficient-of-roll-moment
-  "Determine coefficient of roll moment depending on angle of side-slip and optionally angle of attack"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [angle-of-side-slip]
-  (* -0.5 (sin angle-of-side-slip)))
-
-
 (def gltf-to-aerodynamic (mat3x3 1 0 0, 0 0 1, 0 -1 0))
 
 
@@ -296,6 +241,61 @@
   {:malli/schema [:=> [:cat fvec3] fvec3]}
   [aerodynamic-vector]
   (mulv aerodynamic-to-gltf aerodynamic-vector))
+
+
+; (defn coefficient-of-lift
+;   "Determine coefficient of lift (negative z in wind system) depending on angle of attack and optionally angle of side-slip"
+;   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
+;   ([angle-of-attack]
+;    ((compose (basic-lift 1.1) (glide 0.8 (to-radians 13) 0.5 (to-radians 12)) (tail 0.5 (to-radians 8) (to-radians 12)))
+;     angle-of-attack))
+;   ([angle-of-attack angle-of-side-slip]
+;    (* (mix (coefficient-of-lift angle-of-attack) (- (coefficient-of-lift (mirror angle-of-attack))) angle-of-side-slip)
+;       (cos angle-of-side-slip))))
+;
+;
+; (defn coefficient-of-drag
+;   "Determine coefficient of drag (negative x in wind system) depending on angle of attack and optionally angle of side-slip"
+;   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
+;   ([angle-of-attack] ((compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))) angle-of-attack))
+;   ([angle-of-attack angle-of-side-slip]
+;    (mix (coefficient-of-drag angle-of-attack) 0.5 (* 2 angle-of-side-slip))))
+;
+;
+; (defn coefficient-of-side-force
+;   "Determine coefficient of side force (positive y in wind system) depending on angle of attack and optionally angle of side-slip"
+;   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
+;   ([angle-of-side-slip] ((basic-lift -0.4) angle-of-side-slip))
+;   ([angle-of-attack angle-of-side-slip] (+ (* (sin angle-of-attack) ((basic-lift 2.0) angle-of-side-slip))
+;                                            (* (cos angle-of-attack) (coefficient-of-side-force angle-of-side-slip)))))
+
+
+; (defn coefficient-of-pitch-moment
+;   "Determine coefficient of pitch moment depending on angle of attack and optionally angle of side-slip"
+;   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
+;   ([angle-of-attack]
+;    (+ (* -0.6 (sin angle-of-attack))
+;       ((spike 0.2 (to-radians 10) (to-radians 15)) (- angle-of-attack (to-radians 180)))
+;       ((spike 0.2 (to-radians 10) (to-radians 15)) (+ angle-of-attack (to-radians 180)))))
+;   ([angle-of-attack angle-of-side-slip]
+;    (* (mix (coefficient-of-pitch-moment (identity angle-of-attack))
+;            (coefficient-of-pitch-moment (mirror   angle-of-attack))
+;            angle-of-side-slip)
+;       (cos angle-of-side-slip))))
+;
+;
+; (defn coefficient-of-yaw-moment
+;   "Determine coefficient of yaw moment depending on angle of side-slip and optionally angle of attack"
+;   {:malli/schema [:=> [:cat :double] :double]}
+;   [angle-of-side-slip]
+;   (* 2.0 (sin angle-of-side-slip)))
+;
+;
+; (defn coefficient-of-roll-moment
+;   "Determine coefficient of roll moment depending on angle of side-slip and optionally angle of attack"
+;   {:malli/schema [:=> [:cat :double] :double]}
+;   [angle-of-side-slip]
+;   (* -0.5 (sin angle-of-side-slip)))
 
 
 (def speed-data (m/schema [:map [::alpha :double] [::beta :double] [::speed :double]]))
@@ -325,46 +325,46 @@
   (q/rotate-vector (q/inverse orientation) angular-speed))
 
 
-(defn lift
-  "Compute lift for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-  [{::keys [alpha beta speed]} density surface]
-  (* 0.5 (coefficient-of-lift alpha beta) density (sqr speed) surface))
+; (defn lift
+;   "Compute lift for given speed in body system"
+;   {:malli/schema [:=> [:cat speed-data :double :double] :double]}
+;   [{::keys [alpha beta speed]} density surface]
+;   (* 0.5 (coefficient-of-lift alpha beta) density (sqr speed) surface))
+;
+;
+; (defn drag
+;   "Compute drag for given speed in body system"
+;   {:malli/schema [:=> [:cat speed-data :double :double] :double]}
+;   [{::keys [alpha beta speed]} density surface]
+;   (* 0.5 (coefficient-of-drag alpha beta) density (sqr speed) surface))
+;
+;
+; (defn side-force
+;   "Compute side force for given speed in body system"
+;   {:malli/schema [:=> [:cat speed-data :double :double] :double]}
+;   [{::keys [alpha beta speed]} density surface]
+;   (* 0.5 (coefficient-of-side-force alpha beta) density (sqr speed) surface))
 
 
-(defn drag
-  "Compute drag for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-  [{::keys [alpha beta speed]} density surface]
-  (* 0.5 (coefficient-of-drag alpha beta) density (sqr speed) surface))
-
-
-(defn side-force
-  "Compute side force for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-  [{::keys [alpha beta speed]} density surface]
-  (* 0.5 (coefficient-of-side-force alpha beta) density (sqr speed) surface))
-
-
-(defn pitch-moment
-  "Compute pitch moment for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
-  [{::keys [alpha beta speed]} density surface chord]
-  (* 0.5 (coefficient-of-pitch-moment alpha beta) density (sqr speed) surface chord))
-
-
-(defn yaw-moment
-  "Compute yaw moment for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
-  [{::keys [beta speed]} density surface wingspan]
-  (* 0.5 (coefficient-of-yaw-moment beta) density (sqr speed) surface wingspan))
-
-
-(defn roll-moment
-  "Compute roll moment for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
-  [{::keys [beta speed]} density surface wingspan]
-  (* 0.5 (coefficient-of-roll-moment beta) density (sqr speed) surface wingspan))
+; (defn pitch-moment
+;   "Compute pitch moment for given speed in body system"
+;   {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
+;   [{::keys [alpha beta speed]} density surface chord]
+;   (* 0.5 (coefficient-of-pitch-moment alpha beta) density (sqr speed) surface chord))
+;
+;
+; (defn yaw-moment
+;   "Compute yaw moment for given speed in body system"
+;   {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
+;   [{::keys [beta speed]} density surface wingspan]
+;   (* 0.5 (coefficient-of-yaw-moment beta) density (sqr speed) surface wingspan))
+;
+;
+; (defn roll-moment
+;   "Compute roll moment for given speed in body system"
+;   {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
+;   [{::keys [beta speed]} density surface wingspan]
+;   (* 0.5 (coefficient-of-roll-moment beta) density (sqr speed) surface wingspan))
 
 
 (def coefficient-of-pitch-damping -8.0)
@@ -393,24 +393,24 @@
   (* 0.25 density speed surface roll-rate (sqr wingspan) coefficient-of-roll-damping))
 
 
-(defn aerodynamic-loads
-  "Determine aerodynamic forces and moments"
-  {:malli/schema [:=> [:cat :double q/quaternion fvec3 fvec3 :double :double :double] :some]}
-  [height orientation linear-speed angular-speed surface wingspan chord]
-  (let [density             (density-at-height height)
-        speed               (linear-speed-in-body-system orientation linear-speed)
-        rotation            (angular-speed-in-body-system orientation angular-speed)
-        forces              (vec3 (- (drag speed density surface))
-                                  (side-force speed density surface)
-                                  (- (lift speed density surface)))
-        aerodynamic-moments (vec3 (roll-moment speed density surface wingspan)
-                                  (pitch-moment speed density surface chord)
-                                  (yaw-moment speed density surface wingspan))
-        damping-moments     (vec3 (roll-damping speed (rotation 0) density surface wingspan)
-                                  (pitch-damping speed (rotation 1) density surface chord)
-                                  (yaw-damping speed (rotation 2) density surface wingspan))]
-    {::forces (q/rotate-vector orientation (wind-to-body-system speed forces))
-     ::moments (q/rotate-vector orientation (add aerodynamic-moments damping-moments))}))
+; (defn aerodynamic-loads
+;   "Determine aerodynamic forces and moments"
+;   {:malli/schema [:=> [:cat :double q/quaternion fvec3 fvec3 :double :double :double] :some]}
+;   [height orientation linear-speed angular-speed surface wingspan chord]
+;   (let [density             (density-at-height height)
+;         speed               (linear-speed-in-body-system orientation linear-speed)
+;         rotation            (angular-speed-in-body-system orientation angular-speed)
+;         forces              (vec3 (- (drag speed density surface))
+;                                   (side-force speed density surface)
+;                                   (- (lift speed density surface)))
+;         aerodynamic-moments (vec3 (roll-moment speed density surface wingspan)
+;                                   (pitch-moment speed density surface chord)
+;                                   (yaw-moment speed density surface wingspan))
+;         damping-moments     (vec3 (roll-damping speed (rotation 0) density surface wingspan)
+;                                   (pitch-damping speed (rotation 1) density surface chord)
+;                                   (yaw-damping speed (rotation 2) density surface wingspan))]
+;     {::forces (q/rotate-vector orientation (wind-to-body-system speed forces))
+;      ::moments (q/rotate-vector orientation (add aerodynamic-moments damping-moments))}))
 
 
 (set! *warn-on-reflection* false)
