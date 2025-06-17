@@ -361,14 +361,18 @@
 ;   ([angle-of-attack] ((compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))) angle-of-attack))
 ;   ([angle-of-attack angle-of-side-slip]
 ;    (mix (coefficient-of-drag angle-of-attack) 0.5 (* 2 angle-of-side-slip))))
-;
-;
-; (defn coefficient-of-side-force
-;   "Determine coefficient of side force (positive y in wind system) depending on angle of attack and optionally angle of side-slip"
-;   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
-;   ([angle-of-side-slip] ((basic-lift -0.4) angle-of-side-slip))
-;   ([angle-of-attack angle-of-side-slip] (+ (* (sin angle-of-attack) ((basic-lift 2.0) angle-of-side-slip))
-;                                            (* (cos angle-of-attack) (coefficient-of-side-force angle-of-side-slip)))))
+
+
+(def c-y-beta -0.05)  ; TODO: scale speed dependent rudder function?
+(def c-y-alpha 0.1)
+
+
+(defn coefficient-of-side-force
+  "Determine coefficient of side force (positive y in wind system) depending on angle of attack and optionally angle of side-slip"
+  ([beta]
+   (* 0.5 c-y-beta (sin (* 2 beta))))
+  ([alpha beta]
+   (* (+ (* 0.5 c-y-beta) (* c-y-alpha (sin alpha))) (sin (* 2 beta)))))
 
 
 ; (defn coefficient-of-pitch-moment

@@ -7,6 +7,7 @@
       [fastmath.vector :refer (vec3)]
       [sfsim.conftest :refer (roughly-vector)]
       [sfsim.quaternion :as q]
+      [sfsim.util :refer (sqr)]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.aerodynamics :refer :all :as aerodynamics]))
 
@@ -143,23 +144,21 @@
 (facts "Coefficient of drag"
        (coefficient-of-drag 0.6 (to-radians 0.0))
        => 0.04741
-       (coefficient-of-drag 0.6 (to-radians 33.0))  ; TODO: drag for alpha 90 degrees should be large
-       => (roughly (+ 0.04741 (/ (* 1.3 1.3) PI 0.9859 aspect-ratio)) 1e-6)
-       (coefficient-of-drag 0.6 (to-radians 33.0) (to-radians 0.0))
-       => (roughly (+ 0.04741 (/ (* 1.3 1.3) PI 0.9859 aspect-ratio)) 1e-6)
+       (coefficient-of-drag 0.6 (to-radians 3.0))  ; TODO: drag for alpha 90 degrees should be large
+       => (roughly (+ 0.04741 (/ (sqr (* 2.7825 (to-radians 3.0))) PI 0.9859 aspect-ratio)) 1e-6)
+       (coefficient-of-drag 0.6 (to-radians 3.0) (to-radians 0.0))
+       => (roughly (+ 0.04741 (/ (sqr (* 2.7825 (to-radians 3.0))) PI 0.9859 aspect-ratio)) 1e-6)
        (coefficient-of-drag 0.6 (to-radians 33.0) (to-radians 90.0))  ; TODO: increase zero lift drag when flying sideways
        => 0.04741)
 
-; (facts "Sanity check for the aerodynamic coefficient functions"
-;        (coefficient-of-drag (to-radians 0)) => #(>= % 0.1)
-;        (coefficient-of-drag (to-radians 180)) => #(>= % 0.1)
-;        (coefficient-of-drag (to-radians 90)) => #(>= % (* 2 (coefficient-of-drag (to-radians 0))))
-;        (coefficient-of-drag (to-radians 90)) => #(>= % (* 2 (coefficient-of-drag (to-radians 180))))
-;        (coefficient-of-side-force (to-radians 0)) => zero?
-;        (coefficient-of-side-force (to-radians 45)) => #(<= % -0.1)
-;        (coefficient-of-side-force (to-radians -45)) => #(>= % 0.1)
-;        (coefficient-of-side-force (to-radians 135)) => #(>= % 0.1)
-;        (coefficient-of-side-force (to-radians -135)) => #(<= % -0.1))
+
+(facts "Coefficient of side force"
+       (coefficient-of-side-force (to-radians 0.0)) => 0.0
+       (coefficient-of-side-force (to-radians 3.0)) => (roughly (* -0.05 (to-radians 3.0)) 1e-5)
+       (coefficient-of-side-force (to-radians -3.0)) => (roughly (* -0.05 (to-radians -3.0)) 1e-5)
+       (coefficient-of-side-force (to-radians 90.0)) => (roughly 0.0 1e-6)
+       (coefficient-of-side-force (to-radians 0.0) (to-radians 3.0)) => (roughly (* -0.05 (to-radians 3.0)) 1e-5)
+       (coefficient-of-side-force (to-radians 90.0) (to-radians 45.0)) => (roughly (+ -0.025 0.1) 1e-5))
 
 
 (facts "Mirror values at 90 degrees"
@@ -168,31 +167,6 @@
        (mirror (to-radians 180)) => (roughly (to-radians 0) 1e-6)
        (mirror (to-radians -90)) => (roughly (to-radians -90) 1e-6)
        (mirror (to-radians -180)) => (roughly (to-radians 0) 1e-6))
-
-
-; (facts "Sanity check for the 3D aerodynamic coefficient functions"
-;        (coefficient-of-drag (to-radians 0) (to-radians 0))
-;        => #(>= % 0.05)
-;        (coefficient-of-drag (to-radians 0) (to-radians 0))
-;        => (roughly (coefficient-of-drag (to-radians 0) (to-radians 180)) 1e-6)
-;        (coefficient-of-drag (to-radians 0) (to-radians 90))
-;        => #(>= % (+ (coefficient-of-drag (to-radians 0) (to-radians 0)) 0.1))
-;        (coefficient-of-drag (to-radians 0) (to-radians -90))
-;        => (roughly (coefficient-of-drag (to-radians 0) (to-radians 90)) 1e-6)
-;        (coefficient-of-drag (to-radians 90) (to-radians 0))
-;        => #(>= % (+ (coefficient-of-drag (to-radians 0) (to-radians 90)) 0.1))
-;        (coefficient-of-drag (to-radians 20) (to-radians 90))
-;        => (roughly (coefficient-of-drag (to-radians 45) (to-radians 90)))
-;        (coefficient-of-side-force (to-radians 0) (to-radians 0))
-;        => (roughly 0.0 1e-6)
-;        (coefficient-of-side-force (to-radians 0) (to-radians 45))
-;        => #(<= % -0.1)
-;        (coefficient-of-side-force (to-radians 0) (to-radians 90))
-;        => (roughly 0.0 1e-6)
-;        (coefficient-of-side-force (to-radians 90) (to-radians 45))
-;        => #(>= % 1.0)
-;        (coefficient-of-side-force (to-radians 90) (to-radians 45))
-;        => (roughly (- (coefficient-of-side-force (to-radians 90) (to-radians -45))) 1e-6))
 
 
 (facts "Spike function with linear and sinusoidal ramp"
