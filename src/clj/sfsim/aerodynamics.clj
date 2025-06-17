@@ -243,6 +243,11 @@
   (mulv aerodynamic-to-gltf aerodynamic-vector))
 
 
+(def wing-span (* 2 21.1480))
+(def wing-area 682.1415)
+(def aspect-ratio (/ (sqr wing-span) wing-area))
+
+
 (def c-l-alpha (akima-spline
                  0.0 2.5596
                  0.6 2.7825
@@ -306,6 +311,48 @@
           alpha)))))
   ([speed-mach alpha beta]
    (* (mix (coefficient-of-lift speed-mach alpha) (- (coefficient-of-lift speed-mach (mirror alpha))) beta) (cos beta))))
+
+
+(def c-d-0 (akima-spline
+             0.0  0.04780
+             0.6  0.04741
+             0.8  0.04728
+             1.2  0.26410
+             1.4  0.26382
+             1.6  0.26355
+             1.8  0.26327
+             2.0  0.26299
+             3.0  0.20472
+             4.0  0.15512
+             5.0  0.13197
+             10.0 0.21126
+             20.0 0.21126
+             30.0 0.21126))
+
+
+(def oswald-factor (akima-spline
+                     0.0  0.9846
+                     0.6  0.9859
+                     0.8  0.9873
+                     1.2  0.3359
+                     1.4  0.3167
+                     1.6  0.2817
+                     1.8  0.2504
+                     2.0  0.2255
+                     3.0  0.1579
+                     4.0  0.1179
+                     5.0  0.0930
+                     10.0 0.0264
+                     20.0 0.0264
+                     30.0 0.0264))
+
+
+(defn coefficient-of-drag
+  "Determine coefficient of drag (negative x in wind system) depending on mach speed, angle of attack, and optionally angle of side-slip"
+  ([speed-mach alpha]
+   (coefficient-of-drag speed-mach alpha 0.0))
+  ([speed-mach alpha beta]
+   (+ (c-d-0 speed-mach) (/ (sqr (coefficient-of-lift speed-mach alpha beta)) (* PI (oswald-factor speed-mach) aspect-ratio)))))
 
 
 ; (defn coefficient-of-drag
