@@ -363,7 +363,7 @@
         segment (get lookup [center target])
         layout  (read-coefficient-layout segment buffer)
         cache   (z/lru (fn [index] (map-vec3 (read-interval-coefficients segment layout index buffer))) :lru/threshold 8)]
-    (fn [tdb]
+    (fn spk-segment-interpolate [tdb]
       (let [[index s]    (interval-index-and-position layout tdb)
             coefficients (cache index)]
         (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
@@ -394,7 +394,7 @@
         segment (get lookup target)
         layout  (read-coefficient-layout segment buffer)
         cache   (z/lru (fn [index] (map-vec3 (read-interval-coefficients segment layout index buffer))) :lru/threshold 8)]
-    (fn [tdb]
+    (fn pck-segment-interpolate [tdb]
       (let [[index s]    (interval-index-and-position layout tdb)
             coefficients (cache index)]
         (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
@@ -562,7 +562,7 @@
   [filename]
   (let [string (slurp filename)]
     (transform
-      {:START      (fn [& assignments] (reduce do-assignment {} assignments))
+      {:START      (fn do-all-assignments [& assignments] (reduce do-assignment {} assignments))
        :ASSIGNMENT vector
        :STRING     identity
        :NUMBER     #(Integer/parseInt %)
@@ -597,7 +597,7 @@
   [frame-kernel pck identifier target]
   (let [matrix       (frame-kernel-body-frame (frame-kernel-body-frame-data frame-kernel identifier))
         interpolator (make-pck-segment-interpolator pck target)]
-    (fn [tdb]
+    (fn interpolate-body-position [tdb]
       (let [components (interpolator tdb)
             ra         (.x ^Vec3 components)
             decl       (.y ^Vec3 components)
