@@ -2,6 +2,7 @@
 * update aerodynamics with expert data
 * move curves code into separate module
 * add joystick
+* use definline in Jolt wrappers
 * make new trailer
 * spacecraft module with data transfer from state dictionary to Jolt physics, graphics, keyboard, ...
 * physics and animation of steering (apply difference of two animation time stamps)
