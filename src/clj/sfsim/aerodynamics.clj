@@ -351,7 +351,7 @@
   "Determine coefficient of drag (negative x in wind system) depending on mach speed, angle of attack, and optionally angle of side-slip"
   ([speed-mach alpha]
    (coefficient-of-drag speed-mach alpha 0.0))
-  ([speed-mach alpha beta]
+  ([speed-mach alpha beta]  ; TODO: should max at alpha = 90 degree and go back down, should have mimimum at beta = 90 degree
    (+ (c-d-0 speed-mach) (/ (sqr (coefficient-of-lift speed-mach alpha beta)) (* PI (oswald-factor speed-mach) aspect-ratio)))))
 
 
@@ -373,6 +373,31 @@
    (* 0.5 c-y-beta (sin (* 2 beta))))
   ([alpha beta]
    (* (+ (* 0.5 c-y-beta) (* c-y-alpha (sin alpha))) (sin (* 2 beta)))))
+
+
+(def x-ref-percent 25.0)
+(def x-neutral-percent (akima-spline
+                         0.0  25.7408
+                         0.6  25.8613
+                         0.8  26.0130
+                         1.2  26.3814
+                         1.4  26.2970
+                         1.6  26.0632
+                         1.8  25.8788
+                         2.0  25.7365
+                         3.0  25.4226
+                         4.0  25.2999
+                         5.0  25.2361
+                         10.0 50.0000
+                         20.0 50.0000
+                         30.0 50.0000))
+
+
+(defn coefficient-of-pitch-moment
+  ([speed-mach alpha]
+   (* (coefficient-of-lift speed-mach alpha) 0.01 (- (x-neutral-percent speed-mach) x-ref-percent)))
+  ([speed-mach alpha beta]  ; TODO: side force participation with increasing beta
+   (* (coefficient-of-lift speed-mach alpha beta) 0.01 (- (x-neutral-percent speed-mach) x-ref-percent))))
 
 
 ; (defn coefficient-of-pitch-moment
