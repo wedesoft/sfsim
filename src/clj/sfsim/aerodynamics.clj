@@ -412,15 +412,56 @@
 ;            (coefficient-of-pitch-moment (mirror   angle-of-attack))
 ;            angle-of-side-slip)
 ;       (cos angle-of-side-slip))))
-;
-;
-; (defn coefficient-of-yaw-moment
-;   "Determine coefficient of yaw moment depending on angle of side-slip and optionally angle of attack"
-;   {:malli/schema [:=> [:cat :double] :double]}
-;   [angle-of-side-slip]
-;   (* 2.0 (sin angle-of-side-slip)))
-;
-;
+
+
+(def c-n-beta (akima-spline
+                0.0   0.0369
+                0.6   0.0578
+                0.8   0.0923
+                1.2   0.3199
+                1.4   0.1797
+                1.6   0.1164
+                1.8   0.0782
+                2.0   0.0521
+                3.0  -0.0123
+                4.0  -0.0398
+                5.0  -0.0554
+                10.0 -0.0290
+                20.0 -0.0290
+                30.0 -0.0290))
+
+
+(defn coefficient-of-yaw-moment
+  "Determine coefficient of yaw moment depending on speed and angle of side-slip"
+  {:malli/schema [:=> [:cat :double :double] :double]}
+  [speed-mach beta]
+  (* (c-n-beta speed-mach) (sin beta)))
+
+
+(def c-l-beta-alpha (akima-spline
+                      0.0   -2.9217
+                      0.6   -3.1333
+                      0.8   -3.3667
+                      1.2    0.5971
+                      1.4   -0.8761
+                      1.6   -0.0015
+                      1.8   -0.1113
+                      2.0   -0.0751
+                      3.0   -0.1459
+                      4.0    0.0981
+                      5.0    0.0463
+                      10.0   0.0000
+                      20.0   0.0000
+                      30.0   0.0000))
+
+
+(defn coefficient-of-roll-moment
+  "Determine coefficient of roll moment depending on speed, angle of side-slip and angle of attack"
+  {:malli/schema [:=> [:cat :double :double :double] :double]}
+  [speed-mach alpha beta]
+  (* 0.5 (c-l-beta-alpha speed-mach) (sin (* 2 beta)) (sin alpha)))
+
+
 ; (defn coefficient-of-roll-moment
 ;   "Determine coefficient of roll moment depending on angle of side-slip and optionally angle of attack"
 ;   {:malli/schema [:=> [:cat :double] :double]}

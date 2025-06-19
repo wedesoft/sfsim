@@ -221,27 +221,18 @@
        => (roughly (* 2.7825 (to-radians 3.0) 0.01 (- 25.8613 25.0)) 1e-6)
        (coefficient-of-pitch-moment 0.6 (to-radians 3.0) (to-radians 90.0)) => (roughly 0.0 1e-6))
 
-; (facts "Sanity checks for the aerodynamic moment coefficients"
-;        (coefficient-of-pitch-moment (to-radians 0.0)) => 0.0
-;        (coefficient-of-pitch-moment (to-radians 90)) => #(<= % -0.5)
-;        (coefficient-of-pitch-moment (to-radians 180)) => (roughly 0.0 1e-6)
-;        (coefficient-of-pitch-moment (to-radians -90)) => #(>= % 0.5)
-;        (coefficient-of-pitch-moment (to-radians 170)) => #(<= % (- (coefficient-of-pitch-moment (to-radians 10)) 0.1))
-;        (coefficient-of-pitch-moment (to-radians -170)) => #(>= % (+ (coefficient-of-pitch-moment (to-radians -10)) 0.1))
-;        (coefficient-of-yaw-moment (to-radians 0.0)) => 0.0
-;        (coefficient-of-yaw-moment (to-radians 90)) => #(>= % 1.5)
-;        (coefficient-of-yaw-moment (to-radians 180)) => (roughly 0.0 1e-6)
-;        (coefficient-of-roll-moment (to-radians 0.0)) => 0.0
-;        (coefficient-of-roll-moment (to-radians 90.0)) => #(<= % -0.5)
-;        (coefficient-of-roll-moment (to-radians 180.0)) => (roughly 0.0 1e-6))
+
+(facts "Coefficient of yaw moment"
+       (coefficient-of-yaw-moment 0.6 (to-radians 0.0)) => 0.0
+       (coefficient-of-yaw-moment 0.6 (to-radians 3.0)) => (roughly (* 0.0578 (to-radians 3.0)) 1e-5))
+       (coefficient-of-yaw-moment 0.6 (to-radians 180.0)) => (roughly 0.0 1e-5)
 
 
-; (facts "Tests for 3D version of pitch moment"
-;        (coefficient-of-pitch-moment (to-radians 0) (to-radians 0)) => 0.0
-;        (coefficient-of-pitch-moment (to-radians 90) (to-radians 0)) => (coefficient-of-pitch-moment (to-radians 90))
-;        (coefficient-of-pitch-moment (to-radians 90) (to-radians 90)) => (roughly 0.0 1e-6)
-;        (coefficient-of-pitch-moment (to-radians 10) (to-radians 180))
-;        => (coefficient-of-pitch-moment (to-radians 190) (to-radians 0)))
+(facts "Coefficient of roll moment"
+       (coefficient-of-roll-moment 0.6 (to-radians 0.0) (to-radians 0.0)) => 0.0
+       (coefficient-of-roll-moment 0.6 (to-radians 3.0) (to-radians 5.0))
+       => (roughly (* -3.1333 (to-radians 3.0) (to-radians 5.0)) 1e-4)
+       (coefficient-of-roll-moment 0.6 (to-radians 3.0) (to-radians 90.0)) => (roughly 0.0 1e-6))
 
 
 (facts "Convert glTF model coordinates to aerodynamic body coordinates"
