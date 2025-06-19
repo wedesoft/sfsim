@@ -2,7 +2,9 @@
 * update aerodynamics with expert data
 * move curves code into separate module
 * add joystick
-* use definline in Jolt wrappers
+* reentry flame: https://www.shadertoy.com/view/XX3fDH
+* rocket: https://www.shadertoy.com/view/wdjGRz
+  * mach cone: https://www.shadertoy.com/view/WdGBDc
 * make new trailer
 * spacecraft module with data transfer from state dictionary to Jolt physics, graphics, keyboard, ...
 * physics and animation of steering (apply difference of two animation time stamps)
