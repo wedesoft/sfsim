@@ -8,7 +8,6 @@
       [sfsim.conftest :refer (roughly-vector)]
       [sfsim.quaternion :as q]
       [sfsim.util :refer (sqr)]
-      [sfsim.atmosphere :as atmosphere]
       [sfsim.aerodynamics :refer :all :as aerodynamics]))
 
 
@@ -238,37 +237,22 @@
 ;          (roll-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0 0.5) => 0.25))
 
 
-(facts "Compute pitch damping moment for given pitch rate in body system"
-       (let [speed-data {:sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/alpha 0.0}]
-         (with-redefs [aerodynamics/coefficient-of-pitch-damping -1.0]
-           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
-           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
-           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 2.0 1.0 1.0 1.0) => -0.5
-           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
-           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
-           (pitch-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
+(facts "Compute roll damping for given roll, pitch, and yaw rates"
+       (roll-damping 1.225 100.0 1.0 0.0 0.0) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-l-p wing-span) 1e-6)
+       (roll-damping 1.225 100.0 0.0 1.0 0.0) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-l-q chord    ) 1e-6)
+       (roll-damping 1.225 100.0 0.0 0.0 1.0) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-l-r wing-span) 1e-6))
 
 
-(facts "Compute yaw damping moment for given yaw rate in body system"
-       (let [speed-data {:sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/alpha 0.0}]
-         (with-redefs [aerodynamics/coefficient-of-yaw-damping -1.0]
-           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
-           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
-           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 2.0 1.0 1.0 1.0) => -0.5
-           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
-           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
-           (yaw-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
+(facts "Compute pitch damping for given roll, pitch, and yaw rates"
+       (pitch-damping 1.225 100.0 1.0 0.0 0.0) => (roughly (* 0.25 1.225 100.0 reference-area chord C-m-p wing-span) 1e-6)
+       (pitch-damping 1.225 100.0 0.0 1.0 0.0) => (roughly (* 0.25 1.225 100.0 reference-area chord C-m-q chord    ) 1e-6)
+       (pitch-damping 1.225 100.0 0.0 0.0 1.0) => (roughly (* 0.25 1.225 100.0 reference-area chord C-m-r wing-span) 1e-6))
 
 
-(facts "Compute roll damping moment for given roll rate in body system"
-       (let [speed-data {:sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/alpha 0.0}]
-         (with-redefs [aerodynamics/coefficient-of-roll-damping -1.0]
-           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 1.0) => -0.25
-           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 2.0) 1.0 1.0 1.0 1.0) => -0.5
-           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 2.0 1.0 1.0 1.0) => -0.5
-           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 2.0 1.0 1.0) => -0.5
-           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 2.0 1.0) => -0.5
-           (roll-damping (assoc speed-data :sfsim.aerodynamics/speed 1.0) 1.0 1.0 1.0 2.0) => -1.0)))
+(facts "Compute pitch damping for given roll, pitch, and yaw rates"
+       (yaw-damping 1.225 100.0 1.0 0.0 0.0) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-n-p wing-span) 1e-6)
+       (yaw-damping 1.225 100.0 0.0 1.0 0.0) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-n-q chord    ) 1e-6)
+       (yaw-damping 1.225 100.0 0.0 0.0 1.0) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-n-r wing-span) 1e-6))
 
 
 (facts "Convert vector from wind system to body system"

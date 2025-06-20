@@ -1,13 +1,12 @@
 (ns sfsim.aerodynamics
     (:require
-      [clojure.math :refer (PI cos sin sqrt to-radians atan2 hypot)]
+      [clojure.math :refer (PI cos sin to-radians atan2 hypot)]
       [fastmath.matrix :refer (mat3x3 mulv)]
-      [fastmath.vector :refer (vec3 mag add)]
+      [fastmath.vector :refer (vec3 mag)]
       [fastmath.interpolation :as interpolation]
       [malli.core :as m]
       [sfsim.matrix :refer [fvec3]]
       [sfsim.quaternion :as q]
-      [sfsim.atmosphere :refer (density-at-height)]
       [sfsim.util :refer (sqr cube)]))
 
 
@@ -151,8 +150,10 @@
   (mulv aerodynamic-to-gltf aerodynamic-vector))
 
 
-(def wing-span (* 2 21.1480))
 (def wing-area 682.1415)
+(def reference-area 668.7206)
+(def wing-span (* 2 21.1480))
+(def chord 22.5714)
 (def aspect-ratio (/ (sqr wing-span) wing-area))
 
 
@@ -439,30 +440,35 @@
 ;   (* 0.5 (coefficient-of-roll-moment beta) density (sqr speed) surface wingspan))
 
 
-(def coefficient-of-pitch-damping -8.0)
-(def coefficient-of-yaw-damping -4.0)
-(def coefficient-of-roll-damping -4.0)
+(def C-l-p -0.4228)
+(def C-m-p  0.0000)
+(def C-n-p  0.0535)
+(def C-l-q  0.0000)
+(def C-m-q -1.3470)
+(def C-n-q  0.0000)
+(def C-l-r  0.1929)
+(def C-m-r  0.0000)
+(def C-n-r -0.2838)
+
+(defn roll-damping
+  "Compute roll damping for given roll, pitch, and yaw rates"
+  [density speed roll-rate pitch-rate yaw-rate]
+  (* 0.25 density speed reference-area wing-span
+     (+ (* C-l-p roll-rate wing-span) (* C-l-q pitch-rate chord) (* C-l-r yaw-rate wing-span))))
 
 
 (defn pitch-damping
-  "Compute pitch damping moment for given pitch rate in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double :double :double] :double]}
-  [{::keys [speed]} pitch-rate density surface chord]
-  (* 0.25 density speed surface pitch-rate (sqr chord) coefficient-of-pitch-damping))
+  "Compute pitch damping for given roll, pitch, and yaw rates"
+  [density speed roll-rate pitch-rate yaw-rate]
+  (* 0.25 density speed reference-area chord
+     (+ (* C-m-p roll-rate wing-span) (* C-m-q pitch-rate chord) (* C-m-r yaw-rate wing-span))))
 
 
 (defn yaw-damping
-  "Compute yaw damping moment for given yaw rate in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double :double :double] :double]}
-  [{::keys [speed]} yaw-rate density surface wingspan]
-  (* 0.25 density speed surface yaw-rate (sqr wingspan) coefficient-of-yaw-damping))
-
-
-(defn roll-damping
-  "Compute roll damping moment for given roll rate in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double :double :double] :double]}
-  [{::keys [speed]} roll-rate density surface wingspan]
-  (* 0.25 density speed surface roll-rate (sqr wingspan) coefficient-of-roll-damping))
+  "Compute yaw damping for given roll, pitch, and yaw rates"
+  [density speed roll-rate pitch-rate yaw-rate]
+  (* 0.25 density speed reference-area wing-span
+     (+ (* C-n-p roll-rate wing-span) (* C-n-q pitch-rate chord) (* C-n-r yaw-rate wing-span))))
 
 
 ; (defn aerodynamic-loads
