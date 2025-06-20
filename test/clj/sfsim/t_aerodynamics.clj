@@ -16,15 +16,6 @@
 (mi/instrument! {:report (pretty/thrower)})
 
 
-(facts "Linear segment"
-       ((linear 0.0 0.0 1.0 1.0) 0.0) => (roughly 0.0 1e-6)
-       ((linear 0.0 0.0 1.0 1.0) 1.0) => (roughly 1.0 1e-6)
-       ((linear 0.0 0.0 1.0 2.0) 1.0) => (roughly 2.0 1e-6)
-       ((linear 0.0 1.0 1.0 2.0) 0.0) => (roughly 1.0 1e-6)
-       ((linear 1.0 1.0 2.0 2.0) 1.0) => (roughly 1.0 1e-6)
-       ((linear 1.0 1.0 3.0 2.0) 3.0) => (roughly 2.0 1e-6))
-
-
 (facts "Cubic Hermite spline"
        ((cubic-hermite-spline 0.0 0.0 0.0 1.0 1.0 0.0) 0.0) => (roughly 0.0 1e-6)
        ((cubic-hermite-spline 0.0 0.0 0.0 1.0 1.0 0.0) 1.0) => (roughly 1.0 1e-6)
@@ -61,63 +52,6 @@
        (mix 0.1 0.4 (to-radians 0)) => 0.1
        (mix 0.1 0.4 (to-radians 180)) => 0.4
        (mix 0.1 0.4 (to-radians 360)) => 0.1)
-
-
-(facts "Basic drag function"
-       ((basic-drag 0.1 2.0) 0.0) => 0.1
-       ((basic-drag 0.1 2.0) (to-radians 90)) => 2.0
-       ((basic-drag 0.1 2.0) (to-radians 180)) => 0.1)
-
-(facts "Basic lift function"
-       ((basic-lift 1.1) 0.0) => 0.0
-       ((basic-lift 1.1) (to-radians 45)) => 1.1
-       ((basic-lift 1.1) (to-radians 90)) => (roughly 0.0 1e-6))
-
-
-(facts "Ellipse-like fall-off function"
-       ((fall-off 0.8 0.5) 0.0) => 0.8
-       ((fall-off 0.8 0.5) 0.5) => 0.0
-       ((fall-off 0.8 0.5) 0.2) => (roughly 0.16 1e-6)
-       ((fall-off 0.8 0.6) 1.0) => 0.0)
-
-(facts "Increase of lift for small angles of attack before stall"
-       ((glide 0.8 0.6 0.4 0.5) 0.0) => 0.0
-       ((glide 0.8 0.6 0.4 0.5) 0.6) => 0.8
-       ((glide 0.8 0.6 0.4 0.5) 1.1) => 0.0
-       ((glide 0.8 0.6 0.4 0.5) 0.8) => (roughly 0.08 1e-6)
-       ((glide 0.8 0.6 0.4 0.5) -0.6) => -0.8
-       ((glide 0.8 0.6 0.4 0.5) -1.1) => 0.0
-       ((glide 0.8 0.6 0.4 0.5) -0.8) => (roughly -0.08 1e-6))
-
-(facts "Bumps to add to drag before 180 and -180 degrees"
-       ((bumps 0.1 0.4) 0.0) => 0.0
-       ((bumps 0.1 0.4) (- PI 0.2)) => 0.1
-       ((bumps 0.1 0.4) (- 0.2 PI)) => 0.1
-       ((bumps 0.1 0.4) (- PI)) => 0.0
-       ((bumps 0.1 0.4) (+ PI)) => 0.0
-       ((bumps 0.1 0.4) (- PI 0.4)) => 0.0
-       ((bumps 0.1 0.4) (- 0.4 PI)) => 0.0)
-
-
-(facts "Lift increase to add near 180 and -180 degrees"
-       ((tail 0.4 0.1 0.2) PI) => 0.0
-       ((tail 0.4 0.1 0.2) 0.1) => 0.0
-       ((tail 0.4 0.1 0.2) -0.1) => 0.0
-       ((tail 0.4 0.1 0.2) (- PI 0.1)) => (roughly -0.4 1e-6)
-       ((tail 0.4 0.1 0.2) (- 0.1 PI)) => (roughly 0.4 1e-6)
-       ((tail 0.4 0.1 0.2) (- PI 0.05)) => (roughly -0.2 1e-6)
-       ((tail 0.4 0.1 0.2) (- 0.05 PI)) => (roughly 0.2 1e-6)
-       ((tail 0.4 0.1 0.2) (- PI 0.2)) => (roughly -0.2 1e-6)
-       ((tail 0.4 0.1 0.2) (- 0.2 PI)) => (roughly 0.2 1e-6)
-       ((tail 0.4 0.1 0.2) (- PI 0.25)) => (roughly -0.1 1e-6)
-       ((tail 0.4 0.1 0.2) (- 0.25 PI)) => (roughly 0.1 1e-6))
-
-
-(facts "Compose an aerodynamic curve"
-       ((compose (fn [_x] 0.0)) 0.0) => 0.0
-       ((compose (fn [_x] 1.0)) 0.0) => 1.0
-       ((compose (fn [x] x)) 2.0) => 2.0
-       ((compose (fn [_x] 1.0) (fn [_x] 2.0)) 0.0) => 3.0)
 
 
 (facts "Coefficient of lift"
@@ -167,17 +101,6 @@
        (mirror (to-radians 180)) => (roughly (to-radians 0) 1e-6)
        (mirror (to-radians -90)) => (roughly (to-radians -90) 1e-6)
        (mirror (to-radians -180)) => (roughly (to-radians 0) 1e-6))
-
-
-(facts "Spike function with linear and sinusoidal ramp"
-       ((spike 2.0 0.5 0.4) 0.0) => 0.0
-       ((spike 2.0 0.5 0.4) 0.25) => 1.0
-       ((spike 2.0 0.5 0.4) 0.5) => 2.0
-       ((spike 2.0 0.5 0.4) 0.9) => 0.0
-       ((spike 2.0 0.5 0.4) 1.0) => 0.0
-       ((spike 2.0 0.5 0.4) 0.7) => (roughly (- 2 (sqrt 2)) 1e-6)
-       ((spike 2.0 0.5 0.4) -0.25) => -1.0
-       ((spike 2.0 0.5 0.4) -0.7) => (roughly (- (sqrt 2) 2) 1e-6))
 
 
 (facts "Airplane coordinates of speed vector in body system for angle of attack and side slip angle"

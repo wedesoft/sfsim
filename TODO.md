@@ -1,5 +1,7 @@
 # TODO
 * update aerodynamics with expert data
+  * damping moments
+  * control surfaces
 * move curves code into separate module
 * add joystick
 * reentry flame: https://www.shadertoy.com/view/XX3fDH
@@ -215,6 +217,7 @@
   first 4 screenshots important - bright ones and dark ones,
   good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
   add steam page url to long description, add animated GIFs, section banners
+* https://www.youtube.com/@indiegamecloud
 * targeted game description:
   * go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
   * breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs

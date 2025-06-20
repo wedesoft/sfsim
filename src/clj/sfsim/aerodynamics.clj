@@ -15,13 +15,6 @@
 (set! *warn-on-reflection* true)
 
 
-(defn linear
-  "Create linear function from two points"
-  {:malli/schema [:=> [:cat :double :double :double :double] [:=> [:cat :double] :double]]}
-  [x0 y0 x1 y1]
-  (fn linear-function [x] (/ (+ (* y0 (- x1 x)) (* y1 (- x x0))) (- x1 x0))))
-
-
 (defn cubic-hermite-spline
   "Create a cubic Hermite spline from two points with derivative"
   {:malli/schema [:=> [:cat :double :double :double :double :double :double] [:=> [:cat :double] :double]]}
@@ -85,76 +78,6 @@
     (* 0.5 (+ (* a (+ 1 cos-angle)) (* b (- 1 cos-angle))))))
 
 
-(defn basic-drag
-  "Basic cosine shaped drag function"
-  {:malli/schema [:=> [:cat :double :double] [:=> [:cat :double] :double]]}
-  [min-drag max-drag]
-  (fn [angle-of-attack] (mix min-drag max-drag (* 2 angle-of-attack))))
-
-
-(defn basic-lift
-  "Basic sinus shaped lift function"
-  {:malli/schema [:=> [:cat :double] [:=> [:cat :double] :double]]}
-  [max-lift]
-  (fn [angle] (* max-lift (sin (* 2 angle)))))
-
-
-(defn fall-off
-  "Ellipse-like fall-off function"
-  {:malli/schema [:=> [:cat :double :double] [:=> [:cat :double] :double]]}
-  [max-increase interval]
-  (fn [angle-of-attack]
-      (let [relative-position (/ (- interval angle-of-attack) interval)]
-        (if (>= relative-position 0.0)
-          (* max-increase (- 1.0 (sqrt (- 1.0 (sqr relative-position)))))
-          0.0))))
-
-
-(defn glide
-  "Increase of lift for small angles of attack before stall"
-  {:malli/schema [:=> [:cat :double :double :double :double] [:=> [:cat :double] :double]]}
-  [max-increase stall-angle reduced-increase fall-off-interval]
-  (fn glide-fn [angle-of-attack]
-      (if (neg? angle-of-attack)
-        (- (glide-fn (- angle-of-attack)))
-        (if (<= angle-of-attack stall-angle)
-          (* (/ max-increase stall-angle) angle-of-attack)
-          ((fall-off reduced-increase fall-off-interval) (- angle-of-attack stall-angle))))))
-
-
-(defn bumps
-  "Bumps to add to drag before 180 and -180 degrees"
-  {:malli/schema [:=> [:cat :double :double] [:=> [:cat :double] :double]]}
-  [max-increase interval]
-  (fn [angle-of-attack]
-      (let [relative-pos (/ (- (abs angle-of-attack) (- PI interval)) interval)]
-        (if (pos? relative-pos)
-          (* 0.5 max-increase (- 1 (cos (* 2 PI relative-pos))))
-          0.0))))
-
-
-(defn tail
-  "Lift increase to add near 180 and -180 degrees"
-  {:malli/schema [:=> [:cat :double :double :double] [:=> [:cat :double] :double]]}
-  [max-increase ramp-up ramp-down]
-  (fn [angle-of-attack]
-      (let [relative-pos (if (pos? angle-of-attack) (- angle-of-attack PI) (+ angle-of-attack PI))]
-        (if (<= (abs relative-pos) ramp-up)
-          (/ (* max-increase relative-pos) ramp-up)
-          (if (<= (abs relative-pos) (+ ramp-up ramp-down))
-            (if (pos? angle-of-attack)
-              (- (* max-increase (/ (- ramp-down (- PI angle-of-attack ramp-up)) ramp-down)))
-              (* max-increase (/ (- ramp-down (- (+ angle-of-attack PI) ramp-up)) ramp-down)))
-            0.0)))))
-
-
-(defn compose
-  "Compose an aerodynamic curve"
-  {:malli/schema [:=> [:cat [:* fn?]] fn?]}
-  [& funs]
-  (comp (partial apply +) (apply juxt funs)))
-
-
 (defn mirror
   "Mirror values at 90 degrees"
   {:malli/schema [:=> [:cat :double] :double]}
@@ -162,21 +85,6 @@
   (if (>= angle 0.0)
     (- PI angle)
     (- (- PI) angle)))
-
-
-(defn spike
-  "Spike function with linear and sinusoidal ramp"
-  {:malli/schema [:=> [:cat :double :double :double] [:=> [:cat :double] :double]]}
-  [max-increase ramp-up ramp-down]
-  (fn spike-fn [angle]
-      (if (>= angle 0)
-        (* max-increase
-           (if (<= angle ramp-up)
-             (/ angle ramp-up)
-             (if (<= angle (+ ramp-up ramp-down))
-               (- 1.0 (sin (/ (* 0.5 PI (- angle ramp-up)) ramp-down)))
-               0.0)))
-        (- (spike-fn (- angle))))))
 
 
 (defn speed-x
@@ -460,13 +368,6 @@
   {:malli/schema [:=> [:cat :double :double :double] :double]}
   [speed-mach alpha beta]
   (* 0.5 (c-l-beta-alpha speed-mach) (sin (* 2 beta)) (sin alpha)))
-
-
-; (defn coefficient-of-roll-moment
-;   "Determine coefficient of roll moment depending on angle of side-slip and optionally angle of attack"
-;   {:malli/schema [:=> [:cat :double] :double]}
-;   [angle-of-side-slip]
-;   (* -0.5 (sin angle-of-side-slip)))
 
 
 (def speed-data (m/schema [:map [::alpha :double] [::beta :double] [::speed :double]]))
