@@ -238,7 +238,7 @@
 (def world-map-tile
   "Load and cache map tiles"
   (z/lru
-    (fn [prefix in-level ty tx]
+    (fn load-world-map-tile [prefix in-level ty tx]
       (slurp-image (tile-path prefix in-level ty tx ".png")))
     :lru/threshold 128))
 

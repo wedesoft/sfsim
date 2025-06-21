@@ -15,6 +15,47 @@
 (mi/instrument! {:report (pretty/thrower)})
 
 
+(facts "Linear segment"
+       ((linear 0.0 0.0 1.0 1.0) 0.0) => (roughly 0.0 1e-6)
+       ((linear 0.0 0.0 1.0 1.0) 1.0) => (roughly 1.0 1e-6)
+       ((linear 0.0 0.0 1.0 2.0) 1.0) => (roughly 2.0 1e-6)
+       ((linear 0.0 1.0 1.0 2.0) 0.0) => (roughly 1.0 1e-6)
+       ((linear 1.0 1.0 2.0 2.0) 1.0) => (roughly 1.0 1e-6)
+       ((linear 1.0 1.0 3.0 2.0) 3.0) => (roughly 2.0 1e-6))
+
+
+(facts "Cubic Hermite spline"
+       ((cubic-hermite-spline 0.0 0.0 0.0 1.0 1.0 0.0) 0.0) => (roughly 0.0 1e-6)
+       ((cubic-hermite-spline 0.0 0.0 0.0 1.0 1.0 0.0) 1.0) => (roughly 1.0 1e-6)
+       ((cubic-hermite-spline 0.0 0.0 0.0 1.0 2.0 0.0) 1.0) => (roughly 2.0 1e-6)
+       ((cubic-hermite-spline 0.0 1.0 0.0 1.0 2.0 0.0) 0.0) => (roughly 1.0 1e-6)
+       ((cubic-hermite-spline 1.0 1.0 0.0 2.0 2.0 0.0) 1.0) => (roughly 1.0 1e-6)
+       ((cubic-hermite-spline 1.0 1.0 0.0 3.0 2.0 0.0) 3.0) => (roughly 2.0 1e-6)
+       ((cubic-hermite-spline 0.0 0.0 1.0 2.0 0.0 -1.0) 1.0) => (roughly 0.5 1e-6)
+       ((cubic-hermite-spline 0.0 0.0 1.0 2.0 0.0 1.0) 1.0) => (roughly 0.0 1e-6))
+
+
+(facts "Piecewise function"
+       ((piecewise [0.0 1.0] (fn [x] x)) 0.5) => 0.5
+       ((piecewise [0.0 1.0] (constantly 1.0) [1.0 2.0] (constantly 2.0)) 1.5) => 2.0
+       ((piecewise [0.0 1.0] (constantly 1.0) [1.0 2.0] (constantly 2.0)) 0.5) => 1.0)
+
+
+(facts "Piecewise linear function"
+       ((piecewise-linear 2.0 3.0, 5.0 7.0) 3.5) => 5.0
+       ((piecewise-linear 2.0 3.0, 5.0 7.0, 11.0 13.0) 8.0) => 10.0)
+
+
+(facts "Cubic spline function"
+       ((cubic-spline 2.0 3.0, 5.0 7.0, 6.0 8.0, 7.0 8.0, 8.0 7.0) 3.5) => (roughly 5.0582 1e-4)
+       ((cubic-spline 2.0 3.0, 5.0 7.0, 11.0 13.0, 17.0 19.0, 23.0 29.0) 8.0) => (roughly 10.2744 1e-4))
+
+
+(facts "Akima spline function"
+       ((akima-spline 2.0 3.0, 5.0 7.0, 6.0 8.0, 7.0 8.0, 8.0 7.0) 3.5) => (roughly 5.1875 1e-4)
+       ((akima-spline 2.0 3.0, 5.0 7.0, 11.0 13.0, 17.0 19.0, 23.0 29.0) 8.0) => (roughly 10.1667 1e-4))
+
+
 (facts "Mix two values depending on angle"
        (mix 0.1 0.4 (to-radians 0)) => 0.1
        (mix 0.1 0.4 (to-radians 180)) => 0.4
@@ -72,10 +113,10 @@
 
 
 (facts "Compose an aerodynamic curve"
-       ((compose (fn [x] 0.0)) 0.0) => 0.0
-       ((compose (fn [x] 1.0)) 0.0) => 1.0
+       ((compose (fn [_x] 0.0)) 0.0) => 0.0
+       ((compose (fn [_x] 1.0)) 0.0) => 1.0
        ((compose (fn [x] x)) 2.0) => 2.0
-       ((compose (fn [x] 1.0) (fn [x] 2.0)) 0.0) => 3.0)
+       ((compose (fn [_x] 1.0) (fn [_x] 2.0)) 0.0) => 3.0)
 
 
 (facts "Sanity check for the aerodynamic coefficient functions"

@@ -3,15 +3,78 @@
       [clojure.math :refer (PI cos sin sqrt to-radians atan2 hypot)]
       [fastmath.matrix :refer (mat3x3 mulv)]
       [fastmath.vector :refer (vec3 mag add)]
+      [fastmath.interpolation :as interpolation]
       [malli.core :as m]
       [sfsim.matrix :refer [fvec3]]
       [sfsim.quaternion :as q]
       [sfsim.atmosphere :refer (density-at-height)]
-      [sfsim.util :refer (sqr)]))
+      [sfsim.util :refer (sqr cube)]))
 
 
 (set! *unchecked-math* true)
 (set! *warn-on-reflection* true)
+
+
+(defn linear
+  "Create linear function from two points"
+  {:malli/schema [:=> [:cat :double :double :double :double] [:=> [:cat :double] :double]]}
+  [x0 y0 x1 y1]
+  (fn linear-function [x] (/ (+ (* y0 (- x1 x)) (* y1 (- x x0))) (- x1 x0))))
+
+
+(defn cubic-hermite-spline
+  "Create a cubic Hermite spline from two points with derivative"
+  {:malli/schema [:=> [:cat :double :double :double :double :double :double] [:=> [:cat :double] :double]]}
+  [x0 y0 dy0 x1 y1 dy1]
+  (let [h (- x1 x0)]
+    (fn cubic-spline-function [x]
+        (let [t (/ (- x x0) h)
+              t2 (sqr t)
+              t3 (cube t)]
+          (+ (* (+ (*  2 t3) (* -3 t2)   1) y0)
+             (* (+       t3  (* -2 t2) t  ) h dy0)
+             (* (+ (* -2 t3) (*  3 t2)    ) y1)
+             (* (+       t3  (* -1 t2)    ) h dy1))))))
+
+
+(defn piecewise
+  "Create piecewise function from intervals interleaved with functions"
+  {:malli/schema [:=> [:cat [:* [:cat [:tuple :double :double] [:=> [:cat :double] :double]]]] [:=> [:cat :double] :double]]}
+  [[start end] function & remaining]
+  (fn piecewise-function [x]
+      (if (<= start x end)
+        (function x)
+        ((apply piecewise remaining) x))))
+
+
+(defn piecewise-linear
+  "Create piecewise linear function from series of interleaved x and y coordinates"
+  {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
+  [& args]
+  (let [points (partition 2 args)
+        x      (map first points)
+        y      (map second points)]
+    (interpolation/linear-smile x y)))
+
+
+(defn cubic-spline
+  "Create cubic spline function from series of interleaved x and y coordinates"
+  {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
+  [& args]
+  (let [points (partition 2 args)
+        x      (map first points)
+        y      (map second points)]
+    (interpolation/cubic-spline x y)))
+
+
+(defn akima-spline
+  "Create Akima spline function from series of interleaved x and y coordinates"
+  {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
+  [& args]
+  (let [points (partition 2 args)
+        x      (map first points)
+        y      (map second points)]
+    (interpolation/akima-spline x y)))
 
 
 (defn mix
