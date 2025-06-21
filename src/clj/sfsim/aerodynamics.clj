@@ -239,6 +239,23 @@
              30.0 0.21126))
 
 
+(def c-d-90 (akima-spline
+              0.0   1.1000
+              0.6   1.1000
+              0.8   1.1000
+              1.2   2.3884
+              1.4   1.4936
+              1.6   1.5653
+              1.8   1.6180
+              2.0   1.6573
+              3.0   1.7557
+              4.0   1.7918
+              5.0   1.8088
+              10.0  1.8317
+              20.0  1.8317
+              30.0  1.8317))
+
+
 (def oswald-factor (akima-spline
                      0.0  0.9846
                      0.6  0.9859
@@ -256,12 +273,18 @@
                      30.0 0.0264))
 
 
+(defn coefficient-of-induced-drag
+  "Determine drag caused by lift depending on speed, angle of attack and angle of side slip"
+  [speed-mach alpha beta]
+  (/ (sqr (coefficient-of-lift speed-mach alpha beta)) (* PI (oswald-factor speed-mach) aspect-ratio)))
+
+
 (defn coefficient-of-drag
   "Determine coefficient of drag (negative x in wind system) depending on mach speed, angle of attack, and optionally angle of side-slip"
   ([speed-mach alpha]
    (coefficient-of-drag speed-mach alpha 0.0))
-  ([speed-mach alpha beta]  ; TODO: should max at alpha = 90 degree and go back down, should have mimimum at beta = 90 degree
-   (+ (c-d-0 speed-mach) (/ (sqr (coefficient-of-lift speed-mach alpha beta)) (* PI (oswald-factor speed-mach) aspect-ratio)))))
+  ([speed-mach alpha beta]  ; TODO: should have mimimum at beta = 90 degree
+   (mix (+ (c-d-0 speed-mach) (coefficient-of-induced-drag speed-mach alpha beta)) (c-d-90 speed-mach) (* 2 alpha))))
 
 
 ; (defn coefficient-of-drag
