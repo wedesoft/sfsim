@@ -29,11 +29,17 @@ It is also planned to have flight instruments to support the different stages of
 
 ### Is the game free software?
 
-Yes, the game is free and open source software ([EPL 1.0][3]).
+Yes, the game is free and open source software ([EPL-1.0][3]).
 The source code is [available on Github][2].
 It makes use of [Clojure][4], [LWJGL][6], [Fastmath][5], [Jolt Physics][9], and other libraries.
 The celestical positions are implemented according to [Skyfield][8].
 Note that building the project assets takes several days on a modern computer.
+
+### Can I use the source code in my own project?
+
+Yes, same as Clojure, the project is released under [EPL-1.0][3].
+The Eclipse Public License 1.0 is a weak copyleft open source license that allows modification and distribution of code, requiring that changes to EPL-licensed code be shared under the same license, but allowing proprietary use of combined works.
+Note that if you just want to study the source code, you do not need a license.
 
 ### Who made the music?
 
