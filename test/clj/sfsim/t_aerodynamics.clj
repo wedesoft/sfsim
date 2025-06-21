@@ -81,9 +81,10 @@
        => (roughly (+ 0.04741 (/ (sqr (* 2.7825 (to-radians 3.0))) PI 0.9859 aspect-ratio)) 1e-2)
        (coefficient-of-drag 0.6 (to-radians 90.0)) => (roughly 1.1 1e-6)
        (coefficient-of-drag 0.6 (to-radians 3.0) (to-radians 0.0))
-       => (roughly (+ 0.04741 (/ (sqr (* 2.7825 (to-radians 3.0))) PI 0.9859 aspect-ratio)) 1e-2))
-       ;(coefficient-of-drag 0.6 (to-radians 33.0) (to-radians 90.0))  ; TODO: increase zero lift drag when flying sideways
-       ;=> 0.04741
+       => (roughly (+ 0.04741 (/ (sqr (* 2.7825 (to-radians 3.0))) PI 0.9859 aspect-ratio)) 1e-2)
+       (coefficient-of-drag 0.6 (to-radians 0.0) (to-radians 90.0))
+       (coefficient-of-drag 0.6 (to-radians 0.0) (to-radians 90.0)) => (roughly 0.0721 1e-4)
+       (coefficient-of-drag 0.6 (to-radians 33.0) (to-radians 90.0)) => (roughly 0.0721 1e-4))
 
 
 (facts "Coefficient of side force"

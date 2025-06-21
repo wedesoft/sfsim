@@ -156,6 +156,8 @@
 (def chord 22.5714)
 (def aspect-ratio (/ (sqr wing-span) wing-area))
 
+(def body-width 23.0)
+(def body-length 35.0)
 
 (def c-l-alpha (akima-spline
                  0.0 2.5596
@@ -283,8 +285,10 @@
   "Determine coefficient of drag (negative x in wind system) depending on mach speed, angle of attack, and optionally angle of side-slip"
   ([speed-mach alpha]
    (coefficient-of-drag speed-mach alpha 0.0))
-  ([speed-mach alpha beta]  ; TODO: should have mimimum at beta = 90 degree
-   (mix (+ (c-d-0 speed-mach) (coefficient-of-induced-drag speed-mach alpha beta)) (c-d-90 speed-mach) (* 2 alpha))))
+  ([speed-mach alpha beta]
+   (mix (mix (+ (c-d-0 speed-mach) (coefficient-of-induced-drag speed-mach alpha beta)) (c-d-90 speed-mach) (* 2 alpha))
+        (* (/ body-length body-width) (c-d-0 speed-mach))
+        (* 2 beta))))
 
 
 ; (defn coefficient-of-drag
