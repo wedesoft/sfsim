@@ -39,7 +39,9 @@ Note that building the project assets takes several days on a modern computer.
 
 Yes, same as Clojure, the project is released under [EPL-1.0][3].
 The Eclipse Public License 1.0 is a weak copyleft open source license that allows modification and distribution of code, requiring that changes to EPL-licensed code be shared under the same license, but allowing proprietary use of combined works.
+
 Note that if you just want to study the source code, you do not need a license.
+I.e. you are not bound by the license if you just want to study the source code and reimplement concepts in your own project.
 
 ### Who made the music?
 
