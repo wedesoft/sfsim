@@ -1,6 +1,5 @@
 # TODO
 * update aerodynamics with expert data
-  * damping moments
   * control surfaces
 * move curves code into separate module
 * add joystick

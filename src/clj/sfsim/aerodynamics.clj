@@ -291,15 +291,7 @@
         (* 2 beta))))
 
 
-; (defn coefficient-of-drag
-;   "Determine coefficient of drag (negative x in wind system) depending on angle of attack and optionally angle of side-slip"
-;   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
-;   ([angle-of-attack] ((compose (basic-drag 0.1 2.0) (bumps 0.04 (to-radians 20))) angle-of-attack))
-;   ([angle-of-attack angle-of-side-slip]
-;    (mix (coefficient-of-drag angle-of-attack) 0.5 (* 2 angle-of-side-slip))))
-
-
-(def c-y-beta -0.05)  ; TODO: scale speed dependent rudder function?
+(def c-y-beta -0.05)
 (def c-y-alpha 0.1)
 
 
@@ -308,7 +300,7 @@
   ([beta]
    (* 0.5 c-y-beta (sin (* 2 beta))))
   ([alpha beta]
-   (* (+ (* 0.5 c-y-beta) (* c-y-alpha (sin alpha))) (sin (* 2 beta)))))
+   (* (+ (* 0.5 c-y-beta) (* c-y-alpha (sin alpha))) (sin (* 2 beta)))))  ; TODO: negative alpha same effect as positive alpha?
 
 
 (def x-ref-percent 25.0)
@@ -334,20 +326,6 @@
    (* (coefficient-of-lift speed-mach alpha) 0.01 (- (x-neutral-percent speed-mach) x-ref-percent)))
   ([speed-mach alpha beta]  ; TODO: side force participation with increasing beta
    (* (coefficient-of-lift speed-mach alpha beta) 0.01 (- (x-neutral-percent speed-mach) x-ref-percent))))
-
-
-; (defn coefficient-of-pitch-moment
-;   "Determine coefficient of pitch moment depending on angle of attack and optionally angle of side-slip"
-;   {:malli/schema [:=> [:cat :double [:? :double]] :double]}
-;   ([angle-of-attack]
-;    (+ (* -0.6 (sin angle-of-attack))
-;       ((spike 0.2 (to-radians 10) (to-radians 15)) (- angle-of-attack (to-radians 180)))
-;       ((spike 0.2 (to-radians 10) (to-radians 15)) (+ angle-of-attack (to-radians 180)))))
-;   ([angle-of-attack angle-of-side-slip]
-;    (* (mix (coefficient-of-pitch-moment (identity angle-of-attack))
-;            (coefficient-of-pitch-moment (mirror   angle-of-attack))
-;            angle-of-side-slip)
-;       (cos angle-of-side-slip))))
 
 
 (def c-n-beta (akima-spline
@@ -425,20 +403,33 @@
   (q/rotate-vector (q/inverse orientation) angular-speed))
 
 
-; (defn lift
-;   "Compute lift for given speed in body system"
-;   {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-;   [{::keys [alpha beta speed]} density surface]
-;   (* 0.5 (coefficient-of-lift alpha beta) density (sqr speed) surface))
-;
-;
-; (defn drag
-;   "Compute drag for given speed in body system"
-;   {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-;   [{::keys [alpha beta speed]} density surface]
-;   (* 0.5 (coefficient-of-drag alpha beta) density (sqr speed) surface))
-;
-;
+(defn dynamic-pressure
+  "Compute dynamic pressure for given speed in body system"
+  [density speed]
+  (* 0.5 density (sqr speed)))
+
+
+(defn lift
+  "Compute lift for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
+  [{::keys [alpha beta speed]} speed-of-sound density]
+  (* (coefficient-of-lift (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) reference-area))
+
+
+(defn drag
+  "Compute drag for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
+  [{::keys [alpha beta speed]} speed-of-sound density]
+  (* (coefficient-of-drag (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) reference-area))
+
+
+(defn side-force
+  "Compute side-force for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
+  [{::keys [alpha beta speed]} _speed-of-sound density]
+  (* (coefficient-of-side-force alpha beta) (dynamic-pressure density speed) reference-area))
+
+
 ; (defn side-force
 ;   "Compute side force for given speed in body system"
 ;   {:malli/schema [:=> [:cat speed-data :double :double] :double]}

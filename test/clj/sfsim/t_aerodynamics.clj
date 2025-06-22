@@ -182,33 +182,33 @@
        => (roughly (/ PI 2) 1e-6))
 
 
-; (facts "Compute lift for given speed in body system"
-;        (with-redefs [aerodynamics/coefficient-of-lift
-;                      (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
-;          (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0) => 0.5
-;          (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0) => 0.25
-;          (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0) => 2.5
-;          (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0) => 2.0))
-;
-;
-; (facts "Compute drag for given speed in body system"
-;        (with-redefs [aerodynamics/coefficient-of-drag
-;                      (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
-;          (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0) => 0.5
-;          (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0) => 0.25
-;          (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0) => 2.5
-;          (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0) => 2.0))
-;
-;
-; (facts "Compute side force for given speed in body system"
-;        (with-redefs [aerodynamics/coefficient-of-side-force
-;                      (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
-;          (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 1.0) => 0.5
-;          (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 0.5 1.0) => 0.25
-;          (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) 1.0 5.0) => 2.5
-;          (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 2 0 0)) 1.0 1.0) => 2.0))
-;
-;
+(facts "Compute lift for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-lift
+                     (fn [speed-mach alpha beta] (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5) 0.14)]
+         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
+         => (roughly (* 0.14 0.5 1.225 (* 160 160) reference-area) 1e-6)
+         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.0)
+         => (roughly (* 0.14 0.5 1.0 (* 160 160) reference-area) 1e-6)))
+
+
+(facts "Compute drag for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-drag
+                     (fn [speed-mach alpha beta] (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5) 0.047475)]
+         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
+         => (roughly (* 0.047475 0.5 1.225 (* 160 160) reference-area) 1e-6)
+         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.0)
+         => (roughly (* 0.047475 0.5 1.0 (* 160 160) reference-area) 1e-6)))
+
+
+(facts "Compute side force for given speed in body system"
+       (with-redefs [aerodynamics/coefficient-of-side-force
+                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) -0.0026)]
+         (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
+         => (roughly (* -0.0026 0.5 1.225 (* 160 160) reference-area) 1e-6)
+         (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.0)
+         => (roughly (* -0.0026 0.5 1.0 (* 160 160) reference-area) 1e-6)))
+
+
 ; (facts "Compute pitch moment for given speed in body system"
 ;        (with-redefs [aerodynamics/coefficient-of-pitch-moment
 ;                      (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]
