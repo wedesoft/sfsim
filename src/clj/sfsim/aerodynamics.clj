@@ -292,7 +292,7 @@
 
 
 (def c-y-beta -0.05)
-(def c-y-alpha 0.1)
+(def c-y-alpha 0.2)  ; TODO: check amount
 
 
 (defn coefficient-of-side-force
@@ -300,7 +300,8 @@
   ([beta]
    (* 0.5 c-y-beta (sin (* 2 beta))))
   ([alpha beta]
-   (* (+ (* 0.5 c-y-beta) (* c-y-alpha (sin alpha))) (sin (* 2 beta)))))  ; TODO: negative alpha same effect as positive alpha?
+   (* (mix (* 0.5 c-y-beta) (* 0.5 c-y-alpha) (* 2 alpha))
+      (sin (* 2 beta)))))
 
 
 (def x-ref-percent 25.0)

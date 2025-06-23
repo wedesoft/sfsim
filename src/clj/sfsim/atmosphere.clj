@@ -506,7 +506,6 @@
   (* 331.3 (sqrt (/ temperature 273.15))))
 
 
-
 (def phase-function
   "Shader function for scattering phase function"
   (slurp "resources/shaders/atmosphere/phase-function.glsl"))
