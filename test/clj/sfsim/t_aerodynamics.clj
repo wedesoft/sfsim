@@ -209,6 +209,27 @@
          => (roughly (* -0.0026 0.5 1.0 (* 160 160) reference-area) 1e-6)))
 
 
+(facts "Compute roll moment"
+       (with-redefs [aerodynamics/coefficient-of-roll-moment
+                     (fn [speed-mach alpha beta] (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5) -0.008)]
+         (roll-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
+         => (roughly (* -0.008 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
+
+
+(facts "Compute pitch moment"
+       (with-redefs [aerodynamics/coefficient-of-pitch-moment
+                     (fn [speed-mach alpha beta] (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5) 0.001)]
+         (pitch-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
+         => (roughly (* 0.001 0.5 1.225 (* 160 160) reference-area chord) 1e-6)))
+
+
+(facts "Compute yaw moment"
+       (with-redefs [aerodynamics/coefficient-of-yaw-moment
+                     (fn [speed-mach beta] (facts beta => 0.0 speed-mach => 0.5) 0.002)]
+         (yaw-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
+         => (roughly (* 0.002 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
+
+
 ; (facts "Compute pitch moment for given speed in body system"
 ;        (with-redefs [aerodynamics/coefficient-of-pitch-moment
 ;                      (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) 1.0)]

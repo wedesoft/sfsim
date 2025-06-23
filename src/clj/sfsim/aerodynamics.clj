@@ -430,25 +430,26 @@
   (* (coefficient-of-side-force alpha beta) (dynamic-pressure density speed) reference-area))
 
 
-; (defn pitch-moment
-;   "Compute pitch moment for given speed in body system"
-;   {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
-;   [{::keys [alpha beta speed]} density surface chord]
-;   (* 0.5 (coefficient-of-pitch-moment alpha beta) density (sqr speed) surface chord))
-;
-;
-; (defn yaw-moment
-;   "Compute yaw moment for given speed in body system"
-;   {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
-;   [{::keys [beta speed]} density surface wingspan]
-;   (* 0.5 (coefficient-of-yaw-moment beta) density (sqr speed) surface wingspan))
-;
-;
-; (defn roll-moment
-;   "Compute roll moment for given speed in body system"
-;   {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
-;   [{::keys [beta speed]} density surface wingspan]
-;   (* 0.5 (coefficient-of-roll-moment beta) density (sqr speed) surface wingspan))
+(defn roll-moment
+  "Compute roll moment for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
+  [{::keys [alpha beta speed]} speed-of-sound density]
+  (* (coefficient-of-roll-moment (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) reference-area
+     0.5 wing-span))
+
+
+(defn pitch-moment
+  "Compute pitch moment for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
+  [{::keys [alpha beta speed]} speed-of-sound density]
+  (* (coefficient-of-pitch-moment (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) reference-area chord))
+
+
+(defn yaw-moment
+  "Compute yaw moment for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
+  [{::keys [beta speed]} speed-of-sound density]
+  (* (coefficient-of-yaw-moment (/ speed speed-of-sound) beta) (dynamic-pressure density speed) reference-area 0.5 wing-span))
 
 
 (def C-l-p -0.4228)
