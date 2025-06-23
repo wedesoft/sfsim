@@ -430,13 +430,6 @@
   (* (coefficient-of-side-force alpha beta) (dynamic-pressure density speed) reference-area))
 
 
-; (defn side-force
-;   "Compute side force for given speed in body system"
-;   {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-;   [{::keys [alpha beta speed]} density surface]
-;   (* 0.5 (coefficient-of-side-force alpha beta) density (sqr speed) surface))
-
-
 ; (defn pitch-moment
 ;   "Compute pitch moment for given speed in body system"
 ;   {:malli/schema [:=> [:cat speed-data :double :double :double] :double]}
