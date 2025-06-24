@@ -2,11 +2,12 @@
     (:require
       [clojure.math :refer (PI cos sin to-radians atan2 hypot)]
       [fastmath.matrix :refer (mat3x3 mulv)]
-      [fastmath.vector :refer (vec3 mag)]
+      [fastmath.vector :refer (vec3 mag add)]
       [fastmath.interpolation :as interpolation]
       [malli.core :as m]
       [sfsim.matrix :refer [fvec3]]
       [sfsim.quaternion :as q]
+      [sfsim.atmosphere :as atmosphere]
       [sfsim.util :refer (sqr cube)]))
 
 
@@ -292,7 +293,7 @@
 
 
 (def c-y-beta -0.05)
-(def c-y-alpha 0.2)  ; TODO: check amount
+(def c-y-alpha 0.6)
 
 
 (defn coefficient-of-side-force
@@ -465,43 +466,51 @@
 
 (defn roll-damping
   "Compute roll damping for given roll, pitch, and yaw rates"
-  [density speed roll-rate pitch-rate yaw-rate]
+  {:malli/schema [:=> [:cat speed-data fvec3 :double] :double]}
+  [{::keys [speed]} [roll-rate pitch-rate yaw-rate] density]
   (* 0.25 density speed reference-area wing-span
      (+ (* C-l-p roll-rate wing-span) (* C-l-q pitch-rate chord) (* C-l-r yaw-rate wing-span))))
 
 
 (defn pitch-damping
   "Compute pitch damping for given roll, pitch, and yaw rates"
-  [density speed roll-rate pitch-rate yaw-rate]
+  {:malli/schema [:=> [:cat speed-data fvec3 :double] :double]}
+  [{::keys [speed]} [roll-rate pitch-rate yaw-rate] density]
   (* 0.25 density speed reference-area chord
      (+ (* C-m-p roll-rate wing-span) (* C-m-q pitch-rate chord) (* C-m-r yaw-rate wing-span))))
 
 
 (defn yaw-damping
   "Compute yaw damping for given roll, pitch, and yaw rates"
-  [density speed roll-rate pitch-rate yaw-rate]
+  {:malli/schema [:=> [:cat speed-data fvec3 :double] :double]}
+  [{::keys [speed]} [roll-rate pitch-rate yaw-rate] density]
   (* 0.25 density speed reference-area wing-span
      (+ (* C-n-p roll-rate wing-span) (* C-n-q pitch-rate chord) (* C-n-r yaw-rate wing-span))))
 
 
-; (defn aerodynamic-loads
-;   "Determine aerodynamic forces and moments"
-;   {:malli/schema [:=> [:cat :double q/quaternion fvec3 fvec3 :double :double :double] :some]}
-;   [height orientation linear-speed angular-speed surface wingspan chord]
-;   (let [density             (density-at-height height)
-;         speed               (linear-speed-in-body-system orientation linear-speed)
-;         rotation            (angular-speed-in-body-system orientation angular-speed)
-;         forces              (vec3 (- (drag speed density surface))
-;                                   (side-force speed density surface)
-;                                   (- (lift speed density surface)))
-;         aerodynamic-moments (vec3 (roll-moment speed density surface wingspan)
-;                                   (pitch-moment speed density surface chord)
-;                                   (yaw-moment speed density surface wingspan))
-;         damping-moments     (vec3 (roll-damping speed (rotation 0) density surface wingspan)
-;                                   (pitch-damping speed (rotation 1) density surface chord)
-;                                   (yaw-damping speed (rotation 2) density surface wingspan))]
-;     {::forces (q/rotate-vector orientation (wind-to-body-system speed forces))
-;      ::moments (q/rotate-vector orientation (add aerodynamic-moments damping-moments))}))
+(defn aerodynamic-loads
+  "Determine aerodynamic forces and moments"
+  {:malli/schema [:=> [:cat :double q/quaternion fvec3 fvec3] :some]}
+  [height orientation linear-speed angular-speed]
+  (let [density             (atmosphere/density-at-height height)
+        temperature         (atmosphere/temperature-at-height height)
+        speed-of-sound      (atmosphere/speed-of-sound temperature)
+        speed               (linear-speed-in-body-system orientation linear-speed)
+        rotation            (angular-speed-in-body-system orientation angular-speed)
+        roll-rate           (rotation 0)
+        pitch-rate          (rotation 1)
+        yaw-rate            (rotation 2)
+        forces              (vec3 (- (drag speed speed-of-sound density))
+                                  (side-force speed speed-of-sound density)
+                                  (- (lift speed speed-of-sound density)))
+        aerodynamic-moments (vec3 (roll-moment speed speed-of-sound density)
+                                  (pitch-moment speed speed-of-sound density)
+                                  (yaw-moment speed speed-of-sound density))
+        damping-moments     (vec3 (roll-damping speed rotation density)
+                                  (pitch-damping speed rotation density)
+                                  (yaw-damping speed rotation density))]
+    {::forces (q/rotate-vector orientation (wind-to-body-system speed forces))
+     ::moments (q/rotate-vector orientation (add aerodynamic-moments damping-moments))}))
 
 
 (set! *warn-on-reflection* false)
