@@ -487,11 +487,124 @@
   (* 0.25 density speed reference-area wing-span
      (+ (* C-n-p roll-rate wing-span) (* C-n-q pitch-rate chord) (* C-n-r yaw-rate wing-span))))
 
+(def c-l-xi-a (akima-spline
+                0.0   -0.3566
+                0.6   -0.3935
+                0.8   -0.4379
+                1.2   -0.3715
+                1.4   -0.2515
+                1.6   -0.1973
+                1.8   -0.1647
+                2.0   -0.1423
+                3.0   -0.0871
+                4.0   -0.0636
+                5.0   -0.0503
+                10.0  -0.1154
+                20.0  -0.1154
+                30.0  -0.1154))
+
+
+(def c-m-delta-f (akima-spline
+                   0.0  -0.3736
+                   0.6  -0.4277
+                   0.8  -0.4976
+                   1.2  -0.4226
+                   1.4  -0.2861
+                   1.6  -0.2244
+                   1.8  -0.1873
+                   2.0  -0.1618
+                   3.0  -0.0991
+                   4.0  -0.0724
+                   5.0  -0.0572
+                   10.0 -0.1402
+                   20.0 -0.1402
+                   30.0 -0.1402))
+
+
+(def c-n-beta-r (akima-spline
+                  0.0   -0.0632
+                  0.6   -0.0693
+                  0.8   -0.0765
+                  1.2   -0.0951
+                  1.4   -0.0644
+                  1.6   -0.0505
+                  1.8   -0.0421
+                  2.0   -0.0364
+                  3.0   -0.0201
+                  4.0   -0.0147
+                  5.0   -0.0116
+                  10.0  -0.0284
+                  20.0  -0.0284
+                  30.0  -0.0284))
+
+
+(def c-n-xi-a (akima-spline
+                0.0   0.0586
+                0.6   0.0653
+                0.8   0.0737
+                1.2   0.0000
+                1.4   0.0000
+                1.6   0.0000
+                1.8   0.0000
+                2.0   0.0000
+                3.0   0.0000
+                4.0   0.0000
+                5.0   0.0000
+                10.0  0.0000
+                20.0  0.0000
+                30.0  0.0000))
+
+
+(defn coefficient-of-roll-moment-aileron
+  "Determine coefficient of roll moment due to ailerons"
+  {:malli/schema [:=> [:cat :double :double] :double]}
+  [speed-mach ailerons]
+  (* 0.5 (c-l-xi-a speed-mach) (sin (* 2 ailerons))))
+
+
+(defn coefficient-of-pitch-moment-flaps
+  "Determine coefficient of pitch moment due to flaps"
+  {:malli/schema [:=> [:cat :double :double] :double]}
+  [speed-mach flaps]
+  (* 0.5 (c-m-delta-f speed-mach) (sin (* 2 flaps))))
+
+
+(defn coefficient-of-yaw-moment-rudder
+  "Determine coefficient of yaw moment due to rudder and ailerons"
+  {:malli/schema [:=> [:cat :double :double :double] :double]}
+  [speed-mach rudder ailerons]
+  (+ (* 0.5 (c-n-beta-r speed-mach) (sin (* 2 rudder)))
+     (* 0.5 (c-n-xi-a speed-mach) (sin (* 2 ailerons)))))
+
+
+(defn roll-moment-control
+  "Compute roll moment due to control surfaces"
+  {:malli/schema [:=> [:cat speed-data fvec3 :double :double] :double]}
+  [{::keys [speed]} control speed-of-sound density]
+  (* (coefficient-of-roll-moment-aileron (/ speed speed-of-sound) (control 0)) (dynamic-pressure density speed) reference-area
+     0.5 wing-span))
+
+
+(defn pitch-moment-control
+  "Compute pitch moment due to control surfaces"
+  {:malli/schema [:=> [:cat speed-data fvec3 :double :double] :double]}
+  [{::keys [speed]} control speed-of-sound density]
+  (* (coefficient-of-pitch-moment-flaps (/ speed speed-of-sound) (control 1)) (dynamic-pressure density speed) reference-area
+     chord))
+
+
+(defn yaw-moment-control
+  "Compute yaw moment for given speed in body system"
+  {:malli/schema [:=> [:cat speed-data fvec3 :double :double] :double]}
+  [{::keys [speed]} control speed-of-sound density]
+  (* (coefficient-of-yaw-moment-rudder (/ speed speed-of-sound) (control 2) (control 0)) (dynamic-pressure density speed)
+     reference-area 0.5 wing-span))
+
 
 (defn aerodynamic-loads
   "Determine aerodynamic forces and moments"
-  {:malli/schema [:=> [:cat :double q/quaternion fvec3 fvec3] :some]}
-  [height orientation linear-speed angular-speed]
+  {:malli/schema [:=> [:cat :double q/quaternion fvec3 fvec3 fvec3] :some]}
+  [height orientation linear-speed angular-speed control]
   (let [density             (atmosphere/density-at-height height)
         temperature         (atmosphere/temperature-at-height height)
         speed-of-sound      (atmosphere/speed-of-sound temperature)
@@ -505,9 +618,12 @@
                                   (yaw-moment speed speed-of-sound density))
         damping-moments     (vec3 (roll-damping speed rotation density)
                                   (pitch-damping speed rotation density)
-                                  (yaw-damping speed rotation density))]
+                                  (yaw-damping speed rotation density))
+        control-moments     (vec3 (roll-moment-control speed control speed-of-sound density)
+                                  (pitch-moment-control speed control speed-of-sound density)
+                                  (yaw-moment-control speed control speed-of-sound density))]
     {::forces (q/rotate-vector orientation (wind-to-body-system speed forces))
-     ::moments (q/rotate-vector orientation (add aerodynamic-moments damping-moments))}))
+     ::moments (q/rotate-vector orientation (add (add aerodynamic-moments damping-moments) control-moments))}))
 
 
 (set! *warn-on-reflection* false)

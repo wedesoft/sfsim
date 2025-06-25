@@ -259,6 +259,43 @@
          (yaw-damping speed (basis 2) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-n-r wing-span) 1e-6)))
 
 
+(facts "Determine coefficient of roll moment due to aileron"
+       (coefficient-of-roll-moment-aileron 0.6 (to-radians 0.0)) => 0.0
+       (coefficient-of-roll-moment-aileron 0.6 (to-radians 3.0)) => (roughly (* -0.3935 (to-radians 3.0)) 1e-4))
+
+
+(facts "Determine coefficient of pitch moment due to flaps"
+       (coefficient-of-pitch-moment-flaps 0.6 (to-radians 0.0)) => 0.0
+       (coefficient-of-pitch-moment-flaps 0.6 (to-radians 3.0)) => (roughly (* -0.4277 (to-radians 3.0)) 1e-4))
+
+
+(facts "Determine coefficient of yaw moment due to rudder and ailerons"
+       (coefficient-of-yaw-moment-rudder 0.6 (to-radians 0.0) (to-radians 0.0)) => 0.0
+       (coefficient-of-yaw-moment-rudder 0.6 (to-radians 3.0) (to-radians 0.0)) => (roughly (* -0.0693 (to-radians 3.0)) 1e-4)
+       (coefficient-of-yaw-moment-rudder 0.6 (to-radians 0.0) (to-radians 3.0)) => (roughly (*  0.0653 (to-radians 3.0)) 1e-4))
+
+
+(facts "Compute roll control moment"
+       (with-redefs [aerodynamics/coefficient-of-roll-moment-aileron
+                     (fn [speed-mach ailerons] (facts ailerons => 0.01 speed-mach => 0.5) -0.004)]
+         (roll-moment-control (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0.01 0 0) 320.0 1.225)
+         => (roughly (* -0.004 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
+
+
+(facts "Compute pitch control moment"
+       (with-redefs [aerodynamics/coefficient-of-pitch-moment-flaps
+                     (fn [speed-mach flaps] (facts flaps => 0.01 speed-mach => 0.5) -0.004)]
+         (pitch-moment-control (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0 0.01 0) 320.0 1.225)
+         => (roughly (* -0.004 0.5 1.225 (* 160 160) reference-area chord) 1e-6)))
+
+
+(facts "Compute yaw control moment"
+       (with-redefs [aerodynamics/coefficient-of-yaw-moment-rudder
+                     (fn [speed-mach rudder ailerons] (facts rudder => 0.01 ailerons => 0.02 speed-mach => 0.5) 0.001)]
+         (yaw-moment-control (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0.02 0 0.01) 320.0 1.225)
+         => (roughly (* 0.001 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
+
+
 (facts "Convert vector from wind system to body system"
        (wind-to-body-system (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 1 0 0)) (vec3 1 0 0))
        => (roughly-vector (vec3 1 0 0) 1e-6)
@@ -329,10 +366,22 @@
                        aerodynamics/yaw-damping
                        (fn [speed-body rate density]
                            (facts speed-body => :speed-body rate => :angular-body density => :density)
-                           -0.5)]
-           (:sfsim.aerodynamics/forces (aerodynamic-loads height orientation linear-speed angular-speed))
+                           -0.5)
+                       aerodynamics/roll-moment-control
+                       (fn [speed-body control speed-of-sound density]
+                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => :c-air density => :density)
+                           0.0)
+                       aerodynamics/pitch-moment-control
+                       (fn [speed-body control speed-of-sound density]
+                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => :c-air density => :density)
+                           0.0)
+                       aerodynamics/yaw-moment-control
+                       (fn [speed-body control speed-of-sound density]
+                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => :c-air density => :density)
+                           0.0)]
+           (:sfsim.aerodynamics/forces (aerodynamic-loads height orientation linear-speed angular-speed (vec3 0 1 2)))
            => (vec3 -3.0 5.0 -2.0)
-           (:sfsim.aerodynamics/moments (aerodynamic-loads height orientation linear-speed angular-speed))
+           (:sfsim.aerodynamics/moments (aerodynamic-loads height orientation linear-speed angular-speed (vec3 0 1 2)))
            => (vec3 -0.5 -0.125 -0.25)
            (with-redefs [aerodynamics/linear-speed-in-body-system
                          (fn [orientation speed] (facts orientation => (q/->Quaternion 0.0 1.0 0.0 0.0) speed => (vec3 5 0 0))
@@ -340,7 +389,9 @@
                        aerodynamics/angular-speed-in-body-system
                        (fn [orientation speed] (facts orientation => (q/->Quaternion 0.0 1.0 0.0 0.0) speed => (vec3 3 1 2))
                            :angular-body)]
-             (:sfsim.aerodynamics/forces (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed))
+             (:sfsim.aerodynamics/forces (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed
+                                                            (vec3 0 1 2)))
              => (q/rotate-vector (q/->Quaternion 0.0 1.0 0.0 0.0) (vec3 -3.0 5.0 -2.0))
-             (:sfsim.aerodynamics/moments (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed))
+             (:sfsim.aerodynamics/moments (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed
+                                                             (vec3 0 1 2)))
              => (q/rotate-vector (q/->Quaternion 0.0 1.0 0.0 0.0) (vec3 -0.5 -0.125 -0.25))))))
