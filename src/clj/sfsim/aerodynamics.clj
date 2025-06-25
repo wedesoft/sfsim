@@ -325,9 +325,9 @@
 
 (defn coefficient-of-pitch-moment
   ([speed-mach alpha]
-   (* (coefficient-of-lift speed-mach alpha) 0.01 (- (x-neutral-percent speed-mach) x-ref-percent)))
+   (coefficient-of-pitch-moment speed-mach alpha 0.0))
   ([speed-mach alpha beta]  ; TODO: side force participation with increasing beta
-   (* (coefficient-of-lift speed-mach alpha beta) 0.01 (- (x-neutral-percent speed-mach) x-ref-percent))))
+   (* (coefficient-of-lift speed-mach alpha beta) 0.01 (- x-ref-percent (x-neutral-percent speed-mach)))))
 
 
 (def c-n-beta (akima-spline

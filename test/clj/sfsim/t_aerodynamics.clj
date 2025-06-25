@@ -145,9 +145,9 @@
 
 (facts "Coefficient of pitch moment"
        (coefficient-of-pitch-moment 0.6 (to-radians 0.0)) => 0.0
-       (coefficient-of-pitch-moment 0.6 (to-radians 3.0)) => (roughly (* 2.7825 (to-radians 3.0) 0.01 (- 25.8613 25.0)) 1e-6)
+       (coefficient-of-pitch-moment 0.6 (to-radians 3.0)) => (roughly (* 2.7825 (to-radians 3.0) 0.01 (- 25.0 25.8613)) 1e-6)
        (coefficient-of-pitch-moment 0.6 (to-radians 3.0) (to-radians 0.0))
-       => (roughly (* 2.7825 (to-radians 3.0) 0.01 (- 25.8613 25.0)) 1e-6)
+       => (roughly (* 2.7825 (to-radians 3.0) 0.01 (- 25.0 25.8613)) 1e-6)
        (coefficient-of-pitch-moment 0.6 (to-radians 3.0) (to-radians 90.0)) => (roughly 0.0 1e-6))
 
 
