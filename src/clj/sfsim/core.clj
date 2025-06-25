@@ -41,7 +41,7 @@
     (org.lwjgl.opengl
       GL11)
     (org.lwjgl.nuklear
-      Nuklear)
+      Nuklear NkRect NkColor)
     (org.lwjgl.system
       MemoryStack)))
 
@@ -518,6 +518,22 @@
                       (when (gui/button-label gui "Quit")
                         (GLFW/glfwSetWindowShouldClose window true))))
 
+
+(defn stick
+  [gui t u r]
+  (let [stack (MemoryStack/stackPush)
+        rect (NkRect/malloc stack)
+        rgb  (NkColor/malloc stack)]
+    (gui/nuklear-window gui "stick" 10 10 80 80
+                        (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
+                          (gui/layout-row-dynamic gui 80 1)
+                          (Nuklear/nk_widget rect (:sfsim.gui/context gui))
+                          (Nuklear/nk_fill_circle canvas
+                                                  (Nuklear/nk_rect (- 45 (* t 30)) (- 45 (* u 30)) 10 10 rect)
+                                                  (Nuklear/nk_rgb 255 0 0 rgb)))))
+  (MemoryStack/stackPop))
+
+
 (def frame-index (atom 0))
 (def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
@@ -739,12 +755,13 @@
                                                      (planet/get-current-tree tile-tree))
                                ;; Render atmosphere with cloud overlay
                                (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
+                           (setup-rendering window-width window-height :sfsim.render/noculling false)
                            (when @menu
-                             (setup-rendering window-width window-height :sfsim.render/noculling false)
                              (reset! focus-old nil)
                              (@menu gui)
-                             (reset! focus-new nil)
-                             (gui/render-nuklear-gui gui window-width window-height)))
+                             (reset! focus-new nil))
+                           (stick gui t u r)
+                           (gui/render-nuklear-gui gui window-width window-height))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
