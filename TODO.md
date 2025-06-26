@@ -1,6 +1,5 @@
 # TODO
-* update aerodynamics with expert data
-  * control surfaces
+* check sign of side forces
 * move curves code into separate module
 * add joystick
 * reentry flame: https://www.shadertoy.com/view/XX3fDH
