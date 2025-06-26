@@ -779,7 +779,9 @@
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
         (swap! n inc)
         (when (zero? (mod @n 10))
-          (print (format "\rspeed %.1f, dist (r/f) %.0f dt %.3f" (mag (jolt/get-linear-velocity body)) @dist (* dt 0.001)))
+          (print (format "\rheight = %.1f, speed = %.1f, dist (r/f) %.0f dt %.3f"
+                         (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+                         (mag (jolt/get-linear-velocity body)) @dist (* dt 0.001)))
           (flush))
         (if fix-fps (reset! t0 (System/currentTimeMillis)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)
