@@ -1,6 +1,6 @@
 (ns sfsim.aerodynamics
     (:require
-      [clojure.math :refer (PI cos sin to-radians atan2 hypot)]
+      [clojure.math :refer (PI cos sin to-radians atan2 hypot exp)]
       [fastmath.matrix :refer (mat3x3 mulv)]
       [fastmath.vector :refer (vec3 mag add)]
       [fastmath.interpolation :as interpolation]
@@ -28,6 +28,20 @@
              (* (+       t3  (* -2 t2) t  ) h dy0)
              (* (+ (* -2 t3) (*  3 t2)    ) y1)
              (* (+       t3  (* -1 t2)    ) h dy1))))))
+
+
+(defn logistic-function
+  "Logistic function, 1 / (1 + exp(-x))"
+  {:malli/schema [:=> [:cat :double] :double]}
+  [x]
+  (/ 1 (+ 1 (exp (- x)))))
+
+
+(defn limiting-function
+  "Function with derivative equal to 1 at x = 0 and y=h as assymptote"
+  {:malli/schema [:=> [:cat :double] [:=> [:cat :double] :double]]}
+  [h]
+  (fn [x] (* 2.0 h (- (logistic-function (/ (* 2.0 x) h)) 0.5))))
 
 
 (defn piecewise

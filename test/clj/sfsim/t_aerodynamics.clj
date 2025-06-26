@@ -28,6 +28,21 @@
        ((cubic-hermite-spline 0.0 0.0 1.0 2.0 0.0 1.0) 1.0) => (roughly 0.0 1e-6))
 
 
+(facts "Logistic function"
+       (logistic-function    0.0) => 0.5
+       (logistic-function   1e-3) => (roughly 0.50025 1e-5)
+       (logistic-function  -10.0) => (roughly 0.0 1e-4)
+       (logistic-function   10.0) => (roughly 1.0 1e-4))
+
+
+(facts "Limiting function"
+       ((limiting-function 1.0) 0.0) => (roughly 0.0 1e-4)
+       ((limiting-function 1.0) 10.0) => (roughly 1.0 1e-4)
+       ((limiting-function 0.5) 10.0) => (roughly 0.5 1e-4)
+       ((limiting-function 1.0) 0.001) => (roughly 0.001 1e-4)
+       ((limiting-function 0.5) 0.001) => (roughly 0.001 1e-4))
+
+
 (facts "Piecewise function"
        ((piecewise [0.0 1.0] (fn [x] x)) 0.5) => 0.5
        ((piecewise [0.0 1.0] (constantly 1.0) [1.0 2.0] (constantly 2.0)) 1.5) => 2.0
