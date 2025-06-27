@@ -1,12 +1,13 @@
 # TODO
 * add joystick
+* indicate rudder and thrust
 * following camera
+* make new trailer
 * installer or playtest
 * move curves code into separate module
-* reentry flame: https://www.shadertoy.com/view/XX3fDH
 * rocket: https://www.shadertoy.com/view/wdjGRz
   * mach cone: https://www.shadertoy.com/view/WdGBDc
-* make new trailer
+* reentry flame: https://www.shadertoy.com/view/XX3fDH
 * spacecraft module with data transfer from state dictionary to Jolt physics, graphics, keyboard, ...
 * physics and animation of steering (apply difference of two animation time stamps)
 * refactor gear code
