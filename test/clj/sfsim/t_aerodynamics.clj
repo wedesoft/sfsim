@@ -176,8 +176,9 @@
 (facts "Coefficient of roll moment"
        (coefficient-of-roll-moment 0.6 (to-radians 0.0) (to-radians 0.0)) => 0.0
        (coefficient-of-roll-moment 0.6 (to-radians 3.0) (to-radians 5.0))
-       => (roughly (* -3.1333 (to-radians 3.0) (to-radians 5.0)) 1e-3)
-       (coefficient-of-roll-moment 0.6 (to-radians 3.0) (to-radians 90.0)) => (roughly 0.0 1e-6))
+       => (roughly (* -3.1333 (to-radians 3.0) (to-radians 5.0)) 5e-3)
+       (coefficient-of-roll-moment 0.6 (to-radians 3.0) (to-radians 90.0)) => (roughly 0.0 1e-6)
+       (coefficient-of-roll-moment 0.6 (to-radians 90.0) (to-radians 3.0)) => (roughly 0.0 1e-6))
 
 
 (facts "Convert glTF model coordinates to aerodynamic body coordinates"

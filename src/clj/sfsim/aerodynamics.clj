@@ -385,13 +385,13 @@
                       30.0   0.0000))
 
 
-(def limit-range (limiting-function 0.4))
+(def limit-range (limiting-function 0.3))
 
 (defn coefficient-of-roll-moment
   "Determine coefficient of roll moment depending on speed, angle of side-slip and angle of attack"
   {:malli/schema [:=> [:cat :double :double :double] :double]}
   [speed-mach alpha beta]
-  (* 0.5 (c-l-beta-alpha speed-mach) (limit-range (sin (* 2 beta))) (limit-range (sin alpha))))
+  (* 0.25 (c-l-beta-alpha speed-mach) (limit-range (sin (* 2 beta))) (limit-range (sin (* 2 alpha)))))
 
 
 (def speed-data (m/schema [:map [::alpha :double] [::beta :double] [::speed :double]]))
