@@ -1,0 +1,23 @@
+"AppBuild"
+{
+	"AppID" "3847320"
+	"Desc" "sfsim playtest build"
+
+	"ContentRoot" "..\"
+	"BuildOutput" "..\output\"
+
+  "verbose" "0"
+
+	"Depots"
+	{
+		"3847322"
+		{
+			"FileMapping"
+			{
+				"LocalPath" "out-windows\*"
+				"DepotPath" "."
+				"Recursive" "1"
+			}
+		}
+	}
+}

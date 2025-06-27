@@ -1,0 +1,23 @@
+"AppBuild"
+{
+	"AppID" "3687560"
+	"Desc" "sfsim build"
+
+	"ContentRoot" "..\"
+	"BuildOutput" "..\output\"
+
+  "verbose" "0"
+
+	"Depots"
+	{
+		"3687563"
+		{
+			"FileMapping"
+			{
+				"LocalPath" "data\*"
+				"DepotPath" "data\"
+				"Recursive" "1"
+			}
+		}
+	}
+}
