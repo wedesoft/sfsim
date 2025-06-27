@@ -441,10 +441,10 @@
   has_hit_hard_point [::mem/pointer ::mem/int] ::mem/byte)
 
 
-(defn has-hit-hard-point
+(definline has-hit-hard-point
   "Check if wheel suspension has hit its upper limit"
   [constraint wheel]
-  (not (zero? (has-hit-hard-point- constraint wheel))))
+  `(not (zero? (has-hit-hard-point- ~constraint ~wheel))))
 
 
 (defcfn remove-and-destroy-constraint

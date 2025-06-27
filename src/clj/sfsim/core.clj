@@ -41,7 +41,7 @@
     (org.lwjgl.opengl
       GL11)
     (org.lwjgl.nuklear
-      Nuklear)
+      Nuklear NkRect NkColor)
     (org.lwjgl.system
       MemoryStack)))
 
@@ -518,6 +518,28 @@
                       (when (gui/button-label gui "Quit")
                         (GLFW/glfwSetWindowShouldClose window true))))
 
+
+(defn stick
+  [gui t u r]
+  (let [stack (MemoryStack/stackPush)
+        rect (NkRect/malloc stack)
+        rgb  (NkColor/malloc stack)]
+    (gui/nuklear-window gui "stick" 10 10 80 100
+                        (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
+                          (gui/layout-row-dynamic gui 80 1)
+                          (Nuklear/nk_widget rect (:sfsim.gui/context gui))
+                          (Nuklear/nk_fill_circle canvas
+                                                  (Nuklear/nk_rect (- 45 (* t 30)) (- 45 (* u 30)) 10 10 rect)
+                                                  (Nuklear/nk_rgb 255 0 0 rgb)))
+                        (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
+                          (gui/layout-row-dynamic gui 20 1)
+                          (Nuklear/nk_widget rect (:sfsim.gui/context gui))
+                          (Nuklear/nk_fill_circle canvas
+                                                  (Nuklear/nk_rect (- 45 (* r 30)) 90 10 10 rect)
+                                                  (Nuklear/nk_rgb 255 0 255 rgb)))))
+  (MemoryStack/stackPop))
+
+
 (def frame-index (atom 0))
 (def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
@@ -564,10 +586,10 @@
             rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
             rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
             brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.0)
-            u        (if (@keystates GLFW/GLFW_KEY_S) 1 (if (@keystates GLFW/GLFW_KEY_W) -1 0))
-            r        (if (@keystates GLFW/GLFW_KEY_A) -1 (if (@keystates GLFW/GLFW_KEY_D) 1 0))
-            t        (if (@keystates GLFW/GLFW_KEY_E) 1 (if (@keystates GLFW/GLFW_KEY_Q) -1 0))
-            thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) (* 20.0 mass) 0.0)
+            u        (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 0))
+            r        (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 0))
+            t        (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
+            thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) (* 30.0 mass) 0.0)
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
@@ -590,9 +612,9 @@
           (do
             (if @slew
               (do
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 u) (vec3 0 1 0)))
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 r) (vec3 0 0 1)))
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 t) (vec3 1 0 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 u) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 r) (vec3 0 0 1)))
+                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 t) (vec3 1 0 0)))
                 (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
               (do
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
@@ -608,16 +630,11 @@
                     (jolt/remove-and-destroy-constraint @vehicle)
                     (reset! vehicle nil)))
                 (when @vehicle (jolt/set-brake-input @vehicle brake))
-                (let [speed   (mag (jolt/get-linear-velocity body))
-                      height  (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-                      density (atmosphere/density-at-height height)]
-                  (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
-                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 (* 0.5 u 0.25 (sqr speed) density 1.0 surface chord) 0)))
-                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 0 0 (* 0.5 r 0.25 (sqr speed) density 0.5 surface chord))))
-                  (jolt/add-torque body (q/rotate-vector (:orientation @pose) (vec3 (* 0.5 t 0.25 (sqr speed) density 0.25 surface wingspan) 0 0))))
+                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
                 (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
-                                                             (jolt/get-angular-velocity body) surface wingspan chord)]
+                                                             (jolt/get-angular-velocity body)
+                                                             (mult (vec3 t u r) (to-radians 25)))]
                   (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                   (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
                 (update-mesh! (:position @pose))
@@ -741,12 +758,13 @@
                                                      (planet/get-current-tree tile-tree))
                                ;; Render atmosphere with cloud overlay
                                (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
+                           (setup-rendering window-width window-height :sfsim.render/noculling false)
                            (when @menu
-                             (setup-rendering window-width window-height :sfsim.render/noculling false)
                              (reset! focus-old nil)
                              (@menu gui)
-                             (reset! focus-new nil)
-                             (gui/render-nuklear-gui gui window-width window-height)))
+                             (reset! focus-new nil))
+                           (stick gui t u r)
+                           (gui/render-nuklear-gui gui window-width window-height))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
@@ -767,7 +785,9 @@
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
         (swap! n inc)
         (when (zero? (mod @n 10))
-          (print (format "\ro.-step (t/g) %.0f, dist (r/f) %.0f dt %.3f" @opacity-base @dist (* dt 0.001)))
+          (print (format "\rheight = %.1f, speed = %.1f, dist (r/f) %.0f dt %.3f"
+                         (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+                         (mag (jolt/get-linear-velocity body)) @dist (* dt 0.001)))
           (flush))
         (if fix-fps (reset! t0 (System/currentTimeMillis)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)

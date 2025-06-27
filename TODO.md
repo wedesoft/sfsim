@@ -1,9 +1,22 @@
 # TODO
-* move curves code into separate module
-* update aerodynamics with expert data
+* indicate thrust, speed, height, and fps
 * add joystick
-* use definline in Jolt wrappers
+* add fullscreen toggle, make sure UI works
+* esc toggles menu
+* p toggles pause
+* following camera
 * make new trailer
+* articles: aerodynamics of game, Clojure game development
+* installer
+* orbiting
+* thrusters
+* sounds
+* launchpad
+* playtest app: 3847320, depot: 3847321
+* move curves code into separate module
+* rocket: https://www.shadertoy.com/view/wdjGRz
+  * mach cone: https://www.shadertoy.com/view/WdGBDc
+* reentry flame: https://www.shadertoy.com/view/XX3fDH
 * spacecraft module with data transfer from state dictionary to Jolt physics, graphics, keyboard, ...
 * physics and animation of steering (apply difference of two animation time stamps)
 * refactor gear code
@@ -52,6 +65,7 @@
 * render moonlight and moon
   https://svs.gsfc.nasa.gov/4720/
 * moon base, lights
+* shooting stars
 * fix planet tessellation tests
 * define wheel positions in Blender
   animate wheel rotation and suspension, bake gear animation and name actions the same
@@ -213,6 +227,7 @@
   first 4 screenshots important - bright ones and dark ones,
   good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
   add steam page url to long description, add animated GIFs, section banners
+* https://www.youtube.com/@indiegamecloud
 * targeted game description:
   * go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
   * breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs

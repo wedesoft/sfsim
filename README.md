@@ -3,6 +3,7 @@
 This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
 Requires OpenGL 4.5.
+See [sfsim homepage][1] for more details.
 
 [![Aerodynamic prototype](https://i.ytimg.com/vi/vmg0p5jawnY/hqdefault.jpg)](https://www.youtube.com/watch?v=vmg0p5jawnY)
 
@@ -73,7 +74,7 @@ cd ..
 # Run
 
 * Run tests (recommended to use xvfb-run): `xvfb-run clj -M:test`
-* Run test for specific module (rendering for example): `clj -M:test sfsim.t-render`
+* Run test for specific module (rendering for example): `xvfb-run clj -M:test sfsim.t-render`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run main program: `clj -M:run`
 

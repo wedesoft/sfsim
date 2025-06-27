@@ -16,7 +16,7 @@
                               sun-elevation-to-index surface-intersection surface-point? surface-radiance
                               surface-radiance-base surface-radiance-space transmittance transmittance-outer
                               transmittance-space transmittance-track transmittance-point vertex-atmosphere extinction
-                              attenuation-point temperature-at-height pressure-at-height density-at-height)
+                              attenuation-point temperature-at-height pressure-at-height density-at-height speed-of-sound)
      :as atmosphere]
     [sfsim.conftest :refer (roughly-vector is-image shader-test)]
     [sfsim.image :refer (convert-4d-to-2d get-vector3)]
@@ -1012,6 +1012,12 @@ void main()
        (density-at-height (* 65617 foot)) => (roughly (* 1.7083e-4 (/ slugs foot foot foot)) 1e-5)
        (density-at-height (* 80000 foot)) => (roughly (* 8.4459e-5 (/ slugs foot foot foot)) 1e-5)
        (density-at-height (* 104990 foot)) => (roughly (* 2.5660E-5 (/ slugs foot foot foot)) 1e-5))
+
+
+(facts "Speed of sound as a function of temperature"
+       (speed-of-sound 273.15) => (roughly 331.3 1e-1)
+       (speed-of-sound 293.15) => (roughly 343.2 1e-1)
+       (speed-of-sound 223.15) => (roughly 299.4 1e-1))
 
 
 (GLFW/glfwTerminate)
