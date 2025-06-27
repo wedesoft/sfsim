@@ -581,8 +581,8 @@
             rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
             brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.0)
             u        (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 0))
-            r        (if (@keystates GLFW/GLFW_KEY_D) -1 (if (@keystates GLFW/GLFW_KEY_A) 1 0))
-            t        (if (@keystates GLFW/GLFW_KEY_Q) 1 (if (@keystates GLFW/GLFW_KEY_E) -1 0))
+            r        (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 0))
+            t        (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
             thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) (* 50.0 mass) 0.0)
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
@@ -606,9 +606,9 @@
           (do
             (if @slew
               (do
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 u) (vec3 0 1 0)))
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 r) (vec3 0 0 1)))
-                (swap! pose update :orientation q/* (q/rotation (* dt 0.001 t) (vec3 1 0 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 u) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 r) (vec3 0 0 1)))
+                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 t) (vec3 1 0 0)))
                 (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
               (do
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
