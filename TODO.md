@@ -1,14 +1,18 @@
 # TODO
 * indicate thrust, speed, height, and fps
 * add joystick
+* add fullscreen toggle, make sure UI works
+* esc toggles menu
+* p toggles pause
 * following camera
 * make new trailer
 * articles: aerodynamics of game, Clojure game development
 * installer
-* thrusters
 * orbiting
+* thrusters
+* sounds
 * launchpad
-* playtest
+* playtest app: 3847320, depot: 3847321
 * move curves code into separate module
 * rocket: https://www.shadertoy.com/view/wdjGRz
   * mach cone: https://www.shadertoy.com/view/WdGBDc

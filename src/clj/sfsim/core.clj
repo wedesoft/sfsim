@@ -589,7 +589,7 @@
             u        (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 0))
             r        (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 0))
             t        (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
-            thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) (* 50.0 mass) 0.0)
+            thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) (* 30.0 mass) 0.0)
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
