@@ -113,7 +113,8 @@
        (coefficient-of-side-force (to-radians 90.0) (to-radians 45.0)) => (roughly 0.3 1e-5)
        (coefficient-of-side-force (to-radians -90.0) (to-radians 45.0)) => (roughly 0.3 1e-5)
        (coefficient-of-side-force (to-radians 90.0) (to-radians -45.0)) => (roughly -0.3 1e-5)
-       (coefficient-of-side-force (to-radians -90.0) (to-radians -45.0)) => (roughly -0.3 1e-5))
+       (coefficient-of-side-force (to-radians -90.0) (to-radians -45.0)) => (roughly -0.3 1e-5)
+       (coefficient-of-side-force (to-radians 90.0) (to-radians 90.0)) => (roughly 0.0 1e-5))
 
 
 (facts "Mirror values at 90 degrees"
