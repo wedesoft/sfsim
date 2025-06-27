@@ -18,4 +18,4 @@ libjolt.dll: src/c/sfsim/jolt.o
 src/c/sfsim/jolt.o: src/c/sfsim/jolt.cc src/c/sfsim/jolt.hh
 
 clean:
-	rm -f src/c/sfsim/libjolt.dll src/c/sfsim/*.o
+	rm -f libjolt.dll src/c/sfsim/*.o
