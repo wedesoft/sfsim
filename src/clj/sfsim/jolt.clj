@@ -10,7 +10,7 @@
     [sfsim.quaternion :as q]))
 
 
-(ffi/load-library "src/c/sfsim/libjolt.so")
+(ffi/load-library "libjolt.so")
 
 
 (defcfn jolt-init
