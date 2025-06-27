@@ -524,13 +524,19 @@
   (let [stack (MemoryStack/stackPush)
         rect (NkRect/malloc stack)
         rgb  (NkColor/malloc stack)]
-    (gui/nuklear-window gui "stick" 10 10 80 80
+    (gui/nuklear-window gui "stick" 10 10 80 100
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
                                                   (Nuklear/nk_rect (- 45 (* t 30)) (- 45 (* u 30)) 10 10 rect)
-                                                  (Nuklear/nk_rgb 255 0 0 rgb)))))
+                                                  (Nuklear/nk_rgb 255 0 0 rgb)))
+                        (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
+                          (gui/layout-row-dynamic gui 20 1)
+                          (Nuklear/nk_widget rect (:sfsim.gui/context gui))
+                          (Nuklear/nk_fill_circle canvas
+                                                  (Nuklear/nk_rect (- 45 (* r 30)) 90 10 10 rect)
+                                                  (Nuklear/nk_rgb 255 0 255 rgb)))))
   (MemoryStack/stackPop))
 
 
