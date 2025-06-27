@@ -3,6 +3,7 @@
 * add joystick
 * following camera
 * make new trailer
+* articles: aerodynamics of game, Clojure game development
 * installer
 * thrusters
 * orbiting
@@ -60,6 +61,7 @@
 * render moonlight and moon
   https://svs.gsfc.nasa.gov/4720/
 * moon base, lights
+* shooting stars
 * fix planet tessellation tests
 * define wheel positions in Blender
   animate wheel rotation and suspension, bake gear animation and name actions the same

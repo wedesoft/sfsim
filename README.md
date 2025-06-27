@@ -74,7 +74,7 @@ cd ..
 # Run
 
 * Run tests (recommended to use xvfb-run): `xvfb-run clj -M:test`
-* Run test for specific module (rendering for example): `clj -M:test sfsim.t-render`
+* Run test for specific module (rendering for example): `xvfb-run clj -M:test sfsim.t-render`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run main program: `clj -M:run`
 
