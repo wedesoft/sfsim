@@ -6,9 +6,9 @@ LDFLAGS = -L/usr/local/lib -lJolt -pthread
 
 all: jolt
 
-jolt: src/c/sfsim/libjolt.dll
+jolt: libjolt.dll
 
-src/c/sfsim/libjolt.dll: src/c/sfsim/jolt.o
+libjolt.dll: src/c/sfsim/jolt.o
 	$(CC) -shared -flto=auto -o $@ $^ $(LDFLAGS)
 	$(STRIP) $@
 

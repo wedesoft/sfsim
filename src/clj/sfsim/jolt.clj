@@ -11,7 +11,7 @@
 
 
 ; use ldd to list dependencies of DLL
-(ffi/load-library "src/c/sfsim/libjolt.dll")
+(ffi/load-library "libjolt.dll")
 
 
 (defcfn jolt-init
