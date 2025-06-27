@@ -18,4 +18,4 @@ libjolt.so: src/c/sfsim/jolt.o
 src/c/sfsim/jolt.o: src/c/sfsim/jolt.cc src/c/sfsim/jolt.hh
 
 clean:
-	rm -f src/c/sfsim/libjolt.so src/c/sfsim/*.o
+	rm -f libjolt.so src/c/sfsim/*.o
