@@ -1,6 +1,6 @@
 # TODO
+* indicate thrust, speed, and height
 * add joystick
-* indicate rudder and thrust
 * following camera
 * make new trailer
 * installer or playtest
