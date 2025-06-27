@@ -1,9 +1,13 @@
 # TODO
-* indicate thrust, speed, and height
+* indicate thrust, speed, height, and fps
 * add joystick
 * following camera
 * make new trailer
-* installer or playtest
+* installer
+* thrusters
+* orbiting
+* launchpad
+* playtest
 * move curves code into separate module
 * rocket: https://www.shadertoy.com/view/wdjGRz
   * mach cone: https://www.shadertoy.com/view/WdGBDc
