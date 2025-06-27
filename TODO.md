@@ -1,7 +1,8 @@
 # TODO
-* check sign of side forces
-* move curves code into separate module
 * add joystick
+* following camera
+* installer or playtest
+* move curves code into separate module
 * reentry flame: https://www.shadertoy.com/view/XX3fDH
 * rocket: https://www.shadertoy.com/view/wdjGRz
   * mach cone: https://www.shadertoy.com/view/WdGBDc
