@@ -12,7 +12,7 @@
 * thrusters
 * sounds
 * launchpad
-* playtest app: 3847320, depot: 3847321
+* playtest app: 3847320, windows playtest depot: 3847322, data depot: 3687563
 * move curves code into separate module
 * rocket: https://www.shadertoy.com/view/wdjGRz
   * mach cone: https://www.shadertoy.com/view/WdGBDc

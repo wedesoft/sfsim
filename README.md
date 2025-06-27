@@ -65,6 +65,7 @@ cd ..
 * Build JAR file: `clj -T:build uber`
 * Create Windows executable: `java -jar packr-all-4.0.0.jar packr-config.json` (delete out-windows folder first)
 * Create Windows installer: `makensis nsis-config.nsi`
+* Upload to Steam: `tools\ContentBuilder\builder\steamcmd.exe +login <account_name> <password> +run_app_build C:\Users\....\sfsim\scripts\simple_app_build.vdf +quit`
 
 # Lint
 
