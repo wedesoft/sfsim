@@ -9,6 +9,9 @@
   (:import
     (java.io
       ByteArrayOutputStream)
+    (java.util.zip
+      GZIPInputStream
+      GZIPOutputStream)
     (java.nio
       ByteBuffer
       ByteOrder)
@@ -60,11 +63,29 @@
     (.toByteArray out)))
 
 
+(defn slurp-bytes-gz
+  "Read bytes from a gzip compressed file"
+  {:malli/schema [:=> [:cat non-empty-string] bytes?]}
+  ^bytes [^String file-name]
+  (with-open [in  (-> file-name io/input-stream GZIPInputStream.)
+              out (ByteArrayOutputStream.)]
+    (io/copy in out)
+    (.toByteArray out)))
+
+
 (defn spit-bytes
   "Write bytes to a file"
   {:malli/schema [:=> [:cat non-empty-string bytes?] :nil]}
   [^String file-name ^bytes byte-data]
   (with-open [out (io/output-stream file-name)]
+    (.write out byte-data)))
+
+
+(defn spit-bytes-gz
+  "Compress bytes and write to a file"
+  {:malli/schema [:=> [:cat non-empty-string bytes?] :nil]}
+  [^String file-name ^bytes byte-data]
+  (with-open [out (-> file-name io/output-stream GZIPOutputStream.)]
     (.write out byte-data)))
 
 
@@ -90,16 +111,29 @@
     (spit-bytes file-name (.array byte-buffer))))
 
 
-(defn slurp-floats
-  "Read floating point numbers from a file"
-  {:malli/schema [:=> [:cat non-empty-string] seqable?]}
-  ^floats [^String file-name]
-  (let [byte-data    (slurp-bytes file-name)
-        n            (.count (seq byte-data))
+(defn bytes->floats
+  "Convert bytes to floating point numbers"
+  {:malli/schema [:=> [:cat bytes?] seqable?]}
+  ^floats [^bytes byte-data]
+  (let [n            (.count (seq byte-data))
         float-buffer (-> byte-data ByteBuffer/wrap (.order ByteOrder/LITTLE_ENDIAN) .asFloatBuffer)
         result       (float-array (/ n 4))]
     (.get float-buffer result)
     result))
+
+
+(defn slurp-floats
+  "Read floating point numbers from a file"
+  {:malli/schema [:=> [:cat non-empty-string] seqable?]}
+  ^floats [^String file-name]
+  (-> file-name slurp-bytes bytes->floats))
+
+
+(defn slurp-floats-gz
+  "Read floating point numbers from a compressed file"
+  {:malli/schema [:=> [:cat non-empty-string] seqable?]}
+  ^floats [^String file-name]
+  (-> file-name slurp-bytes-gz bytes->floats))
 
 
 (defn spit-floats

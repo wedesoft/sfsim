@@ -26,6 +26,10 @@
       (seq (slurp-bytes "test/clj/sfsim/fixtures/util/bytes.raw")) => [2 3 5 7])
 
 
+(fact "Uncompress bytes"
+      (seq (slurp-bytes-gz "test/clj/sfsim/fixtures/util/bytes.gz")) => [2 3 5 7] )
+
+
 (fact "Load a set of short integers"
       (seq (slurp-shorts "test/clj/sfsim/fixtures/util/shorts.raw")) => [2 3 5 7])
 
@@ -34,10 +38,20 @@
       (seq (slurp-floats "test/clj/sfsim/fixtures/util/floats.raw")) => [2.0 3.0 5.0 7.0])
 
 
+(fact "Load a set of compressed floating point numbers"
+      (seq (slurp-floats-gz "test/clj/sfsim/fixtures/util/floats.gz")) => [2.0 3.0 5.0 7.0])
+
+
 (fact "Save a set of bytes"
       (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
         (spit-bytes file-name (byte-array [2 3 5 7])) => anything
         (seq (slurp-bytes file-name)) => [2 3 5 7]))
+
+
+(fact "Compress a set of bytes"
+      (let [file-name (.getPath (File/createTempFile "spit" ".gz"))]
+        (spit-bytes-gz file-name (byte-array [2 3 5 7])) => anything
+        (seq (slurp-bytes-gz file-name)) => [2 3 5 7]))
 
 
 (fact "Save a set of short integers"

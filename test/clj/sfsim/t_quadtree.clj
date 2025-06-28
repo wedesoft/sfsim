@@ -42,11 +42,11 @@
 (tabular "Load normals, scale factors and colors for a tile"
          (fact (?k (load-tile-data :sfsim.cubemap/face3 2 2 1 6378000.0)) => ?result
                (provided
-                 (image/slurp-image "data/globe/3/2/1/2.jpg")       => "2.jpg"
-                 (image/slurp-image "data/globe/3/2/1/2.night.jpg") => "2.night.jpg"
-                 (util/slurp-floats "data/globe/3/2/1/2.surf")      => "2.surf"
-                 (image/slurp-normals "data/globe/3/2/1/2.png")     => "2.png"
-                 (util/slurp-bytes "data/globe/3/2/1/2.water")      => "2.water"
+                 (image/slurp-image    "data/globe/3/2/1/2.jpg")       => "2.jpg"
+                 (image/slurp-image    "data/globe/3/2/1/2.night.jpg") => "2.night.jpg"
+                 (util/slurp-floats-gz "data/globe/3/2/1/2.surf.gz")   => "2.surf"
+                 (image/slurp-normals  "data/globe/3/2/1/2.png")       => "2.png"
+                 (util/slurp-bytes-gz  "data/globe/3/2/1/2.water.gz")  => "2.water"
                  (cubemap/tile-center :sfsim.cubemap/face3 2 2 1 6378000.0)           => :tile-center))
          ?k       ?result
          :sfsim.planet/day      "2.jpg"
@@ -323,9 +323,9 @@
                                                 #:sfsim.quadtree{:row 32 :column 40 :tile-y 3 :tile-x 5 :dy :dy :dx :dx})
                     util/cube-path (fn [prefix face level y x suffix]
                                      (fact prefix => "data/globe", face => 2, level => 6, y => 32, x => 40,
-                                           suffix => ".surf")
-                                     "data/globe/2/6/31/35.surf")
-                    util/slurp-floats (fn [file-name] (fact file-name => "data/globe/2/6/31/35.surf") :surface-tile)
+                                           suffix => ".surf.gz")
+                                     "data/globe/2/6/31/35.surf.gz")
+                    util/slurp-floats-gz (fn [file-name] (fact file-name => "data/globe/2/6/31/35.surf.gz") :surface-tile)
                     cubemap/tile-center (fn [face level row column radius]
                                           (facts face => 2, level => 6, row => 32, column => 40, radius => 6378000.0)
                                           (vec3 1 2 3))
