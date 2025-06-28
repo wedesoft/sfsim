@@ -9,7 +9,7 @@
     [sfsim.image :refer (slurp-image slurp-normals get-vector3)]
     [sfsim.matrix :refer (fvec3)]
     [sfsim.plane :refer (points->plane ray-plane-intersection-parameter)]
-    [sfsim.util :refer (cube-path slurp-floats slurp-bytes dissoc-in N N0)]))
+    [sfsim.util :refer (cube-path slurp-floats-gz slurp-bytes-gz dissoc-in N N0)]))
 
 
 (set! *unchecked-math* true)
@@ -66,11 +66,11 @@
    ::y                    y
    ::x                    x
    ::center               (tile-center face level y x radius)
-   :sfsim.planet/day     (slurp-image   (cube-path "data/globe" face level y x ".jpg"))
-   :sfsim.planet/night   (slurp-image   (cube-path "data/globe" face level y x ".night.jpg"))
-   :sfsim.planet/surface (slurp-floats  (cube-path "data/globe" face level y x ".surf"))
-   :sfsim.planet/normals (slurp-normals (cube-path "data/globe" face level y x ".png"))
-   :sfsim.planet/water   (slurp-bytes   (cube-path "data/globe" face level y x ".water"))})
+   :sfsim.planet/day     (slurp-image     (cube-path "data/globe" face level y x ".jpg"))
+   :sfsim.planet/night   (slurp-image     (cube-path "data/globe" face level y x ".night.jpg"))
+   :sfsim.planet/surface (slurp-floats-gz (cube-path "data/globe" face level y x ".surf.gz"))
+   :sfsim.planet/normals (slurp-normals   (cube-path "data/globe" face level y x ".png"))
+   :sfsim.planet/water   (slurp-bytes-gz  (cube-path "data/globe" face level y x ".water.gz"))})
 
 
 (def tile-info (m/schema [:map [::face :keyword] [::level N0] [::y N0] [::x N0]]))
@@ -389,8 +389,8 @@
   "Load tile with specified face and tile position"
   (z/lru
     (fn [level tilesize face row column]
-      (let [path (cube-path "data/globe" face level row column ".surf")]
-        #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats path)}))
+      (let [path (cube-path "data/globe" face level row column ".surf.gz")]
+        #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats-gz path)}))
     :lru/threshold 4))
 
 

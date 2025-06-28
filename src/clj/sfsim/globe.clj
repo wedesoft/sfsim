@@ -8,7 +8,7 @@
                                                normal-for-point project-onto-globe water-geodetic tile-center)]
     [sfsim.image :refer (set-byte! set-pixel! set-vector3! spit-jpg spit-normals make-image make-byte-image
                                    make-vector-image)]
-    [sfsim.util :refer (align-address cube-dir cube-path make-progress-bar spit-bytes spit-floats tick-and-print
+    [sfsim.util :refer (align-address cube-dir cube-path make-progress-bar spit-bytes-gz spit-floats-gz tick-and-print
                                       index->face)])
   (:import
     (java.io
@@ -62,8 +62,8 @@
                  (.mkdirs (File. (cube-dir "data/globe" face out-level a)))
                  (spit-jpg (cube-path "data/globe" face out-level b a ".jpg") tile-day)
                  (spit-jpg (cube-path "data/globe" face out-level b a ".night.jpg") tile-night)
-                 (spit-bytes (cube-path "data/globe" face out-level b a ".water") (:sfsim.image/data water))
-                 (spit-floats (cube-path "data/globe" face out-level b a ".surf") (:sfsim.image/data surface))
+                 (spit-bytes-gz (cube-path "data/globe" face out-level b a ".water.gz") (:sfsim.image/data water))
+                 (spit-floats-gz (cube-path "data/globe" face out-level b a ".surf.gz") (:sfsim.image/data surface))
                  (spit-normals (cube-path "data/globe" face out-level b a ".png") normals)
                  (send bar tick-and-print)))))
 
