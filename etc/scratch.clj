@@ -1,4 +1,5 @@
 (require '[sfsim.image :as image])
+(require '[sfsim.util :as util])
 (require '[clojure.java.io :as io])
 (import '[java.io File ByteArrayOutputStream FileInputStream])
 (import '[java.util.zip GZIPInputStream])

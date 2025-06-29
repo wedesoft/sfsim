@@ -22,7 +22,9 @@
       Paths
       StandardOpenOption)
     (org.apache.commons.compress.archivers.tar
-      TarFile)
+      TarFile
+      TarArchiveEntry
+      TarFile$BoundedTarEntryInputStream)
     (org.lwjgl
       BufferUtils)))
 
@@ -64,17 +66,17 @@
   (let [tar-file (TarFile. (File. file-name))
         entries  (.getEntries tar-file)]
     {::tar tar-file
-     ::entries (into {} (map (juxt #(.getName %) identity) entries))}))
+     ::entries (into {} (map (juxt #(.getName ^TarArchiveEntry %) identity) entries))}))
 
 
 (defn get-tar-entry
   "Open stream to read file from tar archive"
   {:malli/schema [:=> [:cat tarfile non-empty-string] :some]}
-  [tar ^String file-name]
+  ^TarFile$BoundedTarEntryInputStream [tar ^String file-name]
   (let [entry (get-in tar [::entries file-name])]
     (when-not entry
               (throw (Exception. (str "Entry " file-name " not found in tar file"))))
-    (.getInputStream (::tar tar) entry)))
+    (.getInputStream ^TarFile (::tar tar) ^TarArchiveEntry entry)))
 
 
 (defn stream->bytes

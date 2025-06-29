@@ -4,12 +4,14 @@
     [clojure.math :refer (round)]
     [fastmath.vector :refer (vec3 vec4)]
     [malli.core :as m]
-    [sfsim.util :refer (byte->ubyte ubyte->byte dimensions N N0 non-empty-string)])
+    [sfsim.util :refer (byte->ubyte ubyte->byte dimensions N N0 non-empty-string tarfile slurp-bytes-tar)])
   (:import
     (java.nio
       DirectByteBuffer)
     (org.lwjgl
       BufferUtils)
+    (org.lwjgl.system
+      MemoryUtil)
     (org.lwjgl.stb
       STBImage
       STBImageWrite)))
@@ -65,6 +67,28 @@
      (STBImage/stbi_image_free ^DirectByteBuffer buffer)
      (STBImage/stbi_set_flip_vertically_on_load false)
      {::data data ::width width ::height height ::channels (aget channels 0)})))
+
+
+(defn slurp-image-tar
+  "Load an RGBA image from a file in a tar archive"
+  {:malli/schema [:=> [:cat tarfile non-empty-string [:? :boolean]] image]}
+  ([tar path] (slurp-image-tar tar path false))
+  ([tar path flip]
+   (STBImage/stbi_set_flip_vertically_on_load flip)
+   (let [bytes_ (slurp-bytes-tar tar path)
+         mem (MemoryUtil/memAlloc (count bytes_))]
+     (.put mem bytes_)
+     (.flip mem)
+     (let [width    (int-array 1)
+           height   (int-array 1)
+           channels (int-array 1)
+           buffer   (STBImage/stbi_load_from_memory mem width height channels 4)
+           data     (byte-array (.limit buffer))]
+       (.get ^DirectByteBuffer buffer ^bytes data)
+       (.flip ^DirectByteBuffer buffer)
+       (STBImage/stbi_image_free ^DirectByteBuffer buffer)
+       (STBImage/stbi_set_flip_vertically_on_load false)
+       #:sfsim.image{:width (aget width 0) :height (aget height 0) :channels (aget channels 0) :data data}))))
 
 
 (defn spit-png

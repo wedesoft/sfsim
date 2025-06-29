@@ -4,6 +4,7 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
+    [sfsim.util :as util]
     [sfsim.image :refer :all])
   (:import
     (java.io
@@ -43,6 +44,14 @@
        (count (:sfsim.image/data (make-image 3 2))) => (* 3 2 4))
 
 
+(facts "Load PNG image"
+       (let [image (slurp-image "test/clj/sfsim/fixtures/image/pattern.png")]
+         (:sfsim.image/width image) => 2
+         (:sfsim.image/height image) => 2
+         (:sfsim.image/channels image) => 3
+         (seq (:sfsim.image/data image)) => [-1 0 0 -1, 0 0 0 -1, 0 0 0 -1, 0 -1 0 -1]))
+
+
 (facts "Saving and loading of PNG image"
        (let [file-name (.getPath (File/createTempFile "spit" ".png"))
              value     [1 2 3 -1]]
@@ -59,6 +68,14 @@
          (:sfsim.image/width  (slurp-image file-name)) => 4
          (:sfsim.image/height (slurp-image file-name)) => 2
          (take 4 (:sfsim.image/data (slurp-image file-name))) => value))
+
+
+(facts "Load PNG image from tar file"
+       (let [image (slurp-image-tar (util/untar "test/clj/sfsim/fixtures/image/image.tar") "pattern.png")]
+         (:sfsim.image/width image) => 2
+         (:sfsim.image/height image) => 2
+         (:sfsim.image/channels image) => 3
+         (seq (:sfsim.image/data image)) => [-1 0 0 -1, 0 0 0 -1, 0 0 0 -1, 0 -1 0 -1]))
 
 
 (facts "Try flipping an image when loading"
