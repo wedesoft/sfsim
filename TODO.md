@@ -1,5 +1,6 @@
 # TODO
-* tar archives with random lookup; org.apache.commons/commons-compress {:mvn/version "1.27.1"}}
+* extract image, normals (PNG) from tar file
+* build step to tar stuff up
 * indicate thrust, speed, height, and fps
 * add joystick
 * add fullscreen toggle, make sure UI works

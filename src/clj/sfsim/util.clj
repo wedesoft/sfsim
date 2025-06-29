@@ -8,6 +8,7 @@
     [progrock.core :as p])
   (:import
     (java.io
+      File
       ByteArrayOutputStream)
     (java.util.zip
       GZIPInputStream
@@ -20,6 +21,8 @@
     (java.nio.file
       Paths
       StandardOpenOption)
+    (org.apache.commons.compress.archivers.tar
+      TarFile)
     (org.lwjgl
       BufferUtils)))
 
@@ -51,26 +54,68 @@
 
 
 (def non-empty-string (m/schema [:string {:min 1}]))
+(def tarfile (m/schema [:map [::tar :some] [::entries [:map-of :string :some]]]))
+
+
+(defn untar
+  "Open a tar file"
+  {:malli/schema [:=> [:cat non-empty-string] tarfile]}
+  [^String file-name]
+  (let [tar-file (TarFile. (File. file-name))
+        entries  (.getEntries tar-file)]
+    {::tar tar-file
+     ::entries (into {} (map (juxt #(.getName %) identity) entries))}))
+
+
+(defn get-tar-entry
+  "Open stream to read file from tar archive"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] :some]}
+  [tar ^String file-name]
+  (let [entry (get-in tar [::entries file-name])]
+    (when-not entry
+              (throw (Exception. (str "Entry " file-name " not found in tar file"))))
+    (.getInputStream (::tar tar) entry)))
+
+
+(defn stream->bytes
+  "Read bytes from a stream"
+  {:malli/schema [:=> [:cat :some] bytes?]}
+  [^java.io.InputStream in]
+  (with-open [out (ByteArrayOutputStream.)]
+    (io/copy in out)
+    (.toByteArray out)))
 
 
 (defn slurp-bytes
   "Read bytes from a file"
   {:malli/schema [:=> [:cat non-empty-string] bytes?]}
   ^bytes [^String file-name]
-  (with-open [in  (io/input-stream file-name)
-              out (ByteArrayOutputStream.)]
-    (io/copy in out)
-    (.toByteArray out)))
+  (with-open [in (io/input-stream file-name)]
+    (stream->bytes in)))
 
 
 (defn slurp-bytes-gz
   "Read bytes from a gzip compressed file"
   {:malli/schema [:=> [:cat non-empty-string] bytes?]}
   ^bytes [^String file-name]
-  (with-open [in  (-> file-name io/input-stream GZIPInputStream.)
-              out (ByteArrayOutputStream.)]
-    (io/copy in out)
-    (.toByteArray out)))
+  (with-open [in (-> file-name io/input-stream GZIPInputStream.)]
+    (stream->bytes in)))
+
+
+(defn slurp-bytes-tar
+  "Read bytes from a file in a tar file"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] bytes?]}
+  ^bytes [tar ^String file-name]
+  (with-open [in (get-tar-entry tar file-name)]
+    (stream->bytes in)))
+
+
+(defn slurp-bytes-gz-tar
+  "Read compressed bytes from a file in a tar file"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] bytes?]}
+  ^bytes [tar ^String file-name]
+  (with-open [in (GZIPInputStream. (get-tar-entry tar file-name))]
+    (stream->bytes in)))
 
 
 (defn spit-bytes
@@ -134,6 +179,20 @@
   {:malli/schema [:=> [:cat non-empty-string] seqable?]}
   ^floats [^String file-name]
   (-> file-name slurp-bytes-gz bytes->floats))
+
+
+(defn slurp-floats-tar
+  "Read floating point numbers from a file in a tar archive"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] seqable?]}
+  ^floats [tar ^String file-name]
+  (->> file-name (slurp-bytes-tar tar) bytes->floats))
+
+
+(defn slurp-floats-gz-tar
+  "Read compressed floating point numbers from a file in a tar archive"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] seqable?]}
+  ^floats [tar ^String file-name]
+  (->> file-name (slurp-bytes-gz-tar tar) bytes->floats))
 
 
 (defn spit-floats
