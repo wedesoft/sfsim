@@ -17,7 +17,8 @@ See [sfsim homepage][1] for more details.
 
 ## Install JoltPhysics
 
-Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) and build it as follows.
+Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.3.0 and build it as follows.
+Note you might have to install glslc if you already have Vulkan installed.
 
 ### GCC/Linux
 
