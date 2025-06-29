@@ -15,7 +15,7 @@
 (io/copy in out)
 (seq (.toByteArray out))
 
-(def in (.getInputStream tar-file (lookup "data/globe/0/0/0/0.png")))
+(def in (.getInputStream tar-file (lookup "0.jpg")))
 (def b (.readAllBytes in))
 (def data (MemoryUtil/memAlloc (count b)))
 (.put data b)
