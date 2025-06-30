@@ -96,7 +96,7 @@
            (.println *err* (str "Downloading " url " ..."))
            (io/copy
              (io/input-stream url)
-             (io/file filename)))))
+             (io/file (str "tmp/" filename))))))
 
 (defn download-blackmarble
   "Download some NASA Blackmarble data from https://earthobservatory.nasa.gov/features/NightLights/page3.php"
@@ -107,7 +107,7 @@
            (.println *err* (str "Downloading " url " ..."))
            (io/copy
              (io/input-stream url)
-             (io/file filename)))))
+             (io/file (str "tmp/" filename))))))
 
 (defn download-elevation
   "Download NOAA elevation data from https://www.ngdc.noaa.gov/mgg/topo/gltiles.html"
@@ -117,7 +117,7 @@
     (.println *err* (str "Downloading " url " ..."))
     (io/copy
       (io/input-stream url)
-      (io/file filename))))
+      (io/file (str "tmp/" filename)))))
 
 
 (defn download-lunar-color
@@ -128,7 +128,7 @@
     (.println *err* (str "Downloading " url " ..."))
     (io/copy
       (io/input-stream url)
-      (io/file filename))))
+      (io/file (str "tmp/" filename)))))
 
 
 (defn download-lunar-elevation
@@ -139,7 +139,7 @@
     (.println *err* (str "Downloading " url " ..."))
     (io/copy
       (io/input-stream url)
-      (io/file filename))))
+      (io/file (str "tmp/" filename)))))
 
 
 (defn extract-elevation

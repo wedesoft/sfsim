@@ -1,4 +1,5 @@
 # TODO
+* try downloads
 * extract image, normals (PNG) from tar file
 * build step to tar stuff up
 * indicate thrust, speed, height, and fps
