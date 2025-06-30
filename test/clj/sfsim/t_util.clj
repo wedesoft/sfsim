@@ -119,6 +119,14 @@
       (cube-dir "globe" :sfsim.cubemap/face5 2 1) => "globe/5/2/1")
 
 
+(fact "Determine tar file containing cube tile"
+      (cube-tar "globe" :sfsim.cubemap/face5 2 1) => "globe/5/2/1.tar")
+
+
+(fact "Determine file name of cube tile"
+      (cube-file-name 3 ".png") => "3.png")
+
+
 (tabular "Sinc function"
          (fact (sinc ?x) => (roughly ?result 1e-6))
          ?x       ?result

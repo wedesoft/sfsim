@@ -145,23 +145,23 @@
 (defn extract-elevation
   "Extract and concatenate elevation files"
   [& _]
-  (b/unzip {:zip-file "all10g.zip" :target-dir "."})
-  (with-open [out (io/output-stream "elevation.A1.raw")]
-    (io/copy (io/file "all10/a10g") out) (io/copy (io/file "all10/e10g") out))
-  (with-open [out (io/output-stream "elevation.B1.raw")]
-    (io/copy (io/file "all10/b10g") out) (io/copy (io/file "all10/f10g") out))
-  (with-open [out (io/output-stream "elevation.C1.raw")]
-    (io/copy (io/file "all10/c10g") out) (io/copy (io/file "all10/g10g") out))
-  (with-open [out (io/output-stream "elevation.D1.raw")]
-    (io/copy (io/file "all10/d10g") out) (io/copy (io/file "all10/h10g") out))
-  (with-open [out (io/output-stream "elevation.A2.raw")]
-    (io/copy (io/file "all10/i10g") out) (io/copy (io/file "all10/m10g") out))
-  (with-open [out (io/output-stream "elevation.B2.raw")]
-    (io/copy (io/file "all10/j10g") out) (io/copy (io/file "all10/n10g") out))
-  (with-open [out (io/output-stream "elevation.C2.raw")]
-    (io/copy (io/file "all10/k10g") out) (io/copy (io/file "all10/o10g") out))
-  (with-open [out (io/output-stream "elevation.D2.raw")]
-    (io/copy (io/file "all10/l10g") out) (io/copy (io/file "all10/p10g") out)))
+  (b/unzip {:zip-file "tmp/all10g.zip" :target-dir "tmp"})
+  (with-open [out (io/output-stream "tmp/elevation.A1.raw")]
+    (io/copy (io/file "tmp/all10/a10g") out) (io/copy (io/file "tmp/all10/e10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.B1.raw")]
+    (io/copy (io/file "tmp/all10/b10g") out) (io/copy (io/file "tmp/all10/f10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.C1.raw")]
+    (io/copy (io/file "tmp/all10/c10g") out) (io/copy (io/file "tmp/all10/g10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.D1.raw")]
+    (io/copy (io/file "tmp/all10/d10g") out) (io/copy (io/file "tmp/all10/h10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.A2.raw")]
+    (io/copy (io/file "tmp/all10/i10g") out) (io/copy (io/file "tmp/all10/m10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.B2.raw")]
+    (io/copy (io/file "tmp/all10/j10g") out) (io/copy (io/file "tmp/all10/n10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.C2.raw")]
+    (io/copy (io/file "tmp/all10/k10g") out) (io/copy (io/file "tmp/all10/o10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.D2.raw")]
+    (io/copy (io/file "tmp/all10/l10g") out) (io/copy (io/file "tmp/all10/p10g") out)))
 
 (defn map-tiles
   "Generate map tiles from specified image"
@@ -285,7 +285,8 @@
 (defn cube-map
   "Create cub map level from map and elevation tiles"
   [& {:keys [in-level out-level]}]
-  (g/make-cube-map in-level out-level))
+  (g/make-cube-map in-level out-level)
+  (g/make-cube-map-tars out-level))
 
 (defn cube-maps
   "Create pyramid of cube maps"

@@ -240,7 +240,10 @@
 
 (defn create-tar
   "Create tar file from interleaved entry names and file names"
-  {:malli/schema [:=> [:cat non-empty-string [:vector non-empty-string]] :nil]}
+  {:malli/schema [:=> [:cat non-empty-string
+                            [:and [:sequential non-empty-string]
+                                  [:fn {:error/message "Vector needs to have even number of values"} #(even? (count %))]]]
+                  :nil]}
   [tar-file-name destinations-and-sources]
   (let [tar (TarArchiveOutputStream. (io/output-stream tar-file-name))]
     (doseq [[dest src] (partition 2 destinations-and-sources)]
@@ -296,6 +299,20 @@
   {:malli/schema [:=> [:cat :string face N0 N0] :string]}
   [prefix face level x]
   (str prefix \/ (face->index face) \/ level \/ x))
+
+
+(defn cube-tar
+  "Determine tar file containing cube tile"
+  {:malli/schema [:=> [:cat :string face N0 N0] :string]}
+  [prefix face level x]
+  (str prefix \/ (face->index face) \/ level \/ x ".tar"))
+
+
+(defn cube-file-name
+  "Determine file name of cube tile"
+  {:malli/schema [:=> [:cat N0 :string] :string]}
+  [y suffix]
+  (str y suffix))
 
 
 (defn sinc
