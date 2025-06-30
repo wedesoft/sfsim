@@ -19,5 +19,14 @@
 				"Recursive" "1"
 			}
 		}
+		"3847321"
+		{
+			"FileMapping"
+			{
+				"LocalPath" "data\*"
+				"DepotPath" "data\"
+				"Recursive" "1"
+			}
+		}
 	}
 }
