@@ -1,8 +1,9 @@
 (require '[sfsim.image :as image])
+(require '[sfsim.util :as util])
 (require '[clojure.java.io :as io])
-(import '[java.io File ByteArrayOutputStream])
+(import '[java.io File ByteArrayOutputStream FileInputStream])
 (import '[java.util.zip GZIPInputStream])
-(import '[org.apache.commons.compress.archivers.tar TarFile])
+(import '[org.apache.commons.compress.archivers.tar TarFile TarArchiveOutputStream])
 (import '[org.lwjgl.stb STBImage])
 (import '[org.lwjgl.system MemoryUtil])
 
@@ -32,3 +33,11 @@
 (def image #:sfsim.image{:width (aget width 0) :height (aget height 0) :channels (aget channels 0) :data b})
 
 (image/spit-png "/tmp/test.png" image)
+
+(def tar (TarArchiveOutputStream. (io/output-stream "test2.tar")))
+(def f (File. "0.jpg"))
+(def entry (.createArchiveEntry tar f "0.jpg"))
+(.putArchiveEntry tar entry)
+(io/copy (FileInputStream. f) tar)
+(.closeArchiveEntry tar)
+(.close tar)

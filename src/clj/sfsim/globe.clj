@@ -2,14 +2,15 @@
   "Use Mercator color and elevation map tiles to generate cube map tiles for color, water, elevation, and normals."
   (:gen-class)
   (:require
+    [clojure.java.io :as io]
     [com.climate.claypoole :as cp]
     [fastmath.vector :refer (sub)]
     [sfsim.cubemap :refer (cartesian->geodetic color-geodetic-day color-geodetic-night cube-coordinate cube-map
-                                               normal-for-point project-onto-globe water-geodetic tile-center)]
+                           normal-for-point project-onto-globe water-geodetic tile-center)]
     [sfsim.image :refer (set-byte! set-pixel! set-vector3! spit-jpg spit-normals make-image make-byte-image
-                                   make-vector-image)]
-    [sfsim.util :refer (align-address cube-dir cube-path make-progress-bar spit-bytes-gz spit-floats-gz tick-and-print
-                                      index->face)])
+                         make-vector-image)]
+    [sfsim.util :refer (align-address cube-dir cube-path cube-tar make-progress-bar spit-bytes-gz spit-floats-gz tick-and-print
+                        index->face create-tar)])
   (:import
     (java.io
       File)))
@@ -66,6 +67,22 @@
                  (spit-floats-gz (cube-path "data/globe" face out-level b a ".surf.gz") (:sfsim.image/data surface))
                  (spit-normals (cube-path "data/globe" face out-level b a ".png") normals)
                  (send bar tick-and-print)))))
+
+
+(defn make-cube-map-tars
+  "Program to put cube map tiles into tar files"
+  [out-level]
+  (let [n   (bit-shift-left 1 out-level)]
+    (doseq [k (range 6) a (range n)]
+           (let [face          (index->face k)
+                 tar-file-name (cube-tar "data/globe" face out-level a)
+                 directory     (io/file (cube-dir "data/globe" face out-level a))
+                 files         (remove (memfn isDirectory) (file-seq directory))
+                 file-paths    (map (memfn getPath) files)
+                 file-names    (map (memfn getName) files)]
+             (println "creating " tar-file-name)
+             (create-tar tar-file-name (interleave file-names file-paths))
+             (run! io/delete-file (reverse (file-seq directory)))))))
 
 
 (set! *unchecked-math* false)

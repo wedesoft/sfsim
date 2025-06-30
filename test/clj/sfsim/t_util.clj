@@ -30,6 +30,14 @@
       (seq (slurp-bytes-gz "test/clj/sfsim/fixtures/util/bytes.gz")) => [2 3 5 7] )
 
 
+(fact "Slurp bytes from file in tar"
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-bytes-tar tar "bytes.raw"))) => [2 3 5 7])
+
+
+(fact "Slurp compressed bytes from file in tar"
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-bytes-gz-tar tar "bytes.gz"))) => [2 3 5 7])
+
+
 (fact "Load a set of short integers"
       (seq (slurp-shorts "test/clj/sfsim/fixtures/util/shorts.raw")) => [2 3 5 7])
 
@@ -40,6 +48,14 @@
 
 (fact "Load a set of compressed floating point numbers"
       (seq (slurp-floats-gz "test/clj/sfsim/fixtures/util/floats.gz")) => [2.0 3.0 5.0 7.0])
+
+
+(fact "Load a set of floating point numbers from a file in a tar archive"
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-floats-tar tar "floats.raw"))) => [2.0 3.0 5.0 7.0])
+
+
+(fact "Load a set of compressed floating point numbers from a file in a tar archive"
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-floats-gz-tar tar "floats.gz"))) => [2.0 3.0 5.0 7.0])
 
 
 (fact "Save a set of bytes"
@@ -66,12 +82,25 @@
         (seq (slurp-floats file-name)) => [2.0 3.0 5.0 7.0]))
 
 
+(fact "Compress a set of floats"
+      (let [file-name (.getPath (File/createTempFile "spit" ".gz"))]
+        (spit-floats-gz file-name (float-array [2.0 3.0 5.0 7.0])) => anything
+        (seq (slurp-floats-gz file-name)) => [2.0 3.0 5.0 7.0]))
+
+
+
 (facts "Slurp bytes into a Java byte buffer"
        (let [buffer (slurp-byte-buffer "test/clj/sfsim/fixtures/util/bytes.raw")]
          (.get buffer 0) => 2
          (.get buffer 1) => 3
          (.get buffer 2) => 5
          (.get buffer 3) => 7))
+
+
+(fact "Create tar file from files"
+      (let [file-name (.getPath (File/createTempFile "test" ".tar"))]
+        (create-tar file-name ["bytes.raw" "test/clj/sfsim/fixtures/util/bytes.raw"])
+        (seq (with-tar tar file-name (slurp-bytes-tar tar "bytes.raw"))) => [2 3 5 7]))
 
 
 (fact "Determine file path of map tile"
@@ -88,6 +117,14 @@
 
 (fact "Determine directory name of cube tile"
       (cube-dir "globe" :sfsim.cubemap/face5 2 1) => "globe/5/2/1")
+
+
+(fact "Determine tar file containing cube tile"
+      (cube-tar "globe" :sfsim.cubemap/face5 2 1) => "globe/5/2/1.tar")
+
+
+(fact "Determine file name of cube tile"
+      (cube-file-name 3 ".png") => "3.png")
 
 
 (tabular "Sinc function"
@@ -176,3 +213,16 @@
        (find-if odd? [2 4 6]) => nil
        (find-if odd? [2 3 4]) => 3
        (find-if odd? [2 4 5]) => 5)
+
+
+(def destruct (atom nil))
+(def sqr-cache (make-lru-cache 2 sqr (fn [x] (reset! destruct x))))
+
+
+(facts "LRU cache with destructor"
+       (sqr-cache 2) => 4
+       (sqr-cache 3) => 9
+       (sqr-cache 2) => 4
+       @destruct => nil
+       (sqr-cache 5) => 25
+       @destruct => 9)

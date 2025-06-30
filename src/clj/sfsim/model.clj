@@ -22,6 +22,8 @@
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap)]
     [sfsim.util :refer (N0 N third)])
   (:import
+    (java.nio
+      DirectByteBuffer)
     (org.lwjgl.assimp
       AIAnimation
       AIColor4D
@@ -208,9 +210,9 @@
         channels (int-array 1)
         buffer   (STBImage/stbi_load_from_memory (.pcDataCompressed texture) width height channels 4)
         data     (byte-array (.limit buffer))]
-    (.get buffer data)
-    (.flip buffer)
-    (STBImage/stbi_image_free buffer)
+    (.get ^DirectByteBuffer buffer ^bytes data)
+    (.flip ^DirectByteBuffer buffer)
+    (STBImage/stbi_image_free ^DirectByteBuffer buffer)
     #:sfsim.image{:width (aget width 0) :height (aget height 0) :channels (aget channels 0) :data data}))
 
 
