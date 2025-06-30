@@ -225,4 +225,4 @@
        (sqr-cache 2) => 4
        @destruct => nil
        (sqr-cache 5) => 25
-       @destruct => 3)
+       @destruct => 9)

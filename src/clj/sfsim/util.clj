@@ -486,7 +486,7 @@
                 old     @state
                 updated (swap! state cache/miss arg result)
                 evicted (remove (set (keys updated)) (keys old))]
-            (doseq [x evicted] (destructor x))
+            (doseq [x evicted] (destructor (cache/lookup old x)))
             result)))))
 
 
