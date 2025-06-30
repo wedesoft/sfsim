@@ -31,11 +31,11 @@
 
 
 (fact "Slurp bytes from file in tar"
-      (seq (slurp-bytes-tar (untar "test/clj/sfsim/fixtures/util/bytes.tar") "bytes.raw")) => [2 3 5 7])
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-bytes-tar tar "bytes.raw"))) => [2 3 5 7])
 
 
 (fact "Slurp compressed bytes from file in tar"
-      (seq (slurp-bytes-gz-tar (untar "test/clj/sfsim/fixtures/util/bytes.tar") "bytes.gz")) => [2 3 5 7])
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-bytes-gz-tar tar "bytes.gz"))) => [2 3 5 7])
 
 
 (fact "Load a set of short integers"
@@ -51,11 +51,11 @@
 
 
 (fact "Load a set of floating point numbers from a file in a tar archive"
-      (seq (slurp-floats-tar (untar "test/clj/sfsim/fixtures/util/bytes.tar") "floats.raw")) => [2.0 3.0 5.0 7.0])
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-floats-tar tar "floats.raw"))) => [2.0 3.0 5.0 7.0])
 
 
 (fact "Load a set of compressed floating point numbers from a file in a tar archive"
-      (seq (slurp-floats-gz-tar (untar "test/clj/sfsim/fixtures/util/bytes.tar") "floats.gz")) => [2.0 3.0 5.0 7.0])
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-floats-gz-tar tar "floats.gz"))) => [2.0 3.0 5.0 7.0])
 
 
 (fact "Save a set of bytes"

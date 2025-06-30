@@ -71,7 +71,7 @@
 
 
 (facts "Load PNG image from tar file"
-       (let [image (slurp-image-tar (util/untar "test/clj/sfsim/fixtures/image/image.tar") "pattern.png")]
+       (let [image (util/with-tar tar "test/clj/sfsim/fixtures/image/image.tar" (slurp-image-tar tar "pattern.png"))]
          (:sfsim.image/width image) => 2
          (:sfsim.image/height image) => 2
          (:sfsim.image/channels image) => 3

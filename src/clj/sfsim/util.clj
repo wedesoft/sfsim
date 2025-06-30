@@ -69,6 +69,22 @@
      ::entries (into {} (map (juxt #(.getName ^TarArchiveEntry %) identity) entries))}))
 
 
+(defn tar-close
+  "Close a tar file"
+  {:malli/schema [:=> [:cat tarfile] :any]}
+  [tar-file]
+  (.close ^TarFile (::tar tar-file)))
+
+
+(defmacro with-tar
+  "Macro for opening and closing a tar file"
+  [sym file-name & body]
+  `(let [~sym    (untar ~file-name)
+         result# (do ~@body)]
+     (tar-close ~sym)
+     result#))
+
+
 (defn get-tar-entry
   "Open stream to read file from tar archive"
   {:malli/schema [:=> [:cat tarfile non-empty-string] :some]}
