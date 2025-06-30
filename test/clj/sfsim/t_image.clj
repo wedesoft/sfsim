@@ -92,10 +92,26 @@
          (seq (:sfsim.image/data (slurp-image file-name))) => [4 5 6 -1 1 2 3 -1]))
 
 
-(fact "Save normal vectors"
+(fact "Save and load normal vectors PNG file"
       (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
         (spit-normals file-name #:sfsim.image{:width 2 :height 1 :data (float-array [1.0 0.0 0.0 0.0 -1.0 0.0])}) => anything
         (let [normals (slurp-normals file-name)
+              n1      (get-vector3 normals 0 0)
+              n2      (get-vector3 normals 0 1)]
+          (:sfsim.image/width normals)  => 2
+          (:sfsim.image/height normals) => 1
+          (n1 0)            => (roughly  1.0 1e-2)
+          (n1 1)            => (roughly  0.0 1e-2)
+          (n2 0)            => (roughly  0.0 1e-2)
+          (n2 1)            => (roughly -1.0 1e-2))))
+
+
+(fact "Load normal vectors from PNG in a tar file"
+      (let [file-name (.getPath (File/createTempFile "normals" ".png"))
+            tar-name  (.getPath (File/createTempFile "normals" ".tar"))]
+        (spit-normals file-name #:sfsim.image{:width 2 :height 1 :data (float-array [1.0 0.0 0.0 0.0 -1.0 0.0])})
+        (util/create-tar tar-name ["normals.png" file-name])
+        (let [normals (util/with-tar tar tar-name (slurp-normals-tar tar "normals.png"))
               n1      (get-vector3 normals 0 0)
               n2      (get-vector3 normals 0 1)]
           (:sfsim.image/width normals)  => 2

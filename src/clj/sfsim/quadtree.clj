@@ -6,10 +6,11 @@
     [fastmath.vector :refer (sub mag add)]
     [malli.core :as m]
     [sfsim.cubemap :refer (tile-center project-onto-cube determine-face cube-i cube-j)]
-    [sfsim.image :refer (slurp-image slurp-normals get-vector3)]
+    [sfsim.image :refer (slurp-image-tar slurp-normals-tar get-vector3)]
     [sfsim.matrix :refer (fvec3)]
     [sfsim.plane :refer (points->plane ray-plane-intersection-parameter)]
-    [sfsim.util :refer (cube-path slurp-floats-gz slurp-bytes-gz dissoc-in N N0)]))
+    [sfsim.util :refer (cube-path cube-tar cube-file-name slurp-floats-gz-tar slurp-bytes-gz-tar dissoc-in untar tar-close
+                        make-lru-cache N N0)]))
 
 
 (set! *unchecked-math* true)
@@ -57,20 +58,24 @@
              [:sfsim.planet/water :any]]))
 
 
+(def access-cube-tar (make-lru-cache 10 untar tar-close))
+
+
 (defn load-tile-data
   "Load data associated with a cube map tile"
   {:malli/schema [:=> [:cat :keyword N0 N0 N0 :double] tile]}
   [face level y x radius]
-  {::face                 face
-   ::level                level
-   ::y                    y
-   ::x                    x
-   ::center               (tile-center face level y x radius)
-   :sfsim.planet/day     (slurp-image     (cube-path "data/globe" face level y x ".jpg"))
-   :sfsim.planet/night   (slurp-image     (cube-path "data/globe" face level y x ".night.jpg"))
-   :sfsim.planet/surface (slurp-floats-gz (cube-path "data/globe" face level y x ".surf.gz"))
-   :sfsim.planet/normals (slurp-normals   (cube-path "data/globe" face level y x ".png"))
-   :sfsim.planet/water   (slurp-bytes-gz  (cube-path "data/globe" face level y x ".water.gz"))})
+  (let [tar (access-cube-tar (cube-tar "data/globe" face level x))]
+    {::face                 face
+     ::level                level
+     ::y                    y
+     ::x                    x
+     ::center               (tile-center face level y x radius)
+     :sfsim.planet/day     (slurp-image-tar     tar (cube-file-name y ".jpg"))
+     :sfsim.planet/night   (slurp-image-tar     tar (cube-file-name y ".night.jpg"))
+     :sfsim.planet/surface (slurp-floats-gz-tar tar (cube-file-name y ".surf.gz"))
+     :sfsim.planet/normals (slurp-normals-tar   tar (cube-file-name y ".png"))
+     :sfsim.planet/water   (slurp-bytes-gz-tar  tar (cube-file-name y ".water.gz"))}))
 
 
 (def tile-info (m/schema [:map [::face :keyword] [::level N0] [::y N0] [::x N0]]))
@@ -389,8 +394,9 @@
   "Load tile with specified face and tile position"
   (z/lru
     (fn [level tilesize face row column]
-      (let [path (cube-path "data/globe" face level row column ".surf.gz")]
-        #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats-gz path)}))
+      (let [tar       (access-cube-tar (cube-tar "data/globe" face level column))
+            file-name (cube-file-name row ".surf.gz")]
+        #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats-gz-tar tar file-name)}))
     :lru/threshold 4))
 
 

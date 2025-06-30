@@ -155,6 +155,28 @@
     {::width width ::height height ::data data}))
 
 
+(defn slurp-normals-tar
+  "Convert PNG to normal vectors"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] normals]}
+  [tar path]
+  (let [bytes_    (slurp-bytes-tar tar path)
+        mem       (MemoryUtil/memAlloc (count bytes_))]
+     (.put mem bytes_)
+     (.flip mem)
+    (let [width     (int-array 1)
+          height    (int-array 1)
+          channels  (int-array 1)
+          buffer    (STBImage/stbi_load_from_memory mem width height channels 3)
+          byte-data (byte-array (.limit buffer))
+          data      (float-array (.limit buffer))]
+      (.get ^DirectByteBuffer buffer ^bytes byte-data)
+      (.flip ^DirectByteBuffer buffer)
+      (STBImage/stbi_image_free ^DirectByteBuffer buffer)
+      (doseq [i (range (count data))]
+             (aset-float ^floats data ^long i ^float (/ (+ (aget ^bytes byte-data ^long i) 0.5) 127.5)))
+      {::width (aget width 0) ::height (aget height 0) ::data data})))
+
+
 (defn get-pixel
   "Read color value from a pixel of an image"
   {:malli/schema [:=> [:cat image N0 N0] [:tuple :double :double :double]]}
