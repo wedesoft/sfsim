@@ -1,5 +1,6 @@
 # TODO
 * create data depot on steam
+* use BufferedInputStream and BufferedOutputStream
 * indicate thrust, speed, height, and fps
 * add joystick
 * add lift or force caused by pitch rate
