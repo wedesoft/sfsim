@@ -58,7 +58,7 @@
              [:sfsim.planet/water :any]]))
 
 
-(def access-cube-tar (make-lru-cache 10 untar tar-close))
+(def access-cube-tar (make-lru-cache 80 untar tar-close))
 
 
 (defn load-tile-data
