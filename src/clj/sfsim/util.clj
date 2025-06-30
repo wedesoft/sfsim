@@ -213,14 +213,27 @@
   (->> file-name (slurp-bytes-gz-tar tar) bytes->floats))
 
 
+(defn floats->bytes
+  "Convert float array to byte buffer"
+  [^floats float-data]
+  (let [n           (count float-data)
+        byte-buffer (.order (ByteBuffer/allocate (* n 4)) ByteOrder/LITTLE_ENDIAN)]
+    (.put (.asFloatBuffer byte-buffer) float-data)
+    (.array byte-buffer)))
+
+
 (defn spit-floats
   "Write floating point numbers to a file"
   {:malli/schema [:=> [:cat non-empty-string seqable?] :nil]}
   [^String file-name ^floats float-data]
-  (let [n           (count float-data)
-        byte-buffer (.order (ByteBuffer/allocate (* n 4)) ByteOrder/LITTLE_ENDIAN)]
-    (.put (.asFloatBuffer byte-buffer) float-data)
-    (spit-bytes file-name (.array byte-buffer))))
+  (spit-bytes file-name (floats->bytes float-data)))
+
+
+(defn spit-floats-gz
+  "Write floating point numbers to a compressed file"
+  {:malli/schema [:=> [:cat non-empty-string seqable?] :nil]}
+  [^String file-name ^floats float-data]
+  (spit-bytes-gz file-name (floats->bytes float-data)))
 
 
 (defn slurp-byte-buffer

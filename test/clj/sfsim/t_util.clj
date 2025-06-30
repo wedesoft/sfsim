@@ -82,6 +82,13 @@
         (seq (slurp-floats file-name)) => [2.0 3.0 5.0 7.0]))
 
 
+(fact "Compress a set of floats"
+      (let [file-name (.getPath (File/createTempFile "spit" ".gz"))]
+        (spit-floats-gz file-name (float-array [2.0 3.0 5.0 7.0])) => anything
+        (seq (slurp-floats-gz file-name)) => [2.0 3.0 5.0 7.0]))
+
+
+
 (facts "Slurp bytes into a Java byte buffer"
        (let [buffer (slurp-byte-buffer "test/clj/sfsim/fixtures/util/bytes.raw")]
          (.get buffer 0) => 2
