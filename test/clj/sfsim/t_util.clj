@@ -97,6 +97,12 @@
          (.get buffer 3) => 7))
 
 
+(fact "Create tar file from files"
+      (let [file-name (.getPath (File/createTempFile "test" ".tar"))]
+        (create-tar file-name ["bytes.raw" "test/clj/sfsim/fixtures/util/bytes.raw"])
+        (seq (with-tar tar file-name (slurp-bytes-tar tar "bytes.raw"))) => [2 3 5 7]))
+
+
 (fact "Determine file path of map tile"
       (tile-path "world" 1 3 2 ".png") => "world/1/2/3.png")
 

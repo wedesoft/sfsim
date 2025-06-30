@@ -9,6 +9,7 @@
   (:import
     (java.io
       File
+      FileInputStream
       ByteArrayOutputStream)
     (java.util.zip
       GZIPInputStream
@@ -23,6 +24,7 @@
       StandardOpenOption)
     (org.apache.commons.compress.archivers.tar
       TarFile
+      TarArchiveOutputStream
       TarArchiveEntry
       TarFile$BoundedTarEntryInputStream)
     (org.lwjgl
@@ -234,6 +236,22 @@
   {:malli/schema [:=> [:cat non-empty-string seqable?] :nil]}
   [^String file-name ^floats float-data]
   (spit-bytes-gz file-name (floats->bytes float-data)))
+
+
+(defn create-tar
+  "Create tar file from interleaved entry names and file names"
+  {:malli/schema [:=> [:cat non-empty-string [:vector non-empty-string]] :nil]}
+  [tar-file-name destinations-and-sources]
+  (let [tar (TarArchiveOutputStream. (io/output-stream tar-file-name))]
+    (doseq [[dest src] (partition 2 destinations-and-sources)]
+           (let [file  (File. ^String src)
+                 entry (.createArchiveEntry ^TarArchiveOutputStream tar ^File file ^String dest)
+                 in    (FileInputStream. file)]
+             (.putArchiveEntry tar entry)
+             (io/copy in tar)
+             (.closeArchiveEntry tar)
+             (.close in)))
+    (.close tar)))
 
 
 (defn slurp-byte-buffer
