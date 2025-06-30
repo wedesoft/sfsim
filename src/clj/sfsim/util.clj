@@ -8,6 +8,8 @@
     [malli.core :as m]
     [progrock.core :as p])
   (:import
+    (clojure.core.cache
+      LRUCache)
     (java.io
       File
       FileInputStream
@@ -480,7 +482,7 @@
         [arg]
         (if-let [result (cache/lookup @state arg)]
           (do
-            (swap! state (memfn hit arg) arg)
+            (swap! state (memfn ^LRUCache hit arg) arg)
             result)
           (let [result  (fun arg)
                 old     @state
