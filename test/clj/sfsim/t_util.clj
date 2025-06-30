@@ -213,3 +213,16 @@
        (find-if odd? [2 4 6]) => nil
        (find-if odd? [2 3 4]) => 3
        (find-if odd? [2 4 5]) => 5)
+
+
+(def destruct (atom nil))
+(def sqr-cache (make-lru-cache 2 sqr (fn [x] (reset! destruct x))))
+
+
+(facts "LRU cache with destructor"
+       (sqr-cache 2) => 4
+       (sqr-cache 3) => 9
+       (sqr-cache 2) => 4
+       @destruct => nil
+       (sqr-cache 5) => 25
+       @destruct => 3)

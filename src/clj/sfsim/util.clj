@@ -1,6 +1,7 @@
 (ns sfsim.util
   "Various utility functions."
   (:require
+    [clojure.core.cache :as cache]
     [clojure.java.io :as io]
     [clojure.math :refer (sin)]
     [clojure.set :refer (map-invert)]
@@ -468,6 +469,25 @@
   {:malli/schema [:=> [:cat fn? [:sequential :some]] :any]}
   [pred coll]
   (first (filter pred coll)))
+
+
+(defn make-lru-cache
+  "Create LRU cache with destructor"
+  {:malli/schema [:=> [:cat N0 fn? fn?] fn?]}
+  [cache-size fun destructor]
+  (let [state (atom (cache/lru-cache-factory {} :threshold cache-size))]
+    (fn lru-wrapper
+        [arg]
+        (if-let [result (cache/lookup @state arg)]
+          (do
+            (swap! state (memfn hit arg) arg)
+            result)
+          (let [result  (fun arg)
+                old     @state
+                updated (swap! state cache/miss arg result)
+                evicted (remove (set (keys updated)) (keys old))]
+            (doseq [x evicted] (destructor x))
+            result)))))
 
 
 (set! *warn-on-reflection* false)
