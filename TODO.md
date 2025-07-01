@@ -1,5 +1,5 @@
 # TODO
-* add fullscreen toggle, make sure UI works
+* add fullscreen toggle
 * indicate thrust, speed, height, and fps
 * add joystick
 * add lift or force caused by pitch rate
