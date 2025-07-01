@@ -1,5 +1,5 @@
 # TODO
-* create data depot on steam
+* update build steps to use tmp directory
 * use BufferedInputStream and BufferedOutputStream
 * indicate thrust, speed, height, and fps
 * add joystick
