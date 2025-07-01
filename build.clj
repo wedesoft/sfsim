@@ -171,40 +171,40 @@
 (defn map-sector-day-tiles
   "Generate pyramid of daytime map tiles for given sector of world map"
   [& {:keys [sector prefix y x]}]
-  (map-tiles {:image (str "world.200404.3x21600x21600." sector ".png") :level 5 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "world." sector "." 2 ".png") :level 4 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "world." sector "." 3 ".png") :level 3 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "world." sector "." 4 ".png") :level 2 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "world." sector "." 5 ".png") :level 1 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "world." sector "." 6 ".png") :level 0 :prefix prefix :y-offset y :x-offset x}))
+  (map-tiles {:image (str "tmp/world.200404.3x21600x21600." sector ".png") :level 5 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/world." sector "." 2 ".png") :level 4 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/world." sector "." 3 ".png") :level 3 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/world." sector "." 4 ".png") :level 2 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/world." sector "." 5 ".png") :level 1 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/world." sector "." 6 ".png") :level 0 :prefix prefix :y-offset y :x-offset x}))
 
 (defn map-sector-night-tiles
   "Generate pyramid of nighttime map tiles for given sector of world map"
   [& {:keys [sector prefix y x]}]
-  (map-tiles {:image (str "BlackMarble_2016_" sector ".jpg") :level 5 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "blackmarble." sector "." 2 ".png") :level 4 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "blackmarble." sector "." 3 ".png") :level 3 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "blackmarble." sector "." 4 ".png") :level 2 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "blackmarble." sector "." 5 ".png") :level 1 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "blackmarble." sector "." 6 ".png") :level 0 :prefix prefix :y-offset y :x-offset x}))
+  (map-tiles {:image (str "tmp/BlackMarble_2016_" sector ".jpg") :level 5 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/blackmarble." sector "." 2 ".png") :level 4 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/blackmarble." sector "." 3 ".png") :level 3 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/blackmarble." sector "." 4 ".png") :level 2 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/blackmarble." sector "." 5 ".png") :level 1 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/blackmarble." sector "." 6 ".png") :level 0 :prefix prefix :y-offset y :x-offset x}))
 
 (defn map-scales-day
   "Generate pyramid of daytime scales for given sector of world map"
   [& {:keys [sector]}]
-  (sh "convert" (str "world.200404.3x21600x21600." sector ".png") "-scale" "50%" (str "world." sector "." 2 ".png"))
-  (scale-image-file {:input (str "world." sector "." 2 ".png") :output (str "world." sector "." 3 ".png")})
-  (scale-image-file {:input (str "world." sector "." 3 ".png") :output (str "world." sector "." 4 ".png")})
-  (scale-image-file {:input (str "world." sector "." 4 ".png") :output (str "world." sector "." 5 ".png")})
-  (scale-image-file {:input (str "world." sector "." 5 ".png") :output (str "world." sector "." 6 ".png")}))
+  (sh "convert" (str "tmp/world.200404.3x21600x21600." sector ".png") "-scale" "50%" (str "tmp/world." sector "." 2 ".png"))
+  (scale-image-file {:input (str "tmp/world." sector "." 2 ".png") :output (str "tmp/world." sector "." 3 ".png")})
+  (scale-image-file {:input (str "tmp/world." sector "." 3 ".png") :output (str "tmp/world." sector "." 4 ".png")})
+  (scale-image-file {:input (str "tmp/world." sector "." 4 ".png") :output (str "tmp/world." sector "." 5 ".png")})
+  (scale-image-file {:input (str "tmp/world." sector "." 5 ".png") :output (str "tmp/world." sector "." 6 ".png")}))
 
 (defn map-scales-night
   "Generate pyramid of nighttime scales for given sector of world map"
   [& {:keys [sector]}]
-  (sh "convert" (str "BlackMarble_2016_" sector ".jpg") "-scale" "50%" (str "blackmarble." sector "." 2 ".png"))
-  (scale-image-file {:input (str "blackmarble." sector "." 2 ".png") :output (str "blackmarble." sector "." 3 ".png")})
-  (scale-image-file {:input (str "blackmarble." sector "." 3 ".png") :output (str "blackmarble." sector "." 4 ".png")})
-  (scale-image-file {:input (str "blackmarble." sector "." 4 ".png") :output (str "blackmarble." sector "." 5 ".png")})
-  (scale-image-file {:input (str "blackmarble." sector "." 5 ".png") :output (str "blackmarble." sector "." 6 ".png")}))
+  (sh "convert" (str "tmp/BlackMarble_2016_" sector ".jpg") "-scale" "50%" (str "tmp/blackmarble." sector "." 2 ".png"))
+  (scale-image-file {:input (str "tmp/blackmarble." sector "." 2 ".png") :output (str "tmp/blackmarble." sector "." 3 ".png")})
+  (scale-image-file {:input (str "tmp/blackmarble." sector "." 3 ".png") :output (str "tmp/blackmarble." sector "." 4 ".png")})
+  (scale-image-file {:input (str "tmp/blackmarble." sector "." 4 ".png") :output (str "tmp/blackmarble." sector "." 5 ".png")})
+  (scale-image-file {:input (str "tmp/blackmarble." sector "." 5 ".png") :output (str "tmp/blackmarble." sector "." 6 ".png")}))
 
 (defn map-sector-day
   "Generate daytime scale pyramid and map tiles for given sector"
