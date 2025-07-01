@@ -249,7 +249,7 @@
                   :nil]}
   [tar-file-name destinations-and-sources]
   (let [tar (TarArchiveOutputStream. (io/output-stream tar-file-name))]
-    (.setBigNumberMode ^TarArchiveOutputStream tar TarArchiveOutputStream/BIGNUMBER_POSIX)
+    (.setBigNumberMode ^TarArchiveOutputStream tar TarArchiveOutputStream/BIGNUMBER_STAR)
     (doseq [[dest src] (partition 2 destinations-and-sources)]
            (let [file  (File. ^String src)
                  entry (.createArchiveEntry ^TarArchiveOutputStream tar ^File file ^String dest)
