@@ -1,11 +1,8 @@
 # TODO
-* update build steps to use tmp directory
-* use BufferedInputStream and BufferedOutputStream
+* add fullscreen toggle
 * indicate thrust, speed, height, and fps
 * add joystick
 * add lift or force caused by pitch rate
-* add fullscreen toggle, make sure UI works
-* esc toggles menu
 * p toggles pause
 * following camera
 * make new trailer

@@ -23,8 +23,8 @@
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                                      texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
-                                      setup-rendering quad-splits-orientations)]
+                          texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
+                          setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
     [sfsim.util :refer (sqr)]
     [sfsim.texture :refer (destroy-texture texture->image)])
@@ -109,11 +109,9 @@
 
 (def desktop-width (.width ^GLFWVidMode mode))
 (def desktop-height (.height ^GLFWVidMode mode))
-(def window-width (if fullscreen desktop-width 854))
-(def window-height (if fullscreen desktop-height 480))
-;(def window-width (if fullscreen desktop-width 1920))
-;(def window-height (if fullscreen desktop-height 620))
-(def window (make-window "sfsim" window-width window-height (not fullscreen)))
+(def window-width (atom (if fullscreen desktop-width 854)))
+(def window-height (atom (if fullscreen desktop-height 480)))
+(def window (make-window "sfsim" @window-width @window-height (not fullscreen)))
 (GLFW/glfwShowWindow window)
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
@@ -418,7 +416,7 @@
 
 (defn location-dialog
   [gui]
-  (gui/nuklear-window gui "location" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
+  (gui/nuklear-window gui "location" (quot (- @window-width 320) 2) (quot (- @window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 2)
                       (gui/text-label gui "Longitude (East)")
                       (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
@@ -469,7 +467,7 @@
 
 (defn datetime-dialog
   [gui]
-  (gui/nuklear-window gui "datetime" (quot (- window-width 320) 2) (quot (- window-height (* 38 3)) 2) 320 (* 38 3)
+  (gui/nuklear-window gui "datetime" (quot (- @window-width 320) 2) (quot (- @window-height (* 38 3)) 2) 320 (* 38 3)
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.4)
                                       (gui/text-label gui "Date")
@@ -505,7 +503,7 @@
 
 (defn main-dialog
   [gui]
-  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
+  (gui/nuklear-window gui "menu" (quot (- @window-width 320) 2) (quot (- @window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 1)
                       (when (gui/button-label gui "Location")
                         (location-dialog-set position-data @pose)
@@ -556,6 +554,7 @@
 (def gear (atom 0.0))
 (def gear-down (atom true))
 (def prev-gear-req (atom false))
+(def prev-mn-req (atom false))
 
 (defn -main
   "Space flight simulator main function"
@@ -565,7 +564,9 @@
         h  (int-array 1)]
     (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< @n (count @recording))))
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
-      (planet/update-tile-tree planet-renderer tile-tree (aget w 0) (:position @pose))
+      (reset! window-width (aget w 0))
+      (reset! window-height (aget h 0))
+      (planet/update-tile-tree planet-renderer tile-tree @window-width (:position @pose))
       (when (@keystates GLFW/GLFW_KEY_P)
         (reset! slew true))
       (when (@keystates GLFW/GLFW_KEY_X)
@@ -580,7 +581,7 @@
         (reset! slew false))
       (let [t1       (System/currentTimeMillis)
             dt       (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
-            mn       (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
+            mn-req   (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
             gear-req (if (@keystates GLFW/GLFW_KEY_G) true false)
             ra       (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
             rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
@@ -594,7 +595,9 @@
             d        (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
             dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))]
-        (when mn (reset! menu main-dialog))
+        (when (and mn-req (not @prev-mn-req))
+          (swap! menu #(if % nil main-dialog)))
+        (reset! prev-mn-req mn-req)
         (when (and gear-req (not @prev-gear-req))
           (swap! gear-down not))
         (reset! prev-gear-req gear-req)
@@ -683,9 +686,9 @@
               sun-pos            (sub (earth-moon jd-ut))
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
-                                                                 (aget w 0) (aget h 0) origin @camera-orientation
+                                                                 @window-width @window-height origin @camera-orientation
                                                                  light-direction)
-              scene-render-vars  (model/make-scene-render-vars config/render-config (aget w 0) (aget h 0) origin
+              scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
                                                                @camera-orientation light-direction object-position
                                                                config/object-radius)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
@@ -758,26 +761,26 @@
                                                      (planet/get-current-tree tile-tree))
                                ;; Render atmosphere with cloud overlay
                                (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
-                           (setup-rendering window-width window-height :sfsim.render/noculling false)
+                           (setup-rendering @window-width @window-height :sfsim.render/noculling false)
                            (when @menu
                              (reset! focus-old nil)
                              (@menu gui)
                              (reset! focus-new nil))
                            (stick gui t u r)
-                           (gui/render-nuklear-gui gui window-width window-height))
+                           (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (when playback
-            (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 window-width window-height))
-                  data   (byte-array (* 4 window-width window-height))]
+            (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 @window-width @window-height))
+                  data   (byte-array (* 4 @window-width @window-height))]
               (GL11/glFlush)
               (GL11/glFinish)
-              (GL11/glReadPixels 0 0 ^long window-width ^long window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
+              (GL11/glReadPixels 0 0 ^long @window-width ^long @window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
               (.get buffer data)
               (spit-png (format "frame%06d.png" @frame-index) {:sfsim.image/data data
-                                                               :sfsim.image/width window-width
-                                                               :sfsim.image/height window-height
+                                                               :sfsim.image/width @window-width
+                                                               :sfsim.image/height @window-height
                                                                :sfsim.image/channels 4} true)
               (swap! frame-index inc))))
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))

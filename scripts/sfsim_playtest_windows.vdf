@@ -1,7 +1,7 @@
 "AppBuild"
 {
-	"AppID" "3687560"
-	"Desc" "sfsim build"
+	"AppID" "3847320"
+	"Desc" "sfsim playtest windows and data build"
 
 	"ContentRoot" "..\"
 	"BuildOutput" "..\output\"
@@ -10,7 +10,16 @@
 
 	"Depots"
 	{
-		"3687563"
+		"3847322"
+		{
+			"FileMapping"
+			{
+				"LocalPath" "out-windows\*"
+				"DepotPath" "."
+				"Recursive" "1"
+			}
+		}
+		"3847321"
 		{
 			"FileMapping"
 			{
