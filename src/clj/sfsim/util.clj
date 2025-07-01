@@ -12,7 +12,7 @@
       LRUCache)
     (java.io
       File
-      FileInputStream
+      BufferedInputStream
       ByteArrayOutputStream)
     (java.util.zip
       GZIPInputStream
@@ -97,7 +97,7 @@
   (let [entry (get-in tar [::entries file-name])]
     (when-not entry
               (throw (Exception. (str "Entry " file-name " not found in tar file"))))
-    (.getInputStream ^TarFile (::tar tar) ^TarArchiveEntry entry)))
+    (BufferedInputStream. (.getInputStream ^TarFile (::tar tar) ^TarArchiveEntry entry))))
 
 
 (defn stream->bytes
@@ -253,7 +253,7 @@
     (doseq [[dest src] (partition 2 destinations-and-sources)]
            (let [file  (File. ^String src)
                  entry (.createArchiveEntry ^TarArchiveOutputStream tar ^File file ^String dest)
-                 in    (FileInputStream. file)]
+                 in    (io/input-stream file)]
              (.putArchiveEntry tar entry)
              (io/copy in tar)
              (.closeArchiveEntry tar)
