@@ -1,9 +1,9 @@
 # TODO
+* esc toggles menu
+* add fullscreen toggle, make sure UI works
 * indicate thrust, speed, height, and fps
 * add joystick
 * add lift or force caused by pitch rate
-* add fullscreen toggle, make sure UI works
-* esc toggles menu
 * p toggles pause
 * following camera
 * make new trailer
