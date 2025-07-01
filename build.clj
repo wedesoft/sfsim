@@ -245,10 +245,10 @@
 (defn elevation-scales
   "Generate pyramid of scales for given "
   [& {:keys [sector]}]
-  (scale-elevation {:input (str "elevation." sector ".raw") :output (str "elevation." sector "." 2 ".raw")})
-  (scale-elevation {:input (str "elevation." sector "." 2 ".raw") :output (str "elevation." sector "." 3 ".raw")})
-  (scale-elevation {:input (str "elevation." sector "." 3 ".raw") :output (str "elevation." sector "." 4 ".raw")})
-  (scale-elevation {:input (str "elevation." sector "." 4 ".raw") :output (str "elevation." sector "." 5 ".raw")}))
+  (scale-elevation {:input (str "tmp/elevation." sector ".raw") :output (str "tmp/elevation." sector "." 2 ".raw")})
+  (scale-elevation {:input (str "tmp/elevation." sector "." 2 ".raw") :output (str "tmp/elevation." sector "." 3 ".raw")})
+  (scale-elevation {:input (str "tmp/elevation." sector "." 3 ".raw") :output (str "tmp/elevation." sector "." 4 ".raw")})
+  (scale-elevation {:input (str "tmp/elevation." sector "." 4 ".raw") :output (str "tmp/elevation." sector "." 5 ".raw")}))
 
 (defn elevation-tiles
   "Generate map tiles from specified image"
@@ -258,11 +258,11 @@
 (defn elevation-sector-tiles
   "Generate pyramid of elevation tiles for given sector of world map"
   [& {:keys [sector prefix y x]}]
-  (elevation-tiles {:image (str "elevation." sector ".raw") :level 4 :prefix prefix :y-offset y :x-offset x})
-  (elevation-tiles {:image (str "elevation." sector "." 2 ".raw") :level 3 :prefix prefix :y-offset y :x-offset x})
-  (elevation-tiles {:image (str "elevation." sector "." 3 ".raw") :level 2 :prefix prefix :y-offset y :x-offset x})
-  (elevation-tiles {:image (str "elevation." sector "." 4 ".raw") :level 1 :prefix prefix :y-offset y :x-offset x})
-  (elevation-tiles {:image (str "elevation." sector "." 5 ".raw") :level 0 :prefix prefix :y-offset y :x-offset x}))
+  (elevation-tiles {:image (str "tmp/elevation." sector ".raw") :level 4 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "tmp/elevation." sector "." 2 ".raw") :level 3 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "tmp/elevation." sector "." 3 ".raw") :level 2 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "tmp/elevation." sector "." 4 ".raw") :level 1 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "tmp/elevation." sector "." 5 ".raw") :level 0 :prefix prefix :y-offset y :x-offset x}))
 
 (defn elevation-sector
   "Generate scale pyramid and elevation tiles for given sector"
