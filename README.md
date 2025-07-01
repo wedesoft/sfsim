@@ -64,9 +64,9 @@ cd ..
 * Perform all build steps above: `clj -T:build all`
 * Enable integration tests (requiring results of above build steps): `touch .integration`
 * Build JAR file: `clj -T:build uber`
-* Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config.json` (delete out-windows folder first)
+* Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json` (delete out-windows folder first)
 * Create Windows installer: `makensis scripts/nsis-config.nsi`
-* Upload to Steam: `sdk\tools\ContentBuilder\builder\steamcmd.exe +login <account_name> <password> +run_app_build C:\Users\....\sfsim\scripts\simple_app_build.vdf +quit`
+* Upload to Steam: `sdk\tools\ContentBuilder\builder\steamcmd.exe +login <account_name> <password> +run_app_build C:\Users\....\sfsim\scripts\sfsim_playtest_windows.vdf +quit`
 
 # Lint
 
