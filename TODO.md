@@ -1,5 +1,4 @@
 # TODO
-* esc toggles menu
 * add fullscreen toggle, make sure UI works
 * indicate thrust, speed, height, and fps
 * add joystick

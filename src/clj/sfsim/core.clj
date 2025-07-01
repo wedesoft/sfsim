@@ -556,6 +556,7 @@
 (def gear (atom 0.0))
 (def gear-down (atom true))
 (def prev-gear-req (atom false))
+(def prev-mn-req (atom false))
 
 (defn -main
   "Space flight simulator main function"
@@ -580,7 +581,7 @@
         (reset! slew false))
       (let [t1       (System/currentTimeMillis)
             dt       (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
-            mn       (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
+            mn-req   (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
             gear-req (if (@keystates GLFW/GLFW_KEY_G) true false)
             ra       (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
             rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
@@ -594,7 +595,9 @@
             d        (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
             dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))]
-        (when mn (reset! menu main-dialog))
+        (when (and mn-req (not @prev-mn-req))
+          (swap! menu #(if % nil main-dialog)))
+        (reset! prev-mn-req mn-req)
         (when (and gear-req (not @prev-gear-req))
           (swap! gear-down not))
         (reset! prev-gear-req gear-req)
