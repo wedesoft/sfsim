@@ -104,15 +104,22 @@
 (def fix-fps false)
 (def fullscreen playback)
 
-(def monitor (GLFW/glfwGetPrimaryMonitor))
-(def mode (GLFW/glfwGetVideoMode monitor))
+(def window-width (atom nil))
+(def window-height (atom nil))
 
-(def desktop-width (.width ^GLFWVidMode mode))
-(def desktop-height (.height ^GLFWVidMode mode))
-(def window-width (atom (if fullscreen desktop-width 854)))
-(def window-height (atom (if fullscreen desktop-height 480)))
-(def window (make-window "sfsim" @window-width @window-height (not fullscreen)))
-(GLFW/glfwShowWindow window)
+(defn create-window
+  [fullscreen]
+  (let [monitor (GLFW/glfwGetPrimaryMonitor)
+        mode (GLFW/glfwGetVideoMode monitor)
+        desktop-width (.width ^GLFWVidMode mode)
+        desktop-height (.height ^GLFWVidMode mode)
+        width (if fullscreen desktop-width 854)
+        height (if fullscreen desktop-height 480)
+        window (make-window "sfsim" width height (not fullscreen))]
+    (GLFW/glfwShowWindow window)
+    window))
+
+(def window (atom (create-window fullscreen)))
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
@@ -266,11 +273,11 @@
           (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press))))))
 
 
-(GLFW/glfwSetKeyCallback window keyboard-callback)
+(GLFW/glfwSetKeyCallback @window keyboard-callback)
 
 
 (GLFW/glfwSetCharCallback
-  window
+  @window
   (reify GLFWCharCallbackI
     (invoke
       [_this _window codepoint]
@@ -278,7 +285,7 @@
 
 
 (GLFW/glfwSetCursorPosCallback
-  window
+  @window
   (reify GLFWCursorPosCallbackI
     (invoke
       [_this _window xpos ypos]
@@ -286,14 +293,14 @@
 
 
 (GLFW/glfwSetMouseButtonCallback
-  window
+  @window
   (reify GLFWMouseButtonCallbackI
     (invoke
       [_this _window button action _mods]
       (let [stack (MemoryStack/stackPush)
             cx    (.mallocDouble stack 1)
             cy    (.mallocDouble stack 1)]
-        (GLFW/glfwGetCursorPos ^long window cx cy)
+        (GLFW/glfwGetCursorPos ^long _window cx cy)
         (let [x        (int (.get cx 0))
               y        (int (.get cy 0))
               nkbutton (cond
@@ -514,7 +521,7 @@
                       (when (gui/button-label gui "Resume")
                         (reset! menu nil))
                       (when (gui/button-label gui "Quit")
-                        (GLFW/glfwSetWindowShouldClose window true))))
+                        (GLFW/glfwSetWindowShouldClose @window true))))
 
 
 (defn stick
@@ -562,8 +569,8 @@
   (let [n  (atom 0)
         w  (int-array 1)
         h  (int-array 1)]
-    (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< @n (count @recording))))
-      (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
+    (while (and (not (GLFW/glfwWindowShouldClose @window)) (or (not playback) (< @n (count @recording))))
+      (GLFW/glfwGetWindowSize ^long @window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
       (planet/update-tile-tree planet-renderer tile-tree @window-width (:position @pose))
@@ -738,7 +745,7 @@
                                                                (planet/get-current-tree tile-tree))
                                    ;; Render clouds above the horizon
                                    (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
-          (onscreen-render window
+          (onscreen-render @window
                            (if (< (:sfsim.render/z-near scene-render-vars) (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
                                (clear (vec3 0 1 0) 1.0 0)
@@ -807,7 +814,7 @@
   (opacity/destroy-opacity-renderer opacity-renderer)
   (gui/destroy-nuklear-gui gui)
   (gui/destroy-font-texture bitmap-font)
-  (destroy-window window)
+  (destroy-window @window)
   (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
   (when (and (not playback) @recording)
