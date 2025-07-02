@@ -537,7 +537,7 @@
 
 (defn info
   [gui h text]
-  (gui/nuklear-window gui "info" 10 (- h 42) 400 32
+  (gui/nuklear-window gui "info" 10 (- h 42) 480 32
                       (gui/layout-row-dynamic gui 32 1)
                       (gui/text-label gui text)))
 
@@ -560,6 +560,7 @@
 (def prev-gear-req (atom false))
 (def prev-mn-req (atom false))
 (def prev-fullscr (atom false))
+(def prev-pause (atom false))
 
 (defn -main
   "Space flight simulator main function"
@@ -582,8 +583,9 @@
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
       (planet/update-tile-tree planet-renderer tile-tree @window-width (:position @pose))
-      (when (@keystates GLFW/GLFW_KEY_P)
-        (reset! slew true))
+      (when (and (@keystates GLFW/GLFW_KEY_P) (not @prev-pause))
+        (swap! slew not))
+      (reset! prev-pause (@keystates GLFW/GLFW_KEY_P))
       (when (@keystates GLFW/GLFW_KEY_X)
         (jolt/set-orientation body (:orientation @pose))
         (jolt/set-translation body (:position @pose))
@@ -592,8 +594,6 @@
               s       (min @speed max-speed)]
           (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.3))))
          (jolt/set-angular-velocity body (vec3 0 0 0)))
-      (when (@keystates GLFW/GLFW_KEY_O)
-        (reset! slew false))
       (let [t1       (System/currentTimeMillis)
             dt       (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn-req   (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
@@ -781,11 +781,13 @@
                              (reset! focus-old nil)
                              (@menu gui @window-width @window-height)
                              (reset! focus-new nil))
-                           (stick gui t u r thrust)
-                           (info gui @window-height
-                                 (format "\rheight = %.1f m, speed = %.1f m/s, fps %.1f"
-                                         (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-                                         (mag (jolt/get-linear-velocity body)) (/ 1000.0 dt)))
+                           (when (not playback)
+                             (stick gui t u r thrust)
+                             (info gui @window-height
+                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps %5.1f%s"
+                                           (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+                                           (mag (jolt/get-linear-velocity body)) (/ 1000.0 dt)
+                                           (if @slew ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)

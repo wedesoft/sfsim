@@ -1,7 +1,6 @@
 # TODO
 * add joystick
 * add lift or force caused by pitch rate
-* p toggles pause
 * following camera
 * make new trailer
 * articles: aerodynamics of game, Clojure game development
