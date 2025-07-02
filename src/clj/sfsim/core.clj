@@ -171,10 +171,6 @@
 (def scene (model/load-scene scene-renderer model))
 (def convex-hulls (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 
-; (def main-wheel-left-path (model/get-node-path scene "Main Wheel Left"))
-; (def main-wheel-right-path (model/get-node-path scene "Main Wheel Right"))
-; (def front-wheel-path (model/get-node-path scene "Front Wheel"))
-
 (def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Left"))))
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
 (def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
