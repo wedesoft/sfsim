@@ -415,8 +415,8 @@
 
 
 (defn location-dialog
-  [gui]
-  (gui/nuklear-window gui "location" (quot (- @window-width 320) 2) (quot (- @window-height (* 38 4)) 2) 320 (* 38 4)
+  [gui window-width window-height]
+  (gui/nuklear-window gui "location" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 2)
                       (gui/text-label gui "Longitude (East)")
                       (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
@@ -466,8 +466,8 @@
 
 
 (defn datetime-dialog
-  [gui]
-  (gui/nuklear-window gui "datetime" (quot (- @window-width 320) 2) (quot (- @window-height (* 38 3)) 2) 320 (* 38 3)
+  [gui window-width window-height]
+  (gui/nuklear-window gui "datetime" (quot (- window-width 320) 2) (quot (- window-height (* 38 3)) 2) 320 (* 38 3)
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.4)
                                       (gui/text-label gui "Date")
@@ -502,8 +502,8 @@
 
 
 (defn main-dialog
-  [gui]
-  (gui/nuklear-window gui "menu" (quot (- @window-width 320) 2) (quot (- @window-height (* 38 4)) 2) 320 (* 38 4)
+  [gui window-width window-height]
+  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 1)
                       (when (gui/button-label gui "Location")
                         (location-dialog-set position-data @pose)
@@ -764,7 +764,7 @@
                            (setup-rendering @window-width @window-height :sfsim.render/noculling false)
                            (when @menu
                              (reset! focus-old nil)
-                             (@menu gui)
+                             (@menu gui @window-width @window-height)
                              (reset! focus-new nil))
                            (stick gui t u r)
                            (gui/render-nuklear-gui gui @window-width @window-height))
