@@ -562,7 +562,11 @@
               desktop-height (.height ^GLFWVidMode mode)]
           (GLFW/glfwSetWindowMonitor @window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)))
       (when (= @bomb -30)
-        (GLFW/glfwSetWindowMonitor @window 0 0 0 854 480 GLFW/GLFW_DONT_CARE))
+        (let [monitor (GLFW/glfwGetPrimaryMonitor)
+              mode (GLFW/glfwGetVideoMode monitor)
+              desktop-width (.width ^GLFWVidMode mode)
+              desktop-height (.height ^GLFWVidMode mode)]
+          (GLFW/glfwSetWindowMonitor @window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE)))
       (GLFW/glfwGetWindowSize ^long @window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
