@@ -116,7 +116,6 @@
         width (if fullscreen desktop-width 854)
         height (if fullscreen desktop-height 480)
         window (make-window "sfsim" width height (not fullscreen))]
-    (GLFW/glfwShowWindow window)
     window))
 
 (def window (atom (create-window fullscreen)))
