@@ -97,7 +97,7 @@
 (def playback false)
 ; (def fix-fps 30.0)
 (def fix-fps false)
-(def fullscreen playback)
+(def fullscreen (atom playback))
 
 (def window-width (atom nil))
 (def window-height (atom nil))
@@ -113,7 +113,7 @@
         window (make-window "sfsim" width height (not fullscreen))]
     window))
 
-(def window (atom (create-window fullscreen)))
+(def window (atom (create-window @fullscreen)))
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
@@ -544,8 +544,7 @@
 (def gear-down (atom true))
 (def prev-gear-req (atom false))
 (def prev-mn-req (atom false))
-
-(def bomb (atom 100))
+(def prev-fullscr (atom false))
 
 (defn -main
   "Space flight simulator main function"
@@ -554,19 +553,16 @@
         w  (int-array 1)
         h  (int-array 1)]
     (while (and (not (GLFW/glfwWindowShouldClose @window)) (or (not playback) (< @n (count @recording))))
-      (swap! bomb dec)
-      (when (zero? @bomb)
+      (when (and (@keystates GLFW/GLFW_KEY_F) (not @prev-fullscr))
+        (swap! fullscreen not)
         (let [monitor (GLFW/glfwGetPrimaryMonitor)
               mode (GLFW/glfwGetVideoMode monitor)
               desktop-width (.width ^GLFWVidMode mode)
               desktop-height (.height ^GLFWVidMode mode)]
-          (GLFW/glfwSetWindowMonitor @window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)))
-      (when (= @bomb -30)
-        (let [monitor (GLFW/glfwGetPrimaryMonitor)
-              mode (GLFW/glfwGetVideoMode monitor)
-              desktop-width (.width ^GLFWVidMode mode)
-              desktop-height (.height ^GLFWVidMode mode)]
-          (GLFW/glfwSetWindowMonitor @window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE)))
+          (if @fullscreen
+            (GLFW/glfwSetWindowMonitor @window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
+            (GLFW/glfwSetWindowMonitor @window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE))))
+      (reset! prev-fullscr (@keystates GLFW/GLFW_KEY_F))
       (GLFW/glfwGetWindowSize ^long @window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
@@ -587,6 +583,7 @@
             dt       (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn-req   (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
             gear-req (if (@keystates GLFW/GLFW_KEY_G) true false)
+            fullscr  (if (@keystates GLFW/GLFW_KEY_G) true false)
             ra       (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
             rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
             rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
@@ -596,7 +593,7 @@
             t        (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
             thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) (* 30.0 mass) 0.0)
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
-            d        (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
+            d        (if (@keystates GLFW/GLFW_KEY_COMMA) 0.05 (if (@keystates GLFW/GLFW_KEY_PERIOD) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
             dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))]
         (when (and mn-req (not @prev-mn-req))
