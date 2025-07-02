@@ -507,23 +507,31 @@
 
 
 (defn stick
-  [gui t u r]
+  [gui t u r thrust]
   (let [stack (MemoryStack/stackPush)
         rect (NkRect/malloc stack)
         rgb  (NkColor/malloc stack)]
-    (gui/nuklear-window gui "stick" 10 10 80 100
+    (gui/nuklear-window gui "stick" 10 10 80 80
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
                                                   (Nuklear/nk_rect (- 45 (* t 30)) (- 45 (* u 30)) 10 10 rect)
-                                                  (Nuklear/nk_rgb 255 0 0 rgb)))
+                                                  (Nuklear/nk_rgb 255 0 0 rgb))))
+    (gui/nuklear-window gui "rudder" 10 95 80 20
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 20 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect (- 45 (* r 30)) 90 10 10 rect)
-                                                  (Nuklear/nk_rgb 255 0 255 rgb)))))
+                                                  (Nuklear/nk_rect (- 45 (* r 30)) 100 10 10 rect)
+                                                  (Nuklear/nk_rgb 255 0 255 rgb))))
+    (gui/nuklear-window gui "thrust" 95 10 20 80
+                        (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
+                          (gui/layout-row-dynamic gui 80 1)
+                          (Nuklear/nk_widget rect (:sfsim.gui/context gui))
+                          (Nuklear/nk_fill_circle canvas
+                                                  (Nuklear/nk_rect 100 (- 75 (* 60 thrust)) 10 10 rect)
+                                                  (Nuklear/nk_rgb 255 255 255 rgb)))))
   (MemoryStack/stackPop))
 
 
@@ -590,7 +598,7 @@
             u        (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 0))
             r        (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 0))
             t        (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
-            thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) (* 30.0 mass) 0.0)
+            thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) 1 0)
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_COMMA) 0.05 (if (@keystates GLFW/GLFW_KEY_PERIOD) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
@@ -633,7 +641,7 @@
                     (jolt/remove-and-destroy-constraint @vehicle)
                     (reset! vehicle nil)))
                 (when @vehicle (jolt/set-brake-input @vehicle brake))
-                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
+                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* thrust 30.0 mass) 0 0)))
                 (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body)
@@ -766,7 +774,7 @@
                              (reset! focus-old nil)
                              (@menu gui @window-width @window-height)
                              (reset! focus-new nil))
-                           (stick gui t u r)
+                           (stick gui t u r thrust)
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
