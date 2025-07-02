@@ -239,9 +239,7 @@
 
 
 (def keyboard-callback
-  (reify GLFWKeyCallbackI
-    (invoke
-      [_this _window k _scancode action mods]
+  (fn [_window k _scancode action mods]
       (when (= action GLFW/GLFW_PRESS)
         (swap! keystates assoc k true))
       (when (= action GLFW/GLFW_RELEASE)
@@ -265,7 +263,7 @@
           (= k GLFW/GLFW_KEY_HOME)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_START press)
           (= k GLFW/GLFW_KEY_END)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_END press)
           (= k GLFW/GLFW_KEY_LEFT_SHIFT)  (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
-          (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press))))))
+          (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)))))
 
 
 (GLFW/glfwSetKeyCallback @window keyboard-callback)
@@ -558,6 +556,8 @@
 (def prev-gear-req (atom false))
 (def prev-mn-req (atom false))
 
+(def bomb (atom 100))
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -565,6 +565,15 @@
         w  (int-array 1)
         h  (int-array 1)]
     (while (and (not (GLFW/glfwWindowShouldClose @window)) (or (not playback) (< @n (count @recording))))
+      (swap! bomb dec)
+      (when (zero? @bomb)
+        (let [monitor (GLFW/glfwGetPrimaryMonitor)
+              mode (GLFW/glfwGetVideoMode monitor)
+              desktop-width (.width ^GLFWVidMode mode)
+              desktop-height (.height ^GLFWVidMode mode)]
+          (GLFW/glfwSetWindowMonitor @window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)))
+      (when (= @bomb -30)
+        (GLFW/glfwSetWindowMonitor @window 0 0 0 854 480 GLFW/GLFW_DONT_CARE))
       (GLFW/glfwGetWindowSize ^long @window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
