@@ -535,6 +535,13 @@
   (MemoryStack/stackPop))
 
 
+(defn info
+  [gui h text]
+  (gui/nuklear-window gui "info" 10 (- h 42) 400 32
+                      (gui/layout-row-dynamic gui 32 1)
+                      (gui/text-label gui text)))
+
+
 (def frame-index (atom 0))
 (def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
@@ -775,6 +782,10 @@
                              (@menu gui @window-width @window-height)
                              (reset! focus-new nil))
                            (stick gui t u r thrust)
+                           (info gui @window-height
+                                 (format "\rheight = %.1f m, speed = %.1f m/s, fps %.1f"
+                                         (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+                                         (mag (jolt/get-linear-velocity body)) (/ 1000.0 dt)))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
@@ -795,11 +806,6 @@
         (GLFW/glfwPollEvents)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
         (swap! n inc)
-        (when (zero? (mod @n 10))
-          (print (format "\rheight = %.1f, speed = %.1f, dist (r/f) %.0f dt %.3f"
-                         (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-                         (mag (jolt/get-linear-velocity body)) @dist (* dt 0.001)))
-          (flush))
         (if fix-fps (reset! t0 (System/currentTimeMillis)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)
   (model/destroy-scene scene)
