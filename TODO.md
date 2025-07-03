@@ -1,4 +1,6 @@
 # TODO
+* use transients when updating transforms in model
+* add quit goal to build.clj
 * add fullscreen toggle
 * indicate thrust, speed, height, and fps
 * add joystick
