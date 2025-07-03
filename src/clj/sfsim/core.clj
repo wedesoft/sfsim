@@ -26,7 +26,6 @@
                           texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
                           setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
-    [sfsim.util :refer (sqr)]
     [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
     (fastmath.vector
@@ -239,7 +238,9 @@
 
 
 (def keyboard-callback
-  (fn [_window k _scancode action mods]
+  (reify GLFWKeyCallbackI
+    (invoke
+      [_this _window k _scancode action mods]
       (when (= action GLFW/GLFW_PRESS)
         (swap! keystates assoc k true))
       (when (= action GLFW/GLFW_RELEASE)
@@ -263,7 +264,7 @@
           (= k GLFW/GLFW_KEY_HOME)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_START press)
           (= k GLFW/GLFW_KEY_END)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_END press)
           (= k GLFW/GLFW_KEY_LEFT_SHIFT)  (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
-          (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)))))
+          (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press))))))
 
 
 (GLFW/glfwSetKeyCallback @window keyboard-callback)
@@ -572,6 +573,7 @@
 (def prev-mn-req (atom false))
 (def prev-fullscr (atom false))
 (def prev-pause (atom false))
+
 
 (defn -main
   "Space flight simulator main function"
