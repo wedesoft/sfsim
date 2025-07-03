@@ -26,7 +26,6 @@
                           texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
                           setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
-    [sfsim.util :refer (sqr)]
     [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
     (fastmath.vector
@@ -102,17 +101,23 @@
 (def playback false)
 ; (def fix-fps 30.0)
 (def fix-fps false)
-(def fullscreen playback)
+(def fullscreen (atom playback))
 
-(def monitor (GLFW/glfwGetPrimaryMonitor))
-(def mode (GLFW/glfwGetVideoMode monitor))
+(def window-width (atom nil))
+(def window-height (atom nil))
 
-(def desktop-width (.width ^GLFWVidMode mode))
-(def desktop-height (.height ^GLFWVidMode mode))
-(def window-width (atom (if fullscreen desktop-width 854)))
-(def window-height (atom (if fullscreen desktop-height 480)))
-(def window (make-window "sfsim" @window-width @window-height (not fullscreen)))
-(GLFW/glfwShowWindow window)
+(defn create-window
+  [fullscreen]
+  (let [monitor (GLFW/glfwGetPrimaryMonitor)
+        mode (GLFW/glfwGetVideoMode monitor)
+        desktop-width (.width ^GLFWVidMode mode)
+        desktop-height (.height ^GLFWVidMode mode)
+        width (if fullscreen desktop-width 854)
+        height (if fullscreen desktop-height 480)
+        window (make-window "sfsim" width height (not fullscreen))]
+    window))
+
+(def window (atom (create-window @fullscreen)))
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
@@ -164,10 +169,6 @@
 (def model (model/read-gltf "venturestar.glb"))
 (def scene (model/load-scene scene-renderer model))
 (def convex-hulls (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
-
-; (def main-wheel-left-path (model/get-node-path scene "Main Wheel Left"))
-; (def main-wheel-right-path (model/get-node-path scene "Main Wheel Right"))
-; (def front-wheel-path (model/get-node-path scene "Front Wheel"))
 
 (def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Left"))))
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
@@ -266,11 +267,11 @@
           (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press))))))
 
 
-(GLFW/glfwSetKeyCallback window keyboard-callback)
+(GLFW/glfwSetKeyCallback @window keyboard-callback)
 
 
 (GLFW/glfwSetCharCallback
-  window
+  @window
   (reify GLFWCharCallbackI
     (invoke
       [_this _window codepoint]
@@ -278,7 +279,7 @@
 
 
 (GLFW/glfwSetCursorPosCallback
-  window
+  @window
   (reify GLFWCursorPosCallbackI
     (invoke
       [_this _window xpos ypos]
@@ -286,14 +287,14 @@
 
 
 (GLFW/glfwSetMouseButtonCallback
-  window
+  @window
   (reify GLFWMouseButtonCallbackI
     (invoke
       [_this _window button action _mods]
       (let [stack (MemoryStack/stackPush)
             cx    (.mallocDouble stack 1)
             cy    (.mallocDouble stack 1)]
-        (GLFW/glfwGetCursorPos ^long window cx cy)
+        (GLFW/glfwGetCursorPos ^long _window cx cy)
         (let [x        (int (.get cx 0))
               y        (int (.get cy 0))
               nkbutton (cond
@@ -415,8 +416,8 @@
 
 
 (defn location-dialog
-  [gui]
-  (gui/nuklear-window gui "location" (quot (- @window-width 320) 2) (quot (- @window-height (* 38 4)) 2) 320 (* 38 4)
+  [gui window-width window-height]
+  (gui/nuklear-window gui "location" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 2)
                       (gui/text-label gui "Longitude (East)")
                       (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
@@ -466,8 +467,8 @@
 
 
 (defn datetime-dialog
-  [gui]
-  (gui/nuklear-window gui "datetime" (quot (- @window-width 320) 2) (quot (- @window-height (* 38 3)) 2) 320 (* 38 3)
+  [gui window-width window-height]
+  (gui/nuklear-window gui "datetime" (quot (- window-width 320) 2) (quot (- window-height (* 38 3)) 2) 320 (* 38 3)
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.4)
                                       (gui/text-label gui "Date")
@@ -502,8 +503,8 @@
 
 
 (defn main-dialog
-  [gui]
-  (gui/nuklear-window gui "menu" (quot (- @window-width 320) 2) (quot (- @window-height (* 38 4)) 2) 320 (* 38 4)
+  [gui window-width window-height]
+  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 1)
                       (when (gui/button-label gui "Location")
                         (location-dialog-set position-data @pose)
@@ -514,28 +515,43 @@
                       (when (gui/button-label gui "Resume")
                         (reset! menu nil))
                       (when (gui/button-label gui "Quit")
-                        (GLFW/glfwSetWindowShouldClose window true))))
+                        (GLFW/glfwSetWindowShouldClose @window true))))
 
 
 (defn stick
-  [gui t u r]
+  [gui t u r thrust]
   (let [stack (MemoryStack/stackPush)
         rect (NkRect/malloc stack)
         rgb  (NkColor/malloc stack)]
-    (gui/nuklear-window gui "stick" 10 10 80 100
+    (gui/nuklear-window gui "stick" 10 10 80 80
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
                                                   (Nuklear/nk_rect (- 45 (* t 30)) (- 45 (* u 30)) 10 10 rect)
-                                                  (Nuklear/nk_rgb 255 0 0 rgb)))
+                                                  (Nuklear/nk_rgb 255 0 0 rgb))))
+    (gui/nuklear-window gui "rudder" 10 95 80 20
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 20 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect (- 45 (* r 30)) 90 10 10 rect)
-                                                  (Nuklear/nk_rgb 255 0 255 rgb)))))
+                                                  (Nuklear/nk_rect (- 45 (* r 30)) 100 10 10 rect)
+                                                  (Nuklear/nk_rgb 255 0 255 rgb))))
+    (gui/nuklear-window gui "thrust" 95 10 20 80
+                        (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
+                          (gui/layout-row-dynamic gui 80 1)
+                          (Nuklear/nk_widget rect (:sfsim.gui/context gui))
+                          (Nuklear/nk_fill_circle canvas
+                                                  (Nuklear/nk_rect 100 (- 75 (* 60 thrust)) 10 10 rect)
+                                                  (Nuklear/nk_rgb 255 255 255 rgb)))))
   (MemoryStack/stackPop))
+
+
+(defn info
+  [gui h text]
+  (gui/nuklear-window gui "info" 10 (- h 42) 480 32
+                      (gui/layout-row-dynamic gui 32 1)
+                      (gui/text-label gui text)))
 
 
 (def frame-index (atom 0))
@@ -555,6 +571,9 @@
 (def gear-down (atom true))
 (def prev-gear-req (atom false))
 (def prev-mn-req (atom false))
+(def prev-fullscr (atom false))
+(def prev-pause (atom false))
+
 
 (defn -main
   "Space flight simulator main function"
@@ -562,13 +581,24 @@
   (let [n  (atom 0)
         w  (int-array 1)
         h  (int-array 1)]
-    (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< @n (count @recording))))
-      (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
+    (while (and (not (GLFW/glfwWindowShouldClose @window)) (or (not playback) (< @n (count @recording))))
+      (when (and (@keystates GLFW/GLFW_KEY_F) (not @prev-fullscr))
+        (swap! fullscreen not)
+        (let [monitor (GLFW/glfwGetPrimaryMonitor)
+              mode (GLFW/glfwGetVideoMode monitor)
+              desktop-width (.width ^GLFWVidMode mode)
+              desktop-height (.height ^GLFWVidMode mode)]
+          (if @fullscreen
+            (GLFW/glfwSetWindowMonitor @window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
+            (GLFW/glfwSetWindowMonitor @window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE))))
+      (reset! prev-fullscr (@keystates GLFW/GLFW_KEY_F))
+      (GLFW/glfwGetWindowSize ^long @window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
       (planet/update-tile-tree planet-renderer tile-tree @window-width (:position @pose))
-      (when (@keystates GLFW/GLFW_KEY_P)
-        (reset! slew true))
+      (when (and (@keystates GLFW/GLFW_KEY_P) (not @prev-pause))
+        (swap! slew not))
+      (reset! prev-pause (@keystates GLFW/GLFW_KEY_P))
       (when (@keystates GLFW/GLFW_KEY_X)
         (jolt/set-orientation body (:orientation @pose))
         (jolt/set-translation body (:position @pose))
@@ -577,8 +607,6 @@
               s       (min @speed max-speed)]
           (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.3))))
          (jolt/set-angular-velocity body (vec3 0 0 0)))
-      (when (@keystates GLFW/GLFW_KEY_O)
-        (reset! slew false))
       (let [t1       (System/currentTimeMillis)
             dt       (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
             mn-req   (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
@@ -590,9 +618,9 @@
             u        (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 0))
             r        (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 0))
             t        (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
-            thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) (* 30.0 mass) 0.0)
+            thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) 1 0)
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
-            d        (if (@keystates GLFW/GLFW_KEY_R) 0.05 (if (@keystates GLFW/GLFW_KEY_F) -0.05 0))
+            d        (if (@keystates GLFW/GLFW_KEY_COMMA) 0.05 (if (@keystates GLFW/GLFW_KEY_PERIOD) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
             dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))]
         (when (and mn-req (not @prev-mn-req))
@@ -633,7 +661,7 @@
                     (jolt/remove-and-destroy-constraint @vehicle)
                     (reset! vehicle nil)))
                 (when @vehicle (jolt/set-brake-input @vehicle brake))
-                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 thrust 0 0)))
+                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* thrust 30.0 mass) 0 0)))
                 (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body)
@@ -738,7 +766,7 @@
                                                                (planet/get-current-tree tile-tree))
                                    ;; Render clouds above the horizon
                                    (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
-          (onscreen-render window
+          (onscreen-render @window
                            (if (< (:sfsim.render/z-near scene-render-vars) (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
                                (clear (vec3 0 1 0) 1.0 0)
@@ -764,9 +792,15 @@
                            (setup-rendering @window-width @window-height :sfsim.render/noculling false)
                            (when @menu
                              (reset! focus-old nil)
-                             (@menu gui)
+                             (@menu gui @window-width @window-height)
                              (reset! focus-new nil))
-                           (stick gui t u r)
+                           (when (not playback)
+                             (stick gui t u r thrust)
+                             (info gui @window-height
+                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps %5.1f%s"
+                                           (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+                                           (mag (jolt/get-linear-velocity body)) (/ 1000.0 dt)
+                                           (if @slew ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
@@ -787,11 +821,6 @@
         (GLFW/glfwPollEvents)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
         (swap! n inc)
-        (when (zero? (mod @n 10))
-          (print (format "\rheight = %.1f, speed = %.1f, dist (r/f) %.0f dt %.3f"
-                         (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-                         (mag (jolt/get-linear-velocity body)) @dist (* dt 0.001)))
-          (flush))
         (if fix-fps (reset! t0 (System/currentTimeMillis)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)
   (model/destroy-scene scene)
@@ -807,7 +836,7 @@
   (opacity/destroy-opacity-renderer opacity-renderer)
   (gui/destroy-nuklear-gui gui)
   (gui/destroy-font-texture bitmap-font)
-  (destroy-window window)
+  (destroy-window @window)
   (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
   (when (and (not playback) @recording)

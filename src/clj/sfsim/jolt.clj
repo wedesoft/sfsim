@@ -1,7 +1,6 @@
 (ns sfsim.jolt
   "Interface with native Jolt physics library"
   (:require
-    [clojure.spec.alpha :as s]
     [coffi.ffi :refer (defcfn defconst) :as ffi]
     [coffi.mem :as mem]
     [fastmath.matrix :refer (mat3x3 mulm mulv mat4x4)]

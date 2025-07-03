@@ -1,9 +1,8 @@
 # TODO
-* add fullscreen toggle
-* indicate thrust, speed, height, and fps
+* use transients when updating transforms in model
+* add quit goal to build.clj
 * add joystick
 * add lift or force caused by pitch rate
-* p toggles pause
 * following camera
 * make new trailer
 * articles: aerodynamics of game, Clojure game development
