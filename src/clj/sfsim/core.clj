@@ -26,13 +26,18 @@
                           texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
                           setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
+    [sfsim.util :refer (sqr)]
     [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
     (fastmath.vector
       Vec3)
     (org.lwjgl.glfw
       GLFW
-      GLFWVidMode)
+      GLFWVidMode
+      GLFWCharCallbackI
+      GLFWCursorPosCallbackI
+      GLFWKeyCallbackI
+      GLFWMouseButtonCallbackI)
     (org.lwjgl.opengl
       GL11)
     (org.lwjgl.nuklear
@@ -266,19 +271,25 @@
 
 (GLFW/glfwSetCharCallback
   @window
-  (fn [_window codepoint]
-      (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
+  (reify GLFWCharCallbackI
+    (invoke
+      [_this _window codepoint]
+      (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))))
 
 
 (GLFW/glfwSetCursorPosCallback
   @window
-  (fn [_window xpos ypos]
-      (Nuklear/nk_input_motion (:sfsim.gui/context gui) (int xpos) (int ypos))))
+  (reify GLFWCursorPosCallbackI
+    (invoke
+      [_this _window xpos ypos]
+      (Nuklear/nk_input_motion (:sfsim.gui/context gui) (int xpos) (int ypos)))))
 
 
 (GLFW/glfwSetMouseButtonCallback
   @window
-  (fn [_window button action _mods]
+  (reify GLFWMouseButtonCallbackI
+    (invoke
+      [_this _window button action _mods]
       (let [stack (MemoryStack/stackPush)
             cx    (.mallocDouble stack 1)
             cy    (.mallocDouble stack 1)]
@@ -290,7 +301,7 @@
                          (= button GLFW/GLFW_MOUSE_BUTTON_MIDDLE) Nuklear/NK_BUTTON_MIDDLE
                          :else Nuklear/NK_BUTTON_LEFT)]
           (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))
-          (MemoryStack/stackPop)))))
+          (MemoryStack/stackPop))))))
 
 
 (def menu (atom nil))

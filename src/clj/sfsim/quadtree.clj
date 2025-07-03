@@ -9,7 +9,7 @@
     [sfsim.image :refer (slurp-image-tar slurp-normals-tar get-vector3)]
     [sfsim.matrix :refer (fvec3)]
     [sfsim.plane :refer (points->plane ray-plane-intersection-parameter)]
-    [sfsim.util :refer (cube-tar cube-file-name slurp-floats-gz-tar slurp-bytes-gz-tar dissoc-in untar tar-close
+    [sfsim.util :refer (cube-path cube-tar cube-file-name slurp-floats-gz-tar slurp-bytes-gz-tar dissoc-in untar tar-close
                         make-lru-cache N N0)]))
 
 
