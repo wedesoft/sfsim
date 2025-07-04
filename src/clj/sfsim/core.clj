@@ -575,6 +575,10 @@
 (def prev-pause (atom false))
 
 
+(def prev-thrust (atom false))
+(def thrust (atom 0.0))
+
+
 (defn deadzone
   [axis]
   (let [epsilon 0.08
@@ -637,13 +641,17 @@
             rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
             brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.0)
             pitch    (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 (- (deadzone (nth axes 1)))))
-            rudder   (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 (* 0.5 (- (nth axes 2) (nth axes 5)))))
+            rudder   (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 (- (deadzone (nth axes 3)))))
             roll     (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 (- (deadzone (nth axes 0)))))
-            thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) 1 0)
+            thrust-r (if (@keystates GLFW/GLFW_KEY_SPACE) true false)
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_COMMA) 0.05 (if (@keystates GLFW/GLFW_KEY_PERIOD) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
             dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))]
+        (swap! thrust (fn [x] (min 1.0 (max 0.0 (- x (* 0.1 (deadzone (nth axes 4))))))))
+        (when (not (= thrust-r @prev-thrust))
+          (reset! thrust (if thrust-r 1.0 0.0)))
+        (reset! prev-thrust thrust-r)
         (when (and mn-req (not @prev-mn-req))
           (swap! menu #(if % nil main-dialog)))
         (reset! prev-mn-req mn-req)
@@ -682,7 +690,7 @@
                     (jolt/remove-and-destroy-constraint @vehicle)
                     (reset! vehicle nil)))
                 (when @vehicle (jolt/set-brake-input @vehicle brake))
-                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* thrust 30.0 mass) 0 0)))
+                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* @thrust 30.0 mass) 0 0)))
                 (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body)
@@ -816,7 +824,7 @@
                              (@menu gui @window-width @window-height)
                              (reset! focus-new nil))
                            (when (not playback)
-                             (stick gui roll pitch rudder thrust)
+                             (stick gui roll pitch rudder @thrust)
                              (info gui @window-height
                                    (format "\rheight = %10.1f m, speed = %7.1f m/s, fps %5.1f%s"
                                            (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
