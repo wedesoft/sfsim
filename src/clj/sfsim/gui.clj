@@ -105,9 +105,9 @@
   "Create Nuklear allocation object"
   []
   (let [result (NkAllocator/create)]
-    (.alloc result (reify NkPluginAllocI
+    (.alloc result (reify NkPluginAllocI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
                      (invoke [_this _handle _old size] (MemoryUtil/nmemAllocChecked size))))
-    (.mfree result (reify NkPluginFreeI
+    (.mfree result (reify NkPluginFreeI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
                      (invoke [_this _handle ptr] (MemoryUtil/nmemFree ptr))))
     result))
 
@@ -319,7 +319,7 @@
   {:malli/schema [:=> [:cat :some :some] :any]}
   [{::keys [fontinfo scale]} font]
   (.width ^NkUserFont font
-          (reify NkTextWidthCallbackI
+          (reify NkTextWidthCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
             (invoke
               [_this _handle _h text len]
               (let [stack     (MemoryStack/stackPush)
@@ -356,7 +356,7 @@
   (let [bitmap-width  (:sfsim.image/width image)
         bitmap-height (:sfsim.image/height image)]
     (.query ^NkUserFont font
-            (reify NkQueryFontGlyphCallbackI
+            (reify NkQueryFontGlyphCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
               (invoke
                 [_this _handle font-height glyph codepoint _next-codepoint]
                 (let [stack   (MemoryStack/stackPush)
@@ -469,11 +469,11 @@
   [text max-size text-filter-type]
   (let [text-filter
         (case text-filter-type
-          ::filter-ascii   (reify NkPluginFilterI
+          ::filter-ascii   (reify NkPluginFilterI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
                              (invoke [_this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))
-          ::filter-float   (reify NkPluginFilterI
+          ::filter-float   (reify NkPluginFilterI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
                              (invoke [_this edit unicode] (Nuklear/nnk_filter_float edit unicode)))
-          ::filter-decimal (reify NkPluginFilterI
+          ::filter-decimal (reify NkPluginFilterI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
                              (invoke [_this edit unicode] (Nuklear/nnk_filter_decimal edit unicode))))
         text-len    (int-array 1)
         buffer      (BufferUtils/createByteBuffer max-size)]

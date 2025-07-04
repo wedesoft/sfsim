@@ -238,7 +238,7 @@
 
 
 (def keyboard-callback
-  (reify GLFWKeyCallbackI
+  (reify GLFWKeyCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
       [_this _window k _scancode action mods]
       (when (= action GLFW/GLFW_PRESS)
@@ -272,7 +272,7 @@
 
 (GLFW/glfwSetCharCallback
   @window
-  (reify GLFWCharCallbackI
+  (reify GLFWCharCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
       [_this _window codepoint]
       (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))))
@@ -280,7 +280,7 @@
 
 (GLFW/glfwSetCursorPosCallback
   @window
-  (reify GLFWCursorPosCallbackI
+  (reify GLFWCursorPosCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
       [_this _window xpos ypos]
       (Nuklear/nk_input_motion (:sfsim.gui/context gui) (int xpos) (int ypos)))))
@@ -288,7 +288,7 @@
 
 (GLFW/glfwSetMouseButtonCallback
   @window
-  (reify GLFWMouseButtonCallbackI
+  (reify GLFWMouseButtonCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
       [_this _window button action _mods]
       (let [stack (MemoryStack/stackPush)
