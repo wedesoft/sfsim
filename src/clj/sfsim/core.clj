@@ -569,6 +569,8 @@
 
 (def gear (atom 0.0))
 (def gear-down (atom true))
+;(def gear (atom 1.0))
+;(def gear-down (atom false))
 (def prev-gear-req (atom false))
 (def prev-mn-req (atom false))
 (def prev-fullscr (atom false))

@@ -1,4 +1,15 @@
 # TODO
+* trailer 2:15:
+  fly high
+  zoom out to show earth
+  fly through cloud
+  fly curve
+  approach
+  show main gear suspension on landing
+  show front wheel rotation
+  show orbit over mountains in the evening
+  zoom out showing night time earth
+  add wishlist image
 * add joystick
 * add quit goal to build.clj
 * add tested implementation for input handling
