@@ -1,17 +1,9 @@
 # TODO
-* trailer 2:15:
-  fly high
-  zoom out to show earth
-  fly through cloud
-  fly curve
-  approach
-  show main gear suspension on landing
-  show front wheel rotation
-  show orbit over mountains in the evening
-  zoom out showing night time earth
-  add wishlist image
-* add joystick
+* filter fps
+* add joystick configuration
 * add quit goal to build.clj
+* effect of control surfaces needs to diminish with changing wind vector
+* turbulence during landing?
 * add tested implementation for input handling
 * add configuration dialog for input
 * use transients when updating transforms in model
