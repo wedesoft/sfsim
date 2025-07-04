@@ -11,10 +11,14 @@
              buffer1 (GLFW/glfwGetJoystickButtons GLFW/GLFW_JOYSTICK_1)
              buttons (byte-array (.limit buffer1))
              buffer2 (GLFW/glfwGetJoystickAxes GLFW/GLFW_JOYSTICK_1)
-             axes    (float-array (.limit buffer2))]
+             axes    (float-array (.limit buffer2))
+             buffer3 (GLFW/glfwGetJoystickHats GLFW/GLFW_JOYSTICK_1)
+             hats    (byte-array (.limit buffer3))
+             ]
          (.get buffer1 buttons)
          (.get buffer2 axes)
-         (print (format "\rjoystick: %d, buttons: %s, axes: %s" (if present 1 0) (str (seq buttons)) (str (seq axes))))
+         (.get buffer3 hats)
+         (print (format "\rjoystick: %d, buttons: %s, axes: %s, hats: %s" (if present 1 0) (str (seq buttons)) (str (seq axes)) (str (seq hats))))
          (flush)))
 
 (GLFW/glfwDestroyWindow window)
