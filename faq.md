@@ -19,6 +19,7 @@ Steam Deck has not been tested, but the graphics are likely to be too demanding 
 
 You need at least a graphics card with [passmark][17] 10000 such as the Nvidia GeForce GTX 1060.
 The hardware requirements might still change, but the main bottleneck are the volumetric clouds.
+Early tests show that the Steam Deck achieves 25 fps (1280x800 display) and an AMD Radeon RX 6700 XT achieves 50 fps with a 3440x1440 display.
 
 Also ideally you will use a joystick or a game controller for controlling the space craft.
 
