@@ -519,7 +519,7 @@
 
 
 (defn stick
-  [gui t u r thrust]
+  [gui roll pitch rudder thrust]
   (let [stack (MemoryStack/stackPush)
         rect (NkRect/malloc stack)
         rgb  (NkColor/malloc stack)]
@@ -528,14 +528,14 @@
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect (- 45 (* t 30)) (- 45 (* u 30)) 10 10 rect)
+                                                  (Nuklear/nk_rect (- 45 (* roll 30)) (- 45 (* pitch 30)) 10 10 rect)
                                                   (Nuklear/nk_rgb 255 0 0 rgb))))
     (gui/nuklear-window gui "rudder" 10 95 80 20
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 20 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect (- 45 (* r 30)) 100 10 10 rect)
+                                                  (Nuklear/nk_rect (- 45 (* rudder 30)) 100 10 10 rect)
                                                   (Nuklear/nk_rgb 255 0 255 rgb))))
     (gui/nuklear-window gui "thrust" 95 10 20 80
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
@@ -615,9 +615,9 @@
             rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
             rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
             brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.0)
-            u        (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 0))
-            r        (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 0))
-            t        (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
+            pitch    (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 0))
+            rudder   (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 0))
+            roll     (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
             thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) 1 0)
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_COMMA) 0.05 (if (@keystates GLFW/GLFW_KEY_PERIOD) -0.05 0))
@@ -643,9 +643,9 @@
           (do
             (if @slew
               (do
-                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 u) (vec3 0 1 0)))
-                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 r) (vec3 0 0 1)))
-                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 t) (vec3 1 0 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 pitch ) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 rudder) (vec3 0 0 1)))
+                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 roll  ) (vec3 1 0 0)))
                 (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
               (do
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
@@ -665,7 +665,7 @@
                 (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body)
-                                                             (mult (vec3 t u r) (to-radians 25)))]
+                                                             (mult (vec3 roll pitch rudder) (to-radians 25)))]
                   (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                   (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
                 (update-mesh! (:position @pose))
@@ -795,7 +795,7 @@
                              (@menu gui @window-width @window-height)
                              (reset! focus-new nil))
                            (when (not playback)
-                             (stick gui t u r thrust)
+                             (stick gui roll pitch rudder thrust)
                              (info gui @window-height
                                    (format "\rheight = %10.1f m, speed = %7.1f m/s, fps %5.1f%s"
                                            (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))

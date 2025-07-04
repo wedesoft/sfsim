@@ -13,8 +13,7 @@
              buffer2 (GLFW/glfwGetJoystickAxes GLFW/GLFW_JOYSTICK_1)
              axes    (float-array (.limit buffer2))
              buffer3 (GLFW/glfwGetJoystickHats GLFW/GLFW_JOYSTICK_1)
-             hats    (byte-array (.limit buffer3))
-             ]
+             hats    (byte-array (.limit buffer3))]
          (.get buffer1 buttons)
          (.get buffer2 axes)
          (.get buffer3 hats)
