@@ -8,10 +8,13 @@
 (while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwWaitEventsTimeout 0.04)  ; use glfwPollEvents for non-blocking input
        (let [present (GLFW/glfwJoystickPresent GLFW/GLFW_JOYSTICK_1)
-             buffer  (GLFW/glfwGetJoystickButtons GLFW/GLFW_JOYSTICK_1)
-             buttons (byte-array (.limit buffer))]
-         (.get buffer buttons)
-         (print (format "\rjoystick: %d, buttons: %s" (if present 1 0) (str (seq buttons))))
+             buffer1 (GLFW/glfwGetJoystickButtons GLFW/GLFW_JOYSTICK_1)
+             buttons (byte-array (.limit buffer1))
+             buffer2 (GLFW/glfwGetJoystickAxes GLFW/GLFW_JOYSTICK_1)
+             axes    (float-array (.limit buffer2))]
+         (.get buffer1 buttons)
+         (.get buffer2 axes)
+         (print (format "\rjoystick: %d, buttons: %s, axes: %s" (if present 1 0) (str (seq buttons)) (str (seq axes))))
          (flush)))
 
 (GLFW/glfwDestroyWindow window)
