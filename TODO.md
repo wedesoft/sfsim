@@ -1,7 +1,9 @@
 # TODO
-* use transients when updating transforms in model
-* add quit goal to build.clj
 * add joystick
+* add quit goal to build.clj
+* add tested implementation for input handling
+* add configuration dialog for input
+* use transients when updating transforms in model
 * add lift or force caused by pitch rate
 * following camera
 * make new trailer

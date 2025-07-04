@@ -2,7 +2,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt signum)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -101,23 +101,23 @@
 (def playback false)
 ; (def fix-fps 30.0)
 (def fix-fps false)
-(def fullscreen (atom playback))
+(def fullscreen (atom false))
 
 (def window-width (atom nil))
 (def window-height (atom nil))
 
 (defn create-window
-  [fullscreen]
+  [playback]
   (let [monitor (GLFW/glfwGetPrimaryMonitor)
         mode (GLFW/glfwGetVideoMode monitor)
         desktop-width (.width ^GLFWVidMode mode)
         desktop-height (.height ^GLFWVidMode mode)
-        width (if fullscreen desktop-width 854)
-        height (if fullscreen desktop-height 480)
-        window (make-window "sfsim" width height (not fullscreen))]
+        width (if playback desktop-width 854)
+        height (if playback desktop-height 480)
+        window (make-window "sfsim" width height (not playback))]
     window))
 
-(def window (atom (create-window @fullscreen)))
+(def window (atom (create-window playback)))
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
@@ -575,6 +575,26 @@
 (def prev-pause (atom false))
 
 
+(defn deadzone
+  [axis]
+  (let [epsilon 0.08
+        abs-axis (abs axis)]
+    (if (>= abs-axis epsilon)
+      (* (signum axis) (/ (- abs-axis epsilon) (- 1.0 epsilon)))
+      0.0)))
+
+
+(defn joystick-axes
+  []
+  (let [present (GLFW/glfwJoystickPresent GLFW/GLFW_JOYSTICK_1)]
+    (if present
+      (let [buffer (GLFW/glfwGetJoystickAxes GLFW/GLFW_JOYSTICK_1)
+            axes   (float-array (.limit buffer))]
+        (.get buffer axes)
+        (vec axes))
+      [0.0 0.0 -1.0 0.0 0.0 -1.0])))
+
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -609,15 +629,16 @@
          (jolt/set-angular-velocity body (vec3 0 0 0)))
       (let [t1       (System/currentTimeMillis)
             dt       (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
+            axes     (joystick-axes)
             mn-req   (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
             gear-req (if (@keystates GLFW/GLFW_KEY_G) true false)
             ra       (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
             rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
             rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
             brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.0)
-            pitch    (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 0))
-            rudder   (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 0))
-            roll     (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 0))
+            pitch    (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 (- (deadzone (nth axes 1)))))
+            rudder   (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 (* 0.5 (- (nth axes 2) (nth axes 5)))))
+            roll     (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 (- (deadzone (nth axes 0)))))
             thrust   (if (@keystates GLFW/GLFW_KEY_SPACE) 1 0)
             v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_COMMA) 0.05 (if (@keystates GLFW/GLFW_KEY_PERIOD) -0.05 0))
