@@ -601,6 +601,9 @@
       [0.0 0.0 -1.0 0.0 0.0 -1.0])))
 
 
+(def frametime (atom 0.25))
+
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -826,12 +829,13 @@
                              (reset! focus-old nil)
                              (@menu gui @window-width @window-height)
                              (reset! focus-new nil))
+                           (swap! frametime (fn [x] (+ (* 0.95 x) (* 0.05 dt 0.001))))
                            (when (not playback)
                              (stick gui roll pitch rudder @thrust)
                              (info gui @window-height
-                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps %5.1f%s"
+                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s"
                                            (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-                                           (mag (jolt/get-linear-velocity body)) (/ 1000.0 dt)
+                                           (mag (jolt/get-linear-velocity body)) (/ 1.0 @frametime)
                                            (if @slew ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)

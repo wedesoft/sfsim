@@ -1,5 +1,4 @@
 # TODO
-* filter fps
 * add joystick configuration
 * add quit goal to build.clj
 * effect of control surfaces needs to diminish with changing wind vector
