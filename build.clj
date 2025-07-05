@@ -375,6 +375,11 @@
       (io/input-stream url)
       (io/file (str "data/astro/" filename)))))
 
+(defn quit
+  "Fast quit"
+  [& _]
+  (System/exit 0))
+
 (defn all [_]
   (worley)
   (perlin)
@@ -394,4 +399,5 @@
   (map-sectors-night)
   (elevation-sectors)
   (cube-maps)
-  (atmosphere-lut))
+  (atmosphere-lut)
+  (quit))

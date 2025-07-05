@@ -1,7 +1,11 @@
 # TODO
-* use transients when updating transforms in model
+* add joystick configuration
 * add quit goal to build.clj
-* add joystick
+* effect of control surfaces needs to diminish with changing wind vector
+* turbulence during landing?
+* add tested implementation for input handling
+* add configuration dialog for input
+* use transients when updating transforms in model
 * add lift or force caused by pitch rate
 * following camera
 * make new trailer
