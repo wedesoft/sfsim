@@ -697,7 +697,7 @@
                 (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body)
-                                                             (mult (vec3 (* 0.4 roll) (* 0.25 pitch) (* 0.25 rudder))
+                                                             (mult (vec3 (* 0.25 roll) (* 0.20 pitch) (* 0.4 rudder))
                                                                    (to-radians 20)))]
                   (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                   (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
