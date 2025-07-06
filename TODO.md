@@ -1,5 +1,6 @@
 # TODO
 * switch windows JDK install to 24
+* add license to sources and distributable
 * display version in menu, start ChangeLog
 * add joystick configuration
 * add quit goal to build.clj

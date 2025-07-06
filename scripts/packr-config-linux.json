@@ -4,7 +4,7 @@
   "executable": "sfsim",
   "classpath": ["target/sfsim.jar"],
   "mainclass": "sfsim.core",
-  "resources": ["libjolt.so", "venturestar.glb", "resources"],
-  "vmargs": ["Xms2g", "Xmx4g"],
+  "resources": ["LICENSE", "libjolt.so", "venturestar.glb", "resources"],
+  "vmargs": ["Xms2g", "Xmx4g", "XX:+UseZGC"],
   "output": "out-linux"
 }
