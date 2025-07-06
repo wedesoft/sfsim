@@ -10,7 +10,7 @@ See [sfsim homepage][1] for more details.
 # Installation
 
 * Tested on Debian 12 and Windows 11
-* Install JDK 23 (needed because of the shiny new foreign function and memory API)
+* Install [JDK 24](https://www.oracle.com/uk/java/technologies/downloads/)
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
 * Install [NSIS](https://nsis.sourceforge.io/) for building Windows installer
