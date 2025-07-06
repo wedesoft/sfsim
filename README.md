@@ -138,4 +138,4 @@ cd ..
   * [nREPL](https://nrepl.org/) server and [REPL-y](https://github.com/trptcolin/reply) client
   * [rebel-readline](https://github.com/bhauman/rebel-readline) REPL with colors :)
 
-  [1]: https://wedesoft.github.io/sfsim/
+[1]: https://wedesoft.github.io/sfsim/
