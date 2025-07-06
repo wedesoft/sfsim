@@ -1,4 +1,5 @@
 # TODO
+* display version in menu, start ChangeLog
 * add joystick configuration
 * add quit goal to build.clj
 * effect of control surfaces needs to diminish with changing wind vector

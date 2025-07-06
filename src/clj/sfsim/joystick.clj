@@ -1,7 +1,8 @@
 (ns sfsim.joystick
   "Module with functionality to read joystick input"
   (:import
-    org.lwjgl.glfw GLFW))
+    (org.lwjgl.glfw
+      GLFW)))
 
 
 (set! *unchecked-math* true)
