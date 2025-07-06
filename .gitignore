@@ -4,13 +4,7 @@ target
 out-linux
 out-windows
 output
-elevation
-world.*.png
-BlackMarble_2016_*.jpg
-blackmarble.*.png
-elevation.*.raw
-ldem*.tif
-lroc*.tif
+tmp
 recording.edn
 venturestar.glb
 .cache

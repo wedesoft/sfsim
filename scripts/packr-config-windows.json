@@ -4,7 +4,7 @@
   "executable": "sfsim",
   "classpath": ["target/sfsim.jar"],
   "mainclass": "sfsim.core",
-  "resources": ["libjolt.dll", "libgcc_s_seh-1.dll", "libstdc++-6.dll", "libwinpthread-1.dll", "venturestar.glb", "resources"],
-  "vmargs": ["Xms2g", "Xmx4g"],
+  "resources": ["LICENSE", "libjolt.dll", "libgcc_s_seh-1.dll", "libstdc++-6.dll", "libwinpthread-1.dll", "venturestar.glb", "resources"],
+  "vmargs": ["Xms2g", "Xmx4g", "XX:+UseZGC"],
   "output": "out-windows"
 }

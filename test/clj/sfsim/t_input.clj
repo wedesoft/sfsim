@@ -4,12 +4,11 @@
 ;; This source code is licensed under the Eclipse Public License v1.0
 ;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
 
-(ns sfsim.t-opacity
-  (:require
+(ns sfsim.t-input
+    (:require
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
-    [midje.sweet :refer :all]
-    [sfsim.opacity :refer :all]))
+    [midje.sweet :refer :all]))
 
 
 (mi/collect! {:ns (all-ns)})

@@ -5,12 +5,12 @@ Aim is to simulate take off, space station docking, and moon landing with a futu
 Requires OpenGL 4.5.
 See [sfsim homepage][1] for more details.
 
-[![Aerodynamic prototype](https://i.ytimg.com/vi/vmg0p5jawnY/hqdefault.jpg)](https://www.youtube.com/watch?v=vmg0p5jawnY)
+[![Aerodynamic prototype](https://i.ytimg.com/vi/38FGT7SWVh0/hqdefault.jpg)](https://www.youtube.com/watch?v=38FGT7SWVh0)
 
 # Installation
 
 * Tested on Debian 12 and Windows 11
-* Install JDK 23 (needed because of the shiny new foreign function and memory API)
+* Install [JDK 24](https://www.oracle.com/uk/java/technologies/downloads/)
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
 * Install [NSIS](https://nsis.sourceforge.io/) for building Windows installer
@@ -138,4 +138,4 @@ cd ..
   * [nREPL](https://nrepl.org/) server and [REPL-y](https://github.com/trptcolin/reply) client
   * [rebel-readline](https://github.com/bhauman/rebel-readline) REPL with colors :)
 
-  [1]: https://wedesoft.github.io/sfsim/
+[1]: https://wedesoft.github.io/sfsim/
