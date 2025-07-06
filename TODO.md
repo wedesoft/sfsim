@@ -1,6 +1,7 @@
 # TODO
+* input module to handle joystick, key callbacks, and mouse callbacks (send keys/joystick to GUI if active, spacecraft otherwise)
 * switch windows JDK install to 24
-* add license to sources and distributable
+* add license to sources
 * display version in menu, start ChangeLog
 * add joystick configuration
 * add quit goal to build.clj
