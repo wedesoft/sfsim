@@ -32,7 +32,7 @@ Apply the brakes, come to a standstill, and celebrate mission success.
 Don't touch down to fast, or you might break the landing gear or even destroy the spacecraft. Don't touch down too late, or you will run out of runway.
 <!-- insert animation of successful landing -->
 
-{% include youtube.html id="vmg0p5jawnY" %}
+{% include youtube.html id="38FGT7SWVh0" %}
 
 ## The project
 Since a long time I wanted to develop a 3D space flight simulator.
