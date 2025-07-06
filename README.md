@@ -5,7 +5,7 @@ Aim is to simulate take off, space station docking, and moon landing with a futu
 Requires OpenGL 4.5.
 See [sfsim homepage][1] for more details.
 
-[![Aerodynamic prototype](https://i.ytimg.com/vi/vmg0p5jawnY/hqdefault.jpg)](https://www.youtube.com/watch?v=vmg0p5jawnY)
+[![Aerodynamic prototype](https://i.ytimg.com/vi/38FGT7SWVh0/hqdefault.jpg)](https://www.youtube.com/watch?v=38FGT7SWVh0)
 
 # Installation
 
