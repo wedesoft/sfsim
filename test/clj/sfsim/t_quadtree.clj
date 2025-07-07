@@ -325,9 +325,9 @@
                     cubemap/determine-face (fn [point] (fact point => (vec3 0.4 0.6 1)) 2)
                     cubemap/cube-i (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.25)
                     cubemap/cube-j (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.75)
-                    quadtree/tile-coordinates (fn [j i level tilesize]
+                    quadtree/tile-coordinates (fn [^double j ^double i ^long level ^long tilesize]
                                                 (facts j => 0.75, i => 0.25, level => 6, tilesize => 65)
-                                                #:sfsim.quadtree{:row 32 :column 40 :tile-y 3 :tile-x 5 :dy :dy :dx :dx})
+                                                #:sfsim.quadtree{:row 32 :column 40 :tile-y 3 :tile-x 5 :dy 7.0 :dx 11.0})
                     quadtree/access-cube-tar (fn [tar-name] (fact tar-name => "data/globe/2/6/31.tar") "31.tar")
                     util/cube-tar (fn [prefix face level x]
                                     (fact prefix => "data/globe", face => 2, level => 6, x => 40)
@@ -337,8 +337,8 @@
                     cubemap/tile-center (fn [face level row column radius]
                                           (facts face => 2, level => 6, row => 32, column => 40, radius => 6378000.0)
                                           (vec3 1 2 3))
-                    quadtree/tile-triangle (fn [y x first-diagonal]
-                                             (facts y => :dy, x => :dx, first-diagonal => true)
+                    quadtree/tile-triangle (fn [^double y ^double x ^Boolean first-diagonal]
+                                             (facts y => 7.0, x => 11.0, first-diagonal => true)
                                              [[0 0] [0 1] [1 1]])
                     image/get-vector3 (fn [img y x]
                                         (facts (:sfsim.image/data img) => :surface-tile,

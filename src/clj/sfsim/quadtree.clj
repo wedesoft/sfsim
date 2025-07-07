@@ -16,7 +16,10 @@
     [sfsim.matrix :refer (fvec3)]
     [sfsim.plane :refer (points->plane ray-plane-intersection-parameter)]
     [sfsim.util :refer (cube-tar cube-file-name slurp-floats-gz-tar slurp-bytes-gz-tar dissoc-in untar tar-close
-                        make-lru-cache N N0)]))
+                        make-lru-cache N N0)])
+  (:import
+    [clojure.lang
+     Keyword]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -27,16 +30,16 @@
   "Determine screen size of a quad of the world map"
   {:malli/schema [:=> [:cat N0 N :double N :double :double] :double]}
   [level tilesize radius1 width distance angle]
-  (let [cnt         (bit-shift-left 1 level)
-        real-size   (/ (* 2 radius1) cnt (dec tilesize))
-        f           (/ width 2 (-> angle (/ 2) to-radians tan))
-        screen-size (* (/ real-size (max 1 distance)) f)]
+  (let [cnt         (bit-shift-left 1 ^long level)
+        real-size   (/ ^double (* 2.0 ^double radius1) ^long cnt ^long (dec ^long tilesize))
+        f           (/ ^long width (* 2.0 ^double (-> ^double angle (* 0.5) to-radians tan)))
+        screen-size (* ^double (/ ^double real-size ^double (max 1.0 ^double distance)) f)]
     screen-size))
 
 
 (defn- quad-size-for-camera-position
   "Determine screen size of a quad given the camera position"
-  {:malli/schema [:=> [:cat N :double N :double fvec3 :keyword N0 N0 N0]]}
+  {:malli/schema [:=> [:cat N :double N :double fvec3 :keyword N0 N0 N0] :double]}
   [tilesize radius width angle position face level y x]
   (let [center   (tile-center face level y x radius)
         distance (mag (sub position center))]
@@ -47,8 +50,8 @@
   "Decide whether next quad tree level is required"
   {:malli/schema [:=> [:cat N :double N :double N N fvec3 :keyword N0 N0 N0] :boolean]}
   [tilesize radius width angle max-size max-level position face level y x]
-  (and (< level max-level)
-       (> (quad-size-for-camera-position tilesize radius width angle position face level y x) max-size)))
+  (and (< ^long level ^long max-level)
+       (> ^double (quad-size-for-camera-position tilesize radius width angle position face level y x) ^long max-size)))
 
 
 (def tile
@@ -90,7 +93,7 @@
 (defn sub-tiles-info
   "Get metadata for sub tiles of cube map tile"
   {:malli/schema [:=> [:cat :keyword N0 N0 N0] [:vector tile-info]]}
-  [face level y x]
+  [^Keyword face ^long level ^long y ^long x]
   [{::face face ::level (inc level) ::y (* 2 y)       ::x (* 2 x)}
    {::face face ::level (inc level) ::y (* 2 y)       ::x (inc (* 2 x))}
    {::face face ::level (inc level) ::y (inc (* 2 y)) ::x (* 2 x)}
@@ -188,7 +191,7 @@
   (let [[top & tree]    path
         dy              {::quad0 0 ::quad1 0 ::quad2 1 ::quad3 1}
         dx              {::quad0 0 ::quad1 1 ::quad2 0 ::quad3 1}
-        combine-offsets #(bit-or (bit-shift-left %1 1) %2)]
+        combine-offsets #(bit-or (bit-shift-left ^long %1 1) ^long %2)]
     {::face  top
      ::level (count tree)
      ::y     (reduce combine-offsets 0 (mapv dy tree))
@@ -370,7 +373,7 @@
 (defn tile-coordinates
   "Get tile indices, coordinates of pixel within tile and position in pixel"
   {:malli/schema [:=> [:cat :double :double :int :int] coords]}
-  [j i level tilesize]
+  [^double j ^double i ^long level ^long tilesize]
   (let [n      (bit-shift-left 1 level)
         jj     (* j n)
         ii     (* i n)
@@ -390,7 +393,7 @@
 (defn tile-triangle
   "Determine triangle of quad the specified coordinate is in"
   {:malli/schema [:=> [:cat :double :double :boolean] [:vector [:tuple :int :int]]]}
-  [y x first-diagonal]
+  [^double y ^double x ^Boolean first-diagonal]
   (if first-diagonal
     (if (>= x y) [[0 0] [0 1] [1 1]] [[0 0] [1 1] [1 0]])
     (if (<= (+ x y) 1) [[0 0] [0 1] [1 0]] [[1 0] [0 1] [1 1]])))
@@ -422,37 +425,54 @@
         face                   (determine-face p)
         j                      (cube-j face p)
         i                      (cube-i face p)
-        {::keys [row column
-                 tile-y tile-x
-                 dy dx]}       (tile-coordinates j i level tilesize)
+        {::keys [^long row ^long column ^long tile-y ^long tile-x ^double dy ^double dx]}
+                               (tile-coordinates j i level tilesize)
         terrain                (load-surface-tile level tilesize face row column)
         center                 (tile-center face level row column radius)
         orientation            (nth (nth split-orientations tile-y) tile-x)
-        triangle               (mapv (fn [[y x]] (get-vector3 terrain (+ y tile-y) (+ x tile-x)))
+        triangle               (mapv (fn [[^long y ^long x]] (get-vector3 terrain (+ y ^long tile-y) (+ x ^long tile-x)))
                                      (tile-triangle dy dx orientation))
         plane                  (apply points->plane triangle)
         ray                    #:sfsim.ray{:origin (sub center) :direction point}
         multiplier             (ray-plane-intersection-parameter plane ray)
         magnitude-point        (mag point)]
-    (* multiplier magnitude-point)))
+    (* ^double multiplier magnitude-point)))
 
 
-(defn rotate-b
-  [angle size row column]
-  (case (long angle)
+(defn rotate-b-long
+  [^long angle ^long size ^long row ^long column]
+  (case angle
     0   row
     90  (- size column 1)
     180 (- size row 1)
     270 column))
 
 
-(defn rotate-a
-  [angle size row column]
-  (case (long angle)
+(defn rotate-a-long
+  [^long angle ^long size ^long row ^long column]
+  (case angle
     0   column
     90  row
     180 (- size column 1)
     270 (- size row 1)))
+
+
+(defn rotate-b-double
+  [^long angle ^long size ^double tile-y ^double tile-x]
+  (case angle
+    0   tile-y
+    90  (- size tile-x 1)
+    180 (- size tile-y 1)
+    270 tile-x))
+
+
+(defn rotate-a-double
+  [^long angle ^long size ^double tile-y ^double tile-x]
+  (case angle
+    0   tile-x
+    90  tile-y
+    180 (- size tile-x 1)
+    270 (- size tile-y 1)))
 
 
 (declare neighbour-tile)
@@ -471,14 +491,14 @@
   "Create vector with coordinates in neighbouring face"
   {:malli/schema [:=> [:cat :keyword :int :int :int :int :int :double :double :int :int :int] neighbour]}
   [face drotation level tilesize row column tile-y tile-x dy dx rotation]
-  (let [gridsize  (bit-shift-left 1 level)
-        row'      (rotate-b drotation gridsize row column)
-        column'   (rotate-a drotation gridsize row column)
-        tile-y'   (rotate-b drotation tilesize tile-y tile-x)
-        tile-x'   (rotate-a drotation tilesize tile-y tile-x)
-        dy'       (rotate-b drotation 1 dy dx)
-        dx'       (rotate-a drotation 1 dy dx)
-        rotation' (mod (+ rotation drotation) 360)]
+  (let [gridsize  (bit-shift-left 1 ^long level)
+        row'      (rotate-b-long drotation gridsize row column)
+        column'   (rotate-a-long drotation gridsize row column)
+        tile-y'   (rotate-b-double drotation tilesize tile-y tile-x)
+        tile-x'   (rotate-a-double drotation tilesize tile-y tile-x)
+        dy'       (rotate-b-long drotation 1 dy dx)
+        dx'       (rotate-a-long drotation 1 dy dx)
+        rotation' (mod (+ ^long rotation ^long drotation) 360)]
     (neighbour-tile face level tilesize row' column' tile-y' tile-x' dy' dx' rotation')))
 
 

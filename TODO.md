@@ -1,5 +1,5 @@
 # TODO
-* 77% cpu load, now fix reflection warnings
+* now fix reflection warnings
 * input module to handle joystick, key callbacks, and mouse callbacks (send keys/joystick to GUI if active, spacecraft otherwise)
 * switch windows JDK install to 24
 * add license to sources
