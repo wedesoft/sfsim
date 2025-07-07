@@ -14,7 +14,10 @@
       [sfsim.matrix :refer [fvec3]]
       [sfsim.quaternion :as q]
       [sfsim.atmosphere :as atmosphere]
-      [sfsim.util :refer (sqr cube)]))
+      [sfsim.util :refer (sqr cube)])
+    (:import
+      [sfsim.quaternion
+       Quaternion]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
