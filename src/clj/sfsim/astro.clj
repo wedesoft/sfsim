@@ -21,6 +21,8 @@
   (:import
     (fastmath.vector
       Vec3)
+    (fastmath.matrix
+      Mat3x3)
     (java.nio
       ByteBuffer)
     (java.nio.channels
@@ -81,7 +83,7 @@
 (defn daf-descriptor-frame
   "Create codec frame for parsing data descriptor"
   {:malli/schema [:=> [:cat :int :int] :some]}
-  [num-doubles num-integers]
+  [^long num-doubles ^long num-integers]
   (let [summary-length (+ (* 8 num-doubles) (* 4 num-integers))
         padding        (mod (- summary-length) 8)]
     (compile-frame
@@ -120,7 +122,7 @@
 (defn coefficient-frame
   "Return codec frame for parsing a set of coefficients"
   {:malli/schema [:=> [:cat :int :int] :some]}
-  [rsize component-count]
+  [^long rsize ^long component-count]
   (let [coefficient-count (/ (- rsize 2) component-count)]
     (compile-frame (concat [:float64-le :float64-le] (repeat component-count (repeat coefficient-count :float64-le))))))
 
@@ -128,9 +130,9 @@
 (defn decode-record
   "Decode a record using the specified frame"
   {:malli/schema [:=> [:cat :some :some :int] :some]}
-  [buffer frame index]
+  [buffer frame ^long index]
   (let [record (byte-array record-size)]
-    (.position ^ByteBuffer buffer ^long (* (dec index) record-size))
+    (.position ^ByteBuffer buffer ^long (* (dec index) ^long record-size))
     (.get ^ByteBuffer buffer record)
     (decode frame record false)))
 
@@ -206,7 +208,7 @@
 (defn read-daf-summaries
   "Read sources and descriptors to get summaries"
   {:malli/schema [:=> [:cat :map :int :some] [:sequential daf-summary]]}
-  [header index buffer]
+  [header ^long index buffer]
   (let [summaries   (read-daf-descriptor header index buffer)
         next-number (long (::next-number summaries))
         descriptors (::descriptors summaries)
@@ -295,7 +297,7 @@
   {:malli/schema [:=> [:cat :map :some] coefficient-layout]}
   [segment buffer]
   (let [info (byte-array (sizeof coefficient-layout-frame))]
-    (.position ^ByteBuffer buffer ^long (* 8 (- (::end-i segment) 4)))
+    (.position ^ByteBuffer buffer ^long (* 8 ^long (- ^long (::end-i segment) 4)))
     (.get ^ByteBuffer buffer info)
     (convert-to-long (decode coefficient-layout-frame info) [::rsize ::n])))
 
@@ -303,11 +305,11 @@
 (defn read-interval-coefficients
   "Read coefficient block with specified index from segment"
   {:malli/schema [:=> [:cat :map :map :int :some] [:sequential [:sequential :double]]]}
-  [segment layout index buffer]
+  [segment layout ^long index buffer]
   (let [component-count ({2 3 3 6} (::data-type segment))
         frame           (coefficient-frame (::rsize layout) component-count)
         data            (byte-array (sizeof frame))]
-    (.position ^ByteBuffer buffer ^long (+ (* 8 (dec (::start-i segment))) (* index (sizeof frame))))
+    (.position ^ByteBuffer buffer ^long (+ (* 8 ^long (dec ^long (::start-i segment))) ^long (* index ^long (sizeof frame))))
     (.get ^ByteBuffer buffer data)
     (reverse (apply map vector (drop 2 (decode frame data))))))
 
@@ -315,7 +317,7 @@
 (defn chebyshev-polynomials
   "Chebyshev polynomials"
   {:malli/schema [:=> [:cat [:sequential :some] :double :some] :some]}
-  [coefficients s zero]
+  [coefficients ^double s zero]
   (let [s2      (* 2.0 s)
         [w0 w1] (reduce (fn [[w0 w1] c] [(-> w0 (mult s2) (sub w1) (add c)) w0])
                         [zero zero]
@@ -326,14 +328,14 @@
 (defn interval-index-and-position
   "Compute interval index and position (s) inside for given timestamp"
   {:malli/schema [:=> [:cat [:map [::init :double] [::intlen :double] [::n :int]] :double] [:tuple :int :double]]}
-  [layout tdb]
+  [layout ^double tdb]
   (let [init   (::init layout)
         intlen (::intlen layout)
         n      (::n layout)
-        t      (- (* (- tdb ^double T0) S-PER-DAY) init)
-        index  (min (max (long (quot t intlen)) 0) (dec n))
-        offset (- t (* index intlen))
-        s      (- (/ (* 2.0 offset) intlen) 1.0)]
+        t      (- (* (- tdb ^double T0) ^double S-PER-DAY) ^double init)
+        index  (min (max (long (quot t ^double intlen)) 0) ^long (dec ^long n))
+        offset (- t (* ^long index ^double intlen))
+        s      (- (/ (* 2.0 ^double offset) ^double intlen) 1.0)]
     [index s]))
 
 
@@ -412,26 +414,26 @@
 (defn julian-date
   "Convert calendar date to Julian date"
   {:malli/schema [:=> [:cat date] :int]}
-  [{::keys [year month day]}]
+  [{::keys [^long year ^long month ^long day]}]
   (let [g (- (+ year 4716) (if (<= month 2) 1 0))
         f (mod (+ month 9) 12)
-        e (- (+ (quot (* 1461 g) 4) day) 1402)
-        J (+ e (quot (+ (* 153 f) 2) 5))]
-    (+ J (- 38 (quot (* (quot (+ g 184) 100) 3) 4)))))
+        e (- (+ (quot (* 1461 ^long g) 4) day) 1402)
+        J (+ e (quot (+ (* 153 ^long f) 2) 5))]
+    (+ J (- 38 (quot (* (quot (+ ^long g 184) 100) 3) 4)))))
 
 
 (defn calendar-date
   "Convert Julian date to calendar date"
   {:malli/schema [:=> [:cat :int] date]}
-  [jd]
-  (let [f (+ jd 1401)
-        f (+ f (- (quot (* (quot (+ (* 4 jd) 274277) 146097) 3) 4) 38))
-        e (+ (* 4 f) 3)
-        g (quot (mod e 1461) 4)
-        h (+ (* 5 g) 2)
-        day (inc (quot (mod h 153) 5))
-        month (inc (mod (+ (quot h 153) 2) 12))
-        year (+ (- (quot e 1461) 4716) (quot (- (+ 12 2) month) 12))]
+  [^long jd]
+  (let [f     (+ jd 1401)
+        f     (+ ^long f (- (quot (* (quot (+ (* 4 jd) 274277) 146097) 3) 4) 38))
+        e     (+ (* 4 ^long f) 3)
+        g     (quot ^long (mod ^long e 1461) 4)
+        h     (+ (* 5 ^long g) 2)
+        day   (inc ^long (quot ^long (mod ^long h 153) 5))
+        month (inc ^long (mod (+ (quot ^long h 153) 2) 12))
+        year  (+ (- (quot ^long e 1461) 4716) (quot (- (+ 12 2) ^long month) 12))]
     {::year year ::month month ::day day}))
 
 
@@ -441,7 +443,7 @@
 (defn clock-time
   "Convert day fraction to hours, minutes, and seconds"
   {:malli/schema [:=> [:cat :double] clock]}
-  [day-fraction]
+  [^double day-fraction]
   (let [hours   (* 24.0 day-fraction)
         hour    (int hours)
         minutes (* 60.0 (- hours hour))
@@ -456,7 +458,7 @@
 (defn psi-a
   "Compute Psi angle for Earth precession given centuries since 2000"
   {:malli/schema [:=> [:cat :double] :double]}
-  [t]
+  ^double [^double t]
   (-> t (* -0.0000000951) (+ 0.000132851) (* t) (- 0.00114045) (* t) (- 1.0790069) (* t) (+ 5038.481507) (* t)))
 
 
@@ -466,22 +468,22 @@
 (defn omega-a
   "Compute Omega angle for Earth precession given centuries since 2000"
   {:malli/schema [:=> [:cat :double] :double]}
-  [t]
-  (-> t (* 0.0000003337) (- 0.000000467) (* t) (- 0.00772503) (* t) (+ 0.0512623) (* t) (- 0.025754) (* t) (+ eps0)))
+  ^double [^double t]
+  (-> t (* 0.0000003337) (- 0.000000467) (* t) (- 0.00772503) (* t) (+ 0.0512623) (* t) (- 0.025754) (* t) (+ ^double eps0)))
 
 
 (defn chi-a
   "Compute Chi angle for Earth precession given centuries since 2000"
   {:malli/schema [:=> [:cat :double] :double]}
-  [t]
+  ^double [^double t]
   (-> t (* -0.0000000560) (+ 0.000170663) (* t) (- 0.00121197) (* t) (- 2.3814292) (* t) (+ 10.556403) (* t)))
 
 
 (defn compute-precession
   "Compute precession matrix for Earth given Julian day"
   {:malli/schema [:=> [:cat :double] fmat3]}
-  [tdb]
-  (let [t          (/ (- tdb T0) 36525.0)
+  ^Mat3x3 [^double tdb]
+  (let [t          (/ (- tdb ^double T0) 36525.0)
         r3-chi-a   (rotation-z (* (- (chi-a t)) ^double ASEC2RAD))
         r1-omega-a (rotation-x (* (omega-a t) ^double ASEC2RAD))
         r3-psi-a   (rotation-z (* (psi-a t) ^double ASEC2RAD))

@@ -146,7 +146,7 @@
 
 (facts "Create lookup table for SPK segments (lookup by center and target)"
        (with-redefs [astro/read-daf-summaries
-                     (fn [header index buffer]
+                     (fn [header ^long index buffer]
                        (facts header => {:sfsim.astro/forward 53}
                               index => 53
                               buffer => :buffer)
@@ -164,7 +164,7 @@
 
 (facts "Create lookup table for PCK segments (lookup by target)"
        (with-redefs [astro/read-daf-summaries
-                     (fn [header index buffer]
+                     (fn [header ^long index buffer]
                        (facts header => {:sfsim.astro/forward 4}
                               index => 4
                               buffer => :buffer)
@@ -286,10 +286,25 @@
        (chi-a 1.0)   => (roughly 8.173932 1e-6))
 
 
+(defn mock-psi-a
+  ^double [^double t]
+  (fact t => 1.0) (/ (* 0.125 PI) ASEC2RAD))
+
+
+(defn mock-omega-a
+  ^double [^double t]
+  (fact t => 1.0) (/ (* 0.25 PI) ASEC2RAD))
+
+
+(defn mock-chi-a
+  ^double [^double t]
+  (fact t => 1.0) (/ (* 0.5 PI) ASEC2RAD))
+
+
 (fact "Test composition of precession matrix"
-      (with-redefs [astro/psi-a   (fn [t] (fact t => 1.0) (/ (* 0.125 PI) ASEC2RAD))
-                    astro/omega-a (fn [t] (fact t => 1.0) (/ (* 0.25  PI) ASEC2RAD))
-                    astro/chi-a   (fn [t] (fact t => 1.0) (/ (* 0.5   PI) ASEC2RAD))]
+      (with-redefs [astro/psi-a   mock-psi-a
+                    astro/omega-a mock-omega-a
+                    astro/chi-a   mock-chi-a]
         (let [tdb        (+ T0 36525.0)
               r3-chi-a   (rotation-z (* -0.5 PI))
               r1-omega-a (rotation-x (* 0.25 PI))
