@@ -16,7 +16,7 @@
     [sfsim.util :refer (sqr N)]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 (def sphere (m/schema [:map [::centre fvec3] [::radius :double]]))

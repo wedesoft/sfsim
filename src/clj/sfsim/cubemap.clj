@@ -16,7 +16,7 @@
     [sfsim.util :refer (slurp-shorts tile-path sqr)]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 

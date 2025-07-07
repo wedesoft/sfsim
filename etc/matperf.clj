@@ -17,7 +17,7 @@
 (import '[org.ejml.data DMatrixRMaj])
 
 (set! *warn-on-reflection* true)
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set-current-implementation :vectorz)
 
 (defmacro mybench [expr] `(do (println (quote ~expr)) (bench ~expr) (println)))

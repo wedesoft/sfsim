@@ -25,7 +25,7 @@
     [sfsim.util :refer (third fourth limit-quot sqr N slurp-floats)]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 

@@ -18,7 +18,7 @@
 (import '[org.lwjgl.opengl GL]
         '[org.lwjgl.glfw GLFW GLFWKeyCallback])
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 
 (def width 640)
 (def height 640)

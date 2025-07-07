@@ -10,7 +10,7 @@
     [immuconf.config :as immuconf]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 (def config (immuconf/load "resources/config.edn"))

@@ -23,7 +23,7 @@
     [sfsim.worley :refer (worley-size)]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 

@@ -15,7 +15,7 @@
     [sfsim.util :refer (N N0)]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 

@@ -17,7 +17,7 @@
 ;; improved Perlin noise algorithm
 ;; https://adrianb.io/2014/08/09/perlinnoise.html
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 
 
 (defn random-gradient

@@ -22,7 +22,7 @@
       GL42)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 (def texture (m/schema [:map [::target :int] [::texture :int]]))

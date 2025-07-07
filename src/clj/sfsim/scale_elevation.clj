@@ -11,7 +11,7 @@
     [sfsim.util :refer (slurp-shorts spit-shorts)]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 

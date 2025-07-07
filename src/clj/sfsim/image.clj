@@ -23,7 +23,7 @@
       STBImageWrite)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 (def image (m/schema [:map [::width N] [::height N] [::channels N] [::data bytes?]]))

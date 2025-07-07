@@ -15,7 +15,7 @@
 
 ;; http://cv.ulichney.com/papers/1993-void-cluster.pdf
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 (def noise-size 64)

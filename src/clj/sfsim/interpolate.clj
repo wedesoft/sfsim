@@ -16,7 +16,7 @@
       VectorProto)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 (def interpolation-space (m/schema [:map [::shape [:vector N]] [::forward fn?] [::backward fn?]]))

@@ -14,7 +14,7 @@
     [sfsim.util :refer (make-progress-bar tick-and-print dimension-count N N0)]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 (def worley-size 16)
