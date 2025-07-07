@@ -330,7 +330,7 @@
   (let [init   (::init layout)
         intlen (::intlen layout)
         n      (::n layout)
-        t      (- (* (- tdb T0) S-PER-DAY) init)
+        t      (- (* (- tdb ^double T0) S-PER-DAY) init)
         index  (min (max (long (quot t intlen)) 0) (dec n))
         offset (- t (* index intlen))
         s      (- (/ (* 2.0 offset) intlen) 1.0)]
@@ -482,10 +482,10 @@
   {:malli/schema [:=> [:cat :double] fmat3]}
   [tdb]
   (let [t          (/ (- tdb T0) 36525.0)
-        r3-chi-a   (rotation-z (* (- (chi-a t)) ASEC2RAD))
-        r1-omega-a (rotation-x (* (omega-a t) ASEC2RAD))
-        r3-psi-a   (rotation-z (* (psi-a t) ASEC2RAD))
-        r1-eps0    (rotation-x (* (- eps0) ASEC2RAD))]
+        r3-chi-a   (rotation-z (* (- (chi-a t)) ^double ASEC2RAD))
+        r1-omega-a (rotation-x (* (omega-a t) ^double ASEC2RAD))
+        r3-psi-a   (rotation-z (* (psi-a t) ^double ASEC2RAD))
+        r1-eps0    (rotation-x (* (- ^double eps0) ^double ASEC2RAD))]
     (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0)))))
 
 
@@ -495,17 +495,17 @@
 (defn earth-rotation-angle
   "Compute Earth rotation angle as a value between 0 and 1"
   {:malli/schema [:=> [:cat :double] :double]}
-  [jd-ut]
-  (let [th (+ 0.7790572732640 (* 0.00273781191135448 (- jd-ut T0)))]
-    (mod (+ (mod th 1.0) (mod jd-ut 1.0)) 1.0)))
+  ^double [^double jd-ut]
+  (let [th (+ 0.7790572732640 (* 0.00273781191135448 (- jd-ut ^double T0)))]
+    (mod (+ ^double (mod th 1.0) ^double (mod jd-ut 1.0)) 1.0)))
 
 
 (defn sidereal-time
   "Compute Greenwich Mean Sidereal Time (GMST) in hours"
   {:malli/schema [:=> [:cat :double] :double]}
-  [jd-ut]
+  ^double [^double jd-ut]
   (let [theta (earth-rotation-angle jd-ut)
-        t     (/ (- jd-ut T0) 36525.0)
+        t     (/ (- jd-ut ^double T0) 36525.0)
         st    (-> t (* -0.0000000368) (- 0.000029956)
                   (* t) (- 0.00000044)
                   (* t) (+ 1.3915817)
@@ -521,9 +521,9 @@
   "Construct conversion matrix from ICRS to J2000"
   {:malli/schema [:=> :cat fmat3]}
   []
-  (let [xi0  (* -0.0166170 ASEC2RAD)
-        eta0 (* -0.0068192 ASEC2RAD)
-        da0  (* -0.01460   ASEC2RAD)
+  (let [xi0  (* -0.0166170 ^double ASEC2RAD)
+        eta0 (* -0.0068192 ^double ASEC2RAD)
+        da0  (* -0.01460   ^double ASEC2RAD)
         yx   (- da0)
         zx   xi0
         xy   da0
@@ -550,7 +550,7 @@
   "Compute Earth orientation in ICRS coordinate system depending on time t (omitting nutation)"
   {:malli/schema [:=> [:cat :double] fmat3]}
   [jd-ut]
-  (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2 PI (/ (sidereal-time jd-ut) 24.0)))))
+  (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2.0 PI (/ (sidereal-time jd-ut) 24.0)))))
 
 
 (def pck-parser (insta/parser (slurp "resources/grammars/pck.bnf")))
@@ -594,7 +594,7 @@
   [{::keys [axes angles units]}]
   (let [scale     ({"DEGREES" DEGREES2RAD "ARCSECONDS" ASEC2RAD} units)
         rotations [rotation-x rotation-y rotation-z]
-        matrices  (mapv (fn [angle axis] ((rotations (dec axis)) (* angle scale))) angles axes)]
+        matrices  (mapv (fn [angle axis] ((rotations (dec ^long axis)) (* ^double angle ^double scale))) angles axes)]
     (reduce (fn [result rotation] (mulm rotation result)) (eye 3) matrices)))
 
 
@@ -619,7 +619,7 @@
         j2000-instant  (.toInstant j2000-datetime)
         t              (java.time.Instant/now)
         duration       (java.time.Duration/between j2000-instant t)]
-    (/ (.toSeconds duration) S-PER-DAY)))
+    (/ (.toSeconds duration) ^double S-PER-DAY)))
 
 
 (set! *warn-on-reflection* false)
