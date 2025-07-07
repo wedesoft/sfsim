@@ -359,24 +359,24 @@
                              :sfsim.quadtree/tile-y :sfsim.quadtree/tile-x :sfsim.quadtree/rotation)]
            (fact (extract (neighbour-tile ?face 2 9 ?row ?column ?tile-y ?tile-x ?dy ?dx 0)) => ?neighbour))
          ?face ?row ?column ?tile-y ?tile-x ?dy ?dx ?neighbour
-         face0 0    0         0       0      0   0  [face0 0 0   0   0   0]
-         face0 1    2         5       7      0   0  [face0 1 2   5   7   0]
-         face0 1    2         5       7      1   0  [face0 1 2   6   7   0]
-         face0 1    2         5       6      0   1  [face0 1 2   5   7   0]
-         face0 1    2         5       7      4   0  [face0 2 2   1   7   0]
-         face0 1    2         5       7      0   2  [face0 1 3   5   1   0]
-         face0 1    2         5       7     -6   0  [face0 0 2   7   7   0]
-         face0 1    2         5       7      0  -8  [face0 1 1   5   7   0]
-         face1 0    0         0       0     -1   0  [face0 3 0   7   0   0]
-         face0 0    0         0       0     -1   0  [face4 0 0   1   0 180]
-         face0 0    0       1/2       0      1   0  [face0 0 0 3/2   0   0]
-         face0 0    0         0     1/2      0   1  [face0 0 0   0 3/2   0]
-         face0 3    0      15/2     1/2      1   0  [face1 0 0 1/2 1/2   0]
-         face0 3    3         2       0     -1  -1  [face0 3 2   1   7   0])
+         face0 0    0         0.0     0.0    0   0  [face0 0 0   0.0 0.0   0]
+         face0 1    2         5.0     7.0    0   0  [face0 1 2   5.0 7.0   0]
+         face0 1    2         5.0     7.0    1   0  [face0 1 2   6.0 7.0   0]
+         face0 1    2         5.0     6.0    0   1  [face0 1 2   5.0 7.0   0]
+         face0 1    2         5.0     7.0    4   0  [face0 2 2   1.0 7.0   0]
+         face0 1    2         5.0     7.0    0   2  [face0 1 3   5.0 1.0   0]
+         face0 1    2         5.0     7.0   -6   0  [face0 0 2   7.0 7.0   0]
+         face0 1    2         5.0     7.0    0  -8  [face0 1 1   5.0 7.0   0]
+         face1 0    0         0.0     0.0   -1   0  [face0 3 0   7.0 0.0   0]
+         face0 0    0         0.0     0.0   -1   0  [face4 0 0   1.0 0.0 180]
+         face0 0    0         0.5     0.0    1   0  [face0 0 0   1.5 0.0   0]
+         face0 0    0         0.0     0.5    0   1  [face0 0 0   0.0 1.5   0]
+         face0 3    0         7.5     0.5    1   0  [face1 0 0   0.5 0.5   0]
+         face0 3    3         2.0     0.0   -1  -1  [face0 3 2   1.0 7.0   0])
 
 
 (tabular "Get neighbouring tile face and coordinates"
-         (let [tile (neighbour-tile ?face 1 9 ?row ?column 4 4 ?dy ?dx 0)
+         (let [tile (neighbour-tile ?face 1 9 ?row ?column 4.0 4.0 ?dy ?dx 0)
                j    (/ (+ (/ (:sfsim.quadtree/tile-y tile) 8.0) (:sfsim.quadtree/row tile)) 2)
                i    (/ (+ (/ (:sfsim.quadtree/tile-x tile) 8.0) (:sfsim.quadtree/column tile)) 2)
                p    (cube-map (:sfsim.quadtree/face tile) j i)]
@@ -431,13 +431,13 @@
 
 
 (facts "Get diagonal orientations of quad"
-       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation   0}) => true
-       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation   0}) => false
-       (quad-split-orientation [[false true]]   #:sfsim.quadtree{:tile-y 1/2 :tile-x 3/2 :rotation   0}) => true
-       (quad-split-orientation [[false] [true]] #:sfsim.quadtree{:tile-y 3/2 :tile-x 1/2 :rotation   0}) => true
-       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation  90}) => false
-       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation  90}) => true
-       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation 180}) => true)
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation   0}) => true
+       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation   0}) => false
+       (quad-split-orientation [[false true]]   #:sfsim.quadtree{:tile-y 0.5 :tile-x 1.5 :rotation   0}) => true
+       (quad-split-orientation [[false] [true]] #:sfsim.quadtree{:tile-y 1.5 :tile-x 0.5 :rotation   0}) => true
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation  90}) => false
+       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation  90}) => true
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation 180}) => true)
 
 
 (facts "Determine point indices of a pair of triangles for a quad in a 3x3 mesh of 4x4 points"

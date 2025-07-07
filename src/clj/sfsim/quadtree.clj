@@ -462,14 +462,14 @@
   (m/schema [:map [::face :keyword]
              [::row :int]
              [::column :int]
-             [::tile-y rational?]
-             [::tile-x rational?]
+             [::tile-y :double]
+             [::tile-x :double]
              [::rotation :int]]))
 
 
 (defn build-neighbour
   "Create vector with coordinates in neighbouring face"
-  {:malli/schema [:=> [:cat :keyword :int :int :int :int :int rational? rational? :int :int :int] neighbour]}
+  {:malli/schema [:=> [:cat :keyword :int :int :int :int :int :double :double :int :int :int] neighbour]}
   [face drotation level tilesize row column tile-y tile-x dy dx rotation]
   (let [gridsize  (bit-shift-left 1 level)
         row'      (rotate-b drotation gridsize row column)
@@ -484,7 +484,7 @@
 
 (defn neighbour-tile
   "Get neighbouring tile face and coordinates"
-  {:malli/schema [:=> [:cat :keyword :int :int :int :int rational? rational? :int :int :int] neighbour]}
+  {:malli/schema [:=> [:cat :keyword :int :int :int :int :double :double :int :int :int] neighbour]}
   [face level tilesize row column tile-y tile-x dy dx rotation]
   (let [gridsize (bit-shift-left 1 level)]
     (cond
@@ -579,7 +579,7 @@
 
 (defn quad-split-orientation
   "Perform lookup and rotation for split orientation of quad"
-  {:malli/schema [:=> [:cat [:vector [:vector :boolean]] [:map [::tile-y rational?] [::tile-x rational?] [::rotation :int]]]
+  {:malli/schema [:=> [:cat [:vector [:vector :boolean]] [:map [::tile-y :double] [::tile-x :double] [::rotation :int]]]
                   :boolean]}
   [orientations {::keys [tile-y tile-x rotation]}]
   (let [original-orientation (nth (nth orientations (long tile-y)) (long tile-x))]
@@ -593,8 +593,8 @@
   (let [{::keys [coordinates index-map]} (identify-neighbours level tilesize row column tile-y tile-x)]
     (vec
       (mapcat
-        (fn [[dy dx]]
-          (let [neighbour   (neighbour-tile face level tilesize row column (+ tile-y 1/2) (+ tile-x 1/2) dy dx 0)
+        (fn [[^long dy ^long dx]]
+          (let [neighbour   (neighbour-tile face level tilesize row column (+ ^long tile-y 0.5) (+ ^long tile-x 0.5) dy dx 0)
                 orientation (quad-split-orientation orientations neighbour)]
             (indexed-triangles dy dx orientation index-map)))
         coordinates))))
