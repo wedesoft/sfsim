@@ -11,7 +11,10 @@
     [fastmath.vector :refer (vec3 add sub mag)]
     [malli.core :as m]
     [sfsim.matrix :refer (fvec3)]
-    [sfsim.util :refer (make-progress-bar tick-and-print dimension-count N N0)]))
+    [sfsim.util :refer (make-progress-bar tick-and-print dimension-count N N0)])
+  (:import
+    (fastmath.vector
+      Vec3)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -25,17 +28,17 @@
 (defn random-point-grid
   "Create a 3D grid with a random point in each cell"
   {:malli/schema [:=> [:cat N N [:? [:=> :cat :double]]] grid]}
-  ([divisions size]
+  ([^long divisions ^long size]
    (random-point-grid divisions size rand))
-  ([divisions size random]
+  ([^long divisions ^long size random]
    (let [cellsize (/ size divisions)]
      (mapv (fn random-table
-             [k]
+             [^long k]
              (mapv (fn random-row
-                     [j]
+                     [^long j]
                      (mapv (fn random-point
-                             [i]
-                             (add (vec3 (* i cellsize) (* j cellsize) (* k cellsize))
+                             [^long i]
+                             (add (vec3 (* i ^long cellsize) (* j ^long cellsize) (* k ^long cellsize))
                                   (apply vec3 (repeatedly 3 #(random cellsize)))))
                            (range divisions)))
                    (range divisions)))
@@ -45,10 +48,10 @@
 (defn- clipped-index-and-offset
   "Return index modulo dimension of grid and offset for corresponding coordinate"
   {:malli/schema [:=> [:cat grid N N N0] [:tuple N0 :double]]}
-  [grid size dimension index]
+  [grid ^long size ^long dimension ^long index]
   (let [divisions     (dimension-count grid dimension)
-        clipped-index (if (< index divisions) (if (>= index 0) index (+ index divisions)) (- index divisions))
-        offset        (if (< index divisions) (if (>= index 0) 0 (- size)) size)]
+        clipped-index (if (< index ^long divisions) (if (>= index 0) index (+ index ^long divisions)) (- index ^long divisions))
+        offset        (if (< index ^long divisions) (if (>= index 0) 0 (- size)) size)]
     [clipped-index offset]))
 
 
@@ -65,11 +68,14 @@
 (defn closest-distance-to-point-in-grid
   "Return distance to closest point in 3D grid"
   {:malli/schema [:=> [:cat grid N N fvec3] :double]}
-  [grid divisions size point]
-  (let [cellsize (/ size divisions)
+  [grid ^long divisions ^long size ^Vec3 point]
+  (let [cellsize (/ ^long size ^long divisions)
         [x y z]  point
-        [i j k]  [(int (quot x cellsize)) (int (quot y cellsize)) (int (quot z cellsize))]
-        points   (for [dk [-1 0 1] dj [-1 0 1] di [-1 0 1]] (extract-point-from-grid grid size (+ k dk) (+ j dj) (+ i di)))]
+        [i j k]  [(long (quot ^double x ^long cellsize))
+                  (long (quot ^double y ^long cellsize))
+                  (long (quot ^double z ^long cellsize))]
+        points   (for [dk [-1 0 1] dj [-1 0 1] di [-1 0 1]]
+                      (extract-point-from-grid grid size (+ ^long k ^long dk) (+ ^long j ^long dj) (+ ^long i ^long di)))]
     (apply min (mapv #(mag (sub point %)) points))))
 
 
@@ -78,30 +84,31 @@
   {:malli/schema [:=> [:cat [:sequential :double]] [:vector :double]]}
   [values]
   (let [maximum (apply max values)]
-    (vec (pmap #(/ % maximum) values))))
+    (vec (pmap #(/ ^double % ^double maximum) values))))
 
 
 (defn invert-vector
   "Invert values of a vector"
   {:malli/schema [:=> [:cat [:sequential :double]] [:vector :double]]}
   [values]
-  (mapv #(- 1 %) values))
+  (mapv #(- 1.0 ^double %) values))
 
 
 (defn worley-noise
   "Create 3D Worley noise"
   {:malli/schema [:=> [:cat N N [:? :boolean]] [:vector :double]]}
-  ([divisions size]
+  ([^long divisions ^long size]
    (worley-noise divisions size false))
-  ([divisions size progress]
+  ([^long divisions ^long size ^Boolean progress]
    (let [grid (random-point-grid divisions size)
          bar  (if progress (agent (make-progress-bar (* size size size) size)) nil)]
      (invert-vector
        (normalize-vector
-         (pfor (+ 2 (ncpus)) [k (range size) j (range size) i (range size)]
+         (pfor (+ 2 ^long (ncpus)) [k (range size) j (range size) i (range size)]
                (do
                  (when progress (send bar tick-and-print))
-                 (closest-distance-to-point-in-grid grid divisions size (vec3 (+ k 0.5) (+ j 0.5) (+ i 0.5))))))))))
+                 (closest-distance-to-point-in-grid grid divisions size
+                                                    (vec3 (+ ^long k 0.5) (+ ^long j 0.5) (+ ^long i 0.5))))))))))
 
 
 (set! *warn-on-reflection* false)
