@@ -13,7 +13,10 @@
     [malli.core :as m]
     [sfsim.matrix :refer (oriented-matrix fvec3)]
     [sfsim.ray :refer (ray)]
-    [sfsim.util :refer (sqr N)]))
+    [sfsim.util :refer (sqr N)])
+  (:import
+    (fastmath.vector
+      Vec3)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -25,14 +28,14 @@
 (defn height
   "Determine height above surface of sphere"
   {:malli/schema [:=> [:cat sphere fvec3] :double]}
-  [{::keys [centre radius]} point]
+  ^double [{::keys [^Vec3 centre ^double radius]} ^Vec3 point]
   (- (mag (sub point centre)) radius))
 
 
 (defn- ray-sphere-determinant
   "Get determinant for intersection of ray with sphere"
   {:malli/schema [:=> [:cat fvec3 :double fvec3 fvec3] :double]}
-  [centre radius origin direction]
+  ^double [^Vec3 centre ^double radius ^Vec3 origin ^Vec3 direction]
   (let [offset        (sub origin centre)
         direction-sqr (dot direction direction)]
     (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr radius))))))
@@ -74,30 +77,30 @@
 (defn integrate-circle
   "Numerically integrate function in the range from zero to two pi"
   {:malli/schema [:=> [:cat N [:=> [:cat :double] [:vector :double]]] [:vector :double]]}
-  [steps fun]
-  (let [samples (mapv #(* 2 PI (/ (+ 0.5 %) steps)) (range steps))
+  [^long steps fun]
+  (let [samples (mapv #(* 2 PI (/ (+ 0.5 ^long %) steps)) (range steps))
         weight  (/ (* 2 PI) steps)]
     (mult (reduce add (mapv fun samples)) weight)))
 
 
 (defn- spherical-integral
   "Integrate over specified range of sphere"
-  {:malli/schema [:=> [:cat N N :double]]}
+  {:malli/schema [:=> [:cat N N :double :vec3 fn?]]}
   [theta-steps phi-steps theta-range normal fun]
-  (let [samples (mapv #(* theta-range (/ (+ 0.5 %) theta-steps)) (range theta-steps))
-        delta2  (/ theta-range theta-steps 2)
+  (let [samples (mapv #(* ^double theta-range (/ (+ 0.5 ^long %) ^long theta-steps)) (range theta-steps))
+        delta2  (/ ^double theta-range ^long theta-steps 2)
         mat     (transpose (oriented-matrix normal))]
     (reduce add
             (mapv (fn sample-circle
-                    [theta]
-                    (let [factor    (- (cos (- theta delta2)) (cos (+ theta delta2)))
-                          ringsteps (int (ceil (* (sin theta) phi-steps)))
+                    [^double theta]
+                    (let [factor    (- (cos (- theta ^double delta2)) (cos (+ theta ^double delta2)))
+                          ringsteps (int (ceil (* (sin theta) ^long phi-steps)))
                           cos-theta (cos theta)
                           sin-theta (sin theta)]
                       (mult (integrate-circle
                               ringsteps
                               (fn sample-point
-                                [phi]
+                                [^double phi]
                                 (let [x cos-theta
                                       y (* sin-theta (cos phi))
                                       z (* sin-theta (sin phi))]
@@ -109,14 +112,14 @@
 (defn integral-half-sphere
   "Integrate over half unit sphere oriented along normal"
   {:malli/schema [:=> [:cat N fvec3 [:=> [:cat fvec3] [:vector :double]]] [:vector :double]]}
-  [steps normal fun]
+  [^long steps ^Vec3 normal fun]
   (spherical-integral (bit-shift-right steps 2) steps (/ PI 2) normal fun))
 
 
 (defn integral-sphere
   "Integrate over a full unit sphere"
   {:malli/schema [:=> [:cat N fvec3 [:=> [:cat fvec3] [:vector :double]]] [:vector :double]]}
-  [steps normal fun]
+  [^long steps ^Vec3 normal fun]
   (spherical-integral (bit-shift-right steps 1) steps PI normal fun))
 
 
