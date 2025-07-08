@@ -431,7 +431,7 @@
   {:malli/schema [:=> [:cat [:int {:min 0 :max 15}] texture] :nil]}
   [index texture]
   `(do
-     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 ~index))
+     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 (long ~index)))
      (GL11/glBindTexture (:sfsim.texture/target ~texture) (:sfsim.texture/texture ~texture))))
 
 
