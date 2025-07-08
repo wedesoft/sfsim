@@ -197,11 +197,11 @@
 
 
 (facts "Compute quotient and limit it"
-       (limit-quot 0 0 1) => 0
-       (limit-quot 4 2 1) => 1
-       (limit-quot -4 2 1) => -1
-       (limit-quot 1 2 1) => 1/2
-       (limit-quot -4 -2 1) => 1)
+       (limit-quot 0.0 0.0 1.0) => 0.0
+       (limit-quot 4.0 2.0 1.0) => 1.0
+       (limit-quot -4.0 2.0 1.0) => -1.0
+       (limit-quot 1.0 2.0 1.0) => 0.5
+       (limit-quot -4.0 -2.0 1.0) => 1.0)
 
 
 (facts "Count dimensions of nested vector"
