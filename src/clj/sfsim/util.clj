@@ -328,21 +328,21 @@
 (defn sinc
   "sin(x) / x function"
   {:malli/schema [:=> [:cat :double] :double]}
-  [x]
+  ^double [^double x]
   (if (zero? x) 1.0 (/ (sin x) x)))
 
 
 (defn sqr
   "Square of x"
-  {:malli/schema [:=> [:cat number?] number?]}
-  [x]
+  {:malli/schema [:=> [:cat :double] :double]}
+  ^double [^double x]
   (* x x))
 
 
 (defn cube
   "Cube of x"
-  {:malli/schema [:=> [:cat number?] number?]}
-  [x]
+  {:malli/schema [:=> [:cat :double] :double]}
+  ^double [^double x]
   (* x x x))
 
 

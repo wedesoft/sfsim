@@ -142,14 +142,14 @@
 
 
 (facts "Square values"
-       (sqr 2) => 4
-       (sqr 3) => 9)
+       (sqr 2.0) => 4.0
+       (sqr 3.0) => 9.0)
 
 
 (facts "Cube values"
-       (cube 1) => 1
-       (cube 2) => 8
-       (cube 3) => 27)
+       (cube 1.0) => 1.0
+       (cube 2.0) => 8.0
+       (cube 3.0) => 27.0)
 
 
 (facts "Converting unsigned byte to byte and back"
@@ -226,9 +226,9 @@
 
 
 (facts "LRU cache with destructor"
-       (sqr-cache 2) => 4
-       (sqr-cache 3) => 9
-       (sqr-cache 2) => 4
+       (sqr-cache 2.0) => 4.0
+       (sqr-cache 3.0) => 9.0
+       (sqr-cache 2.0) => 4.0
        @destruct => nil
-       (sqr-cache 5) => 25
-       @destruct => 9)
+       (sqr-cache 5.0) => 25.0
+       @destruct => 9.0)
