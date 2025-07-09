@@ -340,7 +340,7 @@
                     quadtree/tile-triangle (fn [^double y ^double x ^Boolean first-diagonal]
                                              (facts y => 7.0, x => 11.0, first-diagonal => true)
                                              [[0 0] [0 1] [1 1]])
-                    image/get-vector3 (fn [img y x]
+                    image/get-vector3 (fn [img ^long y ^long x]
                                         (facts (:sfsim.image/data img) => :surface-tile,
                                                y => #(contains? #{3 4} %), x => #(contains? #{5 6} %))
                                         ({[3 5] (vec3 0 0 0) [3 6] (vec3 1 0 0) [4 6] (vec3 1 1 0)} [y x]))

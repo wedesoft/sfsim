@@ -326,7 +326,7 @@
            (with-redefs [atmosphere/ray-extremity
                          (fn [planet ray] (vec3 0 (+ radius height) 0))
                          sphere/integral-sphere
-                         (fn [steps normal fun]
+                         (fn [^long steps ^Vec3 normal fun]
                            (facts steps => 64
                                   normal => (roughly-vector (vec3 0 1 0) 1e-6)
                                   (fun (vec3 0 1 0)) => (roughly-vector (mult (emult (vec3 1 2 3) (vec3 2e-5 2e-5 2e-5)) 0.5) 1e-10))
@@ -346,7 +346,7 @@
                                     x0 => (vec3 0 radius 0))
                              (vec3 0.9 0.8 0.7))
                          sphere/integral-sphere
-                         (fn [steps normal fun]
+                         (fn [^long steps ^Vec3 normal fun]
                              (facts steps => 64
                                     normal => (roughly-vector (vec3 0 1 0) 1e-6)
                                     (fun (vec3 0 -1 0)) =>
@@ -370,7 +370,7 @@
                                       above-horizon => true)
                                (vec3 1 2 3))]
          (with-redefs [sphere/integral-half-sphere
-                       (fn [steps normal fun]
+                       (fn [^long steps ^Vec3 normal fun]
                          (facts steps => 64
                                 normal => (roughly-vector (vec3 0 1 0) 1e-6)
                                 (fun (vec3 0.36 0.48 0.8)) => (mult (vec3 1 2 3) 0.48))
