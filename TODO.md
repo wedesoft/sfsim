@@ -1,7 +1,7 @@
 # TODO
 * now fix reflection warnings
 * remove malli from primitive functions
-* use different accessors for records?
+* use different accessors for quaternions, vectors, matrices?
 * display version in menu, start ChangeLog
 * input module to handle joystick, key callbacks, and mouse callbacks (send keys/joystick to GUI if active, spacecraft otherwise)
 * switch windows JDK install to 24

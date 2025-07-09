@@ -22,7 +22,10 @@
     [sfsim.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection sphere)]
     [sfsim.texture :refer (destroy-texture make-vector-texture-2d make-vector-texture-4d
                                            texture-2d texture-4d)]
-    [sfsim.util :refer (third fourth limit-quot sqr N slurp-floats)]))
+    [sfsim.util :refer (third fourth limit-quot sqr N slurp-floats cube)])
+  (:import
+    (fastmath.vector
+      Vec3)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -40,7 +43,7 @@
   "Compute scattering or absorption amount in atmosphere"
   {:malli/schema [:function [:=> [:cat scatter :double] fvec3]
                   [:=> [:cat sphere scatter fvec3] fvec3]]}
-  ([{::keys [scatter-base scatter-scale]} height]
+  ([{::keys [^Vec3 scatter-base ^double scatter-scale]} ^double height]
    (mult scatter-base (-> height (/ scatter-scale) - exp)))
   ([planet component x]
    (scattering component (height planet x))))
@@ -56,10 +59,10 @@
 (defn phase
   "Mie scattering phase function by Henyey-Greenstein depending on assymetry g and mu = cos(theta)"
   {:malli/schema [:=> [:cat [:map [::scatter-g {:optional true} :double]] :double] :double]}
-  [{::keys [scatter-g] :or {scatter-g 0}} mu]
+  [{::keys [^double scatter-g] :or {scatter-g 0.0}} ^double mu]
   (let [scatter-g-sqr (sqr scatter-g)]
-    (/ (* 3 (- 1 scatter-g-sqr) (+ 1 (sqr mu)))
-       (* 8 PI (+ 2 scatter-g-sqr) (pow (- (+ 1 scatter-g-sqr) (* 2 scatter-g mu)) 1.5)))))
+    (/ (* 3.0 (- 1.0 scatter-g-sqr) (+ 1.0 (sqr mu)))
+       (* 8.0 PI (+ 2.0 scatter-g-sqr) (pow (- (+ 1.0 scatter-g-sqr) (* 2.0 scatter-g mu)) 1.5)))))
 
 
 (def atmosphere
@@ -71,10 +74,10 @@
 (defn atmosphere-intersection
   "Get intersection of ray with artificial limit of atmosphere"
   {:malli/schema [:=> [:cat atmosphere ray] fvec3]}
-  [{:sfsim.sphere/keys [centre radius] :as planet} ray]
+  [{:sfsim.sphere/keys [centre ^double radius] :as planet} ray]
   (let [height                    (::height planet)
-        atmosphere                #:sfsim.sphere{:centre centre :radius (+ radius height)}
-        {:sfsim.intersection/keys [distance length]} (ray-sphere-intersection atmosphere ray)]
+        atmosphere                #:sfsim.sphere{:centre centre :radius (+ radius ^double height)}
+        {:sfsim.intersection/keys [^double distance ^double length]} (ray-sphere-intersection atmosphere ray)]
     (add (:sfsim.ray/origin ray) (mult (:sfsim.ray/direction ray) (+ distance length)))))
 
 
@@ -89,8 +92,8 @@
 (defn surface-point?
   "Check whether a point is near the surface or near the edge of the atmosphere"
   {:malli/schema [:=> [:cat atmosphere fvec3] :boolean]}
-  [planet point]
-  (< (* 2 (height planet point)) (::height planet)))
+  ^Boolean [planet ^Vec3 point]
+  (< (* 2.0 (height planet point)) ^double (::height planet)))
 
 
 (defn is-above-horizon?
@@ -229,7 +232,7 @@
 (defn horizon-distance
   "Distance from point with specified radius to horizon of planet"
   {:malli/schema [:=> [:cat sphere :double] :double]}
-  [planet radius]
+  ^double [planet ^double radius]
   (sqrt (max 0.0 (- (sqr radius) (sqr (:sfsim.sphere/radius planet))))))
 
 
@@ -239,27 +242,27 @@
   [planet size point direction above-horizon]
   (let [radius        (mag point)
         ground-radius (:sfsim.sphere/radius planet)
-        top-radius    (+ ground-radius (::height planet))
+        top-radius    (+ ^double ground-radius ^double (::height planet))
         sin-elevation (/ (dot point direction) radius)
         rho           (horizon-distance planet radius)
         Delta         (- (sqr (* radius sin-elevation)) (sqr rho))
         H             (sqrt (- (sqr top-radius) (sqr ground-radius)))]
-    (* (dec size)
+    (* (dec ^long size)
        (if above-horizon
-         (- 0.5 (limit-quot (- (* radius sin-elevation) (sqrt (max 0.0 (+ Delta (sqr H))))) (+ (* 2 rho) (* 2 H)) -0.5 0.0))
-         (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0.0 Delta))) (* 2 rho) -0.5 0.0))))))
+         (- 0.5 (limit-quot (- (* radius sin-elevation) (sqrt (max 0.0 (+ Delta (sqr H))))) (+ (+ rho rho) (* 2 H)) -0.5 0.0))
+         (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0.0 Delta))) (+ rho rho) -0.5 0.0))))))
 
 
 (defn index-to-elevation
   "Convert index and radius to elevation"
   {:malli/schema [:=> [:cat atmosphere N :double :double] [:tuple fvec3 :boolean]]}
-  [planet size radius index]
+  [planet ^long size ^double radius ^double index]
   (let [ground-radius (:sfsim.sphere/radius planet)
-        top-radius    (+ ground-radius (::height planet))
+        top-radius    (+ ^double ground-radius ^double (::height planet))
         horizon-dist  (horizon-distance planet radius)
         H             (sqrt (- (sqr top-radius) (sqr ground-radius)))
         scaled-index  (/ index (dec size))]
-    (if (or (< scaled-index 0.5) (and (== scaled-index 0.5) (< (* 2 radius) (+ ground-radius top-radius))))
+    (if (or (< scaled-index 0.5) (and (== scaled-index 0.5) (< (* 2.0 radius) (+ ^double ground-radius ^double top-radius))))
       (let [ground-dist   (* horizon-dist (- 1 (* 2 scaled-index)))
             sin-elevation (limit-quot (- (sqr ground-radius) (sqr radius) (sqr ground-dist)) (* 2 radius ground-dist) 1.0)]
         [(vec3 sin-elevation (sqrt (- 1 (sqr sin-elevation))) 0) false])
@@ -271,19 +274,19 @@
 (defn height-to-index
   "Convert height of point to index"
   {:malli/schema [:=> [:cat atmosphere N fvec3] :double]}
-  [planet size point]
+  ^double [planet ^long size ^Vec3 point]
   (let [radius     (:sfsim.sphere/radius planet)
         max-height (::height planet)]
-    (* (dec size) (/ (horizon-distance planet (mag point)) (horizon-distance planet (+ radius max-height))))))
+    (* (dec size) (/ (horizon-distance planet (mag point)) (horizon-distance planet (+ ^double radius ^double max-height))))))
 
 
 (defn index-to-height
   "Convert index to point with corresponding height"
   {:malli/schema [:=> [:cat atmosphere N :double] fvec3]}
-  [planet size index]
+  ^Vec3 [planet ^long size ^double index]
   (let [radius       (:sfsim.sphere/radius planet)
         max-height   (::height planet)
-        max-horizon  (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
+        max-horizon  (sqrt (- (sqr (+ ^double radius ^double max-height)) (sqr radius)))
         horizon-dist (* (/ index (dec size)) max-horizon)]
     (vec3 (sqrt (+ (sqr radius) (sqr horizon-dist))) 0 0)))
 
@@ -322,7 +325,7 @@
 (defn sun-elevation-to-index
   "Convert sun elevation to index"
   {:malli/schema [:=> [:cat N fvec3 fvec3] :double]}
-  [size point light-direction]
+  ^double [^long size ^Vec3 point ^Vec3 light-direction]
   (let [sin-elevation (/ (dot point light-direction) (mag point))]
     (* (dec size) (max 0.0 (/ (- 1 (exp (- 0 (* 3 sin-elevation) 0.6))) (- 1 (exp -3.6)))))))
 
@@ -330,8 +333,8 @@
 (defn index-to-sin-sun-elevation
   "Convert index to sinus of sun elevation"
   {:malli/schema [:=> [:cat N :double] :double]}
-  [size index]
-  (/ (+ (log (- 1 (* (/ index (dec size)) (- 1 (exp -3.6))))) 0.6) -3))
+  ^double [^long size ^double index]
+  (/ (+ (log (- 1 (* (/ index (dec ^long size)) (- 1 (exp -3.6))))) 0.6) -3))
 
 
 (defn- surface-radiance-forward
@@ -371,17 +374,18 @@
   "Convert sun and viewing direction angle to index"
   {:malli/schema [:=> [:cat N fvec3 fvec3] :double]}
   [size direction light-direction]
-  (* (dec size) (/ (+ 1 (dot direction light-direction)) 2)))
+  (* (dec ^long size) (/ (+ 1 (dot direction light-direction)) 2)))
 
 
 (defn index-to-sun-direction
   "Convert sinus of sun elevation, sun angle index, and viewing direction to sun direction vector"
   {:malli/schema [:=> [:cat N fvec3 :double :double] fvec3]}
   [size direction sin-sun-elevation index]
-  (let [dot-view-sun (- (* 2.0 (/ index (dec size))) 1.0)
-        max-sun-1    (->> sin-sun-elevation sqr (- 1) (max 0.0) sqrt)
-        sun-1        (limit-quot (->> sin-sun-elevation (* (direction 0)) (- dot-view-sun)) (direction 1) max-sun-1)
-        sun-2        (->> sin-sun-elevation sqr (- 1 (sqr sun-1)) (max 0.0) sqrt)]
+  (let [dot-view-sun (- (* 2.0 (/ ^double index (dec ^long size))) 1.0)
+        max-sun-1    (->> sin-sun-elevation sqr (- 1.0) (max 0.0) sqrt)
+        sun-1        (limit-quot (->> ^double sin-sun-elevation (* ^double (direction 0)) (- ^double dot-view-sun))
+                                 (direction 1) max-sun-1)
+        sun-2        (->> sin-sun-elevation sqr (- 1.0 (sqr sun-1)) (max 0.0) sqrt)]
     (vec3 sin-sun-elevation sun-1 sun-2)))
 
 
@@ -425,26 +429,26 @@
 
 (defn temperature-troposphere
   "Compute temperature in troposphere (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [height]
-  (* (- 518.69 (* 3.5662e-3 (/ height foot))) rankin))
+  ^double [^double height]
+  (* (- 518.69 (* 3.5662e-3 (/ height ^double foot))) ^double rankin))
 
 
 (defn temperature-lower-stratosphere
   "Compute temperature in lower stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [_height]
-  (* 389.99 rankin))
+  ^double [^double _height]
+  (* 389.99 ^double rankin))
 
 
 (defn temperature-upper-stratosphere
   "Compute temperature in upper stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [height]
-  (* (+ 389.99 (* 5.4864e-4 (- (/ height foot) 65617))) rankin))
+  ^double [^double height]
+  (* (+ 389.99 (* 5.4864e-4 (- (/ height ^double foot) 65617))) ^double rankin))
 
 
 (defn temperature-at-height
   "Compute atmospheric temperature as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [height]
-  (let [height-in-foot (/ height foot)]
+  ^double [^double height]
+  (let [height-in-foot (/ height ^double foot)]
     (cond
       (<= height-in-foot 36089) (temperature-troposphere height)
       (<= height-in-foot 65617) (temperature-lower-stratosphere height)
@@ -453,26 +457,26 @@
 
 (defn pressure-troposphere
   "Compute pressure in troposphere (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [height]
-  (* 1.1376e-11 (pow (/ (temperature-troposphere height) rankin) 5.2560) (/ pound-force foot foot)))
+  ^double [^double height]
+  (* 1.1376e-11 (pow (/ (temperature-troposphere height) ^double rankin) 5.2560) (/ ^double pound-force (sqr foot))))
 
 
 (defn pressure-lower-stratosphere
   "Compute pressure in lower stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [height]
-  (* 2678.4 (exp (* -4.8063e-5 (/ height foot))) (/ pound-force foot foot)))
+  ^double [^double height]
+  (* 2678.4 (exp (* -4.8063e-5 (/ height ^double foot))) (/ ^double pound-force (sqr foot))))
 
 
 (defn pressure-upper-stratosphere
   "Compute pressure in upper stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [height]
-  (* 3.7930e+90 (pow (/ (temperature-upper-stratosphere height) rankin) -34.164) (/ pound-force foot foot)))
+  ^double [^double height]
+  (* 3.7930e+90 (pow (/ (temperature-upper-stratosphere height) ^double rankin) -34.164) (/ ^double pound-force (sqr foot))))
 
 
 (defn pressure-at-height
   "Compute atmospheric pressure as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [height]
-  (let [height-in-foot (/ height foot)]
+  ^double [^double height]
+  (let [height-in-foot (/ height ^double foot)]
     (cond
       (<= height-in-foot 36089) (pressure-troposphere height)
       (<= height-in-foot 65617) (pressure-lower-stratosphere height)
@@ -481,25 +485,25 @@
 
 (defn density-troposphere
   "Compute density in troposphere (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [height]
-  (* 6.6277e-15 (pow (/ (temperature-troposphere height) rankin) 4.2560) (/ slugs foot foot foot)))
+  ^double [^double height]
+  (* 6.6277e-15 (pow (/ (temperature-troposphere height) ^double rankin) 4.2560) (/ ^double slugs (cube foot))))
 
 
 (defn density-lower-stratosphere
   "Compute density in lower stratosphere (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [height]
-  (* 1.4939e-6 (/ (pressure-lower-stratosphere height) (/ pound-force foot foot)) (/ slugs foot foot foot)))
+  ^double [^double height]
+  (* 1.4939e-6 (/ (pressure-lower-stratosphere height) (/ ^double pound-force (sqr foot))) (/ ^double slugs (cube foot))))
 
 
 (defn density-upper-stratosphere
-  [height]
-  (* 2.2099e+87 (pow (/ (temperature-upper-stratosphere height) rankin) -35.164) (/ slugs foot foot foot)))
+  ^double [^double height]
+  (* 2.2099e+87 (pow (/ (temperature-upper-stratosphere height) ^double rankin) -35.164) (/ ^double slugs (cube foot))))
 
 
 (defn density-at-height
   "Compute atmospheric density as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
-  [height]
-  (let [height-in-foot (/ height foot)]
+  ^double [^double height]
+  (let [height-in-foot (/ height ^double foot)]
     (cond
       (<= height-in-foot 36089) (density-troposphere height)
       (<= height-in-foot 65617) (density-lower-stratosphere height)
@@ -508,7 +512,7 @@
 
 (defn speed-of-sound
   "Speed of sound in atmosphere as a function of temperature"
-  [temperature]
+  ^double [^double temperature]
   (* 331.3 (sqrt (/ temperature 273.15))))
 
 
@@ -640,10 +644,10 @@
   {:malli/schema [:=> [:cat :int :map :int :boolean] :nil]}
   [program atmosphere-luts sampler-offset surface-radiance]
   (uniform-sampler program "transmittance" sampler-offset)
-  (uniform-sampler program "ray_scatter" (+ sampler-offset 1))
-  (uniform-sampler program "mie_strength" (+ sampler-offset 2))
+  (uniform-sampler program "ray_scatter" (+ ^long sampler-offset 1))
+  (uniform-sampler program "mie_strength" (+ ^long sampler-offset 2))
   (when surface-radiance
-    (uniform-sampler program "surface_radiance" (+ sampler-offset 3)))
+    (uniform-sampler program "surface_radiance" (+ ^long sampler-offset 3)))
   (uniform-int program "height_size" (:sfsim.texture/hyperdepth (::scatter atmosphere-luts)))
   (uniform-int program "elevation_size" (:sfsim.texture/depth (::scatter atmosphere-luts)))
   (uniform-int program "light_elevation_size" (:sfsim.texture/height (::scatter atmosphere-luts)))

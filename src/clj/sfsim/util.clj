@@ -410,9 +410,9 @@
 (defn limit-quot
   "Compute quotient and limit it"
   {:malli/schema [:function [:=> [:cat :double :double :double [:? :double]] :double]]}
-  ([^double a ^double b ^double limit]
+  (^double [^double a ^double b ^double limit]
    (limit-quot a b (- limit) limit))
-  ([^double a ^double b ^double limit-lower ^double limit-upper]
+  (^double [^double a ^double b ^double limit-lower ^double limit-upper]
    (if (zero? a)
      a
      (if (< b 0)

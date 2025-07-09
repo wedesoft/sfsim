@@ -220,7 +220,7 @@
                                x => (vec3 0 (+ radius 1000) 0))
                         (vec3 2e-5 2e-5 2e-5))
                       atmosphere/phase
-                      (fn [mie mu]
+                      (fn [mie ^double mu]
                         (facts "Phase function gets called with correct arguments"
                                (:sfsim.atmosphere/scatter-g mie) => 0.76
                                mu => 0.36)
@@ -322,7 +322,7 @@
                                 (facts x => x1
                                        light-direction => (vec3 0.36 0.48 0.8))
                                 (vec3 3 4 5))]
-         (with-redefs [atmosphere/phase (fn [mie mu] 0.5)]
+         (with-redefs [atmosphere/phase (fn [mie ^double _mu] 0.5)]
            (with-redefs [atmosphere/ray-extremity
                          (fn [planet ray] (vec3 0 (+ radius height) 0))
                          sphere/integral-sphere
