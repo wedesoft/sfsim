@@ -294,32 +294,54 @@
         (cubemap/map-interpolation 5 675 135.0 45.0 elevation-pixel + *) => 42.0))
 
 
+(defn elevation-geodetic-mock-1
+  ^double [^long in-level ^long width ^double lon ^double lat]
+  (fact [in-level width lon lat] => [5 675 135.0 45.0])
+  0.0)
+
+
 (fact "Test height zero maps to zero water"
-      (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
-                                         (fact [in-level width lon lat] => [5 675 135.0 45.0])
-                                         0)]
+      (with-redefs [elevation-geodetic elevation-geodetic-mock-1]
         (water-geodetic 5 675 135.0 45.0) => 0))
+
+(defn elevation-geodetic-mock-2
+  ^double [^long in-level ^long width ^double lon ^double lat]
+  -500.0)
 
 
 (fact "Test that height -500 maps to 255"
-      (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
+      (with-redefs [elevation-geodetic elevation-geodetic-mock-2]
         (water-geodetic 5 675 0.0 0.0) => 255))
 
 
+(defn elevation-geodetic-mock-3
+  ^double [^long in-level ^long width ^double lon ^double lat]
+  100.0)
+
+
 (fact "Test that positive height maps to 0"
-      (with-redefs [elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] 100)]
+      (with-redefs [elevation-geodetic elevation-geodetic-mock-3]
         (water-geodetic 5 675 0.0 0.0) => 0))
 
 
+(defn elevation-geodetic-mock-4
+  ^double [^long in-level ^long width ^double lon ^double lat]
+  (fact [in-level width lon lat] => [4 675 0.0 (/ (- PI) 2)])
+  2777.0)
+
+
 (fact "Project point onto globe"
-      (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat]
-                                                 (fact [in-level width lon lat] => [4 675 0.0 (/ (- PI) 2)])
-                                                 2777.0)]
+      (with-redefs [cubemap/elevation-geodetic elevation-geodetic-mock-4]
         (project-onto-globe (vec3 0 0 -1) 4 675 6378000.0) => (roughly-vector (vec3 0 0 -6380777.0) 1e-6)))
 
 
+(defn elevation-geodetic-mock
+  ^double [^long in-level ^long width ^double lon ^double lat]
+  -500.0)
+
+
 (fact "Clip negative height (water) to zero"
-      (with-redefs [cubemap/elevation-geodetic (fn [^long in-level ^long width ^double lon ^double lat] -500)]
+      (with-redefs [cubemap/elevation-geodetic elevation-geodetic-mock]
         (project-onto-globe (vec3 1 0 0) 4 675 6378000.0) => (roughly-vector (vec3 6378000 0 0) 1e-6)))
 
 
