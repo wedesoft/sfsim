@@ -2,22 +2,33 @@
 * now fix reflection warnings
 * remove malli from primitive functions
 * use different accessors for records?
+* display version in menu, start ChangeLog
 * input module to handle joystick, key callbacks, and mouse callbacks (send keys/joystick to GUI if active, spacecraft otherwise)
 * switch windows JDK install to 24
-* add license to sources
-* display version in menu, start ChangeLog
+* simple third person HUD speed and altitude (AGL/radar)
+* mouse control:
+  * up/down for pitch, right/left for roll
+  * RMB/LMB to gradually move rudder right and left while holding the buttons pressed
+  * wheel click to reset rudder
+  * wheel up/down to increase/decrease throttle level
+* now fix reflection warnings
 * add joystick configuration
-* add quit goal to build.clj
+* following camera, different camera views
+* low FPS at 100km height was reported
 * effect of control surfaces needs to diminish with changing wind vector
 * turbulence during landing?
 * add tested implementation for input handling
 * add configuration dialog for input
 * use transients when updating transforms in model
 * add lift or force caused by pitch rate
-* following camera
-* make new trailer
+* use icosahedron for mapping 2D micro textures (better grass)
+  * unroll icosahedron manually (20 surfaces)
+  * find smallest cross product of vector with sum of corner vectors
+  * use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
+  * determine u and v
 * articles: aerodynamics of game, Clojure game development
-* installer
+* sound mutes in fullscreen?
+* extendability (modding)?
 * orbiting
 * thrusters
 * sounds
@@ -33,11 +44,6 @@
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://samdriver.xyz/article/decal-render-intro
 * make new trailer
-* use icosahedron for mapping 2D micro textures
-  * unroll icosahedron manually (20 surfaces)
-  * find smallest cross product of vector with sum of corner vectors
-  * use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
-  * determine u and v
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 * get high-res Florida data
