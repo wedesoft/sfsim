@@ -27,8 +27,10 @@
     [sfsim.texture :refer :all]
     [sfsim.util :refer :all])
   (:import
-    (org.lwjgl.glfw
-      GLFW)))
+    [clojure.lang
+     Keyword]
+    [org.lwjgl.glfw
+     GLFW]))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -54,7 +56,7 @@
              b (vec3 -0.5  -0.5  -1.0)
              c (vec3 -0.75 -0.25 -1.0)
              d (vec3 -0.5  -0.25 -1.0)]
-         (with-redefs [cubemap/cube-map-corners (fn [face level y x]
+         (with-redefs [cubemap/cube-map-corners (fn [^Keyword face ^long level ^long y ^long x]
                                                   (fact [face level y x] => [:sfsim.cubemap/face5 3 2 1])
                                                   [a b c d])]
            (let [arr (make-cube-map-tile-vertices :sfsim.cubemap/face5 3 2 1 10 100)]
