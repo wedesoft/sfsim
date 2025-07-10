@@ -15,7 +15,7 @@
 (def foot 0.3048)
 (def gravitation 9.8066500286389)
 (def pound-weight 0.45359237)
-(def pound-force (* pound-weight gravitation))
+(def pound-force (* ^double pound-weight ^double gravitation))
 (def slugs 14.5939029372)
 
 

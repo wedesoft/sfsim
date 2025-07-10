@@ -9,7 +9,7 @@ uniform mat4 world_to_shadow_map<%= i %>;
 uniform float depth<%= i %>;
 uniform float bias<%= i %>;
 <% ) %>
-<% (doseq [i (range (inc n))] %>
+<% (doseq [i (range (inc ^long n))] %>
 uniform float split<%= i %>;
 <% ) %>
 
@@ -18,7 +18,7 @@ float opacity_cascade_lookup(vec4 point)
 {
   float z = -(world_to_camera * point).z;
 <% (doseq [i (range n)] %>
-  if (z <= split<%= (inc i) %>) {
+  if (z <= split<%= (inc ^long i) %>) {
     vec4 offset_point = vec4(point.xyz + light_direction * bias<%= i %>, 1.0);
     vec4 map_coords = world_to_shadow_map<%= i %> * offset_point;
     return <%= base-function %>(opacity<%= i %>, depth<%= i %>, map_coords);
