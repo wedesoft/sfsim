@@ -14,7 +14,10 @@
       [sfsim.matrix :refer [fvec3]]
       [sfsim.quaternion :as q]
       [sfsim.atmosphere :as atmosphere]
-      [sfsim.util :refer (sqr cube)]))
+      [sfsim.util :refer (sqr cube)])
+    (:import
+      [fastmath.vector
+       Vec3]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -575,48 +578,42 @@
 
 (defn coefficient-of-roll-moment-aileron
   "Determine coefficient of roll moment due to ailerons"
-  {:malli/schema [:=> [:cat :double :double] :double]}
-  [speed-mach ailerons]
-  (* 0.5 (c-l-xi-a speed-mach) (sin (* 2 ailerons))))
+  ^double [^double speed-mach ^double ailerons]
+  (* 0.5 ^double (c-l-xi-a speed-mach) (sin (* 2.0 ailerons))))
 
 
 (defn coefficient-of-pitch-moment-flaps
   "Determine coefficient of pitch moment due to flaps"
-  {:malli/schema [:=> [:cat :double :double] :double]}
-  [speed-mach flaps]
-  (* 0.5 (c-m-delta-f speed-mach) (sin (* 2 flaps))))
+  ^double [^double speed-mach ^double flaps]
+  (* 0.5 ^double (c-m-delta-f speed-mach) (sin (* 2.0 flaps))))
 
 
 (defn coefficient-of-yaw-moment-rudder
   "Determine coefficient of yaw moment due to rudder and ailerons"
-  {:malli/schema [:=> [:cat :double :double :double] :double]}
-  [speed-mach rudder ailerons]
-  (+ (* 0.5 (c-n-beta-r speed-mach) (sin (* 2 rudder)))
-     (* 0.5 (c-n-xi-a speed-mach) (sin (* 2 ailerons)))))
+  ^double [^double speed-mach ^double rudder ^double ailerons]
+  (+ (* 0.5 ^double (c-n-beta-r speed-mach) (sin (* 2.0 rudder)))
+     (* 0.5 ^double (c-n-xi-a speed-mach) (sin (* 2.0 ailerons)))))
 
 
 (defn roll-moment-control
   "Compute roll moment due to control surfaces"
-  {:malli/schema [:=> [:cat speed-data fvec3 :double :double] :double]}
-  [{::keys [speed]} control speed-of-sound density]
-  (* (coefficient-of-roll-moment-aileron (/ speed speed-of-sound) (control 0)) (dynamic-pressure density speed) reference-area
-     0.5 wing-span))
+  ^double [{::keys [^double speed]} ^Vec3 control ^double speed-of-sound ^double density]
+  (* (coefficient-of-roll-moment-aileron (/ speed speed-of-sound) ^double (control 0))
+     (dynamic-pressure density speed) ^double reference-area 0.5 ^double wing-span))
 
 
 (defn pitch-moment-control
   "Compute pitch moment due to control surfaces"
-  {:malli/schema [:=> [:cat speed-data fvec3 :double :double] :double]}
-  [{::keys [speed]} control speed-of-sound density]
-  (* (coefficient-of-pitch-moment-flaps (/ speed speed-of-sound) (control 1)) (dynamic-pressure density speed) reference-area
-     chord))
+  ^double [{::keys [^double speed]} ^Vec3 control ^double speed-of-sound ^double density]
+  (* (coefficient-of-pitch-moment-flaps (/ speed speed-of-sound) ^double (control 1))
+     (dynamic-pressure density speed) ^double reference-area ^double chord))
 
 
 (defn yaw-moment-control
   "Compute yaw moment for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data fvec3 :double :double] :double]}
-  [{::keys [speed]} control speed-of-sound density]
-  (* (coefficient-of-yaw-moment-rudder (/ speed speed-of-sound) (control 2) (control 0)) (dynamic-pressure density speed)
-     reference-area 0.5 wing-span))
+  ^double [{::keys [^double speed]} ^Vec3 control ^double speed-of-sound ^double density]
+  (* (coefficient-of-yaw-moment-rudder (/ speed speed-of-sound) ^double (control 2) ^double (control 0))
+     (dynamic-pressure density speed) ^double reference-area 0.5 ^double wing-span))
 
 
 (defn aerodynamic-loads

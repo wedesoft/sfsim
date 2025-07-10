@@ -16,7 +16,10 @@
       [sfsim.quaternion :as q]
       [sfsim.util :refer (sqr)]
       [sfsim.atmosphere :as atmosphere]
-      [sfsim.aerodynamics :refer :all :as aerodynamics]))
+      [sfsim.aerodynamics :refer :all :as aerodynamics])
+    (:import
+      [fastmath.vector
+       Vec3]))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -328,23 +331,38 @@
        (coefficient-of-yaw-moment-rudder 0.6 (to-radians 0.0) (to-radians 3.0)) => (roughly (*  0.0653 (to-radians 3.0)) 1e-4))
 
 
+(defn coefficient-of-roll-moment-aileron-mock
+  ^double [^double speed-mach ^double ailerons]
+  (facts ailerons => 0.01 speed-mach => 0.5)
+  -0.004)
+
+
 (facts "Compute roll control moment"
-       (with-redefs [aerodynamics/coefficient-of-roll-moment-aileron
-                     (fn [speed-mach ailerons] (facts ailerons => 0.01 speed-mach => 0.5) -0.004)]
+       (with-redefs [aerodynamics/coefficient-of-roll-moment-aileron coefficient-of-roll-moment-aileron-mock]
          (roll-moment-control (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0.01 0 0) 320.0 1.225)
          => (roughly (* -0.004 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
 
 
+(defn coefficient-of-pitch-moment-flaps-mock
+  ^double [^double speed-mach ^double flaps]
+  (facts flaps => 0.01 speed-mach => 0.5)
+  -0.004)
+
+
 (facts "Compute pitch control moment"
-       (with-redefs [aerodynamics/coefficient-of-pitch-moment-flaps
-                     (fn [speed-mach flaps] (facts flaps => 0.01 speed-mach => 0.5) -0.004)]
+       (with-redefs [aerodynamics/coefficient-of-pitch-moment-flaps coefficient-of-pitch-moment-flaps-mock]
          (pitch-moment-control (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0 0.01 0) 320.0 1.225)
          => (roughly (* -0.004 0.5 1.225 (* 160 160) reference-area chord) 1e-6)))
 
 
+(defn coefficient-of-yaw-moment-rudder-mock
+  ^double [^double speed-mach ^double rudder ^double ailerons]
+  (facts rudder => 0.01 ailerons => 0.02 speed-mach => 0.5)
+  0.001)
+
+
 (facts "Compute yaw control moment"
-       (with-redefs [aerodynamics/coefficient-of-yaw-moment-rudder
-                     (fn [speed-mach rudder ailerons] (facts rudder => 0.01 ailerons => 0.02 speed-mach => 0.5) 0.001)]
+       (with-redefs [aerodynamics/coefficient-of-yaw-moment-rudder coefficient-of-yaw-moment-rudder-mock]
          (yaw-moment-control (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0.02 0 0.01) 320.0 1.225)
          => (roughly (* 0.001 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
 
@@ -430,6 +448,24 @@
   -0.5)
 
 
+(defn roll-moment-control-mock
+  ^double [speed-body ^Vec3 control ^double speed-of-sound ^double density]
+  (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
+  0.0)
+
+
+(defn pitch-moment-control-mock
+  ^double [speed-body ^Vec3 control ^double speed-of-sound ^double density]
+  (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
+  0.0)
+
+
+(defn yaw-moment-control-mock
+  ^double [speed-body ^Vec3 control ^double speed-of-sound ^double density]
+  (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
+  0.0)
+
+
 (facts "Determine aerodynamic forces and moments"
        (let [height       1000.0
              orientation  (q/->Quaternion 1.0 0.0 0.0 0.0)
@@ -470,17 +506,11 @@
                        aerodynamics/yaw-damping
                        yaw-damping-mock
                        aerodynamics/roll-moment-control
-                       (fn [speed-body control speed-of-sound density]
-                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
-                           0.0)
+                       roll-moment-control-mock
                        aerodynamics/pitch-moment-control
-                       (fn [speed-body control speed-of-sound density]
-                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
-                           0.0)
+                       pitch-moment-control-mock
                        aerodynamics/yaw-moment-control
-                       (fn [speed-body control speed-of-sound density]
-                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
-                           0.0)]
+                       yaw-moment-control-mock]
            (:sfsim.aerodynamics/forces (aerodynamic-loads height orientation linear-speed angular-speed (vec3 0 1 2)))
            => (vec3 -3.0 5.0 -2.0)
            (:sfsim.aerodynamics/moments (aerodynamic-loads height orientation linear-speed angular-speed (vec3 0 1 2)))
