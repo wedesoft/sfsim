@@ -42,9 +42,9 @@
   {:malli/schema [:=> [:cat :keyword N0 N0 N0 N N] [:vector :double]]}
   [face level y x height-tilesize color-tilesize]
   (let [[a b c d] (cube-map-corners face level y x)
-        h0        (/ 0.5 height-tilesize)
+        h0        (/ 0.5 ^long height-tilesize)
         h1        (- 1.0 h0)
-        c0        (/ 0.5 color-tilesize)
+        c0        (/ 0.5 ^long color-tilesize)
         c1        (- 1.0 c0)]
     [(a 0) (a 1) (a 2) h0 h0 c0 c0
      (b 0) (b 1) (b 2) h1 h0 c1 c0
@@ -126,7 +126,7 @@
     (uniform-int program "neighbours" neighbours)
     (uniform-vector3 program "tile_center" tile-center)
     (uniform-matrix4 program "tile_to_camera" (mulm world-to-camera tile-to-world))
-    (doseq [i (range (count scene-shadows))]
+    (doseq [^long i (range (count scene-shadows))]
       (let [matrices             (:sfsim.model/matrices (nth scene-shadows i))
             world-to-object      (:sfsim.matrix/world-to-object matrices)
             object-to-shadow-map (:sfsim.matrix/object-to-shadow-map matrices)]
@@ -171,8 +171,8 @@
                                   :sfsim.render/fragment [fragment-planet-shadow])]
     (use-program program)
     (uniform-sampler program "surface" 0)
-    (uniform-int program "high_detail" (dec tilesize))
-    (uniform-int program "low_detail" (quot (dec tilesize) 2))
+    (uniform-int program "high_detail" (dec ^long tilesize))
+    (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
     {::program program
      :sfsim.opacity/data shadow-data}))
@@ -232,8 +232,8 @@
     (setup-cloud-sampling-uniforms program cloud-data 7)
     (setup-atmosphere-uniforms program atmosphere-luts 1 false)
     (uniform-float program "radius" (::radius planet-config))
-    (uniform-int program "high_detail" (dec tilesize))
-    (uniform-int program "low_detail" (quot (dec tilesize) 2))
+    (uniform-int program "high_detail" (dec ^long tilesize))
+    (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
     {::program program
      :sfsim.atmosphere/luts atmosphere-luts
@@ -305,8 +305,8 @@
     (setup-cloud-sampling-uniforms program data 6)
     (setup-atmosphere-uniforms program atmosphere-luts 0 false)
     (uniform-float program "radius" (::radius planet-config))
-    (uniform-int program "high_detail" (dec tilesize))
-    (uniform-int program "low_detail" (quot (dec tilesize) 2))
+    (uniform-int program "high_detail" (dec ^long tilesize))
+    (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
     {:sfsim.clouds/program program
      :sfsim.atmosphere/luts atmosphere-luts
@@ -374,10 +374,10 @@
     (setup-shadow-and-opacity-maps program shadow-data 10)
     (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
     (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
-    (doseq [i (range num-scene-shadows)]
-      (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 10 (* 2 num-steps))))
-    (uniform-int program "high_detail" (dec tilesize))
-    (uniform-int program "low_detail" (quot (dec tilesize) 2))
+    (doseq [^long i (range num-scene-shadows)]
+      (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 10 (* 2 ^long num-steps))))
+    (uniform-int program "high_detail" (dec ^long tilesize))
+    (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     (uniform-float program "dawn_start" (::dawn-start config))
     (uniform-float program "dawn_end" (::dawn-end config))
     (uniform-float program "specular" (:sfsim.render/specular render-config))
@@ -438,7 +438,7 @@
                    8 clouds 9 worley})
     (use-textures (zipmap (drop 10 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                    (:sfsim.opacity/opacities shadow-vars))))
-    (doseq [i (range num-scene-shadows)]
+    (doseq [^long i (range num-scene-shadows)]
       (use-textures {(+ i 10 (* 2 num-steps)) (:sfsim.model/shadows (nth scene-shadows i))}))
     (render-tree program tree world-to-camera scene-shadows [::surf-tex ::day-night-tex ::normal-tex ::water-tex])))
 
@@ -546,8 +546,7 @@
 
 (defn render-depth
   "Determine maximum shadow depth for cloud shadows"
-  {:malli/schema [:=> [:cat :double :double :double] :double]}
-  [radius max-height cloud-top]
+  ^double [^double radius ^double max-height ^double cloud-top]
   (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
      (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
 
@@ -562,9 +561,9 @@
         cloud-top       (:sfsim.clouds/cloud-top cloud-data)
         fov             (:sfsim.render/fov render-config)
         min-z-near      (:sfsim.render/min-z-near render-config)
-        height          (- distance radius)
+        height          (- ^double distance ^double radius)
         diagonal-fov    (diagonal-field-of-view window-width window-height fov)
-        z-near          (max (* (- height cloud-top) (cos (* 0.5 diagonal-fov))) min-z-near)
+        z-near          (max (* (- height ^double cloud-top) (cos (* 0.5 diagonal-fov))) min-z-near)
         z-far           (render-depth radius height cloud-top)]
     (make-render-vars render-config window-width window-height position orientation light-direction z-near z-far)))
 
