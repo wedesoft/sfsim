@@ -92,7 +92,6 @@
 
 (defn sub-tiles-info
   "Get metadata for sub tiles of cube map tile"
-  {:malli/schema [:=> [:cat :keyword N0 N0 N0] [:vector tile-info]]}
   [^Keyword face ^long level ^long y ^long x]
   [{::face face ::level (inc level) ::y (* 2 y)       ::x (* 2 x)}
    {::face face ::level (inc level) ::y (* 2 y)       ::x (inc (* 2 x))}
@@ -372,7 +371,6 @@
 
 (defn tile-coordinates
   "Get tile indices, coordinates of pixel within tile and position in pixel"
-  {:malli/schema [:=> [:cat :double :double :int :int] coords]}
   [^double j ^double i ^long level ^long tilesize]
   (let [n      (bit-shift-left 1 level)
         jj     (* j n)
@@ -392,7 +390,6 @@
 
 (defn tile-triangle
   "Determine triangle of quad the specified coordinate is in"
-  {:malli/schema [:=> [:cat :double :double :boolean] [:vector [:tuple :int :int]]]}
   [^double y ^double x ^Boolean first-diagonal]
   (if first-diagonal
     (if (>= x y) [[0 0] [0 1] [1 1]] [[0 0] [1 1] [1 0]])
@@ -572,7 +569,6 @@
 
 (defn generate-triangle-pair
   "Make two triangles for a quad in a 3x3 mesh of 4x4 points"
-  {:malli/schema [:=> [:cat :int :int :boolean] [:vector [:tuple :int :int :int]]]}
   [^long dy ^long dx ^Boolean orientation]
   (let [offset (+ (* 4 dy) dx)]
     (mapv (partial mapv #(+ ^long offset ^long %)) (if orientation [[5 10 6] [5 9 10]] [[5 9 6] [6 9 10]]))))

@@ -77,14 +77,12 @@
 
 (defn scale
   "Multiply quaternion with real number"
-  {:malli/schema [:=> [:cat quaternion :double] quaternion]}
   ^Quaternion [^Quaternion q ^double s]
   (->Quaternion (c/* ^double (:real q) s) (c/* ^double (:imag q) s) (c/* ^double (:jmag q) s) (c/* ^double (:kmag q) s)))
 
 
 (defn norm2
   "Compute square of norm of quaternion"
-  {:malli/schema [:=> [:cat quaternion] :double]}
   ^double [^Quaternion q]
   (c/+ (sqr (:real q))
        (sqr (:imag q))
@@ -94,7 +92,6 @@
 
 (defn norm
   "Compute norm of quaternion"
-  {:malli/schema [:=> [:cat quaternion] :double]}
   ^double [^Quaternion q]
   (sqrt (norm2 q)))
 
@@ -158,7 +155,6 @@
 
 (defn rotation
   "Generate quaternion to represent rotation"
-  {:malli/schema [:=> [:cat :double fvec3] quaternion]}
   ^Quaternion [^double theta ^Vec3 v]
   (let [scale (c/* theta 0.5)]
     (exp (vector->quaternion (mult v scale)))))

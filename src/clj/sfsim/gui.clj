@@ -81,7 +81,6 @@
 
 (defn gui-matrix
   "Projection matrix for rendering 2D GUI"
-  {:malli/schema [:=> [:cat N N] fmat4]}
   ^Mat4x4 [^long width ^long height]
   (let [w2 (/  2.0 width)
         h2 (/ -2.0 height)]
@@ -223,7 +222,6 @@
 
 (defn render-nuklear-gui
   "Display the graphical user interface"
-  {:malli/schema [:=> [:cat :some :int :int] :nil]}
   [{::keys [context config program vao cmds]} ^long width ^long height]
   (let [stack (MemoryStack/stackPush)]
     (GL11/glViewport 0 0 width height)
@@ -284,7 +282,6 @@
 
 (defn make-bitmap-font
   "Create a bitmap font with character packing data"
-  {:malli/schema [:=> [:cat :string :int :int :int] :some]}
   [^String ttf-filename ^long bitmap-width ^long bitmap-height ^long font-height]
   (let [font         (NkUserFont/create)
         fontinfo     (STBTTFontinfo/create)

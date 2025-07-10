@@ -41,8 +41,6 @@
 
 (defn scattering
   "Compute scattering or absorption amount in atmosphere"
-  {:malli/schema [:function [:=> [:cat scatter :double] fvec3]
-                  [:=> [:cat sphere scatter fvec3] fvec3]]}
   ([{::keys [^Vec3 scatter-base ^double scatter-scale]} ^double height]
    (mult scatter-base (-> height (/ scatter-scale) - exp)))
   ([planet component x]
@@ -58,8 +56,7 @@
 
 (defn phase
   "Mie scattering phase function by Henyey-Greenstein depending on assymetry g and mu = cos(theta)"
-  {:malli/schema [:=> [:cat [:map [::scatter-g {:optional true} :double]] :double] :double]}
-  [{::keys [^double scatter-g] :or {scatter-g 0.0}} ^double mu]
+  ^double [{::keys [^double scatter-g] :or {scatter-g 0.0}} ^double mu]
   (let [scatter-g-sqr (sqr scatter-g)]
     (/ (* 3.0 (- 1.0 scatter-g-sqr) (+ 1.0 (sqr mu)))
        (* 8.0 PI (+ 2.0 scatter-g-sqr) (pow (- (+ 1.0 scatter-g-sqr) (* 2.0 scatter-g mu)) 1.5)))))
@@ -231,7 +228,6 @@
 
 (defn horizon-distance
   "Distance from point with specified radius to horizon of planet"
-  {:malli/schema [:=> [:cat sphere :double] :double]}
   ^double [planet ^double radius]
   (sqrt (max 0.0 (- (sqr radius) (sqr (:sfsim.sphere/radius planet))))))
 
@@ -255,7 +251,6 @@
 
 (defn index-to-elevation
   "Convert index and radius to elevation"
-  {:malli/schema [:=> [:cat atmosphere N :double :double] [:tuple fvec3 :boolean]]}
   [planet ^long size ^double radius ^double index]
   (let [ground-radius (:sfsim.sphere/radius planet)
         top-radius    (+ ^double ground-radius ^double (::height planet))
@@ -273,7 +268,6 @@
 
 (defn height-to-index
   "Convert height of point to index"
-  {:malli/schema [:=> [:cat atmosphere N fvec3] :double]}
   ^double [planet ^long size ^Vec3 point]
   (let [radius     (:sfsim.sphere/radius planet)
         max-height (::height planet)]
@@ -282,7 +276,6 @@
 
 (defn index-to-height
   "Convert index to point with corresponding height"
-  {:malli/schema [:=> [:cat atmosphere N :double] fvec3]}
   ^Vec3 [planet ^long size ^double index]
   (let [radius       (:sfsim.sphere/radius planet)
         max-height   (::height planet)
@@ -324,7 +317,6 @@
 
 (defn sun-elevation-to-index
   "Convert sun elevation to index"
-  {:malli/schema [:=> [:cat N fvec3 fvec3] :double]}
   ^double [^long size ^Vec3 point ^Vec3 light-direction]
   (let [sin-elevation (/ (dot point light-direction) (mag point))]
     (* (dec size) (max 0.0 (/ (- 1 (exp (- 0 (* 3 sin-elevation) 0.6))) (- 1 (exp -3.6)))))))
@@ -332,7 +324,6 @@
 
 (defn index-to-sin-sun-elevation
   "Convert index to sinus of sun elevation"
-  {:malli/schema [:=> [:cat N :double] :double]}
   ^double [^long size ^double index]
   (/ (+ (log (- 1 (* (/ index (dec ^long size)) (- 1 (exp -3.6))))) 0.6) -3))
 

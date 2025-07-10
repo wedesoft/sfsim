@@ -327,35 +327,30 @@
 
 (defn sinc
   "sin(x) / x function"
-  {:malli/schema [:=> [:cat :double] :double]}
   ^double [^double x]
   (if (zero? x) 1.0 (/ (sin x) x)))
 
 
 (defn sqr
   "Square of x"
-  {:malli/schema [:=> [:cat :double] :double]}
   ^double [^double x]
   (* x x))
 
 
 (defn cube
   "Cube of x"
-  {:malli/schema [:=> [:cat :double] :double]}
   ^double [^double x]
   (* x x x))
 
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"
-  {:malli/schema [:=> [:cat :int] N0]}
   ^long [^long b]
   (if (>= b 0) b (+ b 256)))
 
 
 (defn ubyte->byte
   "Convert unsigned byte to byte"
-  {:malli/schema [:=> [:cat N0] :int]}
   ^long [^long u]
   (if (<= u 127) u (- u 256)))
 
@@ -371,7 +366,6 @@
 
 (defn align-address
   "Function for aligning an address with specified alignment"
-  {:malli/schema [:=> [:cat N0 N] N0]}
   ^long [^long address ^long alignment]
   (let [mask (dec alignment)]
     (bit-and (+ address mask) (bit-not mask))))
@@ -409,7 +403,6 @@
 
 (defn limit-quot
   "Compute quotient and limit it"
-  {:malli/schema [:function [:=> [:cat :double :double :double [:? :double]] :double]]}
   (^double [^double a ^double b ^double limit]
    (limit-quot a b (- limit) limit))
   (^double [^double a ^double b ^double limit-lower ^double limit-upper]
@@ -466,7 +459,6 @@
 
 (defn octaves
   "Creat eoctaves summing to one"
-  {:malli/schema [:=> [:cat N :double] [:vector :double]]}
   [^long n ^double decay]
   (let [series (take n (iterate #(* ^double % decay) 1.0))
         sum    (apply + series)]

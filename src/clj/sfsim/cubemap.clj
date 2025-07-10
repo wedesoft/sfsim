@@ -27,7 +27,6 @@
 
 (defn cube-map-x
   "x-coordinate of point on cube face"
-  {:malli/schema [:=> [:cat :keyword :double :double] :double]}
   ^double [^Keyword face ^double _j ^double i]
   (case face
     ::face0 (+ -1.0 (* 2.0 i))
@@ -40,7 +39,6 @@
 
 (defn cube-map-y
   "y-coordinate of point on cube face"
-  {:malli/schema [:=> [:cat :keyword :double :double] :double]}
   ^double [^Keyword face ^double j ^double i]
   (case face
     ::face0 (-  1.0 (* 2.0 j))
@@ -53,7 +51,6 @@
 
 (defn cube-map-z
   "z-coordinate of point on cube face"
-  {:malli/schema [:=> [:cat :keyword :double :double] :double]}
   ^double [^Keyword face ^double j ^double _i]
   (case face
     ::face0  1.0
@@ -66,7 +63,6 @@
 
 (defn cube-map
   "Get 3D vector to point on cube face"
-  {:malli/schema [:=> [:cat :keyword :double :double] fvec3]}
   ^Vec3 [^Keyword face ^double j ^double i]
   (vec3 (cube-map-x face j i) (cube-map-y face j i) (cube-map-z face j i)))
 
@@ -84,7 +80,6 @@
 
 (defn cube-i
   "Determine cube face coordinate i given face and a point on the cube surface"
-  {:malli/schema [:=> [:cat :keyword fvec3] :double]}
   ^double [^Keyword face ^Vec3 point]
   (case face
     ::face0 (* 0.5 (+ ^double (point 0) 1.0))
@@ -97,7 +92,6 @@
 
 (defn cube-j
   "Determine cube face coordinate j given face and a point on the cube surface"
-  {:malli/schema [:=> [:cat :keyword fvec3] :double]}
   ^double [^Keyword face ^Vec3 point]
   (case face
     ::face0 (* 0.5 (- 1.0 ^double (point 1)))
@@ -110,7 +104,6 @@
 
 (defn cube-coordinate
   "Determine coordinate of a pixel on a tile of a given level"
-  {:malli/schema [:=> [:cat :int :int :int :double] :double]}
   ^double [^long level ^long tilesize ^long tile ^double pixel]
   (let [tiles (bit-shift-left 1 level)]
     (/ (+ tile (double (/ pixel (dec tilesize)))) tiles)))
@@ -118,7 +111,6 @@
 
 (defn cube-map-corners
   "Get 3D vectors to corners of cube map tile"
-  {:malli/schema [:=> [:cat :keyword :int :int :int] [:tuple fvec3 fvec3 fvec3 fvec3]]}
   [^Keyword face ^long level ^long row ^long column]
   [(cube-map face (cube-coordinate level 2 row 0.0) (cube-coordinate level 2 column 0.0))
    (cube-map face (cube-coordinate level 2 row 0.0) (cube-coordinate level 2 column 1.0))
@@ -128,14 +120,12 @@
 
 (defn longitude
   "Longitude of 3D point (East is positive)"
-  {:malli/schema [:=> [:cat fvec3] :double]}
   ^double [^Vec3 point]
   (atan2 (point 1) (point 0)))
 
 
 (defn latitude
   "Latitude of 3D point"
-  {:malli/schema [:=> [:cat fvec3] :double]}
   ^double [^Vec3 point]
   (let [p (sqrt (+ (sqr (point 0)) (sqr (point 1))))]
     (atan2 (point 2) p)))
@@ -144,7 +134,6 @@
 ;; https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 (defn geodetic->cartesian
   "Convert latitude and longitude to cartesian coordinates assuming a spherical Earth"
-  {:malli/schema [:=> [:cat :double :double :double :double] fvec3]}
   ^Vec3 [^double longitude ^double latitude ^double height ^double radius]
   (let [distance        (+ height radius)
         cos-lat         (cos latitude)
@@ -154,7 +143,6 @@
 
 (defn project-onto-sphere
   "Project a 3D vector onto a sphere"
-  {:malli/schema [:=> [:cat fvec3 :double] fvec3]}
   ^Vec3 [^Vec3 point ^double radius]
   (mult (normalize point) radius))
 
@@ -172,7 +160,6 @@
 
 (defn cartesian->geodetic
   "Convert cartesian coordinates to latitude, longitude and height assuming a spherical Earth"
-  {:malli/schema [:=> [:cat fvec3 :double] [:tuple :double :double :double]]}
   [^Vec3 point ^double radius]
   (let [height    (- (mag point) radius)
         longitude (atan2 (point 1) (point 0))
@@ -183,7 +170,6 @@
 
 (defn map-x
   "Compute x-coordinate on raster map"
-  {:malli/schema [:=> [:cat :double :int :int] :double]}
   ^double [^double longitude ^long tilesize ^long level]
   (let [n (bit-shift-left 1 level)]
     (* (+ PI longitude) (/ (* 4 n tilesize) (* 2 PI)))))
@@ -191,7 +177,6 @@
 
 (defn map-y
   "Compute y-coordinate on raster map"
-  {:malli/schema [:=> [:cat :double :int :int] :double]}
   ^double [^double latitude ^long tilesize ^long level]
   (let [n (bit-shift-left 1 level)]
     (* (- (/ PI 2) latitude) (/ (* 2 n tilesize) PI))))
@@ -199,7 +184,6 @@
 
 (defn map-pixels-x
   "Determine x-coordinates and fractions for interpolation"
-  {:malli/schema [:=> [:cat :double :int :int] [:tuple :int :int :double :double]]}
   [^double longitude ^long tilesize ^long level]
   (let [n     (bit-shift-left 1 level)
         size  (* 4 n tilesize)
@@ -213,7 +197,6 @@
 
 (defn map-pixels-y
   "Determine y-coordinates and fractions for interpolation"
-  {:malli/schema [:=> [:cat :double :int :int] [:tuple :int :int :double :double]]}
   [^double latitude ^long tilesize ^long level]
   (let [n    (bit-shift-left 1 level)
         size (* 2 n tilesize)
@@ -227,7 +210,6 @@
 
 (defn offset-longitude
   "Determine longitudinal offset for computing normal vector"
-  {:malli/schema [:=> [:cat fvec3 :int :int] fvec3]}
   ^Vec3 [^Vec3 p ^long level ^long tilesize]
   (let [lon  (longitude p)
         norm (mag p)]
@@ -236,7 +218,6 @@
 
 (defn offset-latitude
   "Determine latitudinal offset for computing normal vector"
-  {:malli/schema [:=> [:cat fvec3 :int :int] fvec3]}
   ^Vec3 [^Vec3 p ^long level ^long tilesize]
   (let [lon  (longitude p)
         lat  (latitude p)
@@ -286,7 +267,6 @@
 
 (defn elevation-pixel
   "Get elevation value for given pixel coordinates"
-  {:malli/schema [:=> [:cat :int :int :int :int] :int]}
   ^long [^long dy ^long dx ^long in-level ^long width]
   (let [ty  (quot dy width)
         tx  (quot dx width)
@@ -320,28 +300,24 @@
 
 (defn color-geodetic-day
   "Compute interpolated daytime RGB value for a point on the world"
-  {:malli/schema [:=> [:cat :int :int :double :double] fvec3]}
   ^Vec3 [^long in-level ^long width ^double lon ^double lat]
   (map-interpolation in-level width lon lat world-map-pixel-day add mult))
 
 
 (defn color-geodetic-night
   "Compute interpolated nighttime RGB value for a point on the world"
-  {:malli/schema [:=> [:cat :int :int :double :double] fvec3]}
   ^Vec3 [^long in-level ^long width ^double lon ^double lat]
   (map-interpolation in-level width lon lat world-map-pixel-night add mult))
 
 
 (defn elevation-geodetic
   "Compute interpolated elevation value for a point on the world (-500 for water)"
-  {:malli/schema [:=> [:cat :int :int :double :double] :double]}
   ^double [^long in-level ^long width ^double lon ^double lat]
   (map-interpolation in-level width lon lat elevation-pixel + *))
 
 
 (defn water-geodetic
   "Decide whether point is on land (0) or on water (255)"
-  {:malli/schema [:=> [:cat :int :int :double :double] :int]}
   ^long [^long in-level ^long width ^double lon ^double lat]
   (let [height (elevation-geodetic in-level width lon lat)]
     (if (< height 0) (int (/ (* height 255) -500)) 0)))
@@ -349,7 +325,6 @@
 
 (defn project-onto-globe
   "Project point onto the globe with heightmap applied"
-  {:malli/schema [:=> [:cat fvec3 :int :int :double] fvec3]}
   ^Vec3 [^Vec3 point ^long in-level ^long width ^double radius]
   (let [surface-point (project-onto-sphere point radius)
         [lon lat _]   (cartesian->geodetic surface-point radius)

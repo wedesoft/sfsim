@@ -27,7 +27,6 @@
 
 (defn random-point-grid
   "Create a 3D grid with a random point in each cell"
-  {:malli/schema [:=> [:cat N N [:? [:=> :cat :double]]] grid]}
   ([^long divisions ^long size]
    (random-point-grid divisions size rand))
   ([^long divisions ^long size random]
@@ -67,8 +66,7 @@
 
 (defn closest-distance-to-point-in-grid
   "Return distance to closest point in 3D grid"
-  {:malli/schema [:=> [:cat grid N N fvec3] :double]}
-  [grid ^long divisions ^long size ^Vec3 point]
+  ^double [grid ^long divisions ^long size ^Vec3 point]
   (let [cellsize (/ ^long size ^long divisions)
         [x y z]  point
         [i j k]  [(long (quot ^double x ^long cellsize))
@@ -96,7 +94,6 @@
 
 (defn worley-noise
   "Create 3D Worley noise"
-  {:malli/schema [:=> [:cat N N [:? :boolean]] [:vector :double]]}
   ([^long divisions ^long size]
    (worley-noise divisions size false))
   ([^long divisions ^long size ^Boolean progress]

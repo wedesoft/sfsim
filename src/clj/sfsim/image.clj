@@ -36,21 +36,18 @@
 
 (defn make-image
   "Create an empty RGBA image"
-  {:malli/schema [:=> [:cat N N] image]}
   [^long width ^long height]
   {::width width ::height height ::channels 4 ::data (byte-array (* width height 4))})
 
 
 (defn make-byte-image
   "Create an empty byte image"
-  {:malli/schema [:=> [:cat N N] byte-image]}
   [^long width ^long height]
   {::width width ::height height ::data (byte-array (* width height))})
 
 
 (defn make-vector-image
   "Create an empty vector image"
-  {:malli/schema [:=> [:cat N N] field-2d]}
   [^long width ^long height]
   {::width width ::height height ::data (float-array (* width height 3))})
 
@@ -185,7 +182,6 @@
 
 (defn get-pixel
   "Read color value from a pixel of an image"
-  {:malli/schema [:=> [:cat image N0 N0] [:tuple :double :double :double]]}
   [{::keys [^long width data]} ^long y ^long x]
   (let [offset (* 4 (+ (* width y) x))]
     (vec3 (byte->ubyte (aget ^bytes data ^long (+ offset 0)))
@@ -195,7 +191,6 @@
 
 (defn set-pixel!
   "Set color value of a pixel in an image"
-  {:malli/schema [:=> [:cat image N0 N0 [:vector :double]] [:vector :double]]}
   [{::keys [^long width data]} ^long y ^long x c]
   (let [offset (* 4 (+ (* width y) x))]
     (aset-byte data (+ ^long offset 0) (ubyte->byte (long (c 0))))
@@ -207,29 +202,25 @@
 
 (defn get-short
   "Read value from a short integer tile"
-  {:malli/schema [:=> [:cat field-2d N0 N0] :int]}
   [{::keys [^long width data]} ^long y ^long x]
   (aget ^shorts data ^long (+ (* width y) x)))
 
 
 (defn set-short!
   "Write value to a short integer tile"
-  {:malli/schema [:=> [:cat field-2d N0 N0 :int] :int]}
-  [{::keys [^long width data]} ^long y ^long x ^long value]
+  ^long [{::keys [^long width data]} ^long y ^long x ^long value]
   (aset-short data (+ (* width y) x) value))
 
 
 (defn get-float
   "Read value from a floating-point tile"
-  {:malli/schema [:=> [:cat field-2d N0 N0] number?]}
   [{::keys [^long width data]} ^long y ^long x]
   (aget ^floats data ^long (+ (* width y) x)))
 
 
 (defn set-float!
   "Write value to a floating-point tile"
-  {:malli/schema [:=> [:cat field-2d N0 N0 number?] number?]}
-  [{::keys [^long width data]} ^long y ^long x value]
+  [{::keys [^long width data]} ^long y ^long x ^double value] ^double
   (aset-float data (+ (* width y) x) value))
 
 
@@ -255,21 +246,18 @@
 
 (defn get-byte
   "Read byte value from a tile"
-  {:malli/schema [:=> [:cat byte-field-2d N0 N0] :int]}
   [{::keys [^long width data]} ^long y ^long x]
   (byte->ubyte (aget ^bytes data ^long (+ (* width y) x))))
 
 
 (defn set-byte!
   "Write byte value to a tile"
-  {:malli/schema [:=> [:cat byte-field-2d N0 N0 :int] :int]}
-  [{::keys [^long width data]} ^long y ^long x value]
+  ^long [{::keys [^long width data]} ^long y ^long x ^long value]
   (aset-byte data (+ (* width y) x) (ubyte->byte value)))
 
 
 (defn get-vector3
   "Read RGB vector from a vectors tile"
-  {:malli/schema [:=> [:cat field-2d N0 N0] [:tuple :double :double :double]]}
   [{::keys [^long width data]} ^long y ^long x]
   (let [offset (* 3 (+ (* width y) x))]
     (vec3 (aget ^floats data ^long (+ ^long offset 0))
@@ -279,7 +267,6 @@
 
 (defn set-vector3!
   "Write RGB vector value to vectors tile"
-  {:malli/schema [:=> [:cat field-2d N0 N0 [:vector :double]] [:vector :double]]}
   [{::keys [^long width data]} ^long y ^long x value]
   (let [offset (* 3 (+ (* width y) x))]
     (aset-float data (+ ^long offset 0) (value 0))
@@ -290,7 +277,6 @@
 
 (defn get-vector4
   "read RGBA vector from a vectors tile"
-  {:malli/schema [:=> [:cat field-2d N0 N0] [:vector :double]]}
   [{::keys [^long width data]} ^long y ^long x]
   (let [offset (* 4 (+ (* width y) x))]
     (vec4 (aget ^floats data ^long (+ ^long offset 0))
@@ -301,7 +287,6 @@
 
 (defn set-vector4!
   "Write RGBA vector value to vectors tile"
-  {:malli/schema [:=> [:cat field-2d N0 N0 [:vector :double]] [:vector :double]]}
   [{::keys [^long width data]} ^long y ^long x value]
   (let [offset (* 4 (+ (* width y) x))]
     (aset-float data (+ ^long offset 0) (value 0))

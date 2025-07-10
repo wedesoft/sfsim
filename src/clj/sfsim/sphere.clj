@@ -27,7 +27,6 @@
 
 (defn height
   "Determine height above surface of sphere"
-  {:malli/schema [:=> [:cat sphere fvec3] :double]}
   ^double [{::keys [^Vec3 centre ^double radius]} ^Vec3 point]
   (- (mag (sub point centre)) radius))
 
@@ -76,7 +75,6 @@
 
 (defn integrate-circle
   "Numerically integrate function in the range from zero to two pi"
-  {:malli/schema [:=> [:cat N [:=> [:cat :double] [:vector :double]]] [:vector :double]]}
   [^long steps fun]
   (let [samples (mapv #(* 2 PI (/ (+ 0.5 ^long %) steps)) (range steps))
         weight  (/ (* 2 PI) steps)]
@@ -111,14 +109,12 @@
 
 (defn integral-half-sphere
   "Integrate over half unit sphere oriented along normal"
-  {:malli/schema [:=> [:cat N fvec3 [:=> [:cat fvec3] [:vector :double]]] [:vector :double]]}
   [^long steps ^Vec3 normal fun]
   (spherical-integral (bit-shift-right steps 2) steps (/ PI 2) normal fun))
 
 
 (defn integral-sphere
   "Integrate over a full unit sphere"
-  {:malli/schema [:=> [:cat N fvec3 [:=> [:cat fvec3] [:vector :double]]] [:vector :double]]}
   [^long steps ^Vec3 normal fun]
   (spherical-integral (bit-shift-right steps 1) steps PI normal fun))
 

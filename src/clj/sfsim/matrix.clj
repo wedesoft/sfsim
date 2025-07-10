@@ -150,7 +150,6 @@
 
 (defn z-to-ndc
   "Convert (flipped to positive) z-coordinate to normalized device coordinate"
-  {:malli/schema [:=> [:cat :double :double :double] :double]}
   ^double [^double near ^double far ^double z]
   (let [a (/ (* far near) (- far near))
         b (/ near (- far near))]
@@ -304,14 +303,12 @@
 
 (defn split-linear
   "Perform linear z-split for frustum"
-  {:malli/schema [:=> [:cat :double :double N N0] :double]}
   ^double [^double z-near ^double z-far ^long num-steps ^long step]
   (+ z-near (/ (* (- z-far z-near) step) num-steps)))
 
 
 (defn split-exponential
   "Perform exponential z-split for frustum"
-  {:malli/schema [:=> [:cat :double :double N N0] :double]}
   ^double [^double z-near ^double z-far ^long num-steps ^long step]
   (* z-near (pow (/ z-far z-near) (/ step num-steps))))
 
@@ -333,7 +330,6 @@
 
 (defn biases-like
   "Create list of increasing biases"
-  {:malli/schema [:=> [:cat :double [:vector :double]] [:vector :double]]}
   [^double opacity-bias splits]
   (mapv #(* opacity-bias ^double (/ ^double % ^double (second splits))) (rest splits)))
 
@@ -360,7 +356,6 @@
 
 (defn shadow-patch-matrices
   "Shadow matrices for an object mapping object coordinates to shadow coordinates"
-  {:malli/schema [:=> [:cat fmat4 fvec3 :double] shadow-patch]}
   [^Mat4x4 object-to-world ^Vec3 light-direction ^double object-radius]
   (let [a               (- object-radius)
         b               (+ object-radius)

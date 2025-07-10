@@ -197,6 +197,15 @@
            (surface-radiance-base earth [] 10 intensity (vec3 0 radius 0) (vec3 0 -1 0)) => (vec3 0.0 0.0 0.0))))
 
 
+(defn phase-mock-1
+  "Mie scattering phase function by Henyey-Greenstein depending on assymetry g and mu = cos(theta)"
+  ^double ^double [mie ^double mu]
+  (facts "Phase function gets called with correct arguments"
+         (:sfsim.atmosphere/scatter-g mie) => 0.76
+         mu => 0.36)
+  0.1)
+
+
 (fact "Single-scatter in-scattered light at a point in the atmosphere (J[L0])"
       (let [radius           6378000.0
             height           100000.0
@@ -220,11 +229,7 @@
                                x => (vec3 0 (+ radius 1000) 0))
                         (vec3 2e-5 2e-5 2e-5))
                       atmosphere/phase
-                      (fn [mie ^double mu]
-                        (facts "Phase function gets called with correct arguments"
-                               (:sfsim.atmosphere/scatter-g mie) => 0.76
-                               mu => 0.36)
-                        0.1)
+                      phase-mock-1
                       atmosphere/transmittance
                       (fn [planet scatter steps origin direction above-horizon]
                         (facts "Transmittance function gets called with correct arguments"
@@ -296,6 +301,11 @@
          => (roughly-vector (point-scatter-component earth scatter mie steps intensity x view-direction light-direction true) 1e-12)))
 
 
+(defn phase-mock-2
+  ^double [mie ^double _mu]
+  0.5)
+
+
 (facts "Compute in-scattering of light at a point (J) depending on in-scattering from direction (S) and surface radiance (E)"
        (let [radius           6378000.0
              height           100000.0
@@ -322,7 +332,7 @@
                                 (facts x => x1
                                        light-direction => (vec3 0.36 0.48 0.8))
                                 (vec3 3 4 5))]
-         (with-redefs [atmosphere/phase (fn [mie ^double _mu] 0.5)]
+         (with-redefs [atmosphere/phase phase-mock-2]
            (with-redefs [atmosphere/ray-extremity
                          (fn [planet ray] (vec3 0 (+ radius height) 0))
                          sphere/integral-sphere

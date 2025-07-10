@@ -510,7 +510,6 @@
 
 (defn float-cubemap->floats
   "Extract floating-point data from cubemap face"
-  {:malli/schema [:=> [:cat texture-3d :int] float-image-2d]}
   [{::keys [^long target ^long texture ^long width ^long height]} ^long face]
   (with-texture target texture
     (let [buf (BufferUtils/createFloatBuffer (* width height))]
@@ -535,7 +534,6 @@
 
 (defn vector-cubemap->vectors3
   "Extract floating-point vector data from cubemap face"
-  {:malli/schema [:=> [:cat texture-3d :int] float-image-2d]}
   [{::keys [^long target ^long texture ^long width ^long height]} ^long face]
   (with-texture target texture
     (let [buf (BufferUtils/createFloatBuffer (* width height 3))]

@@ -82,7 +82,6 @@
 
 (defn daf-descriptor-frame
   "Create codec frame for parsing data descriptor"
-  {:malli/schema [:=> [:cat :int :int] :some]}
   [^long num-doubles ^long num-integers]
   (let [summary-length (+ (* 8 num-doubles) (* 4 num-integers))
         padding        (mod (- summary-length) 8)]
@@ -121,7 +120,6 @@
 
 (defn coefficient-frame
   "Return codec frame for parsing a set of coefficients"
-  {:malli/schema [:=> [:cat :int :int] :some]}
   [^long rsize ^long component-count]
   (let [coefficient-count (/ (- rsize 2) component-count)]
     (compile-frame (concat [:float64-le :float64-le] (repeat component-count (repeat coefficient-count :float64-le))))))
@@ -129,7 +127,6 @@
 
 (defn decode-record
   "Decode a record using the specified frame"
-  {:malli/schema [:=> [:cat :some :some :int] :some]}
   [buffer frame ^long index]
   (let [record (byte-array record-size)]
     (.position ^ByteBuffer buffer ^long (* (dec index) ^long record-size))
@@ -207,7 +204,6 @@
 
 (defn read-daf-summaries
   "Read sources and descriptors to get summaries"
-  {:malli/schema [:=> [:cat :map :int :some] [:sequential daf-summary]]}
   [header ^long index buffer]
   (let [summaries   (read-daf-descriptor header index buffer)
         next-number (long (::next-number summaries))
@@ -304,7 +300,6 @@
 
 (defn read-interval-coefficients
   "Read coefficient block with specified index from segment"
-  {:malli/schema [:=> [:cat :map :map :int :some] [:sequential [:sequential :double]]]}
   [segment layout ^long index buffer]
   (let [component-count ({2 3 3 6} (::data-type segment))
         frame           (coefficient-frame (::rsize layout) component-count)
@@ -316,7 +311,6 @@
 
 (defn chebyshev-polynomials
   "Chebyshev polynomials"
-  {:malli/schema [:=> [:cat [:sequential :some] :double :some] :some]}
   [coefficients ^double s zero]
   (let [s2      (* 2.0 s)
         [w0 w1] (reduce (fn [[w0 w1] c] [(-> w0 (mult s2) (sub w1) (add c)) w0])
@@ -327,7 +321,6 @@
 
 (defn interval-index-and-position
   "Compute interval index and position (s) inside for given timestamp"
-  {:malli/schema [:=> [:cat [:map [::init :double] [::intlen :double] [::n :int]] :double] [:tuple :int :double]]}
   [layout ^double tdb]
   (let [init   (::init layout)
         intlen (::intlen layout)
@@ -424,7 +417,6 @@
 
 (defn calendar-date
   "Convert Julian date to calendar date"
-  {:malli/schema [:=> [:cat :int] date]}
   [^long jd]
   (let [f     (+ jd 1401)
         f     (+ ^long f (- (quot (* (quot (+ (* 4 jd) 274277) 146097) 3) 4) 38))
@@ -442,7 +434,6 @@
 
 (defn clock-time
   "Convert day fraction to hours, minutes, and seconds"
-  {:malli/schema [:=> [:cat :double] clock]}
   [^double day-fraction]
   (let [hours   (* 24.0 day-fraction)
         hour    (int hours)
@@ -457,7 +448,6 @@
 
 (defn psi-a
   "Compute Psi angle for Earth precession given centuries since 2000"
-  {:malli/schema [:=> [:cat :double] :double]}
   ^double [^double t]
   (-> t (* -0.0000000951) (+ 0.000132851) (* t) (- 0.00114045) (* t) (- 1.0790069) (* t) (+ 5038.481507) (* t)))
 
@@ -467,21 +457,18 @@
 
 (defn omega-a
   "Compute Omega angle for Earth precession given centuries since 2000"
-  {:malli/schema [:=> [:cat :double] :double]}
   ^double [^double t]
   (-> t (* 0.0000003337) (- 0.000000467) (* t) (- 0.00772503) (* t) (+ 0.0512623) (* t) (- 0.025754) (* t) (+ ^double eps0)))
 
 
 (defn chi-a
   "Compute Chi angle for Earth precession given centuries since 2000"
-  {:malli/schema [:=> [:cat :double] :double]}
   ^double [^double t]
   (-> t (* -0.0000000560) (+ 0.000170663) (* t) (- 0.00121197) (* t) (- 2.3814292) (* t) (+ 10.556403) (* t)))
 
 
 (defn compute-precession
   "Compute precession matrix for Earth given Julian day"
-  {:malli/schema [:=> [:cat :double] fmat3]}
   ^Mat3x3 [^double tdb]
   (let [t          (/ (- tdb ^double T0) 36525.0)
         r3-chi-a   (rotation-z (* (- (chi-a t)) ^double ASEC2RAD))
@@ -496,7 +483,6 @@
 
 (defn earth-rotation-angle
   "Compute Earth rotation angle as a value between 0 and 1"
-  {:malli/schema [:=> [:cat :double] :double]}
   ^double [^double jd-ut]
   (let [th (+ 0.7790572732640 (* 0.00273781191135448 (- jd-ut ^double T0)))]
     (mod (+ ^double (mod th 1.0) ^double (mod jd-ut 1.0)) 1.0)))
@@ -504,7 +490,6 @@
 
 (defn sidereal-time
   "Compute Greenwich Mean Sidereal Time (GMST) in hours"
-  {:malli/schema [:=> [:cat :double] :double]}
   ^double [^double jd-ut]
   (let [theta (earth-rotation-angle jd-ut)
         t     (/ (- jd-ut ^double T0) 36525.0)

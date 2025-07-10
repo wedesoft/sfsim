@@ -274,7 +274,6 @@
 
 (defn opengl-type-size
   "Get byte size of OpenGL type"
-  {:malli/schema [:=> [:cat :int] :int]}
   ^long [^long opengl-type]
   (cond
     (= opengl-type GL11/GL_UNSIGNED_BYTE)  Byte/BYTES
@@ -596,7 +595,6 @@
 
 (defn diagonal-field-of-view
   "Compute diagonal field of view angle"
-  {:malli/schema [:=> [:cat :int :int :double] :double]}
   ^double [^long width ^long height ^double fov]
   (let [dx  (sin (* 0.5 fov))
         dy  (/ (* height dx) width)
@@ -659,7 +657,6 @@
 
 (defn setup-shadow-and-opacity-maps
   "Set up cascade of deep opacity maps and cascade of shadow maps"
-  {:malli/schema [:=> [:cat :int :map :int] :nil]}
   [^long program shadow-data ^long sampler-offset]
   (doseq [i (range (:sfsim.opacity/num-steps shadow-data))]
     (uniform-sampler program (str "shadow_map" i) (+ ^long i sampler-offset)))
@@ -698,7 +695,6 @@
 
 (defn quad-splits-orientations
   "Function to determine quad tessellation orientation of diagonal split (true: 00->11, false: 10->01)"
-  {:malli/schema [:=> [:cat :int :int] [:vector [:vector :boolean]]]}
   [^long tilesize ^long zoom]
   (let [indices  [0 1 3 2]
         vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
