@@ -330,6 +330,22 @@
        => (roughly-vector (vec3 1 1 1) 1e-6))
 
 
+(defn density-at-height-mock
+  ^double [^double height]
+  (facts height => 1000.0)
+  1.224)
+
+(defn temperature-at-height-mock
+  ^double [^double height]
+  (facts height => 1000.0)
+  24.0)
+
+(defn speed-of-sound-mock
+  ^double [^double temperature]
+  (facts temperature => 24.0)
+  340.0)
+
+
 (facts "Determine aerodynamic forces and moments"
        (let [height       1000.0
              orientation  (q/->Quaternion 1.0 0.0 0.0 0.0)
@@ -338,12 +354,9 @@
          (with-redefs [aerodynamics/reference-area 100.0
                        aerodynamics/wing-span 30.0
                        aerodynamics/chord 25.0
-                       atmosphere/density-at-height
-                       (fn [height] (facts height => 1000.0) :density)
-                       atmosphere/temperature-at-height
-                       (fn [height] (facts height => 1000.0) :temperature)
-                       atmosphere/speed-of-sound
-                       (fn [temperature] (facts temperature => temperature) :c-air)
+                       atmosphere/density-at-height density-at-height-mock
+                       atmosphere/temperature-at-height temperature-at-height-mock
+                       atmosphere/speed-of-sound speed-of-sound-mock
                        aerodynamics/linear-speed-in-body-system
                        (fn [orientation speed] (facts orientation => (q/->Quaternion 1.0 0.0 0.0 0.0) speed => (vec3 5 0 0))
                            :speed-body)
@@ -356,51 +369,51 @@
                            force-vector)
                        aerodynamics/lift
                        (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => :c-air density => :density)
+                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
                            2.0)
                        aerodynamics/drag
                        (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => :c-air density => :density)
+                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
                            3.0)
                        aerodynamics/side-force
                        (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => :c-air density => :density)
+                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
                            5.0)
                        aerodynamics/roll-moment
                        (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => :c-air density => :density)
+                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
                            0.5)
                        aerodynamics/pitch-moment
                        (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => :c-air density => :density)
+                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
                            0.125)
                        aerodynamics/yaw-moment
                        (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => :c-air density => :density)
+                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
                            0.25)
                        aerodynamics/roll-damping
                        (fn [speed-body rate density]
-                           (facts speed-body => :speed-body rate => :angular-body density => :density)
+                           (facts speed-body => :speed-body rate => :angular-body density => 1.224)
                            -1.0)
                        aerodynamics/pitch-damping
                        (fn [speed-body rate density]
-                           (facts speed-body => :speed-body rate => :angular-body density => :density)
+                           (facts speed-body => :speed-body rate => :angular-body density => 1.224)
                            -0.25)
                        aerodynamics/yaw-damping
                        (fn [speed-body rate density]
-                           (facts speed-body => :speed-body rate => :angular-body density => :density)
+                           (facts speed-body => :speed-body rate => :angular-body density => 1.224)
                            -0.5)
                        aerodynamics/roll-moment-control
                        (fn [speed-body control speed-of-sound density]
-                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => :c-air density => :density)
+                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
                            0.0)
                        aerodynamics/pitch-moment-control
                        (fn [speed-body control speed-of-sound density]
-                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => :c-air density => :density)
+                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
                            0.0)
                        aerodynamics/yaw-moment-control
                        (fn [speed-body control speed-of-sound density]
-                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => :c-air density => :density)
+                           (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
                            0.0)]
            (:sfsim.aerodynamics/forces (aerodynamic-loads height orientation linear-speed angular-speed (vec3 0 1 2)))
            => (vec3 -3.0 5.0 -2.0)

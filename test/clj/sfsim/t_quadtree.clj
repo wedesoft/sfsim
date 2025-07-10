@@ -15,7 +15,12 @@
     [sfsim.image :as image]
     [sfsim.plane :as plane]
     [sfsim.quadtree :refer :all :as quadtree]
-    [sfsim.util :as util]))
+    [sfsim.util :as util])
+ (:import
+    [clojure.lang
+     Keyword]
+    [fastmath.vector
+     Vec3]))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -320,11 +325,21 @@
       (tile-triangle 0.75 0.75 false) => [[1 0] [0 1] [1 1]])
 
 
+(defn cube-i-mock
+  ^double [^Keyword face ^Vec3 point]
+  (facts face => 2, point => (vec3 0.4 0.6 1)) 0.25)
+
+
+(defn cube-j-mock
+  ^double [^Keyword face ^Vec3 point]
+  (facts face => 2, point => (vec3 0.4 0.6 1)) 0.75)
+
+
 (fact "Get distance of surface to planet center for given radial vector"
       (with-redefs [cubemap/project-onto-cube (fn [point] (fact point => (vec3 2 3 5)) (vec3 0.4 0.6 1))
                     cubemap/determine-face (fn [point] (fact point => (vec3 0.4 0.6 1)) 2)
-                    cubemap/cube-i (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.25)
-                    cubemap/cube-j (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.75)
+                    cubemap/cube-i cube-i-mock
+                    cubemap/cube-j cube-j-mock
                     quadtree/tile-coordinates (fn [^double j ^double i ^long level ^long tilesize]
                                                 (facts j => 0.75, i => 0.25, level => 6, tilesize => 65)
                                                 #:sfsim.quadtree{:row 32 :column 40 :tile-y 3 :tile-x 5 :dy 7.0 :dx 11.0})
