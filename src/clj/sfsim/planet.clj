@@ -563,7 +563,7 @@
         min-z-near      (:sfsim.render/min-z-near render-config)
         height          (- ^double distance ^double radius)
         diagonal-fov    (diagonal-field-of-view window-width window-height fov)
-        z-near          (max (* (- height ^double cloud-top) (cos (* 0.5 diagonal-fov))) min-z-near)
+        z-near          (max (* (- height ^double cloud-top) (cos (* 0.5 diagonal-fov))) ^double min-z-near)
         z-far           (render-depth radius height cloud-top)]
     (make-render-vars render-config window-width window-height position orientation light-direction z-near z-far)))
 
