@@ -210,50 +210,80 @@
        => (roughly (/ PI 2) 1e-6))
 
 
+(defn coefficient-of-lift-mock
+   ^double [^double speed-mach ^double alpha ^double beta]
+  (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5)
+  0.14)
+
+
 (facts "Compute lift for given speed in body system"
-       (with-redefs [aerodynamics/coefficient-of-lift
-                     (fn [speed-mach alpha beta] (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5) 0.14)]
+       (with-redefs [aerodynamics/coefficient-of-lift coefficient-of-lift-mock]
          (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
          => (roughly (* 0.14 0.5 1.225 (* 160 160) reference-area) 1e-6)
          (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.0)
          => (roughly (* 0.14 0.5 1.0 (* 160 160) reference-area) 1e-6)))
 
 
+(defn coefficient-of-drag-mock
+  ^double [^double speed-mach ^double alpha ^double beta]
+  (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5)
+  0.047475)
+
+
 (facts "Compute drag for given speed in body system"
-       (with-redefs [aerodynamics/coefficient-of-drag
-                     (fn [speed-mach alpha beta] (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5) 0.047475)]
+       (with-redefs [aerodynamics/coefficient-of-drag coefficient-of-drag-mock]
          (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
          => (roughly (* 0.047475 0.5 1.225 (* 160 160) reference-area) 1e-6)
          (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.0)
          => (roughly (* 0.047475 0.5 1.0 (* 160 160) reference-area) 1e-6)))
 
 
+(defn coefficient-of-side-force-mock
+  ^double [^double alpha ^double beta]
+  (facts alpha => 0.0 beta => 0.0)
+  -0.0026)
+
+
 (facts "Compute side force for given speed in body system"
-       (with-redefs [aerodynamics/coefficient-of-side-force
-                     (fn [alpha beta] (facts alpha => 0.0 beta => 0.0) -0.0026)]
+       (with-redefs [aerodynamics/coefficient-of-side-force coefficient-of-side-force-mock]
          (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
          => (roughly (* -0.0026 0.5 1.225 (* 160 160) reference-area) 1e-6)
          (side-force (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.0)
          => (roughly (* -0.0026 0.5 1.0 (* 160 160) reference-area) 1e-6)))
 
 
+(defn coefficient-of-roll-moment-mock
+  ^double [^double speed-mach ^double alpha ^double beta]
+  (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5)
+  -0.008)
+
+
 (facts "Compute roll moment"
-       (with-redefs [aerodynamics/coefficient-of-roll-moment
-                     (fn [speed-mach alpha beta] (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5) -0.008)]
+       (with-redefs [aerodynamics/coefficient-of-roll-moment coefficient-of-roll-moment-mock]
          (roll-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
          => (roughly (* -0.008 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
 
 
+(defn coefficient-of-pitch-moment-mock
+  ^double [^double speed-mach ^double alpha ^double beta]
+  (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5)
+  0.001)
+
+
 (facts "Compute pitch moment"
-       (with-redefs [aerodynamics/coefficient-of-pitch-moment
-                     (fn [speed-mach alpha beta] (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5) 0.001)]
+       (with-redefs [aerodynamics/coefficient-of-pitch-moment coefficient-of-pitch-moment-mock]
          (pitch-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
          => (roughly (* 0.001 0.5 1.225 (* 160 160) reference-area chord) 1e-6)))
 
 
+(defn coefficient-of-yaw-moment-mock
+  ^double [^double speed-mach ^double beta]
+  (facts beta => 0.0 speed-mach => 0.5)
+  0.002)
+
+
 (facts "Compute yaw moment"
-       (with-redefs [aerodynamics/coefficient-of-yaw-moment
-                     (fn [speed-mach beta] (facts beta => 0.0 speed-mach => 0.5) 0.002)]
+       (with-redefs [aerodynamics/coefficient-of-yaw-moment coefficient-of-yaw-moment-mock]
          (yaw-moment (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
          => (roughly (* 0.002 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
 
@@ -346,6 +376,60 @@
   340.0)
 
 
+(defn lift-mock
+  ^double [speed-body ^double speed-of-sound ^double density]
+  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  2.0)
+
+
+(defn drag-mock
+  ^double [speed-body ^double speed-of-sound ^double density]
+  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  3.0)
+
+
+(defn side-force-mock
+  ^double [speed-body ^double speed-of-sound ^double density]
+  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  5.0)
+
+
+(defn roll-moment-mock
+  ^double [speed-body ^double speed-of-sound ^double density]
+  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  0.5)
+
+
+(defn pitch-moment-mock
+  ^double [speed-body ^double speed-of-sound ^double density]
+  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  0.125)
+
+
+(defn yaw-moment-mock
+  ^double [speed-body ^double speed-of-sound ^double density]
+  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  0.25)
+
+
+(defn roll-damping-mock
+  ^double [speed-body rate ^double density]
+  (facts speed-body => :speed-body rate => :angular-body density => 1.224)
+  -1.0)
+
+
+(defn pitch-damping-mock
+  ^double [speed-body rate ^double density]
+  (facts speed-body => :speed-body rate => :angular-body density => 1.224)
+  -0.25)
+
+
+(defn yaw-damping-mock
+  ^double [speed-body rate ^double density]
+  (facts speed-body => :speed-body rate => :angular-body density => 1.224)
+  -0.5)
+
+
 (facts "Determine aerodynamic forces and moments"
        (let [height       1000.0
              orientation  (q/->Quaternion 1.0 0.0 0.0 0.0)
@@ -368,41 +452,23 @@
                            (facts speed-body => :speed-body)
                            force-vector)
                        aerodynamics/lift
-                       (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
-                           2.0)
+                       lift-mock
                        aerodynamics/drag
-                       (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
-                           3.0)
+                       drag-mock
                        aerodynamics/side-force
-                       (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
-                           5.0)
+                       side-force-mock
                        aerodynamics/roll-moment
-                       (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
-                           0.5)
+                       roll-moment-mock
                        aerodynamics/pitch-moment
-                       (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
-                           0.125)
+                       pitch-moment-mock
                        aerodynamics/yaw-moment
-                       (fn [speed-body speed-of-sound density]
-                           (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
-                           0.25)
+                       yaw-moment-mock
                        aerodynamics/roll-damping
-                       (fn [speed-body rate density]
-                           (facts speed-body => :speed-body rate => :angular-body density => 1.224)
-                           -1.0)
+                       roll-damping-mock
                        aerodynamics/pitch-damping
-                       (fn [speed-body rate density]
-                           (facts speed-body => :speed-body rate => :angular-body density => 1.224)
-                           -0.25)
+                       pitch-damping-mock
                        aerodynamics/yaw-damping
-                       (fn [speed-body rate density]
-                           (facts speed-body => :speed-body rate => :angular-body density => 1.224)
-                           -0.5)
+                       yaw-damping-mock
                        aerodynamics/roll-moment-control
                        (fn [speed-body control speed-of-sound density]
                            (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
