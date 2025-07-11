@@ -7,7 +7,7 @@ uniform mat4 projection;
 uniform vec3 tile_center;
 uniform mat4 tile_to_camera;
 <% (doseq [i (range num-scene-shadows)] %>
-uniform mat4 tile_to_shadow_map_<%= (inc i) %>;
+uniform mat4 tile_to_shadow_map_<%= (inc ^long i) %>;
 <% ) %>
 
 in TCS_OUT
@@ -21,7 +21,7 @@ out TES_OUT
   vec2 colorcoord;
   vec3 point;
 <% (doseq [i (range num-scene-shadows)] %>
-  vec4 object_shadow_pos_<%= (inc i) %>;
+  vec4 object_shadow_pos_<%= (inc ^long i) %>;
 <% ) %>
 } tes_out;
 
@@ -38,7 +38,7 @@ void main()
   tes_out.point = tile_center + vector;
   vec4 transformed_point = tile_to_camera * vec4(vector, 1);
 <% (doseq [i (range num-scene-shadows)] %>
-  tes_out.object_shadow_pos_<%= (inc i) %> = tile_to_shadow_map_<%= (inc i) %> * vec4(vector, 1);
+  tes_out.object_shadow_pos_<%= (inc ^long i) %> = tile_to_shadow_map_<%= (inc ^long i) %> * vec4(vector, 1);
 <% ) %>
   gl_Position = projection * transformed_point;
 }

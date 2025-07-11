@@ -406,8 +406,7 @@
 
 (defn julian-date
   "Convert calendar date to Julian date"
-  {:malli/schema [:=> [:cat date] :int]}
-  [{::keys [^long year ^long month ^long day]}]
+  ^long [{::keys [^long year ^long month ^long day]}]
   (let [g (- (+ year 4716) (if (<= month 2) 1 0))
         f (mod (+ month 9) 12)
         e (- (+ (quot (* 1461 ^long g) 4) day) 1402)
