@@ -24,7 +24,7 @@
     [sfsim.worley :refer (worley-size)]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -186,7 +186,7 @@
                       [(shaders/noise-octaves "clouds" "noise" cloud-octaves)
                        (shaders/lookup-3d "noise" "worley")
                        (shaders/scale-noise "cover" "factor" "clouds")])
-        epsilon       (/ 1.0 worley-size (pow 2.0 (count flow-octaves)))]
+        epsilon       (/ 1.0 ^long worley-size (pow 2.0 (count flow-octaves)))]
     (use-program update-warp)
     (uniform-sampler update-warp "current" 0)
     (uniform-sampler update-warp "worley_north" 1)
@@ -202,7 +202,7 @@
     (let [result (cubemap-warp size lookup
                                (uniform-sampler lookup "current" 0)
                                (uniform-sampler lookup "worley" 1)
-                               (uniform-float lookup "factor" (/ 1.0 2.0 cover-scale))
+                               (uniform-float lookup "factor" (/ 1.0 (* 2.0 ^double cover-scale)))
                                (use-textures {0 @warp 1 worley-cover}))]
       (destroy-program lookup)
       (destroy-program update-warp)
@@ -316,9 +316,11 @@
   [size num-opacity-layers matrix-cascade voxel-size program & body]
   `(mapv
      (fn render-deep-opacity-map# [opacity-level#]
-       (let [opacity-layers#  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp ~size ~size
-                                                           (inc ~num-opacity-layers))
-             level-of-detail# (/ (log (/ (/ (:sfsim.matrix/scale opacity-level#) ~size) ~voxel-size)) (log 2))]
+       (let [opacity-layers#  (make-empty-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp (long ~size) (long ~size)
+                                                           (inc (long ~num-opacity-layers)))
+             level-of-detail# (/ (log (/ (double (/ (double (:sfsim.matrix/scale opacity-level#)) (long ~size)))
+                                         (long ~voxel-size)))
+                                 (log 2.0))]
          (framebuffer-render ~size ~size :sfsim.render/cullback nil [opacity-layers#]
                              (use-program ~program)
                              (uniform-int ~program "shadow_size" ~size)
@@ -359,9 +361,9 @@
   "Compute level of detail offset for sampling cloud textures"
   {:malli/schema [:=> [:cat :map :map :map] :double]}
   [render-config cloud-data render-vars]
-  (/ (log (/ (tan (/ (:sfsim.render/fov render-config) 2))
-             (/ (:sfsim.render/window-width render-vars) 2)
-             (/ (::detail-scale cloud-data) worley-size))) (log 2)))
+  (/ (log (/ (tan (* 0.5 ^double (:sfsim.render/fov render-config)))
+             (* 0.5 ^long (:sfsim.render/window-width render-vars))
+             (/ ^double (::detail-scale cloud-data) ^long worley-size))) (log 2.0)))
 
 
 (def cloud-config
@@ -386,7 +388,7 @@
         perlin-floats        (slurp-floats "data/clouds/perlin.raw")
         worley-data          #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
         worley               (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)
-        perlin-worley-floats (float-array (mapv #(+ (* 0.3 %1) (* 0.7 %2)) perlin-floats worley-floats))
+        perlin-worley-floats (float-array (mapv #(+ (* 0.3 ^double %1) (* 0.7 ^double %2)) perlin-floats worley-floats))
         perlin-worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data perlin-worley-floats}
         perlin-worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat perlin-worley-data)
         cover-floats-list    (mapv (fn load-cloud-cubemap-face [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
@@ -421,8 +423,8 @@
   {:malli/schema [:=> [:cat :int :map :int] :nil]}
   [program cloud-data sampler-offset]
   (uniform-sampler program "worley" sampler-offset)
-  (uniform-sampler program "perlin" (+ sampler-offset 1))
-  (uniform-sampler program "cover" (+ sampler-offset 2))
+  (uniform-sampler program "perlin" (+ ^long sampler-offset 1))
+  (uniform-sampler program "cover" (+ ^long sampler-offset 2))
   (uniform-int program "cover_size" (:sfsim.texture/width (::cloud-cover cloud-data)))
   (uniform-float program "cloud_bottom" (::cloud-bottom cloud-data))
   (uniform-float program "cloud_top" (::cloud-top cloud-data))
@@ -449,7 +451,7 @@
 (defn overall-shading-parameters
   {:malli/schema [:=> [:cat N0] [:vector [:tuple :string :string]]]}
   [n]
-  (mapv (fn [i] ["average_scene_shadow" (str "scene_shadow_map_" (inc i))]) (range n)))
+  (mapv (fn [^long i] ["average_scene_shadow" (str "scene_shadow_map_" (inc i))]) (range n)))
 
 
 (defn overall-shading

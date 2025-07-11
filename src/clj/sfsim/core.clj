@@ -51,7 +51,7 @@
       MemoryStack)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 ; clj -M:nrepl -m sfsim.core
@@ -105,7 +105,7 @@
           false)))
 
 (def playback false)
-; (def fix-fps 30.0)
+; (def fix-fps 30)
 (def fix-fps false)
 (def fullscreen (atom false))
 
@@ -203,13 +203,13 @@
                        :sfsim.jolt/damping 155702.159})
 (def main-wheel-left (assoc main-wheel-base
                             :sfsim.jolt/position
-                            (sub main-wheel-left-pos (vec3 0 0 (- (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
+                            (sub main-wheel-left-pos (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
 (def main-wheel-right (assoc main-wheel-base
                              :sfsim.jolt/position
-                             (sub main-wheel-right-pos (vec3 0 0 (- (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
+                             (sub main-wheel-right-pos (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
 (def front-wheel (assoc front-wheel-base
                         :sfsim.jolt/position
-                        (sub front-wheel-pos (vec3 0 0 (- (:sfsim.jolt/suspension-max-length front-wheel-base) 0.5)))))
+                        (sub front-wheel-pos (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length front-wheel-base) 0.5)))))
 (def wheels [main-wheel-left main-wheel-right front-wheel])
 
 (def tile-tree (planet/make-tile-tree))
@@ -255,8 +255,8 @@
         (when (and press (= k GLFW/GLFW_KEY_TAB))
           (if @focus-old
             (if (not (zero? (bit-and mods GLFW/GLFW_MOD_SHIFT)))
-              (reset! focus-new (dec @focus-old))
-              (reset! focus-new (inc @focus-old)))
+              (reset! focus-new (dec ^long @focus-old))
+              (reset! focus-new (inc ^long @focus-old)))
             (reset! focus-new 0)))
         (cond
           (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
@@ -326,15 +326,15 @@
 
 
 (defn position-from-lon-lat
-  [longitude latitude height]
+  ^Vec3 [^double longitude ^double latitude ^double height]
   (let [point      (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
         min-radius (quadtree/distance-to-surface point
                                                  (:sfsim.planet/level config/planet-config)
                                                  (:sfsim.planet/tilesize config/planet-config)
                                                  (:sfsim.planet/radius config/planet-config)
                                                  split-orientations)
-        radius     (+ height (:sfsim.planet/radius config/planet-config))]
-    (mult point (max radius min-radius))))
+        radius     (+ height ^double (:sfsim.planet/radius config/planet-config))]
+    (mult point (max radius ^double min-radius))))
 
 
 (defn orientation-from-lon-lat
@@ -422,7 +422,7 @@
 
 
 (defn location-dialog
-  [gui window-width window-height]
+  [gui ^long window-width ^long window-height]
   (gui/nuklear-window gui "location" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 2)
                       (gui/text-label gui "Longitude (East)")
@@ -440,13 +440,13 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (+ (int (astro/now)) (+ (/ -5.0 24.0) (/ 27.0 60.0 24.0))) (/ @t0 1000 86400.0))))
+(def time-delta (atom (- (+ (long (astro/now)) (+ (/ -5.0 24.0) (/ 27.0 60.0 24.0))) (/ ^long @t0 1000.0 86400.0))))
 
 (def camera-dx (atom 0.0))
 (def camera-dy (atom 0.0))
 
 (defn datetime-dialog-get
-  [time-data t0]
+  ^double [time-data ^long t0]
   (let [day    (Integer/parseInt (trim (gui/edit-get (:day time-data))))
         month  (Integer/parseInt (trim (gui/edit-get (:month time-data))))
         year   (Integer/parseInt (trim (gui/edit-get (:year time-data))))
@@ -455,13 +455,13 @@
         sec    (Integer/parseInt (trim (gui/edit-get (:second time-data))))
         jd     (astro/julian-date #:sfsim.astro{:year year :month month :day day})
         clock  (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
-    (- (+ (- jd astro/T0 0.5) clock) (/ t0 1000 86400.0))))
+    (- (+ (- jd ^double astro/T0 0.5) clock) (/ t0 1000.0 86400.0))))
 
 
 (defn datetime-dialog-set
-  [time-data time-delta t0]
-  (let [t     (+ time-delta (/ t0 1000 86400.0))
-        t     (+ astro/T0 t 0.5)
+  [time-data ^double time-delta ^long t0]
+  (let [t     (+ time-delta (/ ^long t0 1000.0 86400.0))
+        t     (+ ^double astro/T0 t 0.5)
         date  (astro/calendar-date (int t))
         clock (astro/clock-time (- t (int t)))]
     (gui/edit-set (:day time-data) (format "%2d" (:sfsim.astro/day date)))
@@ -473,7 +473,7 @@
 
 
 (defn datetime-dialog
-  [gui window-width window-height]
+  [gui ^long window-width ^long window-height]
   (gui/nuklear-window gui "datetime" (quot (- window-width 320) 2) (quot (- window-height (* 38 3)) 2) 320 (* 38 3)
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.4)
@@ -509,7 +509,7 @@
 
 
 (defn main-dialog
-  [gui window-width window-height]
+  [gui ^long window-width ^long window-height]
   (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
                       (gui/layout-row-dynamic gui 32 1)
                       (when (gui/button-label gui "Location")
@@ -534,27 +534,27 @@
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect (- 45 (* roll 30)) (- 45 (* pitch 30)) 10 10 rect)
+                                                  (Nuklear/nk_rect (- 45 (* ^double roll 30)) (- 45 (* ^double pitch 30)) 10 10 rect)
                                                   (Nuklear/nk_rgb 255 0 0 rgb))))
     (gui/nuklear-window gui "rudder" 10 95 80 20
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 20 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect (- 45 (* rudder 30)) 100 10 10 rect)
+                                                  (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
                                                   (Nuklear/nk_rgb 255 0 255 rgb))))
     (gui/nuklear-window gui "thrust" 95 10 20 80
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect 100 (- 75 (* 60 thrust)) 10 10 rect)
+                                                  (Nuklear/nk_rect 100 (- 75 (* 60 ^double thrust)) 10 10 rect)
                                                   (Nuklear/nk_rgb 255 255 255 rgb)))))
   (MemoryStack/stackPop))
 
 
 (defn info
-  [gui h text]
+  [gui ^long h ^String text]
   (gui/nuklear-window gui "info" 10 (- h 42) 480 32
                       (gui/layout-row-dynamic gui 32 1)
                       (gui/text-label gui text)))
@@ -588,7 +588,7 @@
 
 
 (defn deadzone
-  [axis]
+  ^double [^double axis]
   (let [epsilon 0.08
         abs-axis (abs axis)]
     (if (>= abs-axis epsilon)
@@ -616,7 +616,7 @@
   (let [n  (atom 0)
         w  (int-array 1)
         h  (int-array 1)]
-    (while (and (not (GLFW/glfwWindowShouldClose @window)) (or (not playback) (< @n (count @recording))))
+    (while (and (not (GLFW/glfwWindowShouldClose @window)) (or (not playback) (< ^long @n (count @recording))))
       (when (and (@keystates GLFW/GLFW_KEY_F) (not @prev-fullscr))
         (swap! fullscreen not)
         (let [monitor (GLFW/glfwGetPrimaryMonitor)
@@ -637,13 +637,15 @@
       (when (@keystates GLFW/GLFW_KEY_X)
         (jolt/set-orientation body (:orientation @pose))
         (jolt/set-translation body (:position @pose))
-        (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+        (let [height    (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
               max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
-              s       (min @speed max-speed)]
+              s         (min ^double @speed max-speed)]
           (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.3))))
          (jolt/set-angular-velocity body (vec3 0 0 0)))
       (let [t1       (System/currentTimeMillis)
-            dt       (if fix-fps (do (Thread/sleep (max 0 (int (- (/ 1000 fix-fps) (- t1 @t0))))) (/ 1000 fix-fps)) (- t1 @t0))
+            dt       (if fix-fps
+                       (do (Thread/sleep (max 0 ^long (- (quot 1000 ^long fix-fps) (- ^long t1 ^long @t0)))) (quot 1000 ^long fix-fps))
+                       (- t1 ^long @t0))
             axes     (joystick-axes)
             mn-req   (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
             gear-req (if (@keystates GLFW/GLFW_KEY_G) true false)
@@ -651,15 +653,15 @@
             rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
             rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
             brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.0)
-            pitch    (if (@keystates GLFW/GLFW_KEY_W) 1 (if (@keystates GLFW/GLFW_KEY_S) -1 (- (deadzone (nth axes 1)))))
-            rudder   (if (@keystates GLFW/GLFW_KEY_E) -1 (if (@keystates GLFW/GLFW_KEY_Q) 1 (- (deadzone (nth axes 2)))))
-            roll     (if (@keystates GLFW/GLFW_KEY_A) 1 (if (@keystates GLFW/GLFW_KEY_D) -1 (- (deadzone (nth axes 0)))))
+            pitch    (if (@keystates GLFW/GLFW_KEY_W) 1.0 (if (@keystates GLFW/GLFW_KEY_S) -1.0 (- (deadzone (nth axes 1)))))
+            rudder   (if (@keystates GLFW/GLFW_KEY_E) -1.0 (if (@keystates GLFW/GLFW_KEY_Q) 1.0 (- (deadzone (nth axes 2)))))
+            roll     (if (@keystates GLFW/GLFW_KEY_A) 1.0 (if (@keystates GLFW/GLFW_KEY_D) -1.0 (- (deadzone (nth axes 0)))))
             thrust-r (if (@keystates GLFW/GLFW_KEY_SPACE) true false)
-            v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- @speed) 0))
+            v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- ^double @speed) 0))
             d        (if (@keystates GLFW/GLFW_KEY_COMMA) 0.05 (if (@keystates GLFW/GLFW_KEY_PERIOD) -0.05 0))
             dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
             dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))]
-        (swap! thrust (fn [x] (min 1.0 (max 0.0 (- x (* 0.1 (deadzone (nth axes 3))))))))
+        (swap! thrust (fn [^double x] (min 1.0 (max 0.0 (- x (* 0.1 (deadzone (nth axes 3))))))))
         (when (not (= thrust-r @prev-thrust))
           (reset! thrust (if thrust-r 1.0 0.0)))
         (reset! prev-thrust thrust-r)
@@ -671,7 +673,7 @@
         (reset! prev-gear-req gear-req)
         (if playback
           (let [frame (nth @recording @n)]
-            (reset! time-delta (/ (- (:timemillis frame) @t0) 1000 86400.0))
+            (reset! time-delta (/ (- ^long (:timemillis frame) ^long @t0) 1000.0 86400.0))
             (reset! pose {:position (:position frame) :orientation (:orientation frame)})
             (reset! camera-orientation (:camera-orientation frame))
             (reset! camera-dx (:camera-dx frame))
@@ -683,26 +685,26 @@
           (do
             (if @slew
               (do
-                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 pitch ) (vec3 0 1 0)))
-                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 rudder) (vec3 0 0 1)))
-                (swap! pose update :orientation q/* (q/rotation (* dt -0.001 roll  ) (vec3 1 0 0)))
-                (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* dt 0.001 v))))
+                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 pitch ) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 rudder) (vec3 0 0 1)))
+                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 roll  ) (vec3 1 0 0)))
+                (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v))))
               (do
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
                 (if @gear-down
-                  (swap! gear - (* dt 0.0005))
-                  (swap! gear + (* dt 0.0005)))
+                  (swap! gear - (* ^long dt 0.0005))
+                  (swap! gear + (* ^long dt 0.0005)))
                 (swap! gear min 1.0)
                 (swap! gear max 0.0)
-                (if (zero? @gear)
+                (if (zero? ^double @gear)
                   (when (not @vehicle)
                     (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
                   (when @vehicle
                     (jolt/remove-and-destroy-constraint @vehicle)
                     (reset! vehicle nil)))
                 (when @vehicle (jolt/set-brake-input @vehicle brake))
-                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* @thrust 30.0 mass) 0 0)))
-                (let [height (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
+                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double @thrust 30.0 ^double mass) 0 0)))
+                (let [height (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body)
                                                              (mult (vec3 (* 0.25 roll) (* 0.25 pitch) (* 0.4 rudder))
@@ -710,20 +712,20 @@
                   (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                   (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
                 (update-mesh! (:position @pose))
-                (jolt/update-system (* dt 0.001) 16)
+                (jolt/update-system (* ^long dt 0.001) 16)
                 (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
                 (reset! wheel-angles (if @vehicle
-                                       [(mod (/ (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
-                                        (mod (/ (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
-                                        (mod (/ (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
+                                       [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
+                                        (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
+                                        (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2.0 PI)) 1.0)]
                                        [0.0 0.0 0.0]))
                 (reset! suspension (if @vehicle
-                                     [(/ (- (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                      (/ (- (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                      (+ 1 (/ (- (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                                     [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                                      (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                                      (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
                                      [1.0 1.0 1.0]))
                 (when @recording
-                  (let [frame {:timemillis (+ (* @time-delta 1000 86400.0) @t0)
+                  (let [frame {:timemillis (long (+ (* ^double @time-delta 1000.0 86400.0) ^long @t0))
                                :position (:position @pose)
                                :orientation (:orientation @pose)
                                :camera-orientation @camera-orientation
@@ -732,25 +734,25 @@
                                :dist @dist
                                :gear @gear
                                :wheel-angles (if @vehicle
-                                               [(mod (/ (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
-                                                (mod (/ (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
-                                                (mod (/ (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
+                                               [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
+                                                (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
+                                                (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
                                                [0.0 0.0 0.0])
                                :suspension (if @vehicle
-                                             [(/ (- (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                              (/ (- (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                              (+ 1 (/ (- (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                                             [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                                              (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                                              (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
                                              [1.0 1.0 1.0])}]
                     (swap! recording conj frame)))))
-            (swap! camera-dx + (* dt dcx 0.005))
-            (swap! camera-dy + (* dt dcy 0.005))
-            (swap! camera-orientation q/* (q/rotation (* dt ra) (vec3 1 0 0)))
-            (swap! camera-orientation q/* (q/rotation (* dt rb) (vec3 0 1 0)))
-            (swap! camera-orientation q/* (q/rotation (* dt rc) (vec3 0 0 1)))
+            (swap! camera-dx + (* ^long dt ^long dcx 0.005))
+            (swap! camera-dy + (* ^long dt ^long dcy 0.005))
+            (swap! camera-orientation q/* (q/rotation (* ^long dt ra) (vec3 1 0 0)))
+            (swap! camera-orientation q/* (q/rotation (* ^long dt rb) (vec3 0 1 0)))
+            (swap! camera-orientation q/* (q/rotation (* ^long dt rc) (vec3 0 0 1)))
             (swap! dist * (exp d))))
         (let [object-position    (:position @pose)
               origin             (add object-position (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy @dist)))
-              jd-ut              (+ @time-delta (/ @t0 1000 86400.0) astro/T0)
+              jd-ut              (+ ^double @time-delta (/ ^long @t0 1000.0 86400.0) ^double astro/T0)
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (sub (earth-moon jd-ut))
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
@@ -765,7 +767,7 @@
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
-              wheels-scene       (if (zero? @gear)
+              wheels-scene       (if (zero? ^double @gear)
                                    (model/apply-transforms
                                      scene
                                      (model/animations-frame
@@ -781,9 +783,9 @@
                                        scene
                                        (model/animations-frame
                                          model
-                                         {"GearLeft" (+ @gear 1)
-                                          "GearRight" (+ @gear 1)
-                                          "GearFront" (+ @gear 2)
+                                         {"GearLeft" (+ ^double @gear 1.0)
+                                          "GearRight" (+ ^double @gear 1.0)
+                                          "GearFront" (+ ^double @gear 2.0)
                                           "WheelLeft" (nth @wheel-angles 0)
                                           "WheelRight" (nth @wheel-angles 1)
                                           "WheelFront" (nth @wheel-angles 2)}))
@@ -791,15 +793,15 @@
                                        scene
                                        (model/animations-frame
                                          model
-                                         {"GearLeft" (+ @gear 1)
-                                          "GearRight" (+ @gear 1)
-                                          "GearFront" (+ @gear 2)}))))
+                                         {"GearLeft" (+ ^double @gear 1.0)
+                                          "GearRight" (+ ^double @gear 1.0)
+                                          "GearFront" (+ ^double @gear 2.0)}))))
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
               clouds             (texture-render-color-depth
-                                   (/ (:sfsim.render/window-width planet-render-vars) 2)
-                                   (/ (:sfsim.render/window-height planet-render-vars) 2)
+                                   (quot ^long (:sfsim.render/window-width planet-render-vars) 2)
+                                   (quot ^long (:sfsim.render/window-height planet-render-vars) 2)
                                    true
                                    (clear (vec3 0 0 0) 1.0)
                                    ;; Render clouds in front of planet
@@ -808,7 +810,7 @@
                                    ;; Render clouds above the horizon
                                    (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
           (onscreen-render @window
-                           (if (< (:sfsim.render/z-near scene-render-vars) (:sfsim.render/z-near planet-render-vars))
+                           (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
                                (clear (vec3 0 1 0) 1.0 0)
                                ;; Render model
@@ -835,21 +837,21 @@
                              (reset! focus-old nil)
                              (@menu gui @window-width @window-height)
                              (reset! focus-new nil))
-                           (swap! frametime (fn [x] (+ (* 0.95 x) (* 0.05 dt 0.001))))
+                           (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^long dt 0.001))))
                            (when (not playback)
                              (stick gui roll pitch rudder @thrust)
                              (info gui @window-height
                                    (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s"
-                                           (- (mag (:position @pose)) (:sfsim.planet/radius config/planet-config))
-                                           (mag (jolt/get-linear-velocity body)) (/ 1.0 @frametime)
+                                           (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
+                                           (mag (jolt/get-linear-velocity body)) (/ 1.0 ^double @frametime)
                                            (if @slew ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (when playback
-            (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 @window-width @window-height))
-                  data   (byte-array (* 4 @window-width @window-height))]
+            (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 ^long @window-width ^long @window-height))
+                  data   (byte-array (* 4 ^long @window-width ^long @window-height))]
               (GL11/glFlush)
               (GL11/glFinish)
               (GL11/glReadPixels 0 0 ^long @window-width ^long @window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)

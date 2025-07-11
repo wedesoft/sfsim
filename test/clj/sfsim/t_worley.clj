@@ -69,7 +69,7 @@
 
 
 (facts "Create 3D Worley noise"
-       (with-redefs [worley/random-point-grid (fn [n size] (facts n => 1 size => 2) [[[(vec3 0.5 0.5 0.5)]]])]
+       (with-redefs [worley/random-point-grid (fn [^long n ^long size] (facts n => 1 size => 2) [[[(vec3 0.5 0.5 0.5)]]])]
          (nth (worley-noise 1 2) 0) => 1.0
          (count (worley-noise 1 2)) => 8
          (apply min (worley-noise 1 2)) => 0.0))

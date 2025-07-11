@@ -12,10 +12,15 @@
     [fastmath.vector :as fv]
     [malli.core :as m]
     [sfsim.quaternion :refer (quaternion rotate-vector)]
-    [sfsim.util :refer (N N0)]))
+    [sfsim.util :refer (N N0)])
+  (:import
+    [fastmath.vector
+     Vec3]
+    [fastmath.matrix
+     Mat4x4]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -126,10 +131,10 @@
   "Compute OpenGL projection matrix (frustum)"
   {:malli/schema [:=> [:cat :int :int :double :double :double] fmat4]}
   [width height near far field-of-view]
-  (let [dx (/ 1.0 (tan (* 0.5 field-of-view)))
-        dy (-> dx (* width) (/ height))
-        a  (/ (* far near) (- far near))
-        b  (/ near (- far near))]
+  (let [dx (/ 1.0 (tan (* 0.5 ^double field-of-view)))
+        dy (-> dx (* ^long width) (/ ^long height))
+        a  (/ (* ^double far ^double near) (- ^double far ^double near))
+        b  (/ ^double near (- ^double far ^double near))]
     (fm/mat4x4 dx  0  0  0
                0  dy  0  0
                0   0  b  a
@@ -145,8 +150,7 @@
 
 (defn z-to-ndc
   "Convert (flipped to positive) z-coordinate to normalized device coordinate"
-  {:malli/schema [:=> [:cat :double :double :double] :double]}
-  [near far z]
+  ^double [^double near ^double far ^double z]
   (let [a (/ (* far near) (- far near))
         b (/ near (- far near))]
     (/ (- a (* z b)) z)))
@@ -177,9 +181,9 @@
   "Compute 3D bounding box for a set of points"
   {:malli/schema [:=> [:cat [:sequential fvec4]] bbox]}
   [points]
-  (let [x (mapv #(/ (% 0) (% 3)) points)
-        y (mapv #(/ (% 1) (% 3)) points)
-        z (mapv #(/ (% 2) (% 3)) points)]
+  (let [x (mapv #(/ ^double (% 0) ^double (% 3)) points)
+        y (mapv #(/ ^double (% 1) ^double (% 3)) points)
+        z (mapv #(/ ^double (% 2) ^double (% 3)) points)]
     {:bottomleftnear (fv/vec3 (apply min x) (apply min y) (apply max z))
      :toprightfar (fv/vec3 (apply max x) (apply max y) (apply min z))}))
 
@@ -194,17 +198,17 @@
 (defn shadow-box-to-ndc
   "Scale and translate light box coordinates to normalized device coordinates"
   {:malli/schema [:=> [:cat bbox] fmat4]}
-  [{:keys [bottomleftnear toprightfar]}]
+  [{:keys [^Vec3 bottomleftnear ^Vec3 toprightfar]}]
   (let [left   (bottomleftnear 0)
         right  (toprightfar 0)
         bottom (bottomleftnear 1)
         top    (toprightfar 1)
-        near   (- (bottomleftnear 2))
-        far    (- (toprightfar 2))]
-    (fm/mat4x4 (/ 2 (- right left)) 0                    0                  (- (/ (* 2 left) (- left right)) 1)
-               0                    (/ 2 (- top bottom)) 0                  (- (/ (* 2 bottom) (- bottom top)) 1)
-               0                    0                    (/ 1 (- far near)) (/ far (- far near))
-               0                    0                    0                  1)))
+        near   (- ^double (bottomleftnear 2))
+        far    (- ^double (toprightfar 2))]
+    (fm/mat4x4 (/ 2.0 (- ^double right ^double left)) 0 0 (- (/ (* 2.0 ^double left) (- ^double left ^double right)) 1.0)
+               0 (/ 2.0 (- ^double top ^double bottom)) 0 (- (/ (* 2.0 ^double bottom) (- ^double bottom ^double top)) 1.0)
+               0 0 (/ 1.0 (- far near)) (/ far (- far near))
+               0 0 0 1)))
 
 
 (defn shadow-box-to-map
@@ -252,7 +256,7 @@
 (defn- span-of-box
   "Get vector of box dimensions"
   {:malli/schema [:=> [:cat bbox] fvec3]}
-  [bounding-box]
+  ^Vec3 [bounding-box]
   (fv/sub (:toprightfar bounding-box) (:bottomleftnear bounding-box)))
 
 
@@ -289,8 +293,8 @@
          shadow-ndc   (shadow-box-to-ndc bounding-box)
          shadow-map   (shadow-box-to-map bounding-box)
          span         (span-of-box bounding-box)
-         scale        (* 0.5 (+ (span 0) (span 1)))
-         depth        (- (span 2))]
+         scale        (* 0.5 (+ ^double (span 0) ^double (span 1)))
+         depth        (- ^double (span 2))]
      {::world-to-shadow-ndc (fm/mulm shadow-ndc light-matrix)
       ::world-to-shadow-map (fm/mulm shadow-map light-matrix)
       ::scale scale
@@ -299,15 +303,13 @@
 
 (defn split-linear
   "Perform linear z-split for frustum"
-  {:malli/schema [:=> [:cat :double :double N N0] :double]}
-  [z-near z-far num-steps step]
+  ^double [^double z-near ^double z-far ^long num-steps ^long step]
   (+ z-near (/ (* (- z-far z-near) step) num-steps)))
 
 
 (defn split-exponential
   "Perform exponential z-split for frustum"
-  {:malli/schema [:=> [:cat :double :double N N0] :double]}
-  [z-near z-far num-steps step]
+  ^double [^double z-near ^double z-far ^long num-steps ^long step]
   (* z-near (pow (/ z-far z-near) (/ step num-steps))))
 
 
@@ -315,21 +317,21 @@
   "Mixed linear and exponential split"
   {:malli/schema [:=> [:cat :double :double :double N N0] :double]}
   [mix z-near z-far num-steps step]
-  (+ (* (- 1 mix) (split-linear z-near z-far num-steps step)) (* mix (split-exponential z-near z-far num-steps step))))
+  (+ (* (- 1.0 ^double mix) (split-linear z-near z-far num-steps step))
+     (* ^double mix (split-exponential z-near z-far num-steps step))))
 
 
 (defn split-list
   "Get list of splits including z-far"
   {:malli/schema [:=> [:cat :map :map] [:vector :double]]}
-  [{:sfsim.opacity/keys [mix num-steps]} {:sfsim.render/keys [z-near z-far]}]
+  [{:sfsim.opacity/keys [^double mix ^long num-steps]} {:sfsim.render/keys [^double z-near ^double z-far]}]
   (mapv (partial split-mixed mix z-near z-far num-steps) (range (inc num-steps))))
 
 
 (defn biases-like
   "Create list of increasing biases"
-  {:malli/schema [:=> [:cat :double [:vector :double]] [:vector :double]]}
-  [opacity-bias splits]
-  (mapv #(* opacity-bias (/ % (second splits))) (rest splits)))
+  [^double opacity-bias splits]
+  (mapv #(* opacity-bias ^double (/ ^double % ^double (second splits))) (rest splits)))
 
 
 (defn shadow-matrix-cascade
@@ -337,7 +339,7 @@
   {:malli/schema [:=> [:cat :map :map] [:vector shadow-box]]}
   [{:sfsim.opacity/keys [num-steps mix depth]} {:sfsim.render/keys [projection camera-to-world light-direction z-near z-far]}]
   (mapv (fn shadow-matrices-for-segment
-          [idx]
+          [^long idx]
           (let [ndc1 (z-to-ndc z-near z-far (split-mixed mix z-near z-far num-steps idx))
                 ndc2 (z-to-ndc z-near z-far (split-mixed mix z-near z-far num-steps (inc idx)))]
             (shadow-matrices projection camera-to-world light-direction depth ndc1 ndc2)))
@@ -354,8 +356,7 @@
 
 (defn shadow-patch-matrices
   "Shadow matrices for an object mapping object coordinates to shadow coordinates"
-  {:malli/schema [:=> [:cat fmat4 fvec3 :double] shadow-patch]}
-  [object-to-world light-direction object-radius]
+  [^Mat4x4 object-to-world ^Vec3 light-direction ^double object-radius]
   (let [a               (- object-radius)
         b               (+ object-radius)
         bounding-box    {:bottomleftnear (fv/vec3 a a b) :toprightfar (fv/vec3 b b a)}

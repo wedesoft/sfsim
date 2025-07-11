@@ -35,7 +35,7 @@
       GL45)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -274,8 +274,7 @@
 
 (defn opengl-type-size
   "Get byte size of OpenGL type"
-  {:malli/schema [:=> [:cat :int] :int]}
-  [opengl-type]
+  ^long [^long opengl-type]
   (cond
     (= opengl-type GL11/GL_UNSIGNED_BYTE)  Byte/BYTES
     (= opengl-type GL11/GL_UNSIGNED_SHORT) Short/BYTES
@@ -289,7 +288,7 @@
   {:malli/schema [:=> [:cat :int [:and sequential? [:repeat [:cat :int :string N]]]] [:vector :int]]}
   [program attributes]
   (let [attribute-pairs (partition 3 attributes)
-        sizes           (mapv (fn [[opengl-type _name size]] (* (opengl-type-size opengl-type) size)) attribute-pairs)
+        sizes           (mapv (fn [[^long opengl-type _name ^long size]] (* (opengl-type-size opengl-type) size)) attribute-pairs)
         stride          (apply + sizes)
         offsets         (reductions + 0 (butlast sizes))
         attr-locations  (for [[[opengl-type attribute size] offset] (mapv list attribute-pairs offsets)]
@@ -431,7 +430,7 @@
   {:malli/schema [:=> [:cat [:int {:min 0 :max 15}] texture] :nil]}
   [index texture]
   `(do
-     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 ~index))
+     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 (long ~index)))
      (GL11/glBindTexture (:sfsim.texture/target ~texture) (:sfsim.texture/texture ~texture))))
 
 
@@ -513,7 +512,7 @@
       (int-array
         (map-indexed
           (fn setup-color-attachment
-            [index texture]
+            [^long index texture]
             (let [color-attachment (+ GL30/GL_COLOR_ATTACHMENT0 index)]
               (if (:sfsim.texture/layer texture)
                 (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER color-attachment (:sfsim.texture/texture texture) 0
@@ -596,8 +595,7 @@
 
 (defn diagonal-field-of-view
   "Compute diagonal field of view angle"
-  {:malli/schema [:=> [:cat :int :int :double] :double]}
-  [width height fov]
+  ^double [^long width ^long height ^double fov]
   (let [dx  (sin (* 0.5 fov))
         dy  (/ (* height dx) width)
         dxy (hypot dx dy)]
@@ -620,7 +618,7 @@
         rotation        (quaternion->matrix orientation)
         camera-to-world (transformation-matrix rotation position)
         z-offset        1.0
-        projection      (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
+        projection      (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)]
     {::origin position
      ::z-near z-near
      ::z-far z-far
@@ -640,8 +638,8 @@
         window-width    (::window-width vars-first)
         window-height   (::window-height vars-first)
         position        (::origin vars-first)
-        z-near          (min (::z-near vars-first) (::z-near vars-second))
-        z-far           (max (::z-far vars-first) (::z-far vars-second))
+        z-near          (min ^double (::z-near vars-first) ^double (::z-near vars-second))
+        z-far           (max ^double (::z-far vars-first) ^double (::z-far vars-second))
         light-direction (::light-direction vars-first)
         camera-to-world (::camera-to-world vars-first)
         z-offset        1.0
@@ -659,12 +657,11 @@
 
 (defn setup-shadow-and-opacity-maps
   "Set up cascade of deep opacity maps and cascade of shadow maps"
-  {:malli/schema [:=> [:cat :int :map :int] :nil]}
-  [program shadow-data sampler-offset]
+  [^long program shadow-data ^long sampler-offset]
   (doseq [i (range (:sfsim.opacity/num-steps shadow-data))]
-    (uniform-sampler program (str "shadow_map" i) (+ i sampler-offset)))
+    (uniform-sampler program (str "shadow_map" i) (+ ^long i sampler-offset)))
   (doseq [i (range (:sfsim.opacity/num-steps shadow-data))]
-    (uniform-sampler program (str "opacity" i) (+ i sampler-offset (:sfsim.opacity/num-steps shadow-data))))
+    (uniform-sampler program (str "opacity" i) (+ ^long i sampler-offset ^long (:sfsim.opacity/num-steps shadow-data))))
   (uniform-int program "num_opacity_layers" (:sfsim.opacity/num-opacity-layers shadow-data))
   (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
   (uniform-float program "depth" (:sfsim.opacity/depth shadow-data))
@@ -698,8 +695,7 @@
 
 (defn quad-splits-orientations
   "Function to determine quad tessellation orientation of diagonal split (true: 00->11, false: 10->01)"
-  {:malli/schema [:=> [:cat :int :int] [:vector [:vector :boolean]]]}
-  [tilesize zoom]
+  [^long tilesize ^long zoom]
   (let [indices  [0 1 3 2]
         vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
         detail   (dec tilesize)
@@ -715,13 +711,13 @@
                                        (uniform-int program "detail" detail)
                                        (render-patches vao))
         img      (texture->image tex)
-        result   (mapv (fn [y]
-                         (mapv (fn [x]
+        result   (mapv (fn [^long y]
+                         (mapv (fn [^long x]
                                  (let [value ((get-pixel img
                                                          (+ (quot zoom 2) (* y zoom))
                                                          (+ (quot zoom 2) (* x zoom))) 1)
                                        odd   (= (mod (+ x y) 2) 1)]
-                                   (= (>= value 127) odd)))
+                                   (= (>= ^long value 127) odd)))
                                (range detail)))
                        (range detail))]
     (destroy-texture tex)

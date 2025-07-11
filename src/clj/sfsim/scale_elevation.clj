@@ -11,7 +11,7 @@
     [sfsim.util :refer (slurp-shorts spit-shorts)]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -20,8 +20,8 @@
   [input-data output-data]
   (let [data          (slurp-shorts input-data)
         n             (alength data)
-        w             (int (round (sqrt n)))
-        size          (/ w 2)
+        w             (long (round (sqrt n)))
+        size          (quot w 2)
         result        (short-array (* size size))]
     (doseq [^int j (range size) ^int i (range size)]
       (let [offset (+ (* j 2 w) (* i 2))

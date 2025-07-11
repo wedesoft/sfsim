@@ -40,7 +40,7 @@
       BufferUtils)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -327,36 +327,31 @@
 
 (defn sinc
   "sin(x) / x function"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [x]
+  ^double [^double x]
   (if (zero? x) 1.0 (/ (sin x) x)))
 
 
 (defn sqr
   "Square of x"
-  {:malli/schema [:=> [:cat number?] number?]}
-  [x]
+  ^double [^double x]
   (* x x))
 
 
 (defn cube
   "Cube of x"
-  {:malli/schema [:=> [:cat number?] number?]}
-  [x]
+  ^double [^double x]
   (* x x x))
 
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"
-  {:malli/schema [:=> [:cat :int] N0]}
-  [b]
+  ^long [^long b]
   (if (>= b 0) b (+ b 256)))
 
 
 (defn ubyte->byte
   "Convert unsigned byte to byte"
-  {:malli/schema [:=> [:cat N0] :int]}
-  [u]
+  ^long [^long u]
   (if (<= u 127) u (- u 256)))
 
 
@@ -371,8 +366,7 @@
 
 (defn align-address
   "Function for aligning an address with specified alignment"
-  {:malli/schema [:=> [:cat N0 N] N0]}
-  [address alignment]
+  ^long [^long address ^long alignment]
   (let [mask (dec alignment)]
     (bit-and (+ address mask) (bit-not mask))))
 
@@ -409,10 +403,9 @@
 
 (defn limit-quot
   "Compute quotient and limit it"
-  {:malli/schema [:function [:=> [:cat number? number? number? [:? number?]] number?]]}
-  ([a b limit]
+  (^double [^double a ^double b ^double limit]
    (limit-quot a b (- limit) limit))
-  ([a b limit-lower limit-upper]
+  (^double [^double a ^double b ^double limit-lower ^double limit-upper]
    (if (zero? a)
      a
      (if (< b 0)
@@ -440,9 +433,9 @@
   "Increase progress and occasionally update progress bar"
   {:malli/schema [:=> [:cat progress] progress]}
   [bar]
-  (let [done   (== (inc (:progress bar)) (:total bar))
+  (let [done   (== (inc ^long (:progress bar)) ^long (:total bar))
         result (assoc (p/tick bar 1) :done? done)]
-    (when (or (zero? (mod (:progress result) (:step bar))) done) (p/print result))
+    (when (or (zero? ^long (mod ^long (:progress result) ^long (:step bar))) done) (p/print result))
     result))
 
 
@@ -466,11 +459,10 @@
 
 (defn octaves
   "Creat eoctaves summing to one"
-  {:malli/schema [:=> [:cat N :double] [:vector :double]]}
-  [n decay]
-  (let [series (take n (iterate #(* % decay) 1.0))
+  [^long n ^double decay]
+  (let [series (take n (iterate #(* ^double % decay) 1.0))
         sum    (apply + series)]
-    (mapv #(/ % sum) series)))
+    (mapv #(/ ^double % ^double sum) series)))
 
 
 (defn find-if

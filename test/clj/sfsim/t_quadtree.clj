@@ -15,7 +15,12 @@
     [sfsim.image :as image]
     [sfsim.plane :as plane]
     [sfsim.quadtree :refer :all :as quadtree]
-    [sfsim.util :as util]))
+    [sfsim.util :as util])
+ (:import
+    [clojure.lang
+     Keyword]
+    [fastmath.vector
+     Vec3]))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -320,14 +325,24 @@
       (tile-triangle 0.75 0.75 false) => [[1 0] [0 1] [1 1]])
 
 
+(defn cube-i-mock
+  ^double [^Keyword face ^Vec3 point]
+  (facts face => 2, point => (vec3 0.4 0.6 1)) 0.25)
+
+
+(defn cube-j-mock
+  ^double [^Keyword face ^Vec3 point]
+  (facts face => 2, point => (vec3 0.4 0.6 1)) 0.75)
+
+
 (fact "Get distance of surface to planet center for given radial vector"
       (with-redefs [cubemap/project-onto-cube (fn [point] (fact point => (vec3 2 3 5)) (vec3 0.4 0.6 1))
                     cubemap/determine-face (fn [point] (fact point => (vec3 0.4 0.6 1)) 2)
-                    cubemap/cube-i (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.25)
-                    cubemap/cube-j (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.75)
-                    quadtree/tile-coordinates (fn [j i level tilesize]
+                    cubemap/cube-i cube-i-mock
+                    cubemap/cube-j cube-j-mock
+                    quadtree/tile-coordinates (fn [^double j ^double i ^long level ^long tilesize]
                                                 (facts j => 0.75, i => 0.25, level => 6, tilesize => 65)
-                                                #:sfsim.quadtree{:row 32 :column 40 :tile-y 3 :tile-x 5 :dy :dy :dx :dx})
+                                                #:sfsim.quadtree{:row 32 :column 40 :tile-y 3 :tile-x 5 :dy 7.0 :dx 11.0})
                     quadtree/access-cube-tar (fn [tar-name] (fact tar-name => "data/globe/2/6/31.tar") "31.tar")
                     util/cube-tar (fn [prefix face level x]
                                     (fact prefix => "data/globe", face => 2, level => 6, x => 40)
@@ -337,10 +352,10 @@
                     cubemap/tile-center (fn [face level row column radius]
                                           (facts face => 2, level => 6, row => 32, column => 40, radius => 6378000.0)
                                           (vec3 1 2 3))
-                    quadtree/tile-triangle (fn [y x first-diagonal]
-                                             (facts y => :dy, x => :dx, first-diagonal => true)
+                    quadtree/tile-triangle (fn [^double y ^double x ^Boolean first-diagonal]
+                                             (facts y => 7.0, x => 11.0, first-diagonal => true)
                                              [[0 0] [0 1] [1 1]])
-                    image/get-vector3 (fn [img y x]
+                    image/get-vector3 (fn [img ^long y ^long x]
                                         (facts (:sfsim.image/data img) => :surface-tile,
                                                y => #(contains? #{3 4} %), x => #(contains? #{5 6} %))
                                         ({[3 5] (vec3 0 0 0) [3 6] (vec3 1 0 0) [4 6] (vec3 1 1 0)} [y x]))
@@ -359,24 +374,24 @@
                              :sfsim.quadtree/tile-y :sfsim.quadtree/tile-x :sfsim.quadtree/rotation)]
            (fact (extract (neighbour-tile ?face 2 9 ?row ?column ?tile-y ?tile-x ?dy ?dx 0)) => ?neighbour))
          ?face ?row ?column ?tile-y ?tile-x ?dy ?dx ?neighbour
-         face0 0    0         0       0      0   0  [face0 0 0   0   0   0]
-         face0 1    2         5       7      0   0  [face0 1 2   5   7   0]
-         face0 1    2         5       7      1   0  [face0 1 2   6   7   0]
-         face0 1    2         5       6      0   1  [face0 1 2   5   7   0]
-         face0 1    2         5       7      4   0  [face0 2 2   1   7   0]
-         face0 1    2         5       7      0   2  [face0 1 3   5   1   0]
-         face0 1    2         5       7     -6   0  [face0 0 2   7   7   0]
-         face0 1    2         5       7      0  -8  [face0 1 1   5   7   0]
-         face1 0    0         0       0     -1   0  [face0 3 0   7   0   0]
-         face0 0    0         0       0     -1   0  [face4 0 0   1   0 180]
-         face0 0    0       1/2       0      1   0  [face0 0 0 3/2   0   0]
-         face0 0    0         0     1/2      0   1  [face0 0 0   0 3/2   0]
-         face0 3    0      15/2     1/2      1   0  [face1 0 0 1/2 1/2   0]
-         face0 3    3         2       0     -1  -1  [face0 3 2   1   7   0])
+         face0 0    0         0.0     0.0    0   0  [face0 0 0   0.0 0.0   0]
+         face0 1    2         5.0     7.0    0   0  [face0 1 2   5.0 7.0   0]
+         face0 1    2         5.0     7.0    1   0  [face0 1 2   6.0 7.0   0]
+         face0 1    2         5.0     6.0    0   1  [face0 1 2   5.0 7.0   0]
+         face0 1    2         5.0     7.0    4   0  [face0 2 2   1.0 7.0   0]
+         face0 1    2         5.0     7.0    0   2  [face0 1 3   5.0 1.0   0]
+         face0 1    2         5.0     7.0   -6   0  [face0 0 2   7.0 7.0   0]
+         face0 1    2         5.0     7.0    0  -8  [face0 1 1   5.0 7.0   0]
+         face1 0    0         0.0     0.0   -1   0  [face0 3 0   7.0 0.0   0]
+         face0 0    0         0.0     0.0   -1   0  [face4 0 0   1.0 0.0 180]
+         face0 0    0         0.5     0.0    1   0  [face0 0 0   1.5 0.0   0]
+         face0 0    0         0.0     0.5    0   1  [face0 0 0   0.0 1.5   0]
+         face0 3    0         7.5     0.5    1   0  [face1 0 0   0.5 0.5   0]
+         face0 3    3         2.0     0.0   -1  -1  [face0 3 2   1.0 7.0   0])
 
 
 (tabular "Get neighbouring tile face and coordinates"
-         (let [tile (neighbour-tile ?face 1 9 ?row ?column 4 4 ?dy ?dx 0)
+         (let [tile (neighbour-tile ?face 1 9 ?row ?column 4.0 4.0 ?dy ?dx 0)
                j    (/ (+ (/ (:sfsim.quadtree/tile-y tile) 8.0) (:sfsim.quadtree/row tile)) 2)
                i    (/ (+ (/ (:sfsim.quadtree/tile-x tile) 8.0) (:sfsim.quadtree/column tile)) 2)
                p    (cube-map (:sfsim.quadtree/face tile) j i)]
@@ -431,13 +446,13 @@
 
 
 (facts "Get diagonal orientations of quad"
-       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation   0}) => true
-       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation   0}) => false
-       (quad-split-orientation [[false true]]   #:sfsim.quadtree{:tile-y 1/2 :tile-x 3/2 :rotation   0}) => true
-       (quad-split-orientation [[false] [true]] #:sfsim.quadtree{:tile-y 3/2 :tile-x 1/2 :rotation   0}) => true
-       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation  90}) => false
-       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation  90}) => true
-       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation 180}) => true)
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation   0}) => true
+       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation   0}) => false
+       (quad-split-orientation [[false true]]   #:sfsim.quadtree{:tile-y 0.5 :tile-x 1.5 :rotation   0}) => true
+       (quad-split-orientation [[false] [true]] #:sfsim.quadtree{:tile-y 1.5 :tile-x 0.5 :rotation   0}) => true
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation  90}) => false
+       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation  90}) => true
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation 180}) => true)
 
 
 (facts "Determine point indices of a pair of triangles for a quad in a 3x3 mesh of 4x4 points"

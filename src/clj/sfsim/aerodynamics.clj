@@ -14,10 +14,13 @@
       [sfsim.matrix :refer [fvec3]]
       [sfsim.quaternion :as q]
       [sfsim.atmosphere :as atmosphere]
-      [sfsim.util :refer (sqr cube)]))
+      [sfsim.util :refer (sqr cube)])
+    (:import
+      [fastmath.vector
+       Vec3]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -25,29 +28,27 @@
   "Create a cubic Hermite spline from two points with derivative"
   {:malli/schema [:=> [:cat :double :double :double :double :double :double] [:=> [:cat :double] :double]]}
   [x0 y0 dy0 x1 y1 dy1]
-  (let [h (- x1 x0)]
+  (let [h (- ^double x1 ^double x0)]
     (fn cubic-spline-function [x]
-        (let [t (/ (- x x0) h)
+        (let [t (/ (- ^double x ^double x0) h)
               t2 (sqr t)
               t3 (cube t)]
-          (+ (* (+ (*  2 t3) (* -3 t2)   1) y0)
-             (* (+       t3  (* -2 t2) t  ) h dy0)
-             (* (+ (* -2 t3) (*  3 t2)    ) y1)
-             (* (+       t3  (* -1 t2)    ) h dy1))))))
+          (+ (* (+ (*  2.0 ^double t3) (* -3.0 ^double t2) 1.0) ^double y0)
+             (* (+         ^double t3  (* -2.0 ^double t2)   t) ^double h ^double dy0)
+             (* (+ (* -2.0 ^double t3) (*  3.0 ^double t2)    ) ^double y1)
+             (* (+         ^double t3  (* -1.0 ^double t2)    ) ^double h ^double dy1))))))
 
 
 (defn logistic-function
   "Logistic function, 1 / (1 + exp(-x))"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [x]
+  ^double [^double x]
   (/ 1 (+ 1 (exp (- x)))))
 
 
 (defn limiting-function
   "Function with derivative equal to 1 at x = 0 and y=h as assymptote"
-  {:malli/schema [:=> [:cat :double] [:=> [:cat :double] :double]]}
-  [h]
-  (fn [x] (* 2.0 h (- (logistic-function (/ (* 2.0 x) h)) 0.5))))
+  [^double h]
+  (fn ^double [^double x] (* 2.0 h (- (logistic-function (/ (* 2.0 x) h)) 0.5))))
 
 
 (defn piecewise
@@ -92,16 +93,14 @@
 
 (defn mix
   "Mix two values depending on angle"
-  {:malli/schema [:=> [:cat :double :double :double] :double]}
-  [a b angle]
+  ^double [^double a ^double b ^double angle]
   (let [cos-angle (cos angle)]
-    (* 0.5 (+ (* a (+ 1 cos-angle)) (* b (- 1 cos-angle))))))
+    (* 0.5 (+ (* a (+ 1.0 cos-angle)) (* b (- 1.0 cos-angle))))))
 
 
 (defn mirror
   "Mirror values at 90 degrees"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [angle]
+  ^double [^double angle]
   (if (>= angle 0.0)
     (- PI angle)
     (- (- PI) angle)))
@@ -173,9 +172,9 @@
 
 (def wing-area 682.1415)
 (def reference-area 668.7206)
-(def wing-span (* 2 21.1480))
+(def wing-span (* 2.0 21.1480))
 (def chord 22.5714)
-(def aspect-ratio (/ (sqr wing-span) wing-area))
+(def aspect-ratio (/ (sqr wing-span) ^double wing-area))
 
 (def body-width 23.0)
 (def body-length 35.0)
@@ -197,7 +196,7 @@
                  30.0 2.0000))
 
 
-(def c-l-lin (comp #(* 0.75 %) (akima-spline 0.0 20, 0.6 22, 0.8 24, 5.0 24, 10.0 30, 20.0 30, 30.0 30)))
+(def c-l-lin (comp #(* 0.75 ^double %) (akima-spline 0.0 20, 0.6 22, 0.8 24, 5.0 24, 10.0 30, 20.0 30, 30.0 30)))
 
 
 (def c-l-alpha-max (akima-spline 0.0 35 0.6 33 0.8 30 5.0 30 10.0 45, 20.0 45, 30.0 45))
@@ -222,14 +221,15 @@
 
 (defn coefficient-of-lift
   "Determine coefficient of lift (negative z in wind system) depending on mach speed, angle of attack, and optional angle of side-slip"
-  ([speed-mach alpha]
+  (^double [^double speed-mach ^double alpha]
    (cond
      (neg? alpha)
      (- (coefficient-of-lift speed-mach (- alpha)))
      (< (to-radians 90.0) alpha)
      (- (coefficient-of-lift speed-mach (- (to-radians 180.0) alpha)))
      :else
-     (let [[gradient linear alpha-peak peak] ((juxt c-l-alpha c-l-lin c-l-alpha-max c-l-max) speed-mach)]
+     (let [[^double gradient ^double linear ^double alpha-peak ^double peak]
+           ((juxt c-l-alpha c-l-lin c-l-alpha-max c-l-max) speed-mach)]
        (cond
          (< alpha (to-radians linear))
          (* gradient alpha)
@@ -241,7 +241,7 @@
          ((cubic-hermite-spline (to-radians alpha-peak) peak 0.0
                                 (to-radians 90)         0.0  (/ (- peak) 0.75 (to-radians (- 90 alpha-peak))))
           alpha)))))
-  ([speed-mach alpha beta]
+  (^double [^double speed-mach ^double alpha ^double beta]
    (* (mix (coefficient-of-lift speed-mach alpha) (- (coefficient-of-lift speed-mach (mirror alpha))) beta) (cos beta))))
 
 
@@ -298,18 +298,18 @@
 
 (defn coefficient-of-induced-drag
   "Determine drag caused by lift depending on speed, angle of attack and angle of side slip"
-  [speed-mach alpha beta]
-  (/ (sqr (coefficient-of-lift speed-mach alpha beta)) (* PI (oswald-factor speed-mach) aspect-ratio)))
+  ^double [^double speed-mach ^double alpha beta]
+  (/ (sqr (coefficient-of-lift speed-mach alpha beta)) (* PI ^double (oswald-factor speed-mach) ^double aspect-ratio)))
 
 
 (defn coefficient-of-drag
   "Determine coefficient of drag (negative x in wind system) depending on mach speed, angle of attack, and optionally angle of side-slip"
-  ([speed-mach alpha]
+  (^double [^double speed-mach ^double alpha]
    (coefficient-of-drag speed-mach alpha 0.0))
-  ([speed-mach alpha beta]
-   (mix (mix (+ (c-d-0 speed-mach) (coefficient-of-induced-drag speed-mach alpha beta)) (c-d-90 speed-mach) (* 2 alpha))
-        (* (/ body-length body-width) (c-d-0 speed-mach))
-        (* 2 beta))))
+  (^double [^double speed-mach ^double alpha ^double beta]
+   (mix (mix (+ ^double (c-d-0 speed-mach) (coefficient-of-induced-drag speed-mach alpha beta)) (c-d-90 speed-mach) (* 2.0 alpha))
+        (* (/ ^double body-length ^double body-width) ^double (c-d-0 speed-mach))
+        (* 2.0 beta))))
 
 
 (def c-y-beta -0.05)
@@ -318,11 +318,11 @@
 
 (defn coefficient-of-side-force
   "Determine coefficient of side force (positive y in wind system) depending on angle of attack and optionally angle of side-slip"
-  ([beta]
-   (* 0.5 c-y-beta (sin (* 2 beta))))
-  ([alpha beta]
-   (* (mix (* 0.5 c-y-beta) (* 0.5 c-y-alpha) (* 2 alpha))
-      (sin (* 2 beta)))))
+  (^double [^double beta]
+   (* 0.5 ^double c-y-beta (sin (* 2.0 beta))))
+  (^double [^double alpha ^double beta]
+   (* (mix (* 0.5 ^double c-y-beta) (* 0.5 ^double c-y-alpha) (* 2 alpha))
+      (sin (* 2.0 beta)))))
 
 
 (def x-ref-percent 25.0)
@@ -344,10 +344,10 @@
 
 
 (defn coefficient-of-pitch-moment
-  ([speed-mach alpha]
+  (^double [^double speed-mach ^double alpha]
    (coefficient-of-pitch-moment speed-mach alpha 0.0))
-  ([speed-mach alpha beta]  ; TODO: side force participation with increasing beta
-   (* (coefficient-of-lift speed-mach alpha beta) 0.01 (- x-ref-percent (x-neutral-percent speed-mach)))))
+  (^double [^double speed-mach ^double alpha ^double beta]  ; TODO: side force participation with increasing beta
+   (* (coefficient-of-lift speed-mach alpha beta) 0.01 (- ^double x-ref-percent ^double (x-neutral-percent speed-mach)))))
 
 
 (def c-n-beta (akima-spline
@@ -369,9 +369,8 @@
 
 (defn coefficient-of-yaw-moment
   "Determine coefficient of yaw moment depending on speed and angle of side-slip"
-  {:malli/schema [:=> [:cat :double :double] :double]}
-  [speed-mach beta]
-  (* (c-n-beta speed-mach) (sin beta)))
+  ^double [^double speed-mach ^double beta]
+  (* ^double (c-n-beta speed-mach) (sin beta)))
 
 
 (def c-l-beta-alpha (akima-spline
@@ -395,9 +394,8 @@
 
 (defn coefficient-of-roll-moment
   "Determine coefficient of roll moment depending on speed, angle of side-slip and angle of attack"
-  {:malli/schema [:=> [:cat :double :double :double] :double]}
-  [speed-mach alpha beta]
-  (* 0.25 (c-l-beta-alpha speed-mach) (limit-range (sin (* 2 beta))) (limit-range (sin (* 2 alpha)))))
+  ^double [^double speed-mach ^double alpha ^double beta]
+  (* 0.25 ^double (c-l-beta-alpha speed-mach) ^double (limit-range (sin (* 2.0 beta))) ^double (limit-range (sin (* 2.0 alpha)))))
 
 
 (def speed-data (m/schema [:map [::alpha :double] [::beta :double] [::speed :double]]))
@@ -429,51 +427,47 @@
 
 (defn dynamic-pressure
   "Compute dynamic pressure for given speed in body system"
-  [density speed]
+  ^double [^double density ^double speed]
   (* 0.5 density (sqr speed)))
 
 
 (defn lift
   "Compute lift for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-  [{::keys [alpha beta speed]} speed-of-sound density]
-  (* (coefficient-of-lift (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) reference-area))
+  ^double [{::keys [^double alpha ^double beta ^double speed]} ^double speed-of-sound ^double density]
+  (* (coefficient-of-lift (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) ^double reference-area))
 
 
 (defn drag
   "Compute drag for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-  [{::keys [alpha beta speed]} speed-of-sound density]
-  (* (coefficient-of-drag (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) reference-area))
+  ^double [{::keys [^double alpha ^double beta ^double speed]} ^double speed-of-sound ^double density]
+  (* (coefficient-of-drag (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) ^double reference-area))
 
 
 (defn side-force
   "Compute side-force for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-  [{::keys [alpha beta speed]} _speed-of-sound density]
-  (* (coefficient-of-side-force alpha beta) (dynamic-pressure density speed) reference-area))
+  ^double [{::keys [^double alpha ^double beta ^double speed]} ^double _speed-of-sound ^double density]
+  (* (coefficient-of-side-force alpha beta) (dynamic-pressure density speed) ^double reference-area))
 
 
 (defn roll-moment
   "Compute roll moment for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-  [{::keys [alpha beta speed]} speed-of-sound density]
-  (* (coefficient-of-roll-moment (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) reference-area
-     0.5 wing-span))
+  ^double [{::keys [^double alpha ^double beta ^double speed]} ^double speed-of-sound ^double density]
+  (* (coefficient-of-roll-moment (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) ^double reference-area
+     0.5 ^double wing-span))
 
 
 (defn pitch-moment
   "Compute pitch moment for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-  [{::keys [alpha beta speed]} speed-of-sound density]
-  (* (coefficient-of-pitch-moment (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) reference-area chord))
+  ^double [{::keys [^double alpha ^double beta ^double speed]} ^double speed-of-sound ^double density]
+  (* (coefficient-of-pitch-moment (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) ^double reference-area
+     ^double chord))
 
 
 (defn yaw-moment
   "Compute yaw moment for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data :double :double] :double]}
-  [{::keys [beta speed]} speed-of-sound density]
-  (* (coefficient-of-yaw-moment (/ speed speed-of-sound) beta) (dynamic-pressure density speed) reference-area 0.5 wing-span))
+  ^double [{::keys [^double beta ^double speed]} ^double speed-of-sound ^double density]
+  (* (coefficient-of-yaw-moment (/ speed speed-of-sound) beta) (dynamic-pressure density speed) ^double reference-area
+     0.5 ^double wing-span))
 
 
 (def C-l-p -0.4228)
@@ -486,28 +480,33 @@
 (def C-m-r  0.0000)
 (def C-n-r -0.2838)
 
+
 (defn roll-damping
   "Compute roll damping for given roll, pitch, and yaw rates"
-  {:malli/schema [:=> [:cat speed-data fvec3 :double] :double]}
-  [{::keys [speed]} [roll-rate pitch-rate yaw-rate] density]
-  (* 0.25 density speed reference-area wing-span
-     (+ (* C-l-p roll-rate wing-span) (* C-l-q pitch-rate chord) (* C-l-r yaw-rate wing-span))))
+  ^double [{::keys [^double speed]} [^double roll-rate ^double pitch-rate ^double yaw-rate] ^double density]
+  (* 0.25 density speed ^double reference-area ^double wing-span
+     (+ (* ^double C-l-p roll-rate ^double wing-span)
+        (* ^double C-l-q pitch-rate ^double chord)
+        (* ^double C-l-r yaw-rate ^double wing-span))))
 
 
 (defn pitch-damping
   "Compute pitch damping for given roll, pitch, and yaw rates"
-  {:malli/schema [:=> [:cat speed-data fvec3 :double] :double]}
-  [{::keys [speed]} [roll-rate pitch-rate yaw-rate] density]
-  (* 0.25 density speed reference-area chord
-     (+ (* C-m-p roll-rate wing-span) (* C-m-q pitch-rate chord) (* C-m-r yaw-rate wing-span))))
+  ^double [{::keys [^double speed]} [^double roll-rate ^double pitch-rate ^double yaw-rate] ^double density]
+  (* 0.25 density speed ^double reference-area ^double chord
+     (+ (* ^double C-m-p roll-rate ^double wing-span)
+        (* ^double C-m-q pitch-rate ^double chord)
+        (* ^double C-m-r yaw-rate ^double wing-span))))
 
 
 (defn yaw-damping
   "Compute yaw damping for given roll, pitch, and yaw rates"
-  {:malli/schema [:=> [:cat speed-data fvec3 :double] :double]}
-  [{::keys [speed]} [roll-rate pitch-rate yaw-rate] density]
-  (* 0.25 density speed reference-area wing-span
-     (+ (* C-n-p roll-rate wing-span) (* C-n-q pitch-rate chord) (* C-n-r yaw-rate wing-span))))
+  ^double [{::keys [^double speed]} [^double roll-rate ^double pitch-rate ^double yaw-rate] ^double density]
+  (* 0.25 density speed ^double reference-area ^double wing-span
+     (+ (* ^double C-n-p roll-rate ^double wing-span)
+        (* ^double C-n-q pitch-rate ^double chord)
+        (* ^double C-n-r yaw-rate ^double wing-span))))
+
 
 (def c-l-xi-a (akima-spline
                 0.0   -0.3566
@@ -579,48 +578,42 @@
 
 (defn coefficient-of-roll-moment-aileron
   "Determine coefficient of roll moment due to ailerons"
-  {:malli/schema [:=> [:cat :double :double] :double]}
-  [speed-mach ailerons]
-  (* 0.5 (c-l-xi-a speed-mach) (sin (* 2 ailerons))))
+  ^double [^double speed-mach ^double ailerons]
+  (* 0.5 ^double (c-l-xi-a speed-mach) (sin (* 2.0 ailerons))))
 
 
 (defn coefficient-of-pitch-moment-flaps
   "Determine coefficient of pitch moment due to flaps"
-  {:malli/schema [:=> [:cat :double :double] :double]}
-  [speed-mach flaps]
-  (* 0.5 (c-m-delta-f speed-mach) (sin (* 2 flaps))))
+  ^double [^double speed-mach ^double flaps]
+  (* 0.5 ^double (c-m-delta-f speed-mach) (sin (* 2.0 flaps))))
 
 
 (defn coefficient-of-yaw-moment-rudder
   "Determine coefficient of yaw moment due to rudder and ailerons"
-  {:malli/schema [:=> [:cat :double :double :double] :double]}
-  [speed-mach rudder ailerons]
-  (+ (* 0.5 (c-n-beta-r speed-mach) (sin (* 2 rudder)))
-     (* 0.5 (c-n-xi-a speed-mach) (sin (* 2 ailerons)))))
+  ^double [^double speed-mach ^double rudder ^double ailerons]
+  (+ (* 0.5 ^double (c-n-beta-r speed-mach) (sin (* 2.0 rudder)))
+     (* 0.5 ^double (c-n-xi-a speed-mach) (sin (* 2.0 ailerons)))))
 
 
 (defn roll-moment-control
   "Compute roll moment due to control surfaces"
-  {:malli/schema [:=> [:cat speed-data fvec3 :double :double] :double]}
-  [{::keys [speed]} control speed-of-sound density]
-  (* (coefficient-of-roll-moment-aileron (/ speed speed-of-sound) (control 0)) (dynamic-pressure density speed) reference-area
-     0.5 wing-span))
+  ^double [{::keys [^double speed]} ^Vec3 control ^double speed-of-sound ^double density]
+  (* (coefficient-of-roll-moment-aileron (/ speed speed-of-sound) ^double (control 0))
+     (dynamic-pressure density speed) ^double reference-area 0.5 ^double wing-span))
 
 
 (defn pitch-moment-control
   "Compute pitch moment due to control surfaces"
-  {:malli/schema [:=> [:cat speed-data fvec3 :double :double] :double]}
-  [{::keys [speed]} control speed-of-sound density]
-  (* (coefficient-of-pitch-moment-flaps (/ speed speed-of-sound) (control 1)) (dynamic-pressure density speed) reference-area
-     chord))
+  ^double [{::keys [^double speed]} ^Vec3 control ^double speed-of-sound ^double density]
+  (* (coefficient-of-pitch-moment-flaps (/ speed speed-of-sound) ^double (control 1))
+     (dynamic-pressure density speed) ^double reference-area ^double chord))
 
 
 (defn yaw-moment-control
   "Compute yaw moment for given speed in body system"
-  {:malli/schema [:=> [:cat speed-data fvec3 :double :double] :double]}
-  [{::keys [speed]} control speed-of-sound density]
-  (* (coefficient-of-yaw-moment-rudder (/ speed speed-of-sound) (control 2) (control 0)) (dynamic-pressure density speed)
-     reference-area 0.5 wing-span))
+  ^double [{::keys [^double speed]} ^Vec3 control ^double speed-of-sound ^double density]
+  (* (coefficient-of-yaw-moment-rudder (/ speed speed-of-sound) ^double (control 2) ^double (control 0))
+     (dynamic-pressure density speed) ^double reference-area 0.5 ^double wing-span))
 
 
 (defn aerodynamic-loads

@@ -1,20 +1,40 @@
 # TODO
+* use different accessors for quaternions, vectors, matrices?
+* display version in menu, start ChangeLog
 * input module to handle joystick, key callbacks, and mouse callbacks (send keys/joystick to GUI if active, spacecraft otherwise)
 * switch windows JDK install to 24
-* add license to sources
-* display version in menu, start ChangeLog
-* add joystick configuration
-* add quit goal to build.clj
-* effect of control surfaces needs to diminish with changing wind vector
-* turbulence during landing?
+* simple third person HUD speed and altitude (AGL/radar)
 * add tested implementation for input handling
+* mouse control:
+  * up/down for pitch, right/left for roll
+  * RMB/LMB to gradually move rudder right and left while holding the buttons pressed
+  * wheel click to reset rudder
+  * wheel up/down to increase/decrease throttle level
+* now fix reflection warnings
+* add joystick configuration
 * add configuration dialog for input
 * use transients when updating transforms in model
 * add lift or force caused by pitch rate
-* following camera
-* make new trailer
+* following camera, different camera views
+* low FPS at 100km height was reported
+* effect of control surfaces needs to diminish with changing wind vector
+* thrust graphics, opengl rocket plume
+  flame: https://www.shadertoy.com/view/XsXSWS
+  mach diamonds: https://www.shadertoy.com/view/wdjGRz
+  mach diamonds: https://www.shadertoy.com/view/WdGBDc
+  blender cone: https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume
+  volumetric engine exhaust?
+  blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
+  particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
+* turbulence during landing?
+* use icosahedron for mapping 2D micro textures (better grass)
+  * unroll icosahedron manually (20 surfaces)
+  * find smallest cross product of vector with sum of corner vectors
+  * use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
+  * determine u and v
 * articles: aerodynamics of game, Clojure game development
-* installer
+* sound mutes in fullscreen?
+* extendability (modding)?
 * orbiting
 * thrusters
 * sounds
@@ -30,11 +50,6 @@
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://samdriver.xyz/article/decal-render-intro
 * make new trailer
-* use icosahedron for mapping 2D micro textures
-  * unroll icosahedron manually (20 surfaces)
-  * find smallest cross product of vector with sum of corner vectors
-  * use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
-  * determine u and v
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 * get high-res Florida data
@@ -47,14 +62,6 @@
 * arycama: limit darkness of cloud shadow (exponential approaching a base level)
 * increase ambient light (surface radiance)
 * orbitting Earth
-* thrust graphics, opengl rocket plume
-  flame: https://www.shadertoy.com/view/XsXSWS
-  mach diamonds: https://www.shadertoy.com/view/wdjGRz
-  mach diamonds: https://www.shadertoy.com/view/WdGBDc
-  blender cone: https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume
-  volumetric engine exhaust?
-  blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
-  particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
 * stars, volumetric clouds https://www.shadertoy.com/view/ttcSD8
   * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
   * Skydome scaled to ZFAR * 0.5

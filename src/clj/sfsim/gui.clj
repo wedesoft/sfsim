@@ -19,6 +19,8 @@
       DirectByteBuffer)
     (java.nio.charset
       StandardCharsets)
+    (fastmath.matrix
+      Mat4x4)
     (org.lwjgl
       BufferUtils)
     (org.lwjgl.nuklear
@@ -56,7 +58,7 @@
       MemoryUtil)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -79,8 +81,7 @@
 
 (defn gui-matrix
   "Projection matrix for rendering 2D GUI"
-  {:malli/schema [:=> [:cat N N] fmat4]}
-  [width height]
+  ^Mat4x4 [^long width ^long height]
   (let [w2 (/  2.0 width)
         h2 (/ -2.0 height)]
     (fm/mat4x4  w2 0.0  0.0 -1.0
@@ -221,8 +222,7 @@
 
 (defn render-nuklear-gui
   "Display the graphical user interface"
-  {:malli/schema [:=> [:cat :some :int :int] :nil]}
-  [{::keys [context config program vao cmds]} width height]
+  [{::keys [context config program vao cmds]} ^long width ^long height]
   (let [stack (MemoryStack/stackPush)]
     (GL11/glViewport 0 0 width height)
     (use-program program)
@@ -241,7 +241,7 @@
               (GL13/glActiveTexture GL13/GL_TEXTURE0)
               (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
               (let [clip-rect (.clip_rect cmd)]
-                (set-scissor (.x clip-rect) (- height (int (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
+                (set-scissor (.x clip-rect) (- height (long (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
               (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
             (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))))
     (Nuklear/nk_clear context)
@@ -282,8 +282,7 @@
 
 (defn make-bitmap-font
   "Create a bitmap font with character packing data"
-  {:malli/schema [:=> [:cat :string :int :int :int] :some]}
-  [ttf-filename bitmap-width bitmap-height font-height]
+  [^String ttf-filename ^long bitmap-width ^long bitmap-height ^long font-height]
   (let [font         (NkUserFont/create)
         fontinfo     (STBTTFontinfo/create)
         ttf          (slurp-byte-buffer ttf-filename)
@@ -340,7 +339,7 @@
                         text-width
                         (do
                           (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
-                          (let [text-width (+ text-width (* (.get advance 0) scale))
+                          (let [text-width (+ text-width (* (.get advance 0) ^double scale))
                                 glyph-len  (Nuklear/nnk_utf_decode (+ text text-len)
                                                                    (MemoryUtil/memAddress unicode) (- len text-len))]
                             (recur (+ text-len glyph-len) glyph-len text-width)))))]
@@ -376,8 +375,8 @@
                   (let [ufg (NkUserFontGlyph/create glyph)]
                     (.width ufg (- (.x1 q) (.x0 q)))
                     (.height ufg (- (.y1 q) (.y0 q)))
-                    (.set (.offset ufg) (.x0 q) (+ (.y0 q) font-height descent))
-                    (.xadvance ufg (* (.get advance 0) scale))
+                    (.set (.offset ufg) (.x0 q) (+ (.y0 q) font-height ^double descent))
+                    (.xadvance ufg (* (.get advance 0) ^double scale))
                     (.set (.uv ufg 0) (.s0 q) (.t0 q))
                     (.set (.uv ufg 1) (.s1 q) (.t1 q)))
                   (MemoryStack/stackPop)))))))
