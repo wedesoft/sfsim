@@ -6,9 +6,23 @@
 
 (ns sfsim.t-input
     (:require
-    [malli.dev.pretty :as pretty]
-    [malli.instrument :as mi]
-    [midje.sweet :refer :all]))
+      [malli.dev.pretty :as pretty]
+      [malli.instrument :as mi]
+      [midje.sweet :refer :all]
+      [sfsim.input :refer :all]))
+
+
+(facts "Record key events"
+       (let [event-buffer (make-event-buffer)
+             playback     (atom [])
+             process-char (fn [c] (swap! playback conj c))]
+         (process-event event-buffer process-char) => []
+         @playback => []
+         (process-event (add-char-event event-buffer 0x20) process-char)
+         @playback => [0x20]
+         (reset! playback [])
+         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-event process-char) (process-event process-char))
+         @playback => [0x61 0x62]))
 
 
 (mi/collect! {:ns (all-ns)})
