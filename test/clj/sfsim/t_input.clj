@@ -12,23 +12,30 @@
       [sfsim.input :refer :all]))
 
 
-(facts "Record key events"
+(facts "Process character events"
        (let [event-buffer (make-event-buffer)
              playback     (atom [])
              process-char (fn [c] (swap! playback conj c))
-             process-last (fn [c] (swap! playback conj c) false)
-             ]
-         (process-events event-buffer process-char) => []
+             process-last (fn [c] (swap! playback conj c) false)]
+         (process-events event-buffer process-char (constantly nil)) => []
          @playback => []
-         (process-events (add-char-event event-buffer 0x20) process-char)
+         (process-events (add-char-event event-buffer 0x20) process-char (constantly nil))
          @playback => [0x20]
          (reset! playback [])
-         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-char))
+         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-char (constantly nil)))
          @playback => [0x61 0x62]
          (reset! playback [])
-         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-last)) => [0x62]
+         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-last (constantly nil))) => [0x62]
          @playback => [0x61]))
 
+
+(facts "Process key events"
+       (let [event-buffer (make-event-buffer)
+             playback (atom [])
+             process-key (fn [k action mods] (swap! playback conj {:key k :action action :mods mods}))]
+         (process-events event-buffer (constantly nil) process-key) => []
+         )
+       )
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})

@@ -26,11 +26,11 @@
 
 (defn process-events
   "Take an event from the event buffer and process it"
-  [event-buffer process-char]
+  [event-buffer process-char process-key]
   (let [codepoint (peek event-buffer)]
     (if codepoint
       (if (process-char codepoint)
-        (recur (pop event-buffer) process-char)
+        (recur (pop event-buffer) process-char process-key)
         (pop event-buffer))
       event-buffer)))
 
