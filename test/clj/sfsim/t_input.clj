@@ -15,14 +15,19 @@
 (facts "Record key events"
        (let [event-buffer (make-event-buffer)
              playback     (atom [])
-             process-char (fn [c] (swap! playback conj c))]
-         (process-event event-buffer process-char) => []
+             process-char (fn [c] (swap! playback conj c))
+             process-last (fn [c] (swap! playback conj c) false)
+             ]
+         (process-events event-buffer process-char) => []
          @playback => []
-         (process-event (add-char-event event-buffer 0x20) process-char)
+         (process-events (add-char-event event-buffer 0x20) process-char)
          @playback => [0x20]
          (reset! playback [])
-         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-event process-char) (process-event process-char))
-         @playback => [0x61 0x62]))
+         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-char))
+         @playback => [0x61 0x62]
+         (reset! playback [])
+         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-last)) => [0x62]
+         @playback => [0x61]))
 
 
 (mi/collect! {:ns (all-ns)})

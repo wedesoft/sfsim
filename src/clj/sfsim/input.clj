@@ -24,13 +24,15 @@
   (conj event-buffer codepoint))
 
 
-(defn process-event
+(defn process-events
+  "Take an event from the event buffer and process it"
   [event-buffer process-char]
-  (if-let [codepoint (peek event-buffer)]
-          (do
-            (process-char codepoint)
-            (pop event-buffer))
-          event-buffer))
+  (let [codepoint (peek event-buffer)]
+    (if codepoint
+      (if (process-char codepoint)
+        (recur (pop event-buffer) process-char)
+        (pop event-buffer))
+      event-buffer)))
 
 
 (set! *warn-on-reflection* false)
