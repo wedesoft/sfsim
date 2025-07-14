@@ -9,7 +9,10 @@
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [midje.sweet :refer :all]
-      [sfsim.input :refer :all]))
+      [sfsim.input :refer :all])
+    (:import
+      [org.lwjgl.glfw
+       GLFW]))
 
 
 (facts "Process character events"
@@ -22,10 +25,10 @@
          (process-events (add-char-event event-buffer 0x20) process-char (constantly nil))
          @playback => [0x20]
          (reset! playback [])
-         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-char (constantly nil)))
+         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-char (constantly nil))) => []
          @playback => [0x61 0x62]
          (reset! playback [])
-         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-last (constantly nil))) => [0x62]
+         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-last (constantly nil)) count) => 1
          @playback => [0x61]))
 
 
@@ -34,8 +37,8 @@
              playback (atom [])
              process-key (fn [k action mods] (swap! playback conj {:key k :action action :mods mods}))]
          (process-events event-buffer (constantly nil) process-key) => []
-         )
-       )
+         (-> event-buffer (add-key-event GLFW/GLFW_KEY_A GLFW/GLFW_PRESS 0) (process-events (constantly nil) process-key)) => []
+         @playback => [{:key GLFW/GLFW_KEY_A :action GLFW/GLFW_PRESS :mods 0}]))
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})

@@ -21,17 +21,31 @@
 
 (defn add-char-event
   [event-buffer codepoint]
-  (conj event-buffer codepoint))
+  (conj event-buffer {::event ::char ::codepoint codepoint}))
+
+
+(defn add-key-event
+  [event-buffer k action mods]
+  (conj event-buffer {::event ::key ::k k ::action action ::mods mods}))
+
+
+(defn process-event
+  [event process-char process-key]
+  (cond
+    (= (::event event) ::char)
+    (process-char (::codepoint event))
+    (= (::event event) ::key)
+    (process-key (::k event) (::action event) (::mods event))))
 
 
 (defn process-events
   "Take an event from the event buffer and process it"
   [event-buffer process-char process-key]
-  (let [codepoint (peek event-buffer)]
-    (if codepoint
-      (if (process-char codepoint)
-        (recur (pop event-buffer) process-char process-key)
-        (pop event-buffer))
+  (let [event (peek event-buffer)]
+    (if event
+      (if (false? (process-event event process-char process-key))
+        (pop event-buffer)
+        (recur (pop event-buffer) process-char process-key))
       event-buffer)))
 
 
