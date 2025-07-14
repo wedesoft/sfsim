@@ -6,14 +6,16 @@
 
 (ns sfsim.input
     (:import
-      (clojure.lang
-        PersistentQueue)))
+      [clojure.lang
+       PersistentQueue]
+      [org.lwjgl.glfw
+       GLFW]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
-; peek, pop, conj
+
 (defn make-event-buffer
   []
   PersistentQueue/EMPTY)
@@ -30,6 +32,7 @@
 
 
 (defn process-event
+  "Process a single event"
   [event process-char process-key]
   (cond
     (= (::event event) ::char)
@@ -39,7 +42,7 @@
 
 
 (defn process-events
-  "Take an event from the event buffer and process it"
+  "Take events from the event buffer and process them"
   [event-buffer process-char process-key]
   (let [event (peek event-buffer)]
     (if event
@@ -47,6 +50,28 @@
         (pop event-buffer)
         (recur (pop event-buffer) process-char process-key))
       event-buffer)))
+
+
+(defn make-initial-state
+  []
+  (atom {::gear-down true}))
+
+
+(defmulti state-change (fn [state id] id))
+
+
+(defmethod state-change ::gear
+  [state _id]
+  (swap! state update ::gear-down not))
+
+
+(def default-mappings
+  {GLFW/GLFW_KEY_G ::gear})
+
+
+(defn process-key
+  [state mappings k action mods]
+  (->> k mappings (state-change state)))
 
 
 (set! *warn-on-reflection* false)

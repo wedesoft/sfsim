@@ -40,5 +40,16 @@
          (-> event-buffer (add-key-event GLFW/GLFW_KEY_A GLFW/GLFW_PRESS 0) (process-events (constantly nil) process-key)) => []
          @playback => [{:key GLFW/GLFW_KEY_A :action GLFW/GLFW_PRESS :mods 0}]))
 
+
+(facts "Default key mappings"
+       (let [event-buffer (make-event-buffer)
+             state        (make-initial-state)]
+         (:sfsim.input/gear-down @state) => true
+         (-> event-buffer
+             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
+             (process-events (constantly nil) (partial process-key state default-mappings)))
+         (:sfsim.input/gear-down @state) => false))
+
+
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
