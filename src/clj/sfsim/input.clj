@@ -9,7 +9,9 @@
       [clojure.lang
        PersistentQueue]
       [org.lwjgl.glfw
-       GLFW]))
+       GLFW]
+      [org.lwjgl.nuklear
+       Nuklear]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -57,21 +59,27 @@
   (atom {::gear-down true}))
 
 
-(defmulti state-change (fn [state id] id))
+(defmulti state-change (fn [id _state _action _mods] id))
 
 
 (defmethod state-change ::gear
-  [state _id]
-  (swap! state update ::gear-down not))
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::gear-down not)))
 
 
 (def default-mappings
   {GLFW/GLFW_KEY_G ::gear})
 
 
+(defn process-char
+  [gui codepoint]
+  (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))
+
+
 (defn process-key
   [state mappings k action mods]
-  (->> k mappings (state-change state)))
+  (-> k mappings (state-change state action mods)))
 
 
 (set! *warn-on-reflection* false)

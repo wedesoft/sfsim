@@ -48,6 +48,10 @@
          (-> event-buffer
              (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
              (process-events (constantly nil) (partial process-key state default-mappings)))
+         (:sfsim.input/gear-down @state) => false
+         (-> event-buffer
+             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
+             (process-events (constantly nil) (partial process-key state default-mappings)))
          (:sfsim.input/gear-down @state) => false))
 
 
