@@ -52,7 +52,7 @@
     false))
 
 
-(facts "Default key mappings"
+(facts "Test the integrated behaviour of some keys"
        (with-redefs [input/menu-key menu-key-mock]
          (let [event-buffer (make-event-buffer)
                state        (make-initial-state)
@@ -113,6 +113,31 @@
            (:sfsim.input/fullscreen @state) => true
            ; Use alternate method for handling keys when menu is shown
            @gui-key => GLFW/GLFW_KEY_F)))
+
+
+(facts "Test some simulator key bindings directly"
+       (let [state (make-initial-state)]
+         ; Test pause
+         (-> GLFW/GLFW_KEY_P default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/pause @state) => true
+         (-> GLFW/GLFW_KEY_P default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/pause @state) => false
+         ; Test brakes
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [true false]
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [true false]
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [false false]
+         ; Test parking brakes
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT))
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [false true]
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [false false]
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT))
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [true false]))
 
 
 (mi/collect! {:ns (all-ns)})

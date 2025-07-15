@@ -56,15 +56,20 @@
 
 (defn make-initial-state
   []
-  (atom {::menu       false
-         ::fullscreen false
-         ::gear-down  true}))
+  (atom {::menu          false
+         ::fullscreen    false
+         ::pause         false
+         ::brake         false
+         ::parking-brake false
+         ::gear-down     true}))
 
 
 (def default-mappings
   {GLFW/GLFW_KEY_ESCAPE ::menu
    GLFW/GLFW_KEY_F      ::fullscreen
-   GLFW/GLFW_KEY_G      ::gear })
+   GLFW/GLFW_KEY_P      ::pause
+   GLFW/GLFW_KEY_G      ::gear
+   GLFW/GLFW_KEY_B      ::brake})
 
 
 (defn menu-key
@@ -102,14 +107,30 @@
 
 (defmethod simulator-key ::fullscreen
   [_id state action _mods]
-  (when (and (= action GLFW/GLFW_PRESS) (-> @state ::menu not))
+  (when (= action GLFW/GLFW_PRESS)
     (swap! state update ::fullscreen not)))
+
+
+(defmethod simulator-key ::pause
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::pause not)))
 
 
 (defmethod simulator-key ::gear
   [_id state action _mods]
-  (when (and (= action GLFW/GLFW_PRESS) (-> @state ::menu not))
+  (when (= action GLFW/GLFW_PRESS)
     (swap! state update ::gear-down not)))
+
+
+(defmethod simulator-key ::brake
+  [_id state action mods]
+  (if (= mods GLFW/GLFW_MOD_SHIFT)
+    (when (= action GLFW/GLFW_PRESS)
+      (swap! state update ::parking-brake not))
+    (do
+      (swap! state assoc ::parking-brake false)
+      (swap! state assoc ::brake (not= action GLFW/GLFW_RELEASE)))))
 
 
 (defn process-char
