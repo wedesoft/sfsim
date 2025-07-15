@@ -1,7 +1,6 @@
 # TODO
 * input module
   * GUI tabbing
-  * GUI control keys
   * joystick
   * mouse
 * use different accessors for quaternions, vectors, matrices?

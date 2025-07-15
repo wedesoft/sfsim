@@ -45,7 +45,7 @@
 
 
 (defn menu-key-mock
-  [k state action mods]
+  [k state gui action mods]
   (reset! gui-key k)
   (when (and (= action GLFW/GLFW_PRESS) (= k GLFW/GLFW_KEY_ESCAPE))
     (swap! state update :sfsim.input/menu not)
