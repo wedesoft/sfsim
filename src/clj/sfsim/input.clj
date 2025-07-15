@@ -62,7 +62,9 @@
          ::brake         false
          ::parking-brake false
          ::gear-down     true
+         ::aileron       0.0
          ::elevator      0.0
+         ::rudder        0.0
          }))
 
 
@@ -72,8 +74,13 @@
    GLFW/GLFW_KEY_P      ::pause
    GLFW/GLFW_KEY_G      ::gear
    GLFW/GLFW_KEY_B      ::brake
+   GLFW/GLFW_KEY_A      ::aileron-left
+   GLFW/GLFW_KEY_KP_5   ::aileron-center
+   GLFW/GLFW_KEY_D      ::aileron-right
    GLFW/GLFW_KEY_W      ::elevator-down
    GLFW/GLFW_KEY_S      ::elevator-up
+   GLFW/GLFW_KEY_Q      ::rudder-left
+   GLFW/GLFW_KEY_E      ::rudder-right
    })
 
 
@@ -103,6 +110,11 @@
 (defmulti simulator-key (fn [id _state _action _mods] id))
 
 
+; Ignore keys without mapping
+(defmethod simulator-key nil
+  [_id _state _action _mods])
+
+
 (defmethod simulator-key ::menu
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
@@ -126,6 +138,38 @@
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
     (swap! state update ::gear-down not)))
+
+
+(defmethod simulator-key ::aileron-left
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::aileron + 0.0625)))
+
+
+(defmethod simulator-key ::aileron-center
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state assoc ::aileron 0.0)))
+
+
+(defmethod simulator-key ::rudder-left
+  [_id state action mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (if (= mods GLFW/GLFW_MOD_CONTROL)
+      (swap! state assoc ::rudder 0.0)
+      (swap! state update ::rudder + 0.0625))))
+
+
+(defmethod simulator-key ::rudder-right
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::rudder - 0.0625)))
+
+
+(defmethod simulator-key ::aileron-right
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::aileron - 0.0625)))
 
 
 (defmethod simulator-key ::elevator-down
