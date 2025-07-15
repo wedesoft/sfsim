@@ -56,25 +56,43 @@
 
 (defn make-initial-state
   []
-  (atom {::gear-down true}))
+  (atom {::menu       false
+         ::fullscreen false
+         ::gear-down  true}))
 
 
 (defmulti state-change (fn [id _state _action _mods] id))
 
 
-(defmethod state-change ::gear
+(defmethod state-change ::menu
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::menu not)
+    false))
+
+
+(defmethod state-change ::fullscreen
+  [_id state action _mods]
+  (when (and (= action GLFW/GLFW_PRESS) (-> @state ::menu not))
+    (swap! state update ::fullscreen not)))
+
+
+(defmethod state-change ::gear
+  [_id state action _mods]
+  (when (and (= action GLFW/GLFW_PRESS) (-> @state ::menu not))
     (swap! state update ::gear-down not)))
 
 
 (def default-mappings
-  {GLFW/GLFW_KEY_G ::gear})
+  {GLFW/GLFW_KEY_ESCAPE ::menu
+   GLFW/GLFW_KEY_F      ::fullscreen
+   GLFW/GLFW_KEY_G      ::gear })
 
 
 (defn process-char
-  [gui codepoint]
-  (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))
+  [state gui codepoint]
+  (when (-> @state ::menu not)
+    (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
 
 
 (defn process-key
