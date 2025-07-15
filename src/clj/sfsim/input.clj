@@ -61,7 +61,9 @@
          ::pause         false
          ::brake         false
          ::parking-brake false
-         ::gear-down     true}))
+         ::gear-down     true
+         ::elevator      0.0
+         }))
 
 
 (def default-mappings
@@ -69,7 +71,10 @@
    GLFW/GLFW_KEY_F      ::fullscreen
    GLFW/GLFW_KEY_P      ::pause
    GLFW/GLFW_KEY_G      ::gear
-   GLFW/GLFW_KEY_B      ::brake})
+   GLFW/GLFW_KEY_B      ::brake
+   GLFW/GLFW_KEY_W      ::elevator-down
+   GLFW/GLFW_KEY_S      ::elevator-up
+   })
 
 
 (defn menu-key
@@ -121,6 +126,18 @@
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
     (swap! state update ::gear-down not)))
+
+
+(defmethod simulator-key ::elevator-down
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::elevator + 0.0625)))
+
+
+(defmethod simulator-key ::elevator-up
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::elevator - 0.0625)))
 
 
 (defmethod simulator-key ::brake

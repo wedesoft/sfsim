@@ -1,5 +1,6 @@
 # TODO
 * input module
+  * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
   * GUI tabbing
   * joystick
   * mouse
