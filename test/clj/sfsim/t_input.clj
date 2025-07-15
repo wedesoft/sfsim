@@ -9,7 +9,7 @@
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [midje.sweet :refer :all]
-      [sfsim.input :refer :all])
+      [sfsim.input :refer :all :as input])
     (:import
       [org.lwjgl.glfw
        GLFW]))
@@ -41,63 +41,78 @@
          @playback => [{:key GLFW/GLFW_KEY_A :action GLFW/GLFW_PRESS :mods 0}]))
 
 
+(def gui-key (atom nil))
+
+
+(defn menu-key-mock
+  [k state action mods]
+  (reset! gui-key k)
+  (when (and (= action GLFW/GLFW_PRESS) (= k GLFW/GLFW_KEY_ESCAPE))
+    (swap! state update :sfsim.input/menu not)
+    false))
+
+
 (facts "Default key mappings"
-       (let [event-buffer (make-event-buffer)
-             state        (make-initial-state)]
-         ; Test gear up
-         (:sfsim.input/gear-down @state) => true
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/gear-down @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/gear-down @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
-             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/gear-down @state) => false
-         ; Test fullscreen
-         (:sfsim.input/fullscreen @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/fullscreen @state) => true
-         ; Test menu toggle
-         (:sfsim.input/menu @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         ; Menu toggle should postpone processing of remaining events
-         (:sfsim.input/menu @state) => true
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
-             (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings))
-             count) => 1
-         ; Hiding menu should postpone processing of remaining events
-         (:sfsim.input/menu @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
-             (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings))
-             count) => 1
-         (:sfsim.input/menu @state) => true
-         ; Test no gear operation when menu is shown
-         (swap! state assoc :sfsim.input/menu true)
-         (:sfsim.input/gear-down @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/gear-down @state) => false
-         ; Test no fullscreen toggle when menu is shown
-         (:sfsim.input/fullscreen @state) => true
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/fullscreen @state) => true))
+       (with-redefs [input/menu-key menu-key-mock]
+         (let [event-buffer (make-event-buffer)
+               state        (make-initial-state)
+               gui          {:sfsim.gui/context :ctx}]
+           ; Test gear up
+           (:sfsim.input/gear-down @state) => true
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/gear-down @state) => false
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/gear-down @state) => false
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/gear-down @state) => false
+           ; Test fullscreen
+           (:sfsim.input/fullscreen @state) => false
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_PRESS 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/fullscreen @state) => true
+           ; Test menu toggle
+           (:sfsim.input/menu @state) => false
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/menu @state) => true
+           ; Hiding menu should postpone processing of remaining events
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings))
+               count) => 1
+           (:sfsim.input/menu @state) => false
+           ; Showing menu should postpone processing of remaining events
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings))
+               count) => 1
+           (:sfsim.input/menu @state) => true
+           ; Test no gear operation when menu is shown
+           (swap! state assoc :sfsim.input/menu true)
+           (:sfsim.input/gear-down @state) => false
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/gear-down @state) => false
+           ; Test no fullscreen toggle when menu is shown
+           (:sfsim.input/fullscreen @state) => true
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_PRESS 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/fullscreen @state) => true
+           ; Use alternate method for handling keys when menu is shown
+           @gui-key => GLFW/GLFW_KEY_F)))
 
 
 (mi/collect! {:ns (all-ns)})

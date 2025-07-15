@@ -70,9 +70,10 @@
 (defn menu-key
   "Key handling when menu is shown"
   [k state action mods]
-  (when (and (= action GLFW/GLFW_PRESS) (= k GLFW/GLFW_KEY_ESCAPE))
-    (swap! state update ::menu not)
-    false))
+  (let [press (or (= action GLFW/GLFW_PRESS))]
+    (when (and press (= k GLFW/GLFW_KEY_ESCAPE))
+      (swap! state update ::menu not)
+      false)))
 
 
 ; Simulation key handling when menu is hidden
@@ -105,8 +106,8 @@
 
 
 (defn process-key
-  [state mappings k action mods]
-  (if (::menu state)
+  [state gui mappings k action mods]
+  (if (::menu @state)
     (-> k (menu-key state action mods))
     (-> k mappings (simulator-key state action mods))))
 
