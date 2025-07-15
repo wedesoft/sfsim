@@ -70,15 +70,23 @@
          (-> event-buffer
              (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
              (process-events (constantly nil) (partial process-key state default-mappings)))
+         ; Menu toggle should postpone processing of remaining events
          (:sfsim.input/menu @state) => true
          (-> event-buffer
              (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
              (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
              (process-events (constantly nil) (partial process-key state default-mappings))
              count) => 1
+         ; Hiding menu should postpone processing of remaining events
          (:sfsim.input/menu @state) => false
-         (swap! state update :sfsim.input/menu not)
+         (-> event-buffer
+             (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+             (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+             (process-events (constantly nil) (partial process-key state default-mappings))
+             count) => 1
+         (:sfsim.input/menu @state) => true
          ; Test no gear operation when menu is shown
+         (swap! state assoc :sfsim.input/menu true)
          (:sfsim.input/gear-down @state) => false
          (-> event-buffer
              (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)

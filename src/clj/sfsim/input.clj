@@ -61,32 +61,41 @@
          ::gear-down  true}))
 
 
-(defmulti state-change (fn [id _state _action _mods] id))
+(def default-mappings
+  {GLFW/GLFW_KEY_ESCAPE ::menu
+   GLFW/GLFW_KEY_F      ::fullscreen
+   GLFW/GLFW_KEY_G      ::gear })
 
 
-(defmethod state-change ::menu
+(defn menu-key
+  "Key handling when menu is shown"
+  [k state action mods]
+  (when (and (= action GLFW/GLFW_PRESS) (= k GLFW/GLFW_KEY_ESCAPE))
+    (swap! state update ::menu not)
+    false))
+
+
+; Simulation key handling when menu is hidden
+(defmulti simulator-key (fn [id _state _action _mods] id))
+
+
+(defmethod simulator-key ::menu
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
     (swap! state update ::menu not)
     false))
 
 
-(defmethod state-change ::fullscreen
+(defmethod simulator-key ::fullscreen
   [_id state action _mods]
   (when (and (= action GLFW/GLFW_PRESS) (-> @state ::menu not))
     (swap! state update ::fullscreen not)))
 
 
-(defmethod state-change ::gear
+(defmethod simulator-key ::gear
   [_id state action _mods]
   (when (and (= action GLFW/GLFW_PRESS) (-> @state ::menu not))
     (swap! state update ::gear-down not)))
-
-
-(def default-mappings
-  {GLFW/GLFW_KEY_ESCAPE ::menu
-   GLFW/GLFW_KEY_F      ::fullscreen
-   GLFW/GLFW_KEY_G      ::gear })
 
 
 (defn process-char
@@ -97,7 +106,9 @@
 
 (defn process-key
   [state mappings k action mods]
-  (-> k mappings (state-change state action mods)))
+  (if (::menu state)
+    (-> k (menu-key state action mods))
+    (-> k mappings (simulator-key state action mods))))
 
 
 (set! *warn-on-reflection* false)

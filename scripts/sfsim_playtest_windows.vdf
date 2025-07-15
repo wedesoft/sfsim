@@ -1,7 +1,7 @@
 "AppBuild"
 {
 	"AppID" "3847320"
-	"Desc" "sfsim playtest windows and data build"
+	"Desc" "sfsim playtest windows"
 
 	"ContentRoot" "..\"
 	"BuildOutput" "..\output\"

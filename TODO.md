@@ -1,5 +1,9 @@
 # TODO
-* input module to handle joystick, key callbacks, and mouse callbacks (send keys/joystick to GUI if active, spacecraft otherwise)
+* input module
+  * GUI tabbing
+  * GUI control keys
+  * joystick
+  * mouse
 * use different accessors for quaternions, vectors, matrices?
 * display version in menu, start ChangeLog
 * switch windows JDK install to 24
