@@ -1,7 +1,7 @@
 # TODO
+* input module to handle joystick, key callbacks, and mouse callbacks (send keys/joystick to GUI if active, spacecraft otherwise)
 * use different accessors for quaternions, vectors, matrices?
 * display version in menu, start ChangeLog
-* input module to handle joystick, key callbacks, and mouse callbacks (send keys/joystick to GUI if active, spacecraft otherwise)
 * switch windows JDK install to 24
 * simple third person HUD speed and altitude (AGL/radar)
 * add tested implementation for input handling
