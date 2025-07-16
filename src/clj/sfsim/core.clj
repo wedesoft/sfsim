@@ -32,7 +32,9 @@
                           texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
                           setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
-    [sfsim.texture :refer (destroy-texture texture->image)])
+    [sfsim.texture :refer (destroy-texture texture->image)]
+    [sfsim.input :refer (default-mappings make-event-buffer make-initial-state add-key-event add-char-event process-events
+                         process-char process-key)])
   (:import
     (fastmath.vector
       Vec3)
@@ -85,6 +87,7 @@
 (jolt/jolt-init)
 
 (def slew (atom true))
+(def prev-fullscr (atom false))
 
 (def recording
   ; initialize recording using "echo [] > recording.edn"
@@ -107,7 +110,6 @@
 (def playback false)
 ; (def fix-fps 30)
 (def fix-fps false)
-(def fullscreen (atom false))
 
 (def window-width (atom nil))
 (def window-height (atom nil))
@@ -243,34 +245,15 @@
 (def focus-new (atom nil))
 
 
+(def event-buffer (atom (make-event-buffer)))
+(def state (make-initial-state))
+
+
 (def keyboard-callback
   (reify GLFWKeyCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
       [_this _window k _scancode action mods]
-      (when (= action GLFW/GLFW_PRESS)
-        (swap! keystates assoc k true))
-      (when (= action GLFW/GLFW_RELEASE)
-        (swap! keystates assoc k false))
-      (let [press (or (= action GLFW/GLFW_PRESS) (= action GLFW/GLFW_REPEAT))]
-        (when (and press (= k GLFW/GLFW_KEY_TAB))
-          (if @focus-old
-            (if (not (zero? (bit-and mods GLFW/GLFW_MOD_SHIFT)))
-              (reset! focus-new (dec ^long @focus-old))
-              (reset! focus-new (inc ^long @focus-old)))
-            (reset! focus-new 0)))
-        (cond
-          (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
-          (= k GLFW/GLFW_KEY_ENTER)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
-          (= k GLFW/GLFW_KEY_TAB)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TAB press)
-          (= k GLFW/GLFW_KEY_BACKSPACE)   (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_BACKSPACE press)
-          (= k GLFW/GLFW_KEY_UP)          (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_UP press)
-          (= k GLFW/GLFW_KEY_DOWN)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DOWN press)
-          (= k GLFW/GLFW_KEY_LEFT)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_LEFT press)
-          (= k GLFW/GLFW_KEY_RIGHT)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_RIGHT press)
-          (= k GLFW/GLFW_KEY_HOME)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_START press)
-          (= k GLFW/GLFW_KEY_END)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_END press)
-          (= k GLFW/GLFW_KEY_LEFT_SHIFT)  (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
-          (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press))))))
+      (swap! event-buffer #(add-key-event % k action mods)))))
 
 
 (GLFW/glfwSetKeyCallback @window keyboard-callback)
@@ -281,7 +264,7 @@
   (reify GLFWCharCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
       [_this _window codepoint]
-      (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))))
+      (swap! event-buffer #(add-char-event % codepoint)))))
 
 
 (GLFW/glfwSetCursorPosCallback
@@ -519,13 +502,13 @@
                         (datetime-dialog-set time-data @time-delta @t0)
                         (reset! menu datetime-dialog))
                       (when (gui/button-label gui "Resume")
-                        (reset! menu nil))
+                        (swap! state assoc :sfsim.input/menu nil))
                       (when (gui/button-label gui "Quit")
                         (GLFW/glfwSetWindowShouldClose @window true))))
 
 
 (defn stick
-  [gui roll pitch rudder thrust]
+  [gui aileron elevator rudder throttle]
   (let [stack (MemoryStack/stackPush)
         rect (NkRect/malloc stack)
         rgb  (NkColor/malloc stack)]
@@ -534,7 +517,7 @@
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect (- 45 (* ^double roll 30)) (- 45 (* ^double pitch 30)) 10 10 rect)
+                                                  (Nuklear/nk_rect (- 45 (* ^double aileron 30)) (- 45 (* ^double elevator 30)) 10 10 rect)
                                                   (Nuklear/nk_rgb 255 0 0 rgb))))
     (gui/nuklear-window gui "rudder" 10 95 80 20
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
@@ -543,12 +526,12 @@
                           (Nuklear/nk_fill_circle canvas
                                                   (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
                                                   (Nuklear/nk_rgb 255 0 255 rgb))))
-    (gui/nuklear-window gui "thrust" 95 10 20 80
+    (gui/nuklear-window gui "throttle" 95 10 20 80
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect 100 (- 75 (* 60 ^double thrust)) 10 10 rect)
+                                                  (Nuklear/nk_rect 100 (- 75 (* 60 ^double throttle)) 10 10 rect)
                                                   (Nuklear/nk_rgb 255 255 255 rgb)))))
   (MemoryStack/stackPop))
 
@@ -574,17 +557,6 @@
 
 
 (def gear (atom 0.0))
-(def gear-down (atom true))
-;(def gear (atom 1.0))
-;(def gear-down (atom false))
-(def prev-gear-req (atom false))
-(def prev-mn-req (atom false))
-(def prev-fullscr (atom false))
-(def prev-pause (atom false))
-
-
-(def prev-thrust (atom false))
-(def thrust (atom 0.0))
 
 
 (defn deadzone
@@ -617,60 +589,40 @@
         w  (int-array 1)
         h  (int-array 1)]
     (while (and (not (GLFW/glfwWindowShouldClose @window)) (or (not playback) (< ^long @n (count @recording))))
-      (when (and (@keystates GLFW/GLFW_KEY_F) (not @prev-fullscr))
-        (swap! fullscreen not)
+      (when (not= (@state :sfsim.input/fullscreen) @prev-fullscr)
         (let [monitor (GLFW/glfwGetPrimaryMonitor)
               mode (GLFW/glfwGetVideoMode monitor)
               desktop-width (.width ^GLFWVidMode mode)
               desktop-height (.height ^GLFWVidMode mode)]
-          (if @fullscreen
+          (if (@state :sfsim.input/fullscreen)
             (GLFW/glfwSetWindowMonitor @window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
-            (GLFW/glfwSetWindowMonitor @window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE))))
-      (reset! prev-fullscr (@keystates GLFW/GLFW_KEY_F))
+            (GLFW/glfwSetWindowMonitor @window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE)))
+        (swap! prev-fullscr not))
       (GLFW/glfwGetWindowSize ^long @window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
       (planet/update-tile-tree planet-renderer tile-tree @window-width (:position @pose))
-      (when (and (@keystates GLFW/GLFW_KEY_P) (not @prev-pause))
-        (swap! slew not))
-      (reset! prev-pause (@keystates GLFW/GLFW_KEY_P))
-      (when (@keystates GLFW/GLFW_KEY_X)
-        (jolt/set-orientation body (:orientation @pose))
-        (jolt/set-translation body (:position @pose))
-        (let [height    (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
-              max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
-              s         (min ^double @speed max-speed)]
-          (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.3))))
-         (jolt/set-angular-velocity body (vec3 0 0 0)))
+      (reset! slew (@state :sfsim.input/pause))
+      ; (when (@keystates GLFW/GLFW_KEY_X)
+      ;   (jolt/set-orientation body (:orientation @pose))
+      ;   (jolt/set-translation body (:position @pose))
+      ;   (let [height    (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
+      ;         max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
+      ;         s         (min ^double @speed max-speed)]
+      ;     (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.3))))
+      ;    (jolt/set-angular-velocity body (vec3 0 0 0)))
       (let [t1       (System/currentTimeMillis)
             dt       (if fix-fps
                        (do (Thread/sleep (max 0 ^long (- (quot 1000 ^long fix-fps) (- ^long t1 ^long @t0)))) (quot 1000 ^long fix-fps))
                        (- t1 ^long @t0))
-            axes     (joystick-axes)
-            mn-req   (if (@keystates GLFW/GLFW_KEY_ESCAPE) true false)
-            gear-req (if (@keystates GLFW/GLFW_KEY_G) true false)
-            ra       (if (@keystates GLFW/GLFW_KEY_KP_2) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_8) -0.0005 0.0))
-            rb       (if (@keystates GLFW/GLFW_KEY_KP_4) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_6) -0.0005 0.0))
-            rc       (if (@keystates GLFW/GLFW_KEY_KP_1) 0.0005 (if (@keystates GLFW/GLFW_KEY_KP_3) -0.0005 0.0))
-            brake    (if (@keystates GLFW/GLFW_KEY_B) 1.0 0.0)
-            pitch    (if (@keystates GLFW/GLFW_KEY_W) 1.0 (if (@keystates GLFW/GLFW_KEY_S) -1.0 (- (deadzone (nth axes 1)))))
-            rudder   (if (@keystates GLFW/GLFW_KEY_E) -1.0 (if (@keystates GLFW/GLFW_KEY_Q) 1.0 (- (deadzone (nth axes 3)))))
-            roll     (if (@keystates GLFW/GLFW_KEY_A) 1.0 (if (@keystates GLFW/GLFW_KEY_D) -1.0 (- (deadzone (nth axes 0)))))
-            thrust-r (if (@keystates GLFW/GLFW_KEY_SPACE) true false)
-            v        (if (@keystates GLFW/GLFW_KEY_PAGE_UP) @speed (if (@keystates GLFW/GLFW_KEY_PAGE_DOWN) (- ^double @speed) 0))
-            d        (if (@keystates GLFW/GLFW_KEY_COMMA) 0.05 (if (@keystates GLFW/GLFW_KEY_PERIOD) -0.05 0))
-            dcy      (if (@keystates GLFW/GLFW_KEY_K) 1 (if (@keystates GLFW/GLFW_KEY_J) -1 0))
-            dcx      (if (@keystates GLFW/GLFW_KEY_L) 1 (if (@keystates GLFW/GLFW_KEY_H) -1 0))]
-        (swap! thrust (fn [^double x] (min 1.0 (max 0.0 (- x (* 0.1 (deadzone (nth axes 4))))))))
-        (when (not (= thrust-r @prev-thrust))
-          (reset! thrust (if thrust-r 1.0 0.0)))
-        (reset! prev-thrust thrust-r)
-        (when (and mn-req (not @prev-mn-req))
-          (swap! menu #(if % nil main-dialog)))
-        (reset! prev-mn-req mn-req)
-        (when (and gear-req (not @prev-gear-req))
-          (swap! gear-down not))
-        (reset! prev-gear-req gear-req)
+            aileron  (@state :sfsim.input/aileron)
+            elevator (@state :sfsim.input/elevator)
+            rudder   (@state :sfsim.input/rudder)
+            throttle (@state :sfsim.input/throttle)
+            brake    (if (@state :sfsim.input/brake) 1.0 (if (@state :sfsim.input/parking-brake) 0.1 0.0))]
+        (if (@state :sfsim.input/menu)
+          (swap! menu #(or % main-dialog))
+          (reset! menu nil))
         (if playback
           (let [frame (nth @recording @n)]
             (reset! time-delta (/ (- ^long (:timemillis frame) ^long @t0) 1000.0 86400.0))
@@ -685,13 +637,14 @@
           (do
             (if @slew
               (do
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 pitch ) (vec3 0 1 0)))
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 rudder) (vec3 0 0 1)))
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 roll  ) (vec3 1 0 0)))
-                (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v))))
+                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 elevator) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 rudder  ) (vec3 0 0 1)))
+                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 aileron ) (vec3 1 0 0)))
+                ; (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v)))
+                )
               (do
                 (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
-                (if @gear-down
+                (if (@state :sfsim.input/gear-down)
                   (swap! gear - (* ^long dt 0.0005))
                   (swap! gear + (* ^long dt 0.0005)))
                 (swap! gear min 1.0)
@@ -703,11 +656,11 @@
                     (jolt/remove-and-destroy-constraint @vehicle)
                     (reset! vehicle nil)))
                 (when @vehicle (jolt/set-brake-input @vehicle brake))
-                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double @thrust 30.0 ^double mass) 0 0)))
+                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
                 (let [height (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body)
-                                                             (mult (vec3 (* 0.25 roll) (* 0.25 pitch) (* 0.4 rudder))
+                                                             (mult (vec3 (* 0.25 aileron) (* 0.25 elevator) (* 0.4 rudder))
                                                                    (to-radians 20)))]
                   (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                   (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
@@ -744,12 +697,13 @@
                                               (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
                                              [1.0 1.0 1.0])}]
                     (swap! recording conj frame)))))
-            (swap! camera-dx + (* ^long dt ^long dcx 0.005))
-            (swap! camera-dy + (* ^long dt ^long dcy 0.005))
-            (swap! camera-orientation q/* (q/rotation (* ^long dt ra) (vec3 1 0 0)))
-            (swap! camera-orientation q/* (q/rotation (* ^long dt rb) (vec3 0 1 0)))
-            (swap! camera-orientation q/* (q/rotation (* ^long dt rc) (vec3 0 0 1)))
-            (swap! dist * (exp d))))
+            ; (swap! camera-dx + (* ^long dt ^long dcx 0.005))
+            ; (swap! camera-dy + (* ^long dt ^long dcy 0.005))
+            ; (swap! camera-orientation q/* (q/rotation (* ^long dt ra) (vec3 1 0 0)))
+            ; (swap! camera-orientation q/* (q/rotation (* ^long dt rb) (vec3 0 1 0)))
+            ; (swap! camera-orientation q/* (q/rotation (* ^long dt rc) (vec3 0 0 1)))
+            ; (swap! dist * (exp d))
+            ))
         (let [object-position    (:position @pose)
               origin             (add object-position (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               jd-ut              (+ ^double @time-delta (/ ^long @t0 1000.0 86400.0) ^double astro/T0)
@@ -839,7 +793,7 @@
                              (reset! focus-new nil))
                            (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^long dt 0.001))))
                            (when (not playback)
-                             (stick gui roll pitch rudder @thrust)
+                             (stick gui aileron elevator rudder throttle)
                              (info gui @window-height
                                    (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s"
                                            (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
@@ -864,6 +818,7 @@
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
+        (swap! event-buffer #(process-events % (partial process-char state gui) (partial process-key state gui default-mappings)))
         (swap! n inc)
         (if fix-fps (reset! t0 (System/currentTimeMillis)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)

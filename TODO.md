@@ -1,9 +1,14 @@
 # TODO
 * input module
   * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
+    * use previous state to detect changes (pause, fullscreen)
+    * parking brake
+    * x key (set position)
+    * d, ra, rb, rc, dcx, and dcy for camera
+    * slew v
   * GUI tabbing
-  * joystick
   * mouse
+  * joystick with deadzone
 * use different accessors for quaternions, vectors, matrices?
 * display version in menu, start ChangeLog
 * switch windows JDK install to 24

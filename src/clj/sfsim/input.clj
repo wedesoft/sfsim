@@ -91,7 +91,7 @@
 (defn menu-key
   "Key handling when menu is shown"
   [k state gui action mods]
-  (let [press (#{GLFW/GLFW_PRESS GLFW/GLFW_REPEAT} action)]
+  (let [press (boolean (#{GLFW/GLFW_PRESS GLFW/GLFW_REPEAT} action))]
     (cond
       (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
       (= k GLFW/GLFW_KEY_ENTER)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
@@ -219,7 +219,7 @@
 
 (defn process-char
   [state gui codepoint]
-  (when (-> @state ::menu not)
+  (when (-> @state ::menu)
     (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
 
 
