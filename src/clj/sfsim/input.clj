@@ -66,15 +66,18 @@
          ::aileron       0.0
          ::elevator      0.0
          ::rudder        0.0
+         ::throttle      0.0
          }))
 
 
 (def default-mappings
   {GLFW/GLFW_KEY_ESCAPE ::menu
-   GLFW/GLFW_KEY_F      ::fullscreen
+   GLFW/GLFW_KEY_ENTER  ::fullscreen
    GLFW/GLFW_KEY_P      ::pause
    GLFW/GLFW_KEY_G      ::gear
    GLFW/GLFW_KEY_B      ::brake
+   GLFW/GLFW_KEY_F      ::throttle-decrease
+   GLFW/GLFW_KEY_R      ::throttle-increase
    GLFW/GLFW_KEY_A      ::aileron-left
    GLFW/GLFW_KEY_KP_5   ::aileron-center
    GLFW/GLFW_KEY_D      ::aileron-right
@@ -124,8 +127,8 @@
 
 
 (defmethod simulator-key ::fullscreen
-  [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
+  [_id state action mods]
+  (when (and (= action GLFW/GLFW_PRESS) (= mods GLFW/GLFW_MOD_ALT))
     (swap! state update ::fullscreen not)))
 
 
@@ -142,8 +145,32 @@
 
 
 (defn increment-clamp
-  [state k increment]
-  (swap! state update k #(-> % (+ increment) (clamp -1.0 1.0))))
+  ([state k increment]
+   (increment-clamp state k increment -1.0 1.0))
+  ([state k increment lower upper]
+   (swap! state update k #(-> ^double % (+ ^double increment) (clamp lower upper)))))
+
+
+(defmethod simulator-key ::brake
+  [_id state action mods]
+  (if (= mods GLFW/GLFW_MOD_SHIFT)
+    (when (= action GLFW/GLFW_PRESS)
+      (swap! state update ::parking-brake not))
+    (do
+      (swap! state assoc ::parking-brake false)
+      (swap! state assoc ::brake (not= action GLFW/GLFW_RELEASE)))))
+
+
+(defmethod simulator-key ::throttle-decrease
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (increment-clamp state ::throttle -0.0625 0.0 1.0)))
+
+
+(defmethod simulator-key ::throttle-increase
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (increment-clamp state ::throttle 0.0625 0.0 1.0)))
 
 
 (defmethod simulator-key ::aileron-left
@@ -188,16 +215,6 @@
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
     (increment-clamp state ::elevator -0.0625)))
-
-
-(defmethod simulator-key ::brake
-  [_id state action mods]
-  (if (= mods GLFW/GLFW_MOD_SHIFT)
-    (when (= action GLFW/GLFW_PRESS)
-      (swap! state update ::parking-brake not))
-    (do
-      (swap! state assoc ::parking-brake false)
-      (swap! state assoc ::brake (not= action GLFW/GLFW_RELEASE)))))
 
 
 (defn process-char

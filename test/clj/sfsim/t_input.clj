@@ -77,8 +77,8 @@
            ; Test fullscreen
            (:sfsim.input/fullscreen @state) => false
            (-> event-buffer
-               (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_PRESS 0)
-               (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_RELEASE 0)
+               (add-key-event GLFW/GLFW_KEY_ENTER GLFW/GLFW_PRESS GLFW/GLFW_MOD_ALT)
+               (add-key-event GLFW/GLFW_KEY_ENTER GLFW/GLFW_RELEASE GLFW/GLFW_MOD_ALT)
                (process-events (constantly nil) (partial process-key state gui default-mappings)))
            (:sfsim.input/fullscreen @state) => true
            ; Test menu toggle
@@ -210,7 +210,21 @@
          (-> GLFW/GLFW_KEY_Q default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
          (-> GLFW/GLFW_KEY_Q default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
          (:sfsim.input/rudder @state) => 1.0
-         ))
+         ; Throttle
+         (:sfsim.input/throttle @state) => 0.0
+         (-> GLFW/GLFW_KEY_R default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_R default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/throttle @state) => 0.0625
+         (-> GLFW/GLFW_KEY_F default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT))
+         (-> GLFW/GLFW_KEY_F default-mappings (simulator-key state GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT))
+         (:sfsim.input/throttle @state) => 0.0
+         (-> GLFW/GLFW_KEY_F default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT))
+         (-> GLFW/GLFW_KEY_F default-mappings (simulator-key state GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT))
+         (:sfsim.input/throttle @state) => 0.0
+         (swap! state assoc :sfsim.input/throttle 1.0)
+         (-> GLFW/GLFW_KEY_R default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_R default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/throttle @state) => 1.0))
 
 
 (mi/collect! {:ns (all-ns)})
