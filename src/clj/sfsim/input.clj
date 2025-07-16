@@ -5,6 +5,7 @@
 ;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
 
 (ns sfsim.input
+    (:require [sfsim.util :refer (clamp)])
     (:import
       [clojure.lang
        PersistentQueue]
@@ -140,10 +141,21 @@
     (swap! state update ::gear-down not)))
 
 
+(defn increment-clamp
+  [state k increment]
+  (swap! state update k #(-> % (+ increment) (clamp -1.0 1.0))))
+
+
 (defmethod simulator-key ::aileron-left
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::aileron + 0.0625)))
+    (increment-clamp state ::aileron 0.0625)))
+
+
+(defmethod simulator-key ::aileron-right
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (increment-clamp state ::aileron -0.0625)))
 
 
 (defmethod simulator-key ::aileron-center
@@ -157,31 +169,25 @@
   (when (= action GLFW/GLFW_PRESS)
     (if (= mods GLFW/GLFW_MOD_CONTROL)
       (swap! state assoc ::rudder 0.0)
-      (swap! state update ::rudder + 0.0625))))
+      (increment-clamp state ::rudder 0.0625))))
 
 
 (defmethod simulator-key ::rudder-right
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::rudder - 0.0625)))
-
-
-(defmethod simulator-key ::aileron-right
-  [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::aileron - 0.0625)))
+    (increment-clamp state ::rudder -0.0625)))
 
 
 (defmethod simulator-key ::elevator-down
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::elevator + 0.0625)))
+    (increment-clamp state ::elevator 0.0625)))
 
 
 (defmethod simulator-key ::elevator-up
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::elevator - 0.0625)))
+    (increment-clamp state ::elevator -0.0625)))
 
 
 (defmethod simulator-key ::brake
