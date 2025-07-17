@@ -34,7 +34,7 @@
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture texture->image)]
     [sfsim.input :refer (default-mappings make-event-buffer make-initial-state add-key-event add-char-event process-events
-                         process-char process-key)])
+                         ->InputHandler)])
   (:import
     (fastmath.vector
       Vec3)
@@ -247,6 +247,7 @@
 
 (def event-buffer (atom (make-event-buffer)))
 (def state (make-initial-state))
+(def input-handler (->InputHandler state gui default-mappings))
 
 
 (def keyboard-callback
@@ -637,9 +638,9 @@
           (do
             (if @slew
               (do
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 elevator) (vec3 0 1 0)))
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 rudder  ) (vec3 0 0 1)))
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 aileron ) (vec3 1 0 0)))
+                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
+                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
+                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double aileron ) (vec3 1 0 0)))
                 ; (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v)))
                 )
               (do
@@ -660,7 +661,9 @@
                 (let [height (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
                       loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                              (jolt/get-angular-velocity body)
-                                                             (mult (vec3 (* 0.25 aileron) (* 0.25 elevator) (* 0.4 rudder))
+                                                             (mult (vec3 (* 0.25 ^double aileron)
+                                                                         (* 0.25 ^double elevator)
+                                                                         (* 0.4  ^double rudder))
                                                                    (to-radians 20)))]
                   (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                   (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
@@ -818,7 +821,7 @@
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
-        (swap! event-buffer #(process-events % (partial process-char state gui) (partial process-key state gui default-mappings)))
+        (swap! event-buffer #(process-events % input-handler))
         (swap! n inc)
         (if fix-fps (reset! t0 (System/currentTimeMillis)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)

@@ -18,26 +18,32 @@
 (facts "Process character events"
        (let [event-buffer (make-event-buffer)
              playback     (atom [])
-             process-char (fn [c] (swap! playback conj c))
-             process-last (fn [c] (swap! playback conj c) false)]
-         (process-events event-buffer process-char (constantly nil)) => []
+             handler      (reify InputHandlerProtocol
+                                 (process-char [_this codepoint] (swap! playback conj codepoint))
+                                 (process-key [_this _k _action _mods]))
+             handle-one   (reify InputHandlerProtocol
+                                 (process-char [_this codepoint] (swap! playback conj codepoint) false)
+                                 (process-key [_this _k _action _mods]))]
+         (process-events event-buffer handler) => []
          @playback => []
-         (process-events (add-char-event event-buffer 0x20) process-char (constantly nil))
+         (process-events (add-char-event event-buffer 0x20) handler)
          @playback => [0x20]
          (reset! playback [])
-         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-char (constantly nil))) => []
+         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events handler)) => []
          @playback => [0x61 0x62]
          (reset! playback [])
-         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events process-last (constantly nil)) count) => 1
+         (-> event-buffer (add-char-event 0x61) (add-char-event 0x62) (process-events handle-one) count) => 1
          @playback => [0x61]))
 
 
 (facts "Process key events"
        (let [event-buffer (make-event-buffer)
              playback (atom [])
-             process-key (fn [k action mods] (swap! playback conj {:key k :action action :mods mods}))]
-         (process-events event-buffer (constantly nil) process-key) => []
-         (-> event-buffer (add-key-event GLFW/GLFW_KEY_A GLFW/GLFW_PRESS 0) (process-events (constantly nil) process-key)) => []
+             handler  (reify InputHandlerProtocol
+                             (process-char [_this _codepoint])
+                             (process-key [_this k action mods] (swap! playback conj {:key k :action action :mods mods})))]
+         (process-events event-buffer handler) => []
+         (-> event-buffer (add-key-event GLFW/GLFW_KEY_A GLFW/GLFW_PRESS 0) (process-events handler)) => []
          @playback => [{:key GLFW/GLFW_KEY_A :action GLFW/GLFW_PRESS :mods 0}]))
 
 
@@ -56,37 +62,38 @@
        (with-redefs [input/menu-key menu-key-mock]
          (let [event-buffer (make-event-buffer)
                state        (make-initial-state)
-               gui          {:sfsim.gui/context :ctx}]
+               gui          {:sfsim.gui/context :ctx}
+               handler      (->InputHandler state gui default-mappings)]
            ; Test gear up
            (:sfsim.input/gear-down @state) => true
            (-> event-buffer
                (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
-               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+               (process-events handler))
            (:sfsim.input/gear-down @state) => false
            (-> event-buffer
                (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
-               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+               (process-events handler))
            (:sfsim.input/gear-down @state) => false
            (-> event-buffer
                (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
                (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
                (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
                (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
-               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+               (process-events handler))
            (:sfsim.input/gear-down @state) => false
            ; Test fullscreen
            (:sfsim.input/fullscreen @state) => false
            (-> event-buffer
                (add-key-event GLFW/GLFW_KEY_ENTER GLFW/GLFW_PRESS GLFW/GLFW_MOD_ALT)
                (add-key-event GLFW/GLFW_KEY_ENTER GLFW/GLFW_RELEASE GLFW/GLFW_MOD_ALT)
-               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+               (process-events handler))
            (:sfsim.input/fullscreen @state) => true
            ; Test menu toggle
            (:sfsim.input/menu @state) => false
            (-> event-buffer
                (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
                (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_RELEASE 0)
-               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+               (process-events handler))
            (:sfsim.input/menu @state) => true
            ; Hiding menu should postpone processing of remaining events
            (-> event-buffer
@@ -94,7 +101,7 @@
                (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_RELEASE 0)
                (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
                (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_RELEASE 0)
-               (process-events (constantly nil) (partial process-key state gui default-mappings))
+               (process-events handler)
                count) => 3
            (:sfsim.input/menu @state) => false
            ; Showing menu should postpone processing of remaining events
@@ -103,7 +110,7 @@
                (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_RELEASE 0)
                (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
                (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_RELEASE 0)
-               (process-events (constantly nil) (partial process-key state gui default-mappings))
+               (process-events handler)
                count) => 3
            (:sfsim.input/menu @state) => true
            ; Test no gear operation when menu is shown
@@ -112,14 +119,14 @@
            (-> event-buffer
                (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
                (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
-               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+               (process-events handler))
            (:sfsim.input/gear-down @state) => false
            ; Test no fullscreen toggle when menu is shown
            (:sfsim.input/fullscreen @state) => true
            (-> event-buffer
                (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_PRESS 0)
                (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_RELEASE 0)
-               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+               (process-events handler))
            (:sfsim.input/fullscreen @state) => true
            ; Use alternate method for handling keys when menu is shown
            @gui-key => GLFW/GLFW_KEY_F)))
@@ -162,6 +169,11 @@
          (-> GLFW/GLFW_KEY_D default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
          (-> GLFW/GLFW_KEY_D default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
          (:sfsim.input/aileron @state) => -0.0625
+         (swap! state assoc :sfsim.input/aileron 0.0)
+         (-> GLFW/GLFW_KEY_D default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_D default-mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (-> GLFW/GLFW_KEY_D default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/aileron @state) => (* 2 -0.0625)
          (-> GLFW/GLFW_KEY_KP_5 default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
          (-> GLFW/GLFW_KEY_KP_5 default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
          (:sfsim.input/aileron @state) => 0.0

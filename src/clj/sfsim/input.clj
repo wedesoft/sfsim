@@ -34,24 +34,34 @@
   (conj event-buffer {::event ::key ::k k ::action action ::mods mods}))
 
 
+(defprotocol InputHandlerProtocol
+  (process-char [this codepoint])
+  (process-key [this k action mods]))
+
+
+(defn keypress?
+  ^Boolean [^long action]
+  (boolean (#{GLFW/GLFW_PRESS GLFW/GLFW_REPEAT} action)))
+
+
 (defn process-event
   "Process a single event"
-  [event process-char process-key]
+  [event handler]
   (cond
     (= (::event event) ::char)
-    (process-char (::codepoint event))
+    (process-char handler (::codepoint event))
     (= (::event event) ::key)
-    (process-key (::k event) (::action event) (::mods event))))
+    (process-key handler (::k event) (::action event) (::mods event))))
 
 
 (defn process-events
   "Take events from the event buffer and process them"
-  [event-buffer process-char process-key]
+  [event-buffer handler]
   (let [event (peek event-buffer)]
     (if event
-      (if (false? (process-event event process-char process-key))
+      (if (false? (process-event event handler))
         (pop event-buffer)
-        (recur (pop event-buffer) process-char process-key))
+        (recur (pop event-buffer) handler))
       event-buffer)))
 
 
@@ -91,7 +101,7 @@
 (defn menu-key
   "Key handling when menu is shown"
   [k state gui action mods]
-  (let [press (boolean (#{GLFW/GLFW_PRESS GLFW/GLFW_REPEAT} action))]
+  (let [press (keypress? action)]
     (cond
       (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
       (= k GLFW/GLFW_KEY_ENTER)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
@@ -163,37 +173,37 @@
 
 (defmethod simulator-key ::throttle-decrease
   [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
+  (when (keypress? action)
     (increment-clamp state ::throttle -0.0625 0.0 1.0)))
 
 
 (defmethod simulator-key ::throttle-increase
   [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
+  (when (keypress? action)
     (increment-clamp state ::throttle 0.0625 0.0 1.0)))
 
 
 (defmethod simulator-key ::aileron-left
   [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
+  (when (keypress? action)
     (increment-clamp state ::aileron 0.0625)))
 
 
 (defmethod simulator-key ::aileron-right
   [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
+  (when (keypress? action)
     (increment-clamp state ::aileron -0.0625)))
 
 
 (defmethod simulator-key ::aileron-center
   [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
+  (when (keypress? action)
     (swap! state assoc ::aileron 0.0)))
 
 
 (defmethod simulator-key ::rudder-left
   [_id state action mods]
-  (when (= action GLFW/GLFW_PRESS)
+  (when (keypress? action)
     (if (= mods GLFW/GLFW_MOD_CONTROL)
       (swap! state assoc ::rudder 0.0)
       (increment-clamp state ::rudder 0.0625))))
@@ -201,33 +211,31 @@
 
 (defmethod simulator-key ::rudder-right
   [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
+  (when (keypress? action)
     (increment-clamp state ::rudder -0.0625)))
 
 
 (defmethod simulator-key ::elevator-down
   [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
+  (when (keypress? action)
     (increment-clamp state ::elevator 0.0625)))
 
 
 (defmethod simulator-key ::elevator-up
   [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
+  (when (keypress? action)
     (increment-clamp state ::elevator -0.0625)))
 
 
-(defn process-char
-  [state gui codepoint]
-  (when (-> @state ::menu)
-    (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
-
-
-(defn process-key
-  [state gui mappings k action mods]
-  (if (::menu @state)
-    (-> k (menu-key state gui action mods))
-    (-> k mappings (simulator-key state action mods))))
+(defrecord InputHandler [state gui mappings]
+  InputHandlerProtocol
+  (process-char [_this codepoint]
+    (when (-> @state ::menu)
+      (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
+  (process-key [_this k action mods]
+    (if (::menu @state)
+      (-> k (menu-key state gui action mods))
+      (-> k mappings (simulator-key state action mods)))))
 
 
 (set! *warn-on-reflection* false)
