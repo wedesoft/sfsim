@@ -87,7 +87,6 @@
 (jolt/jolt-init)
 
 (def slew (atom true))
-(def prev-fullscr (atom false))
 
 (def recording
   ; initialize recording using "echo [] > recording.edn"
@@ -247,6 +246,7 @@
 
 (def event-buffer (atom (make-event-buffer)))
 (def state (make-initial-state))
+(def old-state (atom @state))
 (def input-handler (->InputHandler state gui default-mappings))
 
 
@@ -586,20 +586,18 @@
         w  (int-array 1)
         h  (int-array 1)]
     (while (and (not (GLFW/glfwWindowShouldClose @window)) (or (not playback) (< ^long @n (count @recording))))
-      (when (not= (@state :sfsim.input/fullscreen) @prev-fullscr)
+      (when (not= (@state :sfsim.input/fullscreen) (@old-state :sfsim.input/fullscreen))
         (let [monitor (GLFW/glfwGetPrimaryMonitor)
               mode (GLFW/glfwGetVideoMode monitor)
               desktop-width (.width ^GLFWVidMode mode)
               desktop-height (.height ^GLFWVidMode mode)]
           (if (@state :sfsim.input/fullscreen)
             (GLFW/glfwSetWindowMonitor @window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
-            (GLFW/glfwSetWindowMonitor @window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE)))
-        (swap! prev-fullscr not))
+            (GLFW/glfwSetWindowMonitor @window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE))))
       (GLFW/glfwGetWindowSize ^long @window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
       (planet/update-tile-tree planet-renderer tile-tree @window-width (:position @pose))
-      (reset! slew (@state :sfsim.input/pause))
       ; (when (@keystates GLFW/GLFW_KEY_X)
       ;   (jolt/set-orientation body (:orientation @pose))
       ;   (jolt/set-translation body (:position @pose))
@@ -631,8 +629,7 @@
             (reset! gear (:gear frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
-          (do
-            (if @slew
+            (if (@state :sfsim.input/pause)
               (do
                 (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
                 (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
@@ -702,7 +699,7 @@
             ; (swap! camera-orientation q/* (q/rotation (* ^long dt rb) (vec3 0 1 0)))
             ; (swap! camera-orientation q/* (q/rotation (* ^long dt rc) (vec3 0 0 1)))
             ; (swap! dist * (exp d))
-            ))
+            )
         (let [object-position    (:position @pose)
               origin             (add object-position (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               jd-ut              (+ ^double @time-delta (/ ^long @t0 1000.0 86400.0) ^double astro/T0)
@@ -814,6 +811,7 @@
                                                                :sfsim.image/height @window-height
                                                                :sfsim.image/channels 4} true)
               (swap! frame-index inc))))
+        (reset! old-state @state)
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
