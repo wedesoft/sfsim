@@ -34,24 +34,48 @@
   (conj event-buffer {::event ::key ::k k ::action action ::mods mods}))
 
 
+(defn add-mouse-button-event
+  [event-buffer button x y action mods]
+  (conj event-buffer {::event ::mouse-button ::button button ::x x ::y y ::action action ::mods mods}))
+
+
+(defn add-mouse-move-event
+  [event-buffer x y]
+  (conj event-buffer {::event ::mouse-move ::x x ::y y}))
+
+
 (defprotocol InputHandlerProtocol
   (process-char [this codepoint])
-  (process-key [this k action mods]))
+  (process-key [this k action mods])
+  (process-mouse-button [this button x y action mods])
+  (process-mouse-move [this x y]))
 
 
 (defn keypress?
   ^Boolean [^long action]
   (boolean (#{GLFW/GLFW_PRESS GLFW/GLFW_REPEAT} action)))
 
+(defmulti process-event (fn [event handler] (::event event)))
 
-(defn process-event
-  "Process a single event"
+
+(defmethod process-event ::char
   [event handler]
-  (cond
-    (= (::event event) ::char)
-    (process-char handler (::codepoint event))
-    (= (::event event) ::key)
-    (process-key handler (::k event) (::action event) (::mods event))))
+  (process-char handler (::codepoint event)))
+
+
+(defmethod process-event ::key
+  [event handler]
+  (process-key handler (::k event) (::action event) (::mods event)))
+
+
+(defmethod process-event ::mouse-button
+  [event handler]
+  (process-mouse-button handler (::button event) (::x event) (::y event) (::action event) (::mods event)))
+
+
+(defmethod process-event ::mouse-move
+  [event handler]
+  (process-mouse-move handler (::x event) (::y event)))
 
 
 (defn process-events
@@ -227,6 +251,20 @@
     (increment-clamp state ::elevator -0.0625)))
 
 
+(defn menu-mouse-button
+  [state gui button x y action mods]
+  (let [nkbutton (cond
+                   (= button GLFW/GLFW_MOUSE_BUTTON_RIGHT) Nuklear/NK_BUTTON_RIGHT
+                   (= button GLFW/GLFW_MOUSE_BUTTON_MIDDLE) Nuklear/NK_BUTTON_MIDDLE
+                   :else Nuklear/NK_BUTTON_LEFT)]
+    (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))))
+
+
+(defn menu-mouse-move
+  [_state gui x y]
+  (Nuklear/nk_input_motion (:sfsim.gui/context gui) (long x) (long y)))
+
+
 (defrecord InputHandler [state gui mappings]
   InputHandlerProtocol
   (process-char [_this codepoint]
@@ -235,7 +273,11 @@
   (process-key [_this k action mods]
     (if (::menu @state)
       (-> k (menu-key state gui action mods))
-      (-> k mappings (simulator-key state action mods)))))
+      (-> k mappings (simulator-key state action mods))))
+  (process-mouse-button [_this button x y action mods]
+    (menu-mouse-button state gui button x y action mods))
+  (process-mouse-move [_this x y]
+    (menu-mouse-move state gui x y)))
 
 
 (set! *warn-on-reflection* false)

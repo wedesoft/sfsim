@@ -34,7 +34,7 @@
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture texture->image)]
     [sfsim.input :refer (default-mappings make-event-buffer make-initial-state add-key-event add-char-event process-events
-                         ->InputHandler)])
+                         add-mouse-move-event add-mouse-button-event ->InputHandler)])
   (:import
     (fastmath.vector
       Vec3)
@@ -273,26 +273,20 @@
   (reify GLFWCursorPosCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
       [_this _window xpos ypos]
-      (Nuklear/nk_input_motion (:sfsim.gui/context gui) (int xpos) (int ypos)))))
+      (swap! event-buffer #(add-mouse-move-event % xpos ypos)))))
 
 
 (GLFW/glfwSetMouseButtonCallback
   @window
   (reify GLFWMouseButtonCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
-      [_this _window button action _mods]
-      (let [stack (MemoryStack/stackPush)
-            cx    (.mallocDouble stack 1)
-            cy    (.mallocDouble stack 1)]
+      [_this _window button action mods]
+      (let [cx    (double-array 1)
+            cy    (double-array 1)]
         (GLFW/glfwGetCursorPos ^long _window cx cy)
-        (let [x        (int (.get cx 0))
-              y        (int (.get cy 0))
-              nkbutton (cond
-                         (= button GLFW/GLFW_MOUSE_BUTTON_RIGHT) Nuklear/NK_BUTTON_RIGHT
-                         (= button GLFW/GLFW_MOUSE_BUTTON_MIDDLE) Nuklear/NK_BUTTON_MIDDLE
-                         :else Nuklear/NK_BUTTON_LEFT)]
-          (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))
-          (MemoryStack/stackPop))))))
+        (let [x        (long (aget cx 0))
+              y        (long (aget cy 0))]
+          (swap! event-buffer #(add-mouse-button-event % button x y action mods)))))))
 
 
 (def menu (atom nil))
@@ -417,6 +411,8 @@
                       (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
                       (when (gui/button-label gui "Set")
                         (reset! pose (location-dialog-get position-data))
+                        (jolt/set-orientation body (:orientation @pose))
+                        (jolt/set-translation body (:position @pose))
                         (reset! camera-orientation (q/* (:orientation @pose)
                                                         (q/rotation (to-radians -90) (vec3 1 0 0)))))
                       (when (gui/button-label gui "Close")

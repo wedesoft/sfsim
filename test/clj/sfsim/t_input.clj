@@ -15,15 +15,17 @@
        GLFW]))
 
 
+(mi/collect! {:ns (all-ns)})
+(mi/instrument! {:report (pretty/thrower)})
+
+
 (facts "Process character events"
        (let [event-buffer (make-event-buffer)
              playback     (atom [])
              handler      (reify InputHandlerProtocol
-                                 (process-char [_this codepoint] (swap! playback conj codepoint))
-                                 (process-key [_this _k _action _mods]))
+                                 (process-char [_this codepoint] (swap! playback conj codepoint)))
              handle-one   (reify InputHandlerProtocol
-                                 (process-char [_this codepoint] (swap! playback conj codepoint) false)
-                                 (process-key [_this _k _action _mods]))]
+                                 (process-char [_this codepoint] (swap! playback conj codepoint) false))]
          (process-events event-buffer handler) => []
          @playback => []
          (process-events (add-char-event event-buffer 0x20) handler)
@@ -40,7 +42,6 @@
        (let [event-buffer (make-event-buffer)
              playback (atom [])
              handler  (reify InputHandlerProtocol
-                             (process-char [_this _codepoint])
                              (process-key [_this k action mods] (swap! playback conj {:key k :action action :mods mods})))]
          (process-events event-buffer handler) => []
          (-> event-buffer (add-key-event GLFW/GLFW_KEY_A GLFW/GLFW_PRESS 0) (process-events handler)) => []
@@ -239,5 +240,16 @@
          (:sfsim.input/throttle @state) => 1.0))
 
 
-(mi/collect! {:ns (all-ns)})
-(mi/instrument! {:report (pretty/thrower)})
+(facts "Process mouse events"
+       (let [event-buffer (make-event-buffer)
+             playback     (atom [])
+             handler      (reify InputHandlerProtocol
+                                 (process-mouse-button [_this button x y action mods]
+                                   (swap! playback conj {:button button :action action :mods mods :x x :y y}))
+                                 (process-mouse-move [_this x y]
+                                   (swap! playback conj {:x x :y y})))]
+         (process-events (add-mouse-button-event event-buffer GLFW/GLFW_MOUSE_BUTTON_LEFT 160 120 GLFW/GLFW_PRESS 0) handler)
+         @playback => [{:button GLFW/GLFW_MOUSE_BUTTON_LEFT :action GLFW/GLFW_PRESS :mods 0 :x 160 :y 120}]
+         (reset! playback [])
+         (process-events (add-mouse-move-event event-buffer 100 60) handler)
+         @playback => [{:x 100 :y 60}]))
