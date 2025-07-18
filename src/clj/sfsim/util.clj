@@ -401,6 +401,12 @@
   (apply * shape))
 
 
+(defn clamp
+  "Clamp value between minimum and maximum"
+  ^double [^double x ^double lower ^double upper]
+  (-> x (min upper) (max lower)))
+
+
 (defn limit-quot
   "Compute quotient and limit it"
   (^double [^double a ^double b ^double limit]

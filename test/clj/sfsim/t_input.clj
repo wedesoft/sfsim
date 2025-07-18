@@ -9,7 +9,7 @@
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [midje.sweet :refer :all]
-      [sfsim.input :refer :all])
+      [sfsim.input :refer :all :as input])
     (:import
       [org.lwjgl.glfw
        GLFW]))
@@ -41,55 +41,190 @@
          @playback => [{:key GLFW/GLFW_KEY_A :action GLFW/GLFW_PRESS :mods 0}]))
 
 
-(facts "Default key mappings"
-       (let [event-buffer (make-event-buffer)
-             state        (make-initial-state)]
-         ; Test gear up
-         (:sfsim.input/gear-down @state) => true
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/gear-down @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/gear-down @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
-             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/gear-down @state) => false
-         ; Test fullscreen
-         (:sfsim.input/fullscreen @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/fullscreen @state) => true
-         ; Test menu toggle
-         (:sfsim.input/menu @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/menu @state) => true
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
-             (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings))
-             count) => 1
-         (:sfsim.input/menu @state) => false
-         (swap! state update :sfsim.input/menu not)
-         ; Test no gear operation when menu is shown
-         (:sfsim.input/gear-down @state) => false
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/gear-down @state) => false
-         ; Test no fullscreen toggle when menu is shown
-         (:sfsim.input/fullscreen @state) => true
-         (-> event-buffer
-             (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_PRESS 0)
-             (process-events (constantly nil) (partial process-key state default-mappings)))
-         (:sfsim.input/fullscreen @state) => true))
+(def gui-key (atom nil))
+
+
+(defn menu-key-mock
+  [k state gui action mods]
+  (reset! gui-key k)
+  (when (and (= action GLFW/GLFW_PRESS) (= k GLFW/GLFW_KEY_ESCAPE))
+    (swap! state update :sfsim.input/menu not)
+    false))
+
+
+(facts "Test the integrated behaviour of some keys"
+       (with-redefs [input/menu-key menu-key-mock]
+         (let [event-buffer (make-event-buffer)
+               state        (make-initial-state)
+               gui          {:sfsim.gui/context :ctx}]
+           ; Test gear up
+           (:sfsim.input/gear-down @state) => true
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/gear-down @state) => false
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/gear-down @state) => false
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/gear-down @state) => false
+           ; Test fullscreen
+           (:sfsim.input/fullscreen @state) => false
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_ENTER GLFW/GLFW_PRESS GLFW/GLFW_MOD_ALT)
+               (add-key-event GLFW/GLFW_KEY_ENTER GLFW/GLFW_RELEASE GLFW/GLFW_MOD_ALT)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/fullscreen @state) => true
+           ; Test menu toggle
+           (:sfsim.input/menu @state) => false
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_RELEASE 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/menu @state) => true
+           ; Hiding menu should postpone processing of remaining events
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_RELEASE 0)
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_RELEASE 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings))
+               count) => 3
+           (:sfsim.input/menu @state) => false
+           ; Showing menu should postpone processing of remaining events
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_RELEASE 0)
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_ESCAPE GLFW/GLFW_RELEASE 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings))
+               count) => 3
+           (:sfsim.input/menu @state) => true
+           ; Test no gear operation when menu is shown
+           (swap! state assoc :sfsim.input/menu true)
+           (:sfsim.input/gear-down @state) => false
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/gear-down @state) => false
+           ; Test no fullscreen toggle when menu is shown
+           (:sfsim.input/fullscreen @state) => true
+           (-> event-buffer
+               (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_PRESS 0)
+               (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_RELEASE 0)
+               (process-events (constantly nil) (partial process-key state gui default-mappings)))
+           (:sfsim.input/fullscreen @state) => true
+           ; Use alternate method for handling keys when menu is shown
+           @gui-key => GLFW/GLFW_KEY_F)))
+
+
+(facts "Test some simulator key bindings directly"
+       (let [state (make-initial-state)]
+         ; Pause
+         (-> GLFW/GLFW_KEY_P default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_P default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/pause @state) => true
+         (-> GLFW/GLFW_KEY_P default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_P default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/pause @state) => false
+         ; Brakes
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [true false]
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [true false]
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [false false]
+         ; Parking brakes
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT))
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [false true]
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT))
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [false false]
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT))
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT))
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [true false]
+         (-> GLFW/GLFW_KEY_B default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         ; Aileron
+         (:sfsim.input/aileron @state) => 0.0
+         (-> GLFW/GLFW_KEY_A default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_A default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/aileron @state) => 0.0625
+         (swap! state assoc :sfsim.input/aileron 0.0)
+         (-> GLFW/GLFW_KEY_D default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_D default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/aileron @state) => -0.0625
+         (-> GLFW/GLFW_KEY_KP_5 default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_KP_5 default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/aileron @state) => 0.0
+         (swap! state assoc :sfsim.input/aileron -1.0)
+         (-> GLFW/GLFW_KEY_D default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_D default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/aileron @state) => -1.0
+         (swap! state assoc :sfsim.input/aileron 1.0)
+         (-> GLFW/GLFW_KEY_A default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_A default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/aileron @state) => 1.0
+         ; Elevator
+         (:sfsim.input/elevator @state) => 0.0
+         (-> GLFW/GLFW_KEY_W default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_W default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/elevator @state) => 0.0625
+         (swap! state assoc :sfsim.input/elevator 0.0)
+         (-> GLFW/GLFW_KEY_S default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_S default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/elevator @state) => -0.0625
+         (swap! state assoc :sfsim.input/elevator -1.0)
+         (-> GLFW/GLFW_KEY_S default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_S default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/elevator @state) => -1.0
+         (swap! state assoc :sfsim.input/elevator 1.0)
+         (-> GLFW/GLFW_KEY_W default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_W default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/elevator @state) => 1.0
+         ; Rudder
+         (:sfsim.input/rudder @state) => 0.0
+         (-> GLFW/GLFW_KEY_Q default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_Q default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rudder @state) => 0.0625
+         (swap! state assoc :sfsim.input/rudder 0.0)
+         (-> GLFW/GLFW_KEY_E default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_E default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rudder @state) => -0.0625
+         (-> GLFW/GLFW_KEY_Q default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_CONTROL))
+         (-> GLFW/GLFW_KEY_Q default-mappings (simulator-key state GLFW/GLFW_RELEASE GLFW/GLFW_MOD_CONTROL))
+         (:sfsim.input/rudder @state) => 0.0
+         (swap! state assoc :sfsim.input/rudder -1.0)
+         (-> GLFW/GLFW_KEY_E default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_E default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rudder @state) => -1.0
+         (swap! state assoc :sfsim.input/rudder 1.0)
+         (-> GLFW/GLFW_KEY_Q default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_Q default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rudder @state) => 1.0
+         ; Throttle
+         (:sfsim.input/throttle @state) => 0.0
+         (-> GLFW/GLFW_KEY_R default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_R default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/throttle @state) => 0.0625
+         (-> GLFW/GLFW_KEY_F default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT))
+         (-> GLFW/GLFW_KEY_F default-mappings (simulator-key state GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT))
+         (:sfsim.input/throttle @state) => 0.0
+         (-> GLFW/GLFW_KEY_F default-mappings (simulator-key state GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT))
+         (-> GLFW/GLFW_KEY_F default-mappings (simulator-key state GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT))
+         (:sfsim.input/throttle @state) => 0.0
+         (swap! state assoc :sfsim.input/throttle 1.0)
+         (-> GLFW/GLFW_KEY_R default-mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_R default-mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/throttle @state) => 1.0))
 
 
 (mi/collect! {:ns (all-ns)})

@@ -1,5 +1,9 @@
 # TODO
-* input module to handle joystick, key callbacks, and mouse callbacks (send keys/joystick to GUI if active, spacecraft otherwise)
+* input module
+  * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
+  * GUI tabbing
+  * joystick
+  * mouse
 * use different accessors for quaternions, vectors, matrices?
 * display version in menu, start ChangeLog
 * switch windows JDK install to 24
@@ -11,6 +15,9 @@
   * wheel click to reset rudder
   * wheel up/down to increase/decrease throttle level
 * now fix reflection warnings
+* simulate speed of control surfaces hydraulics
+* air brakes
+* animate control surfaces
 * add joystick configuration
 * add configuration dialog for input
 * use transients when updating transforms in model

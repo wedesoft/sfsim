@@ -5,6 +5,7 @@
 ;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
 
 (ns sfsim.input
+    (:require [sfsim.util :refer (clamp)])
     (:import
       [clojure.lang
        PersistentQueue]
@@ -56,37 +57,164 @@
 
 (defn make-initial-state
   []
-  (atom {::menu       false
-         ::fullscreen false
-         ::gear-down  true}))
+  (atom {::menu          false
+         ::fullscreen    false
+         ::pause         false
+         ::brake         false
+         ::parking-brake false
+         ::gear-down     true
+         ::aileron       0.0
+         ::elevator      0.0
+         ::rudder        0.0
+         ::throttle      0.0
+         }))
 
 
-(defmulti state-change (fn [id _state _action _mods] id))
+(def default-mappings
+  {GLFW/GLFW_KEY_ESCAPE ::menu
+   GLFW/GLFW_KEY_ENTER  ::fullscreen
+   GLFW/GLFW_KEY_P      ::pause
+   GLFW/GLFW_KEY_G      ::gear
+   GLFW/GLFW_KEY_B      ::brake
+   GLFW/GLFW_KEY_F      ::throttle-decrease
+   GLFW/GLFW_KEY_R      ::throttle-increase
+   GLFW/GLFW_KEY_A      ::aileron-left
+   GLFW/GLFW_KEY_KP_5   ::aileron-center
+   GLFW/GLFW_KEY_D      ::aileron-right
+   GLFW/GLFW_KEY_W      ::elevator-down
+   GLFW/GLFW_KEY_S      ::elevator-up
+   GLFW/GLFW_KEY_Q      ::rudder-left
+   GLFW/GLFW_KEY_E      ::rudder-right
+   })
 
 
-(defmethod state-change ::menu
+(defn menu-key
+  "Key handling when menu is shown"
+  [k state gui action mods]
+  (let [press (#{GLFW/GLFW_PRESS GLFW/GLFW_REPEAT} action)]
+    (cond
+      (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
+      (= k GLFW/GLFW_KEY_ENTER)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
+      (= k GLFW/GLFW_KEY_TAB)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TAB press)
+      (= k GLFW/GLFW_KEY_BACKSPACE)   (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_BACKSPACE press)
+      (= k GLFW/GLFW_KEY_UP)          (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_UP press)
+      (= k GLFW/GLFW_KEY_DOWN)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DOWN press)
+      (= k GLFW/GLFW_KEY_LEFT)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_LEFT press)
+      (= k GLFW/GLFW_KEY_RIGHT)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_RIGHT press)
+      (= k GLFW/GLFW_KEY_HOME)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_START press)
+      (= k GLFW/GLFW_KEY_END)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_END press)
+      (= k GLFW/GLFW_KEY_LEFT_SHIFT)  (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
+      (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press))
+    (when (and press (= k GLFW/GLFW_KEY_ESCAPE))
+      (swap! state update ::menu not)
+      false)))
+
+
+; Simulation key handling when menu is hidden
+(defmulti simulator-key (fn [id _state _action _mods] id))
+
+
+; Ignore keys without mapping
+(defmethod simulator-key nil
+  [_id _state _action _mods])
+
+
+(defmethod simulator-key ::menu
   [_id state action _mods]
   (when (= action GLFW/GLFW_PRESS)
     (swap! state update ::menu not)
     false))
 
 
-(defmethod state-change ::fullscreen
-  [_id state action _mods]
-  (when (and (= action GLFW/GLFW_PRESS) (-> @state ::menu not))
+(defmethod simulator-key ::fullscreen
+  [_id state action mods]
+  (when (and (= action GLFW/GLFW_PRESS) (= mods GLFW/GLFW_MOD_ALT))
     (swap! state update ::fullscreen not)))
 
 
-(defmethod state-change ::gear
+(defmethod simulator-key ::pause
   [_id state action _mods]
-  (when (and (= action GLFW/GLFW_PRESS) (-> @state ::menu not))
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::pause not)))
+
+
+(defmethod simulator-key ::gear
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
     (swap! state update ::gear-down not)))
 
 
-(def default-mappings
-  {GLFW/GLFW_KEY_ESCAPE ::menu
-   GLFW/GLFW_KEY_F      ::fullscreen
-   GLFW/GLFW_KEY_G      ::gear })
+(defn increment-clamp
+  ([state k increment]
+   (increment-clamp state k increment -1.0 1.0))
+  ([state k increment lower upper]
+   (swap! state update k #(-> ^double % (+ ^double increment) (clamp lower upper)))))
+
+
+(defmethod simulator-key ::brake
+  [_id state action mods]
+  (if (= mods GLFW/GLFW_MOD_SHIFT)
+    (when (= action GLFW/GLFW_PRESS)
+      (swap! state update ::parking-brake not))
+    (do
+      (swap! state assoc ::parking-brake false)
+      (swap! state assoc ::brake (not= action GLFW/GLFW_RELEASE)))))
+
+
+(defmethod simulator-key ::throttle-decrease
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (increment-clamp state ::throttle -0.0625 0.0 1.0)))
+
+
+(defmethod simulator-key ::throttle-increase
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (increment-clamp state ::throttle 0.0625 0.0 1.0)))
+
+
+(defmethod simulator-key ::aileron-left
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (increment-clamp state ::aileron 0.0625)))
+
+
+(defmethod simulator-key ::aileron-right
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (increment-clamp state ::aileron -0.0625)))
+
+
+(defmethod simulator-key ::aileron-center
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state assoc ::aileron 0.0)))
+
+
+(defmethod simulator-key ::rudder-left
+  [_id state action mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (if (= mods GLFW/GLFW_MOD_CONTROL)
+      (swap! state assoc ::rudder 0.0)
+      (increment-clamp state ::rudder 0.0625))))
+
+
+(defmethod simulator-key ::rudder-right
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (increment-clamp state ::rudder -0.0625)))
+
+
+(defmethod simulator-key ::elevator-down
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (increment-clamp state ::elevator 0.0625)))
+
+
+(defmethod simulator-key ::elevator-up
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (increment-clamp state ::elevator -0.0625)))
 
 
 (defn process-char
@@ -96,8 +224,10 @@
 
 
 (defn process-key
-  [state mappings k action mods]
-  (-> k mappings (state-change state action mods)))
+  [state gui mappings k action mods]
+  (if (::menu @state)
+    (-> k (menu-key state gui action mods))
+    (-> k mappings (simulator-key state action mods))))
 
 
 (set! *warn-on-reflection* false)
