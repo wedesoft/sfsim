@@ -100,7 +100,7 @@
 
 (defn menu-key
   "Key handling when menu is shown"
-  [k state gui action mods]
+  [k state gui action _mods]
   (let [press (keypress? action)]
     (cond
       (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)

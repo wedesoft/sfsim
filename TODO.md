@@ -2,7 +2,6 @@
 * input module
   * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
     * use previous state to detect changes (pause, fullscreen)
-    * parking brake
     * x key (set position)
     * d, ra, rb, rc, dcx, and dcy for camera
     * slew v
