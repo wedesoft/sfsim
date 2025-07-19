@@ -176,7 +176,13 @@
                                                    1 ::elevator
                                                    3 ::rudder
                                                    4 ::throttle-increment
-                                                   }}}
+                                                   }}
+    "Thrustmaster T.A320 Copilot" {::axes {0 ::aileron
+                                           1 ::elevator
+                                           2 ::rudder
+                                           3 ::throttle
+                                           }}
+    }
    })
 
 
@@ -363,7 +369,7 @@
 
 (defmethod simulator-joystick-axis ::throttle
   [_id state value]
-  (swap! state assoc ::throttle value))
+  (swap! state assoc ::throttle (* 0.5 (- 1 value))))
 
 
 (defmethod simulator-joystick-axis ::throttle-increment
