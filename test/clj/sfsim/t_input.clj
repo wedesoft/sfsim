@@ -257,19 +257,43 @@
 
 
 (facts "Process joystick events"
-       (let [event-buffer (make-event-buffer)
-             playback     (atom [])
-             mock-handler (reify InputHandlerProtocol
-                                 (process-joystick-button [_this device button action]
-                                   (swap! playback conj {:device device :button button :action action}))
-                                 (process-joystick-axis [_this device axis value]
-                                   (swap! playback conj {:device device :axis axis :value value})))
-             state        (make-initial-state)
-             gui          {:sfsim.gui/context :ctx}
-             handler      (->InputHandler state gui default-mappings)]
-         (process-events (add-joystick-axis-state event-buffer "Gamepad" [0.5 0.75]) mock-handler)
-         @playback => [{:device "Gamepad" :axis 0 :value 0.5} {:device "Gamepad" :axis 1 :value 0.75}]
-         (process-events (add-joystick-axis-state event-buffer "Gamepad" [0.5 0.75 -0.5 0.0]) handler)
+       (let [event-buffer          (make-event-buffer)
+             playback              (atom [])
+             mock-handler          (reify InputHandlerProtocol
+                                          (process-joystick-button [_this device button action]
+                                            (swap! playback conj {:device device :button button :action action}))
+                                          (process-joystick-axis [_this device axis value]
+                                            (swap! playback conj {:device device :axis axis :value value})))
+             state                 (make-initial-state)
+             gui                   {:sfsim.gui/context :ctx}
+             mappings              {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron
+                                                                                         1 :sfsim.input/elevator
+                                                                                         2 :sfsim.input/rudder}}}}
+             mappings-inv          {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron-inverted
+                                                                                          1 :sfsim.input/elevator-inverted
+                                                                                          2 :sfsim.input/rudder-inverted}}}}
+             map-throttle          {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle}}}}
+             map-throttle-incr     {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle-increment}}}}
+             handler               (->InputHandler state gui mappings)
+             handler-inv           (->InputHandler state gui mappings-inv)
+             handler-throttle      (->InputHandler state gui map-throttle)
+             handler-throttle-incr (->InputHandler state gui map-throttle-incr)]
+         (process-events (add-joystick-axis-state event-buffer "Gamepad" [-0.5 -0.75]) mock-handler)
+         @playback => [{:device "Gamepad" :axis 0 :value -0.5} {:device "Gamepad" :axis 1 :value -0.75}]
+         (process-events (add-joystick-axis-state event-buffer "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
          (:sfsim.input/aileron @state) => 0.5
          (:sfsim.input/elevator @state) => 0.75
-         (:sfsim.input/rudder @state) => -0.5))
+         (:sfsim.input/rudder @state) => -0.5
+         (process-events (add-joystick-axis-state event-buffer "Gamepad" [-0.5 -0.75 0.5 0.0]) handler-inv)
+         (:sfsim.input/aileron @state) => -0.5
+         (:sfsim.input/elevator @state) => -0.75
+         (:sfsim.input/rudder @state) => 0.5
+         (process-events (add-joystick-axis-state event-buffer "Gamepad" [1.0]) handler-throttle)
+         (:sfsim.input/throttle @state) => 1.0
+         (swap! state assoc :sfsim.input/throttle 0.0)
+         (process-events (add-joystick-axis-state event-buffer "Gamepad" [-1.0]) handler-throttle-incr)
+         (:sfsim.input/throttle @state) => 0.0625
+         (swap! state assoc :sfsim.input/throttle 0.0)
+         (process-events (add-joystick-axis-state event-buffer "Gamepad" [1.0]) handler-throttle-incr)
+         (:sfsim.input/throttle @state) => 0.0
+         (process-events (add-joystick-axis-state event-buffer "Unknown" [0.0 0.0]) handler)))

@@ -8,12 +8,11 @@
   (:require
     [fastmath.matrix :as fm]
     [sfsim.image :refer (white-image-with-alpha)]
-    [sfsim.matrix :refer (fmat4)]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
                                        with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                                        destroy-vertex-array-object)]
     [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)]
-    [sfsim.util :refer (N slurp-byte-buffer)])
+    [sfsim.util :refer (slurp-byte-buffer)])
   (:import
     (java.nio
       DirectByteBuffer)

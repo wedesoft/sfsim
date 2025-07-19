@@ -46,15 +46,6 @@
   (conj event-buffer {::event ::mouse-move ::x x ::y y}))
 
 
-(defn add-joystick-axis-state
-  [event-buffer device axes]
-  (reduce
-    (fn [event-buffer [axis value]]
-      (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value}))
-    event-buffer
-    (map-indexed vector axes)))
-
-
 (defn char-callback
   [event-buffer]
   (reify GLFWCharCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
@@ -69,6 +60,31 @@
          (invoke
            [_this _window k _scancode action mods]
            (swap! event-buffer #(add-key-event % k action mods)))))
+
+
+(defn add-joystick-axis-state
+  [event-buffer device axes]
+  (reduce
+    (fn [event-buffer [axis value]]
+      (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value}))
+    event-buffer
+    (map-indexed vector axes)))
+
+
+(defn joystick-poll
+  [event-buffer joystick-id]
+  (if (GLFW/glfwJoystickPresent joystick-id)
+    (let [device      (GLFW/glfwGetJoystickName joystick-id)
+          axes-buffer (GLFW/glfwGetJoystickAxes joystick-id)
+          axes        (float-array (.limit axes-buffer))]
+      (.get axes-buffer axes)
+      (add-joystick-axis-state event-buffer device axes))
+    event-buffer))
+
+
+(defn joysticks-poll
+  [event-buffer]
+  (reduce joystick-poll event-buffer (range GLFW/GLFW_JOYSTICK_1 (inc GLFW/GLFW_JOYSTICK_LAST))))
 
 
 (defprotocol InputHandlerProtocol
@@ -156,9 +172,12 @@
     GLFW/GLFW_KEY_E      ::rudder-right
     }
    ::joysticks
-   {"Gamepad" {::axes {0 ::aileron
-                       1 ::elevator
-                       2 ::rudder}}}})
+   {"Rock Candy Gamepad Wired Controller" {::axes {0 ::aileron
+                                                   1 ::elevator
+                                                   3 ::rudder
+                                                   4 ::throttle-increment
+                                                   }}}
+   })
 
 
 (defn menu-key
@@ -312,19 +331,44 @@
   [_id _state _value])
 
 
-(defmethod simulator-joystick-axis ::aileron
+(defmethod simulator-joystick-axis ::aileron-inverted
   [_id state value]
   (swap! state assoc ::aileron value))
 
 
-(defmethod simulator-joystick-axis ::elevator
+(defmethod simulator-joystick-axis ::aileron
+  [_id state value]
+  (swap! state assoc ::aileron (- ^double value)))
+
+
+(defmethod simulator-joystick-axis ::elevator-inverted
   [_id state value]
   (swap! state assoc ::elevator value))
 
 
-(defmethod simulator-joystick-axis ::rudder
+(defmethod simulator-joystick-axis ::elevator
+  [_id state value]
+  (swap! state assoc ::elevator (- ^double value)))
+
+
+(defmethod simulator-joystick-axis ::rudder-inverted
   [_id state value]
   (swap! state assoc ::rudder value))
+
+
+(defmethod simulator-joystick-axis ::rudder
+  [_id state value]
+  (swap! state assoc ::rudder (- ^double value)))
+
+
+(defmethod simulator-joystick-axis ::throttle
+  [_id state value]
+  (swap! state assoc ::throttle value))
+
+
+(defmethod simulator-joystick-axis ::throttle-increment
+  [_id state value]
+  (increment-clamp state ::throttle (* value -0.0625) 0.0 1.0))
 
 
 (defrecord InputHandler [state gui mappings]
@@ -342,8 +386,7 @@
   (process-mouse-move [_this x y]
     (menu-mouse-move state gui x y))
   (process-joystick-axis [_this device axis value]
-    (let [joystick-mappings (::joysticks mappings)]
-      (simulator-joystick-axis (((joystick-mappings device) ::axes) axis) state value))))
+    (simulator-joystick-axis (some-> mappings ::joysticks (get device) ::axes (get axis)) state value)))
 
 
 (set! *warn-on-reflection* false)

@@ -1,7 +1,8 @@
 # TODO
 * input module
-  * joystick with deadzone
-    * Create events from each joystick's axes, buttons, and hats (using joystick name)
+  * joystick
+    * add deadzones to axes
+    * Create events from each joystick's buttons, and hats (using joystick name)
     * only create button events when different from previous state
     * Read out map keys, apply dead zones and create events (e.g. gear toggle, set rudder position, change or set throttle)
     * Map key consists of event type, joystick name and axis or button
