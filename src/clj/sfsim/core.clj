@@ -8,7 +8,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt signum)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees signum)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -33,17 +33,15 @@
                           setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture texture->image)]
-    [sfsim.input :refer (default-mappings make-event-buffer make-initial-state add-key-event add-char-event process-events
-                         add-mouse-move-event add-mouse-button-event ->InputHandler)])
+    [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events
+                         add-mouse-move-event add-mouse-button-event ->InputHandler char-callback key-callback)])
   (:import
     (fastmath.vector
       Vec3)
     (org.lwjgl.glfw
       GLFW
       GLFWVidMode
-      GLFWCharCallbackI
       GLFWCursorPosCallbackI
-      GLFWKeyCallbackI
       GLFWMouseButtonCallbackI)
     (org.lwjgl.opengl
       GL11)
@@ -86,8 +84,6 @@
 
 (jolt/jolt-init)
 
-(def slew (atom true))
-
 (def recording
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
@@ -124,7 +120,7 @@
         window (make-window "sfsim" width height (not playback))]
     window))
 
-(def window (atom (create-window playback)))
+(def window (create-window playback))
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
@@ -250,26 +246,12 @@
 (def input-handler (->InputHandler state gui default-mappings))
 
 
-(def keyboard-callback
-  (reify GLFWKeyCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
-    (invoke
-      [_this _window k _scancode action mods]
-      (swap! event-buffer #(add-key-event % k action mods)))))
-
-
-(GLFW/glfwSetKeyCallback @window keyboard-callback)
-
-
-(GLFW/glfwSetCharCallback
-  @window
-  (reify GLFWCharCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
-    (invoke
-      [_this _window codepoint]
-      (swap! event-buffer #(add-char-event % codepoint)))))
+(GLFW/glfwSetCharCallback window (char-callback event-buffer))
+(GLFW/glfwSetKeyCallback window (key-callback event-buffer))
 
 
 (GLFW/glfwSetCursorPosCallback
-  @window
+  window
   (reify GLFWCursorPosCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
       [_this _window xpos ypos]
@@ -277,7 +259,7 @@
 
 
 (GLFW/glfwSetMouseButtonCallback
-  @window
+  window
   (reify GLFWMouseButtonCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
       [_this _window button action mods]
@@ -501,7 +483,7 @@
                       (when (gui/button-label gui "Resume")
                         (swap! state assoc :sfsim.input/menu nil))
                       (when (gui/button-label gui "Quit")
-                        (GLFW/glfwSetWindowShouldClose @window true))))
+                        (GLFW/glfwSetWindowShouldClose window true))))
 
 
 (defn stick
@@ -585,16 +567,16 @@
   (let [n  (atom 0)
         w  (int-array 1)
         h  (int-array 1)]
-    (while (and (not (GLFW/glfwWindowShouldClose @window)) (or (not playback) (< ^long @n (count @recording))))
+    (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @n (count @recording))))
       (when (not= (@state :sfsim.input/fullscreen) (@old-state :sfsim.input/fullscreen))
         (let [monitor (GLFW/glfwGetPrimaryMonitor)
               mode (GLFW/glfwGetVideoMode monitor)
               desktop-width (.width ^GLFWVidMode mode)
               desktop-height (.height ^GLFWVidMode mode)]
           (if (@state :sfsim.input/fullscreen)
-            (GLFW/glfwSetWindowMonitor @window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
-            (GLFW/glfwSetWindowMonitor @window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE))))
-      (GLFW/glfwGetWindowSize ^long @window ^ints w ^ints h)
+            (GLFW/glfwSetWindowMonitor window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
+            (GLFW/glfwSetWindowMonitor window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE))))
+      (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
       (planet/update-tile-tree planet-renderer tile-tree @window-width (:position @pose))
@@ -759,7 +741,7 @@
                                                                (planet/get-current-tree tile-tree))
                                    ;; Render clouds above the horizon
                                    (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
-          (onscreen-render @window
+          (onscreen-render window
                            (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
                                (clear (vec3 0 1 0) 1.0 0)
@@ -794,7 +776,7 @@
                                    (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s"
                                            (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
                                            (mag (jolt/get-linear-velocity body)) (/ 1.0 ^double @frametime)
-                                           (if @slew ", pause" ""))))
+                                           (if (@state :sfsim.input/pause) ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
           (model/destroy-scene-shadow-map object-shadow)
@@ -832,7 +814,7 @@
   (opacity/destroy-opacity-renderer opacity-renderer)
   (gui/destroy-nuklear-gui gui)
   (gui/destroy-font-texture bitmap-font)
-  (destroy-window @window)
+  (destroy-window window)
   (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
   (when (and (not playback) @recording)

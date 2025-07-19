@@ -10,7 +10,9 @@
       [clojure.lang
        PersistentQueue]
       [org.lwjgl.glfw
-       GLFW]
+       GLFW
+       GLFWCharCallbackI
+       GLFWKeyCallbackI]
       [org.lwjgl.nuklear
        Nuklear]))
 
@@ -44,6 +46,22 @@
   (conj event-buffer {::event ::mouse-move ::x x ::y y}))
 
 
+(defn char-callback
+  [event-buffer]
+  (reify GLFWCharCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
+         (invoke
+           [_this _window codepoint]
+           (swap! event-buffer #(add-char-event % codepoint)))))
+
+
+(defn key-callback
+  [event-buffer]
+  (reify GLFWKeyCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
+         (invoke
+           [_this _window k _scancode action mods]
+           (swap! event-buffer #(add-key-event % k action mods)))))
+
+
 (defprotocol InputHandlerProtocol
   (process-char [this codepoint])
   (process-key [this k action mods])
@@ -55,7 +73,7 @@
   ^Boolean [^long action]
   (boolean (#{GLFW/GLFW_PRESS GLFW/GLFW_REPEAT} action)))
 
-(defmulti process-event (fn [event handler] (::event event)))
+(defmulti process-event (fn [event _handler] (::event event)))
 
 
 (defmethod process-event ::char
@@ -253,7 +271,7 @@
 
 
 (defn menu-mouse-button
-  [state gui button x y action mods]
+  [_state gui button x y action _mods]
   (let [nkbutton (cond
                    (= button GLFW/GLFW_MOUSE_BUTTON_RIGHT) Nuklear/NK_BUTTON_RIGHT
                    (= button GLFW/GLFW_MOUSE_BUTTON_MIDDLE) Nuklear/NK_BUTTON_MIDDLE

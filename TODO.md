@@ -1,15 +1,15 @@
 # TODO
 * input module
-  * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
-    * x key (set position)
-    * d, ra, rb, rc, dcx, and dcy for camera
-    * slew v
-  * GUI tabbing
   * joystick with deadzone
     * Create events from each joystick's axes, buttons, and hats (using joystick name)
     * Read out map keys, apply dead zones and create events (e.g. gear toggle, set rudder position, change or set throttle)
     * Map key consists of event type, joystick name and axis or button
     * There are separate sub maps for keys, joystick axes, joystick buttons, ...
+  * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
+    * x key (set position)
+    * d, ra, rb, rc, dcx, and dcy for camera
+    * slew v
+  * GUI tabbing
 * use different accessors for quaternions, vectors, matrices?
 * display version in menu, start ChangeLog
 * switch windows JDK install to 24
