@@ -105,21 +105,22 @@
 
 
 (def default-mappings
-  {GLFW/GLFW_KEY_ESCAPE ::menu
-   GLFW/GLFW_KEY_ENTER  ::fullscreen
-   GLFW/GLFW_KEY_P      ::pause
-   GLFW/GLFW_KEY_G      ::gear
-   GLFW/GLFW_KEY_B      ::brake
-   GLFW/GLFW_KEY_F      ::throttle-decrease
-   GLFW/GLFW_KEY_R      ::throttle-increase
-   GLFW/GLFW_KEY_A      ::aileron-left
-   GLFW/GLFW_KEY_KP_5   ::aileron-center
-   GLFW/GLFW_KEY_D      ::aileron-right
-   GLFW/GLFW_KEY_W      ::elevator-down
-   GLFW/GLFW_KEY_S      ::elevator-up
-   GLFW/GLFW_KEY_Q      ::rudder-left
-   GLFW/GLFW_KEY_E      ::rudder-right
-   })
+  {::keyboard
+   {GLFW/GLFW_KEY_ESCAPE ::menu
+    GLFW/GLFW_KEY_ENTER  ::fullscreen
+    GLFW/GLFW_KEY_P      ::pause
+    GLFW/GLFW_KEY_G      ::gear
+    GLFW/GLFW_KEY_B      ::brake
+    GLFW/GLFW_KEY_F      ::throttle-decrease
+    GLFW/GLFW_KEY_R      ::throttle-increase
+    GLFW/GLFW_KEY_A      ::aileron-left
+    GLFW/GLFW_KEY_KP_5   ::aileron-center
+    GLFW/GLFW_KEY_D      ::aileron-right
+    GLFW/GLFW_KEY_W      ::elevator-down
+    GLFW/GLFW_KEY_S      ::elevator-up
+    GLFW/GLFW_KEY_Q      ::rudder-left
+    GLFW/GLFW_KEY_E      ::rudder-right
+    }})
 
 
 (defn menu-key
@@ -271,9 +272,10 @@
     (when (-> @state ::menu)
       (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
   (process-key [_this k action mods]
-    (if (::menu @state)
-      (-> k (menu-key state gui action mods))
-      (-> k mappings (simulator-key state action mods))))
+    (let [keyboard-mappings (::keyboard mappings)]
+      (if (::menu @state)
+        (-> k (menu-key state gui action mods))
+        (-> k keyboard-mappings (simulator-key state action mods)))))
   (process-mouse-button [_this button x y action mods]
     (menu-mouse-button state gui button x y action mods))
   (process-mouse-move [_this x y]
