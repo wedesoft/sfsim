@@ -254,3 +254,22 @@
          (reset! playback [])
          (process-events (add-mouse-move-event event-buffer 100 60) handler)
          @playback => [{:x 100 :y 60}]))
+
+
+(facts "Process joystick events"
+       (let [event-buffer (make-event-buffer)
+             playback     (atom [])
+             mock-handler (reify InputHandlerProtocol
+                                 (process-joystick-button [_this device button action]
+                                   (swap! playback conj {:device device :button button :action action}))
+                                 (process-joystick-axis [_this device axis value]
+                                   (swap! playback conj {:device device :axis axis :value value})))
+             state        (make-initial-state)
+             gui          {:sfsim.gui/context :ctx}
+             handler      (->InputHandler state gui default-mappings)]
+         (process-events (add-joystick-axis-state event-buffer "Gamepad" [0.5 0.75]) mock-handler)
+         @playback => [{:device "Gamepad" :axis 0 :value 0.5} {:device "Gamepad" :axis 1 :value 0.75}]
+         (process-events (add-joystick-axis-state event-buffer "Gamepad" [0.5 0.75 -0.5 0.0]) handler)
+         (:sfsim.input/aileron @state) => 0.5
+         (:sfsim.input/elevator @state) => 0.75
+         (:sfsim.input/rudder @state) => -0.5))

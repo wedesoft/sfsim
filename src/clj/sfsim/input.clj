@@ -46,6 +46,15 @@
   (conj event-buffer {::event ::mouse-move ::x x ::y y}))
 
 
+(defn add-joystick-axis-state
+  [event-buffer device axes]
+  (reduce
+    (fn [event-buffer [axis value]]
+      (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value}))
+    event-buffer
+    (map-indexed vector axes)))
+
+
 (defn char-callback
   [event-buffer]
   (reify GLFWCharCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
@@ -66,7 +75,9 @@
   (process-char [this codepoint])
   (process-key [this k action mods])
   (process-mouse-button [this button x y action mods])
-  (process-mouse-move [this x y]))
+  (process-mouse-move [this x y])
+  (process-joystick-axis [this device axis value])
+  (process-joystick-button [this device button action]))
 
 
 (defn keypress?
@@ -94,6 +105,11 @@
 (defmethod process-event ::mouse-move
   [event handler]
   (process-mouse-move handler (::x event) (::y event)))
+
+
+(defmethod process-event ::joystick-axis
+  [event handler]
+  (process-joystick-axis handler (::device event) (::axis event) (::value event)))
 
 
 (defn process-events
@@ -138,7 +154,11 @@
     GLFW/GLFW_KEY_S      ::elevator-up
     GLFW/GLFW_KEY_Q      ::rudder-left
     GLFW/GLFW_KEY_E      ::rudder-right
-    }})
+    }
+   ::joysticks
+   {"Gamepad" {::axes {0 ::aileron
+                       1 ::elevator
+                       2 ::rudder}}}})
 
 
 (defn menu-key
@@ -284,6 +304,29 @@
   (Nuklear/nk_input_motion (:sfsim.gui/context gui) (long x) (long y)))
 
 
+(defmulti simulator-joystick-axis (fn [id _state _value] id))
+
+
+; Ignore axes without mapping
+(defmethod simulator-joystick-axis nil
+  [_id _state _value])
+
+
+(defmethod simulator-joystick-axis ::aileron
+  [_id state value]
+  (swap! state assoc ::aileron value))
+
+
+(defmethod simulator-joystick-axis ::elevator
+  [_id state value]
+  (swap! state assoc ::elevator value))
+
+
+(defmethod simulator-joystick-axis ::rudder
+  [_id state value]
+  (swap! state assoc ::rudder value))
+
+
 (defrecord InputHandler [state gui mappings]
   InputHandlerProtocol
   (process-char [_this codepoint]
@@ -297,7 +340,10 @@
   (process-mouse-button [_this button x y action mods]
     (menu-mouse-button state gui button x y action mods))
   (process-mouse-move [_this x y]
-    (menu-mouse-move state gui x y)))
+    (menu-mouse-move state gui x y))
+  (process-joystick-axis [_this device axis value]
+    (let [joystick-mappings (::joysticks mappings)]
+      (simulator-joystick-axis (((joystick-mappings device) ::axes) axis) state value))))
 
 
 (set! *warn-on-reflection* false)
