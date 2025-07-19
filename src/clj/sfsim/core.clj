@@ -33,8 +33,8 @@
                           setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture texture->image)]
-    [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events
-                         add-mouse-move-event add-mouse-button-event ->InputHandler char-callback key-callback)])
+    [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events add-mouse-move-event
+                         add-mouse-button-event joysticks-poll ->InputHandler char-callback key-callback)])
   (:import
     (fastmath.vector
       Vec3)
@@ -796,6 +796,7 @@
         (reset! old-state @state)
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
+        (swap! event-buffer joysticks-poll)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
         (swap! event-buffer #(process-events % input-handler))
         (swap! n inc)

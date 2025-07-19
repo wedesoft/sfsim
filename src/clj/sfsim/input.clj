@@ -5,7 +5,9 @@
 ;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
 
 (ns sfsim.input
-    (:require [sfsim.util :refer (clamp)])
+    (:require
+      [clojure.math :refer (signum)]
+      [sfsim.util :refer (clamp)])
     (:import
       [clojure.lang
        PersistentQueue]
@@ -22,40 +24,37 @@
 
 
 (defn make-event-buffer
+  "Create empty event buffer"
   []
   PersistentQueue/EMPTY)
 
 
 (defn add-char-event
+  "Add character input event to event buffer"
   [event-buffer codepoint]
   (conj event-buffer {::event ::char ::codepoint codepoint}))
 
 
 (defn add-key-event
+  "Add keyboard event to event buffer"
   [event-buffer k action mods]
   (conj event-buffer {::event ::key ::k k ::action action ::mods mods}))
 
 
 (defn add-mouse-button-event
+  "Add mouse button event to event buffer"
   [event-buffer button x y action mods]
   (conj event-buffer {::event ::mouse-button ::button button ::x x ::y y ::action action ::mods mods}))
 
 
 (defn add-mouse-move-event
+  "Add mouse move event to event buffer"
   [event-buffer x y]
   (conj event-buffer {::event ::mouse-move ::x x ::y y}))
 
 
-(defn add-joystick-axis-state
-  [event-buffer device axes]
-  (reduce
-    (fn [event-buffer [axis value]]
-      (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value}))
-    event-buffer
-    (map-indexed vector axes)))
-
-
 (defn char-callback
+  "GLFW callback function for character input events"
   [event-buffer]
   (reify GLFWCharCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
          (invoke
@@ -64,11 +63,58 @@
 
 
 (defn key-callback
+  "GLFW callback function for keyboard events"
   [event-buffer]
   (reify GLFWKeyCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
          (invoke
            [_this _window k _scancode action mods]
            (swap! event-buffer #(add-key-event % k action mods)))))
+
+
+(defn dead-zone
+  "Dead zone function for joystick axis"
+  ^double [^double epsilon ^double value]
+  (let [|value| (abs value)]
+    (if (>= |value| epsilon)
+      (* (signum value) (/ (- |value| epsilon) (- 1.0 epsilon)))
+      0.0)))
+
+
+(defn dead-margins
+  "Dead margins function for throttle stick"
+  ^double [^double epsilon ^double value]
+  (let [|value| (abs value)]
+    (if (>= |value| (- 1.0 epsilon))
+      (signum value)
+      (/ value (- 1.0 epsilon)))))
+
+
+(defn add-joystick-axis-state
+  "Add joystick axis state to event buffer"
+  [event-buffer device axes]
+  (reduce
+    (fn [event-buffer [axis value]]
+      (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value}))
+    event-buffer
+    (map-indexed vector axes)))
+
+
+(defn joystick-poll
+  "Get joystick state of a single joystick and add it to the event buffer"
+  [event-buffer joystick-id]
+  (if (GLFW/glfwJoystickPresent joystick-id)
+    (let [device      (GLFW/glfwGetJoystickName joystick-id)
+          axes-buffer (GLFW/glfwGetJoystickAxes joystick-id)
+          axes        (float-array (.limit axes-buffer))]
+      (.get axes-buffer axes)
+      (add-joystick-axis-state event-buffer device axes))
+    event-buffer))
+
+
+(defn joysticks-poll
+  "Get joystick states of all connected joysticks and add them to the event buffer"
+  [event-buffer]
+  (reduce joystick-poll event-buffer (range GLFW/GLFW_JOYSTICK_1 (inc GLFW/GLFW_JOYSTICK_LAST))))
 
 
 (defprotocol InputHandlerProtocol
@@ -81,8 +127,10 @@
 
 
 (defn keypress?
+  "Check if key is pressed"
   ^Boolean [^long action]
   (boolean (#{GLFW/GLFW_PRESS GLFW/GLFW_REPEAT} action)))
+
 
 (defmulti process-event (fn [event _handler] (::event event)))
 
@@ -124,6 +172,7 @@
 
 
 (defn make-initial-state
+  "Create initial state of game and space craft"
   []
   (atom {::menu          false
          ::fullscreen    false
@@ -153,12 +202,14 @@
     GLFW/GLFW_KEY_W      ::elevator-down
     GLFW/GLFW_KEY_S      ::elevator-up
     GLFW/GLFW_KEY_Q      ::rudder-left
-    GLFW/GLFW_KEY_E      ::rudder-right
-    }
+    GLFW/GLFW_KEY_E      ::rudder-right}
    ::joysticks
-   {"Gamepad" {::axes {0 ::aileron
-                       1 ::elevator
-                       2 ::rudder}}}})
+   {"Rock Candy Gamepad Wired Controller" {::dead-zone 0.1
+                                           ::axes     {0 ::aileron
+                                                       1 ::elevator
+                                                       3 ::rudder
+                                                       4 ::throttle-increment
+                                                       }}}})
 
 
 (defn menu-key
@@ -304,27 +355,58 @@
   (Nuklear/nk_input_motion (:sfsim.gui/context gui) (long x) (long y)))
 
 
-(defmulti simulator-joystick-axis (fn [id _state _value] id))
+(defn simulator-joystick-with-dead-zone
+  "Apply filtered joystick axis value to state"
+  [k epsilon state value]
+  (swap! state assoc k (dead-zone epsilon value)))
+
+
+(defmulti simulator-joystick-axis (fn [id epsilon _state _value] id))
 
 
 ; Ignore axes without mapping
 (defmethod simulator-joystick-axis nil
-  [_id _state _value])
+  [_id _epsilon _state _value])
+
+
+(defmethod simulator-joystick-axis ::aileron-inverted
+  [_id epsilon state value]
+  (simulator-joystick-with-dead-zone ::aileron epsilon state value))
 
 
 (defmethod simulator-joystick-axis ::aileron
-  [_id state value]
-  (swap! state assoc ::aileron value))
+  [_id epsilon state value]
+  (simulator-joystick-with-dead-zone ::aileron epsilon state (- ^double value)))
+
+
+(defmethod simulator-joystick-axis ::elevator-inverted
+  [_id epsilon state value]
+  (simulator-joystick-with-dead-zone ::elevator epsilon state value))
 
 
 (defmethod simulator-joystick-axis ::elevator
-  [_id state value]
-  (swap! state assoc ::elevator value))
+  [_id epsilon state value]
+  (simulator-joystick-with-dead-zone ::elevator epsilon state (- ^double value)))
+
+
+(defmethod simulator-joystick-axis ::rudder-inverted
+  [_id epsilon state value]
+  (simulator-joystick-with-dead-zone ::rudder epsilon state value))
 
 
 (defmethod simulator-joystick-axis ::rudder
-  [_id state value]
-  (swap! state assoc ::rudder value))
+  [_id epsilon state value]
+  (simulator-joystick-with-dead-zone ::rudder epsilon state (- ^double value)))
+
+
+(defmethod simulator-joystick-axis ::throttle
+  [_id epsilon state value]
+  (swap! state assoc ::throttle (dead-margins epsilon value)))
+
+
+(defmethod simulator-joystick-axis ::throttle-increment
+  [_id epsilon state value]
+  (increment-clamp state ::throttle (* ^double (dead-zone epsilon value) -0.0625) 0.0 1.0))
 
 
 (defrecord InputHandler [state gui mappings]
@@ -342,8 +424,8 @@
   (process-mouse-move [_this x y]
     (menu-mouse-move state gui x y))
   (process-joystick-axis [_this device axis value]
-    (let [joystick-mappings (::joysticks mappings)]
-      (simulator-joystick-axis (((joystick-mappings device) ::axes) axis) state value))))
+    (let [joystick (some-> mappings ::joysticks (get device))]
+      (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> joystick ::dead-zone) state value))))
 
 
 (set! *warn-on-reflection* false)
