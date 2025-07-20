@@ -361,7 +361,7 @@
   (swap! state assoc k (dead-zone epsilon value)))
 
 
-(defmulti simulator-joystick-axis (fn [id epsilon _state _value] id))
+(defmulti simulator-joystick-axis (fn [id _epsilon _state _value] id))
 
 
 ; Ignore axes without mapping
