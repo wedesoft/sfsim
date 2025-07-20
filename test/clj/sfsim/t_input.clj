@@ -322,9 +322,9 @@
          (process-events (add-joystick-axis-state event-buffer "Gamepad" [-0.75]) handler-zn)
          (:sfsim.input/aileron @state) => 0.5
          (process-events (add-joystick-axis-state event-buffer "Gamepad" [0.75]) handler-throttle)
-         (:sfsim.input/throttle @state) => 0.75
+         (:sfsim.input/throttle @state) => 0.125
          (process-events (add-joystick-axis-state event-buffer "Gamepad" [0.25]) handler-throttle-zn)
-         (:sfsim.input/throttle @state) => 0.5
+         (:sfsim.input/throttle @state) => 0.25
          (swap! state assoc :sfsim.input/throttle 0.0)
          (process-events (add-joystick-axis-state event-buffer "Gamepad" [-1.0]) handler-throttle-incr)
          (:sfsim.input/throttle @state) => 0.0625

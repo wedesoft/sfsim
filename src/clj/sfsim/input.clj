@@ -208,8 +208,12 @@
                                            ::axes     {0 ::aileron
                                                        1 ::elevator
                                                        3 ::rudder
-                                                       4 ::throttle-increment
-                                                       }}}})
+                                                       4 ::throttle-increment}}
+    "Thrustmaster T.A320 Copilot" {::dead-zone 0.1
+                                   ::axes {0 ::aileron
+                                           1 ::elevator
+                                           2 ::rudder
+                                           3 ::throttle}}}})
 
 
 (defn menu-key
@@ -401,7 +405,7 @@
 
 (defmethod simulator-joystick-axis ::throttle
   [_id epsilon state value]
-  (swap! state assoc ::throttle (dead-margins epsilon value)))
+  (swap! state assoc ::throttle (* 0.5 (- 1.0 (dead-margins epsilon value)))))
 
 
 (defmethod simulator-joystick-axis ::throttle-increment

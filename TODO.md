@@ -7,6 +7,8 @@
     * Map key consists of event type, joystick name and axis or button
     * There are separate sub maps for keys, joystick axes, joystick buttons, ...
     * test dual axis mapping for game controller under Linux
+    * configuration dialog for aileron, elevator, rudder, and throttle
+    * configuration dialog for brake, parking brake, gear, air brake, elevator trim, camera angle (hat), camera views
   * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
     * x key (set position)
     * d, ra, rb, rc, dcx, and dcy for camera
