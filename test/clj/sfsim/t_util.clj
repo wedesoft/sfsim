@@ -196,6 +196,12 @@
       (size-of-shape [2 3 5]) => 30)
 
 
+(facts "Clamp value between minimum and maximum"
+       (clamp 0.0 -3.0 5.0) => 0.0
+       (clamp 10.0 -3.0 5.0) => 5.0
+       (clamp -10.0 -3.0 5.0) => -3.0)
+
+
 (facts "Compute quotient and limit it"
        (limit-quot 0.0 0.0 1.0) => 0.0
        (limit-quot 4.0 2.0 1.0) => 1.0
