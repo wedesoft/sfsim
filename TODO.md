@@ -1,12 +1,10 @@
 # TODO
 * input module
   * joystick
-    * Create events from each joystick's buttons, and hats (using joystick name)
-    * only create button events when different from previous state
-    * Read out map keys, apply dead zones and create events (e.g. gear toggle, set rudder position, change or set throttle)
-    * Map key consists of event type, joystick name and axis or button
-    * There are separate sub maps for keys, joystick axes, joystick buttons, ...
-    * test dual axis mapping for game controller under Linux
+    * when menu is open, return moved joystick axis and pressed buttons
+    * Create events from each joystick's buttons, and hats (using joystick name),
+      only create button events when different from previous state
+    * test twin-axis mapping for game controller under Linux
     * configuration dialog for aileron, elevator, rudder, and throttle
     * configuration dialog for brake, parking brake, gear, air brake, elevator trim, camera angle (hat), camera views
   * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
@@ -15,7 +13,7 @@
     * slew v
   * GUI tabbing
   * move event polling into input module
-* use different accessors for quaternions, vectors, matrices?
+* use different accessors for quaternions, vectors, matrices? (use Codeium to generate benchmark program)
 * display version in menu, start ChangeLog
 * switch windows JDK install to 24
 * simple third person HUD speed and altitude (AGL/radar)

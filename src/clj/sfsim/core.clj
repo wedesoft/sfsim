@@ -17,6 +17,7 @@
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
+    [sfsim.version :refer (version)]
     [sfsim.clouds :as clouds]
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
@@ -472,8 +473,10 @@
 
 (defn main-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
+  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 5)) 2) 320 (* 38 5)
                       (gui/layout-row-dynamic gui 32 1)
+                      (gui/text-label gui (format "sfsim %s" version)
+                                      (bit-or Nuklear/NK_TEXT_ALIGN_CENTERED Nuklear/NK_TEXT_ALIGN_MIDDLE))
                       (when (gui/button-label gui "Location")
                         (location-dialog-set position-data @pose)
                         (reset! menu location-dialog))
