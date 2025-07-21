@@ -99,14 +99,29 @@
     (map-indexed vector axes)))
 
 
+(defn add-joystick-button-state
+  "Add joystick button state to event buffer"
+  [event-buffer device buttons]
+  (reduce
+    (fn [event-buffer [button value]]
+        (if (not (zero? ^long value))
+          (conj event-buffer {::event ::joystick-button ::device device ::button button ::action GLFW/GLFW_PRESS})
+          event-buffer))
+    event-buffer
+    (map-indexed vector buttons)))
+
+
 (defn joystick-poll
   "Get joystick state of a single joystick and add it to the event buffer"
   [event-buffer joystick-id]
   (if (GLFW/glfwJoystickPresent joystick-id)
-    (let [device      (GLFW/glfwGetJoystickName joystick-id)
-          axes-buffer (GLFW/glfwGetJoystickAxes joystick-id)
-          axes        (float-array (.limit axes-buffer))]
+    (let [device         (GLFW/glfwGetJoystickName joystick-id)
+          axes-buffer    (GLFW/glfwGetJoystickAxes joystick-id)
+          axes           (float-array (.limit axes-buffer))
+          buttons-buffer (GLFW/glfwGetJoystickButtons joystick-id)
+          buttons        (byte-array (.limit buttons-buffer))]
       (.get axes-buffer axes)
+      (.get buttons-buffer buttons)
       (add-joystick-axis-state event-buffer device axes))
     event-buffer))
 
@@ -158,6 +173,11 @@
 (defmethod process-event ::joystick-axis
   [event handler]
   (process-joystick-axis handler (::device event) (::axis event) (::value event)))
+
+
+(defmethod process-event ::joystick-button
+  [event handler]
+  (process-joystick-button handler (::device event) (::button event) (::action event)))
 
 
 (defn process-events

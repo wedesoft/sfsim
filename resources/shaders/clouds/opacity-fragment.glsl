@@ -63,7 +63,11 @@ void main()
       sample_point -= light_step;
     };
   };
-  if (previous_transmittance == 1.0)
+  if (previous_transmittance == 1.0) {
     start_depth = depth;
+<% (doseq [i (range 1 num-layers)] %>
+    opacity_layer_<%= i %> = 1.0;
+<% ) %>
+  };
   opacity_offset = 1.0 - start_depth / depth;
 }

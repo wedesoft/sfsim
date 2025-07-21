@@ -274,12 +274,10 @@
        (dead-margins 0.5 -1.0) => -1.0)
 
 
-(facts "Process joystick events"
+(facts "Process joystick axis events"
        (let [event-buffer             (make-event-buffer)
              playback                 (atom [])
              mock-handler             (reify InputHandlerProtocol
-                                             (process-joystick-button [_this device button action]
-                                               (swap! playback conj {:device device :button button :action action}))
                                              (process-joystick-axis [_this device axis value]
                                                (swap! playback conj {:device device :axis axis :value value})))
              state                    (make-initial-state)
@@ -334,3 +332,15 @@
          (process-events (add-joystick-axis-state event-buffer "Gamepad" [-0.75]) handler-throttle-incr-zn)
          (:sfsim.input/throttle @state) => (* 0.5 0.0625)
          (process-events (add-joystick-axis-state event-buffer "Unknown" [0.0 0.0]) handler)))
+
+
+(facts "Process joystick button events"
+       (let [event-buffer             (make-event-buffer)
+             playback                 (atom [])
+             mock-handler             (reify InputHandlerProtocol
+                                             (process-joystick-button [_this device button action]
+                                               (swap! playback conj {:device device :button button :action action})))]
+         (process-events (add-joystick-button-state event-buffer "Gamepad" [0 0]) mock-handler)
+         @playback => []
+         (process-events (add-joystick-button-state event-buffer "Gamepad" [0 1]) mock-handler)
+         @playback => [{:device "Gamepad" :button 1 :action GLFW/GLFW_PRESS}]))
