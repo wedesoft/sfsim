@@ -1,7 +1,7 @@
 # TODO
 * input module
   * joystick
-    * when menu is open, return moved joystick axis and pressed buttons
+    * when menu is open, return last moved joystick axis and pressed buttons (are all axes centered at zero under Windows?)
     * Create events from each joystick's buttons, and hats (using joystick name),
       only create button events when different from previous state
     * test twin-axis mapping for game controller under Linux
@@ -14,7 +14,6 @@
   * GUI tabbing
   * move event polling into input module
 * use different accessors for quaternions, vectors, matrices? (use Codeium to generate benchmark program)
-* display version in menu, start ChangeLog
 * switch windows JDK install to 24
 * simple third person HUD speed and altitude (AGL/radar)
 * add tested implementation for input handling

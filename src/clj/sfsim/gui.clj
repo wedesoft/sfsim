@@ -456,7 +456,7 @@
   ([gui label]
    (text-label gui label (bit-or Nuklear/NK_TEXT_ALIGN_LEFT Nuklear/NK_TEXT_ALIGN_MIDDLE)))
   ([gui label alignment]
-   (Nuklear/nk_label ^NkContext (::context gui) ^String label alignment)))
+   (Nuklear/nk_label ^NkContext (::context gui) ^String label ^long alignment)))
 
 
 (defn edit-set
