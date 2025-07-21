@@ -337,10 +337,24 @@
 (facts "Process joystick button events"
        (let [event-buffer             (make-event-buffer)
              playback                 (atom [])
+             button-state             (atom {})
              mock-handler             (reify InputHandlerProtocol
                                              (process-joystick-button [_this device button action]
-                                               (swap! playback conj {:device device :button button :action action})))]
-         (process-events (add-joystick-button-state event-buffer "Gamepad" [0 0]) mock-handler)
+                                               (swap! playback conj {:device device :button button :action action})))
+             mappings                 {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/buttons {1 :sfsim.input/gear}}}}
+             state                    (make-initial-state)
+             gui                      {:sfsim.gui/context :ctx}
+             handler                  (->InputHandler state gui mappings)]
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0]) mock-handler)
          @playback => []
-         (process-events (add-joystick-button-state event-buffer "Gamepad" [0 1]) mock-handler)
-         @playback => [{:device "Gamepad" :button 1 :action GLFW/GLFW_PRESS}]))
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 1]) mock-handler)
+         @playback => [{:device "Gamepad" :button 1 :action GLFW/GLFW_PRESS}]
+         (reset! playback [])
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 1]) mock-handler)
+         @playback => [{:device "Gamepad" :button 1 :action GLFW/GLFW_REPEAT}]
+         (reset! playback [])
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0]) mock-handler)
+         @playback => [{:device "Gamepad" :button 1 :action GLFW/GLFW_RELEASE}]
+         (:sfsim.input/gear-down @state) => true
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 1]) handler)
+         (:sfsim.input/gear-down @state) => false))

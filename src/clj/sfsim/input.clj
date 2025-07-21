@@ -7,7 +7,7 @@
 (ns sfsim.input
     (:require
       [clojure.math :refer (signum)]
-      [sfsim.util :refer (clamp)])
+      [sfsim.util :refer (clamp dissoc-in)])
     (:import
       [clojure.lang
        PersistentQueue]
@@ -101,14 +101,24 @@
 
 (defn add-joystick-button-state
   "Add joystick button state to event buffer"
-  [event-buffer device buttons]
+  [event-buffer button-state device buttons]
   (reduce
     (fn [event-buffer [button value]]
-        (if (not (zero? ^long value))
-          (conj event-buffer {::event ::joystick-button ::device device ::button button ::action GLFW/GLFW_PRESS})
-          event-buffer))
+        (let [already-pressed (get-in @button-state [device button])]
+          (if (not (zero? ^long value))
+            (let [action (if already-pressed GLFW/GLFW_REPEAT GLFW/GLFW_PRESS)]
+              (swap! button-state assoc-in [device button] true)
+              (conj event-buffer {::event ::joystick-button ::device device ::button button ::action action}))
+            (if already-pressed
+              (do
+                (swap! button-state dissoc-in [device button])
+                (conj event-buffer {::event ::joystick-button ::device device ::button button ::action GLFW/GLFW_RELEASE}))
+              event-buffer))))
     event-buffer
     (map-indexed vector buttons)))
+
+
+(def joystick-buttons-state (atom {}))  ; TODO: make this non-global
 
 
 (defn joystick-poll
@@ -122,7 +132,9 @@
           buttons        (byte-array (.limit buttons-buffer))]
       (.get axes-buffer axes)
       (.get buttons-buffer buttons)
-      (add-joystick-axis-state event-buffer device axes))
+      (-> event-buffer
+          (add-joystick-axis-state device axes)
+          (add-joystick-button-state joystick-buttons-state device buttons)))
     event-buffer))
 
 
@@ -225,10 +237,11 @@
     GLFW/GLFW_KEY_E      ::rudder-right}
    ::joysticks
    {"Rock Candy Gamepad Wired Controller" {::dead-zone 0.1
-                                           ::axes     {0 ::aileron
-                                                       1 ::elevator
-                                                       3 ::rudder
-                                                       4 ::throttle-increment}}
+                                           ::axes {0 ::aileron
+                                                   1 ::elevator
+                                                   3 ::rudder
+                                                   4 ::throttle-increment}
+                                           ::buttons {0 ::gear}}
     "Thrustmaster T.A320 Copilot" {::dead-zone 0.1
                                    ::axes {0 ::aileron
                                            1 ::elevator
@@ -433,6 +446,20 @@
   (increment-clamp state ::throttle (* ^double (dead-zone epsilon value) -0.0625) 0.0 1.0))
 
 
+(defmulti simulator-joystick-button (fn [id _state _action] id))
+
+
+; Ignore buttons without mapping
+(defmethod simulator-joystick-button nil
+  [_id _state _action])
+
+
+(defmethod simulator-joystick-button ::gear
+  [_id state action]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::gear-down not)))
+
+
 (defrecord InputHandler [state gui mappings]
   InputHandlerProtocol
   (process-char [_this codepoint]
@@ -449,7 +476,10 @@
     (menu-mouse-move state gui x y))
   (process-joystick-axis [_this device axis value]
     (let [joystick (some-> mappings ::joysticks (get device))]
-      (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> joystick ::dead-zone) state value))))
+      (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> joystick ::dead-zone) state value)))
+  (process-joystick-button [_this device button action]
+    (let [joystick (some-> mappings ::joysticks (get device))]
+      (simulator-joystick-button (some-> joystick ::buttons (get button)) state action))))
 
 
 (set! *warn-on-reflection* false)
