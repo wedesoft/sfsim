@@ -30,7 +30,9 @@ void main()
   float start_segment = intersections.x;
   float extent_segment = intersections.y;
   int current_layer = 0;
-  opacity_layer_0 = 1.0;
+<% (doseq [i (range num-layers)] %>
+  opacity_layer_<%= i %> = 1.0;
+<% ) %>
   if (extent_segment > 0) {
     float s = start_segment;
     vec3 sample_point = fs_in.origin - start_segment * light_direction;
@@ -63,11 +65,7 @@ void main()
       sample_point -= light_step;
     };
   };
-  if (previous_transmittance == 1.0) {
+  if (previous_transmittance == 1.0)
     start_depth = depth;
-<% (doseq [i (range 1 num-layers)] %>
-    opacity_layer_<%= i %> = 1.0;
-<% ) %>
-  };
   opacity_offset = 1.0 - start_depth / depth;
 }
