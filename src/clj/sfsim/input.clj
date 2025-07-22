@@ -241,7 +241,10 @@
                                                    1 ::elevator
                                                    3 ::rudder
                                                    4 ::throttle-increment}
-                                           ::buttons {0 ::gear}}
+                                           ::buttons {0 ::gear
+                                                      1 ::brake
+                                                      2 ::parking-brake
+                                                      }}
     "Thrustmaster T.A320 Copilot" {::dead-zone 0.1
                                    ::axes {0 ::aileron
                                            1 ::elevator
@@ -458,6 +461,19 @@
   [_id state action]
   (when (= action GLFW/GLFW_PRESS)
     (swap! state update ::gear-down not)))
+
+
+(defmethod simulator-joystick-button ::brake
+  [_id state action]
+  (swap! state assoc ::brake (keypress? action))
+  (when (keypress? action)
+    (swap! state assoc ::parking-brake false)))
+
+
+(defmethod simulator-joystick-button ::parking-brake
+  [_id state action]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state assoc ::parking-brake true)))
 
 
 (defrecord InputHandler [state gui mappings]

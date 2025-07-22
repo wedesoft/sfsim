@@ -1,18 +1,21 @@
 # TODO
 * input module
   * joystick
-    * when menu is open, return last moved joystick axis and pressed buttons (are all axes centered at zero under Windows?)
-    * Create events from each joystick's buttons, and hats (using joystick name),
-      only create button events when different from previous state
+    * Create events from joystick hats (using joystick name)
+    * when menu is open, return last moved joystick axis (and then recapture state for diffing again) and pressed buttons
+    * axis configuration dialog for aileron, elevator, rudder, and throttle
+      button configuration for gear, brake, parking brake, elevator trim, camera views, nav lights, strobe lights, landing lights
+      hat configuration for camera angle
+    * add joystick configuration
     * test twin-axis mapping for game controller under Linux
-    * configuration dialog for aileron, elevator, rudder, and throttle
-    * configuration dialog for brake, parking brake, gear, air brake, elevator trim, camera angle (hat), camera views
+    * configuration dialog for air brake, elevator trim (hat?), camera angle (hat), camera views
   * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
     * x key (set position)
     * d, ra, rb, rc, dcx, and dcy for camera
     * slew v
   * GUI tabbing
   * move event polling into input module
+* block gear up when on the ground
 * use different accessors for quaternions, vectors, matrices? (use Codeium to generate benchmark program)
 * switch windows JDK install to 24
 * simple third person HUD speed and altitude (AGL/radar)
@@ -22,15 +25,14 @@
   * RMB/LMB to gradually move rudder right and left while holding the buttons pressed
   * wheel click to reset rudder
   * wheel up/down to increase/decrease throttle level
-* now fix reflection warnings
-* simulate speed of control surfaces hydraulics
+* fix reflection warnings in build script
 * air brakes
-* animate control surfaces
-* add joystick configuration
-* add configuration dialog for input
+* elevator trim
+* following camera, different camera views
+* animate control surfaces and air brake
+* nav lights, strobe lights, landing lights
 * use transients when updating transforms in model
 * add lift or force caused by pitch rate
-* following camera, different camera views
 * low FPS at 100km height was reported
 * effect of control surfaces needs to diminish with changing wind vector
 * thrust graphics, opengl rocket plume

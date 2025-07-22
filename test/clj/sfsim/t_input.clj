@@ -341,7 +341,10 @@
              mock-handler             (reify InputHandlerProtocol
                                              (process-joystick-button [_this device button action]
                                                (swap! playback conj {:device device :button button :action action})))
-             mappings                 {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/buttons {1 :sfsim.input/gear}}}}
+             mappings                 {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/buttons {1 :sfsim.input/gear
+                                                                                                2 :sfsim.input/brake
+                                                                                                3 :sfsim.input/parking-brake
+                                                                                                }}}}
              state                    (make-initial-state)
              gui                      {:sfsim.gui/context :ctx}
              handler                  (->InputHandler state gui mappings)]
@@ -357,4 +360,18 @@
          @playback => [{:device "Gamepad" :button 1 :action GLFW/GLFW_RELEASE}]
          (:sfsim.input/gear-down @state) => true
          (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 1]) handler)
-         (:sfsim.input/gear-down @state) => false))
+         (:sfsim.input/gear-down @state) => false
+         (:sfsim.input/brake @state) => false
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1]) handler)
+         (:sfsim.input/brake @state) => true
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1]) handler)
+         (:sfsim.input/brake @state) => true
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0]) handler)
+         (:sfsim.input/brake @state) => false
+         (:sfsim.input/parking-brake @state) => false
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 1]) handler)
+         (:sfsim.input/parking-brake @state) => true
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0]) handler)
+         (:sfsim.input/parking-brake @state) => true
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1 0]) handler)
+         (:sfsim.input/parking-brake @state) => false))

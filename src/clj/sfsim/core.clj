@@ -520,7 +520,7 @@
 
 (defn info
   [gui ^long h ^String text]
-  (gui/nuklear-window gui "info" 10 (- h 42) 480 32
+  (gui/nuklear-window gui "info" 10 (- h 42) 640 32
                       (gui/layout-row-dynamic gui 32 1)
                       (gui/text-label gui text)))
 
@@ -776,9 +776,10 @@
                            (when (not playback)
                              (stick gui aileron elevator rudder throttle)
                              (info gui @window-height
-                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s"
+                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s%s"
                                            (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
                                            (mag (jolt/get-linear-velocity body)) (/ 1.0 ^double @frametime)
+                                           (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
                                            (if (@state :sfsim.input/pause) ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
