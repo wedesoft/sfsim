@@ -278,11 +278,11 @@
        (let [event-buffer             (make-event-buffer)
              playback                 (atom [])
              mock-handler             (reify InputHandlerProtocol
-                                             (process-joystick-axis [_this device axis value]
+                                             (process-joystick-axis [_this device axis value moved]
                                                (swap! playback conj {:device device :axis axis :value value})))
              state                    (make-initial-state)
-             axis-state               (atom {})
              gui                      {:sfsim.gui/context :ctx}
+             axis-state               (atom {})
              mappings                 {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron
                                                                                              1 :sfsim.input/elevator
                                                                                              2 :sfsim.input/rudder}
@@ -381,11 +381,11 @@
 (facts "Recording last active joystick axis or button"
        (let [event-buffer (make-event-buffer)
              gui          {:sfsim.gui/context :ctx}
-             axis-state   (atom {})
              state        (atom {:sfsim.input/menu true})
+             axis-state   (atom {})
              mappings     {}
              handler      (->InputHandler state gui mappings)]
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [0.0 0.0]) handler)
-         (@state ::last-joystick-axis) => nil
+         (@state :sfsim.input/last-joystick-axis) => nil
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [1.0 0.0]) handler)
-         (@state ::last-joystick-axis) => ["Gamepad" 1]))
+         (@state :sfsim.input/last-joystick-axis) => ["Gamepad" 0]))

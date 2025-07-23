@@ -94,9 +94,11 @@
   [event-buffer axis-state device axes]
   (reduce
     (fn [event-buffer [axis value]]
-        (let [previous-value (or (get-in @axis-state [::axes device axis]) 0.0)]
-          (swap! axis-state assoc-in [::axes device axis] value)
-          (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value})))
+        (let [previous (or (get-in @axis-state [device axis]) 0.0)
+              moved    (>= (abs (- ^double value ^double previous)) 0.5)]
+          (when moved
+            (swap! axis-state assoc-in [device axis] value))
+          (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value ::moved moved})))
     event-buffer
     (map-indexed vector axes)))
 
@@ -120,7 +122,8 @@
     (map-indexed vector buttons)))
 
 
-(def joystick-buttons-state (atom {}))  ; TODO: make this non-global
+(def joystick-buttons-state (atom {}))
+(def joystick-axis-state (atom {}))
 
 
 (defn joystick-poll
@@ -135,7 +138,7 @@
       (.get axes-buffer axes)
       (.get buttons-buffer buttons)
       (-> event-buffer
-          (add-joystick-axis-state device axes)
+          (add-joystick-axis-state joystick-axis-state device axes)
           (add-joystick-button-state joystick-buttons-state device buttons)))
     event-buffer))
 
@@ -151,7 +154,7 @@
   (process-key [this k action mods])
   (process-mouse-button [this button x y action mods])
   (process-mouse-move [this x y])
-  (process-joystick-axis [this device axis value])
+  (process-joystick-axis [this device axis value moved])
   (process-joystick-button [this device button action]))
 
 
@@ -185,8 +188,8 @@
 
 
 (defmethod process-event ::joystick-axis
-  [event handler]
-  (process-joystick-axis handler (::device event) (::axis event) (::value event)))
+  [{::keys [device axis value moved]} handler]
+  (process-joystick-axis handler device axis value moved))
 
 
 (defmethod process-event ::joystick-button
@@ -478,6 +481,12 @@
     (swap! state assoc ::parking-brake true)))
 
 
+(defn menu-joystick-axis
+  [state device axis _value moved]
+  (when moved
+    (swap! state assoc ::last-joystick-axis [device axis])))
+
+
 (defrecord InputHandler [state gui mappings]
   InputHandlerProtocol
   (process-char [_this codepoint]
@@ -492,9 +501,11 @@
     (menu-mouse-button state gui button x y action mods))
   (process-mouse-move [_this x y]
     (menu-mouse-move state gui x y))
-  (process-joystick-axis [_this device axis value]
-    (let [joystick (some-> mappings ::joysticks (get device))]
-      (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> joystick ::dead-zone) state value)))
+  (process-joystick-axis [_this device axis value moved]
+    (if (-> @state ::menu)
+      (menu-joystick-axis state device axis value moved)
+      (let [joystick (some-> mappings ::joysticks (get device))]
+        (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> joystick ::dead-zone) state value))))
   (process-joystick-button [_this device button action]
     (let [joystick (some-> mappings ::joysticks (get device))]
       (simulator-joystick-button (some-> joystick ::buttons (get button)) state action))))
