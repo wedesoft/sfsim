@@ -382,10 +382,17 @@
        (let [event-buffer (make-event-buffer)
              gui          {:sfsim.gui/context :ctx}
              state        (atom {:sfsim.input/menu true})
+             button-state (atom {})
              axis-state   (atom {})
              mappings     {}
              handler      (->InputHandler state gui mappings)]
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0]) handler)
+         (@state :sfsim.input/last-joystick-button) => nil
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1]) handler)
+         (@state :sfsim.input/last-joystick-button) => ["Gamepad" 2]
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [0.0 0.0]) handler)
          (@state :sfsim.input/last-joystick-axis) => nil
+         (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [1.0 0.0]) handler)
+         (@state :sfsim.input/last-joystick-axis) => ["Gamepad" 0]
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [1.0 0.0]) handler)
          (@state :sfsim.input/last-joystick-axis) => ["Gamepad" 0]))

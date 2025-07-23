@@ -487,10 +487,16 @@
     (swap! state assoc ::last-joystick-axis [device axis])))
 
 
+(defn menu-joystick-button
+  [state device button action]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state assoc ::last-joystick-button [device button])))
+
+
 (defrecord InputHandler [state gui mappings]
   InputHandlerProtocol
   (process-char [_this codepoint]
-    (when (-> @state ::menu)
+    (when (::menu @state)
       (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
   (process-key [_this k action mods]
     (let [keyboard-mappings (::keyboard mappings)]
@@ -502,13 +508,15 @@
   (process-mouse-move [_this x y]
     (menu-mouse-move state gui x y))
   (process-joystick-axis [_this device axis value moved]
-    (if (-> @state ::menu)
+    (if (::menu @state)
       (menu-joystick-axis state device axis value moved)
       (let [joystick (some-> mappings ::joysticks (get device))]
         (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> joystick ::dead-zone) state value))))
   (process-joystick-button [_this device button action]
-    (let [joystick (some-> mappings ::joysticks (get device))]
-      (simulator-joystick-button (some-> joystick ::buttons (get button)) state action))))
+    (if (@state ::menu)
+      (menu-joystick-button state device button action)
+      (let [joystick (some-> mappings ::joysticks (get device))]
+        (simulator-joystick-button (some-> joystick ::buttons (get button)) state action)))))
 
 
 (set! *warn-on-reflection* false)
