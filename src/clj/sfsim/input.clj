@@ -91,7 +91,7 @@
 
 (defn add-joystick-axis-state
   "Add joystick axis state to event buffer"
-  [event-buffer device axes]
+  [event-buffer axis-state device axes]
   (reduce
     (fn [event-buffer [axis value]]
       (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value}))
