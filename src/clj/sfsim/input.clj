@@ -94,7 +94,9 @@
   [event-buffer axis-state device axes]
   (reduce
     (fn [event-buffer [axis value]]
-      (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value}))
+        (let [previous-value (or (get-in @axis-state [::axes device axis]) 0.0)]
+          (swap! axis-state assoc-in [::axes device axis] value)
+          (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value})))
     event-buffer
     (map-indexed vector axes)))
 

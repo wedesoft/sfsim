@@ -381,9 +381,11 @@
 (facts "Recording last active joystick axis or button"
        (let [event-buffer (make-event-buffer)
              gui          {:sfsim.gui/context :ctx}
-             axis-state   {}
+             axis-state   (atom {})
              state        (atom {:sfsim.input/menu true})
              mappings     {}
              handler      (->InputHandler state gui mappings)]
-         (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [0 0]) handler)
-         (@state ::last-joystick-axis) => nil))
+         (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [0.0 0.0]) handler)
+         (@state ::last-joystick-axis) => nil
+         (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [1.0 0.0]) handler)
+         (@state ::last-joystick-axis) => ["Gamepad" 1]))
