@@ -35,7 +35,8 @@
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture texture->image)]
     [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events add-mouse-move-event
-                         add-mouse-button-event joysticks-poll ->InputHandler char-callback key-callback)])
+                         add-mouse-button-event joysticks-poll ->InputHandler char-callback key-callback
+                         get-joystick-axis-for-mapping)])
   (:import
     (fastmath.vector
       Vec3)
@@ -361,6 +362,44 @@
         (jolt/optimize-broad-phase)))))
 
 
+(defn joystick-dialog
+  [gui ^long window-width ^long window-height]
+  (gui/nuklear-window gui "joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 6)) 2) 640 (* 37 6)
+                      (gui/layout-row gui 32 2
+                                      (gui/layout-row-push gui 0.2)
+                                      (when (gui/button-label gui "Aileron")
+                                        (swap! state assoc ::joystick-configuration ::aileron))
+                                      (gui/layout-row-push gui 0.8)
+                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/aileron))))
+                      (gui/layout-row gui 32 2
+                                      (gui/layout-row-push gui 0.2)
+                                      (when (gui/button-label gui "Elevator")
+                                        (swap! state assoc ::joystick-configuration ::elevator))
+                                      (gui/layout-row-push gui 0.8)
+                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/elevator))))
+                      (gui/layout-row gui 32 2
+                                      (gui/layout-row-push gui 0.2)
+                                      (when (gui/button-label gui "Rudder")
+                                        (swap! state assoc ::joystick-configuration ::rudder))
+                                      (gui/layout-row-push gui 0.8)
+                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/rudder))))
+                      (gui/layout-row gui 32 2
+                                      (gui/layout-row-push gui 0.2)
+                                      (when (gui/button-label gui "Throttle")
+                                        (swap! state assoc ::joystick-configuration ::throttle))
+                                      (gui/layout-row-push gui 0.8)
+                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/throttle))))
+                      (gui/layout-row gui 32 2
+                                      (gui/layout-row-push gui 0.2)
+                                      (when (gui/button-label gui "Throttle Increment")
+                                        (swap! state assoc ::joystick-configuration ::throttle-increment))
+                                      (gui/layout-row-push gui 0.8)
+                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/throttle-increment))))
+                      (gui/layout-row-dynamic gui 32 1)
+                      (when (gui/button-label gui "Close")
+                        (reset! menu main-dialog))))
+
+
 (defn location-dialog-get
   [position-data]
   (let [longitude   (to-radians (Double/parseDouble (gui/edit-get (:longitude position-data))))
@@ -384,7 +423,7 @@
 
 (defn location-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "location" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
+  (gui/nuklear-window gui "location" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4)
                       (gui/layout-row-dynamic gui 32 2)
                       (gui/text-label gui "Longitude (East)")
                       (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
@@ -437,7 +476,7 @@
 
 (defn datetime-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "datetime" (quot (- window-width 320) 2) (quot (- window-height (* 38 3)) 2) 320 (* 38 3)
+  (gui/nuklear-window gui "datetime" (quot (- window-width 320) 2) (quot (- window-height (* 37 3)) 2) 320 (* 37 3)
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.4)
                                       (gui/text-label gui "Date")
@@ -473,10 +512,12 @@
 
 (defn main-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 5)) 2) 320 (* 38 5)
+  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6)
                       (gui/layout-row-dynamic gui 32 1)
                       (gui/text-label gui (format "sfsim %s" version)
                                       (bit-or Nuklear/NK_TEXT_ALIGN_CENTERED Nuklear/NK_TEXT_ALIGN_MIDDLE))
+                      (when (gui/button-label gui "Joystick")
+                        (reset! menu joystick-dialog))
                       (when (gui/button-label gui "Location")
                         (location-dialog-set position-data @pose)
                         (reset! menu location-dialog))

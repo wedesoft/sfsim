@@ -274,6 +274,14 @@
        (dead-margins 0.5 -1.0) => -1.0)
 
 
+(facts "Get joystick and axis for a mapping"
+       (let [mappings {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron}}
+                                               "Throttle" {:sfsim.input/axes {1 :sfsim.input/throttle}}}}]
+         (get-joystick-axis-for-mapping {} ["Gamepad"] :sfsim.input/aileron) => nil
+         (get-joystick-axis-for-mapping mappings ["Gamepad"] :sfsim.input/aileron) => ["Gamepad" 0]
+         (get-joystick-axis-for-mapping mappings ["Gamepad" "Throttle"] :sfsim.input/throttle) => ["Throttle" 1]))
+
+
 (facts "Process joystick axis events"
        (let [event-buffer             (make-event-buffer)
              playback                 (atom [])
