@@ -17,6 +17,7 @@
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
+    [sfsim.version :refer (version)]
     [sfsim.clouds :as clouds]
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
@@ -472,8 +473,10 @@
 
 (defn main-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 4)) 2) 320 (* 38 4)
+  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 38 5)) 2) 320 (* 38 5)
                       (gui/layout-row-dynamic gui 32 1)
+                      (gui/text-label gui (format "sfsim %s" version)
+                                      (bit-or Nuklear/NK_TEXT_ALIGN_CENTERED Nuklear/NK_TEXT_ALIGN_MIDDLE))
                       (when (gui/button-label gui "Location")
                         (location-dialog-set position-data @pose)
                         (reset! menu location-dialog))
@@ -517,7 +520,7 @@
 
 (defn info
   [gui ^long h ^String text]
-  (gui/nuklear-window gui "info" 10 (- h 42) 480 32
+  (gui/nuklear-window gui "info" 10 (- h 42) 640 32
                       (gui/layout-row-dynamic gui 32 1)
                       (gui/text-label gui text)))
 
@@ -773,9 +776,10 @@
                            (when (not playback)
                              (stick gui aileron elevator rudder throttle)
                              (info gui @window-height
-                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s"
+                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s%s"
                                            (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
                                            (mag (jolt/get-linear-velocity body)) (/ 1.0 ^double @frametime)
+                                           (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
                                            (if (@state :sfsim.input/pause) ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)

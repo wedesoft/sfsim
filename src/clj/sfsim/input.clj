@@ -7,7 +7,7 @@
 (ns sfsim.input
     (:require
       [clojure.math :refer (signum)]
-      [sfsim.util :refer (clamp)])
+      [sfsim.util :refer (clamp dissoc-in)])
     (:import
       [clojure.lang
        PersistentQueue]
@@ -91,23 +91,55 @@
 
 (defn add-joystick-axis-state
   "Add joystick axis state to event buffer"
-  [event-buffer device axes]
+  [event-buffer axis-state device axes]
   (reduce
     (fn [event-buffer [axis value]]
-      (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value}))
+        (let [previous (or (get-in @axis-state [device axis]) 0.0)
+              moved    (>= (abs (- ^double value ^double previous)) 0.5)]
+          (when moved
+            (swap! axis-state assoc-in [device axis] value))
+          (conj event-buffer {::event ::joystick-axis ::device device ::axis axis ::value value ::moved moved})))
     event-buffer
     (map-indexed vector axes)))
+
+
+(defn add-joystick-button-state
+  "Add joystick button state to event buffer"
+  [event-buffer button-state device buttons]
+  (reduce
+    (fn [event-buffer [button value]]
+        (let [already-pressed (get-in @button-state [device button])]
+          (if (not (zero? ^long value))
+            (let [action (if already-pressed GLFW/GLFW_REPEAT GLFW/GLFW_PRESS)]
+              (swap! button-state assoc-in [device button] true)
+              (conj event-buffer {::event ::joystick-button ::device device ::button button ::action action}))
+            (if already-pressed
+              (do
+                (swap! button-state dissoc-in [device button])
+                (conj event-buffer {::event ::joystick-button ::device device ::button button ::action GLFW/GLFW_RELEASE}))
+              event-buffer))))
+    event-buffer
+    (map-indexed vector buttons)))
+
+
+(def joystick-buttons-state (atom {}))
+(def joystick-axis-state (atom {}))
 
 
 (defn joystick-poll
   "Get joystick state of a single joystick and add it to the event buffer"
   [event-buffer joystick-id]
   (if (GLFW/glfwJoystickPresent joystick-id)
-    (let [device      (GLFW/glfwGetJoystickName joystick-id)
-          axes-buffer (GLFW/glfwGetJoystickAxes joystick-id)
-          axes        (float-array (.limit axes-buffer))]
+    (let [device         (GLFW/glfwGetJoystickName joystick-id)
+          axes-buffer    (GLFW/glfwGetJoystickAxes joystick-id)
+          axes           (float-array (.limit axes-buffer))
+          buttons-buffer (GLFW/glfwGetJoystickButtons joystick-id)
+          buttons        (byte-array (.limit buttons-buffer))]
       (.get axes-buffer axes)
-      (add-joystick-axis-state event-buffer device axes))
+      (.get buttons-buffer buttons)
+      (-> event-buffer
+          (add-joystick-axis-state joystick-axis-state device axes)
+          (add-joystick-button-state joystick-buttons-state device buttons)))
     event-buffer))
 
 
@@ -122,7 +154,7 @@
   (process-key [this k action mods])
   (process-mouse-button [this button x y action mods])
   (process-mouse-move [this x y])
-  (process-joystick-axis [this device axis value])
+  (process-joystick-axis [this device axis value moved])
   (process-joystick-button [this device button action]))
 
 
@@ -156,8 +188,13 @@
 
 
 (defmethod process-event ::joystick-axis
+  [{::keys [device axis value moved]} handler]
+  (process-joystick-axis handler device axis value moved))
+
+
+(defmethod process-event ::joystick-button
   [event handler]
-  (process-joystick-axis handler (::device event) (::axis event) (::value event)))
+  (process-joystick-button handler (::device event) (::button event) (::action event)))
 
 
 (defn process-events
@@ -205,10 +242,14 @@
     GLFW/GLFW_KEY_E      ::rudder-right}
    ::joysticks
    {"Rock Candy Gamepad Wired Controller" {::dead-zone 0.1
-                                           ::axes     {0 ::aileron
-                                                       1 ::elevator
-                                                       3 ::rudder
-                                                       4 ::throttle-increment}}
+                                           ::axes {0 ::aileron
+                                                   1 ::elevator
+                                                   3 ::rudder
+                                                   4 ::throttle-increment}
+                                           ::buttons {0 ::gear
+                                                      1 ::brake
+                                                      2 ::parking-brake
+                                                      }}
     "Thrustmaster T.A320 Copilot" {::dead-zone 0.1
                                    ::axes {0 ::aileron
                                            1 ::elevator
@@ -413,10 +454,49 @@
   (increment-clamp state ::throttle (* ^double (dead-zone epsilon value) -0.0625) 0.0 1.0))
 
 
+(defmulti simulator-joystick-button (fn [id _state _action] id))
+
+
+; Ignore buttons without mapping
+(defmethod simulator-joystick-button nil
+  [_id _state _action])
+
+
+(defmethod simulator-joystick-button ::gear
+  [_id state action]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::gear-down not)))
+
+
+(defmethod simulator-joystick-button ::brake
+  [_id state action]
+  (swap! state assoc ::brake (keypress? action))
+  (when (keypress? action)
+    (swap! state assoc ::parking-brake false)))
+
+
+(defmethod simulator-joystick-button ::parking-brake
+  [_id state action]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state assoc ::parking-brake true)))
+
+
+(defn menu-joystick-axis
+  [state device axis _value moved]
+  (when moved
+    (swap! state assoc ::last-joystick-axis [device axis])))
+
+
+(defn menu-joystick-button
+  [state device button action]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state assoc ::last-joystick-button [device button])))
+
+
 (defrecord InputHandler [state gui mappings]
   InputHandlerProtocol
   (process-char [_this codepoint]
-    (when (-> @state ::menu)
+    (when (::menu @state)
       (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
   (process-key [_this k action mods]
     (let [keyboard-mappings (::keyboard mappings)]
@@ -427,9 +507,16 @@
     (menu-mouse-button state gui button x y action mods))
   (process-mouse-move [_this x y]
     (menu-mouse-move state gui x y))
-  (process-joystick-axis [_this device axis value]
-    (let [joystick (some-> mappings ::joysticks (get device))]
-      (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> joystick ::dead-zone) state value))))
+  (process-joystick-axis [_this device axis value moved]
+    (if (::menu @state)
+      (menu-joystick-axis state device axis value moved)
+      (let [joystick (some-> mappings ::joysticks (get device))]
+        (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> joystick ::dead-zone) state value))))
+  (process-joystick-button [_this device button action]
+    (if (@state ::menu)
+      (menu-joystick-button state device button action)
+      (let [joystick (some-> mappings ::joysticks (get device))]
+        (simulator-joystick-button (some-> joystick ::buttons (get button)) state action)))))
 
 
 (set! *warn-on-reflection* false)
