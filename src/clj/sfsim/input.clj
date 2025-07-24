@@ -7,6 +7,7 @@
 (ns sfsim.input
     (:require
       [clojure.math :refer (signum)]
+      [clojure.set :refer (map-invert)]
       [sfsim.util :refer (clamp dissoc-in)])
     (:import
       [clojure.lang
@@ -147,6 +148,31 @@
   "Get joystick states of all connected joysticks and add them to the event buffer"
   [event-buffer]
   (reduce joystick-poll event-buffer (range GLFW/GLFW_JOYSTICK_1 (inc GLFW/GLFW_JOYSTICK_LAST))))
+
+
+(defn joystick-list
+  "Get device names of connected joysticks"
+  []
+  (filter some? (map GLFW/glfwGetJoystickName (range GLFW/GLFW_JOYSTICK_1 (inc GLFW/GLFW_JOYSTICK_LAST)))))
+
+
+(defn get-joystick-axis-for-device
+  "Get joystick axis value for a given device"
+  [mappings device id]
+  (let [axes-inverted (map-invert (get-in mappings [::joysticks device ::axes]))]
+    (axes-inverted id)))
+
+
+(defn get-joystick-axis-for-mapping
+  "Get joystick axis value for a given mapping"
+  ([mappings id]
+   (get-joystick-axis-for-mapping mappings (joystick-list) id))
+  ([mappings devices id]
+   (some identity
+         (map (fn [device]
+                  (when-let [axis (get-joystick-axis-for-device mappings device id)]
+                            [device axis]))
+              devices))))
 
 
 (defprotocol InputHandlerProtocol
