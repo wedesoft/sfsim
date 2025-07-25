@@ -1,12 +1,9 @@
 # TODO
 * input module
   * joystick
+    * button configuration for gear, brake, parking brake, elevator trim, camera views, nav lights, strobe lights, landing lights
+    * save/load configuration
     * Create events from joystick hats (using joystick name)
-    * when menu is open, return last moved joystick axis (and then recapture state for diffing again) and pressed buttons
-    * axis configuration dialog for aileron, elevator, rudder, and throttle
-      button configuration for gear, brake, parking brake, elevator trim, camera views, nav lights, strobe lights, landing lights
-      hat configuration for camera angle
-    * add joystick configuration
     * test twin-axis mapping for game controller under Linux
     * configuration dialog for air brake, elevator trim (hat?), camera angle (hat), camera views
   * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/

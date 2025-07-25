@@ -64,7 +64,7 @@
          (let [event-buffer (make-event-buffer)
                state        (make-initial-state)
                gui          {:sfsim.gui/context :ctx}
-               handler      (->InputHandler state gui default-mappings)]
+               handler      (->InputHandler state gui (atom default-mappings))]
            ; Test gear up
            (:sfsim.input/gear-down @state) => true
            (-> event-buffer
@@ -286,7 +286,7 @@
        (let [event-buffer             (make-event-buffer)
              playback                 (atom [])
              mock-handler             (reify InputHandlerProtocol
-                                             (process-joystick-axis [_this device axis value moved]
+                                             (process-joystick-axis [_this device axis value _moved]
                                                (swap! playback conj {:device device :axis axis :value value})))
              state                    (make-initial-state)
              gui                      {:sfsim.gui/context :ctx}
@@ -309,13 +309,13 @@
                                                                           :sfsim.input/dead-zone 0.5}}}
              map-throttle-incr-zn     {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle-increment}
                                                                           :sfsim.input/dead-zone 0.5}}}
-             handler                  (->InputHandler state gui mappings)
-             handler-inv              (->InputHandler state gui mappings-inv)
-             handler-zn               (->InputHandler state gui mappings-zn)
-             handler-throttle         (->InputHandler state gui map-throttle)
-             handler-throttle-incr    (->InputHandler state gui map-throttle-incr)
-             handler-throttle-zn      (->InputHandler state gui map-throttle-zn)
-             handler-throttle-incr-zn (->InputHandler state gui map-throttle-incr-zn)]
+             handler                  (->InputHandler state gui (atom mappings))
+             handler-inv              (->InputHandler state gui (atom mappings-inv))
+             handler-zn               (->InputHandler state gui (atom mappings-zn))
+             handler-throttle         (->InputHandler state gui (atom map-throttle))
+             handler-throttle-incr    (->InputHandler state gui (atom map-throttle-incr))
+             handler-throttle-zn      (->InputHandler state gui (atom map-throttle-zn))
+             handler-throttle-incr-zn (->InputHandler state gui (atom map-throttle-incr-zn))]
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75]) mock-handler)
          @playback => [{:device "Gamepad" :axis 0 :value -0.5} {:device "Gamepad" :axis 1 :value -0.75}]
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
@@ -356,7 +356,7 @@
                                                                                                 }}}}
              state                    (make-initial-state)
              gui                      {:sfsim.gui/context :ctx}
-             handler                  (->InputHandler state gui mappings)]
+             handler                  (->InputHandler state gui (atom mappings))]
          (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0]) mock-handler)
          @playback => []
          (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 1]) mock-handler)
@@ -393,7 +393,7 @@
              button-state (atom {})
              axis-state   (atom {})
              mappings     {}
-             handler      (->InputHandler state gui mappings)]
+             handler      (->InputHandler state gui (atom mappings))]
          (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0]) handler)
          (@state :sfsim.input/last-joystick-button) => nil
          (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1]) handler)

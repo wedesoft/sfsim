@@ -22,6 +22,7 @@
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
+    [sfsim.util :refer (dissoc-in)]
     [sfsim.jolt :as jolt]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
     [sfsim.model :as model]
@@ -242,10 +243,13 @@
 (def focus-new (atom nil))
 
 
+(def mappings (atom default-mappings))
+
+
 (def event-buffer (atom (make-event-buffer)))
 (def state (make-initial-state))
 (def old-state (atom @state))
-(def input-handler (->InputHandler state gui default-mappings))
+(def input-handler (->InputHandler state gui mappings))
 
 
 (GLFW/glfwSetCharCallback window (char-callback event-buffer))
@@ -362,39 +366,42 @@
         (jolt/optimize-broad-phase)))))
 
 
+(defn joystick-dialog-item
+  [gui text control]
+  (let [[device axis] (get-joystick-axis-for-mapping @mappings control)]
+    (gui/layout-row gui 32 4
+                    (gui/layout-row-push gui 0.2)
+                    (gui/text-label gui text)
+                    (gui/layout-row-push gui 0.1)
+                    (when (and (gui/button-label gui "Clear") device)
+                      (swap! mappings dissoc-in [:sfsim.input/joysticks device :sfsim.input/axes axis]))
+                    (gui/layout-row-push gui 0.1)
+                    (when (gui/button-label gui "Set")
+                      (swap! state dissoc :sfsim.input/last-joystick-axis)
+                      (if (= (@state ::joystick-axis-config) control)
+                        (swap! state dissoc ::joystick-axis-config)
+                        (swap! state assoc ::joystick-axis-config control)))
+                    (when-let [[device-new axis-new] (and (= (@state ::joystick-axis-config) control)
+                                                          (@state :sfsim.input/last-joystick-axis))]
+                              (swap! mappings dissoc-in [:sfsim.input/joysticks device :sfsim.input/axes axis])
+                              (swap! mappings assoc-in [:sfsim.input/joysticks device-new :sfsim.input/axes axis-new] control)
+                              (swap! state dissoc ::joystick-axis-config))
+                    (gui/layout-row-push gui 0.6)
+                    (gui/text-label gui (if (= (@state ::joystick-axis-config) control)
+                                          "Move axis to set"
+                                          (if device (format "Axis %d of %s" axis device) "None"))))))
+
+
 (defn joystick-dialog
   [gui ^long window-width ^long window-height]
   (gui/nuklear-window gui "joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 6)) 2) 640 (* 37 6)
-                      (gui/layout-row gui 32 2
-                                      (gui/layout-row-push gui 0.2)
-                                      (when (gui/button-label gui "Aileron")
-                                        (swap! state assoc ::joystick-configuration ::aileron))
-                                      (gui/layout-row-push gui 0.8)
-                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/aileron))))
-                      (gui/layout-row gui 32 2
-                                      (gui/layout-row-push gui 0.2)
-                                      (when (gui/button-label gui "Elevator")
-                                        (swap! state assoc ::joystick-configuration ::elevator))
-                                      (gui/layout-row-push gui 0.8)
-                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/elevator))))
-                      (gui/layout-row gui 32 2
-                                      (gui/layout-row-push gui 0.2)
-                                      (when (gui/button-label gui "Rudder")
-                                        (swap! state assoc ::joystick-configuration ::rudder))
-                                      (gui/layout-row-push gui 0.8)
-                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/rudder))))
-                      (gui/layout-row gui 32 2
-                                      (gui/layout-row-push gui 0.2)
-                                      (when (gui/button-label gui "Throttle")
-                                        (swap! state assoc ::joystick-configuration ::throttle))
-                                      (gui/layout-row-push gui 0.8)
-                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/throttle))))
-                      (gui/layout-row gui 32 2
-                                      (gui/layout-row-push gui 0.2)
-                                      (when (gui/button-label gui "Throttle Increment")
-                                        (swap! state assoc ::joystick-configuration ::throttle-increment))
-                                      (gui/layout-row-push gui 0.8)
-                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/throttle-increment))))
+                      (gui/layout-row-dynamic gui 32 1)
+                      (gui/text-label gui "Joystick" (bit-or Nuklear/NK_TEXT_ALIGN_CENTERED Nuklear/NK_TEXT_ALIGN_MIDDLE))
+                      (joystick-dialog-item gui "Aileron" :sfsim.input/aileron)
+                      (joystick-dialog-item gui "Elevator" :sfsim.input/elevator)
+                      (joystick-dialog-item gui "Rudder" :sfsim.input/rudder)
+                      (joystick-dialog-item gui "Throttle" :sfsim.input/throttle)
+                      (joystick-dialog-item gui "Throttle Increment" :sfsim.input/throttle-increment)
                       (gui/layout-row-dynamic gui 32 1)
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))
@@ -580,26 +587,6 @@
 
 
 (def gear (atom 0.0))
-
-
-(defn deadzone
-  ^double [^double axis]
-  (let [epsilon 0.08
-        abs-axis (abs axis)]
-    (if (>= abs-axis epsilon)
-      (* (signum axis) (/ (- abs-axis epsilon) (- 1.0 epsilon)))
-      0.0)))
-
-
-(defn joystick-axes
-  []
-  (let [present (GLFW/glfwJoystickPresent GLFW/GLFW_JOYSTICK_1)]
-    (if present
-      (let [buffer (GLFW/glfwGetJoystickAxes GLFW/GLFW_JOYSTICK_1)
-            axes   (float-array (.limit buffer))]
-        (.get buffer axes)
-        (vec axes))
-      [0.0 0.0 -1.0 0.0 0.0 -1.0])))
 
 
 (def frametime (atom 0.25))
