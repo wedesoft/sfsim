@@ -394,7 +394,7 @@
 
 (defn joystick-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 6)) 2) 640 (* 37 6)
+  (gui/nuklear-window gui "joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 7)) 2) 640 (* 37 7)
                       (gui/layout-row-dynamic gui 32 1)
                       (gui/text-label gui "Joystick" (bit-or Nuklear/NK_TEXT_ALIGN_CENTERED Nuklear/NK_TEXT_ALIGN_MIDDLE))
                       (joystick-dialog-item gui "Aileron" :sfsim.input/aileron)

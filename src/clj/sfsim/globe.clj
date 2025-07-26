@@ -28,7 +28,7 @@
 (defn make-cube-map
   "Program to generate tiles for cube map"
   [in-level out-level]
-  (let [n                  (bit-shift-left 1 out-level)
+  (let [n                  (bit-shift-left 1 ^long out-level)
         width              675
         surface-tilesize   65
         sublevel           1
@@ -38,7 +38,7 @@
         color-tilesize     (inc (* subsample (dec surface-tilesize)))
         radius             6378000.0
         bar                (agent (make-progress-bar (* 6 n n) 1))]
-    (cp/pdoseq (+ (cp/ncpus) 2) [k (range 6) b (range n) a (range n)]
+    (cp/pdoseq (+ ^long (cp/ncpus) 2) [k (range 6) b (range n) a (range n)]
                (let [face       (index->face k)
                      tile-day   (make-image color-tilesize color-tilesize)
                      tile-night (make-image color-tilesize color-tilesize)
@@ -50,18 +50,18 @@
                    (let [j                 (cube-coordinate out-level surface-tilesize b (double v))
                          i                 (cube-coordinate out-level surface-tilesize a (double u))
                          p                 (cube-map face j i)
-                         point             (project-onto-globe p (max 0 (min max-surface-level in-level)) width radius)]
+                         point             (project-onto-globe p (max 0 (min max-surface-level ^long in-level)) width radius)]
                      (set-vector3! surface v u (sub point center))))
                  (doseq [v (range color-tilesize) u (range color-tilesize)]
                    (let [j                 (cube-coordinate out-level color-tilesize b (double v))
                          i                 (cube-coordinate out-level color-tilesize a (double u))
                          p                 (cube-map face j i)
-                         point             (project-onto-globe p (max 0 (min max-surface-level in-level)) width radius)
+                         point             (project-onto-globe p (max 0 (min max-surface-level ^long in-level)) width radius)
                          [lon lat _height] (cartesian->geodetic point radius)
-                         normal            (normal-for-point point (max 0 (min max-surface-level in-level)) out-level width color-tilesize radius)
-                         color-day         (color-geodetic-day (max 0 (min max-color-level (+ in-level sublevel))) width lon lat)
-                         color-night       (color-geodetic-night (max 0 (min max-color-level (+ in-level sublevel))) width lon lat)
-                         wet               (water-geodetic (max 0 (min max-surface-level (+ in-level sublevel))) width lon lat)]
+                         normal            (normal-for-point point (max 0 (min max-surface-level ^long in-level)) out-level width color-tilesize radius)
+                         color-day         (color-geodetic-day (max 0 (min max-color-level (+ ^long in-level sublevel))) width lon lat)
+                         color-night       (color-geodetic-night (max 0 (min max-color-level (+ ^long in-level sublevel))) width lon lat)
+                         wet               (water-geodetic (max 0 (min max-surface-level (+ ^long in-level sublevel))) width lon lat)]
                      (set-vector3! normals v u normal)
                      (set-pixel! tile-day v u color-day)
                      (set-pixel! tile-night v u color-night)
@@ -78,7 +78,7 @@
 (defn make-cube-map-tars
   "Program to put cube map tiles into tar files"
   [out-level]
-  (let [n   (bit-shift-left 1 out-level)]
+  (let [n (bit-shift-left 1 ^long out-level)]
     (doseq [k (range 6) a (range n)]
            (let [face          (index->face k)
                  tar-file-name (cube-tar "data/globe" face out-level a)
