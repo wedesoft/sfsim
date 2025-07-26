@@ -37,7 +37,7 @@
     [sfsim.texture :refer (destroy-texture texture->image)]
     [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events add-mouse-move-event
                          add-mouse-button-event joysticks-poll ->InputHandler char-callback key-callback
-                         get-joystick-axis-for-mapping)])
+                         get-joystick-sensor-for-mapping)])
   (:import
     (fastmath.vector
       Vec3)
@@ -367,29 +367,29 @@
 
 
 (defn joystick-dialog-item
-  [gui text control]
-  (let [[device axis] (get-joystick-axis-for-mapping @mappings control)]
+  [gui sensor-type text control]
+  (let [[device sensor] (get-joystick-sensor-for-mapping @mappings sensor-type control)]
     (gui/layout-row gui 32 4
                     (gui/layout-row-push gui 0.2)
                     (gui/text-label gui text)
                     (gui/layout-row-push gui 0.1)
                     (when (and (gui/button-label gui "Clear") device)
-                      (swap! mappings dissoc-in [:sfsim.input/joysticks device :sfsim.input/axes axis]))
+                      (swap! mappings dissoc-in [:sfsim.input/joysticks device sensor-type sensor]))
                     (gui/layout-row-push gui 0.1)
                     (when (gui/button-label gui "Set")
                       (swap! state dissoc :sfsim.input/last-joystick-axis)
-                      (if (= (@state ::joystick-axis-config) control)
-                        (swap! state dissoc ::joystick-axis-config)
-                        (swap! state assoc ::joystick-axis-config control)))
-                    (when-let [[device-new axis-new] (and (= (@state ::joystick-axis-config) control)
-                                                          (@state :sfsim.input/last-joystick-axis))]
-                              (swap! mappings dissoc-in [:sfsim.input/joysticks device :sfsim.input/axes axis])
-                              (swap! mappings assoc-in [:sfsim.input/joysticks device-new :sfsim.input/axes axis-new] control)
-                              (swap! state dissoc ::joystick-axis-config))
+                      (if (= (@state ::joystick-config) control)
+                        (swap! state dissoc ::joystick-config)
+                        (swap! state assoc ::joystick-config control)))
+                    (when-let [[device-new sensor-new] (and (= (@state ::joystick-config) control)
+                                                            (@state :sfsim.input/last-joystick-axis))]
+                              (swap! mappings dissoc-in [:sfsim.input/joysticks device sensor-type sensor])
+                              (swap! mappings assoc-in [:sfsim.input/joysticks device-new sensor-type sensor-new] control)
+                              (swap! state dissoc ::joystick-config))
                     (gui/layout-row-push gui 0.6)
-                    (gui/text-label gui (if (= (@state ::joystick-axis-config) control)
+                    (gui/text-label gui (if (= (@state ::joystick-config) control)
                                           "Move axis to set"
-                                          (if device (format "Axis %d of %s" axis device) "None"))))))
+                                          (if device (format "Axis %d of %s" sensor device) "None"))))))
 
 
 (defn joystick-dialog
@@ -397,11 +397,11 @@
   (gui/nuklear-window gui "joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 7)) 2) 640 (* 37 7)
                       (gui/layout-row-dynamic gui 32 1)
                       (gui/text-label gui "Joystick" (bit-or Nuklear/NK_TEXT_ALIGN_CENTERED Nuklear/NK_TEXT_ALIGN_MIDDLE))
-                      (joystick-dialog-item gui "Aileron" :sfsim.input/aileron)
-                      (joystick-dialog-item gui "Elevator" :sfsim.input/elevator)
-                      (joystick-dialog-item gui "Rudder" :sfsim.input/rudder)
-                      (joystick-dialog-item gui "Throttle" :sfsim.input/throttle)
-                      (joystick-dialog-item gui "Throttle Increment" :sfsim.input/throttle-increment)
+                      (joystick-dialog-item gui :sfsim.input/axes "Aileron" :sfsim.input/aileron)
+                      (joystick-dialog-item gui :sfsim.input/axes "Elevator" :sfsim.input/elevator)
+                      (joystick-dialog-item gui :sfsim.input/axes "Rudder" :sfsim.input/rudder)
+                      (joystick-dialog-item gui :sfsim.input/axes "Throttle" :sfsim.input/throttle)
+                      (joystick-dialog-item gui :sfsim.input/axes "Throttle Increment" :sfsim.input/throttle-increment)
                       (gui/layout-row-dynamic gui 32 1)
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))

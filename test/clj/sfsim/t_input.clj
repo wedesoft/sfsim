@@ -277,9 +277,17 @@
 (facts "Get joystick and axis for a mapping"
        (let [mappings {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron}}
                                                "Throttle" {:sfsim.input/axes {1 :sfsim.input/throttle}}}}]
-         (get-joystick-axis-for-mapping {} ["Gamepad"] :sfsim.input/aileron) => nil
-         (get-joystick-axis-for-mapping mappings ["Gamepad"] :sfsim.input/aileron) => ["Gamepad" 0]
-         (get-joystick-axis-for-mapping mappings ["Gamepad" "Throttle"] :sfsim.input/throttle) => ["Throttle" 1]))
+         (get-joystick-sensor-for-mapping {} ["Gamepad"] :sfsim.input/axes :sfsim.input/aileron) => nil
+         (get-joystick-sensor-for-mapping mappings ["Gamepad"] :sfsim.input/axes :sfsim.input/aileron) => ["Gamepad" 0]
+         (get-joystick-sensor-for-mapping mappings ["Gamepad" "Throttle"] :sfsim.input/axes :sfsim.input/throttle) => ["Throttle" 1]))
+
+
+(facts "Get joystick and button for a mapping"
+       (let [mappings {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/buttons {0 :sfsim.input/gear}}
+                                               "Throttle" {:sfsim.input/buttons {1 :sfsim.input/brake}}}}]
+         (get-joystick-sensor-for-mapping {} ["Gamepad"] :sfsim.input/buttons :sfsim.input/gear) => nil
+         (get-joystick-sensor-for-mapping mappings ["Gamepad"] :sfsim.input/buttons :sfsim.input/gear) => ["Gamepad" 0]
+         (get-joystick-sensor-for-mapping mappings ["Gamepad" "Throttle"] :sfsim.input/buttons :sfsim.input/brake) => ["Throttle" 1]))
 
 
 (facts "Process joystick axis events"

@@ -156,21 +156,21 @@
   (filter some? (map GLFW/glfwGetJoystickName (range GLFW/GLFW_JOYSTICK_1 (inc GLFW/GLFW_JOYSTICK_LAST)))))
 
 
-(defn get-joystick-axis-for-device
-  "Get joystick axis value for a given device"
-  [mappings device id]
-  (let [axes-inverted (map-invert (get-in mappings [::joysticks device ::axes]))]
-    (axes-inverted id)))
+(defn get-joystick-sensor-for-device
+  "Get joystick axis or button index for a given device"
+  [mappings device sensor-type id]
+  (let [sensors-inverted (map-invert (get-in mappings [::joysticks device sensor-type]))]
+    (sensors-inverted id)))
 
 
-(defn get-joystick-axis-for-mapping
-  "Get joystick axis value for a given mapping"
-  ([mappings id]
-   (get-joystick-axis-for-mapping mappings (joystick-list) id))
-  ([mappings devices id]
+(defn get-joystick-sensor-for-mapping
+  "Get joystick axis or button index for a given mapping"
+  ([mappings sensor-type id]
+   (get-joystick-sensor-for-mapping mappings (joystick-list) sensor-type id))
+  ([mappings devices sensor-type id]
    (some identity
          (map (fn [device]
-                  (when-let [axis (get-joystick-axis-for-device mappings device id)]
+                  (when-let [axis (get-joystick-sensor-for-device mappings device sensor-type id)]
                             [device axis]))
               devices))))
 
