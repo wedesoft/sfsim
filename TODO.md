@@ -1,15 +1,14 @@
 # TODO
 * input module
-  * joystick
-    * button configuration for gear, brake, parking brake, camera views
-    * save/load configuration
-    * Create events from joystick hats (using joystick name)
-    * test twin-axis mapping for game controller under Linux
-    * configuration dialog for air brake, elevator trim (hat?), camera angle (hat), camera views
   * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
     * x key (set position)
     * d, ra, rb, rc, dcx, and dcy for camera
     * slew v
+  * joystick
+    * save/load joystick configuration configuration
+    * Create events from joystick hats (using joystick name)
+    * test twin-axis mapping for game controller under Linux
+    * configuration dialog for air brake, elevator trim (hat?), camera angle (hat), camera views
   * GUI tabbing
   * move event polling into input module
 * switch windows JDK install to 24
