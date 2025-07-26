@@ -16,8 +16,8 @@
 * use different accessors for quaternions, vectors, matrices? (use Codeium to generate benchmark program)
 * switch windows JDK install to 24
 * simple third person HUD speed and altitude (AGL/radar)
-* add tested implementation for input handling
 * mouse control:
+  * see MSFS mouse yoke
   * up/down for pitch, right/left for roll
   * RMB/LMB to gradually move rudder right and left while holding the buttons pressed
   * wheel click to reset rudder
