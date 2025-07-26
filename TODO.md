@@ -13,7 +13,7 @@
   * GUI tabbing
   * move event polling into input module
 * switch windows JDK install to 24
-* following camera, different camera views
+* following camera, different camera views, camera controls such as distance
 * keyboard help
 * articles: aerodynamics of game, Clojure game development
 * block gear up when on the ground
@@ -33,7 +33,6 @@
 * orbiting Earth
 * thrusters
 * animate control surfaces and air brake
-* use transients when updating transforms in model
 * low FPS at 100km height was reported
 * thrust graphics, opengl rocket plume
   flame: https://www.shadertoy.com/view/XsXSWS
