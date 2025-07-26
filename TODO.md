@@ -5,6 +5,7 @@
     * d, ra, rb, rc, dcx, and dcy for camera
     * slew v
   * joystick
+    * dead-zone adjustment
     * save/load joystick configuration configuration
     * Create events from joystick hats (using joystick name)
     * test twin-axis mapping for game controller under Linux
