@@ -16,7 +16,7 @@
 (set! *warn-on-reflection* true)
 
 (def tmpdir (System/getenv "TEMP"))
-(def separator "/")
+(def separator "\\")
 (def appdata (System/getenv "APPDATA"))
 (def sfsim-data (str appdata separator "sfsim"))
 
