@@ -13,6 +13,8 @@
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
+(def tmpdir "/tmp")
+
 (def config (immuconf/load "resources/config.edn"))
 
 (def max-height 35000.0)

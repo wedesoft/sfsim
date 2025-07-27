@@ -156,21 +156,21 @@
   (filter some? (map GLFW/glfwGetJoystickName (range GLFW/GLFW_JOYSTICK_1 (inc GLFW/GLFW_JOYSTICK_LAST)))))
 
 
-(defn get-joystick-axis-for-device
-  "Get joystick axis value for a given device"
-  [mappings device id]
-  (let [axes-inverted (map-invert (get-in mappings [::joysticks device ::axes]))]
-    (axes-inverted id)))
+(defn get-joystick-sensor-for-device
+  "Get joystick axis or button index for a given device"
+  [mappings device sensor-type id]
+  (let [sensors-inverted (map-invert (get-in mappings [::joysticks ::devices device sensor-type]))]
+    (sensors-inverted id)))
 
 
-(defn get-joystick-axis-for-mapping
-  "Get joystick axis value for a given mapping"
-  ([mappings id]
-   (get-joystick-axis-for-mapping mappings (joystick-list) id))
-  ([mappings devices id]
+(defn get-joystick-sensor-for-mapping
+  "Get joystick axis or button index for a given mapping"
+  ([mappings sensor-type id]
+   (get-joystick-sensor-for-mapping mappings (joystick-list) sensor-type id))
+  ([mappings devices sensor-type id]
    (some identity
          (map (fn [device]
-                  (when-let [axis (get-joystick-axis-for-device mappings device id)]
+                  (when-let [axis (get-joystick-sensor-for-device mappings device sensor-type id)]
                             [device axis]))
               devices))))
 
@@ -237,16 +237,22 @@
 (defn make-initial-state
   "Create initial state of game and space craft"
   []
-  (atom {::menu          false
-         ::fullscreen    false
-         ::pause         false
-         ::brake         false
-         ::parking-brake false
-         ::gear-down     true
-         ::aileron       0.0
-         ::elevator      0.0
-         ::rudder        0.0
-         ::throttle      0.0
+  (atom {::menu                   false
+         ::fullscreen             false
+         ::pause                  false
+         ::brake                  false
+         ::parking-brake          false
+         ::gear-down              true
+         ::aileron                0.0
+         ::elevator               0.0
+         ::rudder                 0.0
+         ::throttle               0.0
+         ::camera-rotate-x        0.0
+         ::camera-rotate-y        0.0
+         ::camera-rotate-z        0.0
+         ::camera-shift-x         0.0
+         ::camera-shift-y         0.0
+         ::camera-distance-change 0.0
          }))
 
 
@@ -265,22 +271,34 @@
     GLFW/GLFW_KEY_W      ::elevator-down
     GLFW/GLFW_KEY_S      ::elevator-up
     GLFW/GLFW_KEY_Q      ::rudder-left
-    GLFW/GLFW_KEY_E      ::rudder-right}
+    GLFW/GLFW_KEY_E      ::rudder-right
+    GLFW/GLFW_KEY_KP_2   ::camera-rotate-x-positive
+    GLFW/GLFW_KEY_KP_8   ::camera-rotate-x-negative
+    GLFW/GLFW_KEY_KP_4   ::camera-rotate-y-positive
+    GLFW/GLFW_KEY_KP_6   ::camera-rotate-y-negative
+    GLFW/GLFW_KEY_KP_1   ::camera-rotate-z-positive
+    GLFW/GLFW_KEY_KP_3   ::camera-rotate-z-negative
+    GLFW/GLFW_KEY_L      ::camera-shift-x-positive
+    GLFW/GLFW_KEY_H      ::camera-shift-x-negative
+    GLFW/GLFW_KEY_K      ::camera-shift-y-positive
+    GLFW/GLFW_KEY_J      ::camera-shift-y-negative
+    GLFW/GLFW_KEY_COMMA  ::camera-distance-change-positive
+    GLFW/GLFW_KEY_PERIOD ::camera-distance-change-negative
+    }
    ::joysticks
-   {"Rock Candy Gamepad Wired Controller" {::dead-zone 0.1
-                                           ::axes {0 ::aileron
-                                                   1 ::elevator
-                                                   3 ::rudder
-                                                   4 ::throttle-increment}
-                                           ::buttons {0 ::gear
-                                                      1 ::brake
-                                                      2 ::parking-brake
-                                                      }}
-    "Thrustmaster T.A320 Copilot" {::dead-zone 0.1
-                                   ::axes {0 ::aileron
-                                           1 ::elevator
-                                           2 ::rudder
-                                           3 ::throttle}}}})
+   {::dead-zone 0.1
+    ::devices {"Rock Candy Gamepad Wired Controller" {::axes {0 ::aileron
+                                                              1 ::elevator
+                                                              3 ::rudder
+                                                              4 ::throttle-increment}
+                                                      ::buttons {0 ::gear
+                                                                 1 ::brake
+                                                                 2 ::parking-brake
+                                                                 }}
+               "Thrustmaster T.A320 Copilot" {::axes {0 ::aileron
+                                                      1 ::elevator
+                                                      2 ::rudder
+                                                      3 ::throttle}}}}})
 
 
 (defn menu-key
@@ -412,6 +430,66 @@
     (increment-clamp state ::elevator -0.0625)))
 
 
+(defmethod simulator-key ::camera-rotate-x-positive
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-x (if (keypress? action) 0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-rotate-x-negative
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-x (if (keypress? action) -0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-rotate-y-positive
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-y (if (keypress? action) 0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-rotate-y-negative
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-y (if (keypress? action) -0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-rotate-z-positive
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-z (if (keypress? action) 0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-rotate-z-negative
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-z (if (keypress? action) -0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-shift-x-positive
+  [_id state action _mods]
+  (swap! state assoc ::camera-shift-x (if (keypress? action) 5.0 0.0)))
+
+
+(defmethod simulator-key ::camera-shift-x-negative
+  [_id state action _mods]
+  (swap! state assoc ::camera-shift-x (if (keypress? action) -5.0 0.0)))
+
+
+(defmethod simulator-key ::camera-shift-y-positive
+  [_id state action _mods]
+  (swap! state assoc ::camera-shift-y (if (keypress? action) 5.0 0.0)))
+
+
+(defmethod simulator-key ::camera-shift-y-negative
+  [_id state action _mods]
+  (swap! state assoc ::camera-shift-y (if (keypress? action) -5.0 0.0)))
+
+
+(defmethod simulator-key ::camera-distance-change-positive
+  [_id state action _mods]
+  (swap! state assoc ::camera-distance-change (if (keypress? action) 1.0 0.0)))
+
+
+(defmethod simulator-key ::camera-distance-change-negative
+  [_id state action _mods]
+  (swap! state assoc ::camera-distance-change (if (keypress? action) -1.0 0.0)))
+
+
 (defn menu-mouse-button
   [_state gui button x y action _mods]
   (let [nkbutton (cond
@@ -525,7 +603,7 @@
     (when (::menu @state)
       (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
   (process-key [_this k action mods]
-    (let [keyboard-mappings (::keyboard mappings)]
+    (let [keyboard-mappings (::keyboard @mappings)]
       (if (::menu @state)
         (-> k (menu-key state gui action mods))
         (-> k keyboard-mappings (simulator-key state action mods)))))
@@ -536,12 +614,12 @@
   (process-joystick-axis [_this device axis value moved]
     (if (::menu @state)
       (menu-joystick-axis state device axis value moved)
-      (let [joystick (some-> mappings ::joysticks (get device))]
-        (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> joystick ::dead-zone) state value))))
+      (let [joystick (some-> @mappings ::joysticks ::devices (get device))]
+        (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> @mappings ::joysticks ::dead-zone) state value))))
   (process-joystick-button [_this device button action]
     (if (@state ::menu)
       (menu-joystick-button state device button action)
-      (let [joystick (some-> mappings ::joysticks (get device))]
+      (let [joystick (some-> @mappings ::joysticks ::devices (get device))]
         (simulator-joystick-button (some-> joystick ::buttons (get button)) state action)))))
 
 

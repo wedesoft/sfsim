@@ -8,7 +8,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees signum)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -22,6 +22,7 @@
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
+    [sfsim.util :refer (dissoc-in)]
     [sfsim.jolt :as jolt]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
     [sfsim.model :as model]
@@ -36,7 +37,7 @@
     [sfsim.texture :refer (destroy-texture texture->image)]
     [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events add-mouse-move-event
                          add-mouse-button-event joysticks-poll ->InputHandler char-callback key-callback
-                         get-joystick-axis-for-mapping)])
+                         get-joystick-sensor-for-mapping)])
   (:import
     (fastmath.vector
       Vec3)
@@ -242,10 +243,13 @@
 (def focus-new (atom nil))
 
 
+(def mappings (atom default-mappings))
+
+
 (def event-buffer (atom (make-event-buffer)))
 (def state (make-initial-state))
 (def old-state (atom @state))
-(def input-handler (->InputHandler state gui default-mappings))
+(def input-handler (->InputHandler state gui mappings))
 
 
 (GLFW/glfwSetCharCallback window (char-callback event-buffer))
@@ -362,39 +366,61 @@
         (jolt/optimize-broad-phase)))))
 
 
+(defn joystick-dialog-item
+  [gui sensor-type last-event text control sensor-name prompt]
+  (let [[device sensor] (get-joystick-sensor-for-mapping @mappings sensor-type control)]
+    (gui/layout-row gui 32 4
+                    (gui/layout-row-push gui 0.2)
+                    (gui/text-label gui text)
+                    (gui/layout-row-push gui 0.1)
+                    (when (and (gui/button-label gui "Clear") device)
+                      (swap! mappings dissoc-in [:sfsim.input/joysticks device sensor-type sensor]))
+                    (gui/layout-row-push gui 0.1)
+                    (when (gui/button-label gui "Set")
+                      (swap! state dissoc last-event)
+                      (if (= (@state ::joystick-config) control)
+                        (swap! state dissoc ::joystick-config)
+                        (swap! state assoc ::joystick-config control)))
+                    (when-let [[device-new sensor-new] (and (= (@state ::joystick-config) control) (@state last-event))]
+                              (swap! mappings dissoc-in [:sfsim.input/joysticks device sensor-type sensor])
+                              (swap! mappings assoc-in [:sfsim.input/joysticks device-new sensor-type sensor-new] control)
+                              (swap! state dissoc ::joystick-config))
+                    (gui/layout-row-push gui 0.6)
+                    (gui/text-label gui (if (= (@state ::joystick-config) control)
+                                          prompt
+                                          (if device (format "%s %d of %s" sensor-name sensor device) "None"))))))
+
+
+(defn joystick-dialog-axis-item
+  [gui text control]
+  (joystick-dialog-item gui :sfsim.input/axes :sfsim.input/last-joystick-axis text control "Axis" "Move axis to set"))
+
+
+(defn joystick-dialog-button-item
+  [gui text control]
+  (joystick-dialog-item gui :sfsim.input/buttons :sfsim.input/last-joystick-button text control "Button" "Press button to set"))
+
+
 (defn joystick-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 6)) 2) 640 (* 37 6)
+  (gui/nuklear-window gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 11)) 2) 640 (* 37 11) true
+                      (joystick-dialog-axis-item gui "Aileron" :sfsim.input/aileron)
+                      (joystick-dialog-axis-item gui "Elevator" :sfsim.input/elevator)
+                      (joystick-dialog-axis-item gui "Rudder" :sfsim.input/rudder)
+                      (joystick-dialog-axis-item gui "Throttle" :sfsim.input/throttle)
+                      (joystick-dialog-axis-item gui "Throttle Increment" :sfsim.input/throttle-increment)
                       (gui/layout-row gui 32 2
                                       (gui/layout-row-push gui 0.2)
-                                      (when (gui/button-label gui "Aileron")
-                                        (swap! state assoc ::joystick-configuration ::aileron))
-                                      (gui/layout-row-push gui 0.8)
-                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/aileron))))
-                      (gui/layout-row gui 32 2
-                                      (gui/layout-row-push gui 0.2)
-                                      (when (gui/button-label gui "Elevator")
-                                        (swap! state assoc ::joystick-configuration ::elevator))
-                                      (gui/layout-row-push gui 0.8)
-                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/elevator))))
-                      (gui/layout-row gui 32 2
-                                      (gui/layout-row-push gui 0.2)
-                                      (when (gui/button-label gui "Rudder")
-                                        (swap! state assoc ::joystick-configuration ::rudder))
-                                      (gui/layout-row-push gui 0.8)
-                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/rudder))))
-                      (gui/layout-row gui 32 2
-                                      (gui/layout-row-push gui 0.2)
-                                      (when (gui/button-label gui "Throttle")
-                                        (swap! state assoc ::joystick-configuration ::throttle))
-                                      (gui/layout-row-push gui 0.8)
-                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/throttle))))
-                      (gui/layout-row gui 32 2
-                                      (gui/layout-row-push gui 0.2)
-                                      (when (gui/button-label gui "Throttle Increment")
-                                        (swap! state assoc ::joystick-configuration ::throttle-increment))
-                                      (gui/layout-row-push gui 0.8)
-                                      (gui/text-label gui (str (get-joystick-axis-for-mapping default-mappings :sfsim.input/throttle-increment))))
+                                      (gui/text-label gui "Dead Zone")
+                                      (gui/layout-row-push gui 0.7)
+                                      (swap! mappings update-in [:sfsim.input/joysticks :sfsim.input/dead-zone]
+                                             (fn [dead-zone]
+                                                 (gui/slider-float gui 0.0 dead-zone 1.0 (/ 1.0 1024.0))))
+                                      (gui/layout-row-push gui 0.1)
+                                      (gui/text-label gui (format "%5.3f" (get-in @mappings [:sfsim.input/joysticks :sfsim.input/dead-zone]))))
+                      (joystick-dialog-button-item gui "Gear" :sfsim.input/gear)
+                      (joystick-dialog-button-item gui "Brake" :sfsim.input/brake)
+                      (joystick-dialog-button-item gui "Parking Brake" :sfsim.input/parking-brake)
                       (gui/layout-row-dynamic gui 32 1)
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))
@@ -423,7 +449,7 @@
 
 (defn location-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "location" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4)
+  (gui/nuklear-window gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) true
                       (gui/layout-row-dynamic gui 32 2)
                       (gui/text-label gui "Longitude (East)")
                       (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
@@ -476,7 +502,7 @@
 
 (defn datetime-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "datetime" (quot (- window-width 320) 2) (quot (- window-height (* 37 3)) 2) 320 (* 37 3)
+  (gui/nuklear-window gui "Date and Time" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) true
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.4)
                                       (gui/text-label gui "Date")
@@ -512,10 +538,9 @@
 
 (defn main-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6)
+  (gui/nuklear-window gui (format "sfsim %s" version)
+                      (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6) true
                       (gui/layout-row-dynamic gui 32 1)
-                      (gui/text-label gui (format "sfsim %s" version)
-                                      (bit-or Nuklear/NK_TEXT_ALIGN_CENTERED Nuklear/NK_TEXT_ALIGN_MIDDLE))
                       (when (gui/button-label gui "Joystick")
                         (reset! menu joystick-dialog))
                       (when (gui/button-label gui "Location")
@@ -535,21 +560,21 @@
   (let [stack (MemoryStack/stackPush)
         rect (NkRect/malloc stack)
         rgb  (NkColor/malloc stack)]
-    (gui/nuklear-window gui "stick" 10 10 80 80
+    (gui/nuklear-window gui "Yoke" 10 10 80 80 false
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
                                                   (Nuklear/nk_rect (- 45 (* ^double aileron 30)) (- 45 (* ^double elevator 30)) 10 10 rect)
                                                   (Nuklear/nk_rgb 255 0 0 rgb))))
-    (gui/nuklear-window gui "rudder" 10 95 80 20
+    (gui/nuklear-window gui "Rudder" 10 95 80 20 false
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 20 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
                                                   (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
                                                   (Nuklear/nk_rgb 255 0 255 rgb))))
-    (gui/nuklear-window gui "throttle" 95 10 20 80
+    (gui/nuklear-window gui "Throttle" 95 10 20 80 false
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
@@ -561,7 +586,7 @@
 
 (defn info
   [gui ^long h ^String text]
-  (gui/nuklear-window gui "info" 10 (- h 42) 640 32
+  (gui/nuklear-window gui "Information" 10 (- h 42) 640 32 false
                       (gui/layout-row-dynamic gui 32 1)
                       (gui/text-label gui text)))
 
@@ -580,26 +605,6 @@
 
 
 (def gear (atom 0.0))
-
-
-(defn deadzone
-  ^double [^double axis]
-  (let [epsilon 0.08
-        abs-axis (abs axis)]
-    (if (>= abs-axis epsilon)
-      (* (signum axis) (/ (- abs-axis epsilon) (- 1.0 epsilon)))
-      0.0)))
-
-
-(defn joystick-axes
-  []
-  (let [present (GLFW/glfwJoystickPresent GLFW/GLFW_JOYSTICK_1)]
-    (if present
-      (let [buffer (GLFW/glfwGetJoystickAxes GLFW/GLFW_JOYSTICK_1)
-            axes   (float-array (.limit buffer))]
-        (.get buffer axes)
-        (vec axes))
-      [0.0 0.0 -1.0 0.0 0.0 -1.0])))
 
 
 (def frametime (atom 0.25))
@@ -655,77 +660,77 @@
             (reset! gear (:gear frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
-            (if (@state :sfsim.input/pause)
-              (do
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double aileron ) (vec3 1 0 0)))
-                ; (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v)))
-                )
-              (do
-                (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
-                (if (@state :sfsim.input/gear-down)
-                  (swap! gear - (* ^long dt 0.0005))
-                  (swap! gear + (* ^long dt 0.0005)))
-                (swap! gear min 1.0)
-                (swap! gear max 0.0)
-                (if (zero? ^double @gear)
-                  (when (not @vehicle)
-                    (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
-                  (when @vehicle
-                    (jolt/remove-and-destroy-constraint @vehicle)
-                    (reset! vehicle nil)))
-                (when @vehicle (jolt/set-brake-input @vehicle brake))
-                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
-                (let [height (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
-                      loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
-                                                             (jolt/get-angular-velocity body)
-                                                             (mult (vec3 (* 0.25 ^double aileron)
-                                                                         (* 0.25 ^double elevator)
-                                                                         (* 0.4  ^double rudder))
-                                                                   (to-radians 20)))]
-                  (jolt/add-force body (:sfsim.aerodynamics/forces loads))
-                  (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
-                (update-mesh! (:position @pose))
-                (jolt/update-system (* ^long dt 0.001) 16)
-                (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
-                (reset! wheel-angles (if @vehicle
-                                       [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
-                                        (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
-                                        (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2.0 PI)) 1.0)]
-                                       [0.0 0.0 0.0]))
-                (reset! suspension (if @vehicle
-                                     [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                      (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                      (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
-                                     [1.0 1.0 1.0]))
-                (when @recording
-                  (let [frame {:timemillis (long (+ (* ^double @time-delta 1000.0 86400.0) ^long @t0))
-                               :position (:position @pose)
-                               :orientation (:orientation @pose)
-                               :camera-orientation @camera-orientation
-                               :camera-dx @camera-dx
-                               :camera-dy @camera-dy
-                               :dist @dist
-                               :gear @gear
-                               :wheel-angles (if @vehicle
-                                               [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
-                                                (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
-                                                (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
-                                               [0.0 0.0 0.0])
-                               :suspension (if @vehicle
-                                             [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                              (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                              (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
-                                             [1.0 1.0 1.0])}]
-                    (swap! recording conj frame)))))
-            ; (swap! camera-dx + (* ^long dt ^long dcx 0.005))
-            ; (swap! camera-dy + (* ^long dt ^long dcy 0.005))
-            ; (swap! camera-orientation q/* (q/rotation (* ^long dt ra) (vec3 1 0 0)))
-            ; (swap! camera-orientation q/* (q/rotation (* ^long dt rb) (vec3 0 1 0)))
-            ; (swap! camera-orientation q/* (q/rotation (* ^long dt rc) (vec3 0 0 1)))
-            ; (swap! dist * (exp d))
-            )
+            (do
+              (if (@state :sfsim.input/pause)
+                (do
+                  ; (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
+                  ; (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
+                  ; (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double aileron ) (vec3 1 0 0)))
+                  ; (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v)))
+                  )
+                (do
+                  (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+                  (if (@state :sfsim.input/gear-down)
+                    (swap! gear - (* ^long dt 0.0005))
+                    (swap! gear + (* ^long dt 0.0005)))
+                  (swap! gear min 1.0)
+                  (swap! gear max 0.0)
+                  (if (zero? ^double @gear)
+                    (when (not @vehicle)
+                      (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
+                    (when @vehicle
+                      (jolt/remove-and-destroy-constraint @vehicle)
+                      (reset! vehicle nil)))
+                  (when @vehicle (jolt/set-brake-input @vehicle brake))
+                  (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
+                  (let [height (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
+                        loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
+                                                               (jolt/get-angular-velocity body)
+                                                               (mult (vec3 (* 0.25 ^double aileron)
+                                                                           (* 0.25 ^double elevator)
+                                                                           (* 0.4  ^double rudder))
+                                                                     (to-radians 20)))]
+                    (jolt/add-force body (:sfsim.aerodynamics/forces loads))
+                    (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
+                  (update-mesh! (:position @pose))
+                  (jolt/update-system (* ^long dt 0.001) 16)
+                  (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
+                  (reset! wheel-angles (if @vehicle
+                                         [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
+                                          (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
+                                          (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2.0 PI)) 1.0)]
+                                         [0.0 0.0 0.0]))
+                  (reset! suspension (if @vehicle
+                                       [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                                        (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                                        (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                                       [1.0 1.0 1.0]))
+                  (when @recording
+                    (let [frame {:timemillis (long (+ (* ^double @time-delta 1000.0 86400.0) ^long @t0))
+                                 :position (:position @pose)
+                                 :orientation (:orientation @pose)
+                                 :camera-orientation @camera-orientation
+                                 :camera-dx @camera-dx
+                                 :camera-dy @camera-dy
+                                 :dist @dist
+                                 :gear @gear
+                                 :wheel-angles (if @vehicle
+                                                 [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
+                                                  (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
+                                                  (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
+                                                 [0.0 0.0 0.0])
+                                 :suspension (if @vehicle
+                                               [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                                                (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                                                (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                                               [1.0 1.0 1.0])}]
+                      (swap! recording conj frame)))))
+              (swap! camera-dx + (* ^long dt 0.001 ^double (@state :sfsim.input/camera-shift-x)))
+              (swap! camera-dy + (* ^long dt 0.001 ^double (@state :sfsim.input/camera-shift-y)))
+              (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-x)) (vec3 1 0 0)))
+              (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-y)) (vec3 0 1 0)))
+              (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-z)) (vec3 0 0 1)))
+              (swap! dist * (exp (* ^long dt 0.001 ^double (@state :sfsim.input/camera-distance-change))))))
         (let [object-position    (:position @pose)
               origin             (add object-position (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               jd-ut              (+ ^double @time-delta (/ ^long @t0 1000.0 86400.0) ^double astro/T0)
