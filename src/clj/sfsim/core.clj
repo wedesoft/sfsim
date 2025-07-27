@@ -374,7 +374,7 @@
                     (gui/text-label gui text)
                     (gui/layout-row-push gui 0.1)
                     (when (and (gui/button-label gui "Clear") device)
-                      (swap! mappings dissoc-in [:sfsim.input/joysticks device sensor-type sensor]))
+                      (swap! mappings dissoc-in [:sfsim.input/joysticks :sfsim.input/devices device sensor-type sensor]))
                     (gui/layout-row-push gui 0.1)
                     (when (gui/button-label gui "Set")
                       (swap! state dissoc last-event)
@@ -382,8 +382,9 @@
                         (swap! state dissoc ::joystick-config)
                         (swap! state assoc ::joystick-config control)))
                     (when-let [[device-new sensor-new] (and (= (@state ::joystick-config) control) (@state last-event))]
-                              (swap! mappings dissoc-in [:sfsim.input/joysticks device sensor-type sensor])
-                              (swap! mappings assoc-in [:sfsim.input/joysticks device-new sensor-type sensor-new] control)
+                              (swap! mappings dissoc-in [:sfsim.input/joysticks :sfsim.input/devices device sensor-type sensor])
+                              (swap! mappings assoc-in [:sfsim.input/joysticks :sfsim.input/devices device-new sensor-type sensor-new]
+                                     control)
                               (swap! state dissoc ::joystick-config))
                     (gui/layout-row-push gui 0.6)
                     (gui/text-label gui (if (= (@state ::joystick-config) control)
@@ -421,7 +422,10 @@
                       (joystick-dialog-button-item gui "Gear" :sfsim.input/gear)
                       (joystick-dialog-button-item gui "Brake" :sfsim.input/brake)
                       (joystick-dialog-button-item gui "Parking Brake" :sfsim.input/parking-brake)
-                      (gui/layout-row-dynamic gui 32 1)
+                      (gui/layout-row-dynamic gui 32 2)
+                      (when (gui/button-label gui "Save")
+                        (config/write-user-config "joysticks.edn" (@mappings :sfsim.input/joysticks))
+                        (reset! menu main-dialog))
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))
 
