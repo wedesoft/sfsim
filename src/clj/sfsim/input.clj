@@ -159,7 +159,7 @@
 (defn get-joystick-sensor-for-device
   "Get joystick axis or button index for a given device"
   [mappings device sensor-type id]
-  (let [sensors-inverted (map-invert (get-in mappings [::joysticks device sensor-type]))]
+  (let [sensors-inverted (map-invert (get-in mappings [::joysticks ::devices device sensor-type]))]
     (sensors-inverted id)))
 
 
@@ -535,12 +535,12 @@
   (process-joystick-axis [_this device axis value moved]
     (if (::menu @state)
       (menu-joystick-axis state device axis value moved)
-      (let [joystick (some-> @mappings ::joysticks (get device))]
-        (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> joystick ::dead-zone) state value))))
+      (let [joystick (some-> @mappings ::joysticks ::devices (get device))]
+        (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> @mappings ::joysticks ::dead-zone) state value))))
   (process-joystick-button [_this device button action]
     (if (@state ::menu)
       (menu-joystick-button state device button action)
-      (let [joystick (some-> @mappings ::joysticks (get device))]
+      (let [joystick (some-> @mappings ::joysticks ::devices (get device))]
         (simulator-joystick-button (some-> joystick ::buttons (get button)) state action)))))
 
 

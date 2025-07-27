@@ -403,7 +403,7 @@
 
 (defn joystick-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 10)) 2) 640 (* 37 10)
+  (gui/nuklear-window gui "joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 11)) 2) 640 (* 37 11)
                       (gui/layout-row-dynamic gui 32 1)
                       (gui/text-label gui "Joystick" (bit-or Nuklear/NK_TEXT_ALIGN_CENTERED Nuklear/NK_TEXT_ALIGN_MIDDLE))
                       (joystick-dialog-axis-item gui "Aileron" :sfsim.input/aileron)
@@ -414,10 +414,12 @@
                       (gui/layout-row gui 32 2
                                       (gui/layout-row-push gui 0.2)
                                       (gui/text-label gui "Dead Zone")
-                                      (gui/layout-row-push gui 0.8)
+                                      (gui/layout-row-push gui 0.7)
                                       (swap! mappings update-in [:sfsim.input/joysticks :sfsim.input/dead-zone]
                                              (fn [dead-zone]
-                                                 (gui/slider-float gui 0.0 dead-zone 1.0 0.05))))
+                                                 (gui/slider-float gui 0.0 dead-zone 1.0 (/ 1.0 1024.0))))
+                                      (gui/layout-row-push gui 0.1)
+                                      (gui/text-label gui (format "%5.3f" (get-in @mappings [:sfsim.input/joysticks :sfsim.input/dead-zone]))))
                       (joystick-dialog-button-item gui "Gear" :sfsim.input/gear)
                       (joystick-dialog-button-item gui "Brake" :sfsim.input/brake)
                       (joystick-dialog-button-item gui "Parking Brake" :sfsim.input/parking-brake)
