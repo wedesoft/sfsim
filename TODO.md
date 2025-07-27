@@ -1,7 +1,6 @@
 # TODO
 * input module
   * joystick
-    * dead-zone adjustment (slider next to every joystick axis?)
     * save/load joystick configuration configuration
   * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
     * x key (set position)

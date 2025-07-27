@@ -403,9 +403,7 @@
 
 (defn joystick-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 11)) 2) 640 (* 37 11)
-                      (gui/layout-row-dynamic gui 32 1)
-                      (gui/text-label gui "Joystick" (bit-or Nuklear/NK_TEXT_ALIGN_CENTERED Nuklear/NK_TEXT_ALIGN_MIDDLE))
+  (gui/nuklear-window gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 11)) 2) 640 (* 37 11) true
                       (joystick-dialog-axis-item gui "Aileron" :sfsim.input/aileron)
                       (joystick-dialog-axis-item gui "Elevator" :sfsim.input/elevator)
                       (joystick-dialog-axis-item gui "Rudder" :sfsim.input/rudder)
@@ -451,7 +449,7 @@
 
 (defn location-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "location" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4)
+  (gui/nuklear-window gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) true
                       (gui/layout-row-dynamic gui 32 2)
                       (gui/text-label gui "Longitude (East)")
                       (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
@@ -504,7 +502,7 @@
 
 (defn datetime-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "datetime" (quot (- window-width 320) 2) (quot (- window-height (* 37 3)) 2) 320 (* 37 3)
+  (gui/nuklear-window gui "Date and Time" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) true
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.4)
                                       (gui/text-label gui "Date")
@@ -540,10 +538,9 @@
 
 (defn main-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "menu" (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6)
+  (gui/nuklear-window gui (format "sfsim %s" version)
+                      (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6) true
                       (gui/layout-row-dynamic gui 32 1)
-                      (gui/text-label gui (format "sfsim %s" version)
-                                      (bit-or Nuklear/NK_TEXT_ALIGN_CENTERED Nuklear/NK_TEXT_ALIGN_MIDDLE))
                       (when (gui/button-label gui "Joystick")
                         (reset! menu joystick-dialog))
                       (when (gui/button-label gui "Location")
@@ -563,21 +560,21 @@
   (let [stack (MemoryStack/stackPush)
         rect (NkRect/malloc stack)
         rgb  (NkColor/malloc stack)]
-    (gui/nuklear-window gui "stick" 10 10 80 80
+    (gui/nuklear-window gui "Yoke" 10 10 80 80 false
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
                                                   (Nuklear/nk_rect (- 45 (* ^double aileron 30)) (- 45 (* ^double elevator 30)) 10 10 rect)
                                                   (Nuklear/nk_rgb 255 0 0 rgb))))
-    (gui/nuklear-window gui "rudder" 10 95 80 20
+    (gui/nuklear-window gui "Rudder" 10 95 80 20 false
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 20 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
                           (Nuklear/nk_fill_circle canvas
                                                   (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
                                                   (Nuklear/nk_rgb 255 0 255 rgb))))
-    (gui/nuklear-window gui "throttle" 95 10 20 80
+    (gui/nuklear-window gui "Throttle" 95 10 20 80 false
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
                           (Nuklear/nk_widget rect (:sfsim.gui/context gui))
@@ -589,7 +586,7 @@
 
 (defn info
   [gui ^long h ^String text]
-  (gui/nuklear-window gui "info" 10 (- h 42) 640 32
+  (gui/nuklear-window gui "Information" 10 (- h 42) 640 32 false
                       (gui/layout-row-dynamic gui 32 1)
                       (gui/text-label gui text)))
 
