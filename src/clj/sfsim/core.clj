@@ -8,7 +8,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees signum)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -725,13 +725,12 @@
                                                 (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
                                                [1.0 1.0 1.0])}]
                       (swap! recording conj frame)))))
-            ; (swap! camera-dx + (* ^long dt ^long dcx 0.005))
-            ; (swap! camera-dy + (* ^long dt ^long dcy 0.005))
-            (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 (@state :sfsim.input/camera-rotate-x)) (vec3 1 0 0)))
-            (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 (@state :sfsim.input/camera-rotate-y)) (vec3 0 1 0)))
-            (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 (@state :sfsim.input/camera-rotate-z)) (vec3 0 0 1)))
-            ; (swap! dist * (exp d))
-              ))
+              (swap! camera-dx + (* ^long dt 0.001 ^double (@state :sfsim.input/camera-shift-x)))
+              (swap! camera-dy + (* ^long dt 0.001 ^double (@state :sfsim.input/camera-shift-y)))
+              (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-x)) (vec3 1 0 0)))
+              (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-y)) (vec3 0 1 0)))
+              (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-z)) (vec3 0 0 1)))
+              (swap! dist * (exp (* ^long dt 0.001 ^double (@state :sfsim.input/camera-distance-change))))))
         (let [object-position    (:position @pose)
               origin             (add object-position (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               jd-ut              (+ ^double @time-delta (/ ^long @t0 1000.0 86400.0) ^double astro/T0)
