@@ -133,8 +133,41 @@
            @gui-key => GLFW/GLFW_KEY_F)))
 
 
+(facts "Test camera keys"
+       (let [state    (make-initial-state)
+             mappings (:sfsim.input/keyboard default-mappings)]
+         (:sfsim.input/camera-rotate-x @state) => 0.0
+         (-> GLFW/GLFW_KEY_KP_2 mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/camera-rotate-x @state) => 0.5
+         (-> GLFW/GLFW_KEY_KP_2 mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/camera-rotate-x @state) => 0.0
+         (-> GLFW/GLFW_KEY_KP_8 mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/camera-rotate-x @state) => -0.5
+         (-> GLFW/GLFW_KEY_KP_8 mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/camera-rotate-x @state) => 0.0
+         (:sfsim.input/camera-rotate-y @state) => 0.0
+         (-> GLFW/GLFW_KEY_KP_4 mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/camera-rotate-y @state) => 0.5
+         (-> GLFW/GLFW_KEY_KP_4 mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/camera-rotate-y @state) => 0.0
+         (-> GLFW/GLFW_KEY_KP_6 mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/camera-rotate-y @state) => -0.5
+         (-> GLFW/GLFW_KEY_KP_6 mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/camera-rotate-y @state) => 0.0
+         (:sfsim.input/camera-rotate-z @state) => 0.0
+         (-> GLFW/GLFW_KEY_KP_1 mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/camera-rotate-z @state) => 0.5
+         (-> GLFW/GLFW_KEY_KP_1 mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/camera-rotate-z @state) => 0.0
+         (-> GLFW/GLFW_KEY_KP_3 mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/camera-rotate-z @state) => -0.5
+         (-> GLFW/GLFW_KEY_KP_3 mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/camera-rotate-z @state) => 0.0
+       ))
+
+
 (facts "Test some simulator key bindings directly"
-       (let [state (make-initial-state)
+       (let [state    (make-initial-state)
              mappings (:sfsim.input/keyboard default-mappings)]
          ; Pause
          (-> GLFW/GLFW_KEY_P mappings (simulator-key state GLFW/GLFW_PRESS 0))

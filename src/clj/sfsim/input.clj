@@ -237,16 +237,19 @@
 (defn make-initial-state
   "Create initial state of game and space craft"
   []
-  (atom {::menu          false
-         ::fullscreen    false
-         ::pause         false
-         ::brake         false
-         ::parking-brake false
-         ::gear-down     true
-         ::aileron       0.0
-         ::elevator      0.0
-         ::rudder        0.0
-         ::throttle      0.0
+  (atom {::menu            false
+         ::fullscreen      false
+         ::pause           false
+         ::brake           false
+         ::parking-brake   false
+         ::gear-down       true
+         ::aileron         0.0
+         ::elevator        0.0
+         ::rudder          0.0
+         ::throttle        0.0
+         ::camera-rotate-x 0.0
+         ::camera-rotate-y 0.0
+         ::camera-rotate-z 0.0
          }))
 
 
@@ -265,7 +268,14 @@
     GLFW/GLFW_KEY_W      ::elevator-down
     GLFW/GLFW_KEY_S      ::elevator-up
     GLFW/GLFW_KEY_Q      ::rudder-left
-    GLFW/GLFW_KEY_E      ::rudder-right}
+    GLFW/GLFW_KEY_E      ::rudder-right
+    GLFW/GLFW_KEY_KP_2   ::camera-rotate-x-positive
+    GLFW/GLFW_KEY_KP_8   ::camera-rotate-x-negative
+    GLFW/GLFW_KEY_KP_4   ::camera-rotate-y-positive
+    GLFW/GLFW_KEY_KP_6   ::camera-rotate-y-negative
+    GLFW/GLFW_KEY_KP_1   ::camera-rotate-z-positive
+    GLFW/GLFW_KEY_KP_3   ::camera-rotate-z-negative
+    }
    ::joysticks
    {::dead-zone 0.1
     ::devices {"Rock Candy Gamepad Wired Controller" {::axes {0 ::aileron
@@ -409,6 +419,36 @@
   [_id state action _mods]
   (when (keypress? action)
     (increment-clamp state ::elevator -0.0625)))
+
+
+(defmethod simulator-key ::camera-rotate-x-positive
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-x (if (keypress? action) 0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-rotate-x-negative
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-x (if (keypress? action) -0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-rotate-y-positive
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-y (if (keypress? action) 0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-rotate-y-negative
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-y (if (keypress? action) -0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-rotate-z-positive
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-z (if (keypress? action) 0.5 0.0)))
+
+
+(defmethod simulator-key ::camera-rotate-z-negative
+  [_id state action _mods]
+  (swap! state assoc ::camera-rotate-z (if (keypress? action) -0.5 0.0)))
 
 
 (defn menu-mouse-button

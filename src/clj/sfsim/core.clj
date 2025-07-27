@@ -660,77 +660,78 @@
             (reset! gear (:gear frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
-            (if (@state :sfsim.input/pause)
-              (do
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
-                (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double aileron ) (vec3 1 0 0)))
-                ; (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v)))
-                )
-              (do
-                (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
-                (if (@state :sfsim.input/gear-down)
-                  (swap! gear - (* ^long dt 0.0005))
-                  (swap! gear + (* ^long dt 0.0005)))
-                (swap! gear min 1.0)
-                (swap! gear max 0.0)
-                (if (zero? ^double @gear)
-                  (when (not @vehicle)
-                    (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
-                  (when @vehicle
-                    (jolt/remove-and-destroy-constraint @vehicle)
-                    (reset! vehicle nil)))
-                (when @vehicle (jolt/set-brake-input @vehicle brake))
-                (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
-                (let [height (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
-                      loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
-                                                             (jolt/get-angular-velocity body)
-                                                             (mult (vec3 (* 0.25 ^double aileron)
-                                                                         (* 0.25 ^double elevator)
-                                                                         (* 0.4  ^double rudder))
-                                                                   (to-radians 20)))]
-                  (jolt/add-force body (:sfsim.aerodynamics/forces loads))
-                  (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
-                (update-mesh! (:position @pose))
-                (jolt/update-system (* ^long dt 0.001) 16)
-                (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
-                (reset! wheel-angles (if @vehicle
-                                       [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
-                                        (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
-                                        (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2.0 PI)) 1.0)]
-                                       [0.0 0.0 0.0]))
-                (reset! suspension (if @vehicle
-                                     [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                      (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                      (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
-                                     [1.0 1.0 1.0]))
-                (when @recording
-                  (let [frame {:timemillis (long (+ (* ^double @time-delta 1000.0 86400.0) ^long @t0))
-                               :position (:position @pose)
-                               :orientation (:orientation @pose)
-                               :camera-orientation @camera-orientation
-                               :camera-dx @camera-dx
-                               :camera-dy @camera-dy
-                               :dist @dist
-                               :gear @gear
-                               :wheel-angles (if @vehicle
-                                               [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
-                                                (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
-                                                (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
-                                               [0.0 0.0 0.0])
-                               :suspension (if @vehicle
-                                             [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                              (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                              (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
-                                             [1.0 1.0 1.0])}]
-                    (swap! recording conj frame)))))
+            (do
+              (if (@state :sfsim.input/pause)
+                (do
+                  ; (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
+                  ; (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
+                  ; (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double aileron ) (vec3 1 0 0)))
+                  ; (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v)))
+                  )
+                (do
+                  (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+                  (if (@state :sfsim.input/gear-down)
+                    (swap! gear - (* ^long dt 0.0005))
+                    (swap! gear + (* ^long dt 0.0005)))
+                  (swap! gear min 1.0)
+                  (swap! gear max 0.0)
+                  (if (zero? ^double @gear)
+                    (when (not @vehicle)
+                      (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
+                    (when @vehicle
+                      (jolt/remove-and-destroy-constraint @vehicle)
+                      (reset! vehicle nil)))
+                  (when @vehicle (jolt/set-brake-input @vehicle brake))
+                  (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
+                  (let [height (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
+                        loads  (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
+                                                               (jolt/get-angular-velocity body)
+                                                               (mult (vec3 (* 0.25 ^double aileron)
+                                                                           (* 0.25 ^double elevator)
+                                                                           (* 0.4  ^double rudder))
+                                                                     (to-radians 20)))]
+                    (jolt/add-force body (:sfsim.aerodynamics/forces loads))
+                    (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
+                  (update-mesh! (:position @pose))
+                  (jolt/update-system (* ^long dt 0.001) 16)
+                  (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
+                  (reset! wheel-angles (if @vehicle
+                                         [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
+                                          (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
+                                          (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2.0 PI)) 1.0)]
+                                         [0.0 0.0 0.0]))
+                  (reset! suspension (if @vehicle
+                                       [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                                        (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                                        (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                                       [1.0 1.0 1.0]))
+                  (when @recording
+                    (let [frame {:timemillis (long (+ (* ^double @time-delta 1000.0 86400.0) ^long @t0))
+                                 :position (:position @pose)
+                                 :orientation (:orientation @pose)
+                                 :camera-orientation @camera-orientation
+                                 :camera-dx @camera-dx
+                                 :camera-dy @camera-dy
+                                 :dist @dist
+                                 :gear @gear
+                                 :wheel-angles (if @vehicle
+                                                 [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
+                                                  (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
+                                                  (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
+                                                 [0.0 0.0 0.0])
+                                 :suspension (if @vehicle
+                                               [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                                                (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                                                (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                                               [1.0 1.0 1.0])}]
+                      (swap! recording conj frame)))))
             ; (swap! camera-dx + (* ^long dt ^long dcx 0.005))
             ; (swap! camera-dy + (* ^long dt ^long dcy 0.005))
-            ; (swap! camera-orientation q/* (q/rotation (* ^long dt ra) (vec3 1 0 0)))
-            ; (swap! camera-orientation q/* (q/rotation (* ^long dt rb) (vec3 0 1 0)))
-            ; (swap! camera-orientation q/* (q/rotation (* ^long dt rc) (vec3 0 0 1)))
+            (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 (@state :sfsim.input/camera-rotate-x)) (vec3 1 0 0)))
+            (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 (@state :sfsim.input/camera-rotate-y)) (vec3 0 1 0)))
+            (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 (@state :sfsim.input/camera-rotate-z)) (vec3 0 0 1)))
             ; (swap! dist * (exp d))
-            )
+              ))
         (let [object-position    (:position @pose)
               origin             (add object-position (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               jd-ut              (+ ^double @time-delta (/ ^long @t0 1000.0 86400.0) ^double astro/T0)
