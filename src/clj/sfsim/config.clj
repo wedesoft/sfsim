@@ -17,7 +17,7 @@
 
 (def tmpdir (System/getenv "TEMP"))
 (def separator "/")
-(def appdata (str (System/getenv "HOME") separator ".config"))
+(def appdata (System/getenv "APPDATA"))
 (def sfsim-data (str appdata separator "sfsim"))
 
 
