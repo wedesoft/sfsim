@@ -6,6 +6,7 @@
 
 (ns sfsim.t-config
   (:require
+    [clojure.java.io :as io]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -18,4 +19,8 @@
 
 (facts "Configuration file handling"
         (read-user-config "test/clj/sfsim/fixtures/config" "/" "nosuchfile.edn" {}) => {}
-        (read-user-config "test/clj/sfsim/fixtures/config" "/" "test.edn" {}) => {:sfsim.config/value 42.0})
+        (read-user-config "test/clj/sfsim/fixtures/config" "/" "test.edn" {}) => {:sfsim.config/value 42.0}
+        (io/copy (io/file "test/clj/sfsim/fixtures/config/test.edn") (io/file (str tmpdir separator "sfsim.edn")))
+        (read-user-config tmpdir separator "sfsim.edn" {}) => {:sfsim.config/value 42.0}
+        (update-user-config tmpdir separator "sfsim.edn" {:sfsim.config/value 43.0})
+        (read-user-config tmpdir separator "sfsim.edn" {}) => {:sfsim.config/value 43.0})
