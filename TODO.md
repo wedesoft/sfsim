@@ -2,7 +2,7 @@
 * input module
   * joystick
     * save/load joystick configuration configuration
-  * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
+  * keys
     * x key (set position)
     * d, ra, rb, rc, dcx, and dcy for camera
     * slew v
@@ -12,6 +12,7 @@
     * configuration dialog for air brake, elevator trim (hat?), camera angle (hat), camera views
   * GUI tabbing
   * move event polling into input module
+* https://flightsimcoach.com/msfs-2024-keyboard-commands/
 * switch windows JDK install to 24
 * following camera, different camera views, camera controls such as distance
 * keyboard help
