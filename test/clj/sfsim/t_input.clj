@@ -275,16 +275,16 @@
 
 
 (facts "Get joystick and axis for a mapping"
-       (let [mappings {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron}}
-                                               "Throttle" {:sfsim.input/axes {1 :sfsim.input/throttle}}}}]
+       (let [mappings {:sfsim.input/joysticks {:sfsim.input/devices {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron}}
+                                                                     "Throttle" {:sfsim.input/axes {1 :sfsim.input/throttle}}}}}]
          (get-joystick-sensor-for-mapping {} ["Gamepad"] :sfsim.input/axes :sfsim.input/aileron) => nil
          (get-joystick-sensor-for-mapping mappings ["Gamepad"] :sfsim.input/axes :sfsim.input/aileron) => ["Gamepad" 0]
          (get-joystick-sensor-for-mapping mappings ["Gamepad" "Throttle"] :sfsim.input/axes :sfsim.input/throttle) => ["Throttle" 1]))
 
 
 (facts "Get joystick and button for a mapping"
-       (let [mappings {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/buttons {0 :sfsim.input/gear}}
-                                               "Throttle" {:sfsim.input/buttons {1 :sfsim.input/brake}}}}]
+       (let [mappings {:sfsim.input/joysticks {:sfsim.input/devices {"Gamepad" {:sfsim.input/buttons {0 :sfsim.input/gear}}
+                                                                     "Throttle" {:sfsim.input/buttons {1 :sfsim.input/brake}}}}}]
          (get-joystick-sensor-for-mapping {} ["Gamepad"] :sfsim.input/buttons :sfsim.input/gear) => nil
          (get-joystick-sensor-for-mapping mappings ["Gamepad"] :sfsim.input/buttons :sfsim.input/gear) => ["Gamepad" 0]
          (get-joystick-sensor-for-mapping mappings ["Gamepad" "Throttle"] :sfsim.input/buttons :sfsim.input/brake) => ["Throttle" 1]))
@@ -299,24 +299,31 @@
              state                    (make-initial-state)
              gui                      {:sfsim.gui/context :ctx}
              axis-state               (atom {})
-             mappings                 {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron
-                                                                                             1 :sfsim.input/elevator
-                                                                                             2 :sfsim.input/rudder}
-                                                                          :sfsim.input/dead-zone 0.0}}}
-             mappings-inv             {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron-inverted
-                                                                                             1 :sfsim.input/elevator-inverted
-                                                                                             2 :sfsim.input/rudder-inverted}
-                                                                          :sfsim.input/dead-zone 0.0}}}
-             mappings-zn              {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron }
-                                                                          :sfsim.input/dead-zone 0.5}}}
-             map-throttle             {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle}
-                                                                          :sfsim.input/dead-zone 0.0}}}
-             map-throttle-incr        {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle-increment}
-                                                                          :sfsim.input/dead-zone 0.0}}}
-             map-throttle-zn          {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle}
-                                                                          :sfsim.input/dead-zone 0.5}}}
-             map-throttle-incr-zn     {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle-increment}
-                                                                          :sfsim.input/dead-zone 0.5}}}
+             mappings                 {:sfsim.input/joysticks {:sfsim.input/devices
+                                                               {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron
+                                                                                              1 :sfsim.input/elevator
+                                                                                              2 :sfsim.input/rudder}}}
+                                                               :sfsim.input/dead-zone 0.0}}
+             mappings-inv             {:sfsim.input/joysticks {:sfsim.input/devices
+                                                               {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron-inverted
+                                                                                              1 :sfsim.input/elevator-inverted
+                                                                                              2 :sfsim.input/rudder-inverted}}}
+                                                               :sfsim.input/dead-zone 0.0}}
+             mappings-zn              {:sfsim.input/joysticks {:sfsim.input/devices
+                                                               {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/aileron }}}
+                                                               :sfsim.input/dead-zone 0.5}}
+             map-throttle             {:sfsim.input/joysticks {:sfsim.input/devices
+                                                               {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle}}}
+                                                               :sfsim.input/dead-zone 0.0}}
+             map-throttle-incr        {:sfsim.input/joysticks {:sfsim.input/devices
+                                                               {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle-increment}}}
+                                                               :sfsim.input/dead-zone 0.0}}
+             map-throttle-zn          {:sfsim.input/joysticks {:sfsim.input/devices
+                                                               {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle}}}
+                                                               :sfsim.input/dead-zone 0.5}}
+             map-throttle-incr-zn     {:sfsim.input/joysticks {:sfsim.input/devices
+                                                               {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle-increment}}}
+                                                               :sfsim.input/dead-zone 0.5}}
              handler                  (->InputHandler state gui (atom mappings))
              handler-inv              (->InputHandler state gui (atom mappings-inv))
              handler-zn               (->InputHandler state gui (atom mappings-zn))
@@ -358,10 +365,11 @@
              mock-handler             (reify InputHandlerProtocol
                                              (process-joystick-button [_this device button action]
                                                (swap! playback conj {:device device :button button :action action})))
-             mappings                 {:sfsim.input/joysticks {"Gamepad" {:sfsim.input/buttons {1 :sfsim.input/gear
-                                                                                                2 :sfsim.input/brake
-                                                                                                3 :sfsim.input/parking-brake
-                                                                                                }}}}
+             mappings                 {:sfsim.input/joysticks {:sfsim.input/devices
+                                                               {"Gamepad" {:sfsim.input/buttons {1 :sfsim.input/gear
+                                                                                                 2 :sfsim.input/brake
+                                                                                                 3 :sfsim.input/parking-brake
+                                                                                                 }}}}}
              state                    (make-initial-state)
              gui                      {:sfsim.gui/context :ctx}
              handler                  (->InputHandler state gui (atom mappings))]
