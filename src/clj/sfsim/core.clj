@@ -411,6 +411,13 @@
                       (joystick-dialog-axis-item gui "Rudder" :sfsim.input/rudder)
                       (joystick-dialog-axis-item gui "Throttle" :sfsim.input/throttle)
                       (joystick-dialog-axis-item gui "Throttle Increment" :sfsim.input/throttle-increment)
+                      (gui/layout-row gui 32 2
+                                      (gui/layout-row-push gui 0.2)
+                                      (gui/text-label gui "Dead Zone")
+                                      (gui/layout-row-push gui 0.8)
+                                      (swap! mappings update-in [:sfsim.input/joysticks :sfsim.input/dead-zone]
+                                             (fn [dead-zone]
+                                                 (gui/slider-float gui 0.0 dead-zone 1.0 0.05))))
                       (joystick-dialog-button-item gui "Gear" :sfsim.input/gear)
                       (joystick-dialog-button-item gui "Brake" :sfsim.input/brake)
                       (joystick-dialog-button-item gui "Parking Brake" :sfsim.input/parking-brake)

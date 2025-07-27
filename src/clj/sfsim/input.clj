@@ -267,20 +267,19 @@
     GLFW/GLFW_KEY_Q      ::rudder-left
     GLFW/GLFW_KEY_E      ::rudder-right}
    ::joysticks
-   {"Rock Candy Gamepad Wired Controller" {::dead-zone 0.1
-                                           ::axes {0 ::aileron
-                                                   1 ::elevator
-                                                   3 ::rudder
-                                                   4 ::throttle-increment}
-                                           ::buttons {0 ::gear
-                                                      1 ::brake
-                                                      2 ::parking-brake
-                                                      }}
-    "Thrustmaster T.A320 Copilot" {::dead-zone 0.1
-                                   ::axes {0 ::aileron
-                                           1 ::elevator
-                                           2 ::rudder
-                                           3 ::throttle}}}})
+   {::dead-zone 0.1
+    ::devices {"Rock Candy Gamepad Wired Controller" {::axes {0 ::aileron
+                                                              1 ::elevator
+                                                              3 ::rudder
+                                                              4 ::throttle-increment}
+                                                      ::buttons {0 ::gear
+                                                                 1 ::brake
+                                                                 2 ::parking-brake
+                                                                 }}
+               "Thrustmaster T.A320 Copilot" {::axes {0 ::aileron
+                                                      1 ::elevator
+                                                      2 ::rudder
+                                                      3 ::throttle}}}}})
 
 
 (defn menu-key

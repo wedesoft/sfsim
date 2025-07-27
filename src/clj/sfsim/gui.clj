@@ -439,10 +439,20 @@
   "Create a slider with integer value"
   {:malli/schema [:=> [:cat :some :int :int :int :int] :int]}
   [gui minimum value maximum step]
-  (let [buffer (BufferUtils/createIntBuffer 1)]
-    (.put buffer 0 ^int value)
+  (let [buffer (int-array 1)]
+    (aset-int buffer 0 value)
     (Nuklear/nk_slider_int ^NkContext (::context gui) ^int minimum buffer ^int maximum ^int step)
-    (.get buffer 0)))
+    (aget buffer 0)))
+
+
+(defn slider-float
+  "Create a slider with float value"
+  {:malli/schema [:=> [:cat :some :double :double :double :double] :double]}
+  [gui minimum value maximum step]
+  (let [buffer (float-array 1)]
+    (aset-float buffer 0 value)
+    (Nuklear/nk_slider_float ^NkContext (::context gui) ^float minimum buffer ^float maximum ^float step)
+    (aget buffer 0)))
 
 
 (defn button-label

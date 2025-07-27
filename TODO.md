@@ -1,12 +1,13 @@
 # TODO
 * input module
+  * joystick
+    * dead-zone adjustment (slider next to every joystick axis?)
+    * save/load joystick configuration configuration
   * keys https://flightsimcoach.com/msfs-2024-keyboard-commands/
     * x key (set position)
     * d, ra, rb, rc, dcx, and dcy for camera
     * slew v
   * joystick
-    * dead-zone adjustment
-    * save/load joystick configuration configuration
     * Create events from joystick hats (using joystick name)
     * test twin-axis mapping for game controller under Linux
     * configuration dialog for air brake, elevator trim (hat?), camera angle (hat), camera views
