@@ -7,6 +7,7 @@
 (ns sfsim.config
   "Configuration values for software"
   (:require
+    [clojure.java.io :as io]
     [immuconf.config :as immuconf]))
 
 
@@ -17,6 +18,7 @@
 (def tmpdir "/tmp")
 (def separator "/")
 (def appdata (str (System/getenv "HOME") separator ".config"))
+(def sfsim-data (str appdata separator "sfsim"))
 
 
 (def config (immuconf/load "resources/config.edn"))
@@ -28,6 +30,16 @@
 (def cloud-config (immuconf/get config :sfsim.cloud-config))
 (def shadow-config (immuconf/get config :sfsim.shadow-config))
 (def object-radius (immuconf/get config :sfsim.object-radius))
+
+
+(defn read-user-config
+  ([filename default]
+   (read-user-config sfsim-data separator filename default))
+  ([sfsim-data separator filename default]
+   (let [path (str sfsim-data separator filename)]
+     (if (.exists (io/file path))
+       (immuconf/load path)
+       default))))
 
 
 (set! *warn-on-reflection* false)
