@@ -8,6 +8,7 @@
     (:require
       [clojure.math :refer (signum)]
       [clojure.set :refer (map-invert)]
+      [sfsim.config :refer (read-user-config)]
       [sfsim.util :refer (clamp dissoc-in)])
     (:import
       [clojure.lang
@@ -286,19 +287,7 @@
     GLFW/GLFW_KEY_PERIOD ::camera-distance-change-negative
     }
    ::joysticks
-   {::dead-zone 0.1
-    ::devices {"Rock Candy Gamepad Wired Controller" {::axes {0 ::aileron
-                                                              1 ::elevator
-                                                              3 ::rudder
-                                                              4 ::throttle-increment}
-                                                      ::buttons {0 ::gear
-                                                                 1 ::brake
-                                                                 2 ::parking-brake
-                                                                 }}
-               "Thrustmaster T.A320 Copilot" {::axes {0 ::aileron
-                                                      1 ::elevator
-                                                      2 ::rudder
-                                                      3 ::throttle}}}}})
+   (read-user-config "joysticks.edn" {::dead-zone 0.1})})
 
 
 (defn menu-key

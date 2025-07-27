@@ -8,6 +8,7 @@
   "Configuration values for software"
   (:require
     [clojure.java.io :as io]
+    [clojure.pprint :refer (pprint)]
     [immuconf.config :as immuconf]))
 
 
@@ -40,6 +41,17 @@
      (if (.exists (io/file path))
        (immuconf/load path)
        default))))
+
+
+(defn update-user-config
+  ([filename value]
+   (update-user-config sfsim-data separator filename value))
+  ([sfsim-data separator filename value]
+   (let [path (str sfsim-data separator filename)]
+     (io/make-parents path)
+     (with-open [f (io/writer path)]
+       (binding [*out* f]
+                (pprint value))))))
 
 
 (set! *warn-on-reflection* false)
