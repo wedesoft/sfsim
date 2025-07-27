@@ -13,7 +13,7 @@
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
-(def tmpdir "/tmp")
+(def tmpdir (System/getenv "TEMP"))
 
 (def config (immuconf/load "resources/config.edn"))
 
