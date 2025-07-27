@@ -287,7 +287,8 @@
     GLFW/GLFW_KEY_PERIOD ::camera-distance-change-negative
     }
    ::joysticks
-   (read-user-config "joysticks.edn" {::dead-zone 0.1})})
+   (read-user-config "joysticks.edn"
+                     {::dead-zone 0.1})})
 
 
 (defn menu-key

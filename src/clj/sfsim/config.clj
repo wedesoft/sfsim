@@ -43,9 +43,9 @@
        default))))
 
 
-(defn update-user-config
+(defn write-user-config
   ([filename value]
-   (update-user-config sfsim-data separator filename value))
+   (write-user-config sfsim-data separator filename value))
   ([sfsim-data separator filename value]
    (let [path (str sfsim-data separator filename)]
      (io/make-parents path)

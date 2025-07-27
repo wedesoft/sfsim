@@ -22,5 +22,5 @@
         (read-user-config "test/clj/sfsim/fixtures/config" "/" "test.edn" {}) => {:sfsim.config/value 42.0}
         (io/copy (io/file "test/clj/sfsim/fixtures/config/test.edn") (io/file (str tmpdir separator "sfsim.edn")))
         (read-user-config tmpdir separator "sfsim.edn" {}) => {:sfsim.config/value 42.0}
-        (update-user-config tmpdir separator "sfsim.edn" {:sfsim.config/value 43.0})
+        (write-user-config tmpdir separator "sfsim.edn" {:sfsim.config/value 43.0})
         (read-user-config tmpdir separator "sfsim.edn" {}) => {:sfsim.config/value 43.0})
