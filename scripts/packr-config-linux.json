@@ -1,6 +1,6 @@
 {
   "platform": "linux64",
-  "jdk": "/usr/lib/jvm/jdk-24.0.1-oracle-x64",
+  "jdk": "/usr/lib/jvm/jdk-24.0.2-oracle-x64",
   "executable": "sfsim",
   "classpath": ["target/sfsim.jar"],
   "mainclass": "sfsim.core",

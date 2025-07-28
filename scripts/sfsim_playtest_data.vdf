@@ -1,7 +1,7 @@
 "AppBuild"
 {
 	"AppID" "3847320"
-	"Desc" "sfsim and data playtest linux build"
+	"Desc" "sfsim playtest data build"
 
 	"ContentRoot" "../"
 	"BuildOutput" "../output/"
@@ -10,12 +10,12 @@
 
 	"Depots"
 	{
-		"3847323"
+		"3847321"
 		{
 			"FileMapping"
 			{
-				"LocalPath" "out-linux/*"
-				"DepotPath" "."
+				"LocalPath" "data\*"
+				"DepotPath" "data\"
 				"Recursive" "1"
 			}
 		}
