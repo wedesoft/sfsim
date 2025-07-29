@@ -24,7 +24,7 @@ Here are the updated key bindings for testing. Sorry for breaking the camera bin
 * B: wheel brakes
 * A, S, D, W: flight stick
 * Q, E: rudder
-* Space: thrust (keep pressed for continuous thrust)
+* R, F: thrust
 * numerical keypad: change camera position
 * "," and ".": increase/decrease camera distance
 * H, J, K, L: move the camera around
