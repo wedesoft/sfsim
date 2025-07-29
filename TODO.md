@@ -17,8 +17,11 @@
   volumetric engine exhaust?
   blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
   particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
+* rocket: https://www.shadertoy.com/view/wdjGRz
+  * mach cone: https://www.shadertoy.com/view/WdGBDc
+* reentry flame: https://www.shadertoy.com/view/XX3fDH
 * nav lights, strobe lights, landing lights
-* keyboard help
+* physics and animation of steering (apply difference of two animation time stamps)
 * block gear up when on the ground
 * following camera, different camera views, camera controls such as distance, joystick hat
 * Elevator trim
@@ -40,11 +43,7 @@
 * launchpad
 * extendability (modding)?
 * move curves code into separate module
-* rocket: https://www.shadertoy.com/view/wdjGRz
-  * mach cone: https://www.shadertoy.com/view/WdGBDc
-* reentry flame: https://www.shadertoy.com/view/XX3fDH
 * spacecraft module with data transfer from state dictionary to Jolt physics, graphics, keyboard, ...
-* physics and animation of steering (apply difference of two animation time stamps)
 * refactor gear code
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://samdriver.xyz/article/decal-render-intro
@@ -66,7 +65,6 @@
   * no skydome and just stars as pixels?
 * sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
 * sound effects
-* controller, HOTAS support
 * UI overlays for third person view
 * post on https://www.reddit.com/r/spacesimgames/
 * launch complex, lights
@@ -98,7 +96,6 @@
 * .jpg -> .day.jpg
 * GLL parsing https://pure.uva.nl/ws/files/36086100/Thesis.pdf
 * cloud shadow flickering at large distance?
-* animate flaps
 * compute earth barycenter and sun in separate thread (use future)
 * microtexture for normal map, microtextures, bump maps
 * shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
