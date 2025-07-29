@@ -20,6 +20,11 @@
 * reentry flame: https://www.shadertoy.com/view/XX3fDH
 * nav lights, strobe lights, landing lights
 * physics and animation of steering (apply difference of two animation time stamps)
+* takeoff physics
+  * atmospheric flight with stationary atmosphere in rotating coordinate system
+  * rotating Earth coordinate system (centrifugal and coriolis force),
+  * space flight physics with resting coordinate system
+  * implement two-step Runge-Kutta wrapper alignment
 * block gear up when on the ground
 * following camera, different camera views, camera controls such as distance, joystick hat
 * Elevator trim
@@ -79,13 +84,8 @@
   animate wheel rotation and suspension, bake gear animation and name actions the same
 * hover thruster locations
 * threads for rendering, simulation, and loading of data
-* takeoff physics
-  * atmospheric flight with stationary atmosphere in rotating coordinate system
-  * rotating Earth coordinate system (centrifugal and coriolis force),
-  * space flight physics with resting coordinate system
-  * implement two-step Runge-Kutta wrapper alignment
-  * docking physics
-  * moon landing physics
+* docking physics
+* moon landing physics
 * Check out poliastro and hapsira
 * use components and core.async for physics and loading of data, rendering main thread as component?
   https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
