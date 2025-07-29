@@ -17,8 +17,6 @@
   volumetric engine exhaust?
   blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
   particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
-* rocket: https://www.shadertoy.com/view/wdjGRz
-  * mach cone: https://www.shadertoy.com/view/WdGBDc
 * reentry flame: https://www.shadertoy.com/view/XX3fDH
 * nav lights, strobe lights, landing lights
 * physics and animation of steering (apply difference of two animation time stamps)
