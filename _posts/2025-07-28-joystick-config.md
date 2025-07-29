@@ -22,6 +22,7 @@ Here are the updated key bindings for testing. Sorry for breaking the camera bin
 * P: pause/unpause
 * G: gear down/up
 * B: wheel brakes
+* Shift-B: parking brake
 * A, S, D, W: flight stick
 * Q, E: rudder
 * R, F: thrust
