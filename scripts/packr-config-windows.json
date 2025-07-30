@@ -1,6 +1,6 @@
 {
   "platform": "windows64",
-  "jdk": "C:/Program Files/Eclipse Adoptium/jdk-23.0.0.37-hotspot",
+  "jdk": "C:/Program Files/Eclipse Adoptium/jdk-24.0.2.12-hotspot",
   "executable": "sfsim",
   "classpath": ["target/sfsim.jar"],
   "mainclass": "sfsim.core",
