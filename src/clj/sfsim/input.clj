@@ -191,6 +191,12 @@
   (boolean (#{GLFW/GLFW_PRESS GLFW/GLFW_REPEAT} action)))
 
 
+(defn shift?
+  "Check if shift key is pressed"
+  ^Boolean [^long mods]
+  (not (zero? (bit-and mods GLFW/GLFW_MOD_SHIFT))))
+
+
 (defmulti process-event (fn [event _handler] (::event event)))
 
 
@@ -239,6 +245,7 @@
   "Create initial state of game and space craft"
   []
   (atom {::menu                   false
+         ::focus                  0
          ::fullscreen             false
          ::pause                  false
          ::brake                  false
@@ -293,12 +300,12 @@
 
 (defn menu-key
   "Key handling when menu is shown"
-  [k state gui action _mods]
-  (let [press (keypress? action)]
+  [k state gui action mods]
+  (let [press (keypress? action)
+        shift (shift? mods)]
     (cond
       (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
       (= k GLFW/GLFW_KEY_ENTER)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
-      (= k GLFW/GLFW_KEY_TAB)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TAB press)
       (= k GLFW/GLFW_KEY_BACKSPACE)   (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_BACKSPACE press)
       (= k GLFW/GLFW_KEY_UP)          (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_UP press)
       (= k GLFW/GLFW_KEY_DOWN)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DOWN press)
@@ -307,7 +314,8 @@
       (= k GLFW/GLFW_KEY_HOME)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_START press)
       (= k GLFW/GLFW_KEY_END)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_END press)
       (= k GLFW/GLFW_KEY_LEFT_SHIFT)  (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
-      (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press))
+      (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
+      (= k GLFW/GLFW_KEY_TAB)         (when press (swap! state (fn [s] (assoc s ::focus-new ((if shift dec inc) (::focus s)))))))
     (when (and press (= k GLFW/GLFW_KEY_ESCAPE))
       (swap! state update ::menu not)
       false)))
