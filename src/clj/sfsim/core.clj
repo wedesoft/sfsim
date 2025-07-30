@@ -239,12 +239,7 @@
 
 (def keystates (atom {}))
 
-(def focus-old (atom 0))
-(def focus-new (atom nil))
-
-
 (def mappings (atom default-mappings))
-
 
 (def event-buffer (atom (make-event-buffer)))
 (def state (make-initial-state))
@@ -285,10 +280,11 @@
 (defmacro tabbing
   [gui edit idx cnt]
   `(do
-     (when (and @focus-new (= (mod @focus-new ~cnt) ~idx))
-       (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE))
+     (when (and (@state :sfsim.input/focus-new) (= (mod (@state :sfsim.input/focus-new) ~cnt) ~idx))
+       (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE)
+       (swap! state dissoc :sfsim.input/focus-new))
      (when (= Nuklear/NK_EDIT_ACTIVE ~edit)
-       (reset! focus-old ~idx))))
+       (swap! state assoc :sfsim.input/focus ~idx))))
 
 
 (defn position-from-lon-lat
@@ -819,9 +815,7 @@
                                (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
                            (setup-rendering @window-width @window-height :sfsim.render/noculling false)
                            (when @menu
-                             (reset! focus-old nil)
-                             (@menu gui @window-width @window-height)
-                             (reset! focus-new nil))
+                             (@menu gui @window-width @window-height))
                            (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^long dt 0.001))))
                            (when (not playback)
                              (stick gui aileron elevator rudder throttle)

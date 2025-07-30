@@ -51,8 +51,18 @@
 (def gui-key (atom nil))
 
 
+(facts "Test GUI tab focus"
+       (let [state (make-initial-state)
+             gui   {:sfsim.gui/context :ctx}]
+         (@state :sfsim.input/focus) => 0
+         (menu-key GLFW/GLFW_KEY_TAB state gui GLFW/GLFW_PRESS 0)
+         (@state :sfsim.input/focus-new) => 1
+         (menu-key GLFW/GLFW_KEY_TAB state gui GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT)
+         (@state :sfsim.input/focus-new) => -1))
+
+
 (defn menu-key-mock
-  [k state gui action mods]
+  [k state _gui action _mods]
   (reset! gui-key k)
   (when (and (= action GLFW/GLFW_PRESS) (= k GLFW/GLFW_KEY_ESCAPE))
     (swap! state update :sfsim.input/menu not)
