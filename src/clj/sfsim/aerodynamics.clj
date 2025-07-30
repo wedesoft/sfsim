@@ -302,13 +302,21 @@
   (/ (sqr (coefficient-of-lift speed-mach alpha beta)) (* PI ^double (oswald-factor speed-mach) ^double aspect-ratio)))
 
 
+(defn gear-drag-multiplier
+  ^double [^double gear]
+  (+ 1.0 (* 0.2 gear)))
+
+
 (defn coefficient-of-drag
   "Determine coefficient of drag (negative x in wind system) depending on mach speed, angle of attack, and optionally angle of side-slip"
   (^double [^double speed-mach ^double alpha]
-   (coefficient-of-drag speed-mach alpha 0.0))
+   (coefficient-of-drag speed-mach alpha 0.0 0.0))
   (^double [^double speed-mach ^double alpha ^double beta]
-   (mix (mix (+ ^double (c-d-0 speed-mach) (coefficient-of-induced-drag speed-mach alpha beta)) (c-d-90 speed-mach) (* 2.0 alpha))
-        (* (/ ^double body-length ^double body-width) ^double (c-d-0 speed-mach))
+   (coefficient-of-drag speed-mach alpha beta 0.0))
+  (^double [^double speed-mach ^double alpha ^double beta ^double gear]
+   (mix (mix (+ (* (gear-drag-multiplier gear) ^double (c-d-0 speed-mach))
+                (coefficient-of-induced-drag speed-mach alpha beta)) (c-d-90 speed-mach) (* 2.0 alpha))
+        (* (/ ^double body-length ^double body-width) (* (gear-drag-multiplier gear) ^double (c-d-0 speed-mach)))
         (* 2.0 beta))))
 
 
@@ -439,8 +447,8 @@
 
 (defn drag
   "Compute drag for given speed in body system"
-  ^double [{::keys [^double alpha ^double beta ^double speed]} ^double speed-of-sound ^double density]
-  (* (coefficient-of-drag (/ speed speed-of-sound) alpha beta) (dynamic-pressure density speed) ^double reference-area))
+  ^double [{::keys [^double alpha ^double beta ^double speed]} ^double speed-of-sound ^double density ^double gear]
+  (* (coefficient-of-drag (/ speed speed-of-sound) alpha beta gear) (dynamic-pressure density speed) ^double reference-area))
 
 
 (defn side-force
@@ -618,14 +626,14 @@
 
 (defn aerodynamic-loads
   "Determine aerodynamic forces and moments"
-  {:malli/schema [:=> [:cat :double q/quaternion fvec3 fvec3 fvec3] :some]}
-  [height orientation linear-speed angular-speed control]
+  {:malli/schema [:=> [:cat :double q/quaternion fvec3 fvec3 fvec3 :double] :some]}
+  [height orientation linear-speed angular-speed control gear]
   (let [density             (atmosphere/density-at-height height)
         temperature         (atmosphere/temperature-at-height height)
         speed-of-sound      (atmosphere/speed-of-sound temperature)
         speed               (linear-speed-in-body-system orientation linear-speed)
         rotation            (angular-speed-in-body-system orientation angular-speed)
-        forces              (vec3 (- (drag speed speed-of-sound density))
+        forces              (vec3 (- (drag speed speed-of-sound density gear))
                                   (side-force speed speed-of-sound density)
                                   (- (lift speed speed-of-sound density)))
         aerodynamic-moments (vec3 (roll-moment speed speed-of-sound density)

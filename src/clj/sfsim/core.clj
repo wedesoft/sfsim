@@ -604,7 +604,7 @@
      (destroy-texture tex#)))
 
 
-(def gear (atom 0.0))
+(def gear (atom 1.0))
 
 
 (def frametime (atom 0.25))
@@ -671,11 +671,11 @@
                 (do
                   (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
                   (if (@state :sfsim.input/gear-down)
-                    (swap! gear - (* ^long dt 0.0005))
-                    (swap! gear + (* ^long dt 0.0005)))
+                    (swap! gear + (* ^long dt 0.0005))
+                    (swap! gear - (* ^long dt 0.0005)))
                   (swap! gear min 1.0)
                   (swap! gear max 0.0)
-                  (if (zero? ^double @gear)
+                  (if (= ^double @gear 1.0)
                     (when (not @vehicle)
                       (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
                     (when @vehicle
@@ -689,7 +689,8 @@
                                                                (mult (vec3 (* 0.25 ^double aileron)
                                                                            (* 0.25 ^double elevator)
                                                                            (* 0.4  ^double rudder))
-                                                                     (to-radians 20)))]
+                                                                     (to-radians 20))
+                                                               @gear)]
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                     (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
                   (update-mesh! (:position @pose))
@@ -748,7 +749,7 @@
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) @opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
-              wheels-scene       (if (zero? ^double @gear)
+              wheels-scene       (if (= ^double @gear 1.0)
                                    (model/apply-transforms
                                      scene
                                      (model/animations-frame
@@ -764,9 +765,9 @@
                                        scene
                                        (model/animations-frame
                                          model
-                                         {"GearLeft" (+ ^double @gear 1.0)
-                                          "GearRight" (+ ^double @gear 1.0)
-                                          "GearFront" (+ ^double @gear 2.0)
+                                         {"GearLeft" (- 2.0 ^double @gear)
+                                          "GearRight" (- 2.0 ^double @gear)
+                                          "GearFront" (- 3.0 ^double @gear)
                                           "WheelLeft" (nth @wheel-angles 0)
                                           "WheelRight" (nth @wheel-angles 1)
                                           "WheelFront" (nth @wheel-angles 2)}))
@@ -774,9 +775,9 @@
                                        scene
                                        (model/animations-frame
                                          model
-                                         {"GearLeft" (+ ^double @gear 1.0)
-                                          "GearRight" (+ ^double @gear 1.0)
-                                          "GearFront" (+ ^double @gear 2.0)}))))
+                                         {"GearLeft" (- 2.0 ^double @gear)
+                                          "GearRight" (- 2.0 ^double @gear)
+                                          "GearFront" (- 3.0 ^double @gear)}))))
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)

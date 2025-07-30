@@ -108,9 +108,11 @@
        (coefficient-of-drag 0.6 (to-radians 90.0)) => (roughly 1.1 1e-6)
        (coefficient-of-drag 0.6 (to-radians 3.0) (to-radians 0.0))
        => (roughly (+ 0.04741 (/ (sqr (* 2.7825 (to-radians 3.0))) PI 0.9859 aspect-ratio)) 1e-2)
-       (coefficient-of-drag 0.6 (to-radians 0.0) (to-radians 90.0))
        (coefficient-of-drag 0.6 (to-radians 0.0) (to-radians 90.0)) => (roughly 0.0721 1e-4)
-       (coefficient-of-drag 0.6 (to-radians 33.0) (to-radians 90.0)) => (roughly 0.0721 1e-4))
+       (coefficient-of-drag 0.6 (to-radians 33.0) (to-radians 90.0)) => (roughly 0.0721 1e-4)
+       (coefficient-of-drag 0.6 (to-radians 0.0) (to-radians 0.0) 0.0) => 0.04741
+       (coefficient-of-drag 0.6 (to-radians 0.0) (to-radians 0.0) 1.0) => (roughly (* (gear-drag-multiplier 1.0) 0.04741) 1e-4)
+       (coefficient-of-drag 0.6 (to-radians 0.0) (to-radians 90.0) 1.0) => (roughly (* (gear-drag-multiplier 1.0) 0.0721) 1e-4))
 
 
 (facts "Coefficient of side force"
@@ -228,16 +230,16 @@
 
 
 (defn coefficient-of-drag-mock
-  ^double [^double speed-mach ^double alpha ^double beta]
-  (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5)
+  ^double [^double speed-mach ^double alpha ^double beta ^double gear]
+  (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5 gear => 0.25)
   0.047475)
 
 
 (facts "Compute drag for given speed in body system"
        (with-redefs [aerodynamics/coefficient-of-drag coefficient-of-drag-mock]
-         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
+         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225 0.25)
          => (roughly (* 0.047475 0.5 1.225 (* 160 160) reference-area) 1e-6)
-         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.0)
+         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.0 0.25)
          => (roughly (* 0.047475 0.5 1.0 (* 160 160) reference-area) 1e-6)))
 
 
@@ -401,8 +403,8 @@
 
 
 (defn drag-mock
-  ^double [speed-body ^double speed-of-sound ^double density]
-  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  ^double [speed-body ^double speed-of-sound ^double density ^double gear]
+  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224 gear => 0.25)
   3.0)
 
 
@@ -511,9 +513,9 @@
                        pitch-moment-control-mock
                        aerodynamics/yaw-moment-control
                        yaw-moment-control-mock]
-           (:sfsim.aerodynamics/forces (aerodynamic-loads height orientation linear-speed angular-speed (vec3 0 1 2)))
+           (:sfsim.aerodynamics/forces (aerodynamic-loads height orientation linear-speed angular-speed (vec3 0 1 2) 0.25))
            => (vec3 -3.0 5.0 -2.0)
-           (:sfsim.aerodynamics/moments (aerodynamic-loads height orientation linear-speed angular-speed (vec3 0 1 2)))
+           (:sfsim.aerodynamics/moments (aerodynamic-loads height orientation linear-speed angular-speed (vec3 0 1 2) 0.25))
            => (vec3 -0.5 -0.125 -0.25)
            (with-redefs [aerodynamics/linear-speed-in-body-system
                          (fn [orientation speed] (facts orientation => (q/->Quaternion 0.0 1.0 0.0 0.0) speed => (vec3 5 0 0))
@@ -522,8 +524,8 @@
                        (fn [orientation speed] (facts orientation => (q/->Quaternion 0.0 1.0 0.0 0.0) speed => (vec3 3 1 2))
                            :angular-body)]
              (:sfsim.aerodynamics/forces (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed
-                                                            (vec3 0 1 2)))
+                                                            (vec3 0 1 2) 0.25))
              => (q/rotate-vector (q/->Quaternion 0.0 1.0 0.0 0.0) (vec3 -3.0 5.0 -2.0))
              (:sfsim.aerodynamics/moments (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed
-                                                             (vec3 0 1 2)))
+                                                             (vec3 0 1 2) 0.25))
              => (q/rotate-vector (q/->Quaternion 0.0 1.0 0.0 0.0) (vec3 -0.5 -0.125 -0.25))))))
