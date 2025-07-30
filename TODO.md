@@ -27,8 +27,10 @@
 * block gear up when on the ground
 * following camera, different camera views, camera controls such as distance, joystick hat
 * Elevator trim
-* Radar altitude
+* Radar altitude, ground slope warning
 * low FPS at 100km height was reported
+* deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
+* sounds
 * use icosahedron for mapping 2D micro textures (better grass)
   * unroll icosahedron manually (20 surfaces)
   * find smallest cross product of vector with sum of corner vectors
@@ -41,13 +43,12 @@
   * RMB/LMB to gradually move rudder right and left while holding the buttons pressed
   * wheel click to reset rudder
   * wheel up/down to increase/decrease throttle level
-* sounds
+* flying circuit with rectangles to fly through
 * launchpad
 * extendability (modding)?
 * move curves code into separate module
 * spacecraft module with data transfer from state dictionary to Jolt physics, graphics, keyboard, ...
 * refactor gear code
-* deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
   https://samdriver.xyz/article/decal-render-intro
 * make new trailer
 * fix problem with resolution of neighbouring tiles in planetary cubemap
