@@ -358,6 +358,9 @@
          => (roughly (* -0.004 0.5 1.225 (* 160 160) reference-area chord) 1e-6)
          (pitch-moment-control (linear-speed-in-body-system (q/rotation (to-radians 100) (vec3 0 1 0)) (vec3 160 0 0))
                                (vec3 0 (to-radians -20) 0) 320.0 1.225)
+         => (roughly 0.0 1e-6)
+         (pitch-moment-control (linear-speed-in-body-system (q/rotation (to-radians 90) (vec3 0 0 1)) (vec3 160 0 0))
+                               (vec3 0 (to-radians -20) 0) 320.0 1.225)
          => (roughly 0.0 1e-6)))
 
 

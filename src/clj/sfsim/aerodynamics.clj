@@ -612,11 +612,11 @@
 
 (defn pitch-moment-control
   "Compute pitch moment due to control surfaces"
-  ^double [{::keys [^double speed ^double alpha]} ^Vec3 control ^double speed-of-sound ^double density]
+  ^double [{::keys [^double speed ^double alpha ^double beta]} ^Vec3 control ^double speed-of-sound ^double density]
   (let [flaps (control 1)]
     (* (coefficient-of-pitch-moment-flaps (/ speed speed-of-sound) ^double flaps)
        (dynamic-pressure density speed) ^double reference-area ^double chord
-       (cos (+ alpha (* 0.5 ^double flaps))))))
+       (cos (+ alpha (* 0.5 ^double flaps))) (cos beta))))
 
 
 (defn yaw-moment-control
