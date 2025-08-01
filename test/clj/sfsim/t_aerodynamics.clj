@@ -347,14 +347,18 @@
 
 (defn coefficient-of-pitch-moment-flaps-mock
   ^double [^double speed-mach ^double flaps]
-  (facts flaps => 0.01 speed-mach => 0.5)
+  (facts flaps => (to-radians -20) speed-mach => 0.5)
   -0.004)
 
 
 (facts "Compute pitch control moment"
        (with-redefs [aerodynamics/coefficient-of-pitch-moment-flaps coefficient-of-pitch-moment-flaps-mock]
-         (pitch-moment-control (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0 0.01 0) 320.0 1.225)
-         => (roughly (* -0.004 0.5 1.225 (* 160 160) reference-area chord) 1e-6)))
+         (pitch-moment-control (linear-speed-in-body-system (q/rotation (to-radians 10) (vec3 0 1 0)) (vec3 160 0 0))
+                               (vec3 0 (to-radians -20) 0) 320.0 1.225)
+         => (roughly (* -0.004 0.5 1.225 (* 160 160) reference-area chord) 1e-6)
+         (pitch-moment-control (linear-speed-in-body-system (q/rotation (to-radians 100) (vec3 0 1 0)) (vec3 160 0 0))
+                               (vec3 0 (to-radians -20) 0) 320.0 1.225)
+         => (roughly 0.0 1e-6)))
 
 
 (defn coefficient-of-yaw-moment-rudder-mock
