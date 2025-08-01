@@ -1,5 +1,4 @@
 # TODO
-* effect of control surfaces needs to diminish with changing wind vector
 * add lift or force caused by pitch rate
 * air brakes
 * orbiting Earth, implement two-step Runge-Kutta wrapper alignment
