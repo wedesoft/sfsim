@@ -9,7 +9,7 @@
       [midje.sweet :refer :all]
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
-      [clojure.math :refer (PI to-radians sqrt)]
+      [clojure.math :refer (PI to-radians sqrt cos)]
       [fastmath.matrix :refer (eye col)]
       [fastmath.vector :refer (vec3)]
       [sfsim.conftest :refer (roughly-vector)]
@@ -328,9 +328,15 @@
 
 
 (facts "Determine coefficient of yaw moment due to rudder and ailerons"
-       (coefficient-of-yaw-moment-rudder 0.6 (to-radians 0.0) (to-radians 0.0)) => 0.0
-       (coefficient-of-yaw-moment-rudder 0.6 (to-radians 3.0) (to-radians 0.0)) => (roughly (* -0.0693 (to-radians 3.0)) 1e-4)
-       (coefficient-of-yaw-moment-rudder 0.6 (to-radians 0.0) (to-radians 3.0)) => (roughly (*  0.0653 (to-radians 3.0)) 1e-4))
+       (coefficients-of-yaw-moment-rudder-ailerons 0.6 (to-radians 0.0) (to-radians 0.0)) => [0.0 0.0]
+       (nth (coefficients-of-yaw-moment-rudder-ailerons 0.6 (to-radians 3.0) (to-radians 0.0)) 0)
+       => (roughly (* -0.0693 (to-radians 3.0)) 1e-4)
+       (nth (coefficients-of-yaw-moment-rudder-ailerons 0.6 (to-radians 3.0) (to-radians 0.0)) 1)
+       => (roughly 0.0 1e-4)
+       (nth (coefficients-of-yaw-moment-rudder-ailerons 0.6 (to-radians 0.0) (to-radians 3.0)) 0)
+       => (roughly 0.0 1e-4)
+       (nth (coefficients-of-yaw-moment-rudder-ailerons 0.6 (to-radians 0.0) (to-radians 3.0)) 1)
+       => (roughly (*  0.0653 (to-radians 3.0)) 1e-4))
 
 
 (defn coefficient-of-roll-moment-aileron-mock
@@ -341,8 +347,12 @@
 
 (facts "Compute roll control moment"
        (with-redefs [aerodynamics/coefficient-of-roll-moment-aileron coefficient-of-roll-moment-aileron-mock]
-         (roll-moment-control (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0.01 0 0) 320.0 1.225)
-         => (roughly (* -0.004 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
+         (roll-moment-control (linear-speed-in-body-system (q/rotation (to-radians 0) (vec3 0 1 0)) (vec3 160 0 0))
+                              (vec3 0.01 0 0) 320.0 1.225)
+         => (roughly (* -0.004 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)
+         (roll-moment-control (linear-speed-in-body-system (q/rotation (to-radians 10) (vec3 0 1 0)) (vec3 160 0 0))
+                              (vec3 0.01 0 0) 320.0 1.225)
+         => (roughly (* -0.004 0.5 1.225 (* 160 160) (cos (to-radians 10)) reference-area 0.5 wing-span) 1e-6)))
 
 
 (defn coefficient-of-pitch-moment-flaps-mock
@@ -364,16 +374,17 @@
          => (roughly 0.0 1e-6)))
 
 
-(defn coefficient-of-yaw-moment-rudder-mock
-  ^double [^double speed-mach ^double rudder ^double ailerons]
-  (facts rudder => 0.01 ailerons => 0.02 speed-mach => 0.5)
-  0.001)
+(defn coefficients-of-yaw-moment-rudder-ailerons-mock
+  [^double speed-mach ^double rudder ^double ailerons]
+  (facts rudder => (to-radians 10) ailerons => (to-radians 20) speed-mach => 0.5)
+  [0.001 0.002])
 
 
 (facts "Compute yaw control moment"
-       (with-redefs [aerodynamics/coefficient-of-yaw-moment-rudder coefficient-of-yaw-moment-rudder-mock]
-         (yaw-moment-control (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0.02 0 0.01) 320.0 1.225)
-         => (roughly (* 0.001 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
+       (with-redefs [aerodynamics/coefficients-of-yaw-moment-rudder-ailerons coefficients-of-yaw-moment-rudder-ailerons-mock]
+         (yaw-moment-control (linear-speed-in-body-system (q/rotation (to-radians 0) (vec3 0 0 1)) (vec3 160 0 0))
+                             (vec3 (to-radians 20) 0 (to-radians 10)) 320.0 1.225)
+         => (roughly (* (+ (* 0.001 (cos (to-radians 5))) 0.002) 0.5 1.225 (* 160 160) reference-area 0.5 wing-span) 1e-6)))
 
 
 (facts "Convert vector from wind system to body system"

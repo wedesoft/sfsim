@@ -596,17 +596,18 @@
   (* 0.5 ^double (c-m-delta-f speed-mach) (sin (* 2.0 flaps))))
 
 
-(defn coefficient-of-yaw-moment-rudder
+(defn coefficients-of-yaw-moment-rudder-ailerons
   "Determine coefficient of yaw moment due to rudder and ailerons"
-  ^double [^double speed-mach ^double rudder ^double ailerons]
-  (+ (* 0.5 ^double (c-n-beta-r speed-mach) (sin (* 2.0 rudder)))
-     (* 0.5 ^double (c-n-xi-a speed-mach) (sin (* 2.0 ailerons)))))
+  [^double speed-mach ^double rudder ^double ailerons]
+  [(* 0.5 ^double (c-n-beta-r speed-mach) (sin (* 2.0 rudder)))
+   (* 0.5 ^double (c-n-xi-a speed-mach) (sin (* 2.0 ailerons)))])
 
 
 (defn roll-moment-control
   "Compute roll moment due to control surfaces"
-  ^double [{::keys [^double speed]} ^Vec3 control ^double speed-of-sound ^double density]
+  ^double [{::keys [^double speed ^double alpha ^double beta]} ^Vec3 control ^double speed-of-sound ^double density]
   (* (coefficient-of-roll-moment-aileron (/ speed speed-of-sound) ^double (control 0))
+     (cos alpha) (cos beta)
      (dynamic-pressure density speed) ^double reference-area 0.5 ^double wing-span))
 
 
@@ -621,9 +622,13 @@
 
 (defn yaw-moment-control
   "Compute yaw moment for given speed in body system"
-  ^double [{::keys [^double speed]} ^Vec3 control ^double speed-of-sound ^double density]
-  (* (coefficient-of-yaw-moment-rudder (/ speed speed-of-sound) ^double (control 2) ^double (control 0))
-     (dynamic-pressure density speed) ^double reference-area 0.5 ^double wing-span))
+  ^double [{::keys [^double speed ^double alpha ^double beta]} ^Vec3 control ^double speed-of-sound ^double density]
+  (let [rudder                        (control 2)
+        ailerons                      (control 0)
+        [coeff-rudder coeff-ailerons] (coefficients-of-yaw-moment-rudder-ailerons (/ speed speed-of-sound) rudder ailerons)]
+    (* (+ (* ^double coeff-rudder (cos (- beta (* 0.5 ^double rudder)))) (* ^double coeff-ailerons (cos beta)))
+       (cos alpha)
+       (dynamic-pressure density speed) ^double reference-area 0.5 ^double wing-span)))
 
 
 (defn aerodynamic-loads
