@@ -9,11 +9,27 @@ See [sfsim homepage][1] for more details.
 
 # Installation
 
-* Tested on Debian 12 and Windows 11
+* Tested on Debian 13 and Windows 11
 * Install [JDK 24 Deb for Linux](https://www.oracle.com/uk/java/technologies/downloads/) or [JDK 24 MSI for Windows](https://adoptium.net/temurin/releases)
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
 * Install [NSIS](https://nsis.sourceforge.io/) for building Windows installer
+
+# Get Code for GNU/Linux
+
+```Shell
+git clone https://github.com/wedesoft/sfsim.git
+cd sfsim
+git checkout main
+```
+
+## Get Code for Windows
+
+```Shell
+git clone https://github.com/wedesoft/sfsim.git
+cd sfsim
+git checkout windows
+```
 
 ## Install JoltPhysics
 
@@ -64,9 +80,16 @@ cd ..
 * Perform all build steps above: `clj -T:build all`
 * Enable integration tests (requiring results of above build steps): `touch .integration`
 * Build JAR file: `clj -T:build uber`
+
+## Further Build Steps under Windows
+
 * Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json` (delete out-windows folder first)
-* Create Windows installer: `makensis scripts/nsis-config.nsi`
 * Upload to Steam: `sdk\tools\ContentBuilder\builder\steamcmd.exe +login <account_name> <password> +run_app_build C:\Users\....\sfsim\scripts\sfsim_playtest_windows.vdf +quit`
+
+## Further Build Steps under GNU/Linux
+
+* Create Linux executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json` (delete out-linux folder first)
+* Upload to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login <account_name> <password> +run_app_build /home/..../sfsim/scripts/sfsim_playtest_linux.vdf +quit`
 
 # Lint
 
