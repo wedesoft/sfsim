@@ -282,8 +282,8 @@
     GLFW/GLFW_KEY_E      ::rudder-right
     GLFW/GLFW_KEY_KP_2   ::camera-rotate-x-positive
     GLFW/GLFW_KEY_KP_8   ::camera-rotate-x-negative
-    GLFW/GLFW_KEY_KP_4   ::camera-rotate-y-positive
-    GLFW/GLFW_KEY_KP_6   ::camera-rotate-y-negative
+    GLFW/GLFW_KEY_KP_6   ::camera-rotate-y-positive
+    GLFW/GLFW_KEY_KP_4   ::camera-rotate-y-negative
     GLFW/GLFW_KEY_KP_1   ::camera-rotate-z-positive
     GLFW/GLFW_KEY_KP_3   ::camera-rotate-z-negative
     GLFW/GLFW_KEY_L      ::camera-shift-x-positive
