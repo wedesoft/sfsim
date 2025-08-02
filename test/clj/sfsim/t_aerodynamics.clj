@@ -125,7 +125,10 @@
        (coefficient-of-side-force (to-radians -90.0) (to-radians 45.0)) => (roughly 0.3 1e-5)
        (coefficient-of-side-force (to-radians 90.0) (to-radians -45.0)) => (roughly -0.3 1e-5)
        (coefficient-of-side-force (to-radians -90.0) (to-radians -45.0)) => (roughly -0.3 1e-5)
-       (coefficient-of-side-force (to-radians 90.0) (to-radians 90.0)) => (roughly 0.0 1e-5))
+       (coefficient-of-side-force (to-radians 90.0) (to-radians 90.0)) => (roughly 0.0 1e-5)
+       (coefficient-of-side-force (to-radians 0.0)) => 0.0
+       (coefficient-of-side-force 1.2 (to-radians 0.0) (to-radians 0.0) (to-radians 45.0)) => (roughly (* 0.5 0.1201) 1e-5)
+       (coefficient-of-side-force 1.2 (to-radians 0.0) (to-radians 3.0) 0.0) => (roughly (* -0.05 (to-radians 3.0)) 1e-5))
 
 
 (facts "Mirror values at 90 degrees"
@@ -223,7 +226,7 @@
 
 (facts "Compute lift for given speed in body system"
        (with-redefs [aerodynamics/coefficient-of-lift coefficient-of-lift-mock
-                     aerodynamics/C-L-q 2.0]
+                     aerodynamics/c-l-q 2.0]
          (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0 0 0) 320.0 1.225)
          => (roughly (* 0.14 0.5 1.225 (* 160 160) reference-area) 1e-6)
          (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0 0 0) 320.0 1.0)
@@ -301,23 +304,23 @@
 
 (facts "Compute roll damping for given roll, pitch, and yaw rates"
        (let [speed (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 100 0 0))]
-         (roll-damping speed (basis 0) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-l-p wing-span) 1e-6)
-         (roll-damping speed (basis 1) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-l-q chord    ) 1e-6)
-         (roll-damping speed (basis 2) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-l-r wing-span) 1e-6)))
+         (roll-damping speed (basis 0) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span c-l-p wing-span) 1e-6)
+         (roll-damping speed (basis 1) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span c-l-q chord    ) 1e-6)
+         (roll-damping speed (basis 2) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span c-l-r wing-span) 1e-6)))
 
 
 (facts "Compute pitch damping for given roll, pitch, and yaw rates"
        (let [speed (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 100 0 0))]
-         (pitch-damping speed (basis 0) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area chord C-m-p wing-span) 1e-6)
-         (pitch-damping speed (basis 1) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area chord C-m-q chord    ) 1e-6)
-         (pitch-damping speed (basis 2) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area chord C-m-r wing-span) 1e-6)))
+         (pitch-damping speed (basis 0) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area chord c-m-p wing-span) 1e-6)
+         (pitch-damping speed (basis 1) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area chord c-m-q chord    ) 1e-6)
+         (pitch-damping speed (basis 2) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area chord c-m-r wing-span) 1e-6)))
 
 
 (facts "Compute pitch damping for given roll, pitch, and yaw rates"
        (let [speed (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 100 0 0))]
-         (yaw-damping speed (basis 0) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-n-p wing-span) 1e-6)
-         (yaw-damping speed (basis 1) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-n-q chord    ) 1e-6)
-         (yaw-damping speed (basis 2) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span C-n-r wing-span) 1e-6)))
+         (yaw-damping speed (basis 0) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span c-n-p wing-span) 1e-6)
+         (yaw-damping speed (basis 1) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span c-n-q chord    ) 1e-6)
+         (yaw-damping speed (basis 2) 1.225) => (roughly (* 0.25 1.225 100.0 reference-area wing-span c-n-r wing-span) 1e-6)))
 
 
 (facts "Determine coefficient of roll moment due to aileron"
@@ -430,8 +433,8 @@
 
 
 (defn side-force-mock
-  ^double [speed-body ^double speed-of-sound ^double density]
-  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  ^double [speed-body control ^double speed-of-sound ^double density]
+  (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
   5.0)
 
 

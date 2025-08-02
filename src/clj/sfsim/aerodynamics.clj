@@ -324,13 +324,32 @@
 (def c-y-alpha 0.6)
 
 
+(def c-y-beta-r (akima-spline
+                  0.0   0.0798
+                  0.6   0.0875
+                  0.8   0.0966
+                  1.2   0.1201
+                  1.4   0.0813
+                  1.6   0.0638
+                  1.8   0.0532
+                  2.0   0.0460
+                  3.0   0.0282
+                  4.0   0.0206
+                  5.0   0.0163
+                  10.0  0.0398
+                  20.0  0.0398
+                  30.0  0.0398))
+
+
 (defn coefficient-of-side-force
   "Determine coefficient of side force (positive y in wind system) depending on angle of attack and optionally angle of side-slip"
   (^double [^double beta]
    (* 0.5 ^double c-y-beta (sin (* 2.0 beta))))
   (^double [^double alpha ^double beta]
    (* (mix (* 0.5 ^double c-y-beta) (* 0.5 ^double c-y-alpha) (* 2 alpha))
-      (sin (* 2.0 beta)))))
+      (sin (* 2.0 beta))))
+  (^double [^double speed-mach ^double alpha ^double beta ^double rudder]
+           (+ (coefficient-of-side-force alpha beta) (* 0.5 ^double (c-y-beta-r speed-mach) (cos beta) (sin (* 2.0 rudder))))))
 
 
 (def x-ref-percent 25.0)
@@ -439,13 +458,13 @@
   (* 0.5 density (sqr speed)))
 
 
-(def C-L-q 4.2624)
+(def c-l-q 4.2624)
 
 
 (defn lift
   "Compute lift for given speed in body system"
   ^double [{::keys [^double alpha ^double beta ^double speed]} ^Vec3 rotation ^double speed-of-sound ^double density]
-  (* (+ (coefficient-of-lift (/ speed speed-of-sound) alpha beta) (* ^double C-L-q ^double (rotation 1) (cos alpha) (cos beta)))
+  (* (+ (coefficient-of-lift (/ speed speed-of-sound) alpha beta) (* ^double c-l-q ^double (rotation 1) (cos alpha) (cos beta)))
      (dynamic-pressure density speed) ^double reference-area))
 
 
@@ -457,8 +476,11 @@
 
 (defn side-force
   "Compute side-force for given speed in body system"
-  ^double [{::keys [^double alpha ^double beta ^double speed]} ^double _speed-of-sound ^double density]
-  (* (coefficient-of-side-force alpha beta) (dynamic-pressure density speed) ^double reference-area))
+  (^double [{::keys [^double alpha ^double beta ^double speed]} ^double _speed-of-sound ^double density]
+   (* (coefficient-of-side-force alpha beta) (dynamic-pressure density speed) ^double reference-area))
+  (^double [{::keys [^double alpha ^double beta ^double speed]} ^Vec3 control ^double speed-of-sound ^double density]
+   (* (coefficient-of-side-force (/ speed speed-of-sound) alpha beta (control 2))
+      (dynamic-pressure density speed) ^double reference-area)))
 
 
 (defn roll-moment
@@ -482,42 +504,42 @@
      0.5 ^double wing-span))
 
 
-(def C-l-p -0.4228)
-(def C-m-p  0.0000)
-(def C-n-p  0.0535)
-(def C-l-q  0.0000)
-(def C-m-q -1.3470)
-(def C-n-q  0.0000)
-(def C-l-r  0.1929)
-(def C-m-r  0.0000)
-(def C-n-r -0.2838)
+(def c-l-p -0.4228)
+(def c-m-p  0.0000)
+(def c-n-p  0.0535)
+(def c-l-q  0.0000)
+(def c-m-q -1.3470)
+(def c-n-q  0.0000)
+(def c-l-r  0.1929)
+(def c-m-r  0.0000)
+(def c-n-r -0.2838)
 
 
 (defn roll-damping
   "Compute roll damping for given roll, pitch, and yaw rates"
   ^double [{::keys [^double speed]} [^double roll-rate ^double pitch-rate ^double yaw-rate] ^double density]
   (* 0.25 density speed ^double reference-area ^double wing-span
-     (+ (* ^double C-l-p roll-rate ^double wing-span)
-        (* ^double C-l-q pitch-rate ^double chord)
-        (* ^double C-l-r yaw-rate ^double wing-span))))
+     (+ (* ^double c-l-p roll-rate ^double wing-span)
+        (* ^double c-l-q pitch-rate ^double chord)
+        (* ^double c-l-r yaw-rate ^double wing-span))))
 
 
 (defn pitch-damping
   "Compute pitch damping for given roll, pitch, and yaw rates"
   ^double [{::keys [^double speed]} [^double roll-rate ^double pitch-rate ^double yaw-rate] ^double density]
   (* 0.25 density speed ^double reference-area ^double chord
-     (+ (* ^double C-m-p roll-rate ^double wing-span)
-        (* ^double C-m-q pitch-rate ^double chord)
-        (* ^double C-m-r yaw-rate ^double wing-span))))
+     (+ (* ^double c-m-p roll-rate ^double wing-span)
+        (* ^double c-m-q pitch-rate ^double chord)
+        (* ^double c-m-r yaw-rate ^double wing-span))))
 
 
 (defn yaw-damping
   "Compute yaw damping for given roll, pitch, and yaw rates"
   ^double [{::keys [^double speed]} [^double roll-rate ^double pitch-rate ^double yaw-rate] ^double density]
   (* 0.25 density speed ^double reference-area ^double wing-span
-     (+ (* ^double C-n-p roll-rate ^double wing-span)
-        (* ^double C-n-q pitch-rate ^double chord)
-        (* ^double C-n-r yaw-rate ^double wing-span))))
+     (+ (* ^double c-n-p roll-rate ^double wing-span)
+        (* ^double c-n-q pitch-rate ^double chord)
+        (* ^double c-n-r yaw-rate ^double wing-span))))
 
 
 (def c-l-xi-a (akima-spline
@@ -645,7 +667,7 @@
         speed               (linear-speed-in-body-system orientation linear-speed)
         rotation            (angular-speed-in-body-system orientation angular-speed)
         forces              (vec3 (- (drag speed speed-of-sound density gear))
-                                  (side-force speed speed-of-sound density)
+                                  (side-force speed control speed-of-sound density)
                                   (- (lift speed rotation speed-of-sound density)))
         aerodynamic-moments (vec3 (roll-moment speed speed-of-sound density)
                                   (pitch-moment speed speed-of-sound density)
