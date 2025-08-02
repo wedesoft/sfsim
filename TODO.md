@@ -1,5 +1,6 @@
 # TODO
 * add lift or force caused by pitch rate
+* add side force caused by rudder
 * air brakes
 * orbiting Earth, implement two-step Runge-Kutta wrapper alignment
 * Thrusters

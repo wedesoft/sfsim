@@ -222,11 +222,14 @@
 
 
 (facts "Compute lift for given speed in body system"
-       (with-redefs [aerodynamics/coefficient-of-lift coefficient-of-lift-mock]
-         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225)
+       (with-redefs [aerodynamics/coefficient-of-lift coefficient-of-lift-mock
+                     aerodynamics/C-L-q 2.0]
+         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0 0 0) 320.0 1.225)
          => (roughly (* 0.14 0.5 1.225 (* 160 160) reference-area) 1e-6)
-         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.0)
-         => (roughly (* 0.14 0.5 1.0 (* 160 160) reference-area) 1e-6)))
+         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0 0 0) 320.0 1.0)
+         => (roughly (* 0.14 0.5 1.0 (* 160 160) reference-area) 1e-6)
+         (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0 0.5 0) 320.0 1.0)
+         => (roughly (* (+ 0.14 1.0) 0.5 1.0 (* 160 160) reference-area) 1e-6)))
 
 
 (defn coefficient-of-drag-mock
@@ -415,7 +418,7 @@
 
 
 (defn lift-mock
-  ^double [speed-body ^double speed-of-sound ^double density]
+  ^double [speed-body ^Vec3 rotation ^double speed-of-sound ^double density]
   (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
   2.0)
 
