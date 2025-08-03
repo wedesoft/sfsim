@@ -320,10 +320,6 @@
         (* 2.0 beta))))
 
 
-(def c-y-beta -0.05)
-(def c-y-alpha 0.6)
-
-
 (def c-y-beta-r (akima-spline
                   0.0   0.0798
                   0.6   0.0875
@@ -341,15 +337,28 @@
                   30.0  0.0398))
 
 
+(defn c-y-beta
+  "Estimated coefficient of side force gradient for side slip angle"
+  ^double [^double speed-mach]
+  (* -0.25 ^double (c-l-alpha speed-mach)))
+
+
+(defn c-y-alpha
+  "Estimated coefficient of side force gradient for angle of attack"
+  ^double [^double speed-mach]
+  (* 0.5 ^double (c-l-alpha speed-mach)))
+
+
 (defn coefficient-of-side-force
   "Determine coefficient of side force (positive y in wind system) depending on angle of attack and optionally angle of side-slip"
-  (^double [^double beta]
-   (* 0.5 ^double c-y-beta (sin (* 2.0 beta))))
-  (^double [^double alpha ^double beta]
-   (* (mix (* 0.5 ^double c-y-beta) (* 0.5 ^double c-y-alpha) (* 2 alpha))
+  (^double [^double speed-mach ^double beta]
+   (* 0.5 (c-y-beta speed-mach) (sin (* 2.0 beta))))
+  (^double [^double speed-mach ^double alpha ^double beta]
+   (* (mix (* 0.5 (c-y-beta speed-mach)) (* 0.5 (c-y-alpha speed-mach)) (* 2 alpha))
       (sin (* 2.0 beta))))
   (^double [^double speed-mach ^double alpha ^double beta ^double rudder]
-           (+ (coefficient-of-side-force alpha beta) (* 0.5 ^double (c-y-beta-r speed-mach) (cos beta) (sin (* 2.0 rudder))))))
+   (+ (coefficient-of-side-force speed-mach alpha beta)
+      (* 0.5 ^double (c-y-beta-r speed-mach) (cos beta) (sin (* 2.0 rudder))))))
 
 
 (def x-ref-percent 25.0)

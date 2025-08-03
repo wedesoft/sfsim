@@ -1,6 +1,6 @@
 # TODO
-* scale down side force caused by rudder
 * air brakes
+* integrate control surface scaling
 * orbiting Earth, implement two-step Runge-Kutta wrapper alignment
 * Thrusters
 * animate control surfaces and air brake
