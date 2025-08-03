@@ -9,7 +9,7 @@
         generateme/fastmath {:mvn/version "2.4.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
         instaparse/instaparse {:mvn/version "1.5.0"}
         org.clj-commons/gloss {:mvn/version "0.3.6"}
-        org.apache.commons/commons-compress {:mvn/version "1.27.1"}
+        org.apache.commons/commons-compress {:mvn/version "1.28.0"}
         org.suskalo/coffi {:mvn/version "1.0.615"}
         org.lwjgl/lwjgl {:mvn/version "3.3.6"}
         org.lwjgl/lwjgl$natives-linux {:mvn/version "3.3.6"}
@@ -27,7 +27,7 @@
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED" "-XX:+UseZGC"
                             "--sun-misc-unsafe-memory-access=allow"]
                  :main-opts ["-m" "sfsim.core"]}
-           :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.9"}
+           :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.10"}
                           sfsim/sfsim {:local/root "."}}
                    :ns-default build
                    :exec-fn all
