@@ -304,7 +304,7 @@
 
 (defn drag-multiplier
   ^double [^double gear ^double air-brake]
-  (+ 1.0 (* 0.2 gear) (* 0.2 air-brake)))
+  (+ 1.0 (* 0.2 gear) (* 0.4 air-brake)))
 
 
 (defn coefficient-of-drag
