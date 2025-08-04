@@ -58,7 +58,12 @@
          (menu-key GLFW/GLFW_KEY_TAB state gui GLFW/GLFW_PRESS 0)
          (@state :sfsim.input/focus-new) => 1
          (menu-key GLFW/GLFW_KEY_TAB state gui GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT)
-         (@state :sfsim.input/focus-new) => -1))
+         (@state :sfsim.input/focus-new) => -1
+         (@state :sfsim.input/menu) => false
+         (menu-key GLFW/GLFW_KEY_ESCAPE state gui GLFW/GLFW_PRESS 0) => false
+         (@state :sfsim.input/menu) => true
+         (menu-key GLFW/GLFW_KEY_ESCAPE state gui GLFW/GLFW_PRESS 0) => false
+         (@state :sfsim.input/menu) => false))
 
 
 (defn menu-key-mock
