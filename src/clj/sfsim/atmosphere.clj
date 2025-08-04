@@ -440,10 +440,10 @@
   "Compute atmospheric temperature as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
   ^double [^double height]
   (let [height-in-foot (/ height ^double foot)]
-    (cond
-      (<= height-in-foot 36089) (temperature-troposphere height)
-      (<= height-in-foot 65617) (temperature-lower-stratosphere height)
-      :else                     (temperature-upper-stratosphere height))))
+    (condp >= height-in-foot
+      36089 (temperature-troposphere height)
+      65617 (temperature-lower-stratosphere height)
+      (temperature-upper-stratosphere height))))
 
 
 (defn pressure-troposphere
