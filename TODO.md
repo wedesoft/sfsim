@@ -1,6 +1,6 @@
 # TODO
 * integrate control surface scaling
-* orbiting Earth, implement two-step Runge-Kutta wrapper alignment
+* orbiting Earth, implement two-step Runge-Kutta wrapper alignment, display perihel aphel and time to
 * Thrusters
 * animate control surfaces and air brake
 * https://flightsimcoach.com/msfs-2024-keyboard-commands/
