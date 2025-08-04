@@ -497,10 +497,10 @@
 
 (defn menu-mouse-button
   [_state gui button x y action _mods]
-  (let [nkbutton (cond
-                   (= button GLFW/GLFW_MOUSE_BUTTON_RIGHT) Nuklear/NK_BUTTON_RIGHT
-                   (= button GLFW/GLFW_MOUSE_BUTTON_MIDDLE) Nuklear/NK_BUTTON_MIDDLE
-                   :else Nuklear/NK_BUTTON_LEFT)]
+  (let [nkbutton (condp = button
+                   GLFW/GLFW_MOUSE_BUTTON_RIGHT Nuklear/NK_BUTTON_RIGHT
+                   GLFW/GLFW_MOUSE_BUTTON_MIDDLE Nuklear/NK_BUTTON_MIDDLE
+                   Nuklear/NK_BUTTON_LEFT)]
     (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))))
 
 
