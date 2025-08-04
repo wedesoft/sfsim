@@ -450,7 +450,7 @@
                                                                {"Gamepad" {:sfsim.input/buttons {1 :sfsim.input/gear
                                                                                                  2 :sfsim.input/brake
                                                                                                  3 :sfsim.input/parking-brake
-                                                                                                 }}}}}
+                                                                                                 4 :sfsim.input/air-brake}}}}}
              state                    (make-initial-state)
              gui                      {:sfsim.gui/context :ctx}
              handler                  (->InputHandler state gui (atom mappings))]
@@ -480,7 +480,16 @@
          (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0]) handler)
          (:sfsim.input/parking-brake @state) => true
          (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1 0]) handler)
-         (:sfsim.input/parking-brake @state) => false))
+         (:sfsim.input/parking-brake @state) => false
+         (:sfsim.input/air-brake @state)=> false
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 1]) handler)
+         (:sfsim.input/air-brake @state) => true
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 0]) handler)
+         (:sfsim.input/air-brake @state) => true
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 1]) handler)
+         (:sfsim.input/air-brake @state) => false
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 0]) handler)
+         (:sfsim.input/air-brake @state) => false))
 
 
 (facts "Recording last active joystick axis or button"

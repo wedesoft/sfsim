@@ -400,7 +400,7 @@
 
 (defn joystick-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 11)) 2) 640 (* 37 11) true
+  (gui/nuklear-window gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 12)) 2) 640 (* 37 12) true
                       (joystick-dialog-axis-item gui "Aileron" :sfsim.input/aileron)
                       (joystick-dialog-axis-item gui "Elevator" :sfsim.input/elevator)
                       (joystick-dialog-axis-item gui "Rudder" :sfsim.input/rudder)
@@ -416,6 +416,7 @@
                                       (gui/layout-row-push gui 0.1)
                                       (gui/text-label gui (format "%5.3f" (get-in @mappings [:sfsim.input/joysticks :sfsim.input/dead-zone]))))
                       (joystick-dialog-button-item gui "Gear" :sfsim.input/gear)
+                      (joystick-dialog-button-item gui "Air Brake" :sfsim.input/air-brake)
                       (joystick-dialog-button-item gui "Brake" :sfsim.input/brake)
                       (joystick-dialog-button-item gui "Parking Brake" :sfsim.input/parking-brake)
                       (gui/layout-row-dynamic gui 32 2)

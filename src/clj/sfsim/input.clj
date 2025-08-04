@@ -590,6 +590,12 @@
     (swap! state assoc ::parking-brake true)))
 
 
+(defmethod simulator-joystick-button ::air-brake
+  [_id state action]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::air-brake not)))
+
+
 (defn menu-joystick-axis
   [state device axis _value moved]
   (when moved
