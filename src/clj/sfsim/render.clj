@@ -275,12 +275,12 @@
 (defn opengl-type-size
   "Get byte size of OpenGL type"
   ^long [^long opengl-type]
-  (cond
-    (= opengl-type GL11/GL_UNSIGNED_BYTE)  Byte/BYTES
-    (= opengl-type GL11/GL_UNSIGNED_SHORT) Short/BYTES
-    (= opengl-type GL11/GL_UNSIGNED_INT)   Integer/BYTES
-    (= opengl-type GL11/GL_FLOAT)          Float/BYTES
-    (= opengl-type GL11/GL_DOUBLE)         Double/BYTES))
+  (condp = opengl-type
+    GL11/GL_UNSIGNED_BYTE  Byte/BYTES
+    GL11/GL_UNSIGNED_SHORT Short/BYTES
+    GL11/GL_UNSIGNED_INT   Integer/BYTES
+    GL11/GL_FLOAT          Float/BYTES
+    GL11/GL_DOUBLE         Double/BYTES))
 
 
 (defn setup-vertex-attrib-pointers
