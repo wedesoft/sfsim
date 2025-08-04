@@ -468,10 +468,10 @@
   "Compute atmospheric pressure as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
   ^double [^double height]
   (let [height-in-foot (/ height ^double foot)]
-    (cond
-      (<= height-in-foot 36089) (pressure-troposphere height)
-      (<= height-in-foot 65617) (pressure-lower-stratosphere height)
-      :else                     (pressure-upper-stratosphere height))))
+    (condp >= height-in-foot
+      36089 (pressure-troposphere height)
+      65617 (pressure-lower-stratosphere height)
+      (pressure-upper-stratosphere height))))
 
 
 (defn density-troposphere
@@ -495,10 +495,10 @@
   "Compute atmospheric density as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
   ^double [^double height]
   (let [height-in-foot (/ height ^double foot)]
-    (cond
-      (<= height-in-foot 36089) (density-troposphere height)
-      (<= height-in-foot 65617) (density-lower-stratosphere height)
-      :else                     (density-upper-stratosphere height))))
+    (condp >= height-in-foot
+      36089 (density-troposphere height)
+      65617 (density-lower-stratosphere height)
+      (density-upper-stratosphere height))))
 
 
 (defn speed-of-sound
