@@ -605,6 +605,7 @@
 
 
 (def gear (atom 1.0))
+(def air-brake (atom 0.0))
 
 
 (def frametime (atom 0.25))
@@ -670,6 +671,11 @@
                   )
                 (do
                   (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+                  (if (@state :sfsim.input/air-brake)
+                    (swap! air-brake + (* ^long dt 0.002))
+                    (swap! air-brake - (* ^long dt 0.002)))
+                  (swap! air-brake min 1.0)
+                  (swap! air-brake max 0.0)
                   (if (@state :sfsim.input/gear-down)
                     (swap! gear + (* ^long dt 0.0005))
                     (swap! gear - (* ^long dt 0.0005)))
@@ -690,7 +696,8 @@
                                                                            (* 0.25 ^double elevator)
                                                                            (* 0.4  ^double rudder))
                                                                      (to-radians 20))
-                                                               @gear)]
+                                                               @gear
+                                                               @air-brake)]
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                     (jolt/add-torque body (:sfsim.aerodynamics/moments loads)))
                   (update-mesh! (:position @pose))
@@ -821,10 +828,11 @@
                            (when (not playback)
                              (stick gui aileron elevator rudder throttle)
                              (info gui @window-height
-                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s%s"
+                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s%s%s"
                                            (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
                                            (mag (jolt/get-linear-velocity body)) (/ 1.0 ^double @frametime)
                                            (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
+                                           (if (@state :sfsim.input/air-brake) ", air brake" "")
                                            (if (@state :sfsim.input/pause) ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)

@@ -1,5 +1,4 @@
 # TODO
-* air brakes
 * integrate control surface scaling
 * orbiting Earth, implement two-step Runge-Kutta wrapper alignment
 * Thrusters

@@ -307,7 +307,14 @@
          (swap! state assoc :sfsim.input/throttle 1.0)
          (-> GLFW/GLFW_KEY_R mappings (simulator-key state GLFW/GLFW_PRESS 0))
          (-> GLFW/GLFW_KEY_R mappings (simulator-key state GLFW/GLFW_RELEASE 0))
-         (:sfsim.input/throttle @state) => 1.0))
+         (:sfsim.input/throttle @state) => 1.0
+         (:sfsim.input/air-brake @state) => false
+         (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/air-brake @state) => true
+         (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/air-brake @state) => false))
 
 
 (facts "Process mouse events"

@@ -255,6 +255,7 @@
          ::elevator               0.0
          ::rudder                 0.0
          ::throttle               0.0
+         ::air-brake              false
          ::camera-rotate-x        0.0
          ::camera-rotate-y        0.0
          ::camera-rotate-z        0.0
@@ -273,6 +274,7 @@
     GLFW/GLFW_KEY_B      ::brake
     GLFW/GLFW_KEY_F      ::throttle-decrease
     GLFW/GLFW_KEY_R      ::throttle-increase
+    GLFW/GLFW_KEY_SLASH  ::air-brake
     GLFW/GLFW_KEY_A      ::aileron-left
     GLFW/GLFW_KEY_KP_5   ::aileron-center
     GLFW/GLFW_KEY_D      ::aileron-right
@@ -382,6 +384,12 @@
   [_id state action _mods]
   (when (keypress? action)
     (increment-clamp state ::throttle 0.0625 0.0 1.0)))
+
+
+(defmethod simulator-key ::air-brake
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::air-brake not)))
 
 
 (defmethod simulator-key ::aileron-left
