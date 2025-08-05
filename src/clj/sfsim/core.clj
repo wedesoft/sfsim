@@ -76,8 +76,8 @@
 (def earth-mass (config/planet-config :sfsim.planet/mass))
 (def radius (config/planet-config :sfsim.planet/radius))
 (def g physics/gravitational-constant)
-(def orbit-radius (+ radius height))
-(def speed (sqrt (/ (* earth-mass g) orbit-radius)))
+(def orbit-radius (+ ^double radius ^double height))
+(def speed (sqrt (/ (* ^double earth-mass ^double g) ^double orbit-radius)))
 ;(def longitude (to-radians -1.3747))
 ;(def latitude (to-radians 50.9672))
 ;(def height 25.0)
@@ -675,7 +675,7 @@
                   )
                 (do
                   (let [h       (mag (:position @pose))
-                        gravity (mult (:position @pose) (- (/ (* earth-mass g) (cube h))))]
+                        gravity (mult (:position @pose) (- (/ (* ^double earth-mass ^double g) (cube h))))]
                     (jolt/set-gravity gravity))
                   (if (@state :sfsim.input/air-brake)
                     (swap! air-brake + (* ^long dt 0.002))
