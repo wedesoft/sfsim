@@ -8,7 +8,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -22,12 +22,13 @@
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
-    [sfsim.util :refer (dissoc-in)]
+    [sfsim.util :refer (dissoc-in cube)]
     [sfsim.jolt :as jolt]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
+    [sfsim.physics :as physics]
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
@@ -69,16 +70,18 @@
 (java.util.Locale/setDefault java.util.Locale/US)
 
 (def opacity-base (atom 100.0))
-(def longitude (to-radians -1.3747))
-(def latitude (to-radians 50.9672))
-(def height 25.0)
-;(def longitude (to-radians 2.23323))
-;(def latitude (to-radians 56.04026))
-;(def height 1155949.9)
+(def longitude 0.0)
+(def latitude 0.0)
+(def height 280000.0)
+(def earth-mass (config/planet-config :sfsim.planet/mass))
+(def radius (config/planet-config :sfsim.planet/radius))
+(def g physics/gravitational-constant)
+(def orbit-radius (+ radius height))
+(def speed (sqrt (/ (* earth-mass g) orbit-radius)))
+;(def longitude (to-radians -1.3747))
+;(def latitude (to-radians 50.9672))
+;(def height 25.0)
 
-
-;; (def height 30.0)
-(def speed (atom (* 1 7800.0)))
 
 (def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
 (def earth-moon (astro/make-spk-segment-interpolator spk 0 3))
@@ -309,13 +312,13 @@
   (atom {:position (position-from-lon-lat longitude latitude height)
          :orientation (orientation-from-lon-lat longitude latitude)}))
 
-
 (def camera-orientation (atom (q/* (orientation-from-lon-lat longitude latitude)
                                    (q/rotation (to-radians -90) (vec3 1 0 0)))))
 (def dist (atom 60.0))
 
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
+(jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) speed))
 (jolt/set-angular-velocity body (vec3 0 0 0))
 (jolt/set-friction body 0.8)
 (jolt/set-restitution body 0.25)
@@ -671,7 +674,9 @@
                   ; (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v)))
                   )
                 (do
-                  (jolt/set-gravity (mult (normalize (:position @pose)) -9.81))
+                  (let [h       (mag (:position @pose))
+                        gravity (mult (:position @pose) (- (/ (* earth-mass g) (cube h))))]
+                    (jolt/set-gravity gravity))
                   (if (@state :sfsim.input/air-brake)
                     (swap! air-brake + (* ^long dt 0.002))
                     (swap! air-brake - (* ^long dt 0.002)))

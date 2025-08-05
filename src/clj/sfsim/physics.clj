@@ -18,6 +18,9 @@
 (def scale-schema (m/schema [:=> [:cat :double :some] :some]))
 
 
+(def gravitational-constant 6.67430e-11)
+
+
 (defn runge-kutta
   "Runge-Kutta integration method"
   {:malli/schema [:=> [:cat :some :double [:=> [:cat :some :double] :some] add-schema scale-schema] :some]}
