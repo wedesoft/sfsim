@@ -202,7 +202,7 @@ void body_default_settings(JPH::BodyCreationSettings &body_settings)
   body_settings.mApplyGyroscopicForce = true;
   body_settings.mLinearDamping = 0.0f;
   body_settings.mAngularDamping = 0.0f;
-  body_settings.mMaxLinearVelocity = 32768.0f;
+  body_settings.mMaxLinearVelocity = 299792458.0f;
   body_settings.mMotionQuality = JPH::EMotionQuality::LinearCast;
 }
 
