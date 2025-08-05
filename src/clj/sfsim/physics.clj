@@ -21,6 +21,12 @@
 (def gravitational-constant 6.67430e-11)
 
 
+(defn euler
+  "Euler integration method"
+  [y0 dt dy + *]
+  (+ y0 (* dt (dy y0 dt))))
+
+
 (defn runge-kutta
   "Runge-Kutta integration method"
   {:malli/schema [:=> [:cat :some :double [:=> [:cat :some :double] :some] add-schema scale-schema] :some]}
@@ -31,6 +37,16 @@
         k3  (dy (+ y0 (* dt2 k2)) dt2)
         k4  (dy (+ y0 (* dt  k3)) dt)]
     (+ y0 (* (/ ^double dt 6.0) (reduce + [k1 (* 2.0 k2) (* 2.0 k3) k4])))))
+
+
+(defn matching-scheme
+  "Use two custom acceleration values to make semi-implicit Euler result match a ground truth after two steps"
+  [y0 ^double dt y2]
+  (if (zero? dt)
+    [0.0 0.0]
+    (let [a1 (/ (- (:position y2) (:position y0) (* dt (- (:speed y2) (:speed y0)))) (* dt dt))
+          a2 (- (/ (- (:speed y2) (:speed y0)) dt) a1)]
+      [a1 a2])))
 
 
 (set! *warn-on-reflection* false)
