@@ -7,7 +7,8 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [malli.core :as m]))
+    [malli.core :as m]
+    [sfsim.util :refer (sqr)]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -41,11 +42,11 @@
 
 (defn matching-scheme
   "Use two custom acceleration values to make semi-implicit Euler result match a ground truth after two steps"
-  [y0 ^double dt y2]
-  (if (zero? dt)
+  [y0 dt y2 scale subtract]
+  (if (zero? ^double dt)
     [0.0 0.0]
-    (let [a1 (/ (- (:position y2) (:position y0) (* dt (- (:speed y2) (:speed y0)))) (* dt dt))
-          a2 (- (/ (- (:speed y2) (:speed y0)) dt) a1)]
+    (let [a1 (scale (/ 1.0 (sqr dt)) (subtract (:position y2) (:position y0) (scale dt (subtract (:speed y2) (:speed y0)))))
+          a2 (subtract (scale (/ 1.0 ^double dt) (subtract (:speed y2) (:speed y0))) a1)]
       [a1 a2])))
 
 

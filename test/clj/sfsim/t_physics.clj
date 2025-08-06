@@ -60,7 +60,7 @@
 
 
 (tabular "Test Runge Kutta matching scheme for semi-implicit Euler"
-         (fact (semi-implicit-euler-twice ?y0 ?dt (matching-scheme ?y0 ?dt ?y2)) => ?y2)
+         (fact (semi-implicit-euler-twice ?y0 ?dt (matching-scheme ?y0 ?dt ?y2 * -)) => ?y2)
          ?y0                        ?dt ?y2
          {:position 0.0 :speed 0.0} 1.0 {:position 0.0 :speed 0.0}
          {:position 0.0 :speed 0.0} 1.0 {:position 3.0 :speed 2.0}
