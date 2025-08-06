@@ -61,5 +61,12 @@
         (mult direction (- gravity)))))
 
 
+(defn state-change
+  "State change from position-dependent acceleration"
+  [acceleration]
+  (fn [{:keys [position speed]} _dt]
+    {:position speed :speed (acceleration position)}))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

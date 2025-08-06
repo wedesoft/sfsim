@@ -72,6 +72,17 @@
          {:position 0.0 :speed 0.0} 0.0 {:position 0.0 :speed 0.0})
 
 
-(fact "Trajectory change due to gravitation"
+(fact "Determine gravitation from planetary object"
       ((gravitation 0.0) (vec3 100 0 0)) => (vec3 0 0 0)
       ((gravitation 5.9722e+24) (vec3 6378000.0 0 0)) => (roughly-vector (vec3 -9.799 0 0) 1e-3))
+
+
+(fact "State change from position-dependent acceleration"
+      ((state-change (fn [_position] (vec3 0 0 0))) {:position (vec3 0 0 0) :speed (vec3 0 0 0)} 0.0)
+      => {:position (vec3 0 0 0) :speed (vec3 0 0 0)}
+      ((state-change (fn [_position] (vec3 0 0 0))) {:position (vec3 0 0 0) :speed (vec3 2 0 0)} 0.0)
+      => {:position (vec3 2 0 0) :speed (vec3 0 0 0)}
+      ((state-change (fn [_position] (vec3 3 0 0))) {:position (vec3 0 0 0) :speed (vec3 0 0 0)} 0.0)
+      => {:position (vec3 0 0 0) :speed (vec3 3 0 0)}
+      ((state-change (fn [position] position)) {:position (vec3 5 0 0) :speed (vec3 0 0 0)} 0.0)
+      => {:position (vec3 0 0 0) :speed (vec3 5 0 0)})
