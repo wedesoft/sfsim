@@ -69,7 +69,8 @@
          {:position 0.0 :speed 0.0} 2.0 {:position 12.0 :speed 4.0}
          {:position 0.0 :speed 0.0} 1.0 {:position 2.0 :speed 2.0}
          {:position 0.0 :speed 0.0} 1.0 {:position 4.0 :speed 2.0}
-         {:position 0.0 :speed 0.0} 0.0 {:position 0.0 :speed 0.0})
+         {:position 0.0 :speed 0.0} 0.0 {:position 0.0 :speed 0.0}
+         {:position 0.0 :speed 9.8} 1.0 {:position 0.0 :speed -9.8})
 
 
 (fact "Determine gravitation from planetary object"

@@ -48,6 +48,7 @@
     [0.0 0.0]
     (let [a1 (scale (/ 1.0 (sqr dt)) (subtract (subtract (:position y2) (:position y0)) (scale dt (subtract (:speed y2) (:speed y0)))))
           a2 (subtract (scale (/ 1.0 ^double dt) (subtract (:speed y2) (:speed y0))) a1)]
+      (println a1 a2)
       [a1 a2])))
 
 
