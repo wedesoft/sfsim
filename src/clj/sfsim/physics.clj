@@ -8,6 +8,7 @@
   "Physics related functions except for Jolt bindings"
   (:require
     [malli.core :as m]
+    [fastmath.vector :refer (vec3 mag normalize mult)]
     [sfsim.util :refer (sqr)]))
 
 
@@ -48,6 +49,16 @@
     (let [a1 (scale (/ 1.0 (sqr dt)) (subtract (:position y2) (:position y0) (scale dt (subtract (:speed y2) (:speed y0)))))
           a2 (subtract (scale (/ 1.0 ^double dt) (subtract (:speed y2) (:speed y0))) a1)]
       [a1 a2])))
+
+
+(defn gravitation
+  "Determine gravitation from planetary object"
+  [^double mass]
+  (fn [position]
+      (let [radius    (mag position)
+            direction (normalize position)
+            gravity   (/ (* mass ^double gravitational-constant) (sqr radius))]
+        (mult direction (- gravity)))))
 
 
 (set! *warn-on-reflection* false)

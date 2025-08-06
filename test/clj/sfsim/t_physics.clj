@@ -10,6 +10,8 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
+    [fastmath.vector :refer (vec3)]
+    [sfsim.conftest :refer (roughly-vector)]
     [sfsim.physics :refer :all]))
 
 
@@ -38,7 +40,7 @@
        (runge-kutta 1.0 1.0 (fn [y _dt] y) add scale) => (roughly (exp 1) 1e-2))
 
 
-(defn semi-implicit
+(defn semi-implicit-delta
   [a]
   (fn [y dt] (let [speed (+ (:speed y) (* a dt))] {:position speed :speed a})))
 
@@ -50,8 +52,8 @@
 (defn semi-implicit-euler-twice
   [y0 dt [a1 a2]]
   (-> y0
-      (euler dt (semi-implicit a1) add-values scale-values)
-      (euler dt (semi-implicit a2) add-values scale-values)))
+      (euler dt (semi-implicit-delta a1) add-values scale-values)
+      (euler dt (semi-implicit-delta a2) add-values scale-values)))
 
 
 (fact "Sanity check for euler test function"
@@ -68,3 +70,8 @@
          {:position 0.0 :speed 0.0} 1.0 {:position 2.0 :speed 2.0}
          {:position 0.0 :speed 0.0} 1.0 {:position 4.0 :speed 2.0}
          {:position 0.0 :speed 0.0} 0.0 {:position 0.0 :speed 0.0})
+
+
+(fact "Trajectory change due to gravitation"
+      ((gravitation 0.0) (vec3 100 0 0)) => (vec3 0 0 0)
+      ((gravitation 5.9722e+24) (vec3 6378000.0 0 0)) => (roughly-vector (vec3 -9.799 0 0) 1e-3))

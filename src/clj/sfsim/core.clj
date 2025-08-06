@@ -674,9 +674,7 @@
                   ; (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v)))
                   )
                 (do
-                  (let [h       (mag (:position @pose))
-                        gravity (mult (:position @pose) (- (/ (* ^double earth-mass ^double g) (cube h))))]
-                    (jolt/set-gravity gravity))
+                  (jolt/set-gravity ((physics/gravitation earth-mass) (:position @pose)))
                   (if (@state :sfsim.input/air-brake)
                     (swap! air-brake + (* ^long dt 0.002))
                     (swap! air-brake - (* ^long dt 0.002)))
