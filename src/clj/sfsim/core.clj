@@ -79,10 +79,10 @@
 (def orbit-radius (+ ^double radius ^double height))
 (def speed (sqrt (/ (* ^double earth-mass ^double g) ^double orbit-radius)))
 
-(def speed 0)
-(def longitude (to-radians -1.3747))
-(def latitude (to-radians 50.9672))
-(def height 25.0)
+; (def speed 0)
+; (def longitude (to-radians -1.3747))
+; (def latitude (to-radians 50.9672))
+; (def height 25.0)
 
 
 (def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
@@ -709,17 +709,16 @@
                                                      (fn [x y] (merge-with add x y))
                                                      (fn [s x] (into {} (for [[k v] x] [k (mult v s)]))))
                         [a1 a2] (physics/matching-scheme state (* dt 0.0005) state2 #(mult %2 %1) sub)]
-                    (println a1 a2 (mag (mult (add a1 a2) 0.5)))
-                    (jolt/set-gravity ((physics/gravitation earth-mass) (:position @pose)))
+                    ; (jolt/set-gravity ((physics/gravitation earth-mass) (:position @pose)))
                     (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                     (jolt/add-torque body (:sfsim.aerodynamics/moments loads))
-                    ;(jolt/set-gravity a1)
+                    (jolt/set-gravity a1)
                     (jolt/update-system (* ^long dt 0.0005) 1)
                     (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                     (jolt/add-torque body (:sfsim.aerodynamics/moments loads))
-                    ;(jolt/set-gravity a2)
+                    (jolt/set-gravity a2)
                     (jolt/update-system (* ^long dt 0.0005) 1))
                   (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
                   (reset! wheel-angles (if @vehicle
