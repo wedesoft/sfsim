@@ -91,6 +91,7 @@
 (GLFW/glfwInit)
 
 (jolt/jolt-init)
+(jolt/set-gravity (vec3 0 0 0))
 
 (def recording
   ; initialize recording using "echo [] > recording.edn"
@@ -695,31 +696,26 @@
                   (when @vehicle (jolt/set-brake-input @vehicle brake))
                   (update-mesh! (:position @pose))
                   (jolt/set-translation body (:position @pose))
-                  (let [height  (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
-                        loads   (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
-                                                                (jolt/get-angular-velocity body)
-                                                                (mult (vec3 (* 0.25 ^double aileron)
-                                                                            (* 0.25 ^double elevator)
-                                                                            (* 0.4  ^double rudder))
-                                                                      (to-radians 20))
-                                                                @gear
-                                                                @air-brake)
-                        state   {:position (:position @pose) :speed (jolt/get-linear-velocity body)}
-                        state2  (physics/runge-kutta state (* dt 0.001) (physics/state-change (physics/gravitation earth-mass))
-                                                     (fn [x y] (merge-with add x y))
-                                                     (fn [s x] (into {} (for [[k v] x] [k (mult v s)]))))
-                        [a1 a2] (physics/matching-scheme state (* dt 0.0005) state2 #(mult %2 %1) sub)]
-                    ; (jolt/set-gravity ((physics/gravitation earth-mass) (:position @pose)))
+                  (let [height    (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
+                        loads     (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
+                                                                  (jolt/get-angular-velocity body)
+                                                                  (mult (vec3 (* 0.25 ^double aileron)
+                                                                              (* 0.25 ^double elevator)
+                                                                              (* 0.4  ^double rudder))
+                                                                        (to-radians 20))
+                                                                  @gear
+                                                                  @air-brake)
+                        state     {:position (:position @pose) :speed (jolt/get-linear-velocity body)}
+                        state2    (physics/runge-kutta state (* dt 0.001) (physics/state-change (physics/gravitation earth-mass))
+                                                       (fn [x y] (merge-with add x y))
+                                                       (fn [s x] (into {} (for [[k v] x] [k (mult v s)]))))
+                        [dv1 dv2] (physics/matching-scheme state (* dt 0.001) state2 #(mult %2 %1) sub)]
+                    (jolt/add-impulse body (mult dv1 mass))
                     (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                     (jolt/add-torque body (:sfsim.aerodynamics/moments loads))
-                    (jolt/set-gravity a1)
-                    (jolt/update-system (* ^long dt 0.0005) 1)
-                    (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
-                    (jolt/add-force body (:sfsim.aerodynamics/forces loads))
-                    (jolt/add-torque body (:sfsim.aerodynamics/moments loads))
-                    (jolt/set-gravity a2)
-                    (jolt/update-system (* ^long dt 0.0005) 1))
+                    (jolt/update-system (* ^long dt 0.001) 1)
+                    (jolt/add-impulse body (mult dv2 mass)))
                   (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
                   (reset! wheel-angles (if @vehicle
                                          [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)

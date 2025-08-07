@@ -363,6 +363,13 @@ void add_torque(int id, Vec3 torque)
   body_interface->AddTorque(body_id, torque_vector);
 }
 
+void add_impulse(int id, Vec3 impulse)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 impulse_vector(impulse.x, impulse.y, impulse.z);
+  body_interface->AddImpulse(body_id, impulse_vector);
+}
+
 void activate_body(int id)
 {
   JPH::BodyID body_id(id);

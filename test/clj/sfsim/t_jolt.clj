@@ -76,6 +76,12 @@
        (get-translation sphere) => (roughly-vector (vec3 1.75 0 0) 1e-7))
 
 
+(facts "Test applying impulse to sphere"
+       (set-linear-velocity sphere (vec3 0 0 0))
+       (add-impulse sphere (vec3 sphere-mass 0 0))
+       (get-linear-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-7))
+
+
 (def sphere-inertia (* (/ 2 5) sphere-mass 0.5 0.5))
 
 

@@ -43,13 +43,10 @@
 
 (defn matching-scheme
   "Use two custom acceleration values to make semi-implicit Euler result match a ground truth after two steps"
-  [y0 dt y2 scale subtract]
-  (if (zero? ^double dt)
-    [0.0 0.0]
-    (let [a1 (scale (/ 1.0 (sqr dt)) (subtract (subtract (:position y2) (:position y0)) (scale dt (subtract (:speed y2) (:speed y0)))))
-          a2 (subtract (scale (/ 1.0 ^double dt) (subtract (:speed y2) (:speed y0))) a1)]
-      (println a1 a2)
-      [a1 a2])))
+  [y0 dt y1 scale subtract]
+  (let [delta-speed0 (scale (/ 1.0 ^double dt) (subtract (subtract (:position y1) (:position y0)) (scale dt (:speed y0))))
+        delta-speed1 (subtract (subtract (:speed y1) (:speed y0)) delta-speed0)]
+    [delta-speed0 delta-speed1]))
 
 
 (defn gravitation

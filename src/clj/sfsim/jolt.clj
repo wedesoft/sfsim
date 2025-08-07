@@ -293,6 +293,11 @@
   add_torque [::mem/int ::vec3] ::mem/void)
 
 
+(defcfn add-impulse
+  "Apply an impulse in the next physics update"
+  add_impulse [::mem/int ::vec3] ::mem/void)
+
+
 (defcfn activate-body
   "Make sure body is active"
   activate_body [::mem/int] ::mem/void)

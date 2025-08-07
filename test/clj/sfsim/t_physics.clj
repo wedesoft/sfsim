@@ -41,36 +41,37 @@
 
 
 (defn semi-implicit-delta
-  [a]
-  (fn [y dt] (let [speed (+ (:speed y) (* a dt))] {:position speed :speed a})))
+  [y _dt]
+  {:position (:speed y) :speed 0.0})
 
 
 (def add-values (fn [x y] (merge-with + x y)))
 (def scale-values (fn [s x] (into {} (for [[k v] x] [k (* s v)]))))
 
 
-(defn semi-implicit-euler-twice
-  [y0 dt [a1 a2]]
+(defn matched-euler
+  [y0 dt [dv1 dv2]]
   (-> y0
-      (euler dt (semi-implicit-delta a1) add-values scale-values)
-      (euler dt (semi-implicit-delta a2) add-values scale-values)))
+      (update :speed #(add dv1 %))
+      (euler dt semi-implicit-delta add-values scale-values)
+      (update :speed #(add dv2 %))))
 
 
 (fact "Sanity check for euler test function"
-      (semi-implicit-euler-twice {:position 42.0 :speed 0.0} 1.0 [2 3]) => {:position 49.0 :speed 5.0}
-      (semi-implicit-euler-twice {:position 42.0 :speed 0.0} 2.0 [2 3]) => {:position 70.0 :speed 10.0})
+      (matched-euler {:position 42.0 :speed 0.0} 1.0 [2 3]) => {:position 44.0 :speed 5.0}
+      (matched-euler {:position 42.0 :speed 0.0} 2.0 [2 3]) => {:position 46.0 :speed 5.0})
 
 
 (tabular "Test Runge Kutta matching scheme for semi-implicit Euler"
-         (fact (semi-implicit-euler-twice ?y0 ?dt (matching-scheme ?y0 ?dt ?y2 * -)) => ?y2)
-         ?y0                        ?dt ?y2
+         (fact (matched-euler ?y0 ?dt (matching-scheme ?y0 ?dt ?y1 * #(- %1 %2))) => ?y1)
+         ?y0                        ?dt ?y1
          {:position 0.0 :speed 0.0} 1.0 {:position 0.0 :speed 0.0}
-         {:position 0.0 :speed 0.0} 1.0 {:position 3.0 :speed 2.0}
-         {:position 0.0 :speed 0.0} 2.0 {:position 12.0 :speed 4.0}
          {:position 0.0 :speed 0.0} 1.0 {:position 2.0 :speed 2.0}
-         {:position 0.0 :speed 0.0} 1.0 {:position 4.0 :speed 2.0}
-         {:position 0.0 :speed 0.0} 0.0 {:position 0.0 :speed 0.0}
-         {:position 0.0 :speed 9.8} 1.0 {:position 0.0 :speed -9.8})
+         {:position 0.0 :speed 0.0} 1.0 {:position 0.0 :speed 2.0}
+         {:position 0.0 :speed 2.0} 1.0 {:position 2.0 :speed 2.0}
+         {:position 0.0 :speed 0.0} 2.0 {:position 2.0 :speed 1.0}
+         {:position 0.0 :speed 0.0} 2.0 {:position 0.0 :speed 1.0}
+         {:position 2.0 :speed 1.5} 2.0 {:position 5.0 :speed 1.5})
 
 
 (fact "Determine gravitation from planetary object"
