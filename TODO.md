@@ -1,7 +1,9 @@
 # TODO
 * integrate control surface scaling
-* orbiting Earth, implement two-step Runge-Kutta wrapper alignment, display perihel aphel and time to
-* Thrusters
+* Radar altitude
+* implement RCS thrusters
+* following camera, different camera views, camera controls such as distance, joystick hat
+* sound effects
 * animate control surfaces and air brake
 * https://flightsimcoach.com/msfs-2024-keyboard-commands/
 * thrust graphics, opengl rocket plume
@@ -12,6 +14,7 @@
   volumetric engine exhaust?
   blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
   particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
+* make new trailer, post on https://www.reddit.com/r/spacesimgames/
 * reentry flame: https://www.shadertoy.com/view/XX3fDH
 * nav lights, strobe lights, landing lights
 * physics and animation of steering (apply difference of two animation time stamps)
@@ -20,94 +23,28 @@
   * rotating Earth coordinate system (centrifugal and coriolis force),
   * space flight physics with resting coordinate system
 * block gear up when on the ground
-* following camera, different camera views, camera controls such as distance, joystick hat
+* ground slope warning
 * Elevator trim
-* Radar altitude, ground slope warning
 * low FPS at 100km height was reported
 * deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
-* sounds
+  https://samdriver.xyz/article/decal-render-intro
 * use icosahedron for mapping 2D micro textures (better grass)
   * unroll icosahedron manually (20 surfaces)
   * find smallest cross product of vector with sum of corner vectors
   * use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
   * determine u and v
-* use different accessors for quaternions, vectors, matrices? (use Codeium to generate benchmark program)
 * mouse control:
   * see MSFS mouse yoke
   * up/down for pitch, right/left for roll
   * RMB/LMB to gradually move rudder right and left while holding the buttons pressed
   * wheel click to reset rudder
   * wheel up/down to increase/decrease throttle level
-* flying circuit with rectangles to fly through
-* launchpad
-* extendability (modding)?
-* move curves code into separate module
-* spacecraft module with data transfer from state dictionary to Jolt physics, graphics, keyboard, ...
-* refactor gear code
-  https://samdriver.xyz/article/decal-render-intro
-* make new trailer
-* fix problem with resolution of neighbouring tiles in planetary cubemap
-  problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
-* get high-res Florida data
-* https://www.spaceflighthistories.com/post/x-33-venturestar
-  add thrust: 3,010,000 lbf
-  weight: payload 25000 kg. vehicle 100t-135t
-  fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
-  [section4.2.pdf](http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf)
-* integration test powder function
-* arycama: limit darkness of cloud shadow (exponential approaching a base level)
-* increase ambient light (surface radiance)
-* stars, volumetric clouds https://www.shadertoy.com/view/ttcSD8
-  * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
-  * Skydome scaled to ZFAR * 0.5
-  * no skydome and just stars as pixels?
-* sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
-* sound effects
+* display perihel aphel and time to
+* launchpad, launch complex, lights
 * UI overlays for third person view
-* post on https://www.reddit.com/r/spacesimgames/
-* launch complex, lights
-* space station model, station lights
-* cockpit, flight assistance tools
-* steam description with 616x150px heading images
-* release demo
-* render moonlight and moon
-  https://svs.gsfc.nasa.gov/4720/
-* moon base, lights
-* shooting stars
-* fix planet tessellation tests
-* define wheel positions in Blender
-  animate wheel rotation and suspension, bake gear animation and name actions the same
-* hover thruster locations
-* threads for rendering, simulation, and loading of data
-* docking physics
-* moon landing physics
-* Check out poliastro and hapsira
-* use components and core.async for physics and loading of data, rendering main thread as component?
-  https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
-* introduce variation to cloud height
-* [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
-* .jpg -> .day.jpg
-* GLL parsing https://pure.uva.nl/ws/files/36086100/Thesis.pdf
-* cloud shadow flickering at large distance?
-* compute earth barycenter and sun in separate thread (use future)
-* microtexture for normal map, microtextures, bump maps
-* shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
-* pack more textures into one and then try one object casting shadow on another (pack object shadow maps into one?)
-* separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
-  overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
-* integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
-  use multiplication of local shadow map and planet+cloud shadows?
-* https://lup.lub.lu.se/student-papers/search/publication/8893256
-  Scattering approximation function
-* add object radius to object?
-* dted elevation data: https://gdal.org/drivers/raster/dted.html
-  gmted maybe: https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm
-* read lwjgl book: https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/
-* adapt shadow map size to object distance
-* add earth light
-* render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
-* cockpit and scene rendering looking downward so that horizon is in upper half of screen
 * 3D cockpit
+  * cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
+  * cockpit and scene rendering looking downward so that horizon is in upper half of screen
   * EF2000-like zoom into individual MFDs
   * Open Glass Cockpit: https://opengc.sourceforge.net/screenshots.html
   * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
@@ -121,7 +58,6 @@
     * earth
   * aerobrake/base roll-reversal, speed-height-distance profile
   * heading alignment cylinder
-* cockpit
   * top:
     warnings (status display)
     autopilot on/off, autothrottle (autopilot speed), angle of attack and bank hold (including reverse), roll reversal button
@@ -165,6 +101,62 @@
     life support
 * https://blog.kuula.co/virtual-tour-space-shuttle
 * make cockpit with Blender
+* stars, volumetric clouds https://www.shadertoy.com/view/ttcSD8
+  * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
+  * Skydome scaled to ZFAR * 0.5
+  * no skydome and just stars as pixels?
+* sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
+* flying circuit with rectangles to fly through
+* extendability (modding)?
+* fix problem with resolution of neighbouring tiles in planetary cubemap
+  problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
+* get high-res Florida data
+* https://www.spaceflighthistories.com/post/x-33-venturestar
+  add thrust: 3,010,000 lbf
+  weight: payload 25000 kg. vehicle 100t-135t
+  fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
+  [section4.2.pdf](http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf)
+* integration test powder function
+* arycama: limit darkness of cloud shadow (exponential approaching a base level)
+* increase ambient light (surface radiance)
+* space station model, station lights
+* steam description with 616x150px heading images
+* release demo
+* render moonlight and moon
+  https://svs.gsfc.nasa.gov/4720/
+* moon base, lights
+* shooting stars
+* fix planet tessellation tests
+* define wheel positions in Blender
+  animate wheel rotation and suspension, bake gear animation and name actions the same
+* hover thruster locations
+* threads for rendering, simulation, and loading of data
+* docking physics
+* moon landing physics
+* Check out poliastro and hapsira
+* use components and core.async for physics and loading of data, rendering main thread as component?
+  https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
+* introduce variation to cloud height
+* [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
+* .jpg -> .day.jpg
+* GLL parsing https://pure.uva.nl/ws/files/36086100/Thesis.pdf
+* cloud shadow flickering at large distance?
+* compute earth barycenter and sun in separate thread (use future)
+* microtexture for normal map, microtextures, bump maps
+* shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
+* pack more textures into one and then try one object casting shadow on another (pack object shadow maps into one?)
+* separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
+  overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
+* integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
+  use multiplication of local shadow map and planet+cloud shadows?
+* https://lup.lub.lu.se/student-papers/search/publication/8893256
+  Scattering approximation function
+* add object radius to object?
+* dted elevation data: https://gdal.org/drivers/raster/dted.html
+  gmted maybe: https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm
+* read lwjgl book: https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/
+* adapt shadow map size to object distance
+* add earth light
 * test for render-triangles
 * create windows using blending
 * use 1-channel png for water?
