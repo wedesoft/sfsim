@@ -710,6 +710,7 @@
                                                        (fn [x y] (merge-with add x y))
                                                        (fn [s x] (into {} (for [[k v] x] [k (mult v s)]))))
                         [dv1 dv2] (physics/matching-scheme state (* dt 0.001) state2 #(mult %2 %1) sub)]
+                    ; (jolt/set-gravity ((physics/gravitation earth-mass) (:position @pose)))
                     (jolt/add-impulse body (mult dv1 mass))
                     (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
