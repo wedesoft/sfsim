@@ -370,6 +370,13 @@ void add_impulse(int id, Vec3 impulse)
   body_interface->AddImpulse(body_id, impulse_vector);
 }
 
+void add_angular_impulse(int id, Vec3 angular_impulse)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 angular_impulse_vector(angular_impulse.x, angular_impulse.y, angular_impulse.z);
+  body_interface->AddAngularImpulse(body_id, angular_impulse_vector);
+}
+
 void activate_body(int id)
 {
   JPH::BodyID body_id(id);

@@ -298,6 +298,11 @@
   add_impulse [::mem/int ::vec3] ::mem/void)
 
 
+(defcfn add-angular-impulse
+  "Apply an angular impulse in the next physics update"
+  add_angular_impulse [::mem/int ::vec3] ::mem/void)
+
+
 (defcfn activate-body
   "Make sure body is active"
   activate_body [::mem/int] ::mem/void)

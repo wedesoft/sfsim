@@ -1,5 +1,4 @@
 # TODO
-* wrap jolt method for adding rotational impulse
 * integrate control surface scaling
 * orbiting Earth, implement two-step Runge-Kutta wrapper alignment, display perihel aphel and time to
 * Thrusters

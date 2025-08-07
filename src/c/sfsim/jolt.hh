@@ -44,6 +44,7 @@ extern "C" {
   void add_force(int id, Vec3 force);
   void add_torque(int id, Vec3 torque);
   void add_impulse(int id, Vec3 impulse);
+  void add_angular_impulse(int id, Vec3 angular_impulse);
   void activate_body(int id);
   Vec3 get_translation(int id);
   void set_translation(int id, Vec3 translation);

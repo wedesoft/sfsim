@@ -72,7 +72,7 @@
 (def opacity-base (atom 100.0))
 (def longitude 0.0)
 (def latitude 0.0)
-(def height 280000.0)
+(def height 408000.0)
 (def earth-mass (config/planet-config :sfsim.planet/mass))
 (def radius (config/planet-config :sfsim.planet/radius))
 (def g physics/gravitational-constant)

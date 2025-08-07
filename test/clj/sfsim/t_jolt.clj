@@ -85,6 +85,12 @@
 (def sphere-inertia (* (/ 2 5) sphere-mass 0.5 0.5))
 
 
+(facts "Test applying angular impulse to sphere"
+       (set-angular-velocity sphere (vec3 0 0 0))
+       (add-angular-impulse sphere (vec3 sphere-inertia 0 0))
+       (get-angular-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-7))
+
+
 (facts "Test applying torque to sphere for a single physics update"
        (set-angular-velocity sphere (vec3 0 0 0))
        (add-torque sphere (vec3 sphere-inertia 0 0))
