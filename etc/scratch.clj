@@ -4,7 +4,7 @@
 ;; This source code is licensed under the Eclipse Public License v1.0
 ;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
 
-(require '[clojure.math :refer (sqrt PI log)]
+(require '[clojure.math :refer (sqrt PI log pow)]
          '[fastmath.vector :refer (vec3 mag add mult sub)]
          '[sfsim.jolt :as jolt]
          '[sfsim.util :refer (cube)]
@@ -36,7 +36,7 @@
 
 (java.util.Locale/setDefault java.util.Locale/US)
 
-(def x [0.01 0.05 0.125 0.25 0.5 1.0 2.0 4.0 8.0 16.0 32.0 64.0])
+(def x (map #(pow 2 %) (range -5 6 0.1)))
 (def y (atom []))
 
 (doseq [dt x]
@@ -46,12 +46,12 @@
          (reset! max-error 0.0)
          (dotimes [t (long (* n (/ period dt)))]
            (let [state  {:position (jolt/get-translation sphere) :speed (jolt/get-linear-velocity sphere)}
-                 state2 (physics/runge-kutta state dt (physics/state-change (physics/gravitation earth-mass))
+                 state2 (physics/runge-kutta state dt (physics/state-change (physics/gravitation (vec3 0 0 0) earth-mass))
                                              (fn [x y] (merge-with add x y))
                                              (fn [s x] (into {} (for [[k v] x] [k (mult v s)]))))
                  [dv1 dv2] (physics/matching-scheme state dt state2 #(mult %2 %1) sub)]
              (if euler
-               (jolt/set-gravity ((physics/gravitation earth-mass) (jolt/get-translation sphere)))
+               (jolt/set-gravity ((physics/gravitation (vec3 0 0 0) earth-mass) (jolt/get-translation sphere)))
                (jolt/set-gravity (vec3 0 0 0)))
              (when (not euler)
                (jolt/add-impulse sphere (mult dv1 mass)))

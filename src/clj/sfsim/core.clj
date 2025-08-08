@@ -706,7 +706,9 @@
                                                                   @gear
                                                                   @air-brake)
                         state     {:position (:position @pose) :speed (jolt/get-linear-velocity body)}
-                        state2    (physics/runge-kutta state (* dt 0.001) (physics/state-change (physics/gravitation earth-mass))
+                        state2    (physics/runge-kutta state
+                                                       (* dt 0.001)
+                                                       (physics/state-change (physics/gravitation (vec3 0 0 0) earth-mass))
                                                        (fn [x y] (merge-with add x y))
                                                        (fn [s x] (into {} (for [[k v] x] [k (mult v s)]))))
                         [dv1 dv2] (physics/matching-scheme state (* dt 0.001) state2 #(mult %2 %1) sub)]
