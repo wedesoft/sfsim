@@ -4,7 +4,7 @@
 ;; This source code is licensed under the Eclipse Public License v1.0
 ;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
 
-(require '[clojure.math :refer (sqrt PI)]
+(require '[clojure.math :refer (sqrt PI log)]
          '[fastmath.vector :refer (vec3 mag add mult sub)]
          '[sfsim.jolt :as jolt]
          '[sfsim.util :refer (cube)]
@@ -32,12 +32,18 @@
 
 (def euler false)
 
+(def max-error (atom 0.0))
+
 (java.util.Locale/setDefault java.util.Locale/US)
 
-(doseq [dt [0.01 0.05 0.125 0.25 0.5 1.0 2.0 4.0 8.0 16.0 32.0 64.0]]
+(def x [0.01 0.05 0.125 0.25 0.5 1.0 2.0 4.0 8.0 16.0 32.0 64.0])
+(def y (atom []))
+
+(doseq [dt x]
        (with-open [f (clojure.java.io/writer (if euler (format "/tmp/euler%f.dat" dt) (format "/tmp/rk%5.3f.dat" dt)))]
          (jolt/set-translation sphere (vec3 orbit-radius 0 0))
          (jolt/set-linear-velocity sphere (vec3 0 speed 0))
+         (reset! max-error 0.0)
          (dotimes [t (long (* n (/ period dt)))]
            (let [state  {:position (jolt/get-translation sphere) :speed (jolt/get-linear-velocity sphere)}
                  state2 (physics/runge-kutta state dt (physics/state-change (physics/gravitation earth-mass))
@@ -52,9 +58,19 @@
              (jolt/update-system dt 1)
              (when (not euler)
                (jolt/add-impulse sphere (mult dv2 mass)))
-             (.write f (format "%f %f\n" (* t dt) (- (mag (jolt/get-translation sphere)) orbit-radius)))))))
+             (let [error (- (mag (jolt/get-translation sphere)) orbit-radius)]
+               (swap! max-error max (abs error))
+               (.write f (format "%f %f\n" (* t dt) error)))))
+         (swap! y conj @max-error)))
+
+
+(with-open [f (clojure.java.io/writer "/tmp/errors.dat")]
+ (doseq [[i j] (map list x @y)]
+   (.write f (format "%f %f\n" (log i) j))))
+
 
 (sh "gnuplot" "-c" "etc/orbit.gp")
+(sh "gnuplot" "-c" "etc/errors.gp")
 
 (jolt/jolt-destroy)
 (System/exit 0)
