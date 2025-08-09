@@ -40,7 +40,7 @@
        (runge-kutta 1.0 1.0 (fn [y _dt] y) add scale) => (roughly (exp 1) 1e-2))
 
 
-(defn semi-implicit-delta
+(defn linear-motion
   [y _dt]
   {:position (:speed y) :speed 0.0})
 
@@ -53,7 +53,7 @@
   [y0 dt [dv1 dv2]]
   (-> y0
       (update :speed #(add dv1 %))
-      (euler dt semi-implicit-delta add-values scale-values)
+      (euler dt linear-motion add-values scale-values)
       (update :speed #(add dv2 %))))
 
 
