@@ -1,6 +1,6 @@
 set terminal pngcairo size 640,480
 set output "errors.png"
-set title "Euler method maximum orbit deviation"
+set title "Runge Kutta double precision method maximum orbit deviation"
 set logscale x 2
 set logscale y 2
 set xlabel "t"
