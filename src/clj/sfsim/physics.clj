@@ -43,7 +43,7 @@
 
 
 (defn matching-scheme
-  "Use two custom acceleration values to make semi-implicit Euler result match a ground truth after two steps"
+  "Use two custom acceleration values to make semi-implicit Euler result match a ground truth after the integration step"
   [y0 dt y1 scale subtract]
   (let [delta-speed0 (scale (/ 1.0 ^double dt) (subtract (subtract (:position y1) (:position y0)) (scale dt (:speed y0))))
         delta-speed1 (subtract (subtract (:speed y1) (:speed y0)) delta-speed0)]

@@ -1,6 +1,6 @@
 set terminal pngcairo size 640,480
 set output "rk-height.png"
-set title "Runge-Kutta double precision method orbit deviations"
+set title "Runge-Kutta with single precision moving coordinate system"
 set xlabel "t"
 set ylabel "h"
 plot "/tmp/rk0.031.dat" using 1:2 with lines title "dt = 0.031", \

@@ -56,8 +56,8 @@
 
 (java.util.Locale/setDefault java.util.Locale/US)
 
-; (def x (map #(pow 2 %) (range -5 6 0.1)))
-(def x (map #(pow 2 %) (range 1)))
+(def x (map #(pow 2 %) (range -5 6 0.1)))
+; (def x (map #(pow 2 %) (range 1)))
 (def y (atom []))
 (def position-offset (atom (vec3 0 0 0)))
 (def speed-offset (atom (vec3 0 0 0)))
