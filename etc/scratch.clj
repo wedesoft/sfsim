@@ -13,7 +13,7 @@
          '[sfsim.physics :as physics])
 (use '[clojure.java.shell :only [sh]])
 
-; (jolt/jolt-init)
+(jolt/jolt-init)
 
 (def height 408000.0)
 (def earth-mass (config/planet-config :sfsim.planet/mass))
@@ -26,21 +26,29 @@
 (def dt 10.0)
 (def n 1)
 
-;(def sphere (jolt/create-and-add-dynamic-body (jolt/sphere-settings 0.5 1000.0) (vec3 orbit-radius 0 0) (q/->Quaternion 1 0 0 0)))
-;(def mass (jolt/get-mass sphere))
+(def sphere (jolt/create-and-add-dynamic-body (jolt/sphere-settings 0.5 1000.0) (vec3 orbit-radius 0 0) (q/->Quaternion 1 0 0 0)))
+(def mass (jolt/get-mass sphere))
+(def set-translation jolt/set-translation)
+(def set-linear-velocity jolt/set-linear-velocity)
+(def get-translation jolt/get-translation)
+(def get-linear-velocity jolt/get-linear-velocity)
+(def set-gravity jolt/set-gravity)
+(def add-impulse jolt/add-impulse)
+(def update-system jolt/update-system)
 
-(def sphere (atom {:position (vec3 0 0 0) :speed (vec3 0 0 0)}))
-(def gravity (atom (vec3 0 0 0)))
-(def mass 1.0)
-(defn set-translation [body position] (swap! body assoc :position position))
-(defn set-linear-velocity [body speed] (swap! body assoc :speed speed))
-(defn get-translation [body] (:position @body))
-(defn get-linear-velocity [body] (:speed @body))
-(defn set-gravity [value] (reset! gravity value))
-(defn add-impulse [body impulse] (swap! body update :speed add impulse))
-(defn update-system [dt _n]
-  (swap! sphere update :speed add (mult @gravity dt))
-  (swap! sphere update :position add (mult (:speed @sphere) dt)))
+
+; (def sphere (atom {:position (vec3 0 0 0) :speed (vec3 0 0 0)}))
+; (def gravity (atom (vec3 0 0 0)))
+; (def mass 1.0)
+; (defn set-translation [body position] (swap! body assoc :position position))
+; (defn set-linear-velocity [body speed] (swap! body assoc :speed speed))
+; (defn get-translation [body] (:position @body))
+; (defn get-linear-velocity [body] (:speed @body))
+; (defn set-gravity [value] (reset! gravity value))
+; (defn add-impulse [body impulse] (swap! body update :speed add impulse))
+; (defn update-system [dt _n]
+;   (swap! sphere update :speed add (mult @gravity dt))
+;   (swap! sphere update :position add (mult (:speed @sphere) dt)))
 
 (def euler false)
 
@@ -48,35 +56,40 @@
 
 (java.util.Locale/setDefault java.util.Locale/US)
 
-(def x (map #(pow 2 %) (range -5 6 0.1)))
-; (def x (map #(pow 2 %) (range 1)))
+; (def x (map #(pow 2 %) (range -5 6 0.1)))
+(def x (map #(pow 2 %) (range 1)))
 (def y (atom []))
-(def offset (atom (vec3 0 0 0)))
+(def position-offset (atom (vec3 0 0 0)))
+(def speed-offset (atom (vec3 0 0 0)))
 
 (doseq [dt x]
        (with-open [f (clojure.java.io/writer (if euler (format "/tmp/euler%5.3f.dat" dt) (format "/tmp/rk%5.3f.dat" dt)))]
-         (reset! offset (vec3 orbit-radius 0 0))
+         (reset! position-offset (vec3 orbit-radius 0 0))
          (set-translation sphere (vec3 0 0 0))
-         (set-linear-velocity sphere (vec3 0 speed 0))
+         (reset! speed-offset (vec3 0 speed 0))
+         (set-linear-velocity sphere (vec3 0 0 0))
          (reset! max-error 0.0)
          (dotimes [t (long (* n (/ period dt)))]
-           (let [state  {:position (get-translation sphere) :speed (get-linear-velocity sphere)}
-                 state2 (physics/runge-kutta state dt (physics/state-change (physics/gravitation (sub @offset) earth-mass))
+           (let [state  {:position @position-offset :speed @speed-offset}
+                 state2 (physics/runge-kutta state dt (physics/state-change (physics/gravitation (vec3 0 0 0) earth-mass))
                                              (fn [x y] (merge-with add x y))
                                              (fn [s x] (into {} (for [[k v] x] [k (mult v s)]))))
                  [dv1 dv2] (physics/matching-scheme state dt state2 #(mult %2 %1) sub)]
+             ; (println dv1 dv2)
              (if euler
-               (set-gravity ((physics/gravitation (sub @offset) earth-mass) (get-translation sphere)))
+               (set-gravity ((physics/gravitation (sub @position-offset) earth-mass) (get-translation sphere)))
                (set-gravity (vec3 0 0 0)))
              (when (not euler)
                (add-impulse sphere (mult dv1 mass)))
              (update-system dt 1)
              (when (not euler)
                (add-impulse sphere (mult dv2 mass)))
-             (when (>= (mag (get-translation sphere)) 64000)
-               (swap! offset add (get-translation sphere))
-               (set-translation sphere (vec3 0 0 0)))
-             (let [error (- (mag (add @offset (get-translation sphere))) orbit-radius)]
+             (swap! position-offset add (add (mult @speed-offset dt) (get-translation sphere)))
+             (set-translation sphere (vec3 0 0 0))
+             (swap! speed-offset add (get-linear-velocity sphere))
+             (set-linear-velocity sphere (vec3 0 0 0))
+             ; (println @position-offset @speed-offset)
+             (let [error (- (mag (add @position-offset (get-translation sphere))) orbit-radius)]
                (swap! max-error max (abs error))
                (.write f (format "%f %f\n" (* t dt) error)))))
          (swap! y conj @max-error)))
@@ -92,5 +105,5 @@
   (sh "gnuplot" "-c" "etc/rk.gp"))
 (sh "gnuplot" "-c" "etc/errors.gp")
 
-; (jolt/jolt-destroy)
+(jolt/jolt-destroy)
 (System/exit 0)
