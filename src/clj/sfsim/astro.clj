@@ -345,12 +345,14 @@
   [filename]
   (let [buffer (map-file-to-buffer filename)
         header (read-daf-header buffer)
+        cmt    (read-daf-comment header buffer)
         lookup (spk-segment-lookup-table header buffer)]
     (when (not (check-ftp-str header))
       (throw (RuntimeException. "FTPSTR has wrong value")))
     (when (not (check-endianness header))
       (throw (RuntimeException. "File endianness not implemented!")))
     {::header header
+     ::comment cmt
      ::lookup lookup
      ::buffer buffer}))
 
