@@ -1,6 +1,15 @@
 # TODO
+* orbital physics
+  * variables, coordinates, transforms
+    * (:position @pose), object-position; (:orientation @pose); object-to-world
+    * origin; camera-orientation
+    * earth-to-icrs
+  * port Jolt Physics speed and impulses to double precision
+  * atmospheric flight with stationary atmosphere in rotating coordinate system
+  * rotating Earth coordinate system (centrifugal and coriolis force),
+  * space flight physics with moving coordinate system and matching scheme
 * unbuffer make |& less -R
-* port Jolt Physics speed and impulses to double precision
+* increase Mie scattering
 * integrate control surface scaling
 * Radar altitude
 * implement RCS thrusters
@@ -20,10 +29,6 @@
 * reentry flame: https://www.shadertoy.com/view/XX3fDH
 * nav lights, strobe lights, landing lights
 * physics and animation of steering (apply difference of two animation time stamps)
-* takeoff physics
-  * atmospheric flight with stationary atmosphere in rotating coordinate system
-  * rotating Earth coordinate system (centrifugal and coriolis force),
-  * space flight physics with resting coordinate system
 * block gear up when on the ground
 * ground slope warning
 * Elevator trim
