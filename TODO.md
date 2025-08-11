@@ -1,9 +1,9 @@
 # TODO
 * orbital physics
   * variables, coordinates, transforms
-    * (:position @pose), object-position; (:orientation @pose); object-to-world
+    * (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic)
     * origin; camera-orientation
-    * earth-to-icrs
+    * earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
   * port Jolt Physics speed and impulses to double precision
   * atmospheric flight with stationary atmosphere in rotating coordinate system
   * rotating Earth coordinate system (centrifugal and coriolis force),
