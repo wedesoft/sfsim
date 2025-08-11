@@ -86,7 +86,9 @@
 
 
 (def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
-(def earth-moon (astro/make-spk-segment-interpolator spk 0 3))
+(def barycenter-sun (astro/make-spk-segment-interpolator spk 0 10))
+(def barycenter-earth (astro/make-spk-segment-interpolator spk 0 3))
+(defn earth-sun [jd-ut] (sub (barycenter-sun jd-ut) (barycenter-earth jd-ut)))
 
 (GLFW/glfwInit)
 
@@ -760,7 +762,7 @@
               origin             (add object-position (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               jd-ut              (+ ^double @time-delta (/ ^long @t0 1000.0 86400.0) ^double astro/T0)
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
-              sun-pos            (sub (earth-moon jd-ut))
+              sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin @camera-orientation
