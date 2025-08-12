@@ -9,7 +9,7 @@
   * rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme, handle ground collisions
   * ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme (accelerated coordinate system with sun gravitation)
   * rotating Moon coordinate system, handle ground collisions
-  * how to switch speed display?
+  * how to switch speed display (Earth surface, Earth orbit, Moon orbit, Moon surface)
   * get speed in wind system in each case
   * get centrifugal and coriolis forces in each case
   * get Earth position and orientation in each case
