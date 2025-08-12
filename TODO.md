@@ -4,10 +4,16 @@
     * (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic)
     * origin; camera-orientation
     * earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
-  * port Jolt Physics speed and impulses to double precision
+  * multi method for physics coordinate systems, methods and conditions for switching
   * atmospheric flight with stationary atmosphere in rotating coordinate system
-  * rotating Earth coordinate system (centrifugal and coriolis force),
-  * space flight physics with moving coordinate system and matching scheme
+  * rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme, handle ground collisions
+  * ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme (accelerated coordinate system with sun gravitation)
+  * rotating Moon coordinate system, handle ground collisions
+  * how to switch speed display?
+  * get speed in wind system in each case
+  * get centrifugal and coriolis forces in each case
+  * get Earth position and orientation in each case
+  * get Sun position in each case
 * unbuffer make |& less -R
 * increase Mie scattering
 * integrate control surface scaling
