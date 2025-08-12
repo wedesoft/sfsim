@@ -73,9 +73,8 @@
            (let [state  {:position @position-offset :speed @speed-offset}
                  state2 (physics/runge-kutta state dt (physics/state-change (physics/gravitation (vec3 0 0 0) earth-mass))
                                              (fn [x y] (merge-with add x y))
-                                             (fn [s x] (into {} (for [[k v] x] [k (mult v s)]))))
-                 [dv1 dv2] (physics/matching-scheme state dt state2 #(mult %2 %1) sub)]
-             ; (println dv1 dv2)
+                                             (fn [x s] (into {} (for [[k v] x] [k (mult v s)]))))
+                 [dv1 dv2] (physics/matching-scheme state dt state2 mult sub)]
              (if euler
                (set-gravity ((physics/gravitation (sub @position-offset) earth-mass) (get-translation sphere)))
                (set-gravity (vec3 0 0 0)))
@@ -88,7 +87,6 @@
              (set-translation sphere (vec3 0 0 0))
              (swap! speed-offset add (get-linear-velocity sphere))
              (set-linear-velocity sphere (vec3 0 0 0))
-             ; (println @position-offset @speed-offset)
              (let [error (- (mag (add @position-offset (get-translation sphere))) orbit-radius)]
                (swap! max-error max (abs error))
                (.write f (format "%f %f\n" (* t dt) error)))))

@@ -18,7 +18,7 @@
 
 
 (def add-schema (m/schema [:=> [:cat :some :some] :some]))
-(def scale-schema (m/schema [:=> [:cat :double :some] :some]))
+(def scale-schema (m/schema [:=> [:cat :some :double] :some]))
 
 
 (def gravitational-constant 6.67430e-11)
@@ -27,7 +27,7 @@
 (defn euler
   "Euler integration method"
   [y0 dt dy + *]
-  (+ y0 (* dt (dy y0 dt))))
+  (+ y0 (* (dy y0 dt) dt)))
 
 
 (defn runge-kutta
@@ -36,16 +36,16 @@
   [y0 dt dy + *]
   (let [dt2 (/ ^double dt 2.0)
         k1  (dy y0                0.0)
-        k2  (dy (+ y0 (* dt2 k1)) dt2)
-        k3  (dy (+ y0 (* dt2 k2)) dt2)
-        k4  (dy (+ y0 (* dt  k3)) dt)]
-    (+ y0 (* (/ ^double dt 6.0) (reduce + [k1 (* 2.0 k2) (* 2.0 k3) k4])))))
+        k2  (dy (+ y0 (* k1 dt2)) dt2)
+        k3  (dy (+ y0 (* k2 dt2)) dt2)
+        k4  (dy (+ y0 (* k3 dt)) dt)]
+    (+ y0 (* (reduce + [k1 (* k2 2.0) (* k3 2.0) k4]) (/ ^double dt 6.0)))))
 
 
 (defn matching-scheme
   "Use two custom acceleration values to make semi-implicit Euler result match a ground truth after the integration step"
   [y0 dt y1 scale subtract]
-  (let [delta-speed0 (scale (/ 1.0 ^double dt) (subtract (subtract (:position y1) (:position y0)) (scale dt (:speed y0))))
+  (let [delta-speed0 (scale (subtract (subtract (:position y1) (:position y0)) (scale (:speed y0) dt)) (/ 1.0 ^double dt))
         delta-speed1 (subtract (subtract (:speed y1) (:speed y0)) delta-speed0)]
     [delta-speed0 delta-speed1]))
 

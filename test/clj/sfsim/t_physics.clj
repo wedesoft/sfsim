@@ -20,7 +20,7 @@
 
 
 (def add (fn [x y] (+ x y)))
-(def scale (fn [s x] (* s x)))
+(def scale (fn [x s] (* x s)))
 
 
 (facts "Euler integration method"
@@ -46,15 +46,15 @@
 
 
 (def add-values (fn [x y] (merge-with + x y)))
-(def scale-values (fn [s x] (into {} (for [[k v] x] [k (* s v)]))))
+(def scale-values (fn [x s] (into {} (for [[k v] x] [k (* v s)]))))
 
 
 (defn matched-euler
-  [y0 dt [dv1 dv2]]
+  [y0 dt [dv0 dv1]]
   (-> y0
-      (update :speed #(add dv1 %))
+      (update :speed #(add dv0 %))
       (euler dt linear-motion add-values scale-values)
-      (update :speed #(add dv2 %))))
+      (update :speed #(add dv1 %))))
 
 
 (fact "Sanity check for euler test function"
