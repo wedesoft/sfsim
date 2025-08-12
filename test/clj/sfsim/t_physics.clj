@@ -89,3 +89,16 @@
       => {:position (vec3 0 0 0) :speed (vec3 3 0 0)}
       ((state-change (fn [position] position)) {:position (vec3 5 0 0) :speed (vec3 0 0 0)} 0.0)
       => {:position (vec3 0 0 0) :speed (vec3 5 0 0)})
+
+
+(fact "Centrifugal acceleration in rotating coordinate system"
+      (centrifugal-acceleration (vec3 0 0 0) (vec3 1 0 0)) => (vec3 0 0 0)
+      (centrifugal-acceleration (vec3 0 0 1) (vec3 1 0 0)) => (vec3 1 0 0)
+      (centrifugal-acceleration (vec3 0 0 2) (vec3 1 0 0)) => (vec3 4 0 0)
+      (centrifugal-acceleration (vec3 0 0 2) (vec3 0 0 1)) => (vec3 0 0 0))
+
+
+(fact "Coriolis acceleration in rotating coordinate system"
+      (coriolis-acceleration (vec3 0 0 0) (vec3 1 0 0)) => (vec3 0 0 0)
+      (coriolis-acceleration (vec3 0 0 1) (vec3 1 0 0)) => (vec3 0 -2 0)
+      (coriolis-acceleration (vec3 0 0 1) (vec3 0 0 1)) => (vec3 0 0 0))

@@ -8,7 +8,7 @@
   "Physics related functions except for Jolt bindings"
   (:require
     [malli.core :as m]
-    [fastmath.vector :refer (vec3 mag normalize mult sub)]
+    [fastmath.vector :refer (vec3 mag normalize mult sub cross)]
     [sfsim.util :refer (sqr)])
   (:import [fastmath.vector Vec3]))
 
@@ -66,6 +66,18 @@
   [acceleration]
   (fn [{:keys [position speed]} _dt]
     {:position speed :speed (acceleration position)}))
+
+
+(defn centrifugal-acceleration
+  "Determine centrifugal acceleration in a rotating coordinate system"
+  [omega position]
+  (sub (cross omega (cross omega position))))
+
+
+(defn coriolis-acceleration
+  "Determine coriolis acceleration for a moving particle in a rotating coordinate system"
+  [omega speed]
+  (sub (mult (cross omega speed) 2.0)))
 
 
 (set! *warn-on-reflection* false)
