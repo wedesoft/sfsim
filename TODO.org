@@ -6,16 +6,16 @@
    origin; camera-orientation,
    earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
 ** TODO methods
-   + multi method for physics coordinate systems, methods and conditions for switching
-   + atmospheric flight with stationary atmosphere in rotating coordinate system
-   + rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme, handle ground collisions
-   + ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme (accelerated coordinate system with sun gravitation)
-   + rotating Moon coordinate system, handle ground collisions
-   + how to switch speed display (Earth surface, Earth orbit, Moon orbit, Moon surface)
-   + get speed in wind system in each case
-   + get centrifugal and coriolis forces in each case
-   + get Earth position and orientation in each case
-   + get Sun position in each case
+   - [ ] multi method for physics coordinate systems, methods and conditions for switching
+   - [ ] atmospheric flight with stationary atmosphere in rotating coordinate system
+   - [ ] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme, handle ground collisions
+   - [ ] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme (accelerated coordinate system with sun gravitation)
+   - [ ] rotating Moon coordinate system, handle ground collisions
+   - [ ] how to switch speed display (Earth surface, Earth orbit, Moon orbit, Moon surface)
+   - [ ] get speed in wind system in each case
+   - [ ] get centrifugal and coriolis forces in each case
+   - [ ] get Earth position and orientation in each case
+   - [ ] get Sun position in each case
 * TODO increase Mie scattering
 * TODO integrate control surface scaling
 * TODO Radar altitude
@@ -73,46 +73,46 @@
 ** TODO aerobrake/base roll-reversal, speed-height-distance profile
 ** TODO heading alignment cylinder
 ** TODO top:
-   + warnings (status display)
-   + autopilot on/off, autothrottle (autopilot speed), angle of attack and bank hold (including reverse), roll reversal button
-   + autopilot kill rotation, prograde, retrograde, orbit normal +/-, radial in/out
-   + rcs mode (off, rotation, translation)
-   + aircraft flight control surfaces: off/pitch/on
+   - [ ] warnings (status display)
+   - [ ] autopilot on/off, autothrottle (autopilot speed), angle of attack and bank hold (including reverse), roll reversal button
+   - [ ] autopilot kill rotation, prograde, retrograde, orbit normal +/-, radial in/out
+   - [ ] rcs mode (off, rotation, translation)
+   - [ ] aircraft flight control surfaces: off/pitch/on
 ** TODO main:
-   + cabin light, panel light
-   + 2 mfds
-   + apu on/off
-   + airlock doors (three state), chamber pressure, bay door (open, close, stop)
-   + light switch: nav, beacon, strobe
-   + engine, thrust (main/hover), rcs
-   + undock
-   + fuel display (main, rcs, apu), oxygen display
-   + hover doors switch + status
-   + gear up/down switch + status
-   + spoilers
-   + radiator deploy + status
-   + coolant temperature
-   + no flaps
+   - [ ] cabin light, panel light
+   - [ ] 2 mfds
+   - [ ] apu on/off
+   - [ ] airlock doors (three state), chamber pressure, bay door (open, close, stop)
+   - [ ] light switch: nav, beacon, strobe
+   - [ ] engine, thrust (main/hover), rcs
+   - [ ] undock
+   - [ ] fuel display (main, rcs, apu), oxygen display
+   - [ ] hover doors switch + status
+   - [ ] gear up/down switch + status
+   - [ ] spoilers
+   - [ ] radiator deploy + status
+   - [ ] coolant temperature
+   - [ ] no flaps
 ** TODO mfd:
-   + yaw, bank, pitch acceleration and velocity indicators
-   + horizon hsi, height, heading, variometer, speed, ils height, nominal speed
-   + vor (use heading)
-   + nav frequencies, dock, vtol freq
-   + dock (angles, offset to path, distance, approach speed, x/y speed)
-   + camera
-   + map of earth/moon
-   + hull temperature
-   + align orbit plane
-   + orbit
-   + transfer: encounter, translunar orbit, insertion
-   + ascent profile
-   + reentry profile
+   - [ ] yaw, bank, pitch acceleration and velocity indicators
+   - [ ] horizon hsi, height, heading, variometer, speed, ils height, nominal speed
+   - [ ] vor (use heading)
+   - [ ] nav frequencies, dock, vtol freq
+   - [ ] dock (angles, offset to path, distance, approach speed, x/y speed)
+   - [ ] camera
+   - [ ] map of earth/moon
+   - [ ] hull temperature
+   - [ ] align orbit plane
+   - [ ] orbit
+   - [ ] transfer: encounter, translunar orbit, insertion
+   - [ ] ascent profile
+   - [ ] reentry profile
 ** TODO engine thrust lever (main, hover)
-   + hover door
+   - [ ] hover door
 ** TODO bottom
-   + flightstick (yaw/pitch/roll), trim wheel
-   + fuel lines open/close (lox, main), external pressure online
-   + life support
+   - [ ] flightstick (yaw/pitch/roll), trim wheel
+   - [ ] fuel lines open/close (lox, main), external pressure online
+   - [ ] life support
 * TODO [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
 * TODO make cockpit with Blender
 * TODO stars, [[https://www.shadertoy.com/view/ttcSD8][volumetric clouds]]
@@ -126,10 +126,10 @@
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 * TODO get high-res Florida data
 * TODO [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
-  + add thrust: 3,010,000 lbf
-  + weight: payload 25000 kg. vehicle 100t-135t
-  + fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
-  + [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
+  - [ ] add thrust: 3,010,000 lbf
+  - [ ] weight: payload 25000 kg. vehicle 100t-135t
+  - [ ] fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
+  - [ ] [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
 * TODO integration test powder function
 * TODO arycama: limit darkness of cloud shadow (exponential approaching a base level)
 * TODO increase ambient light (surface radiance)
