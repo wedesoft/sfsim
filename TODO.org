@@ -1,19 +1,20 @@
-# TODO
+#+title: TODO
+#+author: Jan Wedekind
 * orbital physics
-  * variables, coordinates, transforms
-    * (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic)
-    * origin; camera-orientation
-    * earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
-  * multi method for physics coordinate systems, methods and conditions for switching
-  * atmospheric flight with stationary atmosphere in rotating coordinate system
-  * rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme, handle ground collisions
-  * ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme (accelerated coordinate system with sun gravitation)
-  * rotating Moon coordinate system, handle ground collisions
-  * how to switch speed display (Earth surface, Earth orbit, Moon orbit, Moon surface)
-  * get speed in wind system in each case
-  * get centrifugal and coriolis forces in each case
-  * get Earth position and orientation in each case
-  * get Sun position in each case
+** variables, coordinates, transforms
+*** (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic)
+*** origin; camera-orientation
+*** earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
+** multi method for physics coordinate systems, methods and conditions for switching
+** atmospheric flight with stationary atmosphere in rotating coordinate system
+** rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme, handle ground collisions
+** ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme (accelerated coordinate system with sun gravitation)
+** rotating Moon coordinate system, handle ground collisions
+** how to switch speed display (Earth surface, Earth orbit, Moon orbit, Moon surface)
+** get speed in wind system in each case
+** get centrifugal and coriolis forces in each case
+** get Earth position and orientation in each case
+** get Sun position in each case
 * unbuffer make |& less -R
 * increase Mie scattering
 * integrate control surface scaling
@@ -22,62 +23,62 @@
 * following camera, different camera views, camera controls such as distance, joystick hat
 * sound effects
 * animate control surfaces and air brake
-* https://flightsimcoach.com/msfs-2024-keyboard-commands/
+* [[https://flightsimcoach.com/msfs-2024-keyboard-commands/][MSFS keycoard commands]]
 * thrust graphics, opengl rocket plume
-  flame: https://www.shadertoy.com/view/XsXSWS
-  mach diamonds: https://www.shadertoy.com/view/wdjGRz
-  mach diamonds: https://www.shadertoy.com/view/WdGBDc
-  blender cone: https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume
+  [[https://www.shadertoy.com/view/XsXSWS][flame]]
+  [[https://www.shadertoy.com/view/wdjGRz][mach diamonds]]
+  [[https://www.shadertoy.com/view/WdGBDc][mach diamonds]]
+  [[https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume][blender cone]]
   volumetric engine exhaust?
-  blender animation: https://www.youtube.com/watch?v=qfI9j92CUso
-  particle based: https://www.youtube.com/watch?v=2duBWH7cR3A
+  [[https://www.youtube.com/watch?v=qfI9j92CUso][blender animation]]
+  [[https://www.youtube.com/watch?v=2duBWH7cR3A][particle based]]
 * make new trailer, post on https://www.reddit.com/r/spacesimgames/
-* reentry flame: https://www.shadertoy.com/view/XX3fDH
+* [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
 * nav lights, strobe lights, landing lights
 * physics and animation of steering (apply difference of two animation time stamps)
 * block gear up when on the ground
 * ground slope warning
 * Elevator trim
 * low FPS at 100km height was reported
-* deferred decals for rendering runway, runway lights, https://aerosavvy.com/airport-lights
-  https://samdriver.xyz/article/decal-render-intro
+* deferred decals for rendering runway, runway lights, [[https://aerosavvy.com/airport-lights][airport lights]]
+  [[https://samdriver.xyz/article/decal-render-intro][decal render intro]]
 * use icosahedron for mapping 2D micro textures (better grass)
-  * unroll icosahedron manually (20 surfaces)
-  * find smallest cross product of vector with sum of corner vectors
-  * use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
-  * determine u and v
+** unroll icosahedron manually (20 surfaces)
+** find smallest cross product of vector with sum of corner vectors
+** use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
+** determine u and v
 * mouse control:
-  * see MSFS mouse yoke
-  * up/down for pitch, right/left for roll
-  * RMB/LMB to gradually move rudder right and left while holding the buttons pressed
-  * wheel click to reset rudder
-  * wheel up/down to increase/decrease throttle level
+** see MSFS mouse yoke
+** up/down for pitch, right/left for roll
+** RMB/LMB to gradually move rudder right and left while holding the buttons pressed
+** wheel click to reset rudder
+** wheel up/down to increase/decrease throttle level
 * display perihel aphel and time to
 * launchpad, launch complex, lights
 * UI overlays for third person view
 * 3D cockpit
-  * cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, https://open.gl/depthstencils
-  * cockpit and scene rendering looking downward so that horizon is in upper half of screen
-  * EF2000-like zoom into individual MFDs
-  * Open Glass Cockpit: https://opengc.sourceforge.net/screenshots.html
-  * Kerbal cockpit: https://www.youtube.com/watch?v=XhudXvmnYwU
-  * SpaceX cockpit: https://iss-sim.spacex.com/
-  * orbit plane alignment
-  * docking view
-  * horizon with height and variometer
-  * encounter
-    * station
-    * moon/base
-    * earth
-  * aerobrake/base roll-reversal, speed-height-distance profile
-  * heading alignment cylinder
-  * top:
+** cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
+** cockpit and scene rendering looking downward so that horizon is in upper half of screen
+** EF2000-like zoom into individual MFDs
+** [[https://opengc.sourceforge.net/screenshots.html][open glass cockpit]]
+** [[https://www.youtube.com/watch?v=XhudXvmnYwU][Kerbal cockpit]]
+** [[https://iss-sim.spacex.com/][SpaceX cockpit]]
+** orbit plane alignment
+** docking view
+** horizon with height and variometer
+** encounter
+*** station
+*** moon/base
+*** earth
+** aerobrake/base roll-reversal, speed-height-distance profile
+** heading alignment cylinder
+** top:
     warnings (status display)
     autopilot on/off, autothrottle (autopilot speed), angle of attack and bank hold (including reverse), roll reversal button
     autopilot kill rotation, prograde, retrograde, orbit normal +/-, radial in/out
     rcs mode (off, rotation, translation)
     aircraft flight control surfaces: off/pitch/on
-  * main:
+** main:
     cabin light, panel light
     2 mfds
     apu on/off
@@ -92,7 +93,7 @@
     radiator deploy + status
     coolant temperature
     no flaps
-  * mfd:
+** mfd:
     yaw, bank, pitch acceleration and velocity indicators
     horizon hsi, height, heading, variometer, speed, ils height, nominal speed
     vor (use heading)
@@ -106,37 +107,36 @@
     transfer: encounter, translunar orbit, insertion
     ascent profile
     reentry profile
-  * engine thrust lever (main, hover)
+** engine thrust lever (main, hover)
     hover door
-  * bottom
+** bottom
     flightstick (yaw/pitch/roll), trim wheel
     fuel lines open/close (lox, main), external pressure online
     life support
-* https://blog.kuula.co/virtual-tour-space-shuttle
+* [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
 * make cockpit with Blender
-* stars, volumetric clouds https://www.shadertoy.com/view/ttcSD8
-  * Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
-  * Skydome scaled to ZFAR * 0.5
-  * no skydome and just stars as pixels?
+* stars, [[https://www.shadertoy.com/view/ttcSD8][volumetric clouds]]
+** Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
+** Skydome scaled to ZFAR * 0.5
+** no skydome and just stars as pixels?
 * sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
 * flying circuit with rectangles to fly through
 * extendability (modding)?
 * fix problem with resolution of neighbouring tiles in planetary cubemap
   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 * get high-res Florida data
-* https://www.spaceflighthistories.com/post/x-33-venturestar
+* [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
   add thrust: 3,010,000 lbf
   weight: payload 25000 kg. vehicle 100t-135t
   fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
-  [section4.2.pdf](http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf)
+  [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
 * integration test powder function
 * arycama: limit darkness of cloud shadow (exponential approaching a base level)
 * increase ambient light (surface radiance)
 * space station model, station lights
 * steam description with 616x150px heading images
 * release demo
-* render moonlight and moon
-  https://svs.gsfc.nasa.gov/4720/
+* [[https://svs.gsfc.nasa.gov/4720/][render moonlight and moon]]
 * moon base, lights
 * shooting stars
 * fix planet tessellation tests
@@ -148,11 +148,10 @@
 * moon landing physics
 * Check out poliastro and hapsira
 * use components and core.async for physics and loading of data, rendering main thread as component?
-  https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/
+  [[https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/][render roads]]
 * introduce variation to cloud height
-* [lunar elevation map](https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE)
+* [[https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE][lunar elevation map]]
 * .jpg -> .day.jpg
-* GLL parsing https://pure.uva.nl/ws/files/36086100/Thesis.pdf
 * cloud shadow flickering at large distance?
 * compute earth barycenter and sun in separate thread (use future)
 * microtexture for normal map, microtextures, bump maps
@@ -162,11 +161,10 @@
   overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
 * integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
   use multiplication of local shadow map and planet+cloud shadows?
-* https://lup.lub.lu.se/student-papers/search/publication/8893256
-  Scattering approximation function
+* [[https://lup.lub.lu.se/student-papers/search/publication/8893256][Scattering approximation function]]
 * add object radius to object?
-* dted elevation data: https://gdal.org/drivers/raster/dted.html
-  gmted maybe: https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm
+* dted elevation data: [[https://gdal.org/drivers/raster/dted.html][dted elevation data]]
+** [[https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm][gmted]]
 * read lwjgl book: https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/
 * adapt shadow map size to object distance
 * add earth light
@@ -174,17 +172,14 @@
 * create windows using blending
 * use 1-channel png for water?
 * make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
-* powder sugar effect https://progmdong.github.io/2019-03-04/Volumetric\_Rendering/
-  [combined Beers and powder function](https://www.youtube.com/watch?v=8OrvIQUFptA)
-  https://www.youtube.com/watch?v=Qj\_tK\_mdRcA
 * add exceptions for all OpenGL stuff
 * hot spots for map
 * use Earth explorer data: https://earthexplorer.usgs.gov/
 * use GMTED2010 or STRM90 elevation data:
-  * https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm
-  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d\_e.htm
-  * https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30\_e.htm
-* how to render water, waves, https://www.shadertoy.com/view/Ms2SD1
+** [[https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm][gmted viewer]]
+** [[https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d\_e.htm][aw3d]]
+** [[https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30\_e.htm][aw3d30]]
+* how to render water, waves, [[https://www.shadertoy.com/view/Ms2SD1][waves]]
 * when building maps put intermediate files into a common subdirectory (tmp?)
 * uniform random offsets for Worley noises to generate different cloud cover for each game
 * render building on top of ground
@@ -197,7 +192,7 @@
 * use ZGC (short pause garbage collector for Java)
 * improve performance of quaternions (see fastmath implementation)
 * Get scale-image to work on large images
-* NASA docking system, soft-dock, hard-dock, https://www.youtube.com/watch?v=dWYpVfhvsak
+* NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
 * EF2000 like cockpit controls (quick access views) ctrl+a,b,c,...? ctrl+arrow?
 * blinking beacon/position lights
 * cockpit: frontal and side view of moon lander
@@ -209,14 +204,14 @@
 * mp3 player, play different game music depending on situation
 * autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
 * no need to adjust MFDs during critical parts of the mission
-* https://github.com/HappyEnte/DreamChaser
+* [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
 * HDR bloom (separable convolution)
-  https://learnopengl.com/Advanced-Lighting/Bloom
-  https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
-  http://blog.chrismdp.com/2015/06/how-to-quickly-add-bloom-to-your-engine/
-  HDR rendering
-  Tone mapping L/(1+L)
-  Add blurred overflow
+** [[https://learnopengl.com/Advanced-Lighting/Bloom][Bloom]]
+** [[https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom][Bloom]]
+** [[http://blog.chrismdp.com/2015/06/how-to-quickly-add-bloom-to-your-engine/][Bloom]]
+** HDR rendering
+** Tone mapping L/(1+L)
+** Add blurred overflow
 * multisampling
 * windows (blending, reflections), greyscale cameras, MFDs
 * frame buffer objects for non-blocking data transfer
@@ -226,7 +221,6 @@
 * missions and high scores
 * beep-beep sound, paraglider audio?
 * normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
-  create application with https://partner.steamgames.com/doc/sdk
 * at least 3 environments/biomes before publishing steam page,
   steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
   show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
@@ -234,7 +228,7 @@
   first 4 screenshots important - bright ones and dark ones,
   good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
   add steam page url to long description, add animated GIFs, section banners
-* https://www.youtube.com/@indiegamecloud
+* [[https://www.youtube.com/@indiegamecloud][indie game cloud]]
 * targeted game description:
-  * go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
-  * breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs
+** go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
+** breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs

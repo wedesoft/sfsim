@@ -29,8 +29,8 @@
 
 
 (def mie
-  #:sfsim.atmosphere{:scatter-base (vec3 5e-6 5e-6 5e-6)
-                     :scatter-scale 2000.0
+  #:sfsim.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5)
+                     :scatter-scale 1200.0
                      :scatter-g 0.76
                      :scatter-quotient 0.9})
 
