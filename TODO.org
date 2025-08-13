@@ -1,6 +1,6 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
-* orbital physics
+* orbital physics :physics:
 ** DONE variables, coordinates, transforms
    - [X] (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic),
    - [X] origin; camera-orientation,
@@ -16,7 +16,7 @@
    - [ ] get centrifugal and coriolis forces in each case
    - [ ] get Earth position and orientation in each case
    - [ ] get Sun position in each case
-* TODO increase Mie scattering
+* DONE increase Mie scattering
 * TODO integrate control surface scaling
 * TODO Radar altitude
 * TODO implement RCS thrusters
