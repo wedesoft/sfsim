@@ -2,9 +2,9 @@
 #+AUTHOR: Jan Wedekind
 * orbital physics
 ** DONE variables, coordinates, transforms
-   (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic),
-   origin; camera-orientation,
-   earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
+   - [X] (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic),
+   - [X] origin; camera-orientation,
+   - [X] earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
 ** TODO methods
    - [ ] multi method for physics coordinate systems, methods and conditions for switching
    - [ ] atmospheric flight with stationary atmosphere in rotating coordinate system
