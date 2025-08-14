@@ -1,44 +1,43 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
-* orbital physics :physics:
-** DONE variables, coordinates, transforms
-   - [X] (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic),
-   - [X] origin; camera-orientation,
-   - [X] earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
-** TODO methods
-   - [ ] multi method for physics coordinate systems, methods and conditions for switching
-   - [ ] atmospheric flight with stationary atmosphere in rotating coordinate system
-   - [ ] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme, handle ground collisions
-   - [ ] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme (accelerated coordinate system with sun gravitation)
-   - [ ] rotating Moon coordinate system, handle ground collisions
-   - [ ] how to switch speed display (Earth surface, Earth orbit, Moon orbit, Moon surface)
-   - [ ] get speed in wind system in each case
-   - [ ] get centrifugal and coriolis forces in each case
-   - [ ] get Earth position and orientation in each case
-   - [ ] get Sun position in each case
-* DONE increase Mie scattering
-* TODO integrate control surface scaling
-* TODO Radar altitude
-* TODO implement RCS thrusters
+* TODO [#A] orbital physics :physics:
+  - Note taken on [2025-08-14 Do 12:15] \\
+    - (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic),
+    - origin; camera-orientation,
+    - earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
+  - [ ] multi method for physics coordinate systems, methods and conditions for switching
+  - [ ] atmospheric flight with stationary atmosphere in rotating coordinate system
+  - [ ] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme, handle ground collisions
+  - [ ] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme (accelerated coordinate system with sun gravitation)
+  - [ ] rotating Moon coordinate system, handle ground collisions
+  - [ ] how to switch speed display (Earth surface, Earth orbit, Moon orbit, Moon surface)
+  - [ ] get speed in wind system in each case
+  - [ ] get centrifugal and coriolis forces in each case
+  - [ ] get Earth position and orientation in each case
+  - [ ] get Sun position in each case
+* DONE [#A] increase Mie scattering
+* TODO [#B] spacecraft simulation :physics:
+  - Note taken on [2025-08-14 Do 12:19] \\
+    - [[https://flightsimcoach.com/msfs-2024-keyboard-commands/][MSFS keycoard commands]]
+    - [[https://www.shadertoy.com/view/XsXSWS][flame]]
+    - [[https://www.shadertoy.com/view/wdjGRz][mach diamonds]]
+    - [[https://www.shadertoy.com/view/WdGBDc][mach diamonds]]
+    - [[https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume][blender cone]]
+    - volumetric engine exhaust?
+    - [[https://www.youtube.com/watch?v=qfI9j92CUso][blender animation]]
+  - [ ] integrate control surface scaling
+  - [ ] implement RCS thrusters
+  - [ ] animate control surfaces and air brake
+  - [ ] thrust graphics, opengl rocket plume
+  - [ ] [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
+  - [ ] physics and animation of steering (apply difference of two animation time stamps)
+  - [ ] block gear up when on the ground
+  - [ ] Elevator trim
+  - [ ] nav lights, strobe lights, landing lights
+* TODO UI overlays for third person view
+  - [ ] Radar altitude
 * TODO following camera, different camera views, camera controls such as distance, joystick hat
 * TODO sound effects
-* TODO animate control surfaces and air brake
-* TODO [[https://flightsimcoach.com/msfs-2024-keyboard-commands/][MSFS keycoard commands]]
-* TODO thrust graphics, opengl rocket plume
-  [[https://www.shadertoy.com/view/XsXSWS][flame]]
-  [[https://www.shadertoy.com/view/wdjGRz][mach diamonds]]
-  [[https://www.shadertoy.com/view/WdGBDc][mach diamonds]]
-  [[https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume][blender cone]]
-  volumetric engine exhaust?
-  [[https://www.youtube.com/watch?v=qfI9j92CUso][blender animation]]
-  [[https://www.youtube.com/watch?v=2duBWH7cR3A][particle based]]
-* TODO make new trailer, post on https://www.reddit.com/r/spacesimgames/
-* TODO [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
-* TODO nav lights, strobe lights, landing lights
-* TODO physics and animation of steering (apply difference of two animation time stamps)
-* TODO block gear up when on the ground
-* TODO ground slope warning
-* TODO Elevator trim
 * TODO low FPS at 100km height was reported
 * TODO deferred decals for rendering runway, runway lights, [[https://aerosavvy.com/airport-lights][airport lights]]
   [[https://samdriver.xyz/article/decal-render-intro][decal render intro]]
@@ -55,9 +54,9 @@
 ** TODO wheel up/down to increase/decrease throttle level
 * TODO display perihel aphel and time to
 * TODO launchpad, launch complex, lights
-* TODO UI overlays for third person view
 * TODO 3D cockpit
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
+** TODO ground slope warning
 ** TODO cockpit and scene rendering looking downward so that horizon is in upper half of screen
 ** TODO EF2000-like zoom into individual MFDs
 ** TODO [[https://opengc.sourceforge.net/screenshots.html][open glass cockpit]]
@@ -67,9 +66,9 @@
 ** TODO docking view
 ** TODO horizon with height and variometer
 ** TODO encounter
-*** TODO station
-*** TODO moon/base
-*** TODO earth
+   - [ ] station
+   - [ ] moon/base
+   - [ ] earth
 ** TODO aerobrake/base roll-reversal, speed-height-distance profile
 ** TODO heading alignment cylinder
 ** TODO top:
