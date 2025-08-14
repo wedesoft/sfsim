@@ -1,6 +1,6 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
-* TODO [#A] orbital physics :physics:
+* TODO [#A] orbital physics                                            :physics:
   - Note taken on [2025-08-14 Do 12:15] \\
     - (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic),
     - origin; camera-orientation,
@@ -15,12 +15,14 @@
   - [ ] get centrifugal and coriolis forces in each case
   - [ ] get Earth position and orientation in each case
   - [ ] get Sun position in each case
+  - [ ] compute earth barycenter and sun in separate thread (use future)
+  - [ ] use separate thread for simulation
 * DONE [#A] increase Mie scattering
-* TODO [#A] UI overlays for third person view
+* TODO [#A] UI overlays for third person view                        :interface:
   - [ ] following camera, different camera views, camera controls such as distance, joystick hat
   - [ ] Radar altitude
-  - [ ] display perihel aphel and time to
-* TODO [#B] spacecraft simulation :physics:
+  - [ ] display perihel aphel and time to, Check out poliastro and hapsira
+* TODO [#B] spacecraft simulation                                      :physics:
   - Note taken on [2025-08-14 Do 12:19] \\
     - [[https://flightsimcoach.com/msfs-2024-keyboard-commands/][MSFS keycoard commands]]
     - [[https://www.shadertoy.com/view/XsXSWS][flame]]
@@ -37,13 +39,25 @@
   - [ ] physics and animation of steering (apply difference of two animation time stamps)
   - [ ] block gear up when on the ground
   - [ ] Elevator trim
-  - [ ] nav lights, strobe lights, landing lights
-  - [ ] moon landing physics (hover thrusters)
+  - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
+  - [ ] moon landing physics (hover thrusters), hover thruster locations
+  - [ ] docking physics
+* TODO [#B] add moon                                                   :scenery:
+  - [ ] moon base, lights
+* TODO [#C] add space station                                          :scenery:
+** TODO space station model, station lights
+** TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
+* TODO [#C] add launchpad                                              :scenery:
+  - [ ] launchpad
+  - [ ] launch complex
+  - [ ] lights
+  - [ ] get high-res Florida data (hot spot for map)
+  - [ ] render building on top of ground
 * TODO [#C] sound effects
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
-* TODO launchpad, launch complex, lights
-* TODO 3D cockpit
+  - [ ] event-based radio (triggers as in Operation Flashpoint)
+* TODO 3D cockpit                                                    :interface:
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
 ** TODO ground slope warning
 ** TODO frontal and side view of moon lander, altitude visualisation?
@@ -83,13 +97,13 @@
    - [ ] radiator deploy + status
    - [ ] coolant temperature
    - [ ] no flaps
-** TODO mfd:
+** TODO mfds:
    - [ ] yaw, bank, pitch acceleration and velocity indicators
    - [ ] horizon hsi, height, heading, variometer, speed, ils height, nominal speed
    - [ ] vor (use heading)
    - [ ] nav frequencies, dock, vtol freq
    - [ ] dock (angles, offset to path, distance, approach speed, x/y speed)
-   - [ ] camera
+   - [ ] cameras (greyscale?)
    - [ ] map of earth/moon
    - [ ] hull temperature
    - [ ] align orbit plane
@@ -97,48 +111,37 @@
    - [ ] transfer: encounter, translunar orbit, insertion
    - [ ] ascent profile
    - [ ] reentry profile
+   - [ ] no need to adjust MFDs during critical parts of the mission
 ** TODO engine thrust lever (main, hover)
    - [ ] hover door
 ** TODO bottom
    - [ ] flightstick (yaw/pitch/roll), trim wheel
    - [ ] fuel lines open/close (lox, main), external pressure online
    - [ ] life support
-** TODO greyscale cameras, MFDs
+** TODO autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
+** TODO use separate thread for making Nuklear buffer
 * TODO [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
-* TODO make cockpit with Blender
-* TODO stars, [[https://www.shadertoy.com/view/ttcSD8][volumetric clouds]]
-** TODO Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
-** TODO Skydome scaled to ZFAR * 0.5
-** TODO no skydome and just stars as pixels?
-* TODO sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
 * TODO extendability (modding)?
-* TODO fix problem with resolution of neighbouring tiles in planetary cubemap
-  problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
-* TODO get high-res Florida data
 * TODO [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
   - [ ] add thrust: 3,010,000 lbf
   - [ ] weight: payload 25000 kg. vehicle 100t-135t
   - [ ] fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
   - [ ] [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
-* TODO arycama: limit darkness of cloud shadow (exponential approaching a base level)
-* TODO space station model, station lights
-* TODO release demo
+
+* TODO [#C] progressing project
+** TODO release demo
+** TODO targeted game description:
+   - [ ] go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
+   - [ ] breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs
+** TODO steam page
+   steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
+   show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
+   (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
+   first 4 screenshots important - bright ones and dark ones (at least 3 different environments),
+   good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
+   add steam page url to long description, add animated GIFs, section banners
 * TODO [[https://svs.gsfc.nasa.gov/4720/][render moonlight and moon]]
-* TODO moon base, lights
 * TODO fix planet tessellation tests
-* TODO define wheel positions in Blender
-  animate wheel rotation and suspension, bake gear animation and name actions the same
-* TODO hover thruster locations
-* TODO threads for rendering, simulation, and loading of data
-* TODO docking physics
-* TODO Check out poliastro and hapsira
-* TODO use components and core.async for physics and loading of data, rendering main thread as component?
-  [[https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/][render roads]]
-* TODO introduce variation to cloud height
-* TODO [[https://wms.lroc.asu.edu/lroc/view_rdr/WAC_CSHADE][lunar elevation map]]
-* TODO .jpg -> .day.jpg
-* TODO cloud shadow flickering at large distance?
-* TODO compute earth barycenter and sun in separate thread (use future)
 * TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
 * TODO pack more textures into one and then try one object casting shadow on another (pack object shadow maps into one?)
 * TODO separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
@@ -147,40 +150,17 @@
   use multiplication of local shadow map and planet+cloud shadows?
 * TODO [[https://lup.lub.lu.se/student-papers/search/publication/8893256][Scattering approximation function]]
 * TODO add object radius to object?
-* TODO dted elevation data: [[https://gdal.org/drivers/raster/dted.html][dted elevation data]]
-** TODO [[https://topotools.cr.usgs.gov/gmted_viewer/viewer.htm][gmted]]
 * TODO read lwjgl book: https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/
-* TODO test for render-triangles
-* TODO create windows using blending
-* TODO use 1-channel png for water?
-* TODO make cloud prototype more modular, separate cloud\_shadow and transmittance\_outer,
-* TODO add exceptions for all OpenGL stuff
-* TODO hot spots for map
 * TODO use Earth explorer data: https://earthexplorer.usgs.gov/
-* TODO use GMTED2010 or STRM90 elevation data:
-** TODO [[https://topotools.cr.usgs.gov/gmted\_viewer/viewer.htm][gmted viewer]]
-** TODO [[https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d\_e.htm][aw3d]]
-** TODO [[https://www.eorc.jaxa.jp/ALOS/en/dataset/aw3d30/aw3d30\_e.htm][aw3d30]]
-* TODO when building maps put intermediate files into a common subdirectory (tmp?)
 * TODO uniform random offsets for Worley noises to generate different cloud cover for each game
-* TODO render building on top of ground
 * TODO put parameters like max-height, power, specular, radius in a configuration (edn?) file
   only render sun glare when sun is above horizon, use single (normalised?) color from transmittance, bloom?
   amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-* TODO organize fixtures using subdirectories
 * TODO You need to ensure that the ByteBuffer passed to stbtt\_InitFont is not garbage collected
-* TODO use ZGC (short pause garbage collector for Java)
 * TODO improve performance of quaternions (see fastmath implementation)
-* TODO Get scale-image to work on large images
-* TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
-* TODO blinking beacon/position lights
-* TODO 3D moon rendering
-* TODO multitextures for land detail, microtextures or normal maps using octahedral mapping?
 * TODO render articulated objects with configuration
-* TODO autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
-* TODO no need to adjust MFDs during critical parts of the mission
 * TODO [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
-* TODO [#C] graphics improvements
+* TODO [#C] graphics improvements                                      :scenery:
 ** TODO general quality
    - Note taken on [2025-08-14 Do 12:33] \\
      - [[https://learnopengl.com/Advanced-Lighting/Bloom][Bloom]]
@@ -191,34 +171,34 @@
    - [ ] adapt shadow map size to object distance
    - [ ] integration test powder function
    - [ ] low FPS at 100km height was reported
+   - [ ] cloud shadow flickering at large distance?
 ** TODO use icosahedron for mapping 2D micro textures (better grass)
    - [ ] unroll icosahedron manually (20 surfaces)
    - [ ] find smallest cross product of vector with sum of corner vectors
    - [ ] use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
    - [ ] determine u and v
    - [ ] microtexture for normal map, microtextures, bump maps
+   - [ ] multitextures for land detail?
 ** TODO deferred decals for rendering runway, runway lights
    - Note taken on [2025-08-14 Do 12:58] \\
      [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,
-     [[https://samdriver.xyz/article/decal-render-intro][decal render intro]]
-** TODO improve rendering of sun
+     [[https://samdriver.xyz/article/decal-render-intro][decal render intro]],
+     [[https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/][render roads]]
+** TODO fix problem with resolution of neighbouring tiles in planetary cubemap
+   problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
+** TODO improve rendering of sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
 ** TODO how to render water, waves, [[https://www.shadertoy.com/view/Ms2SD1][waves]]
 ** TODO increase ambient light (surface radiance)
+** TODO arycama: limit darkness of cloud shadow (exponential approaching a base level)
 ** TODO add earth light
 ** TODO add moon light
-** TODO point sprites for stars, atmospheric flicker using sprite arrays
-** TODO windows (blending, reflections)
-* TODO event-based radio (triggers as in Operation Flashpoint)
+** TODO stars, [[https://www.shadertoy.com/view/ttcSD8][volumetric clouds]]
+*** TODO point sprites for stars, atmospheric flicker using sprite arrays
+*** TODO Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
+*** TODO Skydome scaled to ZFAR * 0.5
+*** TODO no skydome and just stars as pixels?
+** TODO create windows using blending (reflections?)
+** TODO introduce variation to cloud height
 * TODO missions and high scores
 * TODO normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
-* TODO steam page
-  steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
-  show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
-  (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
-  first 4 screenshots important - bright ones and dark ones (at least 3 different environments),
-  good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
-  add steam page url to long description, add animated GIFs, section banners
 * TODO [[https://www.youtube.com/@indiegamecloud][indie game cloud]]
-* TODO targeted game description:
-  - [ ] go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
-  - [ ] breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs
