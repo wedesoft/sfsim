@@ -42,22 +42,18 @@
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
   - [ ] moon landing physics (hover thrusters), hover thruster locations
   - [ ] docking physics
-* TODO [#B] add moon                                                   :scenery:
-  - [ ] moon base, lights
-* TODO [#C] add space station                                          :scenery:
-** TODO space station model, station lights
-** TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
 * TODO [#C] add launchpad                                              :scenery:
   - [ ] launchpad
   - [ ] launch complex
   - [ ] lights
   - [ ] get high-res Florida data (hot spot for map)
   - [ ] render building on top of ground
+  - [ ] try one object casting shadow on another (pack object shadow maps into one?)
 * TODO [#C] sound effects
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
-* TODO 3D cockpit                                                    :interface:
+* TODO [#B] 3D cockpit                                                    :interface:
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
 ** TODO ground slope warning
 ** TODO frontal and side view of moon lander, altitude visualisation?
@@ -120,6 +116,11 @@
    - [ ] life support
 ** TODO autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
 ** TODO use separate thread for making Nuklear buffer
+* TODO [#B] add moon                                                   :scenery:
+  - [ ] moon base, lights
+* TODO [#C] add space station                                          :scenery:
+** TODO space station model, station lights
+** TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
 * TODO [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
 * TODO extendability (modding)?
 * TODO [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
@@ -140,16 +141,13 @@
    first 4 screenshots important - bright ones and dark ones (at least 3 different environments),
    good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
    add steam page url to long description, add animated GIFs, section banners
+** TODO missions and high scores
 * TODO [[https://svs.gsfc.nasa.gov/4720/][render moonlight and moon]]
-* TODO fix planet tessellation tests
-* TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
-* TODO pack more textures into one and then try one object casting shadow on another (pack object shadow maps into one?)
 * TODO separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
 * TODO integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
   use multiplication of local shadow map and planet+cloud shadows?
 * TODO [[https://lup.lub.lu.se/student-papers/search/publication/8893256][Scattering approximation function]]
-* TODO add object radius to object?
 * TODO read lwjgl book: https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/
 * TODO use Earth explorer data: https://earthexplorer.usgs.gov/
 * TODO uniform random offsets for Worley noises to generate different cloud cover for each game
@@ -199,6 +197,9 @@
 *** TODO no skydome and just stars as pixels?
 ** TODO create windows using blending (reflections?)
 ** TODO introduce variation to cloud height
-* TODO missions and high scores
+* TODO [#C] code quality improvements                                 :software:
+** TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
+** TODO add object radius to object?
+** TODO fix planet tessellation tests
 * TODO normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
 * TODO [[https://www.youtube.com/@indiegamecloud][indie game cloud]]
