@@ -9,8 +9,10 @@
   - [ ] multi method for setting speed and angular velocity
   - [ ] multi method for physics coordinate systems, methods and conditions for switching
   - [ ] atmospheric flight with stationary atmosphere in rotating coordinate system
-  - [ ] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme, handle ground collisions
-  - [ ] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme (accelerated coordinate system with sun gravitation)
+  - [ ] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme,
+    handle ground collisions
+  - [ ] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme
+    (accelerated coordinate system with sun gravitation)
   - [ ] rotating Moon coordinate system, handle ground collisions
   - [ ] how to switch speed display (Earth surface, Earth orbit, Moon orbit, Moon surface)
   - [ ] get speed in wind system in each case
