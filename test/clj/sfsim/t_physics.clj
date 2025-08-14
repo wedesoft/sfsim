@@ -115,7 +115,7 @@
 (def state (atom {:sfsim.physics/position (vec3 2 3 5) :sfsim.physics/body sphere}))
 
 
-(facts "Set position of space craft near surface (rotating coordinate system)"
+(facts "Set position of space craft near surface (rotating coordinate system centered on Earth)"
        (set-pose :sfsim.physics/surface state (vec3 6378000 0 0) (q/->Quaternion 0 1 0 0))
        (@state :sfsim.physics/position) => (vec3 0 0 0)
        (jolt/get-translation sphere) => (vec3 6378000 0 0)
