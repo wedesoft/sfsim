@@ -16,6 +16,9 @@
   - [ ] get Earth position and orientation in each case
   - [ ] get Sun position in each case
 * DONE [#A] increase Mie scattering
+* TODO [#A] UI overlays for third person view
+  - [ ] following camera, different camera views, camera controls such as distance, joystick hat
+  - [ ] Radar altitude
 * TODO [#B] spacecraft simulation :physics:
   - Note taken on [2025-08-14 Do 12:19] \\
     - [[https://flightsimcoach.com/msfs-2024-keyboard-commands/][MSFS keycoard commands]]
@@ -34,30 +37,25 @@
   - [ ] block gear up when on the ground
   - [ ] Elevator trim
   - [ ] nav lights, strobe lights, landing lights
-* TODO UI overlays for third person view
-  - [ ] Radar altitude
-* TODO following camera, different camera views, camera controls such as distance, joystick hat
+  - [ ] moon landing physics (hover thrusters)
 * TODO sound effects
+  - [ ] beep-beep sound, paraglider audio?
 * TODO low FPS at 100km height was reported
-* TODO deferred decals for rendering runway, runway lights, [[https://aerosavvy.com/airport-lights][airport lights]]
+* TODO deferred decals for rendering runway, runway lights, [[https://aerosavvy.com/airport-lights][airport lights]], spot lights
   [[https://samdriver.xyz/article/decal-render-intro][decal render intro]]
 * TODO use icosahedron for mapping 2D micro textures (better grass)
 ** TODO unroll icosahedron manually (20 surfaces)
 ** TODO find smallest cross product of vector with sum of corner vectors
 ** TODO use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
 ** TODO determine u and v
-* TODO mouse control:
-** TODO see MSFS mouse yoke
-** TODO up/down for pitch, right/left for roll
-** TODO RMB/LMB to gradually move rudder right and left while holding the buttons pressed
-** TODO wheel click to reset rudder
-** TODO wheel up/down to increase/decrease throttle level
 * TODO display perihel aphel and time to
 * TODO launchpad, launch complex, lights
 * TODO 3D cockpit
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
 ** TODO ground slope warning
+** TODO frontal and side view of moon lander, altitude visualisation?
 ** TODO cockpit and scene rendering looking downward so that horizon is in upper half of screen
+** TODO EF2000 like cockpit controls (quick access views) ctrl+a,b,c,...? ctrl+arrow?
 ** TODO EF2000-like zoom into individual MFDs
 ** TODO [[https://opengc.sourceforge.net/screenshots.html][open glass cockpit]]
 ** TODO [[https://www.youtube.com/watch?v=XhudXvmnYwU][Kerbal cockpit]]
@@ -112,6 +110,7 @@
    - [ ] flightstick (yaw/pitch/roll), trim wheel
    - [ ] fuel lines open/close (lox, main), external pressure online
    - [ ] life support
+** TODO greyscale cameras, MFDs
 * TODO [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
 * TODO make cockpit with Blender
 * TODO stars, [[https://www.shadertoy.com/view/ttcSD8][volumetric clouds]]
@@ -133,7 +132,6 @@
 * TODO arycama: limit darkness of cloud shadow (exponential approaching a base level)
 * TODO increase ambient light (surface radiance)
 * TODO space station model, station lights
-* TODO steam description with 616x150px heading images
 * TODO release demo
 * TODO [[https://svs.gsfc.nasa.gov/4720/][render moonlight and moon]]
 * TODO moon base, lights
@@ -144,7 +142,6 @@
 * TODO hover thruster locations
 * TODO threads for rendering, simulation, and loading of data
 * TODO docking physics
-* TODO moon landing physics
 * TODO Check out poliastro and hapsira
 * TODO use components and core.async for physics and loading of data, rendering main thread as component?
   [[https://www.reddit.com/r/opengl/comments/10rwgy7/what\_is\_currently\_the\_best\_method\_to\_render\_roads/][render roads]]
@@ -192,10 +189,7 @@
 * TODO improve performance of quaternions (see fastmath implementation)
 * TODO Get scale-image to work on large images
 * TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
-* TODO EF2000 like cockpit controls (quick access views) ctrl+a,b,c,...? ctrl+arrow?
 * TODO blinking beacon/position lights
-* TODO cockpit: frontal and side view of moon lander
-* TODO XBox controller
 * TODO 3D moon rendering
 * TODO multitextures for land detail, microtextures or normal maps using octahedral mapping?
 * TODO airport-like departure tables
@@ -204,30 +198,26 @@
 * TODO autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
 * TODO no need to adjust MFDs during critical parts of the mission
 * TODO [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
-* TODO HDR bloom (separable convolution)
-** TODO [[https://learnopengl.com/Advanced-Lighting/Bloom][Bloom]]
-** TODO [[https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom][Bloom]]
-** TODO [[http://blog.chrismdp.com/2015/06/how-to-quickly-add-bloom-to-your-engine/][Bloom]]
-** TODO HDR rendering
-** TODO Tone mapping L/(1+L)
-** TODO Add blurred overflow
-* TODO multisampling
-* TODO windows (blending, reflections), greyscale cameras, MFDs
-* TODO frame buffer objects for non-blocking data transfer
-* TODO point sprites for stars, atmospheric flicker using sprite arrays
-* TODO point light sources
+* TODO [#C] graphics improvements
+  - Note taken on [2025-08-14 Do 12:33] \\
+    - [[https://learnopengl.com/Advanced-Lighting/Bloom][Bloom]]
+    - [[https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom][Bloom]]
+    - [[http://blog.chrismdp.com/2015/06/how-to-quickly-add-bloom-to-your-engine/][Bloom]]
+  - [ ] HDR bloom (separable convolution), Add blurred overflow
+  - [ ] point sprites for stars, atmospheric flicker using sprite arrays
+  - [ ] multisampling
+  - [ ] windows (blending, reflections)
 * TODO event-based radio (triggers as in Operation Flashpoint)
 * TODO missions and high scores
-* TODO beep-beep sound, paraglider audio?
 * TODO normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
-* TODO at least 3 environments/biomes before publishing steam page,
+* TODO steam page
   steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
   show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
   (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
-  first 4 screenshots important - bright ones and dark ones,
+  first 4 screenshots important - bright ones and dark ones (at least 3 different environments),
   good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
   add steam page url to long description, add animated GIFs, section banners
 * TODO [[https://www.youtube.com/@indiegamecloud][indie game cloud]]
 * TODO targeted game description:
-** TODO go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
-** TODO breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs
+  - [ ] go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
+  - [ ] breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs
