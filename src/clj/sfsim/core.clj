@@ -331,6 +331,7 @@
 (def surface 198.0)
 (def chord 10.0)
 (def wingspan 20.75)
+(def thrust (* mass 25.0))
 
 (def vehicle (atom nil))
 
@@ -715,7 +716,7 @@
                                                        (fn [x s] (into {} (for [[k v] x] [k (mult v s)]))))
                         [dv1 dv2] (physics/matching-scheme state (* dt 0.001) state2 mult sub)]
                     (jolt/add-impulse body (mult dv1 mass))
-                    (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle 30.0 ^double mass) 0 0)))
+                    (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle ^double thrust) 0 0)))
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                     (jolt/add-torque body (:sfsim.aerodynamics/moments loads))
                     (jolt/update-system (* ^long dt 0.001) 1)

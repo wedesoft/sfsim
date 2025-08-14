@@ -36,6 +36,7 @@
   - [ ] add thrust: 3,010,000 lbf
   - [ ] weight: payload 25000 kg. vehicle 100t-135t
   - [ ] fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
+  - [ ] max thrust: 13.4 MN
   - [ ] [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
 
   - [ ] integrate control surface scaling
@@ -144,7 +145,7 @@
    (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
    first 4 screenshots important - bright ones and dark ones (at least 3 different environments),
    good short description (engaging start, mention core hooks, enumerate basic gameplay verbs, by wedesoft (social proof)),
-   add steam page url to long description, add animated GIFs, section banners
+   add steam page url to long description, add animated GIFs, section banners, main content column images/videos now with 780px width
 ** TODO missions and high scores
 * TODO [#C] graphics improvements                                      :scenery:
 ** TODO general quality

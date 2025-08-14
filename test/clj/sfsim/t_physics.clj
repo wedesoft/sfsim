@@ -12,11 +12,16 @@
     [midje.sweet :refer :all]
     [fastmath.vector :refer (vec3)]
     [sfsim.conftest :refer (roughly-vector)]
+    [sfsim.quaternion :as q]
+    [sfsim.jolt :as jolt]
     [sfsim.physics :refer :all]))
 
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
+
+
+(jolt/jolt-init)
 
 
 (def add (fn [x y] (+ x y)))
@@ -57,9 +62,9 @@
       (update :speed #(add dv1 %))))
 
 
-(fact "Sanity check for euler test function"
-      (matched-euler {:position 42.0 :speed 0.0} 1.0 [2 3]) => {:position 44.0 :speed 5.0}
-      (matched-euler {:position 42.0 :speed 0.0} 2.0 [2 3]) => {:position 46.0 :speed 5.0})
+(facts "Sanity check for euler test function"
+       (matched-euler {:position 42.0 :speed 0.0} 1.0 [2 3]) => {:position 44.0 :speed 5.0}
+       (matched-euler {:position 42.0 :speed 0.0} 2.0 [2 3]) => {:position 46.0 :speed 5.0})
 
 
 (tabular "Test Runge Kutta matching scheme for semi-implicit Euler"
@@ -74,31 +79,57 @@
          {:position 2.0 :speed 1.5} 2.0 {:position 5.0 :speed 1.5})
 
 
-(fact "Determine gravitation from planetary object"
-      ((gravitation (vec3 0 0 0) 0.0) (vec3 100 0 0)) => (vec3 0 0 0)
-      ((gravitation (vec3 0 0 0) 5.9722e+24) (vec3 6378000.0 0 0)) => (roughly-vector (vec3 -9.799 0 0) 1e-3)
-      ((gravitation (vec3 6378000.0 0 0) 5.9722e+24) (vec3 0 0 0)) => (roughly-vector (vec3 9.799 0 0) 1e-3))
+(facts "Determine gravitation from planetary object"
+       ((gravitation (vec3 0 0 0) 0.0) (vec3 100 0 0)) => (vec3 0 0 0)
+       ((gravitation (vec3 0 0 0) 5.9722e+24) (vec3 6378000.0 0 0)) => (roughly-vector (vec3 -9.799 0 0) 1e-3)
+       ((gravitation (vec3 6378000.0 0 0) 5.9722e+24) (vec3 0 0 0)) => (roughly-vector (vec3 9.799 0 0) 1e-3))
 
 
-(fact "State change from position-dependent acceleration"
-      ((state-change (fn [_position] (vec3 0 0 0))) {:position (vec3 0 0 0) :speed (vec3 0 0 0)} 0.0)
-      => {:position (vec3 0 0 0) :speed (vec3 0 0 0)}
-      ((state-change (fn [_position] (vec3 0 0 0))) {:position (vec3 0 0 0) :speed (vec3 2 0 0)} 0.0)
-      => {:position (vec3 2 0 0) :speed (vec3 0 0 0)}
-      ((state-change (fn [_position] (vec3 3 0 0))) {:position (vec3 0 0 0) :speed (vec3 0 0 0)} 0.0)
-      => {:position (vec3 0 0 0) :speed (vec3 3 0 0)}
-      ((state-change (fn [position] position)) {:position (vec3 5 0 0) :speed (vec3 0 0 0)} 0.0)
-      => {:position (vec3 0 0 0) :speed (vec3 5 0 0)})
+(facts "State change from position-dependent acceleration"
+       ((state-change (fn [_position] (vec3 0 0 0))) {:position (vec3 0 0 0) :speed (vec3 0 0 0)} 0.0)
+       => {:position (vec3 0 0 0) :speed (vec3 0 0 0)}
+       ((state-change (fn [_position] (vec3 0 0 0))) {:position (vec3 0 0 0) :speed (vec3 2 0 0)} 0.0)
+       => {:position (vec3 2 0 0) :speed (vec3 0 0 0)}
+       ((state-change (fn [_position] (vec3 3 0 0))) {:position (vec3 0 0 0) :speed (vec3 0 0 0)} 0.0)
+       => {:position (vec3 0 0 0) :speed (vec3 3 0 0)}
+       ((state-change (fn [position] position)) {:position (vec3 5 0 0) :speed (vec3 0 0 0)} 0.0)
+       => {:position (vec3 0 0 0) :speed (vec3 5 0 0)})
 
 
-(fact "Centrifugal acceleration in rotating coordinate system"
-      (centrifugal-acceleration (vec3 0 0 0) (vec3 1 0 0)) => (vec3 0 0 0)
-      (centrifugal-acceleration (vec3 0 0 1) (vec3 1 0 0)) => (vec3 1 0 0)
-      (centrifugal-acceleration (vec3 0 0 2) (vec3 1 0 0)) => (vec3 4 0 0)
-      (centrifugal-acceleration (vec3 0 0 2) (vec3 0 0 1)) => (vec3 0 0 0))
+(facts "Centrifugal acceleration in rotating coordinate system"
+       (centrifugal-acceleration (vec3 0 0 0) (vec3 1 0 0)) => (vec3 0 0 0)
+       (centrifugal-acceleration (vec3 0 0 1) (vec3 1 0 0)) => (vec3 1 0 0)
+       (centrifugal-acceleration (vec3 0 0 2) (vec3 1 0 0)) => (vec3 4 0 0)
+       (centrifugal-acceleration (vec3 0 0 2) (vec3 0 0 1)) => (vec3 0 0 0))
 
 
-(fact "Coriolis acceleration in rotating coordinate system"
-      (coriolis-acceleration (vec3 0 0 0) (vec3 1 0 0)) => (vec3 0 0 0)
-      (coriolis-acceleration (vec3 0 0 1) (vec3 1 0 0)) => (vec3 0 -2 0)
-      (coriolis-acceleration (vec3 0 0 1) (vec3 0 0 1)) => (vec3 0 0 0))
+(facts "Coriolis acceleration in rotating coordinate system"
+       (coriolis-acceleration (vec3 0 0 0) (vec3 1 0 0)) => (vec3 0 0 0)
+       (coriolis-acceleration (vec3 0 0 1) (vec3 1 0 0)) => (vec3 0 -2 0)
+       (coriolis-acceleration (vec3 0 0 1) (vec3 0 0 1)) => (vec3 0 0 0))
+
+
+(def sphere (jolt/create-and-add-dynamic-body (jolt/sphere-settings 1.0 1000.0) (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
+
+
+(def state (atom {:sfsim.physics/position (vec3 2 3 5) :sfsim.physics/body sphere}))
+
+
+(facts "Set position of space craft near surface (rotating coordinate system)"
+       (set-pose :sfsim.physics/surface state (vec3 6378000 0 0) (q/->Quaternion 0 1 0 0))
+       (@state :sfsim.physics/position) => (vec3 0 0 0)
+       (jolt/get-translation sphere) => (vec3 6378000 0 0)
+       (jolt/get-orientation sphere) => (q/->Quaternion 0 1 0 0))
+
+
+(facts "Set position of space craft not near surface (ICRS aligned coordinate system centered on Earth)"
+       (set-pose :sfsim.physics/orbit state (vec3 6678000 0 0) (q/->Quaternion 0 0 1 0))
+       (@state :sfsim.physics/position) => (vec3 6678000 0 0)
+       (jolt/get-translation sphere) => (vec3 0 0 0)
+       (jolt/get-orientation sphere) => (q/->Quaternion 0 0 1 0))
+
+
+(jolt/remove-and-destroy-body sphere)
+
+
+(jolt/jolt-destroy)

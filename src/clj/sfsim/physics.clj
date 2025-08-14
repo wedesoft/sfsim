@@ -9,6 +9,7 @@
   (:require
     [malli.core :as m]
     [fastmath.vector :refer (vec3 mag normalize mult sub cross)]
+    [sfsim.jolt :as jolt]
     [sfsim.util :refer (sqr)])
   (:import [fastmath.vector Vec3]))
 
@@ -78,6 +79,23 @@
   "Determine coriolis acceleration for a moving particle in a rotating coordinate system"
   [omega speed]
   (sub (mult (cross omega speed) 2.0)))
+
+
+(defmulti set-pose (fn [domain _state _position _orientation] domain))
+
+
+(defmethod set-pose ::surface
+  [_domain state position orientation]
+  (swap! state assoc ::position (vec3 0 0 0))  ; Position offset is zero
+  (jolt/set-translation (::body @state) position)  ; Jolt handles position information to detect collisions with surface
+  (jolt/set-orientation (::body @state) orientation))  ; Jolt handles orientation information
+
+
+(defmethod set-pose ::orbit
+  [_domain state position orientation]
+  (swap! state assoc ::position position)  ; Store double precision position
+  (jolt/set-translation (::body @state) (vec3 0 0 0))  ; Jolt only handles position changes
+  (jolt/set-orientation (::body @state) orientation))  ; Jolt handles orientation information
 
 
 (set! *warn-on-reflection* false)
