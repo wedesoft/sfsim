@@ -138,7 +138,7 @@
 * TODO [#C] add space station                                          :scenery:
 ** TODO space station model, station lights
 ** TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
-* TODO [#C] progressing project
+* TODO [#C] marketing/progressing project                            :marketing:
 ** TODO release demo
 ** TODO targeted game description:
    - [ ] go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
