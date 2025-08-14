@@ -145,17 +145,11 @@
 * TODO [[https://svs.gsfc.nasa.gov/4720/][render moonlight and moon]]
 * TODO separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
   overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
-* TODO integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
-  use multiplication of local shadow map and planet+cloud shadows?
 * TODO [[https://lup.lub.lu.se/student-papers/search/publication/8893256][Scattering approximation function]]
-* TODO read lwjgl book: https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/
-* TODO use Earth explorer data: https://earthexplorer.usgs.gov/
-* TODO uniform random offsets for Worley noises to generate different cloud cover for each game
 * TODO put parameters like max-height, power, specular, radius in a configuration (edn?) file
   only render sun glare when sun is above horizon, use single (normalised?) color from transmittance, bloom?
   amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 * TODO You need to ensure that the ByteBuffer passed to stbtt\_InitFont is not garbage collected
-* TODO improve performance of quaternions (see fastmath implementation)
 * TODO render articulated objects with configuration
 * TODO [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
 * TODO [#C] graphics improvements                                      :scenery:
@@ -191,6 +185,7 @@
 ** TODO add earth light
 ** TODO add moon light
 ** TODO stars, [[https://www.shadertoy.com/view/ttcSD8][volumetric clouds]]
+** TODO uniform random offsets for Worley noises to generate different cloud cover for each game
 *** TODO point sprites for stars, atmospheric flicker using sprite arrays
 *** TODO Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
 *** TODO Skydome scaled to ZFAR * 0.5
@@ -201,5 +196,8 @@
 ** TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
 ** TODO add object radius to object?
 ** TODO fix planet tessellation tests
+** TODO integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
+   - [ ] use multiplication of local shadow map and planet+cloud shadows?
+** TODO improve performance of quaternions (see fastmath implementation)
 * TODO normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
 * TODO [[https://www.youtube.com/@indiegamecloud][indie game cloud]]
