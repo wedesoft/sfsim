@@ -17,7 +17,6 @@
   - [ ] get Sun position in each case
   - [ ] compute earth barycenter and sun in separate thread (use future)
   - [ ] use separate thread for simulation
-* DONE [#A] increase Mie scattering
 * TODO [#A] UI overlays for third person view                        :interface:
   - [ ] following camera, different camera views, camera controls such as distance, joystick hat
   - [ ] Radar altitude
@@ -50,18 +49,23 @@
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
   - [ ] moon landing physics (hover thrusters), hover thruster locations
   - [ ] docking physics
-* TODO [#C] add launchpad                                              :scenery:
+* TODO [#C] add launchpad and runway                                   :scenery:
+  - Note taken on [2025-08-14 Do 12:58] \\
+    [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,
+    [[https://samdriver.xyz/article/decal-render-intro][decal render intro]],
+    [[https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/][render roads]]
   - [ ] launchpad
   - [ ] launch complex
   - [ ] lights
   - [ ] get high-res Florida data (hot spot for map)
   - [ ] render building on top of ground
+  - [ ] deferred decals for rendering runway, runway lights
   - [ ] try one object casting shadow on another (pack object shadow maps into one?)
 * TODO [#C] sound effects
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
-* TODO [#B] 3D cockpit                                                    :interface:
+* TODO [#B] 3D cockpit                                               :interface:
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
 ** TODO ground slope warning
 ** TODO frontal and side view of moon lander, altitude visualisation?
@@ -161,11 +165,6 @@
    - [ ] determine u and v
    - [ ] microtexture for normal map, microtextures, bump maps
    - [ ] multitextures for land detail?
-** TODO deferred decals for rendering runway, runway lights
-   - Note taken on [2025-08-14 Do 12:58] \\
-     [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,
-     [[https://samdriver.xyz/article/decal-render-intro][decal render intro]],
-     [[https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/][render roads]]
 ** TODO fix problem with resolution of neighbouring tiles in planetary cubemap
    problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 ** TODO improve rendering of sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
