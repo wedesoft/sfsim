@@ -49,7 +49,7 @@
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
   - [ ] moon landing physics (hover thrusters), hover thruster locations
   - [ ] docking physics
-* TODO [#C] add launchpad and runway                                   :scenery:
+* TODO [#B] add launchpad and runway                                   :scenery:
   - Note taken on [2025-08-14 Do 12:58] \\
     [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,
     [[https://samdriver.xyz/article/decal-render-intro][decal render intro]],
@@ -61,11 +61,11 @@
   - [ ] render building on top of ground
   - [ ] deferred decals for rendering runway, runway lights
   - [ ] try one object casting shadow on another (pack object shadow maps into one?)
-* TODO [#C] sound effects
+* TODO [#B] sound effects
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
-* TODO [#B] 3D cockpit                                               :interface:
+* TODO [#C] 3D cockpit                                               :interface:
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
 ** TODO ground slope warning
 ** TODO frontal and side view of moon lander, altitude visualisation?
@@ -128,7 +128,7 @@
    - [ ] life support
 ** TODO autopilot programs: baseland, helicopter, hover/autoland, launch/deorbit, aerocapture/aerobrake, airspeed hold, attitude hold, altitude hold, heading alignment cylinder, VOR/ILS, eject, capture, base sync, station sync, dock
 ** TODO use separate thread for making Nuklear buffer
-* TODO [#B] add moon                                                   :scenery:
+* TODO [#C] add moon                                                   :scenery:
   - [ ] moon base, lights
 * TODO [#C] add space station                                          :scenery:
 ** TODO space station model, station lights
