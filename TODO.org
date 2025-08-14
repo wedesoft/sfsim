@@ -66,7 +66,7 @@
   - [ ] render building on top of ground
   - [ ] deferred decals for rendering runway, runway lights
   - [ ] try one object casting shadow on another (pack object shadow maps into one?)
-* TODO [#B] sound effects
+* TODO [#B] sound effects                                            :immersion:
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
