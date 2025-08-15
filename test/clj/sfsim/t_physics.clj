@@ -112,7 +112,7 @@
 (def sphere (jolt/create-and-add-dynamic-body (jolt/sphere-settings 1.0 1000.0) (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
 
 
-(def state (atom {:sfsim.physics/position (vec3 2 3 5) :sfsim.physics/body sphere}))
+(def state (atom {:sfsim.physics/position (vec3 2 3 5) :sfsim.physics/speed (vec3 1 0 0) :sfsim.physics/body sphere}))
 
 
 (facts "Set position of space craft near surface (rotating coordinate system centered on Earth)"
@@ -127,6 +127,20 @@
        (@state :sfsim.physics/position) => (vec3 6678000 0 0)
        (jolt/get-translation sphere) => (vec3 0 0 0)
        (jolt/get-orientation sphere) => (q/->Quaternion 0 0 1 0))
+
+
+(facts "Set linear and angular speed of space craft near surface (rotating coordinate system centered on Earth)"
+       (set-speed :sfsim.physics/surface state (vec3 100 0 0) (vec3 0 0 1))
+       (@state :sfsim.physics/speed) => (vec3 0 0 0)
+       (jolt/get-linear-velocity sphere) => (vec3 100 0 0)
+       (jolt/get-angular-velocity sphere) => (vec3 0 0 1))
+
+
+(facts "Set linear and angular speed of space craft not near surface (ICRS aligned coordinate system centered on Earth)"
+       (set-speed :sfsim.physics/orbit state (vec3 100 0 0) (vec3 0 0 2))
+       (@state :sfsim.physics/speed) => (vec3 100 0 0)
+       (jolt/get-linear-velocity sphere) => (vec3 0 0 0)
+       (jolt/get-angular-velocity sphere) => (vec3 0 0 2))
 
 
 (jolt/remove-and-destroy-body sphere)

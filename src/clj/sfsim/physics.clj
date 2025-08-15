@@ -98,5 +98,22 @@
   (jolt/set-orientation (::body @state) orientation))  ; Jolt handles orientation information
 
 
+(defmulti set-speed (fn [domain _state _linear-velocity _angular-velocity] domain))
+
+
+(defmethod set-speed ::surface
+  [_domain state linear-velocity angular-velocity]
+  (swap! state assoc ::speed (vec3 0 0 0))
+  (jolt/set-linear-velocity (::body @state) linear-velocity)
+  (jolt/set-angular-velocity (::body @state) angular-velocity))
+
+
+(defmethod set-speed ::orbit
+  [_domain state linear-velocity angular-velocity]
+  (swap! state assoc ::speed linear-velocity)
+  (jolt/set-linear-velocity (::body @state) (vec3 0 0 0))
+  (jolt/set-angular-velocity (::body @state) angular-velocity))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
