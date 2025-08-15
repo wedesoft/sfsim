@@ -8,8 +8,12 @@
   "Physics related functions except for Jolt bindings"
   (:require
     [malli.core :as m]
+    [fastmath.matrix :refer (mulv)]
     [fastmath.vector :refer (vec3 mag normalize mult sub cross)]
     [sfsim.jolt :as jolt]
+    [sfsim.astro :as astro]
+    [sfsim.quaternion :as q]
+    [sfsim.matrix :refer (matrix->quaternion)]
     [sfsim.util :refer (sqr)])
   (:import [fastmath.vector Vec3]))
 
@@ -86,6 +90,7 @@
 
 (defmethod set-pose ::surface
   [_domain state position orientation]
+  (swap! state assoc ::domain ::surface)
   (swap! state assoc ::position (vec3 0 0 0))  ; Position offset is zero
   (jolt/set-translation (::body @state) position)  ; Jolt handles position information to detect collisions with surface
   (jolt/set-orientation (::body @state) orientation))  ; Jolt handles orientation information
@@ -93,6 +98,7 @@
 
 (defmethod set-pose ::orbit
   [_domain state position orientation]
+  (swap! state assoc ::domain ::orbit)
   (swap! state assoc ::position position)  ; Store double precision position
   (jolt/set-translation (::body @state) (vec3 0 0 0))  ; Jolt only handles position changes
   (jolt/set-orientation (::body @state) orientation))  ; Jolt handles orientation information
@@ -113,6 +119,21 @@
   (swap! state assoc ::speed linear-velocity)
   (jolt/set-linear-velocity (::body @state) (vec3 0 0 0))
   (jolt/set-angular-velocity (::body @state) angular-velocity))
+
+
+(defmulti set-domain (fn [target _jd-ut state] [(::domain @state) target]))
+
+
+(defmethod set-domain [::surface ::orbit]
+  [_target jd-ut state]
+  (let [transform (astro/earth-to-icrs jd-ut)
+        q         (matrix->quaternion transform)]
+    (set-pose ::orbit state
+              (mulv transform (jolt/get-translation (::body @state)))
+              (q/* q (jolt/get-orientation (::body @state))))
+    (set-speed ::orbit state
+               (mulv transform (jolt/get-linear-velocity (::body @state)))
+               (mulv transform (jolt/get-angular-velocity (::body @state))))))
 
 
 (set! *warn-on-reflection* false)

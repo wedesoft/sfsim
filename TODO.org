@@ -7,7 +7,11 @@
     - earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
   - [X] multi method for setting position and orientation
   - [X] multi method for setting speed and angular velocity
-  - [ ] methods and conditions for switching
+  - [X] method for switching from surface to orbit coordinate system
+  - [ ] method for switching from orbit to surface coordinate system
+  - [ ] condition for switching from surface to orbit coordinate system
+  - [ ] condition for switching from orbit to surface coordinate system
+  - [ ] trivial method for not switching coordinate system
   - [ ] atmospheric flight with stationary atmosphere in rotating coordinate system
   - [ ] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme,
     handle ground collisions

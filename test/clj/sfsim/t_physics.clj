@@ -6,14 +6,16 @@
 
 (ns sfsim.t-physics
   (:require
-    [clojure.math :refer (exp)]
+    [clojure.math :refer (exp to-radians)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [fastmath.vector :refer (vec3)]
-    [sfsim.conftest :refer (roughly-vector)]
+    [sfsim.conftest :refer (roughly-vector roughly-quaternion)]
     [sfsim.quaternion :as q]
+    [sfsim.matrix :as matrix]
     [sfsim.jolt :as jolt]
+    [sfsim.astro :as astro]
     [sfsim.physics :refer :all]))
 
 
@@ -117,6 +119,7 @@
 
 (facts "Set position of space craft near surface (rotating coordinate system centered on Earth)"
        (set-pose :sfsim.physics/surface state (vec3 6378000 0 0) (q/->Quaternion 0 1 0 0))
+       (@state :sfsim.physics/domain) => :sfsim.physics/surface
        (@state :sfsim.physics/position) => (vec3 0 0 0)
        (jolt/get-translation sphere) => (vec3 6378000 0 0)
        (jolt/get-orientation sphere) => (q/->Quaternion 0 1 0 0))
@@ -124,6 +127,7 @@
 
 (facts "Set position of space craft not near surface (ICRS aligned coordinate system centered on Earth)"
        (set-pose :sfsim.physics/orbit state (vec3 6678000 0 0) (q/->Quaternion 0 0 1 0))
+       (@state :sfsim.physics/domain) => :sfsim.physics/orbit
        (@state :sfsim.physics/position) => (vec3 6678000 0 0)
        (jolt/get-translation sphere) => (vec3 0 0 0)
        (jolt/get-orientation sphere) => (q/->Quaternion 0 0 1 0))
@@ -141,6 +145,20 @@
        (@state :sfsim.physics/speed) => (vec3 100 0 0)
        (jolt/get-linear-velocity sphere) => (vec3 0 0 0)
        (jolt/get-angular-velocity sphere) => (vec3 0 0 2))
+
+
+(facts "Switch from Earth system to ICRS system"
+       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (matrix/rotation-z (to-radians 90.0)))]
+         (set-pose :sfsim.physics/surface state (vec3 6678000 0 0) (q/rotation (to-radians 45.0) (vec3 0 0 1)))
+         (set-speed :sfsim.physics/surface state (vec3 100 0 0) (vec3 1 0 0))
+         (set-domain :sfsim.physics/orbit astro/T0 state)
+         (@state :sfsim.physics/domain) => :sfsim.physics/orbit
+         (@state :sfsim.physics/position) => (roughly-vector (vec3 0 6678000 0) 1e-6)
+         (jolt/get-translation (@state :sfsim.physics/body)) => (vec3 0 0 0)
+         (jolt/get-orientation (@state :sfsim.physics/body)) => (roughly-quaternion (q/rotation (to-radians 135.0) (vec3 0 0 1)) 1e-6)
+         (@state :sfsim.physics/speed) => (roughly-vector (vec3 0 100 0) 1e-6)
+         (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (vec3 0 0 0)
+         (jolt/get-angular-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 0 1 0) 1e-6)))
 
 
 (jolt/remove-and-destroy-body sphere)
