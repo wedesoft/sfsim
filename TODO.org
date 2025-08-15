@@ -6,8 +6,8 @@
     - origin; camera-orientation,
     - earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
   - [X] multi method for setting position and orientation
-  - [ ] multi method for setting speed and angular velocity
-  - [ ] multi method for physics coordinate systems, methods and conditions for switching
+  - [X] multi method for setting speed and angular velocity
+  - [ ] methods and conditions for switching
   - [ ] atmospheric flight with stationary atmosphere in rotating coordinate system
   - [ ] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme,
     handle ground collisions
