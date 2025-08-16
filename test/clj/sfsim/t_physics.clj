@@ -147,10 +147,21 @@
        (jolt/get-angular-velocity sphere) => (vec3 0 0 2))
 
 
+(fact "Do nothing when switching from surface to surface"
+      (set-pose :sfsim.physics/surface state (vec3 6678000 0 0) (q/rotation (to-radians 45.0) (vec3 0 0 1)))
+      (set-speed :sfsim.physics/surface state (vec3 100 0 0) (vec3 1 0 0))
+      (set-domain :sfsim.physics/surface astro/T0 state)
+      (@state :sfsim.physics/domain) => :sfsim.physics/surface
+      (@state :sfsim.physics/position) => (roughly-vector (vec3 0 0 0) 1e-6)
+      (jolt/get-translation (@state :sfsim.physics/body)) => (vec3 6678000 0 0)
+      (jolt/get-orientation (@state :sfsim.physics/body)) => (roughly-quaternion (q/rotation (to-radians 45.0) (vec3 0 0 1)) 1e-6)
+      (@state :sfsim.physics/speed) => (vec3 0 0 0)
+      (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (vec3 100 0 0)
+      (jolt/get-angular-velocity (@state :sfsim.physics/body)) => (vec3 1 0 0))
+
+
 (facts "Switch from Earth system to ICRS system"
        (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (matrix/rotation-z (to-radians 90.0)))]
-         (set-pose :sfsim.physics/surface state (vec3 6678000 0 0) (q/rotation (to-radians 45.0) (vec3 0 0 1)))
-         (set-speed :sfsim.physics/surface state (vec3 100 0 0) (vec3 1 0 0))
          (set-domain :sfsim.physics/orbit astro/T0 state)
          (@state :sfsim.physics/domain) => :sfsim.physics/orbit
          (@state :sfsim.physics/position) => (roughly-vector (vec3 0 6678000 0) 1e-6)

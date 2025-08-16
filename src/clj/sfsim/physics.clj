@@ -124,6 +124,10 @@
 (defmulti set-domain (fn [target _jd-ut state] [(::domain @state) target]))
 
 
+(defmethod set-domain :default
+  [_target _jd-ut _state])
+
+
 (defmethod set-domain [::surface ::orbit]
   [_target jd-ut state]
   (let [earth-to-icrs          (astro/earth-to-icrs jd-ut)
