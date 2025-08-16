@@ -489,6 +489,10 @@
     (mod (+ ^double (mod th 1.0) ^double (mod jd-ut 1.0)) 1.0)))
 
 
+(def earth-rotation-speed  ; Earth rotation speed in radians per second
+  (/ (* 2.0 PI (+ 1.0 0.00273781191135448)) 86400))
+
+
 (defn sidereal-time
   "Compute Greenwich Mean Sidereal Time (GMST) in hours"
   ^double [^double jd-ut]

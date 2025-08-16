@@ -8,6 +8,7 @@
   - [X] multi method for setting position and orientation
   - [X] multi method for setting speed and angular velocity
   - [X] method for switching from surface to orbit coordinate system
+  - [X] Add Earth linear and angular speed when changing coordinate system
   - [ ] method for switching from orbit to surface coordinate system
   - [ ] condition for switching from surface to orbit coordinate system
   - [ ] condition for switching from orbit to surface coordinate system
@@ -71,6 +72,8 @@
   - [ ] deferred decals for rendering runway, runway lights
   - [ ] try one object casting shadow on another (pack object shadow maps into one?)
 * TODO [#B] sound effects                                            :immersion:
+  - Note taken on [2025-08-16 Sa 22:05] \\
+    [[https://freesound.org/people/Andrewkn/sounds/502864/]]
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
@@ -168,6 +171,8 @@
    - [ ] low FPS at 100km height was reported
    - [ ] cloud shadow flickering at large distance?
 ** TODO use icosahedron for mapping 2D micro textures (better grass)
+   - Note taken on [2025-08-16 Sa 22:05] \\
+     [[https://uk.pinterest.com/pin/445223113163715012/]]
    - [ ] unroll icosahedron manually (20 surfaces)
    - [ ] find smallest cross product of vector with sum of corner vectors
    - [ ] use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one

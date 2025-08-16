@@ -156,9 +156,9 @@
          (@state :sfsim.physics/position) => (roughly-vector (vec3 0 6678000 0) 1e-6)
          (jolt/get-translation (@state :sfsim.physics/body)) => (vec3 0 0 0)
          (jolt/get-orientation (@state :sfsim.physics/body)) => (roughly-quaternion (q/rotation (to-radians 135.0) (vec3 0 0 1)) 1e-6)
-         (@state :sfsim.physics/speed) => (roughly-vector (vec3 0 100 0) 1e-6)
+         (@state :sfsim.physics/speed) => (roughly-vector (vec3 (- (* 6678000 astro/earth-rotation-speed)) 100 0) 1e-6)
          (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (vec3 0 0 0)
-         (jolt/get-angular-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 0 1 0) 1e-6)))
+         (jolt/get-angular-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 0 1 astro/earth-rotation-speed) 1e-6)))
 
 
 (jolt/remove-and-destroy-body sphere)

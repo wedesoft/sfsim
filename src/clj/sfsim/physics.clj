@@ -9,7 +9,7 @@
   (:require
     [malli.core :as m]
     [fastmath.matrix :refer (mulv)]
-    [fastmath.vector :refer (vec3 mag normalize mult sub cross)]
+    [fastmath.vector :refer (vec3 mag normalize mult add sub cross)]
     [sfsim.jolt :as jolt]
     [sfsim.astro :as astro]
     [sfsim.quaternion :as q]
@@ -126,14 +126,17 @@
 
 (defmethod set-domain [::surface ::orbit]
   [_target jd-ut state]
-  (let [transform (astro/earth-to-icrs jd-ut)
-        q         (matrix->quaternion transform)]
-    (set-pose ::orbit state
-              (mulv transform (jolt/get-translation (::body @state)))
-              (q/* q (jolt/get-orientation (::body @state))))
+  (let [earth-to-icrs          (astro/earth-to-icrs jd-ut)
+        earth-orientation      (matrix->quaternion earth-to-icrs)
+        position               (jolt/get-translation (::body @state))
+        orientation            (jolt/get-orientation (::body @state))
+        linear-velocity        (jolt/get-linear-velocity (::body @state))
+        earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
+        earth-local-speed      (cross earth-angular-velocity position)]
+    (set-pose ::orbit state (mulv earth-to-icrs position) (q/* earth-orientation orientation))
     (set-speed ::orbit state
-               (mulv transform (jolt/get-linear-velocity (::body @state)))
-               (mulv transform (jolt/get-angular-velocity (::body @state))))))
+               (mulv earth-to-icrs (add linear-velocity earth-local-speed))
+               (mulv earth-to-icrs (add (jolt/get-angular-velocity (::body @state)) earth-angular-velocity)))))
 
 
 (set! *warn-on-reflection* false)
