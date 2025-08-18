@@ -84,19 +84,19 @@
 
 
 (facts "Determine gravitation from planetary object"
-       ((gravitation (vec3 0 0 0) 0.0) (vec3 100 0 0)) => (vec3 0 0 0)
-       ((gravitation (vec3 0 0 0) 5.9722e+24) (vec3 6378000.0 0 0)) => (roughly-vector (vec3 -9.799 0 0) 1e-3)
-       ((gravitation (vec3 6378000.0 0 0) 5.9722e+24) (vec3 0 0 0)) => (roughly-vector (vec3 9.799 0 0) 1e-3))
+       ((gravitation (vec3 0 0 0) 0.0) (vec3 100 0 0) (vec3 0 0 0)) => (vec3 0 0 0)
+       ((gravitation (vec3 0 0 0) 5.9722e+24) (vec3 6378000.0 0 0) (vec3 0 0 0)) => (roughly-vector (vec3 -9.799 0 0) 1e-3)
+       ((gravitation (vec3 6378000.0 0 0) 5.9722e+24) (vec3 0 0 0) (vec3 0 0 0)) => (roughly-vector (vec3 9.799 0 0) 1e-3))
 
 
 (facts "State change from position-dependent acceleration"
-       ((state-change (fn [_position] (vec3 0 0 0))) {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 0 0 0)} 0.0)
+       ((state-change (fn [_position _] (vec3 0 0 0))) {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 0 0 0)} 0.0)
        => {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 0 0 0)}
-       ((state-change (fn [_position] (vec3 0 0 0))) {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 2 0 0)} 0.0)
+       ((state-change (fn [_position _] (vec3 0 0 0))) {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 2 0 0)} 0.0)
        => {:sfsim.physics/position (vec3 2 0 0) :sfsim.physics/speed (vec3 0 0 0)}
-       ((state-change (fn [_position] (vec3 3 0 0))) {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 0 0 0)} 0.0)
+       ((state-change (fn [_position _] (vec3 3 0 0))) {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 0 0 0)} 0.0)
        => {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 3 0 0)}
-       ((state-change (fn [position] position)) {:sfsim.physics/position (vec3 5 0 0) :sfsim.physics/speed (vec3 0 0 0)} 0.0)
+       ((state-change (fn [position _] position)) {:sfsim.physics/position (vec3 5 0 0) :sfsim.physics/speed (vec3 0 0 0)} 0.0)
        => {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 5 0 0)})
 
 
@@ -192,6 +192,25 @@
          (@state :sfsim.physics/speed) => (vec3 0 0 0)
          (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 100 0 0) 1e-6)
          (jolt/get-angular-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 1 0 0) 1e-6)))
+
+
+(facts "Perform simulation step in Earth system"
+       (set-pose :sfsim.physics/surface state (vec3 0 0 6678000) (q/->Quaternion 1 0 0 0))
+       (set-speed :sfsim.physics/surface state (vec3 0 0 0) (vec3 0 0 0))
+       (update-state state 1.0 (gravitation (vec3 0 0 0) 5.9722e+24))
+       (jolt/get-translation (@state :sfsim.physics/body)) => (roughly-vector (vec3 0 0 (- 6678000 (* 0.5 8.938))) 1e-3)
+       (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 0 0 -8.938) 1e-3)
+
+       (set-pose :sfsim.physics/surface state (vec3 6678000 0 0) (q/->Quaternion 1 0 0 0))
+       (set-speed :sfsim.physics/surface state (vec3 0 0 0) (vec3 0 0 0))
+       (update-state state 1.0 (gravitation (vec3 0 0 0) 5.9722e+24))
+       (jolt/get-translation (@state :sfsim.physics/body)) => (roughly-vector (vec3 (- 6678000 (* 0.5 8.903)) 0 0) 1e-3)
+       (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 -8.903 0 0) 1e-3)
+
+       (set-pose :sfsim.physics/surface state (vec3 0 0 6678000) (q/->Quaternion 1 0 0 0))
+       (set-speed :sfsim.physics/surface state (vec3 100 0 0) (vec3 0 0 0))
+       (update-state state 1.0 (gravitation (vec3 0 0 0) 5.9722e+24))
+       (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 100 -0.015 -8.938) 1e-3))
 
 
 (jolt/remove-and-destroy-body sphere)

@@ -323,8 +323,6 @@
 
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
-(jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) speed))
-(jolt/set-angular-velocity body (vec3 0 0 0))
 (jolt/set-friction body 0.8)
 (jolt/set-restitution body 0.25)
 (def mass (jolt/get-mass body))
@@ -334,6 +332,11 @@
 (def thrust (* mass 25.0))
 
 (def vehicle (atom nil))
+
+(def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body}))
+(physics/set-pose :sfsim.physics/orbit physics-state (:position @pose) (:orientation @pose))
+(physics/set-speed :sfsim.physics/orbit physics-state (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
+(physics/set-domain :sfsim.physics/surface astro/T0 physics-state)
 
 (jolt/optimize-broad-phase)
 
@@ -698,7 +701,6 @@
                       (reset! vehicle nil)))
                   (when @vehicle (jolt/set-brake-input @vehicle brake))
                   (update-mesh! (:position @pose))
-                  (jolt/set-translation body (:position @pose))
                   (let [height    (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
                         loads     (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
                                                                   (jolt/get-angular-velocity body)
@@ -707,20 +709,11 @@
                                                                               (* 0.4  ^double rudder))
                                                                         (to-radians 20))
                                                                   @gear
-                                                                  @air-brake)
-                        state     {:sfsim.physics/position (:position @pose) :sfsim.physics/speed (jolt/get-linear-velocity body)}
-                        state2    (physics/runge-kutta state
-                                                       (* dt 0.001)
-                                                       (physics/state-change (physics/gravitation (vec3 0 0 0) earth-mass))
-                                                       physics/state-add
-                                                       physics/state-scale)
-                        [dv1 dv2] (physics/matching-scheme state (* dt 0.001) state2 mult sub)]
-                    (jolt/add-impulse body (mult dv1 mass))
+                                                                  @air-brake)]
                     (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle ^double thrust) 0 0)))
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                     (jolt/add-torque body (:sfsim.aerodynamics/moments loads))
-                    (jolt/update-system (* ^long dt 0.001) 1)
-                    (jolt/add-impulse body (mult dv2 mass)))
+                    (physics/update-state physics-state (* ^long dt 0.001) (physics/gravitation (vec3 0 0 0) earth-mass)))
                   (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
                   (reset! wheel-angles (if @vehicle
                                          [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)

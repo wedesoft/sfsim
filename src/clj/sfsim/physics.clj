@@ -58,7 +58,7 @@
 (defn gravitation
   "Determine gravitation from planetary object"
   [^Vec3 center ^double mass]
-  (fn [position]
+  (fn [position _speed]
       (let [radial-vector (sub position center)
             radius        (mag radial-vector)
             direction     (normalize radial-vector)
@@ -70,7 +70,7 @@
   "State change from position-dependent acceleration"
   [acceleration]
   (fn [{::keys [position speed]} _dt]
-    {::position speed ::speed (acceleration position)}))
+    {::position speed ::speed (acceleration position speed)}))
 
 
 (defn state-add
@@ -169,6 +169,26 @@
         earth-local-speed      (cross earth-angular-velocity position)]
     (set-pose ::surface state position (q/* icrs-orientation orientation))
     (set-speed ::surface state (sub linear-velocity earth-local-speed) (sub angular-velocity earth-angular-velocity))))
+
+
+(defmulti update-state (fn [state _dt _acceleration] (::domain @state)))
+
+
+(defmethod update-state ::surface
+  [state dt gravitation]
+  (let [body         (::body @state)
+        mass         (jolt/get-mass body)
+        initial      {::position (jolt/get-translation body) ::speed (jolt/get-linear-velocity body)}
+        omega        (vec3 0 0 astro/earth-rotation-speed)
+        acceleration (fn [position speed] (reduce add [(gravitation position speed)
+                                                       (centrifugal-acceleration omega position)
+                                                       (coriolis-acceleration omega speed)]))
+        final        (runge-kutta initial dt (state-change acceleration) state-add state-scale)
+        [dv1 dv2]    (matching-scheme initial dt final mult sub)]
+    (jolt/set-gravity (vec3 0 0 0))
+    (jolt/add-impulse body (mult dv1 mass))
+    (jolt/update-system dt 1)
+    (jolt/add-impulse body (mult dv2 mass))))
 
 
 (set! *warn-on-reflection* false)

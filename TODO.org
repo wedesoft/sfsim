@@ -10,21 +10,21 @@
   - [X] method for switching from surface to orbit coordinate system
   - [X] Add Earth linear and angular speed when changing coordinate system
   - [X] method for switching from orbit to surface coordinate system
-  - [ ] condition for switching from surface to orbit coordinate system
-  - [ ] condition for switching from orbit to surface coordinate system
   - [X] trivial method for not switching coordinate system
-  - [ ] atmospheric flight with stationary atmosphere in rotating coordinate system
   - [ ] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme,
     handle ground collisions
+  - [ ] atmospheric flight with stationary atmosphere in rotating coordinate system
   - [ ] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme
-    (accelerated coordinate system with sun gravitation)
+  - [ ] atmospheric flight with moving atmosphere in spacecraft coordinate system
+  - [ ] condition for switching from surface to orbit coordinate system
+  - [ ] condition for switching from orbit to surface coordinate system
   - [ ] how to switch speed display (Earth surface, Earth orbit)
+  - [ ] display speed for applying second corrective impulse
   - [ ] get speed in wind system in each case
   - [ ] get centrifugal and coriolis forces in each case
   - [ ] get Earth position and orientation in each case
   - [ ] get Sun position in each case
-  - [ ] compute earth barycenter and sun in separate thread (use future)
-  - [ ] use separate thread for simulation
+  - [ ] accelerated coordinate system with sun gravitation?
 * TODO [#A] UI overlays for third person view                        :interface:
   - [ ] following camera, different camera views, camera controls such as distance, joystick hat
   - [ ] Radar altitude
