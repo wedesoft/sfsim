@@ -8,7 +8,7 @@
   "Physics related functions except for Jolt bindings"
   (:require
     [malli.core :as m]
-    [fastmath.matrix :refer (mulv)]
+    [fastmath.matrix :refer (mulv inverse)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross)]
     [sfsim.jolt :as jolt]
     [sfsim.astro :as astro]
@@ -125,7 +125,8 @@
 
 
 (defmethod set-domain :default
-  [_target _jd-ut _state])
+  [target _jd-ut state]
+  (assert (= target (::domain @state))))
 
 
 (defmethod set-domain [::surface ::orbit]
@@ -135,12 +136,27 @@
         position               (jolt/get-translation (::body @state))
         orientation            (jolt/get-orientation (::body @state))
         linear-velocity        (jolt/get-linear-velocity (::body @state))
+        angular-velocity       (jolt/get-angular-velocity (::body @state))
         earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
         earth-local-speed      (cross earth-angular-velocity position)]
     (set-pose ::orbit state (mulv earth-to-icrs position) (q/* earth-orientation orientation))
     (set-speed ::orbit state
                (mulv earth-to-icrs (add linear-velocity earth-local-speed))
-               (mulv earth-to-icrs (add (jolt/get-angular-velocity (::body @state)) earth-angular-velocity)))))
+               (mulv earth-to-icrs (add angular-velocity earth-angular-velocity)))))
+
+
+(defmethod set-domain [::orbit ::surface]
+  [_target jd-ut state]
+  (let [icrs-to-earth          (inverse (astro/earth-to-icrs jd-ut))
+        icrs-orientation       (matrix->quaternion icrs-to-earth)
+        position               (mulv icrs-to-earth (::position @state))
+        orientation            (jolt/get-orientation (::body @state))
+        linear-velocity        (mulv icrs-to-earth (::speed @state))
+        angular-velocity       (mulv icrs-to-earth (jolt/get-angular-velocity (::body @state)))
+        earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
+        earth-local-speed      (cross earth-angular-velocity position)]
+    (set-pose ::surface state position (q/* icrs-orientation orientation))
+    (set-speed ::surface state (sub linear-velocity earth-local-speed) (sub angular-velocity earth-angular-velocity))))
 
 
 (set! *warn-on-reflection* false)

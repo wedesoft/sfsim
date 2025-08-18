@@ -9,7 +9,7 @@
   - [X] multi method for setting speed and angular velocity
   - [X] method for switching from surface to orbit coordinate system
   - [X] Add Earth linear and angular speed when changing coordinate system
-  - [ ] method for switching from orbit to surface coordinate system
+  - [X] method for switching from orbit to surface coordinate system
   - [ ] condition for switching from surface to orbit coordinate system
   - [ ] condition for switching from orbit to surface coordinate system
   - [X] trivial method for not switching coordinate system
