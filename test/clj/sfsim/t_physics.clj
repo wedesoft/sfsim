@@ -100,6 +100,14 @@
        => {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 5 0 0)})
 
 
+(facts "Add and scale states"
+       (state-add {:sfsim.physics/position (vec3 2 0 0) :sfsim.physics/speed (vec3 3 0 0)}
+                  {:sfsim.physics/position (vec3 5 0 0) :sfsim.physics/speed (vec3 7 0 0)})
+       => {:sfsim.physics/position (vec3 7 0 0) :sfsim.physics/speed (vec3 10 0 0)}
+       (state-scale {:sfsim.physics/position (vec3 2 0 0) :sfsim.physics/speed (vec3 3 0 0)} 5.0)
+       => {:sfsim.physics/position (vec3 10 0 0) :sfsim.physics/speed (vec3 15 0 0)})
+
+
 (facts "Centrifugal acceleration in rotating coordinate system"
        (centrifugal-acceleration (vec3 0 0 0) (vec3 1 0 0)) => (vec3 0 0 0)
        (centrifugal-acceleration (vec3 0 0 1) (vec3 1 0 0)) => (vec3 1 0 0)

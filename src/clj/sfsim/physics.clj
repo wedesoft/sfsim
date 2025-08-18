@@ -73,6 +73,18 @@
     {::position speed ::speed (acceleration position)}))
 
 
+(defn state-add
+  "Add two state hashmaps"
+  [state1 state2]
+  (merge-with add state1 state2))
+
+
+(defn state-scale
+  "Scale a state hashmap"
+  [state scale]
+  (into {} (for [[k v] state] [k (mult v scale)])))
+
+
 (defn centrifugal-acceleration
   "Determine centrifugal acceleration in a rotating coordinate system"
   [omega position]
