@@ -18,8 +18,7 @@
     handle ground collisions
   - [ ] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme
     (accelerated coordinate system with sun gravitation)
-  - [ ] rotating Moon coordinate system, handle ground collisions
-  - [ ] how to switch speed display (Earth surface, Earth orbit, Moon orbit, Moon surface)
+  - [ ] how to switch speed display (Earth surface, Earth orbit)
   - [ ] get speed in wind system in each case
   - [ ] get centrifugal and coriolis forces in each case
   - [ ] get Earth position and orientation in each case
@@ -142,6 +141,8 @@
 ** TODO use separate thread for making Nuklear buffer
 * TODO [#C] add moon                                                   :scenery:
   - [ ] moon base, lights
+  - [ ] rotating Moon coordinate system, handle ground collisions
+  - [ ] how to switch speed display (Moon orbit, Moon surface)
 * TODO [#C] add space station                                          :scenery:
 ** TODO space station model, station lights
 ** TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
