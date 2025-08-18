@@ -708,7 +708,7 @@
                                                                         (to-radians 20))
                                                                   @gear
                                                                   @air-brake)
-                        state     {:position (:position @pose) :speed (jolt/get-linear-velocity body)}
+                        state     {:sfsim.physics/position (:position @pose) :sfsim.physics/speed (jolt/get-linear-velocity body)}
                         state2    (physics/runge-kutta state
                                                        (* dt 0.001)
                                                        (physics/state-change (physics/gravitation (vec3 0 0 0) earth-mass))

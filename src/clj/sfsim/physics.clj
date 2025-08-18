@@ -50,8 +50,8 @@
 (defn matching-scheme
   "Use two custom acceleration values to make semi-implicit Euler result match a ground truth after the integration step"
   [y0 dt y1 scale subtract]
-  (let [delta-speed0 (scale (subtract (subtract (:position y1) (:position y0)) (scale (:speed y0) dt)) (/ 1.0 ^double dt))
-        delta-speed1 (subtract (subtract (:speed y1) (:speed y0)) delta-speed0)]
+  (let [delta-speed0 (scale (subtract (subtract (::position y1) (::position y0)) (scale (::speed y0) dt)) (/ 1.0 ^double dt))
+        delta-speed1 (subtract (subtract (::speed y1) (::speed y0)) delta-speed0)]
     [delta-speed0 delta-speed1]))
 
 
@@ -69,8 +69,8 @@
 (defn state-change
   "State change from position-dependent acceleration"
   [acceleration]
-  (fn [{:keys [position speed]} _dt]
-    {:position speed :speed (acceleration position)}))
+  (fn [{::keys [position speed]} _dt]
+    {::position speed ::speed (acceleration position)}))
 
 
 (defn centrifugal-acceleration

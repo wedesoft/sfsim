@@ -49,7 +49,7 @@
 
 (defn linear-motion
   [y _dt]
-  {:position (:speed y) :speed 0.0})
+  {:sfsim.physics/position (:sfsim.physics/speed y) :sfsim.physics/speed 0.0})
 
 
 (def add-values (fn [x y] (merge-with + x y)))
@@ -59,26 +59,28 @@
 (defn matched-euler
   [y0 dt [dv0 dv1]]
   (-> y0
-      (update :speed #(add dv0 %))
+      (update :sfsim.physics/speed #(add dv0 %))
       (euler dt linear-motion add-values scale-values)
-      (update :speed #(add dv1 %))))
+      (update :sfsim.physics/speed #(add dv1 %))))
 
 
 (facts "Sanity check for euler test function"
-       (matched-euler {:position 42.0 :speed 0.0} 1.0 [2 3]) => {:position 44.0 :speed 5.0}
-       (matched-euler {:position 42.0 :speed 0.0} 2.0 [2 3]) => {:position 46.0 :speed 5.0})
+       (matched-euler {:sfsim.physics/position 42.0 :sfsim.physics/speed 0.0} 1.0 [2 3])
+       => {:sfsim.physics/position 44.0 :sfsim.physics/speed 5.0}
+       (matched-euler {:sfsim.physics/position 42.0 :sfsim.physics/speed 0.0} 2.0 [2 3])
+       => {:sfsim.physics/position 46.0 :sfsim.physics/speed 5.0})
 
 
 (tabular "Test Runge Kutta matching scheme for semi-implicit Euler"
          (fact (matched-euler ?y0 ?dt (matching-scheme ?y0 ?dt ?y1 * #(- %1 %2))) => ?y1)
          ?y0                        ?dt ?y1
-         {:position 0.0 :speed 0.0} 1.0 {:position 0.0 :speed 0.0}
-         {:position 0.0 :speed 0.0} 1.0 {:position 2.0 :speed 2.0}
-         {:position 0.0 :speed 0.0} 1.0 {:position 0.0 :speed 2.0}
-         {:position 0.0 :speed 2.0} 1.0 {:position 2.0 :speed 2.0}
-         {:position 0.0 :speed 0.0} 2.0 {:position 2.0 :speed 1.0}
-         {:position 0.0 :speed 0.0} 2.0 {:position 0.0 :speed 1.0}
-         {:position 2.0 :speed 1.5} 2.0 {:position 5.0 :speed 1.5})
+         {:sfsim.physics/position 0.0 :sfsim.physics/speed 0.0} 1.0 {:sfsim.physics/position 0.0 :sfsim.physics/speed 0.0}
+         {:sfsim.physics/position 0.0 :sfsim.physics/speed 0.0} 1.0 {:sfsim.physics/position 2.0 :sfsim.physics/speed 2.0}
+         {:sfsim.physics/position 0.0 :sfsim.physics/speed 0.0} 1.0 {:sfsim.physics/position 0.0 :sfsim.physics/speed 2.0}
+         {:sfsim.physics/position 0.0 :sfsim.physics/speed 2.0} 1.0 {:sfsim.physics/position 2.0 :sfsim.physics/speed 2.0}
+         {:sfsim.physics/position 0.0 :sfsim.physics/speed 0.0} 2.0 {:sfsim.physics/position 2.0 :sfsim.physics/speed 1.0}
+         {:sfsim.physics/position 0.0 :sfsim.physics/speed 0.0} 2.0 {:sfsim.physics/position 0.0 :sfsim.physics/speed 1.0}
+         {:sfsim.physics/position 2.0 :sfsim.physics/speed 1.5} 2.0 {:sfsim.physics/position 5.0 :sfsim.physics/speed 1.5})
 
 
 (facts "Determine gravitation from planetary object"
@@ -88,14 +90,14 @@
 
 
 (facts "State change from position-dependent acceleration"
-       ((state-change (fn [_position] (vec3 0 0 0))) {:position (vec3 0 0 0) :speed (vec3 0 0 0)} 0.0)
-       => {:position (vec3 0 0 0) :speed (vec3 0 0 0)}
-       ((state-change (fn [_position] (vec3 0 0 0))) {:position (vec3 0 0 0) :speed (vec3 2 0 0)} 0.0)
-       => {:position (vec3 2 0 0) :speed (vec3 0 0 0)}
-       ((state-change (fn [_position] (vec3 3 0 0))) {:position (vec3 0 0 0) :speed (vec3 0 0 0)} 0.0)
-       => {:position (vec3 0 0 0) :speed (vec3 3 0 0)}
-       ((state-change (fn [position] position)) {:position (vec3 5 0 0) :speed (vec3 0 0 0)} 0.0)
-       => {:position (vec3 0 0 0) :speed (vec3 5 0 0)})
+       ((state-change (fn [_position] (vec3 0 0 0))) {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 0 0 0)} 0.0)
+       => {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 0 0 0)}
+       ((state-change (fn [_position] (vec3 0 0 0))) {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 2 0 0)} 0.0)
+       => {:sfsim.physics/position (vec3 2 0 0) :sfsim.physics/speed (vec3 0 0 0)}
+       ((state-change (fn [_position] (vec3 3 0 0))) {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 0 0 0)} 0.0)
+       => {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 3 0 0)}
+       ((state-change (fn [position] position)) {:sfsim.physics/position (vec3 5 0 0) :sfsim.physics/speed (vec3 0 0 0)} 0.0)
+       => {:sfsim.physics/position (vec3 0 0 0) :sfsim.physics/speed (vec3 5 0 0)})
 
 
 (facts "Centrifugal acceleration in rotating coordinate system"
