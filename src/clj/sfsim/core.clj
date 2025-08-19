@@ -330,7 +330,7 @@
 (def surface 198.0)
 (def chord 10.0)
 (def wingspan 20.75)
-(def thrust (* mass 25.0))
+(def thrust (* ^double mass 25.0))
 
 (def vehicle (atom nil))
 
@@ -483,7 +483,7 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- current-time (/ ^long @t0 1000.0 86400.0))))
+(def time-delta (atom (- ^double current-time (/ ^long @t0 1000.0 86400.0))))
 
 (def camera-dx (atom 0.0))
 (def camera-dy (atom 0.0))
