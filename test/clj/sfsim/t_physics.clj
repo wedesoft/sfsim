@@ -132,7 +132,9 @@
        (@state :sfsim.physics/domain) => :sfsim.physics/surface
        (@state :sfsim.physics/position) => (vec3 0 0 0)
        (jolt/get-translation sphere) => (vec3 6378000 0 0)
-       (jolt/get-orientation sphere) => (q/->Quaternion 0 1 0 0))
+       (jolt/get-orientation sphere) => (q/->Quaternion 0 1 0 0)
+       (get-position state) => (vec3 6378000 0 0)
+       (get-orientation state) => (q/->Quaternion 0 1 0 0))
 
 
 (facts "Set position of space craft not near surface (ICRS aligned coordinate system centered on Earth)"
@@ -140,21 +142,29 @@
        (@state :sfsim.physics/domain) => :sfsim.physics/orbit
        (@state :sfsim.physics/position) => (vec3 6678000 0 0)
        (jolt/get-translation sphere) => (vec3 0 0 0)
-       (jolt/get-orientation sphere) => (q/->Quaternion 0 0 1 0))
+       (jolt/get-orientation sphere) => (q/->Quaternion 0 0 1 0)
+       (get-position state) => (vec3 6678000 0 0)
+       (get-orientation state) => (q/->Quaternion 0 0 1 0))
 
 
 (facts "Set linear and angular speed of space craft near surface (rotating coordinate system centered on Earth)"
+       (set-pose :sfsim.physics/surface state (vec3 6678000 0 0) (q/->Quaternion 0 0 1 0))
        (set-speed :sfsim.physics/surface state (vec3 100 0 0) (vec3 0 0 1))
        (@state :sfsim.physics/speed) => (vec3 0 0 0)
        (jolt/get-linear-velocity sphere) => (vec3 100 0 0)
-       (jolt/get-angular-velocity sphere) => (vec3 0 0 1))
+       (jolt/get-angular-velocity sphere) => (vec3 0 0 1)
+       (get-linear-speed state) => (vec3 100 0 0)
+       (get-angular-speed state) => (vec3 0 0 1))
 
 
 (facts "Set linear and angular speed of space craft not near surface (ICRS aligned coordinate system centered on Earth)"
+       (set-pose :sfsim.physics/orbit state (vec3 6678000 0 0) (q/->Quaternion 0 0 1 0))
        (set-speed :sfsim.physics/orbit state (vec3 100 0 0) (vec3 0 0 2))
        (@state :sfsim.physics/speed) => (vec3 100 0 0)
        (jolt/get-linear-velocity sphere) => (vec3 0 0 0)
-       (jolt/get-angular-velocity sphere) => (vec3 0 0 2))
+       (jolt/get-angular-velocity sphere) => (vec3 0 0 2)
+       (get-linear-speed state) => (vec3 100 0 0)
+       (get-angular-speed state) => (vec3 0 0 2))
 
 
 (fact "Do nothing when switching from surface to surface"
@@ -220,7 +230,11 @@
        (@state :sfsim.physics/position) => (roughly-vector (vec3 (- 6678000 (* 0.5 8.938)) 0 0) 1e-3)
        (@state :sfsim.physics/speed) => (roughly-vector (vec3 -8.938 0 0) 1e-3)
        (jolt/get-translation (@state :sfsim.physics/body)) => (vec3 0 0 0)
-       (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (vec3 0 0 0))
+       (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (vec3 0 0 0)
+
+       (update-state state 1.0 (gravitation (vec3 0 0 0) 5.9722e+24))
+       (@state :sfsim.physics/position) => (roughly-vector (vec3 (- 6678000 (* 0.5 8.938 4)) 0 0) 1e-3)
+       (@state :sfsim.physics/speed) => (roughly-vector (vec3 (* 2 -8.938) 0 0) 1e-3))
 
 
 (jolt/remove-and-destroy-body sphere)

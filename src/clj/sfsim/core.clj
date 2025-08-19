@@ -71,18 +71,18 @@
 
 (def earth-mass (config/planet-config :sfsim.planet/mass))
 
-; (def longitude 0.0)
-; (def latitude 0.0)
-; (def height 408000.0)
-; (def radius (config/planet-config :sfsim.planet/radius))
-; (def g physics/gravitational-constant)
-; (def orbit-radius (+ ^double radius ^double height))
-; (def speed (sqrt (/ (* ^double earth-mass ^double g) ^double orbit-radius)))
+(def longitude 0.0)
+(def latitude 0.0)
+(def height 408000.0)
+(def radius (config/planet-config :sfsim.planet/radius))
+(def g physics/gravitational-constant)
+(def orbit-radius (+ ^double radius ^double height))
+(def speed (sqrt (/ (* ^double earth-mass ^double g) ^double orbit-radius)))
 
-(def speed 0)
-(def longitude (to-radians -1.3747))
-(def latitude (to-radians 50.9672))
-(def height 25.0)
+; (def speed 0)
+; (def longitude (to-radians -1.3747))
+; (def latitude (to-radians 50.9672))
+; (def height 25.0)
 
 (def opacity-base 100.0)
 
@@ -314,16 +314,14 @@
     (q/vector-to-vector-rotation (vec3 0 0 1) (sub radius-vector))))
 
 
-(def pose
-  (atom {:position (position-from-lon-lat longitude latitude height)
-         :orientation (orientation-from-lon-lat longitude latitude)}))
+(def pose {:position (position-from-lon-lat longitude latitude height) :orientation (orientation-from-lon-lat longitude latitude)})
 
 (def camera-orientation (atom (q/* (orientation-from-lon-lat longitude latitude)
                                    (q/rotation (to-radians -90) (vec3 1 0 0)))))
 (def dist (atom 60.0))
 
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
-(def body (jolt/create-and-add-dynamic-body convex-hulls-join (:position @pose) (:orientation @pose)))
+(def body (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
 (jolt/set-friction body 0.8)
 (jolt/set-restitution body 0.25)
 (def mass (jolt/get-mass body))
@@ -337,8 +335,10 @@
 (def current-time (+ (long (astro/now)) (+ (/ -5.0 24.0) (/ 27.0 60.0 24.0))))
 
 (def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body}))
-(physics/set-pose :sfsim.physics/surface physics-state (:position @pose) (:orientation @pose))
-(physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
+; (physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
+; (physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector (:orientation pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
+(physics/set-pose :sfsim.physics/orbit physics-state (:position pose) (:orientation pose))
+(physics/set-speed :sfsim.physics/orbit physics-state (mult (q/rotate-vector (:orientation pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
 
 (jolt/optimize-broad-phase)
 
@@ -452,8 +452,8 @@
 
 
 (defn location-dialog-set
-  [position-data pose]
-  (let [position  (:position pose)
+  [position-data]
+  (let [position  (physics/get-position physics-state)
         longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
         latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
         height    (- (mag position) 6378000.0)]
@@ -473,11 +473,10 @@
                       (gui/text-label gui "Height")
                       (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
                       (when (gui/button-label gui "Set")
-                        (reset! pose (location-dialog-get position-data))
-                        (jolt/set-orientation body (:orientation @pose))
-                        (jolt/set-translation body (:position @pose))
-                        (reset! camera-orientation (q/* (:orientation @pose)
-                                                        (q/rotation (to-radians -90) (vec3 1 0 0)))))
+                        (let [pose (location-dialog-get position-data)]
+                          (physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
+                          (reset! camera-orientation (q/* (:orientation pose)
+                                                          (q/rotation (to-radians -90) (vec3 1 0 0))))))
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))
 
@@ -559,7 +558,7 @@
                       (when (gui/button-label gui "Joystick")
                         (reset! menu joystick-dialog))
                       (when (gui/button-label gui "Location")
-                        (location-dialog-set position-data @pose)
+                        (location-dialog-set position-data)
                         (reset! menu location-dialog))
                       (when (gui/button-label gui "Date/Time")
                         (datetime-dialog-set time-data @time-delta @t0)
@@ -644,7 +643,7 @@
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
-      (planet/update-tile-tree planet-renderer tile-tree @window-width (:position @pose))
+      (planet/update-tile-tree planet-renderer tile-tree @window-width (physics/get-position physics-state))
       ; (when (@keystates GLFW/GLFW_KEY_X)
       ;   (jolt/set-orientation body (:orientation @pose))
       ;   (jolt/set-translation body (:position @pose))
@@ -668,7 +667,7 @@
         (if playback
           (let [frame (nth @recording @n)]
             (reset! time-delta (/ (- ^long (:timemillis frame) ^long @t0) 1000.0 86400.0))
-            (reset! pose {:position (:position frame) :orientation (:orientation frame)})
+            (physics/set-pose (:domain frame) physics-state (:position frame) (:orientation frame))
             (reset! camera-orientation (:camera-orientation frame))
             (reset! camera-dx (:camera-dx frame))
             (reset! camera-dy (:camera-dy frame))
@@ -702,9 +701,10 @@
                       (jolt/remove-and-destroy-constraint @vehicle)
                       (reset! vehicle nil)))
                   (when @vehicle (jolt/set-brake-input @vehicle brake))
-                  (update-mesh! (:position @pose))
-                  (let [height    (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
-                        loads     (aerodynamics/aerodynamic-loads height (:orientation @pose) (jolt/get-linear-velocity body)
+                  (update-mesh! (physics/get-position physics-state))
+                  (let [height    (- (mag (physics/get-position physics-state)) ^double (:sfsim.planet/radius config/planet-config))
+                        loads     (aerodynamics/aerodynamic-loads height (physics/get-orientation physics-state)
+                                                                  (jolt/get-linear-velocity body)
                                                                   (jolt/get-angular-velocity body)
                                                                   (mult (vec3 (* 0.25 ^double aileron)
                                                                               (* 0.25 ^double elevator)
@@ -712,11 +712,11 @@
                                                                         (to-radians 20))
                                                                   @gear
                                                                   @air-brake)]
-                    (jolt/add-force body (q/rotate-vector (:orientation @pose) (vec3 (* ^double throttle ^double thrust) 0 0)))
+                    (jolt/add-force body (q/rotate-vector (physics/get-orientation physics-state)
+                                                          (vec3 (* ^double throttle ^double thrust) 0 0)))
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
                     (jolt/add-torque body (:sfsim.aerodynamics/moments loads))
                     (physics/update-state physics-state (* ^long dt 0.001) (physics/gravitation (vec3 0 0 0) earth-mass)))
-                  (reset! pose {:position (jolt/get-translation body) :orientation (jolt/get-orientation body)})
                   (reset! wheel-angles (if @vehicle
                                          [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
                                           (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
@@ -729,8 +729,9 @@
                                        [1.0 1.0 1.0]))
                   (when @recording
                     (let [frame {:timemillis (long (+ (* ^double @time-delta 1000.0 86400.0) ^long @t0))
-                                 :position (:position @pose)
-                                 :orientation (:orientation @pose)
+                                 :position (physics/get-position physics-state)
+                                 :orientation (physics/get-orientation physics-state)
+                                 :domain (:sfsim.physics/domain @physics-state)
                                  :camera-orientation @camera-orientation
                                  :camera-dx @camera-dx
                                  :camera-dy @camera-dy
@@ -753,7 +754,7 @@
               (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-y)) (vec3 0 1 0)))
               (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-z)) (vec3 0 0 1)))
               (swap! dist * (exp (* ^long dt 0.001 ^double (@state :sfsim.input/camera-distance-change))))))
-        (let [object-position    (:position @pose)
+        (let [object-position    (physics/get-position physics-state)  ; TODO: get for surface domain
               origin             (add object-position (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               jd-ut              (+ ^double @time-delta (/ ^long @t0 1000.0 86400.0) ^double astro/T0)
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
@@ -769,7 +770,7 @@
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) opacity-base)
-              object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
+              object-to-world    (transformation-matrix (quaternion->matrix (physics/get-orientation physics-state)) object-position)  ; TODO: get for surface domain
               wheels-scene       (if (= ^double @gear 1.0)
                                    (model/apply-transforms
                                      scene
@@ -843,7 +844,7 @@
                              (stick gui aileron elevator rudder throttle)
                              (info gui @window-height
                                    (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s%s%s"
-                                           (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
+                                           (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
                                            (mag (jolt/get-linear-velocity body)) (/ 1.0 ^double @frametime)
                                            (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
                                            (if (@state :sfsim.input/air-brake) ", air brake" "")

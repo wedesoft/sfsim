@@ -116,6 +116,24 @@
   (jolt/set-orientation (::body @state) orientation))  ; Jolt handles orientation information
 
 
+(defmulti get-position (fn [state] (::domain @state)))
+
+
+(defmethod get-position ::surface
+  [state]
+  (jolt/get-translation (::body @state)))
+
+
+(defmethod get-position ::orbit
+  [state]
+  (::position @state))
+
+
+(defn get-orientation
+  [state]
+  (jolt/get-orientation (::body @state)))
+
+
 (defmulti set-speed (fn [domain _state _linear-velocity _angular-velocity] domain))
 
 
@@ -131,6 +149,24 @@
   (swap! state assoc ::speed linear-velocity)
   (jolt/set-linear-velocity (::body @state) (vec3 0 0 0))
   (jolt/set-angular-velocity (::body @state) angular-velocity))
+
+
+(defmulti get-linear-speed (fn [state] (::domain @state)))
+
+
+(defmethod get-linear-speed ::surface
+  [state]
+  (jolt/get-linear-velocity (::body @state)))
+
+
+(defmethod get-linear-speed ::orbit
+  [state]
+  (::speed @state))
+
+
+(defn get-angular-speed
+  [state]
+  (jolt/get-angular-velocity (::body @state)))
 
 
 (defmulti set-domain (fn [target _jd-ut state] [(::domain @state) target]))
@@ -195,14 +231,16 @@
   [state dt gravitation]
   (let [body      (::body @state)
         mass      (jolt/get-mass body)
-        initial   {::position (::position @state) ::speed (::speed @state)}
+        position  (::position @state)
+        speed     (::speed @state)
+        initial   {::position position ::speed speed}
         final     (runge-kutta initial dt (state-change gravitation) state-add state-scale)
         [dv1 dv2] (matching-scheme initial dt final mult sub)]
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
     (jolt/add-impulse body (mult dv2 mass))
-    (swap! state update ::position #(add % (jolt/get-translation body)))
+    (swap! state update ::position #(add % (add (mult speed dt) (jolt/get-translation body))))
     (swap! state update ::speed #(add % (jolt/get-linear-velocity body)))
     (jolt/set-translation body (vec3 0 0 0))
     (jolt/set-linear-velocity body (vec3 0 0 0))))
