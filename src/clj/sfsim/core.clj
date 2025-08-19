@@ -69,21 +69,22 @@
 ; Ensure floating point numbers use a dot as decimal separator
 (java.util.Locale/setDefault java.util.Locale/US)
 
-(def opacity-base (atom 100.0))
-(def longitude 0.0)
-(def latitude 0.0)
-(def height 408000.0)
 (def earth-mass (config/planet-config :sfsim.planet/mass))
-(def radius (config/planet-config :sfsim.planet/radius))
-(def g physics/gravitational-constant)
-(def orbit-radius (+ ^double radius ^double height))
-(def speed (sqrt (/ (* ^double earth-mass ^double g) ^double orbit-radius)))
 
-; (def speed 0)
-; (def longitude (to-radians -1.3747))
-; (def latitude (to-radians 50.9672))
-; (def height 25.0)
+; (def longitude 0.0)
+; (def latitude 0.0)
+; (def height 408000.0)
+; (def radius (config/planet-config :sfsim.planet/radius))
+; (def g physics/gravitational-constant)
+; (def orbit-radius (+ ^double radius ^double height))
+; (def speed (sqrt (/ (* ^double earth-mass ^double g) ^double orbit-radius)))
 
+(def speed 0)
+(def longitude (to-radians -1.3747))
+(def latitude (to-radians 50.9672))
+(def height 25.0)
+
+(def opacity-base 100.0)
 
 (def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
 (def barycenter-sun (astro/make-spk-segment-interpolator spk 0 10))
@@ -333,10 +334,11 @@
 
 (def vehicle (atom nil))
 
+(def current-time (+ (long (astro/now)) (+ (/ -5.0 24.0) (/ 27.0 60.0 24.0))))
+
 (def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body}))
-(physics/set-pose :sfsim.physics/orbit physics-state (:position @pose) (:orientation @pose))
-(physics/set-speed :sfsim.physics/orbit physics-state (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
-(physics/set-domain :sfsim.physics/surface astro/T0 physics-state)
+(physics/set-pose :sfsim.physics/surface physics-state (:position @pose) (:orientation @pose))
+(physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
 
 (jolt/optimize-broad-phase)
 
@@ -481,7 +483,7 @@
 
 
 (def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- (+ (long (astro/now)) (+ (/ -5.0 24.0) (/ 27.0 60.0 24.0))) (/ ^long @t0 1000.0 86400.0))))
+(def time-delta (atom (- current-time (/ ^long @t0 1000.0 86400.0))))
 
 (def camera-dx (atom 0.0))
 (def camera-dy (atom 0.0))
@@ -766,7 +768,7 @@
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
-                                                                     (planet/get-current-tree tile-tree) @opacity-base)
+                                                                     (planet/get-current-tree tile-tree) opacity-base)
               object-to-world    (transformation-matrix (quaternion->matrix (:orientation @pose)) object-position)
               wheels-scene       (if (= ^double @gear 1.0)
                                    (model/apply-transforms
