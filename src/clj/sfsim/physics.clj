@@ -191,5 +191,22 @@
     (jolt/add-impulse body (mult dv2 mass))))
 
 
+(defmethod update-state ::orbit
+  [state dt gravitation]
+  (let [body      (::body @state)
+        mass      (jolt/get-mass body)
+        initial   {::position (::position @state) ::speed (::speed @state)}
+        final     (runge-kutta initial dt (state-change gravitation) state-add state-scale)
+        [dv1 dv2] (matching-scheme initial dt final mult sub)]
+    (jolt/set-gravity (vec3 0 0 0))
+    (jolt/add-impulse body (mult dv1 mass))
+    (jolt/update-system dt 1)
+    (jolt/add-impulse body (mult dv2 mass))
+    (swap! state update ::position #(add % (jolt/get-translation body)))
+    (swap! state update ::speed #(add % (jolt/get-linear-velocity body)))
+    (jolt/set-translation body (vec3 0 0 0))
+    (jolt/set-linear-velocity body (vec3 0 0 0))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

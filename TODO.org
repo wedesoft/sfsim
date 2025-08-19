@@ -11,20 +11,19 @@
   - [X] Add Earth linear and angular speed when changing coordinate system
   - [X] method for switching from orbit to surface coordinate system
   - [X] trivial method for not switching coordinate system
-  - [ ] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme,
-    handle ground collisions
-  - [ ] atmospheric flight with stationary atmosphere in rotating coordinate system
+  - [X] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme,
+  - [ ] get position and orientation relative to Earth in each case
+  - [ ] get Earth position and orientation in each case
+  - [ ] get Sun position in each case
+  - [ ] display speed for applying second corrective impulse
+  - [ ] get speed in wind system in each case for atmospheric flight with stationary or moving atmosphere
+  - [ ] handle ground collisions in physics module when near surface
+  - [ ] add atmospheric model to physics module
   - [ ] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme
   - [ ] atmospheric flight with moving atmosphere in spacecraft coordinate system
   - [ ] condition for switching from surface to orbit coordinate system
   - [ ] condition for switching from orbit to surface coordinate system
   - [ ] how to switch speed display (Earth surface, Earth orbit)
-  - [ ] display speed for applying second corrective impulse
-  - [ ] get speed in wind system in each case
-  - [ ] get centrifugal and coriolis forces in each case
-  - [ ] get Earth position and orientation in each case
-  - [ ] get Sun position in each case
-  - [ ] accelerated coordinate system with sun gravitation?
 * TODO [#A] UI overlays for third person view                        :interface:
   - [ ] following camera, different camera views, camera controls such as distance, joystick hat
   - [ ] Radar altitude
@@ -143,6 +142,7 @@
   - [ ] moon base, lights
   - [ ] rotating Moon coordinate system, handle ground collisions
   - [ ] how to switch speed display (Moon orbit, Moon surface)
+  - [ ] accelerated coordinate system with sun gravitation?
 * TODO [#C] add space station                                          :scenery:
 ** TODO space station model, station lights
 ** TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
