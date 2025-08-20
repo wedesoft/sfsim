@@ -199,8 +199,8 @@
          (jolt/get-angular-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 0 1 astro/earth-rotation-speed) 1e-6)
          (get-position :sfsim.physics/surface astro/T0 state) => (roughly-vector (vec3 6678000 0 0) 1e-6)
          (get-orientation :sfsim.physics/surface astro/T0 state) => (roughly-quaternion (q/rotation (to-radians 45.0) (vec3 0 0 1)) 1e-6)
-         ; (get-linear-speed :sfsim.physics/surface astro/T0 state) => (roughly-vector (vec3 100 0 0) 1e-6)  TODO
-         ; (get-angular-speed :sfsim.physics/surface astro/T0 state) => (roughly-vector (vec3 1 0 0) 1e-6)  TODO
+         (get-linear-speed :sfsim.physics/surface astro/T0 state) => (roughly-vector (vec3 100 0 0) 1e-6)
+         (get-angular-speed :sfsim.physics/surface astro/T0 state) => (roughly-vector (vec3 1 0 0) 1e-6)
 
          (set-domain :sfsim.physics/surface astro/T0 state)
          (@state :sfsim.physics/domain) => :sfsim.physics/surface

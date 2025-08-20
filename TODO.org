@@ -13,7 +13,7 @@
   - [X] trivial method for not switching coordinate system
   - [X] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme,
   - [X] get position and orientation in specified domain
-  - [ ] get linear and angular speed in specified domain
+  - [X] get linear and angular speed in specified domain
   - [ ] get Earth position and orientation in each case
   - [ ] get Sun position in each case
   - [ ] display speed for applying second corrective impulse
