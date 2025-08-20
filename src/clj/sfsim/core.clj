@@ -708,14 +708,15 @@
                                      ^double (:sfsim.planet/radius config/planet-config))
                         loads     (aerodynamics/aerodynamic-loads height
                                                                   (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                                                                  (jolt/get-linear-velocity body)
-                                                                  (jolt/get-angular-velocity body)
+                                                                  (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
+                                                                  (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
                                                                   (mult (vec3 (* 0.25 ^double aileron)
                                                                               (* 0.25 ^double elevator)
                                                                               (* 0.4  ^double rudder))
                                                                         (to-radians 20))
                                                                   @gear
                                                                   @air-brake)]
+
                     (jolt/add-force body (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                                           (vec3 (* ^double throttle ^double thrust) 0 0)))
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
