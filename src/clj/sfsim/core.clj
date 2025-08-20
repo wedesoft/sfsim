@@ -71,18 +71,18 @@
 
 (def earth-mass (config/planet-config :sfsim.planet/mass))
 
-(def longitude 0.0)
-(def latitude 0.0)
-(def height 408000.0)
-(def radius (config/planet-config :sfsim.planet/radius))
-(def g physics/gravitational-constant)
-(def orbit-radius (+ ^double radius ^double height))
-(def speed (sqrt (/ (* ^double earth-mass ^double g) ^double orbit-radius)))
+; (def longitude 0.0)
+; (def latitude 0.0)
+; (def height 408000.0)
+; (def radius (config/planet-config :sfsim.planet/radius))
+; (def g physics/gravitational-constant)
+; (def orbit-radius (+ ^double radius ^double height))
+; (def speed (sqrt (/ (* ^double earth-mass ^double g) ^double orbit-radius)))
 
-; (def speed 0)
-; (def longitude (to-radians -1.3747))
-; (def latitude (to-radians 50.9672))
-; (def height 25.0)
+(def speed 0)
+(def longitude (to-radians -1.3747))
+(def latitude (to-radians 50.9672))
+(def height 25.0)
 
 (def opacity-base 100.0)
 
@@ -335,10 +335,10 @@
 (def current-time (+ (long (astro/now)) (+ (/ -5.0 24.0) (/ 27.0 60.0 24.0))))
 
 (def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body}))
-;(physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
-;(physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector (:orientation pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
-(physics/set-pose :sfsim.physics/orbit physics-state (:position pose) (:orientation pose))
-(physics/set-speed :sfsim.physics/orbit physics-state (mult (q/rotate-vector (:orientation pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
+(physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
+(physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector (:orientation pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
+; (physics/set-pose :sfsim.physics/orbit physics-state (:position pose) (:orientation pose))
+; (physics/set-speed :sfsim.physics/orbit physics-state (mult (q/rotate-vector (:orientation pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
 
 (jolt/optimize-broad-phase)
 
@@ -698,11 +698,11 @@
                   (swap! gear max 0.0)
                   (if (= ^double @gear 1.0)
                     (when (not @vehicle)
-                      (physics/set-domain :sfsim.physics/surface jd-ut physics-state)
+                      ;(physics/set-domain :sfsim.physics/surface jd-ut physics-state)
                       (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
                     (when @vehicle
                       (jolt/remove-and-destroy-constraint @vehicle)
-                      (physics/set-domain :sfsim.physics/orbit jd-ut physics-state)
+                      ;(physics/set-domain :sfsim.physics/orbit jd-ut physics-state)
                       (reset! vehicle nil)))
                   (when @vehicle (jolt/set-brake-input @vehicle brake))
                   (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut physics-state))
@@ -718,7 +718,6 @@
                                                                         (to-radians 20))
                                                                   @gear
                                                                   @air-brake)]
-
                     (jolt/add-force body (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                                           (vec3 (* ^double throttle ^double thrust) 0 0)))
                     (jolt/add-force body (:sfsim.aerodynamics/forces loads))
