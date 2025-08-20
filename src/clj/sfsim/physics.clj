@@ -189,8 +189,27 @@
 
 
 (defmethod get-linear-speed [::surface ::surface]
-  [domain jd-ut state]
+  [_domain _jd-ut state]
   (jolt/get-linear-velocity (::body @state)))
+
+
+(defmethod get-linear-speed [::surface ::orbit]
+  [_domain jd-ut state]
+  (let [position               (jolt/get-translation (::body @state))
+        linear-velocity        (jolt/get-linear-velocity (::body @state))
+        earth-to-icrs          (astro/earth-to-icrs jd-ut)
+        earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
+        earth-local-speed      (cross earth-angular-velocity position)]
+    (mulv earth-to-icrs (add linear-velocity earth-local-speed))))
+
+
+(defmethod get-linear-speed [::orbit ::surface]
+  [_domain jd-ut state]
+  (let [icrs-to-earth          (inverse (astro/earth-to-icrs jd-ut))
+        linear-velocity        (mulv icrs-to-earth (::speed @state))
+        earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
+        earth-local-speed      (cross earth-angular-velocity (get-position ::surface jd-ut state))]
+    (mulv icrs-to-earth (sub linear-velocity earth-local-speed))))
 
 
 (defmethod get-linear-speed [::orbit ::orbit]
@@ -198,8 +217,24 @@
   (::speed @state))
 
 
-(defn get-angular-speed
-  [domain jd-ut state]
+(defmulti get-angular-speed (fn [domain jd-ut state] [(::domain @state) domain]))
+
+
+(defmethod get-angular-speed [::surface ::surface]
+  [_domain _jd-ut state]
+  (jolt/get-angular-velocity (::body @state)))
+
+
+(defmethod get-angular-speed [::surface ::orbit]
+  [_domain jd-ut state]
+  (let [angular-velocity       (jolt/get-angular-velocity (::body @state))
+        earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
+        earth-to-icrs          (astro/earth-to-icrs jd-ut)]
+    (mulv earth-to-icrs (add angular-velocity earth-angular-velocity))))
+
+
+(defmethod get-angular-speed [::orbit ::orbit]
+  [_domain _jd-ut state]
   (jolt/get-angular-velocity (::body @state)))
 
 
@@ -213,16 +248,10 @@
 
 (defmethod set-domain [::surface ::orbit]
   [_target jd-ut state]
-  (let [earth-to-icrs          (astro/earth-to-icrs jd-ut)
-        position               (jolt/get-translation (::body @state))
-        linear-velocity        (jolt/get-linear-velocity (::body @state))
-        angular-velocity       (jolt/get-angular-velocity (::body @state))
-        earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
-        earth-local-speed      (cross earth-angular-velocity position)]
+  (let [linear-speed  (get-linear-speed ::orbit jd-ut state)
+        angular-speed (get-angular-speed ::orbit jd-ut state)]
     (set-pose ::orbit state (get-position ::orbit jd-ut state) (get-orientation ::orbit jd-ut state))
-    (set-speed ::orbit state
-               (mulv earth-to-icrs (add linear-velocity earth-local-speed))
-               (mulv earth-to-icrs (add angular-velocity earth-angular-velocity)))))
+    (set-speed ::orbit state linear-speed angular-speed)))
 
 
 (defmethod set-domain [::orbit ::surface]
