@@ -14,7 +14,7 @@
   - [X] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme,
   - [X] get position and orientation in specified domain
   - [X] get linear and angular speed in specified domain
-  - [ ] specify atmospheric forces in surface domain
+  - [ ] specify atmospheric forces and torques in surface domain
   - [X] get Earth position and orientation in each case
   - [X] get Sun position in each case
   - [ ] display speed before applying second corrective impulse
@@ -22,6 +22,7 @@
   - [ ] handle ground collisions in physics module when near surface
   - [ ] add atmospheric model to physics module
   - [X] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme
+  - [ ] cache Earth to ICRS matrix
   - [ ] atmospheric flight with moving atmosphere in spacecraft coordinate system
   - [ ] condition for switching from surface to orbit coordinate system
   - [ ] condition for switching from orbit to surface coordinate system

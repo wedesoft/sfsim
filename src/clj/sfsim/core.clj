@@ -8,7 +8,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -22,7 +22,7 @@
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
-    [sfsim.util :refer (dissoc-in cube)]
+    [sfsim.util :refer (dissoc-in)]
     [sfsim.jolt :as jolt]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
     [sfsim.model :as model]

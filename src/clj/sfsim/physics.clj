@@ -313,5 +313,30 @@
     (jolt/set-linear-velocity body (vec3 0 0 0))))
 
 
+(defmulti add-force (fn [domain _jd-ut state _force_] [domain (::domain @state)]))
+
+
+(defmethod add-force [::surface ::surface]
+  [_domain _jd-ut state force_]
+  (jolt/add-force (::body @state) force_))
+
+
+(defmethod add-force [::orbit ::surface]
+  [_domain jd-ut state force_]
+  (let [icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))]
+    (jolt/add-force (::body @state) (mulv icrs-to-earth force_))))
+
+
+(defmethod add-force [::surface ::orbit]
+  [_domain jd-ut state force_]
+  (let [earth-to-icrs (astro/earth-to-icrs jd-ut)]
+    (jolt/add-force (::body @state) (mulv earth-to-icrs force_))))
+
+
+(defmethod add-force [::orbit ::orbit]
+  [_domain _jd-ut state force_]
+  (jolt/add-force (::body @state) force_))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
