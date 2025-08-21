@@ -17,15 +17,15 @@
   - [X] specify atmospheric forces and torques in surface domain
   - [X] get Earth position and orientation in each case
   - [X] get Sun position in each case
+  - [ ] condition for switching from surface to orbit coordinate system
+  - [ ] condition for switching from orbit to surface coordinate system
+  - [ ] cache Earth to ICRS matrix
   - [ ] display speed before applying second corrective impulse
   - [X] get speed in wind system in each case for atmospheric flight with stationary or moving atmosphere
   - [ ] handle ground collisions in physics module when near surface
   - [ ] add atmospheric model to physics module
   - [X] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme
-  - [ ] cache Earth to ICRS matrix
-  - [ ] atmospheric flight with moving atmosphere in spacecraft coordinate system
-  - [ ] condition for switching from surface to orbit coordinate system
-  - [ ] condition for switching from orbit to surface coordinate system
+  - [X] atmospheric flight with moving atmosphere in spacecraft coordinate system
   - [ ] how to switch speed display (Earth surface, Earth orbit)
 * TODO [#A] UI overlays for third person view                        :interface:
   - [ ] following camera, different camera views, camera controls such as distance, joystick hat
