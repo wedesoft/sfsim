@@ -8,7 +8,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -650,15 +650,17 @@
             (reset! suspension (:suspension frame)))
             (do
               (if (@state :sfsim.input/pause)
-                (let [position      (physics/get-position :sfsim.physics/surface jd-ut physics-state)
-                      orientation   (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                      linear-speed  (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
-                      angular-speed (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
-                      orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
-                      orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
-                      orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double aileron ) (vec3 1 0 0)))
-                      position      (add position (mult (q/rotate-vector orientation (vec3 1 0 0)) (* ^long dt 0.001 1000 ^double throttle)))]
-                  (physics/set-pose :sfsim.physics/surface physics-state position orientation))
+                (when (@state :sfsim.input/air-brake)
+                  (let [position      (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+                        speed         (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state))
+                        orientation   (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+                        orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
+                        orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
+                        orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double aileron ) (vec3 1 0 0)))
+                        position      (add position (mult (q/rotate-vector orientation (vec3 1 0 0)) (* ^long dt 0.001 1000 ^double throttle)))]
+                    (physics/set-pose :sfsim.physics/surface physics-state position orientation)
+                    (physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector orientation (vec3 1 0 0)) speed)
+                                       (vec3 0 0 0))))
                 (do
                   (if (@state :sfsim.input/air-brake)
                     (swap! air-brake + (* ^long dt 0.002))
