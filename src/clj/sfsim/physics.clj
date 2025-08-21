@@ -338,5 +338,30 @@
   (jolt/add-force (::body @state) force_))
 
 
+(defmulti add-torque (fn [domain _jd-ut state _torque_] [domain (::domain @state)]))
+
+
+(defmethod add-torque [::surface ::surface]
+  [_domain _jd-ut state torque_]
+  (jolt/add-torque (::body @state) torque_))
+
+
+(defmethod add-torque [::orbit ::surface]
+  [_domain jd-ut state torque_]
+  (let [icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))]
+    (jolt/add-torque (::body @state) (mulv icrs-to-earth torque_))))
+
+
+(defmethod add-torque [::surface ::orbit]
+  [_domain jd-ut state torque_]
+  (let [earth-to-icrs (astro/earth-to-icrs jd-ut)]
+    (jolt/add-torque (::body @state) (mulv earth-to-icrs torque_))))
+
+
+(defmethod add-torque [::orbit ::orbit]
+  [_domain _jd-ut state torque_]
+  (jolt/add-torque (::body @state) torque_))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -698,11 +698,9 @@
                   (swap! gear max 0.0)
                   (if (= ^double @gear 1.0)
                     (when (not @vehicle)
-                      ;(physics/set-domain :sfsim.physics/surface jd-ut physics-state)
                       (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
                     (when @vehicle
                       (jolt/remove-and-destroy-constraint @vehicle)
-                      ;(physics/set-domain :sfsim.physics/orbit jd-ut physics-state)
                       (reset! vehicle nil)))
                   (when @vehicle (jolt/set-brake-input @vehicle brake))
                   (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut physics-state))
@@ -718,10 +716,11 @@
                                                                         (to-radians 20))
                                                                   @gear
                                                                   @air-brake)]
-                    (jolt/add-force body (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                                                          (vec3 (* ^double throttle ^double thrust) 0 0)))
-                    (jolt/add-force body (:sfsim.aerodynamics/forces loads))
-                    (jolt/add-torque body (:sfsim.aerodynamics/moments loads))
+                    (physics/add-force :sfsim.physics/surface jd-ut physics-state
+                                       (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+                                                        (vec3 (* ^double throttle ^double thrust) 0 0)))
+                    (physics/add-force :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/forces loads))
+                    (physics/add-torque :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/moments loads))
                     (physics/update-state physics-state (* ^long dt 0.001) (physics/gravitation (vec3 0 0 0) earth-mass)))
                   (reset! wheel-angles (if @vehicle
                                          [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)

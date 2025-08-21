@@ -14,7 +14,7 @@
   - [X] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme,
   - [X] get position and orientation in specified domain
   - [X] get linear and angular speed in specified domain
-  - [ ] specify atmospheric forces and torques in surface domain
+  - [X] specify atmospheric forces and torques in surface domain
   - [X] get Earth position and orientation in each case
   - [X] get Sun position in each case
   - [ ] display speed before applying second corrective impulse

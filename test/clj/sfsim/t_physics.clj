@@ -10,6 +10,7 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
+    [fastmath.matrix :refer (inverse mulv)]
     [fastmath.vector :refer (vec3)]
     [sfsim.conftest :refer (roughly-vector roughly-quaternion)]
     [sfsim.quaternion :as q]
@@ -271,6 +272,34 @@
          (add-force :sfsim.physics/surface astro/T0 state (vec3 (jolt/get-mass sphere) 0 0))
          (update-state state 1.0 (constantly (vec3 0 0 0)))
          (get-linear-speed :sfsim.physics/orbit astro/T0 state) => (roughly-vector (vec3 0 1 0) 1e-3)))
+
+
+(facts "Apply torques in Earth centered rotating coordinate system"
+       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (matrix/rotation-z (to-radians 90.0)))]
+         (set-pose :sfsim.physics/surface state (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
+         (set-speed :sfsim.physics/surface state (vec3 0 0 0) (vec3 0 0 0))
+         (add-torque :sfsim.physics/surface astro/T0 state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (update-state state 1.0 (constantly (vec3 0 0 0)))
+         (get-angular-speed :sfsim.physics/surface astro/T0 state) => (roughly-vector (vec3 1 0 0) 1e-3)
+
+         (set-speed :sfsim.physics/surface state (vec3 0 0 0) (vec3 0 0 0))
+         (add-torque :sfsim.physics/orbit astro/T0 state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (update-state state 1.0 (constantly (vec3 0 0 0)))
+         (get-angular-speed :sfsim.physics/surface astro/T0 state) => (roughly-vector (vec3 0 -1 0) 1e-3)))
+
+
+(facts "Apply torques in Earth centered ICRS aligned coordinate system"
+      (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (matrix/rotation-z (to-radians 90.0)))]
+         (set-pose :sfsim.physics/orbit state (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
+         (set-speed :sfsim.physics/orbit state (vec3 0 0 0) (vec3 0 0 0))
+         (add-torque :sfsim.physics/orbit astro/T0 state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (update-state state 1.0 (constantly (vec3 0 0 0)))
+         (get-angular-speed :sfsim.physics/orbit astro/T0 state) => (roughly-vector (vec3 1 0 0) 1e-3)
+
+         (set-speed :sfsim.physics/orbit state (vec3 0 0 0) (vec3 0 0 0))
+         (add-torque :sfsim.physics/surface astro/T0 state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (update-state state 1.0 (constantly (vec3 0 0 0)))
+         (get-angular-speed :sfsim.physics/orbit astro/T0 state) => (roughly-vector (vec3 0 1 0) 1e-3)))
 
 
 (jolt/remove-and-destroy-body sphere)
