@@ -118,21 +118,10 @@
 ; (def fix-fps 30)
 (def fix-fps false)
 
-(def window-width (atom nil))
-(def window-height (atom nil))
+(def window-width (atom (:sfsim.render/window-width config/render-config)))
+(def window-height (atom (:sfsim.render/window-height config/render-config)))
 
-(defn create-window
-  [playback]
-  (let [monitor (GLFW/glfwGetPrimaryMonitor)
-        mode (GLFW/glfwGetVideoMode monitor)
-        desktop-width (.width ^GLFWVidMode mode)
-        desktop-height (.height ^GLFWVidMode mode)
-        width (if playback desktop-width 854)
-        height (if playback desktop-height 480)
-        window (make-window "sfsim" width height (not playback))]
-    window))
-
-(def window (create-window playback))
+(def window (make-window "sfsim" @window-width @window-height true))
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
@@ -245,8 +234,6 @@
    :minute (gui/edit-data    "0" 3 :sfsim.gui/filter-decimal)
    :second (gui/edit-data    "0" 3 :sfsim.gui/filter-decimal)})
 
-
-(def keystates (atom {}))
 
 (def mappings (atom default-mappings))
 
@@ -609,14 +596,6 @@
 (def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
 
-(defmacro render-frame
-  [_window & body]
-  `(let [tex# (texture-render-color 1920 1080 true ~@body)
-         img# (texture->image tex#)]
-     (spit-png (format "%06d.png" @frame-index) img#)
-     (swap! frame-index inc)
-     (destroy-texture tex#)))
-
 
 (def gear (atom 1.0))
 (def air-brake (atom 0.0))
@@ -643,14 +622,6 @@
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
-      ; (when (@keystates GLFW/GLFW_KEY_X)
-      ;   (jolt/set-orientation body (:orientation @pose))
-      ;   (jolt/set-translation body (:position @pose))
-      ;   (let [height    (- (mag (:position @pose)) ^double (:sfsim.planet/radius config/planet-config))
-      ;         max-speed (+ 320 (/ 21 (sqrt (exp (- (/ height 5500))))))
-      ;         s         (min ^double @speed max-speed)]
-      ;     (jolt/set-linear-velocity body (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* s 0.3))))
-      ;    (jolt/set-angular-velocity body (vec3 0 0 0)))
       (let [t1       (System/currentTimeMillis)
             dt       (if fix-fps
                        (do (Thread/sleep (max 0 ^long (- (quot 1000 ^long fix-fps) (- ^long t1 ^long @t0)))) (quot 1000 ^long fix-fps))
@@ -669,7 +640,7 @@
         (if playback
           (let [frame (nth @recording @n)]
             (reset! time-delta (/ (- ^long (:timemillis frame) ^long @t0) 1000.0 86400.0))
-            (physics/set-pose (:domain frame) physics-state (:position frame) (:orientation frame))
+            (physics/set-pose :sfsim.physics/surface physics-state (:position frame) (:orientation frame))
             (reset! camera-orientation (:camera-orientation frame))
             (reset! camera-dx (:camera-dx frame))
             (reset! camera-dy (:camera-dy frame))
@@ -679,12 +650,15 @@
             (reset! suspension (:suspension frame)))
             (do
               (if (@state :sfsim.input/pause)
-                (do
-                  ; (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
-                  ; (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
-                  ; (swap! pose update :orientation q/* (q/rotation (* ^long dt -0.001 ^double aileron ) (vec3 1 0 0)))
-                  ; (swap! pose update :position add (mult (q/rotate-vector (:orientation @pose) (vec3 1 0 0)) (* ^long dt 0.001 ^double v)))
-                  )
+                (let [position      (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+                      orientation   (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+                      linear-speed  (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
+                      angular-speed (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
+                      orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
+                      orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
+                      orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double aileron ) (vec3 1 0 0)))
+                      position      (add position (mult (q/rotate-vector orientation (vec3 1 0 0)) (* ^long dt 0.001 1000 ^double throttle)))]
+                  (physics/set-pose :sfsim.physics/surface physics-state position orientation))
                 (do
                   (if (@state :sfsim.input/air-brake)
                     (swap! air-brake + (* ^long dt 0.002))
