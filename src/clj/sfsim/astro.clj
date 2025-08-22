@@ -530,11 +530,12 @@
   (mulm (compute-precession tdb) ICRS-to-J2000))
 
 
-(defn earth-to-icrs
+(def earth-to-icrs
   "Compute Earth orientation in ICRS coordinate system depending on time t (omitting nutation)"
-  {:malli/schema [:=> [:cat :double] fmat3]}
-  [jd-ut]
-  (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2.0 PI (/ (sidereal-time jd-ut) 24.0)))))
+  (z/lru
+    (fn earth-to-icrs-fn [jd-ut]
+      (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2.0 PI (/ (sidereal-time jd-ut) 24.0)))))
+    :lru/threshold 4))
 
 
 (def pck-parser (insta/parser (slurp "resources/grammars/pck.bnf")))

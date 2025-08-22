@@ -19,7 +19,7 @@
   - [X] get Sun position in each case
   - [ ] condition for switching from surface to orbit coordinate system
   - [ ] condition for switching from orbit to surface coordinate system
-  - [ ] cache Earth to ICRS matrix
+  - [X] cache Earth to ICRS matrix
   - [ ] display speed before applying second corrective impulse
   - [X] get speed in wind system in each case for atmospheric flight with stationary or moving atmosphere
   - [ ] handle ground collisions in physics module when near surface
