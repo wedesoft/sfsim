@@ -680,22 +680,23 @@
                       (jolt/remove-and-destroy-constraint @vehicle)
                       (reset! vehicle nil)))
                   (when @vehicle (jolt/set-brake-input @vehicle brake))
-                  (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut physics-state))
                   (let [height    (- (mag (physics/get-position :sfsim.physics/surface jd-ut physics-state))
                                      ^double (:sfsim.planet/radius config/planet-config))]
                     (physics/set-domain (if (>= height (:sfsim.planet/max-height config/planet-config))
-                                          :sfsim.physics/orbit :sfsim.physics/surface)
+                                          :sfsim.physics/orbit
+                                          :sfsim.physics/surface)
                                         jd-ut physics-state)
-                    (let [loads     (aerodynamics/aerodynamic-loads height
-                                                                    (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                                                                    (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
-                                                                    (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
-                                                                    (mult (vec3 (* 0.25 ^double aileron)
-                                                                                (* 0.25 ^double elevator)
-                                                                                (* 0.4  ^double rudder))
-                                                                          (to-radians 20))
-                                                                    @gear
-                                                                    @air-brake)]
+                    (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut physics-state))
+                    (let [loads (aerodynamics/aerodynamic-loads height
+                                                                (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+                                                                (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
+                                                                (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
+                                                                (mult (vec3 (* 0.25 ^double aileron)
+                                                                            (* 0.25 ^double elevator)
+                                                                            (* 0.4  ^double rudder))
+                                                                      (to-radians 20))
+                                                                @gear
+                                                                @air-brake)]
                       (physics/add-force :sfsim.physics/surface jd-ut physics-state
                                          (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                                           (vec3 (* ^double throttle ^double thrust) 0 0)))
@@ -830,7 +831,7 @@
                              (info gui @window-height
                                    (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s%s%s"
                                            (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
-                                           (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state))
+                                           (mag (:sfsim.physics/display-speed @physics-state))
                                            (/ 1.0 ^double @frametime)
                                            (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
                                            (if (@state :sfsim.input/air-brake) ", air brake" "")

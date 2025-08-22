@@ -291,6 +291,7 @@
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
+    (swap! state assoc ::display-speed (jolt/get-linear-velocity body))
     (jolt/add-impulse body (mult dv2 mass))))
 
 
@@ -306,6 +307,7 @@
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
+    (swap! state assoc ::display-speed (add speed (jolt/get-linear-velocity body)))
     (jolt/add-impulse body (mult dv2 mass))
     (swap! state update ::position #(add % (add (mult speed dt) (jolt/get-translation body))))
     (swap! state update ::speed #(add % (jolt/get-linear-velocity body)))
