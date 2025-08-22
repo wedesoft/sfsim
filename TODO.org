@@ -1,32 +1,5 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
-* TODO [#A] orbital physics                                            :physics:
-  - Note taken on [2025-08-14 Do 12:15] \\
-    - (:position @pose), object-position; (:orientation @pose); object-to-world (also gltf-to-aerodynamic),
-    - origin; camera-orientation,
-    - earth-to-icrs, earth-sun, moon-to-icrs (integration tests)
-  - [X] multi method for setting position and orientation
-  - [X] multi method for setting speed and angular velocity
-  - [X] method for switching from surface to orbit coordinate system
-  - [X] Add Earth linear and angular speed when changing coordinate system
-  - [X] method for switching from orbit to surface coordinate system
-  - [X] trivial method for not switching coordinate system
-  - [X] rotating Earth coordinate system (centrifugal and coriolis force) when close to surface using Jolt matching scheme,
-  - [X] get position and orientation in specified domain
-  - [X] get linear and angular speed in specified domain
-  - [X] specify atmospheric forces and torques in surface domain
-  - [X] get Earth position and orientation in each case
-  - [X] get Sun position in each case
-  - [ ] condition for switching from surface to orbit coordinate system
-  - [ ] condition for switching from orbit to surface coordinate system
-  - [X] cache Earth to ICRS matrix
-  - [ ] display speed before applying second corrective impulse
-  - [X] get speed in wind system in each case for atmospheric flight with stationary or moving atmosphere
-  - [ ] handle ground collisions in physics module when near surface
-  - [ ] add atmospheric model to physics module
-  - [X] ICRS position and speed relative to Earth plus zero-centered Jolt matching scheme
-  - [X] atmospheric flight with moving atmosphere in spacecraft coordinate system
-  - [ ] how to switch speed display (Earth surface, Earth orbit)
 * TODO [#A] UI overlays for third person view                        :interface:
   - [ ] following camera, different camera views, camera controls such as distance, joystick hat
   - [ ] Radar altitude
@@ -97,6 +70,7 @@
    - [ ] earth
 ** TODO aerobrake/base roll-reversal, speed-height-distance profile
 ** TODO heading alignment cylinder
+** TODO how to switch speed display (Earth surface, Earth orbit), display speed before applying second corrective impulse
 ** TODO top:
    - [ ] warnings (status display)
    - [ ] autopilot on/off, autothrottle (autopilot speed), angle of attack and bank hold (including reverse), roll reversal button
