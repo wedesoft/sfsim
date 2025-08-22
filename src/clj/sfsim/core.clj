@@ -682,7 +682,7 @@
                   (when @vehicle (jolt/set-brake-input @vehicle brake))
                   (let [height    (- (mag (physics/get-position :sfsim.physics/surface jd-ut physics-state))
                                      ^double (:sfsim.planet/radius config/planet-config))]
-                    (physics/set-domain (if (>= height (:sfsim.planet/max-height config/planet-config))
+                    (physics/set-domain (if (>= height ^double (:sfsim.planet/space-boundary config/planet-config))
                                           :sfsim.physics/orbit
                                           :sfsim.physics/surface)
                                         jd-ut physics-state)

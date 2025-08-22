@@ -14,6 +14,7 @@
  :sfsim.planet-config #:sfsim.planet{:radius 6378000.0
                                      :mass 5.9722e+24
                                      :max-height 8000.0
+                                     :space-boundary 80467.2
                                      :albedo 0.9
                                      :dawn-start -0.2
                                      :dawn-end 0.0
