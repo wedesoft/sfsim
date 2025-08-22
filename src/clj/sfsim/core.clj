@@ -439,8 +439,9 @@
 
 
 (defn location-dialog-set
-  [position-data]
-  (let [position  (physics/get-position :sfsim.physics/surface astro/T0 physics-state)  ; TODO: use correct time or old position
+  [position-data ^double time-delta ^long t0]
+  (let [t         (+ time-delta (/ ^long t0 1000.0 86400.0) ^double astro/T0)
+        position  (physics/get-position :sfsim.physics/surface t physics-state)
         longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
         latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
         height    (- (mag position) 6378000.0)]
@@ -545,7 +546,7 @@
                       (when (gui/button-label gui "Joystick")
                         (reset! menu joystick-dialog))
                       (when (gui/button-label gui "Location")
-                        (location-dialog-set position-data)
+                        (location-dialog-set position-data @time-delta @t0)
                         (reset! menu location-dialog))
                       (when (gui/button-label gui "Date/Time")
                         (datetime-dialog-set time-data @time-delta @t0)
@@ -681,23 +682,26 @@
                   (when @vehicle (jolt/set-brake-input @vehicle brake))
                   (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut physics-state))
                   (let [height    (- (mag (physics/get-position :sfsim.physics/surface jd-ut physics-state))
-                                     ^double (:sfsim.planet/radius config/planet-config))
-                        loads     (aerodynamics/aerodynamic-loads height
-                                                                  (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                                                                  (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
-                                                                  (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
-                                                                  (mult (vec3 (* 0.25 ^double aileron)
-                                                                              (* 0.25 ^double elevator)
-                                                                              (* 0.4  ^double rudder))
-                                                                        (to-radians 20))
-                                                                  @gear
-                                                                  @air-brake)]
-                    (physics/add-force :sfsim.physics/surface jd-ut physics-state
-                                       (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                                                        (vec3 (* ^double throttle ^double thrust) 0 0)))
-                    (physics/add-force :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/forces loads))
-                    (physics/add-torque :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/moments loads))
-                    (physics/update-state physics-state (* ^long dt 0.001) (physics/gravitation (vec3 0 0 0) earth-mass)))
+                                     ^double (:sfsim.planet/radius config/planet-config))]
+                    (physics/set-domain (if (>= height (:sfsim.planet/max-height config/planet-config))
+                                          :sfsim.physics/orbit :sfsim.physics/surface)
+                                        jd-ut physics-state)
+                    (let [loads     (aerodynamics/aerodynamic-loads height
+                                                                    (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+                                                                    (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
+                                                                    (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
+                                                                    (mult (vec3 (* 0.25 ^double aileron)
+                                                                                (* 0.25 ^double elevator)
+                                                                                (* 0.4  ^double rudder))
+                                                                          (to-radians 20))
+                                                                    @gear
+                                                                    @air-brake)]
+                      (physics/add-force :sfsim.physics/surface jd-ut physics-state
+                                         (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+                                                          (vec3 (* ^double throttle ^double thrust) 0 0)))
+                      (physics/add-force :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/forces loads))
+                      (physics/add-torque :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/moments loads))
+                      (physics/update-state physics-state (* ^long dt 0.001) (physics/gravitation (vec3 0 0 0) earth-mass))))
                   (reset! wheel-angles (if @vehicle
                                          [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
                                           (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)

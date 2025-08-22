@@ -6,6 +6,9 @@
                                      :window-width 854
                                      :window-height 480
                                      :fov 1.0471975511965976  ; 60 degrees
+                                     ; :window-width 720
+                                     ; :window-height 1280
+                                     ; :fov 0.5
                                      :min-z-near 1.0}
 
  :sfsim.planet-config #:sfsim.planet{:radius 6378000.0
