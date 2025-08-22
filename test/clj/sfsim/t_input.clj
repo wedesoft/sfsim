@@ -58,7 +58,12 @@
          (menu-key GLFW/GLFW_KEY_TAB state gui GLFW/GLFW_PRESS 0)
          (@state :sfsim.input/focus-new) => 1
          (menu-key GLFW/GLFW_KEY_TAB state gui GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT)
-         (@state :sfsim.input/focus-new) => -1))
+         (@state :sfsim.input/focus-new) => -1
+         (@state :sfsim.input/menu) => false
+         (menu-key GLFW/GLFW_KEY_ESCAPE state gui GLFW/GLFW_PRESS 0) => false
+         (@state :sfsim.input/menu) => true
+         (menu-key GLFW/GLFW_KEY_ESCAPE state gui GLFW/GLFW_PRESS 0) => false
+         (@state :sfsim.input/menu) => false))
 
 
 (defn menu-key-mock
@@ -307,7 +312,14 @@
          (swap! state assoc :sfsim.input/throttle 1.0)
          (-> GLFW/GLFW_KEY_R mappings (simulator-key state GLFW/GLFW_PRESS 0))
          (-> GLFW/GLFW_KEY_R mappings (simulator-key state GLFW/GLFW_RELEASE 0))
-         (:sfsim.input/throttle @state) => 1.0))
+         (:sfsim.input/throttle @state) => 1.0
+         (:sfsim.input/air-brake @state) => false
+         (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/air-brake @state) => true
+         (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/air-brake @state) => false))
 
 
 (facts "Process mouse events"
@@ -438,7 +450,7 @@
                                                                {"Gamepad" {:sfsim.input/buttons {1 :sfsim.input/gear
                                                                                                  2 :sfsim.input/brake
                                                                                                  3 :sfsim.input/parking-brake
-                                                                                                 }}}}}
+                                                                                                 4 :sfsim.input/air-brake}}}}}
              state                    (make-initial-state)
              gui                      {:sfsim.gui/context :ctx}
              handler                  (->InputHandler state gui (atom mappings))]
@@ -468,7 +480,16 @@
          (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0]) handler)
          (:sfsim.input/parking-brake @state) => true
          (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1 0]) handler)
-         (:sfsim.input/parking-brake @state) => false))
+         (:sfsim.input/parking-brake @state) => false
+         (:sfsim.input/air-brake @state)=> false
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 1]) handler)
+         (:sfsim.input/air-brake @state) => true
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 0]) handler)
+         (:sfsim.input/air-brake @state) => true
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 1]) handler)
+         (:sfsim.input/air-brake @state) => false
+         (process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 0]) handler)
+         (:sfsim.input/air-brake @state) => false))
 
 
 (facts "Recording last active joystick axis or button"

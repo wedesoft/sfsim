@@ -7,11 +7,11 @@
 (ns sfsim.matrix
   "Matrix and vector operations"
   (:require
-    [clojure.math :refer (cos sin tan pow)]
+    [clojure.math :refer (cos sin tan pow atan2)]
     [fastmath.matrix :as fm]
     [fastmath.vector :as fv]
     [malli.core :as m]
-    [sfsim.quaternion :refer (quaternion rotate-vector)]
+    [sfsim.quaternion :refer (quaternion rotate-vector rotation)]
     [sfsim.util :refer (N N0)])
   (:import
     [fastmath.vector
@@ -78,6 +78,22 @@
     (fm/mat3x3 (a 0) (b 0) (c 0)
                (a 1) (b 1) (c 1)
                (a 2) (b 2) (c 2))))
+
+
+(defn matrix->quaternion
+  "Convert rotation matrix to quaternion"
+  {:malli/schema [:=> [:cat fmat3] quaternion]}
+  [m]
+  (let [[l1 l2 l3]   (fm/eigenvalues m)
+        eigenvectors (fm/eigenvectors m)
+        det          (fm/det eigenvectors)
+        [v1 v2 v3]   (fm/cols eigenvectors)
+        [i1 i2 i3]   (map (comp abs #(% 1)) [l1 l2 l3])
+        angle        (fn [l] (atan2 (l 1) (l 0)))]
+    (condp = (min ^double i1 ^double i2 ^double i3)
+           i1 (rotation (angle (if (pos? det) l3 l2)) v1)
+           i2 (rotation (angle (if (pos? det) l1 l3)) v2)
+           i3 (rotation (angle (if (pos? det) l2 l1)) v3))))
 
 
 (defn project

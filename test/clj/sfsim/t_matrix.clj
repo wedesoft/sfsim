@@ -6,13 +6,13 @@
 
 (ns sfsim.t-matrix
   (:require
-    [clojure.math :refer (sqrt PI)]
+    [clojure.math :refer (sqrt PI to-radians)]
     [fastmath.matrix :as fm]
     [fastmath.vector :as fv]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.conftest :refer (roughly-matrix roughly-vector)]
+    [sfsim.conftest :refer (roughly-matrix roughly-vector roughly-quaternion)]
     [sfsim.matrix :refer :all]
     [sfsim.quaternion :refer (->Quaternion rotation)]))
 
@@ -36,6 +36,15 @@
        (quaternion->matrix (rotation (/ PI 6) (fv/vec3 1 0 0))) => (roughly-matrix (rotation-x (/ PI 6)) 1e-6)
        (quaternion->matrix (rotation (/ PI 6) (fv/vec3 0 1 0))) => (roughly-matrix (rotation-y (/ PI 6)) 1e-6)
        (quaternion->matrix (rotation (/ PI 6) (fv/vec3 0 0 1))) => (roughly-matrix (rotation-z (/ PI 6)) 1e-6))
+
+
+(tabular "Convert rotation matrix to quaternion"
+         (fact (matrix->quaternion (quaternion->matrix ?q)) => (roughly-quaternion ?q 1e-6))
+         ?q
+         (->Quaternion 1 0 0 0)
+         (rotation (/ PI 6) (fv/vec3 1 0 0))
+         (rotation (/ PI 6) (fv/vec3 0 1 0))
+         (rotation (/ PI 6) (fv/vec3 0 0 1)))
 
 
 (fact "Project homogeneous coordinate to cartesian"

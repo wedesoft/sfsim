@@ -345,12 +345,14 @@
   [filename]
   (let [buffer (map-file-to-buffer filename)
         header (read-daf-header buffer)
+        cmt    (read-daf-comment header buffer)
         lookup (spk-segment-lookup-table header buffer)]
     (when (not (check-ftp-str header))
       (throw (RuntimeException. "FTPSTR has wrong value")))
     (when (not (check-endianness header))
       (throw (RuntimeException. "File endianness not implemented!")))
     {::header header
+     ::comment cmt
      ::lookup lookup
      ::buffer buffer}))
 
@@ -443,8 +445,6 @@
     {::hour hour ::minute minute ::second sec}))
 
 
-;; See python-skyfield precessionlib.compute_precession
-
 (defn psi-a
   "Compute Psi angle for Earth precession given centuries since 2000"
   ^double [^double t]
@@ -467,7 +467,7 @@
 
 
 (defn compute-precession
-  "Compute precession matrix for Earth given Julian day"
+  "Compute precession matrix for Earth given Julian day (see python-skyfield precessionlib.compute_precession)"
   ^Mat3x3 [^double tdb]
   (let [t          (/ (- tdb ^double T0) 36525.0)
         r3-chi-a   (rotation-z (* (- (chi-a t)) ^double ASEC2RAD))
@@ -477,14 +477,15 @@
     (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0)))))
 
 
-;; Compute Greenwich mean sidereal time.
-;; See python-skyfield earthlib.earth_rotation_angle
-
 (defn earth-rotation-angle
-  "Compute Earth rotation angle as a value between 0 and 1"
+  "Compute Earth rotation angle as a value between 0 and 1 (see python-skyfield earthlib.earth_rotation_angle)"
   ^double [^double jd-ut]
   (let [th (+ 0.7790572732640 (* 0.00273781191135448 (- jd-ut ^double T0)))]
     (mod (+ ^double (mod th 1.0) ^double (mod jd-ut 1.0)) 1.0)))
+
+
+(def earth-rotation-speed  ; Earth rotation speed in radians per second
+  (/ (* 2.0 PI (+ 1.0 0.00273781191135448)) 86400))
 
 
 (defn sidereal-time
@@ -500,11 +501,8 @@
     (mod (+ (/ st 54000.0) (* theta 24.0)) 24.0)))
 
 
-;; Conversion matrix from ICRS to J2000.
-;; See python-skyfield framelib.ICRS_to_J2000
-
 (defn- build_matrix
-  "Construct conversion matrix from ICRS to J2000"
+  "Construct conversion matrix from ICRS to J2000 (see python-skyfield.framelib.ICRS_to_J2000)"
   {:malli/schema [:=> :cat fmat3]}
   []
   (let [xi0  (* -0.0166170 ^double ASEC2RAD)
@@ -532,11 +530,12 @@
   (mulm (compute-precession tdb) ICRS-to-J2000))
 
 
-(defn earth-to-icrs
+(def earth-to-icrs
   "Compute Earth orientation in ICRS coordinate system depending on time t (omitting nutation)"
-  {:malli/schema [:=> [:cat :double] fmat3]}
-  [jd-ut]
-  (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2.0 PI (/ (sidereal-time jd-ut) 24.0)))))
+  (z/lru
+    (fn earth-to-icrs-fn [jd-ut]
+      (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2.0 PI (/ (sidereal-time jd-ut) 24.0)))))
+    :lru/threshold 4))
 
 
 (def pck-parser (insta/parser (slurp "resources/grammars/pck.bnf")))

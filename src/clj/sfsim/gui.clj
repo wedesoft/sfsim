@@ -304,7 +304,7 @@
           image (white-image-with-alpha alpha)]
       {::font font
        ::fontinfo fontinfo
-       ::ttf ttf
+       ::ttf ttf  ; keep alive after passing buffer to stbtt_InitFont
        ::font-height font-height
        ::scale scale
        ::descent (* (aget orig-descent 0) scale)

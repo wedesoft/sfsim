@@ -255,6 +255,7 @@
          ::elevator               0.0
          ::rudder                 0.0
          ::throttle               0.0
+         ::air-brake              false
          ::camera-rotate-x        0.0
          ::camera-rotate-y        0.0
          ::camera-rotate-z        0.0
@@ -273,6 +274,7 @@
     GLFW/GLFW_KEY_B      ::brake
     GLFW/GLFW_KEY_F      ::throttle-decrease
     GLFW/GLFW_KEY_R      ::throttle-increase
+    GLFW/GLFW_KEY_SLASH  ::air-brake
     GLFW/GLFW_KEY_A      ::aileron-left
     GLFW/GLFW_KEY_KP_5   ::aileron-center
     GLFW/GLFW_KEY_D      ::aileron-right
@@ -303,22 +305,21 @@
   [k state gui action mods]
   (let [press (keypress? action)
         shift (shift? mods)]
-    (cond
-      (= k GLFW/GLFW_KEY_DELETE)      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
-      (= k GLFW/GLFW_KEY_ENTER)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
-      (= k GLFW/GLFW_KEY_BACKSPACE)   (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_BACKSPACE press)
-      (= k GLFW/GLFW_KEY_UP)          (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_UP press)
-      (= k GLFW/GLFW_KEY_DOWN)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DOWN press)
-      (= k GLFW/GLFW_KEY_LEFT)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_LEFT press)
-      (= k GLFW/GLFW_KEY_RIGHT)       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_RIGHT press)
-      (= k GLFW/GLFW_KEY_HOME)        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_START press)
-      (= k GLFW/GLFW_KEY_END)         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_END press)
-      (= k GLFW/GLFW_KEY_LEFT_SHIFT)  (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
-      (= k GLFW/GLFW_KEY_RIGHT_SHIFT) (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
-      (= k GLFW/GLFW_KEY_TAB)         (when press (swap! state (fn [s] (assoc s ::focus-new ((if shift dec inc) (::focus s)))))))
-    (when (and press (= k GLFW/GLFW_KEY_ESCAPE))
-      (swap! state update ::menu not)
-      false)))
+    (condp = k
+      GLFW/GLFW_KEY_DELETE      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
+      GLFW/GLFW_KEY_ENTER       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
+      GLFW/GLFW_KEY_BACKSPACE   (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_BACKSPACE press)
+      GLFW/GLFW_KEY_UP          (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_UP press)
+      GLFW/GLFW_KEY_DOWN        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DOWN press)
+      GLFW/GLFW_KEY_LEFT        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_LEFT press)
+      GLFW/GLFW_KEY_RIGHT       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_RIGHT press)
+      GLFW/GLFW_KEY_HOME        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_START press)
+      GLFW/GLFW_KEY_END         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_END press)
+      GLFW/GLFW_KEY_LEFT_SHIFT  (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
+      GLFW/GLFW_KEY_RIGHT_SHIFT (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
+      GLFW/GLFW_KEY_TAB         (when press (swap! state (fn [s] (assoc s ::focus-new ((if shift dec inc) (::focus s))))))
+      GLFW/GLFW_KEY_ESCAPE      (when press (swap! state update ::menu not) false)
+      true)))
 
 
 ; Simulation key handling when menu is hidden
@@ -382,6 +383,12 @@
   [_id state action _mods]
   (when (keypress? action)
     (increment-clamp state ::throttle 0.0625 0.0 1.0)))
+
+
+(defmethod simulator-key ::air-brake
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::air-brake not)))
 
 
 (defmethod simulator-key ::aileron-left
@@ -490,10 +497,10 @@
 
 (defn menu-mouse-button
   [_state gui button x y action _mods]
-  (let [nkbutton (cond
-                   (= button GLFW/GLFW_MOUSE_BUTTON_RIGHT) Nuklear/NK_BUTTON_RIGHT
-                   (= button GLFW/GLFW_MOUSE_BUTTON_MIDDLE) Nuklear/NK_BUTTON_MIDDLE
-                   :else Nuklear/NK_BUTTON_LEFT)]
+  (let [nkbutton (condp = button
+                   GLFW/GLFW_MOUSE_BUTTON_RIGHT Nuklear/NK_BUTTON_RIGHT
+                   GLFW/GLFW_MOUSE_BUTTON_MIDDLE Nuklear/NK_BUTTON_MIDDLE
+                   Nuklear/NK_BUTTON_LEFT)]
     (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))))
 
 
@@ -581,6 +588,12 @@
   [_id state action]
   (when (= action GLFW/GLFW_PRESS)
     (swap! state assoc ::parking-brake true)))
+
+
+(defmethod simulator-joystick-button ::air-brake
+  [_id state action]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::air-brake not)))
 
 
 (defn menu-joystick-axis

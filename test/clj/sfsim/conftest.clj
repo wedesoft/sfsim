@@ -13,6 +13,7 @@
     [sfsim.render :refer (make-program make-vertex-array-object render-quads texture-render-color use-program
                                        with-invisible-window destroy-program destroy-vertex-array-object)]
     [sfsim.shaders :as shaders]
+    [sfsim.quaternion :as q]
     [sfsim.texture :refer (rgb-texture->vectors3 destroy-texture)]))
 
 
@@ -30,6 +31,14 @@
   (fn [actual]
     (and (== (count expected) (count actual))
          (<= (sqrt (apply + (mapv (comp #(* % %) -) actual expected))) error))))
+
+
+(defn roughly-quaternion
+  "Compare quaternion with expected value"
+  [expected error]
+  (fn [actual]
+      (println expected actual)
+      (<= (q/norm (q/- actual expected)) error)))
 
 
 (defn roughly-quaternion

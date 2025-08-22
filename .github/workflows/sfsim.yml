@@ -10,7 +10,7 @@ jobs:
   ubuntu-build-and-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Cache Jolt bindings
       id: cache-libjolt
       uses: actions/cache@v4
@@ -50,14 +50,14 @@ jobs:
         sudo make install
         cd ../../..
     - name: Install Java
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: 'oracle'
         java-version: '24'
     - name: Install Clojure
       uses: DeLaGuardo/setup-clojure@13.4
       with:
-        cli: 1.12.1.1550
+        cli: 1.12.1.1561
     - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
       name: Build Jolt bindings
       run: make
