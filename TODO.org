@@ -174,6 +174,7 @@
 ** TODO create windows using blending (reflections?)
 ** TODO introduce variation to cloud height
 * TODO [#C] code quality improvements                                 :software:
+** TODO limit dt or pause
 ** TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
 ** TODO add object radius to object?
 ** TODO fix planet tessellation tests
