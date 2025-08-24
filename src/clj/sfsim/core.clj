@@ -8,7 +8,7 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt pow)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -590,10 +590,11 @@
 
 
 
+(def camera-relative-position (atom (vec3 0 0 0)))
 
 
 (defn get-camera-pose
-  [physics-state jd-ut dist]
+  [physics-state jd-ut dt dist]
   (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
         orientation        (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
         speed              (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
@@ -604,8 +605,11 @@
         rx                 (rotation-x (to-radians -10.0))
         camera-matrix      (mulm (cols->mat right up (sub forward)) rx)
         camera-orientation (matrix->quaternion camera-matrix)
-        camera-position    (add position (mulv camera-matrix (vec3 0 0 dist)))]
-    [camera-position camera-orientation]))
+        relative-target    (mulv camera-matrix (vec3 0 0 dist))
+        weight-previous    (pow 0.25 (* dt 0.001))
+        relative-position  (swap! camera-relative-position
+                                  #(add (mult % weight-previous) (mult relative-target (- 1.0 weight-previous))))]
+    [(add position relative-position) camera-orientation]))
 
 
 (defn info
@@ -764,7 +768,7 @@
               ; (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-z)) (vec3 0 0 1)))
               (swap! dist * (exp (* ^long dt 0.001 ^double (@state :sfsim.input/camera-distance-change))))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut physics-state)
-              [origin camera-orientation] (get-camera-pose physics-state jd-ut @dist)
+              [origin camera-orientation] (get-camera-pose physics-state jd-ut dt @dist)
               ; origin             (add object-position (q/rotate-vector camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
