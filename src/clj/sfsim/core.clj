@@ -25,7 +25,7 @@
     [sfsim.util :refer (dissoc-in)]
     [sfsim.jolt :as jolt]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix matrix->quaternion get-translation get-translation
-                          rotation-x)]
+                          rotation-x rotation-y)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
@@ -307,7 +307,6 @@
 
 ;(def camera-orientation (atom (q/* (orientation-from-lon-lat longitude latitude)
 ;                                   (q/rotation (to-radians -90) (vec3 1 0 0)))))
-(def dist (atom 60.0))
 
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
@@ -591,10 +590,15 @@
 
 
 (def camera-relative-position (atom (vec3 0 0 0)))
+(def dist (atom 60.0))
+(def camera-yaw (atom 0.0))
+(def camera-pitch (atom 10.0))
+(def camera-target-yaw (atom 0.0))
+(def camera-target-pitch (atom 10.0))
 
 
 (defn get-camera-pose
-  [physics-state jd-ut dt dist]
+  [physics-state jd-ut dt dist state]
   (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
         orientation        (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
         speed              (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
@@ -602,11 +606,21 @@
         direction          (normalize (add speed (q/rotate-vector orientation (vec3 10 0 0))))
         forward            (normalize (sub direction (mult up (dot direction up))))
         right              (normalize (cross forward up))
-        rx                 (rotation-x (to-radians -10.0))
-        camera-matrix      (mulm (cols->mat right up (sub forward)) rx)
+        weight-previous    (pow 0.25 (* ^double dt 0.001))
+        camera-delta-yaw   (* ^long dt 0.1 ^double (state :sfsim.input/camera-rotate-y))
+        camera-delta-pitch (* ^long dt 0.1 ^double (state :sfsim.input/camera-rotate-x))
+        target-yaw         (swap! camera-target-yaw + camera-delta-yaw)
+        target-pitch       (swap! camera-target-pitch + camera-delta-pitch)
+        current-yaw        (swap! camera-yaw #(+ (* % weight-previous) (* target-yaw (- 1.0 weight-previous))))
+        current-pitch      (swap! camera-pitch #(+ (* % weight-previous) (* target-pitch (- 1.0 weight-previous))))
+        rx                 (rotation-x (to-radians (- target-pitch)))
+        ry                 (rotation-y (to-radians target-yaw))
+        target-matrix      (mulm (cols->mat right up (sub forward)) (mulm ry rx))
+        rx                 (rotation-x (to-radians (- current-pitch)))
+        ry                 (rotation-y (to-radians current-yaw))
+        camera-matrix      (mulm (cols->mat right up (sub forward)) (mulm ry rx))
         camera-orientation (matrix->quaternion camera-matrix)
-        relative-target    (mulv camera-matrix (vec3 0 0 dist))
-        weight-previous    (pow 0.25 (* dt 0.001))
+        relative-target    (mulv target-matrix (vec3 0 0 dist))
         relative-position  (swap! camera-relative-position
                                   #(add (mult % weight-previous) (mult relative-target (- 1.0 weight-previous))))]
     [(add position relative-position) camera-orientation]))
@@ -768,7 +782,7 @@
               ; (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-z)) (vec3 0 0 1)))
               (swap! dist * (exp (* ^long dt 0.001 ^double (@state :sfsim.input/camera-distance-change))))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut physics-state)
-              [origin camera-orientation] (get-camera-pose physics-state jd-ut dt @dist)
+              [origin camera-orientation] (get-camera-pose physics-state jd-ut dt @dist @state)
               ; origin             (add object-position (q/rotate-vector camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
