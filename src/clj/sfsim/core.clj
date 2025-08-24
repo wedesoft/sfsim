@@ -8,12 +8,12 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt pow)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
-    [fastmath.matrix :refer (inverse mulv mulm)]
-    [fastmath.vector :refer (vec3 add mult mag sub normalize)]
+    [fastmath.matrix :refer (inverse mulv mulm cols->mat)]
+    [fastmath.vector :refer (vec3 add mult mag sub normalize dot cross)]
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
@@ -24,7 +24,8 @@
     [sfsim.gui :as gui]
     [sfsim.util :refer (dissoc-in)]
     [sfsim.jolt :as jolt]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix matrix->quaternion get-translation get-translation
+                          rotation-x rotation-y rotation-z)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
@@ -96,23 +97,24 @@
 (jolt/jolt-init)
 (jolt/set-gravity (vec3 0 0 0))
 
-(def recording
-  ; initialize recording using "echo [] > recording.edn"
-  (atom (if (.exists (java.io.File. "recording.edn"))
-          (mapv (fn [{:keys [timemillis position orientation camera-orientation dist gear wheel-angles suspension camera-dx camera-dy]}]
-                    {:timemillis timemillis
-                     :position (apply vec3 position)
-                     :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
-                     :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation)
-                                                         (:jmag camera-orientation) (:kmag camera-orientation))
-                     :dist dist
-                     :gear gear
-                     :wheel-angles wheel-angles
-                     :suspension suspension
-                     :camera-dx camera-dx
-                     :camera-dy camera-dy})
-                (clojure.edn/read-string (slurp "recording.edn")))
-          false)))
+; (def recording
+;   ; initialize recording using "echo [] > recording.edn"
+;   (atom (if (.exists (java.io.File. "recording.edn"))
+;           (mapv (fn [{:keys [timemillis position orientation camera-orientation dist gear wheel-angles suspension camera-dx camera-dy]}]
+;                     {:timemillis timemillis
+;                      :position (apply vec3 position)
+;                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
+;                      :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation)
+;                                                          (:jmag camera-orientation) (:kmag camera-orientation))
+;                      :dist dist
+;                      :gear gear
+;                      :wheel-angles wheel-angles
+;                      :suspension suspension
+;                      :camera-dx camera-dx
+;                      :camera-dy camera-dy})
+;                 (clojure.edn/read-string (slurp "recording.edn")))
+;           false)))
+(def recording (atom false))
 
 (def playback false)
 ; (def fix-fps 30)
@@ -303,9 +305,8 @@
 
 (def pose {:position (position-from-lon-lat longitude latitude height) :orientation (orientation-from-lon-lat longitude latitude)})
 
-(def camera-orientation (atom (q/* (orientation-from-lon-lat longitude latitude)
-                                   (q/rotation (to-radians -90) (vec3 1 0 0)))))
-(def dist (atom 60.0))
+;(def camera-orientation (atom (q/* (orientation-from-lon-lat longitude latitude)
+;                                   (q/rotation (to-radians -90) (vec3 1 0 0)))))
 
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
@@ -463,8 +464,9 @@
                       (when (gui/button-label gui "Set")
                         (let [pose (location-dialog-get position-data)]
                           (physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
-                          (reset! camera-orientation (q/* (:orientation pose)
-                                                          (q/rotation (to-radians -90) (vec3 1 0 0))))))
+                          ; (reset! camera-orientation (q/* (:orientation pose)
+                          ;                                 (q/rotation (to-radians -90) (vec3 1 0 0))))
+                          ))
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))
 
@@ -586,6 +588,52 @@
   (MemoryStack/stackPop))
 
 
+
+(def camera-relative-position (atom (vec3 0 0 0)))
+(def dist (atom 60.0))
+(def camera-roll (atom 0.0))
+(def camera-pitch (atom 10.0))
+(def camera-yaw (atom 0.0))
+(def camera-target-roll (atom 0.0))
+(def camera-target-pitch (atom 10.0))
+(def camera-target-yaw (atom 0.0))
+
+
+(defn get-camera-pose
+  [physics-state jd-ut dt state]
+  (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+        orientation        (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+        speed              (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
+        up                 (normalize position)
+        direction          (normalize (add speed (q/rotate-vector orientation (vec3 10 0 0))))
+        forward            (normalize (sub direction (mult up (dot direction up))))
+        right              (normalize (cross forward up))
+        horizon            (cols->mat right up (sub forward))
+        weight-previous    (pow 0.25 (* ^double dt 0.001))
+        camera-delta-roll  (* ^long dt 0.1 ^double (@state :sfsim.input/camera-rotate-z))
+        camera-delta-yaw   (* ^long dt 0.1 ^double (@state :sfsim.input/camera-rotate-y))
+        camera-delta-pitch (* ^long dt 0.1 ^double (@state :sfsim.input/camera-rotate-x))
+        distance           (swap! dist * (exp (* ^long dt 0.001 ^double (@state :sfsim.input/camera-distance-change))))
+        target-roll        (swap! camera-target-roll + camera-delta-roll)  ; TODO: wrap target and current when leaving [0, 360] range
+        target-pitch       (swap! camera-target-pitch + camera-delta-pitch)
+        target-yaw         (swap! camera-target-yaw + camera-delta-yaw)
+        current-roll       (swap! camera-roll #(+ (* ^double % weight-previous) (* ^double target-roll (- 1.0 weight-previous))))
+        current-pitch      (swap! camera-pitch #(+ (* ^double % weight-previous) (* ^double target-pitch (- 1.0 weight-previous))))
+        current-yaw        (swap! camera-yaw #(+ (* ^double % weight-previous) (* ^double target-yaw (- 1.0 weight-previous))))
+        rz                 (rotation-z (to-radians (- ^double current-roll)))
+        rx                 (rotation-x (to-radians (- ^double target-pitch)))
+        ry                 (rotation-y (to-radians target-yaw))
+        target-matrix      (mulm horizon (mulm ry (mulm rx rz)))
+        rx                 (rotation-x (to-radians (- ^double current-pitch)))
+        ry                 (rotation-y (to-radians current-yaw))
+        camera-matrix      (mulm horizon (mulm ry rx))
+        camera-orientation (matrix->quaternion camera-matrix)
+        relative-target    (mulv target-matrix (vec3 0 0 distance))
+        relative-position  (swap! camera-relative-position
+                                  #(add (mult % weight-previous) (mult relative-target (- 1.0 weight-previous))))]
+    [(add position relative-position) camera-orientation]))
+
+
 (defn info
   [gui ^long h ^String text]
   (gui/nuklear-window gui "Information" 10 (- h 42) 640 32 false
@@ -640,15 +688,16 @@
           (reset! menu nil))
         (if playback
           (let [frame (nth @recording @n)]
-            (reset! time-delta (/ (- ^long (:timemillis frame) ^long @t0) 1000.0 86400.0))
-            (physics/set-pose :sfsim.physics/surface physics-state (:position frame) (:orientation frame))
-            (reset! camera-orientation (:camera-orientation frame))
-            (reset! camera-dx (:camera-dx frame))
-            (reset! camera-dy (:camera-dy frame))
-            (reset! dist (:dist frame))
-            (reset! gear (:gear frame))
-            (reset! wheel-angles (:wheel-angles frame))
-            (reset! suspension (:suspension frame)))
+            ; (reset! time-delta (/ (- ^long (:timemillis frame) ^long @t0) 1000.0 86400.0))
+            ; (physics/set-pose :sfsim.physics/surface physics-state (:position frame) (:orientation frame))
+            ; (reset! camera-orientation (:camera-orientation frame))
+            ; (reset! camera-dx (:camera-dx frame))
+            ; (reset! camera-dy (:camera-dy frame))
+            ; (reset! dist (:dist frame))
+            ; (reset! gear (:gear frame))
+            ; (reset! wheel-angles (:wheel-angles frame))
+            ; (reset! suspension (:suspension frame))
+            )
             (do
               (if (@state :sfsim.input/pause)
                 (when (@state :sfsim.input/air-brake)
@@ -713,42 +762,41 @@
                                         (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
                                         (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
                                        [1.0 1.0 1.0]))
-                  (when @recording
-                    (let [frame {:timemillis (long (+ (* ^double @time-delta 1000.0 86400.0) ^long @t0))
-                                 :position (physics/get-position :sfsim.physics/surface jd-ut physics-state)
-                                 :orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                                 :camera-orientation @camera-orientation
-                                 :camera-dx @camera-dx
-                                 :camera-dy @camera-dy
-                                 :dist @dist
-                                 :gear @gear
-                                 :wheel-angles (if @vehicle
-                                                 [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
-                                                  (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
-                                                  (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
-                                                 [0.0 0.0 0.0])
-                                 :suspension (if @vehicle
-                                               [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                                (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                                (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
-                                               [1.0 1.0 1.0])}]
-                      (swap! recording conj frame)))))
-              (swap! camera-dx + (* ^long dt 0.001 ^double (@state :sfsim.input/camera-shift-x)))
-              (swap! camera-dy + (* ^long dt 0.001 ^double (@state :sfsim.input/camera-shift-y)))
-              (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-x)) (vec3 1 0 0)))
-              (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-y)) (vec3 0 1 0)))
-              (swap! camera-orientation q/* (q/rotation (* ^long dt 0.001 ^double (@state :sfsim.input/camera-rotate-z)) (vec3 0 0 1)))
-              (swap! dist * (exp (* ^long dt 0.001 ^double (@state :sfsim.input/camera-distance-change))))))
+                  ; (when @recording
+                  ;   (let [frame {:timemillis (long (+ (* ^double @time-delta 1000.0 86400.0) ^long @t0))
+                  ;                :position (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+                  ;                :orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+                  ;                :camera-orientation @camera-orientation
+                  ;                :camera-dx @camera-dx
+                  ;                :camera-dy @camera-dy
+                  ;                :dist @dist
+                  ;                :gear @gear
+                  ;                :wheel-angles (if @vehicle
+                  ;                                [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
+                  ;                                 (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
+                  ;                                 (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
+                  ;                                [0.0 0.0 0.0])
+                  ;                :suspension (if @vehicle
+                  ;                              [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                  ;                               (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                  ;                               (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                  ;                              [1.0 1.0 1.0])}]
+                  ;     (swap! recording conj frame)))
+                  ))
+              ; (swap! camera-dx + (* ^long dt 0.001 ^double (@state :sfsim.input/camera-shift-x)))
+              ; (swap! camera-dy + (* ^long dt 0.001 ^double (@state :sfsim.input/camera-shift-y)))
+              ))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut physics-state)
-              origin             (add object-position (q/rotate-vector @camera-orientation (vec3 @camera-dx @camera-dy @dist)))
+              [origin camera-orientation] (get-camera-pose physics-state jd-ut dt state)
+              ; origin             (add object-position (q/rotate-vector camera-orientation (vec3 @camera-dx @camera-dy @dist)))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
-                                                                 @window-width @window-height origin @camera-orientation
+                                                                 @window-width @window-height origin camera-orientation
                                                                  light-direction)
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
-                                                               @camera-orientation light-direction object-position
+                                                               camera-orientation light-direction object-position
                                                                config/object-radius)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data

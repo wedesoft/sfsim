@@ -1,10 +1,14 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] UI overlays for third person view                        :interface:
-  - [ ] following camera, different camera views, camera controls such as distance, joystick hat
+  - [ ] following camera, different camera views, camera controls such as distance
   - [ ] Radar altitude
-  - [ ] display perihel aphel and time to, Check out poliastro and hapsira
 * TODO [#B] spacecraft simulation                                      :physics:
+  - Note taken on [2025-08-24 So 20:58] \\
+    - add thrust: 3,010,000 lbf
+    - weight: payload 25000 kg. vehicle 100t-135t
+    - fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
+    - max thrust: 13.4 MN
   - Note taken on [2025-08-14 Do 12:19] \\
     - [[https://flightsimcoach.com/msfs-2024-keyboard-commands/][MSFS keycoard commands]]
     - [[https://www.shadertoy.com/view/XsXSWS][flame]]
@@ -16,10 +20,6 @@
     - [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
-  - [ ] add thrust: 3,010,000 lbf
-  - [ ] weight: payload 25000 kg. vehicle 100t-135t
-  - [ ] fuel: LOX 723900 kg, LH2 126000 kg -> 849900 kg
-  - [ ] max thrust: 13.4 MN
   - [ ] [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
 
   - [ ] integrate control surface scaling
@@ -28,6 +28,7 @@
   - [ ] thrust graphics, opengl rocket plume
   - [ ] [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
   - [ ] physics and animation of steering (apply difference of two animation time stamps)
+  - [ ] display perihel aphel and time to, Check out poliastro and hapsira
   - [ ] block gear up when on the ground
   - [ ] Elevator trim
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
@@ -173,7 +174,9 @@
 *** TODO no skydome and just stars as pixels?
 ** TODO create windows using blending (reflections?)
 ** TODO introduce variation to cloud height
-* TODO [#C] code quality improvements                                 :software:
+* TODO [#C] smaller improvements
+** TODO joystick hat to control camera
+** TODO limit dt or pause
 ** TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
 ** TODO add object radius to object?
 ** TODO fix planet tessellation tests

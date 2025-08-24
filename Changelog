@@ -1,3 +1,10 @@
+sfsim (0.4-1)
+
+  * high accuracy orbital physics
+	* following camera
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 24 Aug 2025 22:47:00 +0100
+
 sfsim (0.3-1)
 
   * GUI tabbing
