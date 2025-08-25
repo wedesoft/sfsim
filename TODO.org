@@ -22,11 +22,11 @@
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
   - [X] integrate control surface scaling
   - [ ] implement RCS thrusters
+  - [ ] thrust graphics, opengl rocket plume
+  - [ ] animate control surfaces and air brake
   - [ ] yaw stabilisation
   - [ ] kill rotation
-  - [ ] animate control surfaces and air brake
-  - [ ] thrust graphics, opengl rocket plume
-  - [ ] physics and animation of steering (apply difference of two animation time stamps)
+  - [ ] physics and animation of steering front wheel (apply difference of two animation time stamps)
   - [ ] display perihel aphel and time to, Check out poliastro and hapsira
   - [ ] block gear up when on the ground
   - [ ] Radar altitude
