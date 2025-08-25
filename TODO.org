@@ -13,6 +13,7 @@
     - [[https://www.shadertoy.com/view/XsXSWS][flame]]
     - [[https://www.shadertoy.com/view/wdjGRz][mach diamonds]]
     - [[https://www.shadertoy.com/view/WdGBDc][mach diamonds]]
+    - [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
     - [[https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume][blender cone]]
     - volumetric engine exhaust?
     - [[https://www.youtube.com/watch?v=qfI9j92CUso][blender animation]]
@@ -21,9 +22,10 @@
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
   - [X] integrate control surface scaling
   - [ ] implement RCS thrusters
+  - [ ] yaw stabilisation
+  - [ ] kill rotation
   - [ ] animate control surfaces and air brake
   - [ ] thrust graphics, opengl rocket plume
-  - [ ] [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
   - [ ] physics and animation of steering (apply difference of two animation time stamps)
   - [ ] display perihel aphel and time to, Check out poliastro and hapsira
   - [ ] block gear up when on the ground
