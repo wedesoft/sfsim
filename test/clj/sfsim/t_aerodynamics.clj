@@ -347,7 +347,7 @@
 
 (defn coefficient-of-roll-moment-aileron-mock
   ^double [^double speed-mach ^double ailerons]
-  (facts ailerons => 0.01 speed-mach => 0.5)
+  (facts ailerons => (* aileron-scaling 0.01) speed-mach => 0.5)
   -0.004)
 
 
@@ -363,7 +363,7 @@
 
 (defn coefficient-of-pitch-moment-flaps-mock
   ^double [^double speed-mach ^double flaps]
-  (facts flaps => (to-radians -20) speed-mach => 0.5)
+  (facts flaps => (* elevator-scaling (to-radians -20)) speed-mach => 0.5)
   -0.004)
 
 
@@ -382,7 +382,7 @@
 
 (defn coefficients-of-yaw-moment-rudder-ailerons-mock
   [^double speed-mach ^double rudder ^double ailerons]
-  (facts rudder => (to-radians 10) ailerons => (to-radians 20) speed-mach => 0.5)
+  (facts rudder => (* rudder-scaling (to-radians 10)) ailerons => (* aileron-scaling (to-radians 20)) speed-mach => 0.5)
   [0.001 0.002])
 
 

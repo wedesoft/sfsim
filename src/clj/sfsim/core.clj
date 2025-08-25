@@ -741,10 +741,7 @@
                                                                 (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                                                 (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
                                                                 (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
-                                                                (mult (vec3 (* 0.25 ^double aileron)
-                                                                            (* 0.25 ^double elevator)
-                                                                            (* 0.4  ^double rudder))
-                                                                      (to-radians 20))
+                                                                (mult (vec3 aileron elevator rudder) (to-radians 20))
                                                                 @gear
                                                                 @air-brake)]
                       (physics/add-force :sfsim.physics/surface jd-ut physics-state

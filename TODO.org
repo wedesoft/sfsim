@@ -1,9 +1,8 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
-* TODO [#A] UI overlays for third person view                        :interface:
-  - [ ] following camera, different camera views, camera controls such as distance
-  - [ ] Radar altitude
-* TODO [#B] spacecraft simulation                                      :physics:
+* TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2025-08-25 Mo 21:26] \\
+    - [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
   - Note taken on [2025-08-24 So 20:58] \\
     - add thrust: 3,010,000 lbf
     - weight: payload 25000 kg. vehicle 100t-135t
@@ -20,9 +19,7 @@
     - [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
-  - [ ] [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
-
-  - [ ] integrate control surface scaling
+  - [X] integrate control surface scaling
   - [ ] implement RCS thrusters
   - [ ] animate control surfaces and air brake
   - [ ] thrust graphics, opengl rocket plume
@@ -30,6 +27,7 @@
   - [ ] physics and animation of steering (apply difference of two animation time stamps)
   - [ ] display perihel aphel and time to, Check out poliastro and hapsira
   - [ ] block gear up when on the ground
+  - [ ] Radar altitude
   - [ ] Elevator trim
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
   - [ ] moon landing physics (hover thrusters), hover thruster locations

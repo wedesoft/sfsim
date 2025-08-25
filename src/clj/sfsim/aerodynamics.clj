@@ -639,21 +639,30 @@
    (* 0.5 ^double (c-n-xi-a speed-mach) (sin (* 2.0 ailerons)))])
 
 
+(def aileron-scaling 0.25)
+
+
 (defn roll-moment-control
   "Compute roll moment due to control surfaces"
   ^double [{::keys [^double speed ^double alpha ^double beta]} ^Vec3 control ^double speed-of-sound ^double density]
-  (* (coefficient-of-roll-moment-aileron (/ speed speed-of-sound) ^double (control 0))
+  (* (coefficient-of-roll-moment-aileron (/ speed speed-of-sound) (* ^double aileron-scaling ^double (control 0)))
      (cos alpha) (cos beta)
      (dynamic-pressure density speed) ^double reference-area 0.5 ^double wing-span))
+
+
+(def elevator-scaling 0.25)
 
 
 (defn pitch-moment-control
   "Compute pitch moment due to control surfaces"
   ^double [{::keys [^double speed ^double alpha ^double beta]} ^Vec3 control ^double speed-of-sound ^double density]
   (let [flaps (control 1)]
-    (* (coefficient-of-pitch-moment-flaps (/ speed speed-of-sound) ^double flaps)
+    (* (coefficient-of-pitch-moment-flaps (/ speed speed-of-sound) (* ^double elevator-scaling ^double flaps))
        (dynamic-pressure density speed) ^double reference-area ^double chord
        (cos (+ alpha (* 0.5 ^double flaps))) (cos beta))))
+
+
+(def rudder-scaling 0.4)
 
 
 (defn yaw-moment-control
@@ -661,7 +670,9 @@
   ^double [{::keys [^double speed ^double alpha ^double beta]} ^Vec3 control ^double speed-of-sound ^double density]
   (let [rudder                        (control 2)
         ailerons                      (control 0)
-        [coeff-rudder coeff-ailerons] (coefficients-of-yaw-moment-rudder-ailerons (/ speed speed-of-sound) rudder ailerons)]
+        [coeff-rudder coeff-ailerons] (coefficients-of-yaw-moment-rudder-ailerons (/ speed speed-of-sound)
+                                                                                  (* ^double rudder-scaling ^double rudder)
+                                                                                  (* ^double aileron-scaling ^double ailerons))]
     (* (+ (* ^double coeff-rudder (cos (- beta (* 0.5 ^double rudder)))) (* ^double coeff-ailerons (cos beta)))
        (cos alpha)
        (dynamic-pressure density speed) ^double reference-area 0.5 ^double wing-span)))
