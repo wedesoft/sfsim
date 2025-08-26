@@ -24,6 +24,7 @@
     - [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
+    - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [X] integrate control surface scaling
   - [ ] implement RCS thrusters
   - [ ] thrust graphics, opengl rocket plume
