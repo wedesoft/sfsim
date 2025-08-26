@@ -6,7 +6,9 @@
 (GLFW/glfwInit)
 
 (GLFW/glfwDefaultWindowHints)
-(def window (GLFW/glfwCreateWindow 854 480 "Shadertoy" 0 0))
+(def width 1920)
+(def height 1024)
+(def window (GLFW/glfwCreateWindow width height "Shadertoy" 0 0))
 
 (GLFW/glfwMakeContextCurrent window)
 (GLFW/glfwSwapInterval 1)
@@ -94,7 +96,7 @@ void main()
 
 (GL20/glUseProgram program)
 
-(GL20/glUniform2f (GL20/glGetUniformLocation program "iResolution") 854 480)
+(GL20/glUniform2f (GL20/glGetUniformLocation program "iResolution") width height)
 
 (def t (atom 0.0))
 
