@@ -12,6 +12,7 @@ float hash(float p)
   p3 += dot(p3, p3.yzx + 19.19);
   return fract((p3.x + p3.y) * p3.z);
 }
+
 float hash31( vec3 p )
 {
   float h = dot(p,vec3(17, 1527, 113));
