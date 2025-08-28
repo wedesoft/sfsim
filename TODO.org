@@ -1,6 +1,10 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2025-08-26 Di 21:59] \\
+    - [[https://github.com/wedesoft/sfsim/issues/135]]
+    - [[https://en.wikipedia.org/wiki/Shock_diamond][shock diamond position formula]]
+    - [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
   - Note taken on [2025-08-26 Tue 09:21] \\
     - Links by Substantial_Marzipan about linear aerospike:
       - https://aerospaceweb.org/design/aerospike/aerospike.shtml
@@ -24,6 +28,7 @@
     - [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
+    - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [X] integrate control surface scaling
   - [ ] implement RCS thrusters
   - [ ] thrust graphics, opengl rocket plume
