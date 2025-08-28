@@ -1,10 +1,14 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2025-08-28 Do 12:50] \\
+    No, the shock diamonds in a series are not the same size; they decrease in both size and intensity further down the exhaust plume.
+    This happens as the supersonic exhaust jet dissipates energy and gradually adjusts its pressure to match the surrounding atmospheric pressure.
   - Note taken on [2025-08-26 Di 21:59] \\
     - [[https://github.com/wedesoft/sfsim/issues/135]]
     - [[https://en.wikipedia.org/wiki/Shock_diamond][shock diamond position formula]]
     - [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
+    - [[https://www.quora.com/On-some-of-the-starship-launches-it-seems-to-have-shock-diamonds-and-shock-diamonds-mean-over-expansion-Is-this-bad-Why-or-why-not][mach diamonds diagram]]
   - Note taken on [2025-08-26 Tue 09:21] \\
     - Links by Substantial_Marzipan about linear aerospike:
       - https://aerospaceweb.org/design/aerospike/aerospike.shtml
