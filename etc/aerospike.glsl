@@ -41,11 +41,9 @@ float sigmoid(float x)
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
-  vec2 uv;
-  uv.x = fragCoord.x / iResolution.x;
+  vec2 uv = vec2(fragCoord.x / iResolution.x, 2 * fragCoord.y / iResolution.y - 1.0);
   float left = uv.x;
   float t = iTime;
-  uv.y = 2 * fragCoord.y / iResolution.y - 1.0;
   uv += .03*perlin(t*.5+left)*(.5+left);
   uv += .01*perlin(t*7.+left)*(.5+left);
   uv.y += .01*perlin(t*67.+left)*(.5+left);
@@ -53,8 +51,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   uv.x += .02*(.2-abs(uv.y))*perlin(t*3.);
   float phase = 10 * uv.x;
   float min_radius = 0.3;
-  float radius = min_radius + 0.15 * abs(sin(phase));
-  float w = mod(phase - 0.5 * M_PI, M_PI) - 0.5 * M_PI;
+  float radius = min_radius + 0.1 * abs(sin(phase));
+  float diamond_longitudinal = mod(phase - 0.5 * M_PI, M_PI) - 0.5 * M_PI;
   float inner_radius = radius * 0.8;
   float dy = abs(uv.y) / radius;
   float dx = sqrt(max(0, 1 - dy * dy));
@@ -64,13 +62,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   // float diamond = max(0.0, (1 - abs(w) / 0.1)) * max(0.0, (1 - abs(y) / radius));
   float diamond_radius = 0.0;
   float diamond_strength = 0.0;
-  if (w > -0.4) {
-    if (w < 0.0) {
-      diamond_strength = smoothstep(-0.4, -0.2, w);
-      diamond_radius = min_radius + w / 0.4 * min_radius * 0.3;
+  if (diamond_longitudinal > -0.4) {
+    if (diamond_longitudinal < 0.0) {
+      diamond_strength = smoothstep(-0.4, -0.2, diamond_longitudinal);
+      diamond_radius = min_radius + diamond_longitudinal / 0.4 * min_radius * 0.3;
     } else {
       diamond_strength = 1.0;
-      diamond_radius = max(min_radius - w * 0.2, 0.0);
+      diamond_radius = max(min_radius - diamond_longitudinal * 0.2, 0.0);
     };
   };
   float diamond = 0.0;
