@@ -49,34 +49,38 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   uv.y += .01*perlin(t*67.+left)*(.5+left);
   uv.y += .005*perlin(t*101.+left)*(.5+left);
   uv.x += .02*(.2-abs(uv.y))*perlin(t*3.);
-  float phase = 10 * uv.x;
+  float period = 10;
+  float phase = period * uv.x;
   float min_radius = 0.3;
-  float radius = min_radius + 0.1 * abs(sin(phase));
+  float bulge = 0.2;
+  float radius = min_radius + bulge * abs(sin(phase));
   float diamond_longitudinal = mod(phase - 0.5 * M_PI, M_PI) - 0.5 * M_PI;
-  float inner_radius = radius * 0.8;
-  float dy = abs(uv.y) / radius;
-  float dx = sqrt(max(0, 1 - dy * dy));
-  float dy2 = abs(uv.y) / inner_radius;
-  float dx2 = sqrt(max(0, 1 - dy2 * dy2));
-  float luminocity = 1.0 * dx - 0.8 * dx2;
-  // float diamond = max(0.0, (1 - abs(w) / 0.1)) * max(0.0, (1 - abs(y) / radius));
+  float inner_radius = radius * 0.9;
+  float radial_coord = abs(uv.y);
+  float outer_cross_section = sqrt(max(0, radius * radius - radial_coord * radial_coord));
+  float inner_cross_section = sqrt(max(0, inner_radius * inner_radius - radial_coord * radial_coord));
+  float luminocity = 2.0 * outer_cross_section - 1.6 * inner_cross_section;
+  float diamond_front_length = min_radius / (bulge * period);
+  float diamond_back_length = diamond_front_length * 0.7;
+  float tail_start = 0.3 * diamond_front_length;
+  float tail_length = 0.8 * diamond_front_length;
   float diamond_radius = 0.0;
   float diamond_strength = 0.0;
-  if (diamond_longitudinal > -0.4) {
-    if (diamond_longitudinal < 0.0) {
-      diamond_strength = smoothstep(-0.4, -0.2, diamond_longitudinal);
-      diamond_radius = min_radius + diamond_longitudinal / 0.4 * min_radius * 0.3;
-    } else {
-      diamond_strength = 1.0;
-      diamond_radius = max(min_radius - diamond_longitudinal * 0.2, 0.0);
-    };
+  if (diamond_longitudinal > 0) {
+    diamond_radius = min_radius * max(0, 1.0 - abs(diamond_longitudinal / period) / diamond_back_length);
+  } else {
+    diamond_radius = min_radius * max(0, 1.0 - abs(diamond_longitudinal / period) / diamond_front_length);
+  };
+  if (diamond_longitudinal / period > -tail_start) {
+    diamond_strength = max(0, 1.0 - (tail_start + diamond_longitudinal / period) / tail_length);
+  } else {
+    diamond_strength = 1.0;
   };
   float diamond = 0.0;
   if (diamond_radius > 0) {
     diamond_strength = diamond_strength * (1 - smoothstep(diamond_radius - 0.1, diamond_radius, abs(uv.y)));
-    float dy = abs(uv.y) / diamond_radius;
-    float dx = sqrt(max(0, 1 - dy * dy));
-    diamond = 0.4 * dx * diamond_strength;
+    float diamond_cross_section = sqrt(max(0, diamond_radius * diamond_radius - radial_coord * radial_coord));
+    diamond = 1.5 * diamond_cross_section * diamond_strength;
   };
   vec3 color = vec3(0.60, 0.62, 0.63) * (1.0 - luminocity - diamond) + vec3(0.77, 0.75, 0.76) * luminocity + vec3(0.90, 0.75, 0.71) * diamond;
   fragColor = vec4(color, 1);
