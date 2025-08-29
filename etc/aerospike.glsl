@@ -70,7 +70,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       diamond_radius = min_radius + w / 0.4 * min_radius * 0.3;
     } else {
       diamond_strength = 1.0;
-      diamond_radius = max(min_radius - w * 0.5, 0.0);
+      diamond_radius = max(min_radius - w * 0.2, 0.0);
     };
   };
   float diamond = 0.0;
