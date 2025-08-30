@@ -100,9 +100,9 @@
 (def recording
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
-          (mapv (fn [{:keys [timemillis position orientation camera-position camera-orientation dist gear wheel-angles suspension
+          (mapv (fn [{:keys [timeseconds position orientation camera-position camera-orientation dist gear wheel-angles suspension
                              camera-dx camera-dy]}]
-                    {:timemillis timemillis
+                    {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
                      :camera-position (apply vec3 camera-position)
@@ -118,8 +118,9 @@
           false)))
 
 (def playback false)
-; (def fix-fps 30)
+; (def playback true)
 (def fix-fps false)
+; (def fix-fps 30)
 
 (def window-width (atom (:sfsim.render/window-width config/render-config)))
 (def window-height (atom (:sfsim.render/window-height config/render-config)))
@@ -438,8 +439,8 @@
 
 
 (defn location-dialog-set
-  [position-data ^double time-delta ^long t0]
-  (let [t         (+ time-delta (/ ^long t0 1000.0 86400.0) ^double astro/T0)
+  [position-data ^double time-delta ^double t0]
+  (let [t         (+ time-delta (/ ^double t0 86400.0) ^double astro/T0)
         position  (physics/get-position :sfsim.physics/surface t physics-state)
         longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
         latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
@@ -469,14 +470,14 @@
                         (reset! menu main-dialog))))
 
 
-(def t0 (atom (System/currentTimeMillis)))
-(def time-delta (atom (- ^double current-time (/ ^long @t0 1000.0 86400.0))))
+(def t0 (atom (GLFW/glfwGetTime)))
+(def time-delta (atom (- ^double current-time (/ ^double @t0 86400.0))))
 
 (def camera-dx (atom 0.0))
 (def camera-dy (atom 0.0))
 
 (defn datetime-dialog-get
-  ^double [time-data ^long t0]
+  ^double [time-data ^double t0]
   (let [day    (Integer/parseInt (trim (gui/edit-get (:day time-data))))
         month  (Integer/parseInt (trim (gui/edit-get (:month time-data))))
         year   (Integer/parseInt (trim (gui/edit-get (:year time-data))))
@@ -485,12 +486,12 @@
         sec    (Integer/parseInt (trim (gui/edit-get (:second time-data))))
         jd     (astro/julian-date #:sfsim.astro{:year year :month month :day day})
         clock  (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
-    (- (+ (- jd ^double astro/T0 0.5) clock) (/ t0 1000.0 86400.0))))
+    (- (+ (- jd ^double astro/T0 0.5) clock) (/ t0 86400.0))))
 
 
 (defn datetime-dialog-set
-  [time-data ^double time-delta ^long t0]
-  (let [t     (+ time-delta (/ ^long t0 1000.0 86400.0))
+  [time-data ^double time-delta ^double t0]
+  (let [t     (+ time-delta (/ ^double t0 86400.0))
         t     (+ ^double astro/T0 t 0.5)
         date  (astro/calendar-date (int t))
         clock (astro/clock-time (- t (int t)))]
@@ -609,11 +610,11 @@
         forward            (normalize (sub direction (mult up (dot direction up))))
         right              (normalize (cross forward up))
         horizon            (cols->mat right up (sub forward))
-        weight-previous    (pow 0.25 (* ^double dt 0.001))
-        camera-delta-roll  (* ^long dt 0.1 ^double (@state :sfsim.input/camera-rotate-z))
-        camera-delta-yaw   (* ^long dt 0.1 ^double (@state :sfsim.input/camera-rotate-y))
-        camera-delta-pitch (* ^long dt 0.1 ^double (@state :sfsim.input/camera-rotate-x))
-        distance           (swap! dist * (exp (* ^long dt 0.001 ^double (@state :sfsim.input/camera-distance-change))))
+        weight-previous    (pow 0.25 dt)
+        camera-delta-roll  (* ^double dt 100.0 ^double (@state :sfsim.input/camera-rotate-z))
+        camera-delta-yaw   (* ^double dt 100.0 ^double (@state :sfsim.input/camera-rotate-y))
+        camera-delta-pitch (* ^double dt 100.0 ^double (@state :sfsim.input/camera-rotate-x))
+        distance           (swap! dist * (exp (* ^double dt ^double (@state :sfsim.input/camera-distance-change))))
         target-roll        (swap! camera-target-roll + camera-delta-roll)  ; TODO: wrap target and current when leaving [0, 360] range
         target-pitch       (swap! camera-target-pitch + camera-delta-pitch)
         target-yaw         (swap! camera-target-yaw + camera-delta-yaw)
@@ -672,11 +673,11 @@
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
-      (let [t1       (System/currentTimeMillis)
+      (let [t1       (GLFW/glfwGetTime)
             dt       (if fix-fps
-                       (do (Thread/sleep (max 0 ^long (- (quot 1000 ^long fix-fps) (- ^long t1 ^long @t0)))) (quot 1000 ^long fix-fps))
-                       (- t1 ^long @t0))
-            jd-ut    (+ ^double @time-delta (/ ^long @t0 1000.0 86400.0) ^double astro/T0)
+                       (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 fix-fps) (- ^double t1 ^double @t0)))))) (/ 1.0 fix-fps))
+                       (- t1 ^double @t0))
+            jd-ut    (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
             aileron  (@state :sfsim.input/aileron)
             elevator (@state :sfsim.input/elevator)
             rudder   (@state :sfsim.input/rudder)
@@ -689,7 +690,7 @@
           (reset! menu nil))
         (if playback
           (let [frame (nth @recording @n)]
-            (reset! time-delta (/ (- ^long (:timemillis frame) ^long @t0) 1000.0 86400.0))
+            (reset! time-delta (/ (- ^double (:timeseconds frame) ^double @t0) 86400.0))
             (physics/set-pose :sfsim.physics/surface physics-state (:position frame) (:orientation frame))
             (reset! camera-position (:camera-position frame))
             (reset! camera-orientation (:camera-orientation frame))
@@ -705,22 +706,22 @@
                 (let [position      (physics/get-position :sfsim.physics/surface jd-ut physics-state)
                       speed         (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state))
                       orientation   (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                      orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double elevator) (vec3 0 1 0)))
-                      orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double rudder  ) (vec3 0 0 1)))
-                      orientation   (q/* orientation (q/rotation (* ^long dt -0.001 ^double aileron ) (vec3 1 0 0)))
-                      position      (add position (mult (q/rotate-vector orientation (vec3 1 0 0)) (* ^long dt 0.001 1000 ^double throttle)))]
+                      orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double elevator) (vec3 0 1 0)))
+                      orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double rudder  ) (vec3 0 0 1)))
+                      orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double aileron ) (vec3 1 0 0)))
+                      position      (add position (mult (q/rotate-vector orientation (vec3 1 0 0)) (* ^double dt 1000.0 ^double throttle)))]
                   (physics/set-pose :sfsim.physics/surface physics-state position orientation)
                   (physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector orientation (vec3 1 0 0)) speed)
                                      (vec3 0 0 0))))
               (do
                 (if (@state :sfsim.input/air-brake)
-                  (swap! air-brake + (* ^long dt 0.002))
-                  (swap! air-brake - (* ^long dt 0.002)))
+                  (swap! air-brake + (* ^double dt 2.0))
+                  (swap! air-brake - (* ^double dt 2.0)))
                 (swap! air-brake min 1.0)
                 (swap! air-brake max 0.0)
                 (if (@state :sfsim.input/gear-down)
-                  (swap! gear + (* ^long dt 0.0005))
-                  (swap! gear - (* ^long dt 0.0005)))
+                  (swap! gear + (* ^double dt 0.5))
+                  (swap! gear - (* ^double dt 0.5)))
                 (swap! gear min 1.0)
                 (swap! gear max 0.0)
                 (if (= ^double @gear 1.0)
@@ -749,7 +750,7 @@
                                                         (vec3 (* ^double throttle ^double thrust) 0 0)))
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/forces loads))
                     (physics/add-torque :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/moments loads))
-                    (physics/update-state physics-state (* ^long dt 0.001) (physics/gravitation (vec3 0 0 0) earth-mass))))
+                    (physics/update-state physics-state dt (physics/gravitation (vec3 0 0 0) earth-mass))))
                 (reset! wheel-angles (if @vehicle
                                        [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
                                         (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
@@ -762,7 +763,7 @@
                                      [1.0 1.0 1.0]))
                 (when @recording
                   (let [[origin camera-orientation] (get-camera-pose physics-state jd-ut dt state)
-                        frame {:timemillis (long (+ (* ^double @time-delta 1000.0 86400.0) ^long @t0))
+                        frame {:timeseconds (+ (* ^double @time-delta 86400.0) ^double @t0)
                                :position (physics/get-position :sfsim.physics/surface jd-ut physics-state)
                                :orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                :camera-position origin
@@ -782,8 +783,8 @@
                                               (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
                                              [1.0 1.0 1.0])}]
                     (swap! recording conj frame)))))
-            (swap! camera-dx + (* ^long dt 0.001 ^double (@state :sfsim.input/camera-shift-x)))
-            (swap! camera-dy + (* ^long dt 0.001 ^double (@state :sfsim.input/camera-shift-y)))))
+            (swap! camera-dx + (* ^double dt ^double (@state :sfsim.input/camera-shift-x)))
+            (swap! camera-dy + (* ^double dt ^double (@state :sfsim.input/camera-shift-y)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut physics-state)
               [origin camera-orientation] (if playback [@camera-position @camera-orientation]
                                             (get-camera-pose physics-state jd-ut dt state))
@@ -871,7 +872,7 @@
                            (setup-rendering @window-width @window-height :sfsim.render/noculling false)
                            (when @menu
                              (@menu gui @window-width @window-height))
-                           (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^long dt 0.001))))
+                           (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                            (when (not playback)
                              (stick gui aileron elevator rudder throttle)
                              (info gui @window-height
@@ -905,7 +906,7 @@
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
         (swap! event-buffer #(process-events % input-handler))
         (swap! n inc)
-        (if fix-fps (reset! t0 (System/currentTimeMillis)) (swap! t0 + dt)))))
+        (if fix-fps (reset! t0 (GLFW/glfwGetTime)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)
   (model/destroy-scene scene)
   (model/destroy-scene-shadow-renderer scene-shadow-renderer)
