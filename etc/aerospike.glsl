@@ -13,13 +13,6 @@ float hash(float p)
   return fract((p3.x + p3.y) * p3.z);
 }
 
-float hash31( vec3 p )
-{
-  float h = dot(p,vec3(17, 1527, 113));
-  return fract(sin(h)*43758.5453123);
-}
-
-
 float fade(float t) { return t*t*t*(t*(6.*t-15.)+10.); }
 
 float grad(float hash, float p)
@@ -32,11 +25,6 @@ float perlin(float p)
 {
   float pi = floor(p), pf = p - pi, w = fade(pf);
   return mix(grad(hash(pi), pf), grad(hash(pi + 1.0), pf - 1.0), w) * 2.0;
-}
-
-float sigmoid(float x)
-{
-  return 1.0 / (1.0 + exp(-x));
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
