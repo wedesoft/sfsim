@@ -23,6 +23,7 @@
   - Note taken on [2025-08-14 Do 12:19] \\
     - [[https://flightsimcoach.com/msfs-2024-keyboard-commands/][MSFS keycoard commands]]
     - [[https://www.shadertoy.com/view/XsXSWS][gas flame]]
+    - [[https://www.shadertoy.com/view/XsVSDW][flame thrower]]
     - [[https://www.shadertoy.com/view/wdjGRz][launching rocket with mach diamonds]]
     - [[https://www.shadertoy.com/view/WdGBDc][mach diamonds with vibration]]
     - [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
