@@ -65,18 +65,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float diamond_back_length = diamond_front_length * 0.7;
   float tail_start = 0.3 * diamond_front_length;
   float tail_length = 0.8 * diamond_front_length;
-  float diamond_radius = 0.0;
-  float diamond_strength = 0.0;
-  if (diamond_longitudinal > 0) {
-    diamond_radius = min_radius * max(0, 1.0 - abs(diamond_longitudinal / period) / diamond_back_length);
-  } else {
-    diamond_radius = min_radius * max(0, 1.0 - abs(diamond_longitudinal / period) / diamond_front_length);
-  };
-  if (diamond_longitudinal / period > -tail_start) {
-    diamond_strength = max(0, 1.0 - (tail_start + diamond_longitudinal / period) / tail_length);
-  } else {
-    diamond_strength = 1.0;
-  };
+  float diamond_length = diamond_longitudinal > 0.0 ? diamond_back_length : diamond_front_length;
+  float diamond_radius = min_radius * max(0, 1.0 - abs(diamond_longitudinal / period) / diamond_length);
+  float diamond_strength = min(1.0, max(0, 1.0 - (tail_start + diamond_longitudinal / period) / tail_length));
   diamond_strength = diamond_strength * (1 - smoothstep(diamond_radius - 0.1, diamond_radius, abs(uv.y)));
   float diamond_cross_section = sqrt(max(0, diamond_radius * diamond_radius - radial_coord * radial_coord));
   float diamond = 1.5 * diamond_cross_section * diamond_strength;
