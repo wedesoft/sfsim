@@ -98,15 +98,11 @@ void main()
 
 (GL20/glUniform2f (GL20/glGetUniformLocation program "iResolution") width height)
 
-(def t (atom 0.0))
-
 (while (not (GLFW/glfwWindowShouldClose window))
-  (GL20/glUniform1f (GL20/glGetUniformLocation program "iTime") @t)
+  (GL20/glUniform1f (GL20/glGetUniformLocation program "iTime") (GLFW/glfwGetTime))
   (GL11/glDrawElements GL11/GL_QUADS 4 GL11/GL_UNSIGNED_INT 0)
   (GLFW/glfwSwapBuffers window)
-  (GLFW/glfwPollEvents)
-  (GLFW/glfwWaitEventsTimeout 0.02)
-  (swap! t + 0.02))
+  (GLFW/glfwPollEvents))
 
 (GL20/glDeleteProgram program)
 (GLFW/glfwDestroyWindow window)

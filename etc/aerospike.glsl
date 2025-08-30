@@ -27,6 +27,33 @@ float perlin(float p)
   return mix(grad(hash(pi), pf), grad(hash(pi + 1.0), pf - 1.0), w) * 2.0;
 }
 
+vec2 hash2d( vec2 p )
+{
+  p = vec2( dot(p,vec2(127.1,311.7)),
+       dot(p,vec2(269.5,183.3)) );
+  return -1.0 + 2.0*fract(sin(p)*43758.5453123);
+}
+
+float noise( in vec2 p )
+{
+  const float K1 = 0.366025404; // (sqrt(3)-1)/2;
+  const float K2 = 0.211324865; // (3-sqrt(3))/6;
+
+  vec2 i = floor( p + (p.x+p.y)*K1 );
+
+  vec2 a = p - i + (i.x+i.y)*K2;
+  vec2 o = (a.x>a.y) ? vec2(1.0,0.0) : vec2(0.0,1.0);
+  vec2 b = a - o + K2;
+  vec2 c = a - 1.0 + 2.0*K2;
+
+  vec3 h = max( 0.5-vec3(dot(a,a), dot(b,b), dot(c,c) ), 0.0 );
+
+  vec3 n = h*h*h*h*vec3( dot(a,hash2d(i+0.0)), dot(b,hash2d(i+o)), dot(c,hash2d(i+1.0)));
+
+  return dot( n, vec3(70.0) );
+}
+
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   vec2 uv = vec2(fragCoord.x / iResolution.x, 2 * fragCoord.y / iResolution.y - 1.0);
@@ -34,10 +61,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float t = iTime;
   uv.y += .01*perlin(t*67.+left)*(.1+left);
   uv.y += .005*perlin(t*101.+left)*(.1+left);
-  float period = 10;
+  float period = 15;
   float phase = period * uv.x;
-  float min_radius = 0.3;
-  float bulge = 0.2;
+  float min_radius = 0.2;
+  float bulge = 0.1;
   float radius = min_radius + bulge * abs(sin(phase));
   float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
   float inner_radius = radius * 0.9;
@@ -48,7 +75,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 core_color = vec3(0.58, 0.67, 0.85);
   float outer_plume_strength = 1 - smoothstep(radius - 0.1, radius, abs(uv.y));
   float inner_plume_strength = 1 - smoothstep(inner_radius - 0.1, inner_radius, abs(uv.y));
+  float flame_frequency = 10;
+  float brightness = noise(vec2(uv.x * flame_frequency - t * 100, uv.y * flame_frequency * min_radius / radius));
   vec3 luminocity = fringe_color * outer_cross_section * outer_plume_strength + inner_cross_section * inner_plume_strength * (core_color - fringe_color);
+  brightness = min(max(brightness + 0.5, 0), 1.0);
+  luminocity += 0.1 * outer_cross_section * brightness * fringe_color;
   float diamond_front_length = min_radius / (bulge * period);
   float diamond_back_length = diamond_front_length * 0.7;
   float tail_start = 0.3 * diamond_front_length;
