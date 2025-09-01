@@ -3,6 +3,11 @@
 #define M_PI 3.1415926535897932384626433832795
 #define HASHSCALE 0.1031
 
+// References:
+// Mach diamonds: https://www.shadertoy.com/view/WdGBDc
+// fbm and domain warping: https://www.shadertoy.com/view/WsjGRz
+// flame thrower: https://www.shadertoy.com/view/XsVSDW
+
 uniform vec2 iResolution;
 uniform float iTime;
 
