@@ -6,8 +6,8 @@
 (GLFW/glfwInit)
 
 (GLFW/glfwDefaultWindowHints)
-(def width 1920)
-(def height 1080)
+(def width 1024)
+(def height 768)
 (def window (GLFW/glfwCreateWindow width height "Shadertoy" 0 0))
 
 (GLFW/glfwMakeContextCurrent window)
