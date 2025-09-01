@@ -59,7 +59,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float t = iTime;
   uv.y += .01*perlin(t*67.+left)*(.1+left);
   uv.y += .005*perlin(t*101.+left)*(.1+left);
-  float period = 15.0;
+  float period = 12.0;
   float phase = period * uv.x;
   float min_radius = 0.2;
   float bulge = 0.1;
@@ -68,7 +68,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float radial_coord = abs(uv.y);
   float cross_section = sqrt(max(0.0, radius * radius - radial_coord * radial_coord));
   vec3 background = vec3(0.12, 0.27, 0.42);
-  vec3 fringe_color = vec3(0.78, 0.63, 0.74);
+  vec3 fringe_color = vec3(1.0, 0.5, 0.6);
   float smoothing = 0.03;
   float flame_frequency_longitudinal = 20.0;
   float flame_frequency_lateral = 40.0;
