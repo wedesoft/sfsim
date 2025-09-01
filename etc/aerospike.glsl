@@ -63,9 +63,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float phase = period * uv.x;
   float min_radius = 0.2;
   float bulge = 0.1;
-  float radius = min_radius + bulge * abs(sin(phase));
   float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
-  float inner_radius = radius * 0.9;
+  float radius = min_radius + bulge * abs(sin(phase));
   float radial_coord = abs(uv.y);
   float outer_cross_section = sqrt(max(0.0, radius * radius - radial_coord * radial_coord));
   vec3 background = vec3(0.12, 0.27, 0.42);
