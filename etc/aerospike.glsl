@@ -66,7 +66,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
   float radius = min_radius + bulge * abs(sin(phase));
   float radial_coord = abs(uv.y);
-  float outer_cross_section = sqrt(max(0.0, radius * radius - radial_coord * radial_coord));
+  float cross_section = sqrt(max(0.0, radius * radius - radial_coord * radial_coord));
   vec3 background = vec3(0.12, 0.27, 0.42);
   vec3 fringe_color = vec3(0.78, 0.63, 0.74);
   float smoothing = 0.03;
@@ -75,9 +75,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float brightness = fbm(vec2(uv.x * flame_frequency_longitudinal - t * 200.0, uv.y * flame_frequency_lateral * min_radius / radius));
   brightness = clamp(brightness, 0.0, 1.0);
   float variation = 0.08;
-  outer_cross_section += brightness * variation - variation * 0.5;
+  cross_section += brightness * variation - variation * 0.5;
   float strength = 2.0 * (1.0 - smoothstep(radius - smoothing, radius, abs(uv.y)));
-  vec3 luminocity = strength * max(0.0, outer_cross_section) * (fringe_color - background);
+  vec3 luminocity = strength * max(0.0, cross_section) * (fringe_color - background);
   float diamond_front_length = min_radius / (bulge * period);
   float diamond_back_length = diamond_front_length * 0.7;
   float tail_start = 0.3 * diamond_front_length;
