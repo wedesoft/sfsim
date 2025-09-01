@@ -35,8 +35,11 @@
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [X] integrate control surface scaling
-  - [ ] implement RCS thrusters
   - [ ] thrust graphics, opengl rocket plume
+    - [ ] deteriorating series of mach diamonds
+    - [ ] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
+    - [ ] expanding plume with decreasing atmospheric pressure
+  - [ ] implement RCS thrusters
   - [ ] animate control surfaces and air brake
   - [ ] yaw stabilisation
   - [ ] kill rotation
