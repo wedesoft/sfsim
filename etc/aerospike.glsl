@@ -52,6 +52,28 @@ float fbm(vec2 n) {
   return total;
 }
 
+float current_bulge(float phase) {
+  return abs(sin(phase));
+}
+
+float current_dilation(float phase) {
+  return 1.0 + 0.02 * phase;
+}
+
+float smooth_bulge(float phase) {
+  float weight = exp(-phase * 0.1);
+  float growth = current_dilation(phase);
+  return growth * (current_bulge(phase) * weight + (1.0 - weight));
+}
+
+float current_radius(float min_radius, float bulge, float phase) {
+  return min_radius + bulge * smooth_bulge(phase);
+}
+
+float intersection(float radius, float radial_coord) {
+  return sqrt(radius * radius - radial_coord * radial_coord);
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   vec2 uv = vec2(fragCoord.x / iResolution.x, 2.0 * fragCoord.y / iResolution.y - 1.0);
@@ -59,16 +81,16 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float t = iTime;
   uv.y += .01*perlin(t*67.+left)*(.1+left);
   uv.y += .005*perlin(t*101.+left)*(.1+left);
-  float period = 12.0;
-  float phase = period * uv.x;
-  float min_radius = 0.2;
-  float bulge = 0.1;
+  float omega = 24.0;
+  float phase = omega * uv.x + M_PI / 4;
+  float min_radius = 0.1;
+  float bulge = 0.05;
   float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
-  float radius = min_radius + bulge * abs(sin(phase));
+  float radius = current_radius(min_radius, bulge, phase);
   float radial_coord = abs(uv.y);
-  float cross_section = sqrt(max(0.0, radius * radius - radial_coord * radial_coord));
+  float cross_section = radius > radial_coord ? intersection(radius, radial_coord) : 0.0;
   vec3 background = vec3(0.12, 0.27, 0.42);
-  vec3 fringe_color = vec3(1.0, 0.5, 0.6);
+  vec3 fringe_color = vec3(0.9, 0.5, 0.6);
   float smoothing = 0.03;
   float flame_frequency_longitudinal = 20.0;
   float flame_frequency_lateral = 40.0;
@@ -76,16 +98,18 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   brightness = clamp(brightness, 0.0, 1.0);
   float variation = 0.08;
   cross_section += brightness * variation - variation * 0.5;
-  float strength = 2.0 * (1.0 - smoothstep(radius - smoothing, radius, abs(uv.y)));
-  vec3 luminocity = strength * max(0.0, cross_section) * (fringe_color - background);
-  float diamond_front_length = min_radius / (bulge * period);
+  float dilation = current_dilation(phase);
+  float strength = 4.0 * (1.0 - smoothstep(radius - smoothing, radius, abs(uv.y))) / (dilation * dilation);
+  vec3 luminocity = strength * cross_section * (fringe_color - background);
+  float diamond_front_length = min_radius / (bulge * omega);
   float diamond_back_length = diamond_front_length * 0.7;
   float tail_start = 0.3 * diamond_front_length;
   float tail_length = 0.8 * diamond_front_length;
   float diamond_length = diamond_longitudinal > 0.0 ? diamond_back_length : diamond_front_length;
-  float diamond_radius = min_radius * max(0.0, 1.0 - abs(diamond_longitudinal / period) / diamond_length);
-  float diamond_strength = min(1.0, max(0.0, 1.0 - (tail_start + diamond_longitudinal / period) / tail_length));
-  diamond_strength = diamond_strength * (1.0 - smoothstep(diamond_radius - 0.1, diamond_radius, abs(uv.y)));
+  float diamond_radius = min_radius * max(0.0, 1.0 - abs(diamond_longitudinal / omega) / diamond_length);
+  float diamond_strength = min(1.0, max(0.0, 1.0 - (tail_start + diamond_longitudinal / omega) / tail_length));
+  float blur = dilation - 1.0;
+  diamond_strength = 3.0 * diamond_strength * (1.0 - smoothstep(diamond_radius - blur, diamond_radius, abs(uv.y)));
   float diamond_cross_section = sqrt(max(0.0, diamond_radius * diamond_radius - radial_coord * radial_coord));
   float diamond = 1.5 * diamond_cross_section * diamond_strength;
   vec3 diamond_color = diamond * vec3(0.98, 0.93, 1.0);
