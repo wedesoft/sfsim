@@ -13,7 +13,7 @@ float bumps(float x)
 {
   float omega = 20.0 * pow(0.1, iMouse.y / iResolution.y);
   float decay = 1.0 - exp(-x * 3);
-  return 0.1 + mix(abs(cos(x * omega)), 2 * iMouse.y / iResolution.y, decay) * 0.1;
+  return 0.1 + mix(abs(cos(x * omega)), 4 * iMouse.y / iResolution.y, decay) * 0.1;
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
