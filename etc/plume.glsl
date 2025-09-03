@@ -20,7 +20,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   vec2 uv = vec2(fragCoord.x / iResolution.x, 2.0 * fragCoord.y / iResolution.y - 1.0);
   // bool inside = abs(uv.y) <= mix(bumps(uv.x), parabola(uv.x), iMouse.y / iResolution.y);
-  bool inside = abs(uv.y) <= bumps(uv.x);
-  vec3 color = inside ? vec3(1, 1, 1) : vec3(0, 0, 0);
+  float radius = bumps(uv.x);
+  bool inside = abs(uv.y) <= radius;
+  vec3 color;
+  if (inside) {
+    float a = radius * radius;
+    float d = sqrt(radius * radius - uv.y * uv.y);
+    color = 0.1 * vec3(1, 1, 1) * d / a;
+  } else {
+    color = vec3(0, 0, 0);
+  };
   fragColor =  vec4(color, 1);
 }

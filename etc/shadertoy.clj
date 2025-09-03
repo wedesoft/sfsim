@@ -5,8 +5,8 @@
 (GLFW/glfwInit)
 
 (GLFW/glfwDefaultWindowHints)
-(def width 1024)
-(def height 768)
+(def width 1280)
+(def height 720)
 (def window (GLFW/glfwCreateWindow width height "Shadertoy" 0 0))
 (def mouse-pos (atom [0.0 0.0]))
 (def mouse-button (atom false))
