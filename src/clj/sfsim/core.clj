@@ -675,7 +675,7 @@
       (reset! window-height (aget h 0))
       (let [t1       (GLFW/glfwGetTime)
             dt       (if fix-fps
-                       (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 fix-fps) (- ^double t1 ^double @t0)))))) (/ 1.0 fix-fps))
+                       (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0)))))) (/ 1.0 ^double fix-fps))
                        (- t1 ^double @t0))
             jd-ut    (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
             aileron  (@state :sfsim.input/aileron)
