@@ -1,9 +1,20 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
-* TODO [#A] UI overlays for third person view                        :interface:
-  - [ ] following camera, different camera views, camera controls such as distance
-  - [ ] Radar altitude
-* TODO [#B] spacecraft simulation                                      :physics:
+* TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2025-08-28 Do 12:50] \\
+    No, the shock diamonds in a series are not the same size; they decrease in both size and intensity further down the exhaust plume.
+    This happens as the supersonic exhaust jet dissipates energy and gradually adjusts its pressure to match the surrounding atmospheric pressure.
+  - Note taken on [2025-08-26 Di 21:59] \\
+    - [[https://github.com/wedesoft/sfsim/issues/135]]
+    - [[https://en.wikipedia.org/wiki/Shock_diamond][shock diamond position formula]]
+    - [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
+    - [[https://www.quora.com/On-some-of-the-starship-launches-it-seems-to-have-shock-diamonds-and-shock-diamonds-mean-over-expansion-Is-this-bad-Why-or-why-not][mach diamonds diagram]]
+  - Note taken on [2025-08-26 Tue 09:21] \\
+    - Links by Substantial_Marzipan about linear aerospike:
+      - https://aerospaceweb.org/design/aerospike/aerospike.shtml
+      - https://en.m.wikipedia.org/wiki/Rocketdyne_XRS-2200
+  - Note taken on [2025-08-25 Mo 21:26] \\
+    - [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
   - Note taken on [2025-08-24 So 20:58] \\
     - add thrust: 3,010,000 lbf
     - weight: payload 25000 kg. vehicle 100t-135t
@@ -11,25 +22,31 @@
     - max thrust: 13.4 MN
   - Note taken on [2025-08-14 Do 12:19] \\
     - [[https://flightsimcoach.com/msfs-2024-keyboard-commands/][MSFS keycoard commands]]
-    - [[https://www.shadertoy.com/view/XsXSWS][flame]]
-    - [[https://www.shadertoy.com/view/wdjGRz][mach diamonds]]
-    - [[https://www.shadertoy.com/view/WdGBDc][mach diamonds]]
+    - [[https://www.shadertoy.com/view/XsXSWS][gas flame]]
+    - [[https://www.shadertoy.com/view/XsVSDW][flame thrower]]
+    - [[https://www.shadertoy.com/view/wdjGRz][launching rocket with mach diamonds]]
+    - [[https://www.shadertoy.com/view/WdGBDc][mach diamonds with vibration]]
+    - [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
     - [[https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume][blender cone]]
     - volumetric engine exhaust?
     - [[https://www.youtube.com/watch?v=qfI9j92CUso][blender animation]]
     - [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
-  - [ ] [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
-
-  - [ ] integrate control surface scaling
+    - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
+  - [X] integrate control surface scaling
+  - [ ] thrust graphics, opengl rocket plume
+    - [ ] deteriorating series of mach diamonds
+    - [ ] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
+    - [ ] expanding plume with decreasing atmospheric pressure
   - [ ] implement RCS thrusters
   - [ ] animate control surfaces and air brake
-  - [ ] thrust graphics, opengl rocket plume
-  - [ ] [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
-  - [ ] physics and animation of steering (apply difference of two animation time stamps)
+  - [ ] yaw stabilisation
+  - [ ] kill rotation
+  - [ ] physics and animation of steering front wheel (apply difference of two animation time stamps)
   - [ ] display perihel aphel and time to, Check out poliastro and hapsira
   - [ ] block gear up when on the ground
+  - [ ] Radar altitude
   - [ ] Elevator trim
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
   - [ ] moon landing physics (hover thrusters), hover thruster locations
@@ -125,6 +142,7 @@
 ** TODO space station model, station lights
 ** TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
 * TODO [#C] marketing/progressing project                            :marketing:
+** TODO contact gamespress
 ** TODO release demo
 ** TODO targeted game description:
    - [ ] go four layers deep when describing your kind game: main genre, sub-genre, type of combat, setting / theme
