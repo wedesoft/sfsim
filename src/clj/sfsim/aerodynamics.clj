@@ -316,7 +316,7 @@
   ([speed-mach alpha beta gear air-brake]
    (mix (mix (+ (* (drag-multiplier gear air-brake) ^double (c-d-0 speed-mach))
                 (coefficient-of-induced-drag speed-mach alpha beta)) ^double (c-d-90 speed-mach) (* 2.0 ^double alpha))
-        (* (/ ^double body-length ^double body-width) (* (drag-multiplier gear 0.0) ^double (c-d-0 speed-mach)))
+        (* (/ ^double body-length ^double body-width) (drag-multiplier gear 0.0) ^double (c-d-0 speed-mach))
         (* 2.0 ^double beta))))
 
 

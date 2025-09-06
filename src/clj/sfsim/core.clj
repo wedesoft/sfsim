@@ -319,7 +319,7 @@
 
 (def vehicle (atom nil))
 
-(def current-time (+ (long (astro/now)) (+ (/ -5.0 24.0) (/ 27.0 60.0 24.0))))
+(def current-time (+ (long (astro/now)) (/ -5.0 24.0) (/ 27.0 60.0 24.0)))
 
 (def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body}))
 (physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
