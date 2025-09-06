@@ -116,7 +116,7 @@
   (jolt/set-orientation (::body @state) orientation))  ; Jolt handles orientation information
 
 
-(defmulti get-position (fn [domain jd-ut state] [(::domain @state) domain]))
+(defmulti get-position (fn [domain _jd-ut state] [(::domain @state) domain]))
 
 
 (defmethod get-position [::surface ::surface]
@@ -164,7 +164,7 @@
 
 
 (defmethod get-orientation [::orbit ::orbit]
-  [domain jd-ut state]
+  [_domain _jd-ut state]
   (jolt/get-orientation (::body @state)))
 
 
@@ -213,11 +213,11 @@
 
 
 (defmethod get-linear-speed [::orbit ::orbit]
-  [domain jd-ut state]
+  [_domain _jd-ut state]
   (::speed @state))
 
 
-(defmulti get-angular-speed (fn [domain jd-ut state] [(::domain @state) domain]))
+(defmulti get-angular-speed (fn [domain _jd-ut state] [(::domain @state) domain]))
 
 
 (defmethod get-angular-speed [::surface ::surface]

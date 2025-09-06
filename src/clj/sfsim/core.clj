@@ -33,10 +33,10 @@
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                          texture-render-color write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars
-                          setup-rendering quad-splits-orientations)]
+                          write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering
+                          quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
-    [sfsim.texture :refer (destroy-texture texture->image)]
+    [sfsim.texture :refer (destroy-texture)]
     [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events add-mouse-move-event
                          add-mouse-button-event joysticks-poll ->InputHandler char-callback key-callback
                          get-joystick-sensor-for-mapping)])
