@@ -11,15 +11,17 @@ float parabola(float x)
 
 float bumps(float x)
 {
-  float omega = 20.0 * pow(0.1, iMouse.y / iResolution.y);
-  float decay = 1.0 - exp(-x * 3);
-  return 0.1 + mix(abs(cos(x * omega)), 4 * iMouse.y / iResolution.y, decay) * 0.1;
+  float transition = 3 * iMouse.y / iResolution.y;
+  float omega = 20.0 * pow(0.1, transition);
+  float decay = exp(-x * 3);
+  float bell = 2 * transition * (1.0 - exp(-x * 2 / (transition + 0.1)));
+  return 0.1 + 0.1 * abs(cos(x * omega)) * decay + bell;
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
-  vec2 uv = vec2(fragCoord.x / iResolution.x, 2.0 * fragCoord.y / iResolution.y - 1.0);
-  // bool inside = abs(uv.y) <= mix(bumps(uv.x), parabola(uv.x), iMouse.y / iResolution.y);
+  float fov = 5.0;
+  vec2 uv = vec2(fragCoord.x / iResolution.x, 2.0 * fragCoord.y / iResolution.y - 1.0) * fov;
   float radius = bumps(uv.x);
   bool inside = abs(uv.y) <= radius;
   vec3 color;
