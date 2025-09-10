@@ -30,7 +30,7 @@ float bumps(float x)
     float start = log((limit - nozzle) / limit) / log(c);
     return limit - limit * pow(c, start + x);
   } else {
-    float omega = 20.0 * pow(0.1, slider);
+    float omega = 100.0 * (nozzle - limit);
     float bumps = (nozzle - limit) * abs(cos(x * omega));
     return limit + bumps;
   };
