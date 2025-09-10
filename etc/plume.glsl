@@ -21,11 +21,19 @@ float bumps2(float x)
 float bumps(float x)
 {
   float slider = iMouse.y / iResolution.y;
+  float nozzle = 0.2;
   float pressure = pow(0.001, slider);
   float limit = 0.1 * sqrt(1.0 / pressure);
   float derivative = 3;
   float c = exp(-derivative / limit);
-  return limit - limit * pow(c, x);
+  if (nozzle < limit) {
+    float start = log((limit - nozzle) / limit) / log(c);
+    return limit - limit * pow(c, start + x);
+  } else {
+    float omega = 20.0 * pow(0.1, slider);
+    float bumps = (nozzle - limit) * abs(cos(x * omega));
+    return limit + bumps;
+  };
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
@@ -36,10 +44,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   bool inside = abs(uv.y) <= radius;
   vec3 color;
   if (inside) {
-    // float a = radius * radius;
-    // float d = sqrt(radius * radius - uv.y * uv.y);
-    // color = 0.1 * vec3(1, 1, 1) * d / a;
-    color = vec3(1, 0.5, 0.5);
+    float a = radius * radius;
+    float d = sqrt(radius * radius - uv.y * uv.y);
+    color = 0.1 * vec3(1, 1, 1) * d / a;
   } else {
     color = vec3(0, 0, 0);
   };

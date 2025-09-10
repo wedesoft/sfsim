@@ -193,6 +193,7 @@
 ** TODO create windows using blending (reflections?)
 ** TODO introduce variation to cloud height
 * TODO [#C] smaller improvements
+** TODO r/daslu suggested talk at [[macroexpand_noj][https://scicloj.github.io/macroexpand-2025/macroexpand_noj]]
 ** TODO joystick hat to control camera
 ** TODO limit dt or pause
 ** TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
