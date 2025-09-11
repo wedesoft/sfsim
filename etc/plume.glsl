@@ -4,9 +4,11 @@ uniform vec2 iResolution;
 uniform float iTime;
 uniform vec2 iMouse;
 
-float parabola(float x)
+
+float prandtl_meyer(float mach)
 {
-  return 0.2 / (0.1 + exp(-x * 10));
+  float gamma = 1.25;
+  return sqrt((gamma + 1) / (gamma - 1)) * atan((gamma - 1) / (gamma + 1) * (mach * mach - 1)) - atan(sqrt(mach * mach - 1));
 }
 
 float bumps2(float x)
