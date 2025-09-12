@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.perlin
   "Create improved Perlin noise"
   (:require
@@ -5,13 +11,16 @@
     [com.climate.claypoole :refer (pfor ncpus)]
     [fastmath.vector :refer (vec3 add sub dot mult)]
     [sfsim.matrix :refer (fvec3)]
-    [sfsim.util :refer (make-progress-bar tick-and-print dimension-count N)]))
+    [sfsim.util :refer (make-progress-bar tick-and-print dimension-count N)])
+  (:import
+    [fastmath.vector
+     Vec3]))
 
 
 ;; improved Perlin noise algorithm
 ;; https://adrianb.io/2014/08/09/perlinnoise.html
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 
 
 (defn random-gradient
@@ -60,7 +69,7 @@
   {:malli/schema [:=> [:cat [:vector [:vector [:vector fvec3]]] fvec3] [:vector fvec3]]}
   [gradient-grid point]
   (let [[x  y  z] (determine-division point)
-        [x+ y+ z+] (mapv #(mod (inc %) (dimension-count gradient-grid 0)) [x y z])]
+        [x+ y+ z+] (mapv #(mod (inc ^double %) (dimension-count gradient-grid 0)) [x y z])]
     (vec (for [zd [z z+] yd [y y+] xd [x x+]]
            (reduce nth gradient-grid [zd yd xd])))))
 
@@ -74,21 +83,20 @@
 
 (defn ease-curve
   "Monotonous and point-symmetric ease curve"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [t]
+  ^double [^double t]
   (-> t (* 6.0) (- 15.0) (* t) (+ 10.0) (* t t t)))
 
 
 (defn interpolation-weights
   "Determine weights for interpolation"
   {:malli/schema [:=> [:cat [:=> [:cat :double] :double] fvec3] [:sequential :double]]}
-  [ease-curve index]
+  [ease-curve ^Vec3 index]
   (let [division   (apply vec3 (determine-division index))
         point      (sub index division)
         [bx by bz] point
         [ax ay az] (sub (vec3 1 1 1) point)]
     (for [z [az bz] y [ay by] x [ax bx]]
-      (* (ease-curve z) (ease-curve y) (ease-curve x)))))
+      (* ^double (ease-curve z) ^double (ease-curve y) ^double (ease-curve x)))))
 
 
 (defn normalize-vector
@@ -97,13 +105,12 @@
   [values]
   (let [minimum (apply min values)
         maximum (apply max values)]
-    (vec (pmap #(/ (- % minimum) (- maximum minimum)) values))))
+    (vec (pmap #(/ (- ^double % ^double minimum) (- ^double maximum ^double minimum)) values))))
 
 
 (defn perlin-noise-sample
   "Compute a single sample of Perlin noise"
-  {:malli/schema [:=> [:cat [:vector [:vector [:vector fvec3]]] N N fvec3] :double]}
-  [gradient-grid divisions size cell]
+  ^double [gradient-grid ^long divisions ^long size ^Vec3 cell]
   (let [point     (mult cell (/ divisions size))
         corners   (corner-vectors point)
         gradients (corner-gradients gradient-grid point)
@@ -114,15 +121,14 @@
 
 (defn perlin-noise
   "Create 3D Perlin noise"
-  {:malli/schema [:=> [:cat N N [:? :boolean]] [:vector :double]]}
-  ([divisions size]
+  ([^long divisions ^long size]
    (perlin-noise divisions size false))
-  ([divisions size progress]
+  ([^long divisions ^long size ^Boolean progress]
    (let [gradient-grid (random-gradient-grid divisions)
          bar           (if progress (agent (make-progress-bar (* size size size) size)) nil)]
      (normalize-vector
        (vec
-         (pfor (+ 2 (ncpus)) [k (range size) j (range size) i (range size)]
+         (pfor (+ 2 ^long (ncpus)) [^long k (range size) ^long j (range size) ^long i (range size)]
                (do
                  (when progress (send bar tick-and-print))
                  (perlin-noise-sample gradient-grid divisions size (vec3 (+ i 0.5) (+ j 0.5) (+ k 0.5))))))))))

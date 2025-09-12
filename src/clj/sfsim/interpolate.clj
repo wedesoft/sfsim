@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.interpolate
   "N-dimensional interpolation"
   (:require
@@ -10,7 +16,7 @@
       VectorProto)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 (def interpolation-space (m/schema [:map [::shape [:vector N]] [::forward fn?] [::backward fn?]]))
@@ -22,7 +28,9 @@
   [minima maxima shape]
   (fn linear-forward
     [& point]
-    (mapv (fn linear-forward-component [x a b n] (-> x (- a) (/ (- b a)) (* (dec n)))) point minima maxima shape)))
+    (mapv (fn linear-forward-component [^double x ^double a ^double b ^long n]
+              (-> x (- a) (/ (- b a)) (* (dec n))))
+          point minima maxima shape)))
 
 
 (defn- linear-backward
@@ -31,7 +39,9 @@
   [minima maxima shape]
   (fn linear-backward
     [& indices]
-    (mapv (fn linear-backward-component [i a b n] (-> i (/ (dec n)) (* (- b a)) (+ a))) indices minima maxima shape)))
+    (mapv (fn linear-backward-component [^double i ^double a ^double b ^long n]
+              (-> i (/ (dec n)) (* (- b a)) (+ a)))
+          indices minima maxima shape)))
 
 
 (defn linear-space
@@ -65,7 +75,7 @@
 (defn clip
   "Clip a value to [0, size - 1]"
   ^double [^double value ^long size]
-  (min (max value 0) (dec size)))
+  (min (max value 0.0) (dec size)))
 
 
 (defn mix

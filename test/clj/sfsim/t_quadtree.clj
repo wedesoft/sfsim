@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.t-quadtree
   (:require
     [clojure.math :refer (tan to-radians)]
@@ -9,7 +15,12 @@
     [sfsim.image :as image]
     [sfsim.plane :as plane]
     [sfsim.quadtree :refer :all :as quadtree]
-    [sfsim.util :as util]))
+    [sfsim.util :as util])
+ (:import
+    [clojure.lang
+     Keyword]
+    [fastmath.vector
+     Vec3]))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -42,18 +53,19 @@
 (tabular "Load normals, scale factors and colors for a tile"
          (fact (?k (load-tile-data :sfsim.cubemap/face3 2 2 1 6378000.0)) => ?result
                (provided
-                 (image/slurp-image "data/globe/3/2/1/2.jpg")       => "2.jpg"
-                 (image/slurp-image "data/globe/3/2/1/2.night.jpg") => "2.night.jpg"
-                 (util/slurp-floats "data/globe/3/2/1/2.surf")      => "2.surf"
-                 (image/slurp-normals "data/globe/3/2/1/2.png")     => "2.png"
-                 (util/slurp-bytes "data/globe/3/2/1/2.water")      => "2.water"
+                 (quadtree/access-cube-tar "data/globe/3/2/1.tar")     => "1.tar"
+                 (image/slurp-image-tar    "1.tar" "2.jpg")            => "3/2/1/2.jpg"
+                 (image/slurp-image-tar    "1.tar" "2.night.jpg")      => "3/2/1/2.night.jpg"
+                 (util/slurp-floats-gz-tar "1.tar" "2.surf.gz")        => "3/2/1/2.surf"
+                 (image/slurp-normals-tar  "1.tar" "2.png")            => "3/2/1/2.png"
+                 (util/slurp-bytes-gz-tar  "1.tar" "2.water.gz")       => "3/2/1/2.water"
                  (cubemap/tile-center :sfsim.cubemap/face3 2 2 1 6378000.0)           => :tile-center))
          ?k       ?result
-         :sfsim.planet/day      "2.jpg"
-         :sfsim.planet/night    "2.night.jpg"
-         :sfsim.planet/surface  "2.surf"
-         :sfsim.planet/normals  "2.png"
-         :sfsim.planet/water    "2.water"
+         :sfsim.planet/day      "3/2/1/2.jpg"
+         :sfsim.planet/night    "3/2/1/2.night.jpg"
+         :sfsim.planet/surface  "3/2/1/2.surf"
+         :sfsim.planet/normals  "3/2/1/2.png"
+         :sfsim.planet/water    "3/2/1/2.water"
          :sfsim.quadtree/face   :sfsim.cubemap/face3
          :sfsim.quadtree/level  2
          :sfsim.quadtree/y      2
@@ -313,26 +325,37 @@
       (tile-triangle 0.75 0.75 false) => [[1 0] [0 1] [1 1]])
 
 
+(defn cube-i-mock
+  ^double [^Keyword face ^Vec3 point]
+  (facts face => 2, point => (vec3 0.4 0.6 1)) 0.25)
+
+
+(defn cube-j-mock
+  ^double [^Keyword face ^Vec3 point]
+  (facts face => 2, point => (vec3 0.4 0.6 1)) 0.75)
+
+
 (fact "Get distance of surface to planet center for given radial vector"
       (with-redefs [cubemap/project-onto-cube (fn [point] (fact point => (vec3 2 3 5)) (vec3 0.4 0.6 1))
                     cubemap/determine-face (fn [point] (fact point => (vec3 0.4 0.6 1)) 2)
-                    cubemap/cube-i (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.25)
-                    cubemap/cube-j (fn [face point] (facts face => 2, point => (vec3 0.4 0.6 1)) 0.75)
-                    quadtree/tile-coordinates (fn [j i level tilesize]
+                    cubemap/cube-i cube-i-mock
+                    cubemap/cube-j cube-j-mock
+                    quadtree/tile-coordinates (fn [^double j ^double i ^long level ^long tilesize]
                                                 (facts j => 0.75, i => 0.25, level => 6, tilesize => 65)
-                                                #:sfsim.quadtree{:row 32 :column 40 :tile-y 3 :tile-x 5 :dy :dy :dx :dx})
-                    util/cube-path (fn [prefix face level y x suffix]
-                                     (fact prefix => "data/globe", face => 2, level => 6, y => 32, x => 40,
-                                           suffix => ".surf")
-                                     "data/globe/2/6/31/35.surf")
-                    util/slurp-floats (fn [file-name] (fact file-name => "data/globe/2/6/31/35.surf") :surface-tile)
+                                                #:sfsim.quadtree{:row 32 :column 40 :tile-y 3 :tile-x 5 :dy 7.0 :dx 11.0})
+                    quadtree/access-cube-tar (fn [tar-name] (fact tar-name => "data/globe/2/6/31.tar") "31.tar")
+                    util/cube-tar (fn [prefix face level x]
+                                    (fact prefix => "data/globe", face => 2, level => 6, x => 40)
+                                    "data/globe/2/6/31.tar")
+                    util/cube-file-name (fn [y suffix] (fact y => 32, suffix => ".surf.gz") "35.surf.gz")
+                    util/slurp-floats-gz-tar (fn [tar file-name] (fact tar => "31.tar" file-name => "35.surf.gz") :surface-tile)
                     cubemap/tile-center (fn [face level row column radius]
                                           (facts face => 2, level => 6, row => 32, column => 40, radius => 6378000.0)
                                           (vec3 1 2 3))
-                    quadtree/tile-triangle (fn [y x first-diagonal]
-                                             (facts y => :dy, x => :dx, first-diagonal => true)
+                    quadtree/tile-triangle (fn [^double y ^double x ^Boolean first-diagonal]
+                                             (facts y => 7.0, x => 11.0, first-diagonal => true)
                                              [[0 0] [0 1] [1 1]])
-                    image/get-vector3 (fn [img y x]
+                    image/get-vector3 (fn [img ^long y ^long x]
                                         (facts (:sfsim.image/data img) => :surface-tile,
                                                y => #(contains? #{3 4} %), x => #(contains? #{5 6} %))
                                         ({[3 5] (vec3 0 0 0) [3 6] (vec3 1 0 0) [4 6] (vec3 1 1 0)} [y x]))
@@ -351,24 +374,24 @@
                              :sfsim.quadtree/tile-y :sfsim.quadtree/tile-x :sfsim.quadtree/rotation)]
            (fact (extract (neighbour-tile ?face 2 9 ?row ?column ?tile-y ?tile-x ?dy ?dx 0)) => ?neighbour))
          ?face ?row ?column ?tile-y ?tile-x ?dy ?dx ?neighbour
-         face0 0    0         0       0      0   0  [face0 0 0   0   0   0]
-         face0 1    2         5       7      0   0  [face0 1 2   5   7   0]
-         face0 1    2         5       7      1   0  [face0 1 2   6   7   0]
-         face0 1    2         5       6      0   1  [face0 1 2   5   7   0]
-         face0 1    2         5       7      4   0  [face0 2 2   1   7   0]
-         face0 1    2         5       7      0   2  [face0 1 3   5   1   0]
-         face0 1    2         5       7     -6   0  [face0 0 2   7   7   0]
-         face0 1    2         5       7      0  -8  [face0 1 1   5   7   0]
-         face1 0    0         0       0     -1   0  [face0 3 0   7   0   0]
-         face0 0    0         0       0     -1   0  [face4 0 0   1   0 180]
-         face0 0    0       1/2       0      1   0  [face0 0 0 3/2   0   0]
-         face0 0    0         0     1/2      0   1  [face0 0 0   0 3/2   0]
-         face0 3    0      15/2     1/2      1   0  [face1 0 0 1/2 1/2   0]
-         face0 3    3         2       0     -1  -1  [face0 3 2   1   7   0])
+         face0 0    0         0.0     0.0    0   0  [face0 0 0   0.0 0.0   0]
+         face0 1    2         5.0     7.0    0   0  [face0 1 2   5.0 7.0   0]
+         face0 1    2         5.0     7.0    1   0  [face0 1 2   6.0 7.0   0]
+         face0 1    2         5.0     6.0    0   1  [face0 1 2   5.0 7.0   0]
+         face0 1    2         5.0     7.0    4   0  [face0 2 2   1.0 7.0   0]
+         face0 1    2         5.0     7.0    0   2  [face0 1 3   5.0 1.0   0]
+         face0 1    2         5.0     7.0   -6   0  [face0 0 2   7.0 7.0   0]
+         face0 1    2         5.0     7.0    0  -8  [face0 1 1   5.0 7.0   0]
+         face1 0    0         0.0     0.0   -1   0  [face0 3 0   7.0 0.0   0]
+         face0 0    0         0.0     0.0   -1   0  [face4 0 0   1.0 0.0 180]
+         face0 0    0         0.5     0.0    1   0  [face0 0 0   1.5 0.0   0]
+         face0 0    0         0.0     0.5    0   1  [face0 0 0   0.0 1.5   0]
+         face0 3    0         7.5     0.5    1   0  [face1 0 0   0.5 0.5   0]
+         face0 3    3         2.0     0.0   -1  -1  [face0 3 2   1.0 7.0   0])
 
 
 (tabular "Get neighbouring tile face and coordinates"
-         (let [tile (neighbour-tile ?face 1 9 ?row ?column 4 4 ?dy ?dx 0)
+         (let [tile (neighbour-tile ?face 1 9 ?row ?column 4.0 4.0 ?dy ?dx 0)
                j    (/ (+ (/ (:sfsim.quadtree/tile-y tile) 8.0) (:sfsim.quadtree/row tile)) 2)
                i    (/ (+ (/ (:sfsim.quadtree/tile-x tile) 8.0) (:sfsim.quadtree/column tile)) 2)
                p    (cube-map (:sfsim.quadtree/face tile) j i)]
@@ -423,13 +446,13 @@
 
 
 (facts "Get diagonal orientations of quad"
-       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation   0}) => true
-       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation   0}) => false
-       (quad-split-orientation [[false true]]   #:sfsim.quadtree{:tile-y 1/2 :tile-x 3/2 :rotation   0}) => true
-       (quad-split-orientation [[false] [true]] #:sfsim.quadtree{:tile-y 3/2 :tile-x 1/2 :rotation   0}) => true
-       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation  90}) => false
-       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation  90}) => true
-       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 1/2 :tile-x 1/2 :rotation 180}) => true)
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation   0}) => true
+       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation   0}) => false
+       (quad-split-orientation [[false true]]   #:sfsim.quadtree{:tile-y 0.5 :tile-x 1.5 :rotation   0}) => true
+       (quad-split-orientation [[false] [true]] #:sfsim.quadtree{:tile-y 1.5 :tile-x 0.5 :rotation   0}) => true
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation  90}) => false
+       (quad-split-orientation [[false]]        #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation  90}) => true
+       (quad-split-orientation [[true]]         #:sfsim.quadtree{:tile-y 0.5 :tile-x 0.5 :rotation 180}) => true)
 
 
 (facts "Determine point indices of a pair of triangles for a quad in a 3x3 mesh of 4x4 points"

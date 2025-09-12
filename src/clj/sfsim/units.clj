@@ -1,7 +1,13 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.units)
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -9,7 +15,7 @@
 (def foot 0.3048)
 (def gravitation 9.8066500286389)
 (def pound-weight 0.45359237)
-(def pound-force (* pound-weight gravitation))
+(def pound-force (* ^double pound-weight ^double gravitation))
 (def slugs 14.5939029372)
 
 

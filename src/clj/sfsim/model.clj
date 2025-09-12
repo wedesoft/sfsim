@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.model
   "Import glTF scenes into Clojure"
   (:require
@@ -15,13 +21,15 @@
     [sfsim.planet :refer (surface-radiance-function shadow-vars)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
-                                                   make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
-                                                   uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
-                                                   setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
+                          make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
+                          uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
+                          setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap)]
     [sfsim.util :refer (N0 N third)])
   (:import
+    (java.nio
+      DirectByteBuffer)
     (org.lwjgl.assimp
       AIAnimation
       AIColor4D
@@ -45,7 +53,7 @@
       STBImage)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -208,9 +216,9 @@
         channels (int-array 1)
         buffer   (STBImage/stbi_load_from_memory (.pcDataCompressed texture) width height channels 4)
         data     (byte-array (.limit buffer))]
-    (.get buffer data)
-    (.flip buffer)
-    (STBImage/stbi_image_free buffer)
+    (.get ^DirectByteBuffer buffer ^bytes data)
+    (.flip ^DirectByteBuffer buffer)
+    (STBImage/stbi_image_free ^DirectByteBuffer buffer)
     #:sfsim.image{:width (aget width 0) :height (aget height 0) :channels (aget channels 0) :data data}))
 
 
@@ -220,7 +228,7 @@
 (defn- decode-position-key
   "Read a position key from an animation channel"
   {:malli/schema [:=> [:cat :some :double N0] position-key]}
-  [channel ticks-per-second i]
+  [channel ^double ticks-per-second ^long i]
   (let [position-key (.get (.mPositionKeys ^AINodeAnim channel) ^long i)
         position     (.mValue ^AIVectorKey position-key)]
     {::time (/ (.mTime ^AIVectorKey position-key) ticks-per-second)
@@ -233,7 +241,7 @@
 (defn- decode-rotation-key
   "Read a rotation key from an animation channel"
   {:malli/schema [:=> [:cat :some :double N0] rotation-key]}
-  [channel ticks-per-second i]
+  [channel ^double ticks-per-second i]
   (let [rotation-key (.get (.mRotationKeys ^AINodeAnim channel) ^long i)
         rotation     (.mValue ^AIQuatKey rotation-key)]
     {::time (/ (.mTime ^AIQuatKey rotation-key) ticks-per-second)
@@ -246,7 +254,7 @@
 (defn- decode-scaling-key
   "Read a scaling key from an animation channel"
   {:malli/schema [:=> [:cat :some :double N0] scaling-key]}
-  [channel ticks-per-second i]
+  [channel ^double ticks-per-second ^long i]
   (let [scaling-key (.get (.mScalingKeys ^AINodeAnim channel) ^long i)
         scaling     (.mValue ^AIVectorKey scaling-key)]
     {::time (/ (.mTime ^AIVectorKey scaling-key) ticks-per-second)
@@ -262,7 +270,7 @@
 (defn- decode-channel
   "Read channel of an animation"
   {:malli/schema [:=> [:cat :some :double N0] [:tuple :string channel]]}
-  [animation ticks-per-second i]
+  [animation ^double ticks-per-second ^long i]
   (let [channel (AINodeAnim/create ^long (.get (.mChannels ^AIAnimation animation) ^long i))]
     [(.dataString (.mNodeName channel))
      {::position-keys (mapv #(decode-position-key channel ticks-per-second %) (range (.mNumPositionKeys channel)))
@@ -442,17 +450,17 @@
 (defn- interpolate-frame
   "Interpolate between pose frames"
   {:malli/schema [:=> [:cat [:vector [:map [::time :double]]] :double :keyword fn?] :some]}
-  [key-frames t k lerp]
+  [key-frames ^double t k lerp]
   (let [n       (count key-frames)
         t0      (::time (first key-frames))
         t1      (::time (last key-frames))
-        delta-t (if (<= n 1) 1.0 (/ (- t1 t0) (dec n)))
-        index   (int (floor (/ (- t t0) delta-t)))]
+        delta-t (if (<= n 1) 1.0 (/ ^double (- ^double t1 ^double t0) (dec n)))
+        index   (int (floor (/ (- t ^double t0) ^double delta-t)))]
     (cond (<  index 0)       (k (first key-frames))
           (>= index (dec n)) (k (last key-frames))
           :else              (let [frame-a  (nth key-frames index)
                                    frame-b  (nth key-frames (inc index))
-                                   weight   (/ (- (::time frame-b) t) delta-t)]
+                                   weight   (/ ^double (- ^double (::time frame-b) ^double t) ^double delta-t)]
                                (lerp (k frame-a) (k frame-b) weight)))))
 
 
@@ -470,7 +478,8 @@
   {:malli/schema [:=> [:cat [:vector position-key] :double] fvec3]}
   [key-frames t]
   (interpolate-frame key-frames t ::position
-                     (fn weight-positions [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
+                     (fn weight-positions [a b weight]
+                         (add (mult a weight) (mult b (- 1.0 ^double weight))))))
 
 
 (defn interpolate-rotation
@@ -478,7 +487,8 @@
   {:malli/schema [:=> [:cat [:vector rotation-key] :double] quaternion]}
   [key-frames t]
   (interpolate-frame key-frames t ::rotation
-                     (fn weight-rotations [a b weight] (q/+ (q/scale a weight) (q/scale (nearest-quaternion b a) (- 1.0 weight))))))
+                     (fn weight-rotations [a b weight]
+                         (q/+ (q/scale a weight) (q/scale (nearest-quaternion b a) (- 1.0 ^double weight))))))
 
 
 (defn interpolate-scaling
@@ -486,7 +496,8 @@
   {:malli/schema [:=> [:cat [:vector scaling-key] :double] fvec3]}
   [key-frames t]
   (interpolate-frame key-frames t ::scaling
-                     (fn weight-scales [a b weight] (add (mult a weight) (mult b (- 1.0 weight))))))
+                     (fn weight-scales [a b weight]
+                         (add (mult a weight) (mult b (- 1.0 ^double weight))))))
 
 
 (defn interpolate-transformation
@@ -573,9 +584,9 @@
   [program texture-offset num-scene-shadows textured bump]
   (if textured
     (do
-      (uniform-sampler program "colors" (+ texture-offset num-scene-shadows))
-      (when bump (uniform-sampler program "normals" (+ texture-offset num-scene-shadows 1))))
-    (when bump (uniform-sampler program "normals" (+ texture-offset num-scene-shadows)))))
+      (uniform-sampler program "colors" (+ ^long texture-offset ^long num-scene-shadows))
+      (when bump (uniform-sampler program "normals" (+ ^long texture-offset ^long num-scene-shadows 1))))
+    (when bump (uniform-sampler program "normals" (+ ^long texture-offset ^long num-scene-shadows)))))
 
 
 (defn setup-scene-static-uniforms
@@ -595,8 +606,8 @@
     (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
     (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
     (doseq [i (range num-scene-shadows)]
-      (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 8)))
-    (setup-shadow-and-opacity-maps program shadow-data (+ 8 num-scene-shadows))
+      (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ ^long i 8)))
+    (setup-shadow-and-opacity-maps program shadow-data (+ 8 ^long num-scene-shadows))
     (setup-scene-samplers program texture-offset num-scene-shadows textured bump)
     (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
@@ -627,7 +638,7 @@
         cloud-data           (:sfsim.clouds/data data)
         render-config        (:sfsim.render/config data)
         atmosphere-luts      (:sfsim.atmosphere/luts data)
-        texture-offset       (+ 8 (* 2 num-steps))
+        texture-offset       (+ 8 (* 2 ^long num-steps))
         variations           (for [textured [false true] bump [false true] num-scene-shadows scene-shadow-counts]
                                [textured bump num-scene-shadows])
         programs             (mapv #(make-scene-program (first %) (second %) texture-offset (third %) data) variations)]
@@ -699,7 +710,9 @@
   (uniform-matrix4 program "object_to_world" transform)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
   (doseq [i (range (count scene-shadow-matrices))]
-    (uniform-matrix4 program (str "object_to_shadow_map_" (inc i)) (mulm (nth scene-shadow-matrices i) internal-transform))))
+    (uniform-matrix4 program
+                     (str "object_to_shadow_map_" (inc ^long i))
+                     (mulm (nth scene-shadow-matrices i) internal-transform))))
 
 
 (defmulti render-mesh (fn [material _render-vars] (material-type material)))
@@ -732,7 +745,7 @@
   [{::keys [colors normals]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
   (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
                                           scene-shadow-matrices)
-  (use-textures {texture-offset colors (inc texture-offset) normals}))
+  (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
 
 
 (def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
@@ -763,12 +776,15 @@
                    4 (:sfsim.clouds/worley cloud-data) 5 (:sfsim.clouds/perlin-worley cloud-data)
                    6 (:sfsim.clouds/cloud-cover cloud-data) 7 (:sfsim.clouds/bluenoise cloud-data)})
     (doseq [i (range num-scene-shadows)]
-      (use-textures {(+ i 8) (::shadows (nth scene-shadows i))}))
+      (use-textures {(+ ^long i 8) (::shadows (nth scene-shadows i))}))
     (use-textures (zipmap (drop (+ 8 num-scene-shadows) (range))
                           (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
     (doseq [scene scenes]
-      (render-scene (comp (::programs scene-renderer) material-and-shadow-type) (+ texture-offset num-scene-shadows) render-vars
-                    (mapv (fn [s] (:sfsim.matrix/object-to-shadow-map (::matrices s))) scene-shadows) scene render-mesh))))
+      (render-scene (comp (::programs scene-renderer) material-and-shadow-type)
+                    (+ ^long texture-offset num-scene-shadows)
+                    render-vars
+                    (mapv (fn [s] (:sfsim.matrix/object-to-shadow-map (::matrices s))) scene-shadows)
+                    scene render-mesh))))
 
 
 (defn destroy-scene-renderer
@@ -786,9 +802,9 @@
         camera-to-world      (transformation-matrix rotation position)
         world-to-camera      (inverse camera-to-world)
         object-camera-vector (mulv world-to-camera (vec3->vec4 object-position 1.0))
-        object-depth         (- (object-camera-vector 2))
-        z-near               (max (- object-depth object-radius) min-z-near)
-        z-far                (+ z-near object-radius object-radius)]
+        object-depth         (- ^double (object-camera-vector 2))
+        z-near               (max ^double (- ^double object-depth ^double object-radius) ^double min-z-near)
+        z-far                (+ ^double z-near ^double object-radius ^double object-radius)]
     (make-render-vars render-config window-width window-height position orientation light-direction z-near z-far)))
 
 

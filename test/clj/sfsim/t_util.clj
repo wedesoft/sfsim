@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.t-util
   (:require
     [clojure.math :refer (PI)]
@@ -26,6 +32,18 @@
       (seq (slurp-bytes "test/clj/sfsim/fixtures/util/bytes.raw")) => [2 3 5 7])
 
 
+(fact "Uncompress bytes"
+      (seq (slurp-bytes-gz "test/clj/sfsim/fixtures/util/bytes.gz")) => [2 3 5 7] )
+
+
+(fact "Slurp bytes from file in tar"
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-bytes-tar tar "bytes.raw"))) => [2 3 5 7])
+
+
+(fact "Slurp compressed bytes from file in tar"
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-bytes-gz-tar tar "bytes.gz"))) => [2 3 5 7])
+
+
 (fact "Load a set of short integers"
       (seq (slurp-shorts "test/clj/sfsim/fixtures/util/shorts.raw")) => [2 3 5 7])
 
@@ -34,10 +52,28 @@
       (seq (slurp-floats "test/clj/sfsim/fixtures/util/floats.raw")) => [2.0 3.0 5.0 7.0])
 
 
+(fact "Load a set of compressed floating point numbers"
+      (seq (slurp-floats-gz "test/clj/sfsim/fixtures/util/floats.gz")) => [2.0 3.0 5.0 7.0])
+
+
+(fact "Load a set of floating point numbers from a file in a tar archive"
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-floats-tar tar "floats.raw"))) => [2.0 3.0 5.0 7.0])
+
+
+(fact "Load a set of compressed floating point numbers from a file in a tar archive"
+      (seq (with-tar tar "test/clj/sfsim/fixtures/util/bytes.tar" (slurp-floats-gz-tar tar "floats.gz"))) => [2.0 3.0 5.0 7.0])
+
+
 (fact "Save a set of bytes"
       (let [file-name (.getPath (File/createTempFile "spit" ".tmp"))]
         (spit-bytes file-name (byte-array [2 3 5 7])) => anything
         (seq (slurp-bytes file-name)) => [2 3 5 7]))
+
+
+(fact "Compress a set of bytes"
+      (let [file-name (.getPath (File/createTempFile "spit" ".gz"))]
+        (spit-bytes-gz file-name (byte-array [2 3 5 7])) => anything
+        (seq (slurp-bytes-gz file-name)) => [2 3 5 7]))
 
 
 (fact "Save a set of short integers"
@@ -52,12 +88,25 @@
         (seq (slurp-floats file-name)) => [2.0 3.0 5.0 7.0]))
 
 
+(fact "Compress a set of floats"
+      (let [file-name (.getPath (File/createTempFile "spit" ".gz"))]
+        (spit-floats-gz file-name (float-array [2.0 3.0 5.0 7.0])) => anything
+        (seq (slurp-floats-gz file-name)) => [2.0 3.0 5.0 7.0]))
+
+
+
 (facts "Slurp bytes into a Java byte buffer"
        (let [buffer (slurp-byte-buffer "test/clj/sfsim/fixtures/util/bytes.raw")]
          (.get buffer 0) => 2
          (.get buffer 1) => 3
          (.get buffer 2) => 5
          (.get buffer 3) => 7))
+
+
+(fact "Create tar file from files"
+      (let [file-name (.getPath (File/createTempFile "test" ".tar"))]
+        (create-tar file-name ["bytes.raw" "test/clj/sfsim/fixtures/util/bytes.raw"])
+        (seq (with-tar tar file-name (slurp-bytes-tar tar "bytes.raw"))) => [2 3 5 7]))
 
 
 (fact "Determine file path of map tile"
@@ -76,6 +125,14 @@
       (cube-dir "globe" :sfsim.cubemap/face5 2 1) => "globe/5/2/1")
 
 
+(fact "Determine tar file containing cube tile"
+      (cube-tar "globe" :sfsim.cubemap/face5 2 1) => "globe/5/2/1.tar")
+
+
+(fact "Determine file name of cube tile"
+      (cube-file-name 3 ".png") => "3.png")
+
+
 (tabular "Sinc function"
          (fact (sinc ?x) => (roughly ?result 1e-6))
          ?x       ?result
@@ -85,8 +142,14 @@
 
 
 (facts "Square values"
-       (sqr 2) => 4
-       (sqr 3) => 9)
+       (sqr 2.0) => 4.0
+       (sqr 3.0) => 9.0)
+
+
+(facts "Cube values"
+       (cube 1.0) => 1.0
+       (cube 2.0) => 8.0
+       (cube 3.0) => 27.0)
 
 
 (facts "Converting unsigned byte to byte and back"
@@ -133,12 +196,18 @@
       (size-of-shape [2 3 5]) => 30)
 
 
+(facts "Clamp value between minimum and maximum"
+       (clamp 0.0 -3.0 5.0) => 0.0
+       (clamp 10.0 -3.0 5.0) => 5.0
+       (clamp -10.0 -3.0 5.0) => -3.0)
+
+
 (facts "Compute quotient and limit it"
-       (limit-quot 0 0 1) => 0
-       (limit-quot 4 2 1) => 1
-       (limit-quot -4 2 1) => -1
-       (limit-quot 1 2 1) => 1/2
-       (limit-quot -4 -2 1) => 1)
+       (limit-quot 0.0 0.0 1.0) => 0.0
+       (limit-quot 4.0 2.0 1.0) => 1.0
+       (limit-quot -4.0 2.0 1.0) => -1.0
+       (limit-quot 1.0 2.0 1.0) => 0.5
+       (limit-quot -4.0 -2.0 1.0) => 1.0)
 
 
 (facts "Count dimensions of nested vector"
@@ -156,3 +225,16 @@
        (find-if odd? [2 4 6]) => nil
        (find-if odd? [2 3 4]) => 3
        (find-if odd? [2 4 5]) => 5)
+
+
+(def destruct (atom nil))
+(def sqr-cache (make-lru-cache 2 sqr (fn [x] (reset! destruct x))))
+
+
+(facts "LRU cache with destructor"
+       (sqr-cache 2.0) => 4.0
+       (sqr-cache 3.0) => 9.0
+       (sqr-cache 2.0) => 4.0
+       @destruct => nil
+       (sqr-cache 5.0) => 25.0
+       @destruct => 9.0)

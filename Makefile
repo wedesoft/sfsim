@@ -6,9 +6,9 @@ LDFLAGS = -L/usr/local/lib -lJolt -pthread
 
 all: jolt
 
-jolt: src/c/sfsim/libjolt.so
+jolt: libjolt.so
 
-src/c/sfsim/libjolt.so: src/c/sfsim/jolt.o
+libjolt.so: src/c/sfsim/jolt.o
 	$(CC) -shared -flto=auto -o $@ $^ $(LDFLAGS)
 	$(STRIP) $@
 
@@ -18,4 +18,4 @@ src/c/sfsim/libjolt.so: src/c/sfsim/jolt.o
 src/c/sfsim/jolt.o: src/c/sfsim/jolt.cc src/c/sfsim/jolt.hh
 
 clean:
-	rm -f src/c/sfsim/libjolt.so src/c/sfsim/*.o
+	rm -f libjolt.so src/c/sfsim/*.o

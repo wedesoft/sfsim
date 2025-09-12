@@ -1,18 +1,25 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.gui
   (:require
     [fastmath.matrix :as fm]
     [sfsim.image :refer (white-image-with-alpha)]
-    [sfsim.matrix :refer (fmat4)]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
                                        with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                                        destroy-vertex-array-object)]
     [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)]
-    [sfsim.util :refer (N slurp-byte-buffer)])
+    [sfsim.util :refer (slurp-byte-buffer)])
   (:import
     (java.nio
       DirectByteBuffer)
     (java.nio.charset
       StandardCharsets)
+    (fastmath.matrix
+      Mat4x4)
     (org.lwjgl
       BufferUtils)
     (org.lwjgl.nuklear
@@ -50,7 +57,7 @@
       MemoryUtil)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -73,8 +80,7 @@
 
 (defn gui-matrix
   "Projection matrix for rendering 2D GUI"
-  {:malli/schema [:=> [:cat N N] fmat4]}
-  [width height]
+  ^Mat4x4 [^long width ^long height]
   (let [w2 (/  2.0 width)
         h2 (/ -2.0 height)]
     (fm/mat4x4  w2 0.0  0.0 -1.0
@@ -105,9 +111,9 @@
   "Create Nuklear allocation object"
   []
   (let [result (NkAllocator/create)]
-    (.alloc result (reify NkPluginAllocI
+    (.alloc result (reify NkPluginAllocI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
                      (invoke [_this _handle _old size] (MemoryUtil/nmemAllocChecked size))))
-    (.mfree result (reify NkPluginFreeI
+    (.mfree result (reify NkPluginFreeI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
                      (invoke [_this _handle ptr] (MemoryUtil/nmemFree ptr))))
     result))
 
@@ -215,8 +221,7 @@
 
 (defn render-nuklear-gui
   "Display the graphical user interface"
-  {:malli/schema [:=> [:cat :some :int :int] :nil]}
-  [{::keys [context config program vao cmds]} width height]
+  [{::keys [context config program vao cmds]} ^long width ^long height]
   (let [stack (MemoryStack/stackPush)]
     (GL11/glViewport 0 0 width height)
     (use-program program)
@@ -235,7 +240,7 @@
               (GL13/glActiveTexture GL13/GL_TEXTURE0)
               (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
               (let [clip-rect (.clip_rect cmd)]
-                (set-scissor (.x clip-rect) (- height (int (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
+                (set-scissor (.x clip-rect) (- height (long (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
               (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
             (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))))
     (Nuklear/nk_clear context)
@@ -257,11 +262,14 @@
 
 
 (defmacro nuklear-window
-  [gui title x y width height & body]
+  [gui title x y width height border & body]
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
          context# (:sfsim.gui/context ~gui)]
-     (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#) Nuklear/NK_WINDOW_NO_SCROLLBAR)
+     (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
+                             ~(if border
+                               `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE Nuklear/NK_WINDOW_NO_SCROLLBAR)
+                               `Nuklear/NK_WINDOW_NO_SCROLLBAR))
        ~@body
        (Nuklear/nk_end context#))
      (MemoryStack/stackPop)))
@@ -276,8 +284,7 @@
 
 (defn make-bitmap-font
   "Create a bitmap font with character packing data"
-  {:malli/schema [:=> [:cat :string :int :int :int] :some]}
-  [ttf-filename bitmap-width bitmap-height font-height]
+  [^String ttf-filename ^long bitmap-width ^long bitmap-height ^long font-height]
   (let [font         (NkUserFont/create)
         fontinfo     (STBTTFontinfo/create)
         ttf          (slurp-byte-buffer ttf-filename)
@@ -297,7 +304,7 @@
           image (white-image-with-alpha alpha)]
       {::font font
        ::fontinfo fontinfo
-       ::ttf ttf
+       ::ttf ttf  ; keep alive after passing buffer to stbtt_InitFont
        ::font-height font-height
        ::scale scale
        ::descent (* (aget orig-descent 0) scale)
@@ -319,7 +326,7 @@
   {:malli/schema [:=> [:cat :some :some] :any]}
   [{::keys [fontinfo scale]} font]
   (.width ^NkUserFont font
-          (reify NkTextWidthCallbackI
+          (reify NkTextWidthCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
             (invoke
               [_this _handle _h text len]
               (let [stack     (MemoryStack/stackPush)
@@ -334,7 +341,7 @@
                         text-width
                         (do
                           (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
-                          (let [text-width (+ text-width (* (.get advance 0) scale))
+                          (let [text-width (+ text-width (* (.get advance 0) ^double scale))
                                 glyph-len  (Nuklear/nnk_utf_decode (+ text text-len)
                                                                    (MemoryUtil/memAddress unicode) (- len text-len))]
                             (recur (+ text-len glyph-len) glyph-len text-width)))))]
@@ -356,7 +363,7 @@
   (let [bitmap-width  (:sfsim.image/width image)
         bitmap-height (:sfsim.image/height image)]
     (.query ^NkUserFont font
-            (reify NkQueryFontGlyphCallbackI
+            (reify NkQueryFontGlyphCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
               (invoke
                 [_this _handle font-height glyph codepoint _next-codepoint]
                 (let [stack   (MemoryStack/stackPush)
@@ -370,8 +377,8 @@
                   (let [ufg (NkUserFontGlyph/create glyph)]
                     (.width ufg (- (.x1 q) (.x0 q)))
                     (.height ufg (- (.y1 q) (.y0 q)))
-                    (.set (.offset ufg) (.x0 q) (+ (.y0 q) font-height descent))
-                    (.xadvance ufg (* (.get advance 0) scale))
+                    (.set (.offset ufg) (.x0 q) (+ (.y0 q) font-height ^double descent))
+                    (.xadvance ufg (* (.get advance 0) ^double scale))
                     (.set (.uv ufg 0) (.s0 q) (.t0 q))
                     (.set (.uv ufg 1) (.s1 q) (.t1 q)))
                   (MemoryStack/stackPop)))))))
@@ -435,10 +442,20 @@
   "Create a slider with integer value"
   {:malli/schema [:=> [:cat :some :int :int :int :int] :int]}
   [gui minimum value maximum step]
-  (let [buffer (BufferUtils/createIntBuffer 1)]
-    (.put buffer 0 ^int value)
+  (let [buffer (int-array 1)]
+    (aset-int buffer 0 value)
     (Nuklear/nk_slider_int ^NkContext (::context gui) ^int minimum buffer ^int maximum ^int step)
-    (.get buffer 0)))
+    (aget buffer 0)))
+
+
+(defn slider-float
+  "Create a slider with float value"
+  {:malli/schema [:=> [:cat :some :double :double :double :double] :double]}
+  [gui minimum value maximum step]
+  (let [buffer (float-array 1)]
+    (aset-float buffer 0 value)
+    (Nuklear/nk_slider_float ^NkContext (::context gui) ^float minimum buffer ^float maximum ^float step)
+    (aget buffer 0)))
 
 
 (defn button-label
@@ -449,8 +466,10 @@
 
 (defn text-label
   "Create a text label"
-  [gui label]
-  (Nuklear/nk_label ^NkContext (::context gui) ^String label (bit-or Nuklear/NK_TEXT_ALIGN_LEFT Nuklear/NK_TEXT_ALIGN_MIDDLE)))
+  ([gui label]
+   (text-label gui label (bit-or Nuklear/NK_TEXT_ALIGN_LEFT Nuklear/NK_TEXT_ALIGN_MIDDLE)))
+  ([gui label alignment]
+   (Nuklear/nk_label ^NkContext (::context gui) ^String label ^long alignment)))
 
 
 (defn edit-set
@@ -469,11 +488,11 @@
   [text max-size text-filter-type]
   (let [text-filter
         (case text-filter-type
-          ::filter-ascii   (reify NkPluginFilterI
+          ::filter-ascii   (reify NkPluginFilterI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
                              (invoke [_this edit unicode] (Nuklear/nnk_filter_ascii edit unicode)))
-          ::filter-float   (reify NkPluginFilterI
+          ::filter-float   (reify NkPluginFilterI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
                              (invoke [_this edit unicode] (Nuklear/nnk_filter_float edit unicode)))
-          ::filter-decimal (reify NkPluginFilterI
+          ::filter-decimal (reify NkPluginFilterI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
                              (invoke [_this edit unicode] (Nuklear/nnk_filter_decimal edit unicode))))
         text-len    (int-array 1)
         buffer      (BufferUtils/createByteBuffer max-size)]

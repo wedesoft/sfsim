@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.texture
   (:require
     [malli.core :as m]
@@ -16,7 +22,7 @@
       GL42)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 (def texture (m/schema [:map [::target :int] [::texture :int]]))
@@ -355,12 +361,14 @@
   {:malli/schema [:=> [:cat float-image-4d interpolation boundary :int :int :int] texture-4d]}
   [image interpolation boundary internalformat format_ type_]
   (let [buffer     (make-float-buffer (:sfsim.image/data image))
-        width      ^long (:sfsim.image/width image)
-        height     ^long (:sfsim.image/height image)
-        depth      ^long (:sfsim.image/depth image)
-        hyperdepth ^long (:sfsim.image/hyperdepth image)]
-    (assoc (create-texture-2d interpolation boundary (* width depth) (* height hyperdepth)
-                              (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long (* width depth) ^long (* height hyperdepth) 0
+        width      (:sfsim.image/width image)
+        height     (:sfsim.image/height image)
+        depth      (:sfsim.image/depth image)
+        hyperdepth (:sfsim.image/hyperdepth image)
+        width-2d   (* ^long width ^long depth)
+        height-2d  (* ^long height ^long hyperdepth)]
+    (assoc (create-texture-2d interpolation boundary width-2d height-2d
+                              (GL11/glTexImage2D GL11/GL_TEXTURE_2D 0 ^long internalformat ^long width-2d ^long height-2d 0
                                                  ^long format_ ^long type_ ^java.nio.DirectFloatBufferU buffer))
            ::width width
            ::height height
@@ -405,7 +413,7 @@
 (defn depth-texture->floats
   "Extract floating-point depth map from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
-  [{::keys [target texture width height]}]
+  [{::keys [^long target ^long texture ^long width ^long height]}]
   (with-texture target texture
     (let [buf (BufferUtils/createFloatBuffer (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT buf)
@@ -415,7 +423,7 @@
 (defn float-texture-2d->floats
   "Extract floating-point floating-point data from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
-  [{::keys [target texture width height]}]
+  [{::keys [^long target ^long texture ^long width ^long height]}]
   (with-texture target texture
     (let [buf (BufferUtils/createFloatBuffer (* width height))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL11/GL_RED GL11/GL_FLOAT buf)
@@ -425,7 +433,7 @@
 (defn float-texture-3d->floats
   "Extract floating-point floating-point data from texture"
   {:malli/schema [:=> [:cat texture-3d] float-image-3d]}
-  [{::keys [target texture width height depth]}]
+  [{::keys [^long target ^long texture ^long width ^long height ^long depth]}]
   (with-texture target texture
     (let [buf (BufferUtils/createFloatBuffer (* width height depth))]
       (GL11/glGetTexImage GL12/GL_TEXTURE_3D 0 GL11/GL_RED GL11/GL_FLOAT buf)
@@ -435,7 +443,7 @@
 (defn rgb-texture->vectors3
   "Extract floating-point RGB vectors from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
-  [{::keys [target texture width height]}]
+  [{::keys [^long target ^long texture ^long width ^long height]}]
   (with-texture target texture
     (let [buf (BufferUtils/createFloatBuffer (* width height 3))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGB GL11/GL_FLOAT buf)
@@ -445,7 +453,7 @@
 (defn rgba-texture->vectors4
   "Extract floating-point RGBA vectors from texture"
   {:malli/schema [:=> [:cat texture-2d] float-image-2d]}
-  [{::keys [target texture width height]}]
+  [{::keys [^long target ^long texture ^long width ^long height]}]
   (with-texture target texture
     (let [buf  (BufferUtils/createFloatBuffer (* width height 4))]
       (GL11/glGetTexImage GL11/GL_TEXTURE_2D 0 GL12/GL_RGBA GL11/GL_FLOAT buf)
@@ -455,7 +463,7 @@
 (defn texture->image
   "Convert texture to RGB image"
   {:malli/schema [:=> [:cat texture-2d] image]}
-  [{::keys [target texture width height]}]
+  [{::keys [^long target ^long texture ^long width ^long height]}]
   (with-texture target texture
     (let [size (* 4 width height)
           buf  (BufferUtils/createByteBuffer size)]
@@ -479,9 +487,9 @@
   [images interpolation boundary internalformat format_ type_]
   (let [size (:sfsim.image/width (first images))]
     (create-cubemap interpolation boundary size
-                    (doseq [[face image] (map-indexed vector images)]
-                      (GL11/glTexImage2D ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 ^long internalformat ^long size ^long size
-                                         0 ^long format_ ^long type_
+                    (doseq [[^long face image] (map-indexed vector images)]
+                      (GL11/glTexImage2D ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 ^long internalformat
+                                         ^long size ^long size 0 ^long format_ ^long type_
                                          ^java.nio.DirectFloatBufferU (make-float-buffer (:sfsim.image/data image)))))))
 
 
@@ -502,8 +510,7 @@
 
 (defn float-cubemap->floats
   "Extract floating-point data from cubemap face"
-  {:malli/schema [:=> [:cat texture-3d :int] float-image-2d]}
-  [{::keys [target texture width height]} face]
+  [{::keys [^long target ^long texture ^long width ^long height]} ^long face]
   (with-texture target texture
     (let [buf (BufferUtils/createFloatBuffer (* width height))]
       (GL11/glGetTexImage ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL11/GL_RED GL11/GL_FLOAT buf)
@@ -527,8 +534,7 @@
 
 (defn vector-cubemap->vectors3
   "Extract floating-point vector data from cubemap face"
-  {:malli/schema [:=> [:cat texture-3d :int] float-image-2d]}
-  [{::keys [target texture width height]} face]
+  [{::keys [^long target ^long texture ^long width ^long height]} ^long face]
   (with-texture target texture
     (let [buf (BufferUtils/createFloatBuffer (* width height 3))]
       (GL11/glGetTexImage ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_RGB GL11/GL_FLOAT buf)

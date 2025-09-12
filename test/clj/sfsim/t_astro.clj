@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.t-astro
   (:require
     [clojure.math :refer (PI)]
@@ -140,7 +146,7 @@
 
 (facts "Create lookup table for SPK segments (lookup by center and target)"
        (with-redefs [astro/read-daf-summaries
-                     (fn [header index buffer]
+                     (fn [header ^long index buffer]
                        (facts header => {:sfsim.astro/forward 53}
                               index => 53
                               buffer => :buffer)
@@ -158,7 +164,7 @@
 
 (facts "Create lookup table for PCK segments (lookup by target)"
        (with-redefs [astro/read-daf-summaries
-                     (fn [header index buffer]
+                     (fn [header ^long index buffer]
                        (facts header => {:sfsim.astro/forward 4}
                               index => 4
                               buffer => :buffer)
@@ -280,10 +286,25 @@
        (chi-a 1.0)   => (roughly 8.173932 1e-6))
 
 
+(defn mock-psi-a
+  ^double [^double t]
+  (fact t => 1.0) (/ (* 0.125 PI) ASEC2RAD))
+
+
+(defn mock-omega-a
+  ^double [^double t]
+  (fact t => 1.0) (/ (* 0.25 PI) ASEC2RAD))
+
+
+(defn mock-chi-a
+  ^double [^double t]
+  (fact t => 1.0) (/ (* 0.5 PI) ASEC2RAD))
+
+
 (fact "Test composition of precession matrix"
-      (with-redefs [astro/psi-a   (fn [t] (fact t => 1.0) (/ (* 0.125 PI) ASEC2RAD))
-                    astro/omega-a (fn [t] (fact t => 1.0) (/ (* 0.25  PI) ASEC2RAD))
-                    astro/chi-a   (fn [t] (fact t => 1.0) (/ (* 0.5   PI) ASEC2RAD))]
+      (with-redefs [astro/psi-a   mock-psi-a
+                    astro/omega-a mock-omega-a
+                    astro/chi-a   mock-chi-a]
         (let [tdb        (+ T0 36525.0)
               r3-chi-a   (rotation-z (* -0.5 PI))
               r1-omega-a (rotation-x (* 0.25 PI))
@@ -292,19 +313,24 @@
           (compute-precession tdb) => (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0))))))
 
 
-(fact "Compute Earth rotation angle as a value between 0 and 1"
-      (earth-rotation-angle (+ T0 0.0)) => (roughly 0.779057 1e-6)
-      (earth-rotation-angle (+ T0 0.5)) => (roughly 0.280426 1e-6)
-      (earth-rotation-angle (+ T0 1.0)) => (roughly 0.781795 1e-6)
-      (earth-rotation-angle (+ T0 183.0)) => (roughly 0.280077 1e-6)
-      (earth-rotation-angle (+ T0 36525.0)) => (roughly 0.777637 1e-6))
+(facts "Compute Earth rotation angle as a value between 0 and 1"
+       (earth-rotation-angle (+ T0 0.0)) => (roughly 0.779057 1e-6)
+       (earth-rotation-angle (+ T0 0.5)) => (roughly 0.280426 1e-6)
+       (earth-rotation-angle (+ T0 1.0)) => (roughly 0.781795 1e-6)
+       (earth-rotation-angle (+ T0 183.0)) => (roughly 0.280077 1e-6)
+       (earth-rotation-angle (+ T0 36525.0)) => (roughly 0.777637 1e-6))
 
 
-(fact "Compute Greenwich Mean Sidereal Time (GMST) in hours"
-      (sidereal-time (+ T0 0.0))     => (roughly (+ 18 (/ 41 60) (/ 50.55 3600)) 2e-6)
-      (sidereal-time (+ T0 0.5))     => (roughly (+  6 (/ 43 60) (/ 48.83 3600)) 2e-6)
-      (sidereal-time (+ T0 1.0))     => (roughly (+ 18 (/ 45 60) (/ 47.10 3600)) 2e-6)
-      (sidereal-time (+ T0 36525.0)) => (roughly (+ 18 (/ 44 60) (/ 55.44 3600)) 2e-6))
+(facts "Get Earth rotation speed in radians per second"
+       earth-rotation-speed => (roughly (* 2 PI (- (earth-rotation-angle (+ T0 (/ 1.0 86400))) (earth-rotation-angle T0))) 1e-9)
+       (* earth-rotation-speed (-> 23 (* 60) (+ 56) (* 60) (+ 4.0905))) => (roughly (* 2 PI) 1e-6))
+
+
+(facts "Compute Greenwich Mean Sidereal Time (GMST) in hours"
+       (sidereal-time (+ T0 0.0))     => (roughly (+ 18 (/ 41 60) (/ 50.55 3600)) 2e-6)
+       (sidereal-time (+ T0 0.5))     => (roughly (+  6 (/ 43 60) (/ 48.83 3600)) 2e-6)
+       (sidereal-time (+ T0 1.0))     => (roughly (+ 18 (/ 45 60) (/ 47.10 3600)) 2e-6)
+       (sidereal-time (+ T0 36525.0)) => (roughly (+ 18 (/ 44 60) (/ 55.44 3600)) 2e-6))
 
 
 (fact "ICRS to J2000 transformation matrix"

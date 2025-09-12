@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.t-planet
   (:require
     [clojure.math :refer (PI exp pow)]
@@ -21,8 +27,10 @@
     [sfsim.texture :refer :all]
     [sfsim.util :refer :all])
   (:import
-    (org.lwjgl.glfw
-      GLFW)))
+    [clojure.lang
+     Keyword]
+    [org.lwjgl.glfw
+     GLFW]))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -48,7 +56,7 @@
              b (vec3 -0.5  -0.5  -1.0)
              c (vec3 -0.75 -0.25 -1.0)
              d (vec3 -0.5  -0.25 -1.0)]
-         (with-redefs [cubemap/cube-map-corners (fn [face level y x]
+         (with-redefs [cubemap/cube-map-corners (fn [^Keyword face ^long level ^long y ^long x]
                                                   (fact [face level y x] => [:sfsim.cubemap/face5 3 2 1])
                                                   [a b c d])]
            (let [arr (make-cube-map-tile-vertices :sfsim.cubemap/face5 3 2 1 10 100)]
@@ -666,6 +674,12 @@ void main()
        (render-depth 4.0 1.0 1.0) => 6.0)
 
 
+(defn render-depth-mock
+  ^double [^double radius ^double max-height ^double cloud-top]
+  (fact [radius cloud-top] => [1000.0 100.0])
+  300.0)
+
+
 (facts "Create hashmap with render variables for rendering current frame of planet"
        (let [planet {:sfsim.planet/radius 1000.0}
              cloud  {:sfsim.clouds/cloud-top 100.0}
@@ -674,7 +688,7 @@ void main()
              pos2   (vec3 (+ 1000 75) 0 0)
              o      (q/rotation 0.0 (vec3 0 0 1))
              light  (vec3 1 0 0)]
-         (with-redefs [planet/render-depth (fn [radius height cloud-top] (fact [radius cloud-top] => [1000.0 100.0]) 300.0)
+         (with-redefs [planet/render-depth render-depth-mock
                        matrix/quaternion->matrix (fn [orientation] (fact [orientation] orientation => o) :rotation-matrix)
                        matrix/transformation-matrix (fn [rot pos] (fact rot => :rotation-matrix) (eye 4))
                        matrix/projection-matrix (fn [w h near far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]

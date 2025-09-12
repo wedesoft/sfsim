@@ -1,7 +1,12 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.jolt
   "Interface with native Jolt physics library"
   (:require
-    [clojure.spec.alpha :as s]
     [coffi.ffi :refer (defcfn defconst) :as ffi]
     [coffi.mem :as mem]
     [fastmath.matrix :refer (mat3x3 mulm mulv mat4x4)]
@@ -10,7 +15,7 @@
     [sfsim.quaternion :as q]))
 
 
-(ffi/load-library "src/c/sfsim/libjolt.so")
+(ffi/load-library "libjolt.so")
 
 
 (defcfn jolt-init
@@ -288,6 +293,16 @@
   add_torque [::mem/int ::vec3] ::mem/void)
 
 
+(defcfn add-impulse
+  "Apply an impulse in the next physics update"
+  add_impulse [::mem/int ::vec3] ::mem/void)
+
+
+(defcfn add-angular-impulse
+  "Apply an angular impulse in the next physics update"
+  add_angular_impulse [::mem/int ::vec3] ::mem/void)
+
+
 (defcfn activate-body
   "Make sure body is active"
   activate_body [::mem/int] ::mem/void)
@@ -410,10 +425,10 @@
   has_hit_hard_point [::mem/pointer ::mem/int] ::mem/byte)
 
 
-(defn has-hit-hard-point
+(definline has-hit-hard-point
   "Check if wheel suspension has hit its upper limit"
   [constraint wheel]
-  (not (zero? (has-hit-hard-point- constraint wheel))))
+  `(not (zero? (has-hit-hard-point- ~constraint ~wheel))))
 
 
 (defcfn remove-and-destroy-constraint

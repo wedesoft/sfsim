@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.conftest
   (:require
     [clojure.java.io :as io]
@@ -7,6 +13,7 @@
     [sfsim.render :refer (make-program make-vertex-array-object render-quads texture-render-color use-program
                                        with-invisible-window destroy-program destroy-vertex-array-object)]
     [sfsim.shaders :as shaders]
+    [sfsim.quaternion :as q]
     [sfsim.texture :refer (rgb-texture->vectors3 destroy-texture)]))
 
 
@@ -24,6 +31,14 @@
   (fn [actual]
     (and (== (count expected) (count actual))
          (<= (sqrt (apply + (mapv (comp #(* % %) -) actual expected))) error))))
+
+
+(defn roughly-quaternion
+  "Compare quaternion with expected value"
+  [expected error]
+  (fn [actual]
+      (println expected actual)
+      (<= (q/norm (q/- actual expected)) error)))
 
 
 (defn roughly-quaternion

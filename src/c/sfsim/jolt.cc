@@ -200,8 +200,9 @@ void optimize_broad_phase()
 void body_default_settings(JPH::BodyCreationSettings &body_settings)
 {
   body_settings.mApplyGyroscopicForce = true;
-  body_settings.mLinearDamping = 0.0;
-  body_settings.mAngularDamping = 0.0;
+  body_settings.mLinearDamping = 0.0f;
+  body_settings.mAngularDamping = 0.0f;
+  body_settings.mMaxLinearVelocity = 299792458.0f;
   body_settings.mMotionQuality = JPH::EMotionQuality::LinearCast;
 }
 
@@ -360,6 +361,20 @@ void add_torque(int id, Vec3 torque)
   JPH::BodyID body_id(id);
   JPH::Vec3 torque_vector(torque.x, torque.y, torque.z);
   body_interface->AddTorque(body_id, torque_vector);
+}
+
+void add_impulse(int id, Vec3 impulse)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 impulse_vector(impulse.x, impulse.y, impulse.z);
+  body_interface->AddImpulse(body_id, impulse_vector);
+}
+
+void add_angular_impulse(int id, Vec3 angular_impulse)
+{
+  JPH::BodyID body_id(id);
+  JPH::Vec3 angular_impulse_vector(angular_impulse.x, angular_impulse.y, angular_impulse.z);
+  body_interface->AddAngularImpulse(body_id, angular_impulse_vector);
 }
 
 void activate_body(int id)

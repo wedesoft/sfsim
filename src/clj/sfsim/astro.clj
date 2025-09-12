@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.astro
   "NASA JPL interpolation for pose of celestical objects (see https://rhodesmill.org/skyfield/ for original code and more)"
   (:require
@@ -15,6 +21,8 @@
   (:import
     (fastmath.vector
       Vec3)
+    (fastmath.matrix
+      Mat3x3)
     (java.nio
       ByteBuffer)
     (java.nio.channels
@@ -25,7 +33,7 @@
       StandardOpenOption)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -74,8 +82,7 @@
 
 (defn daf-descriptor-frame
   "Create codec frame for parsing data descriptor"
-  {:malli/schema [:=> [:cat :int :int] :some]}
-  [num-doubles num-integers]
+  [^long num-doubles ^long num-integers]
   (let [summary-length (+ (* 8 num-doubles) (* 4 num-integers))
         padding        (mod (- summary-length) 8)]
     (compile-frame
@@ -113,18 +120,16 @@
 
 (defn coefficient-frame
   "Return codec frame for parsing a set of coefficients"
-  {:malli/schema [:=> [:cat :int :int] :some]}
-  [rsize component-count]
+  [^long rsize ^long component-count]
   (let [coefficient-count (/ (- rsize 2) component-count)]
     (compile-frame (concat [:float64-le :float64-le] (repeat component-count (repeat coefficient-count :float64-le))))))
 
 
 (defn decode-record
   "Decode a record using the specified frame"
-  {:malli/schema [:=> [:cat :some :some :int] :some]}
-  [buffer frame index]
+  [buffer frame ^long index]
   (let [record (byte-array record-size)]
-    (.position ^ByteBuffer buffer ^long (* (dec index) record-size))
+    (.position ^ByteBuffer buffer ^long (* (dec index) ^long record-size))
     (.get ^ByteBuffer buffer record)
     (decode frame record false)))
 
@@ -199,8 +204,7 @@
 
 (defn read-daf-summaries
   "Read sources and descriptors to get summaries"
-  {:malli/schema [:=> [:cat :map :int :some] [:sequential daf-summary]]}
-  [header index buffer]
+  [header ^long index buffer]
   (let [summaries   (read-daf-descriptor header index buffer)
         next-number (long (::next-number summaries))
         descriptors (::descriptors summaries)
@@ -289,27 +293,25 @@
   {:malli/schema [:=> [:cat :map :some] coefficient-layout]}
   [segment buffer]
   (let [info (byte-array (sizeof coefficient-layout-frame))]
-    (.position ^ByteBuffer buffer ^long (* 8 (- (::end-i segment) 4)))
+    (.position ^ByteBuffer buffer ^long (* 8 ^long (- ^long (::end-i segment) 4)))
     (.get ^ByteBuffer buffer info)
     (convert-to-long (decode coefficient-layout-frame info) [::rsize ::n])))
 
 
 (defn read-interval-coefficients
   "Read coefficient block with specified index from segment"
-  {:malli/schema [:=> [:cat :map :map :int :some] [:sequential [:sequential :double]]]}
-  [segment layout index buffer]
+  [segment layout ^long index buffer]
   (let [component-count ({2 3 3 6} (::data-type segment))
         frame           (coefficient-frame (::rsize layout) component-count)
         data            (byte-array (sizeof frame))]
-    (.position ^ByteBuffer buffer ^long (+ (* 8 (dec (::start-i segment))) (* index (sizeof frame))))
+    (.position ^ByteBuffer buffer ^long (+ (* 8 ^long (dec ^long (::start-i segment))) ^long (* index ^long (sizeof frame))))
     (.get ^ByteBuffer buffer data)
     (reverse (apply map vector (drop 2 (decode frame data))))))
 
 
 (defn chebyshev-polynomials
   "Chebyshev polynomials"
-  {:malli/schema [:=> [:cat [:sequential :some] :double :some] :some]}
-  [coefficients s zero]
+  [coefficients ^double s zero]
   (let [s2      (* 2.0 s)
         [w0 w1] (reduce (fn [[w0 w1] c] [(-> w0 (mult s2) (sub w1) (add c)) w0])
                         [zero zero]
@@ -319,15 +321,14 @@
 
 (defn interval-index-and-position
   "Compute interval index and position (s) inside for given timestamp"
-  {:malli/schema [:=> [:cat [:map [::init :double] [::intlen :double] [::n :int]] :double] [:tuple :int :double]]}
-  [layout tdb]
+  [layout ^double tdb]
   (let [init   (::init layout)
         intlen (::intlen layout)
         n      (::n layout)
-        t      (- (* (- tdb T0) S-PER-DAY) init)
-        index  (min (max (long (quot t intlen)) 0) (dec n))
-        offset (- t (* index intlen))
-        s      (- (/ (* 2.0 offset) intlen) 1.0)]
+        t      (- (* (- tdb ^double T0) ^double S-PER-DAY) ^double init)
+        index  (min (max (long (quot t ^double intlen)) 0) ^long (dec ^long n))
+        offset (- t (* ^long index ^double intlen))
+        s      (- (/ (* 2.0 ^double offset) ^double intlen) 1.0)]
     [index s]))
 
 
@@ -344,12 +345,14 @@
   [filename]
   (let [buffer (map-file-to-buffer filename)
         header (read-daf-header buffer)
+        cmt    (read-daf-comment header buffer)
         lookup (spk-segment-lookup-table header buffer)]
     (when (not (check-ftp-str header))
       (throw (RuntimeException. "FTPSTR has wrong value")))
     (when (not (check-endianness header))
       (throw (RuntimeException. "File endianness not implemented!")))
     {::header header
+     ::comment cmt
      ::lookup lookup
      ::buffer buffer}))
 
@@ -363,7 +366,7 @@
         segment (get lookup [center target])
         layout  (read-coefficient-layout segment buffer)
         cache   (z/lru (fn [index] (map-vec3 (read-interval-coefficients segment layout index buffer))) :lru/threshold 8)]
-    (fn [tdb]
+    (fn spk-segment-interpolate [tdb]
       (let [[index s]    (interval-index-and-position layout tdb)
             coefficients (cache index)]
         (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
@@ -394,7 +397,7 @@
         segment (get lookup target)
         layout  (read-coefficient-layout segment buffer)
         cache   (z/lru (fn [index] (map-vec3 (read-interval-coefficients segment layout index buffer))) :lru/threshold 8)]
-    (fn [tdb]
+    (fn pck-segment-interpolate [tdb]
       (let [[index s]    (interval-index-and-position layout tdb)
             coefficients (cache index)]
         (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
@@ -405,27 +408,25 @@
 
 (defn julian-date
   "Convert calendar date to Julian date"
-  {:malli/schema [:=> [:cat date] :int]}
-  [{::keys [year month day]}]
+  ^long [{::keys [^long year ^long month ^long day]}]
   (let [g (- (+ year 4716) (if (<= month 2) 1 0))
         f (mod (+ month 9) 12)
-        e (- (+ (quot (* 1461 g) 4) day) 1402)
-        J (+ e (quot (+ (* 153 f) 2) 5))]
-    (+ J (- 38 (quot (* (quot (+ g 184) 100) 3) 4)))))
+        e (- (+ (quot (* 1461 ^long g) 4) day) 1402)
+        J (+ e (quot (+ (* 153 ^long f) 2) 5))]
+    (+ J (- 38 (quot (* (quot (+ ^long g 184) 100) 3) 4)))))
 
 
 (defn calendar-date
   "Convert Julian date to calendar date"
-  {:malli/schema [:=> [:cat :int] date]}
-  [jd]
-  (let [f (+ jd 1401)
-        f (+ f (- (quot (* (quot (+ (* 4 jd) 274277) 146097) 3) 4) 38))
-        e (+ (* 4 f) 3)
-        g (quot (mod e 1461) 4)
-        h (+ (* 5 g) 2)
-        day (inc (quot (mod h 153) 5))
-        month (inc (mod (+ (quot h 153) 2) 12))
-        year (+ (- (quot e 1461) 4716) (quot (- (+ 12 2) month) 12))]
+  [^long jd]
+  (let [f     (+ jd 1401)
+        f     (+ ^long f (- (quot (* (quot (+ (* 4 jd) 274277) 146097) 3) 4) 38))
+        e     (+ (* 4 ^long f) 3)
+        g     (quot ^long (mod ^long e 1461) 4)
+        h     (+ (* 5 ^long g) 2)
+        day   (inc ^long (quot ^long (mod ^long h 153) 5))
+        month (inc ^long (mod (+ (quot ^long h 153) 2) 12))
+        year  (+ (- (quot ^long e 1461) 4716) (quot (- (+ 12 2) ^long month) 12))]
     {::year year ::month month ::day day}))
 
 
@@ -434,8 +435,7 @@
 
 (defn clock-time
   "Convert day fraction to hours, minutes, and seconds"
-  {:malli/schema [:=> [:cat :double] clock]}
-  [day-fraction]
+  [^double day-fraction]
   (let [hours   (* 24.0 day-fraction)
         hour    (int hours)
         minutes (* 60.0 (- hours hour))
@@ -445,12 +445,9 @@
     {::hour hour ::minute minute ::second sec}))
 
 
-;; See python-skyfield precessionlib.compute_precession
-
 (defn psi-a
   "Compute Psi angle for Earth precession given centuries since 2000"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [t]
+  ^double [^double t]
   (-> t (* -0.0000000951) (+ 0.000132851) (* t) (- 0.00114045) (* t) (- 1.0790069) (* t) (+ 5038.481507) (* t)))
 
 
@@ -459,47 +456,43 @@
 
 (defn omega-a
   "Compute Omega angle for Earth precession given centuries since 2000"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [t]
-  (-> t (* 0.0000003337) (- 0.000000467) (* t) (- 0.00772503) (* t) (+ 0.0512623) (* t) (- 0.025754) (* t) (+ eps0)))
+  ^double [^double t]
+  (-> t (* 0.0000003337) (- 0.000000467) (* t) (- 0.00772503) (* t) (+ 0.0512623) (* t) (- 0.025754) (* t) (+ ^double eps0)))
 
 
 (defn chi-a
   "Compute Chi angle for Earth precession given centuries since 2000"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [t]
+  ^double [^double t]
   (-> t (* -0.0000000560) (+ 0.000170663) (* t) (- 0.00121197) (* t) (- 2.3814292) (* t) (+ 10.556403) (* t)))
 
 
 (defn compute-precession
-  "Compute precession matrix for Earth given Julian day"
-  {:malli/schema [:=> [:cat :double] fmat3]}
-  [tdb]
-  (let [t          (/ (- tdb T0) 36525.0)
-        r3-chi-a   (rotation-z (* (- (chi-a t)) ASEC2RAD))
-        r1-omega-a (rotation-x (* (omega-a t) ASEC2RAD))
-        r3-psi-a   (rotation-z (* (psi-a t) ASEC2RAD))
-        r1-eps0    (rotation-x (* (- eps0) ASEC2RAD))]
+  "Compute precession matrix for Earth given Julian day (see python-skyfield precessionlib.compute_precession)"
+  ^Mat3x3 [^double tdb]
+  (let [t          (/ (- tdb ^double T0) 36525.0)
+        r3-chi-a   (rotation-z (* (- (chi-a t)) ^double ASEC2RAD))
+        r1-omega-a (rotation-x (* (omega-a t) ^double ASEC2RAD))
+        r3-psi-a   (rotation-z (* (psi-a t) ^double ASEC2RAD))
+        r1-eps0    (rotation-x (* (- ^double eps0) ^double ASEC2RAD))]
     (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0)))))
 
 
-;; Compute Greenwich mean sidereal time.
-;; See python-skyfield earthlib.earth_rotation_angle
-
 (defn earth-rotation-angle
-  "Compute Earth rotation angle as a value between 0 and 1"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [jd-ut]
-  (let [th (+ 0.7790572732640 (* 0.00273781191135448 (- jd-ut T0)))]
-    (mod (+ (mod th 1.0) (mod jd-ut 1.0)) 1.0)))
+  "Compute Earth rotation angle as a value between 0 and 1 (see python-skyfield earthlib.earth_rotation_angle)"
+  ^double [^double jd-ut]
+  (let [th (+ 0.7790572732640 (* 0.00273781191135448 (- jd-ut ^double T0)))]
+    (mod (+ ^double (mod th 1.0) ^double (mod jd-ut 1.0)) 1.0)))
+
+
+(def earth-rotation-speed  ; Earth rotation speed in radians per second
+  (/ (* 2.0 PI (+ 1.0 0.00273781191135448)) 86400))
 
 
 (defn sidereal-time
   "Compute Greenwich Mean Sidereal Time (GMST) in hours"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [jd-ut]
+  ^double [^double jd-ut]
   (let [theta (earth-rotation-angle jd-ut)
-        t     (/ (- jd-ut T0) 36525.0)
+        t     (/ (- jd-ut ^double T0) 36525.0)
         st    (-> t (* -0.0000000368) (- 0.000029956)
                   (* t) (- 0.00000044)
                   (* t) (+ 1.3915817)
@@ -508,16 +501,13 @@
     (mod (+ (/ st 54000.0) (* theta 24.0)) 24.0)))
 
 
-;; Conversion matrix from ICRS to J2000.
-;; See python-skyfield framelib.ICRS_to_J2000
-
 (defn- build_matrix
-  "Construct conversion matrix from ICRS to J2000"
+  "Construct conversion matrix from ICRS to J2000 (see python-skyfield.framelib.ICRS_to_J2000)"
   {:malli/schema [:=> :cat fmat3]}
   []
-  (let [xi0  (* -0.0166170 ASEC2RAD)
-        eta0 (* -0.0068192 ASEC2RAD)
-        da0  (* -0.01460   ASEC2RAD)
+  (let [xi0  (* -0.0166170 ^double ASEC2RAD)
+        eta0 (* -0.0068192 ^double ASEC2RAD)
+        da0  (* -0.01460   ^double ASEC2RAD)
         yx   (- da0)
         zx   xi0
         xy   da0
@@ -540,11 +530,12 @@
   (mulm (compute-precession tdb) ICRS-to-J2000))
 
 
-(defn earth-to-icrs
+(def earth-to-icrs
   "Compute Earth orientation in ICRS coordinate system depending on time t (omitting nutation)"
-  {:malli/schema [:=> [:cat :double] fmat3]}
-  [jd-ut]
-  (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2 PI (/ (sidereal-time jd-ut) 24.0)))))
+  (z/lru
+    (fn earth-to-icrs-fn [jd-ut]
+      (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2.0 PI (/ (sidereal-time jd-ut) 24.0)))))
+    :lru/threshold 4))
 
 
 (def pck-parser (insta/parser (slurp "resources/grammars/pck.bnf")))
@@ -562,7 +553,7 @@
   [filename]
   (let [string (slurp filename)]
     (transform
-      {:START      (fn [& assignments] (reduce do-assignment {} assignments))
+      {:START      (fn do-all-assignments [& assignments] (reduce do-assignment {} assignments))
        :ASSIGNMENT vector
        :STRING     identity
        :NUMBER     #(Integer/parseInt %)
@@ -588,7 +579,7 @@
   [{::keys [axes angles units]}]
   (let [scale     ({"DEGREES" DEGREES2RAD "ARCSECONDS" ASEC2RAD} units)
         rotations [rotation-x rotation-y rotation-z]
-        matrices  (mapv (fn [angle axis] ((rotations (dec axis)) (* angle scale))) angles axes)]
+        matrices  (mapv (fn [angle axis] ((rotations (dec ^long axis)) (* ^double angle ^double scale))) angles axes)]
     (reduce (fn [result rotation] (mulm rotation result)) (eye 3) matrices)))
 
 
@@ -597,7 +588,7 @@
   [frame-kernel pck identifier target]
   (let [matrix       (frame-kernel-body-frame (frame-kernel-body-frame-data frame-kernel identifier))
         interpolator (make-pck-segment-interpolator pck target)]
-    (fn [tdb]
+    (fn interpolate-body-position [tdb]
       (let [components (interpolator tdb)
             ra         (.x ^Vec3 components)
             decl       (.y ^Vec3 components)
@@ -613,7 +604,7 @@
         j2000-instant  (.toInstant j2000-datetime)
         t              (java.time.Instant/now)
         duration       (java.time.Duration/between j2000-instant t)]
-    (/ (.toSeconds duration) S-PER-DAY)))
+    (/ (.toSeconds duration) ^double S-PER-DAY)))
 
 
 (set! *warn-on-reflection* false)

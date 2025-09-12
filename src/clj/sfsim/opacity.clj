@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.opacity
   "Rendering of deep opacity maps for cloud shadows"
   (:require
@@ -17,7 +23,7 @@
     [sfsim.worley :refer (worley-size)]))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -68,7 +74,7 @@
     (use-textures {0 (:sfsim.clouds/worley cloud-data) 1 (:sfsim.clouds/perlin-worley cloud-data)
                    2 (:sfsim.clouds/cloud-cover cloud-data)})
     (opacity-cascade (::shadow-size data) (::num-opacity-layers data) matrix-cas
-                     (/ (:sfsim.clouds/detail-scale cloud-data) worley-size) program
+                     (/ ^double (:sfsim.clouds/detail-scale cloud-data) ^long worley-size) program
                      (uniform-vector3 program "light_direction" light-direction)
                      (uniform-float program "scatter_amount" scatter-amount)
                      (uniform-float program "opacity_step" opacity-step)
@@ -100,10 +106,11 @@
         matrix-cascade  (shadow-matrix-cascade shadow-data render-vars)
         position        (:sfsim.render/origin render-vars)
         cos-light       (/ (dot (:sfsim.render/light-direction render-vars) position) (mag position))
-        sin-light       (sqrt (- 1 (sqr cos-light)))
-        opacity-step    (* (+ cos-light (* 10 sin-light)) opacity-base)
-        scatter-amount  (+ (* (:sfsim.clouds/anisotropic cloud-data) (phase {:sfsim.atmosphere/scatter-g 0.76} -1.0))
-                           (- 1 (:sfsim.clouds/anisotropic cloud-data)))
+        sin-light       (sqrt (- 1.0 (sqr cos-light)))
+        opacity-step    (* (+ cos-light (* 10 sin-light)) ^double opacity-base)
+        scatter-amount  (+ ^double (* ^double (:sfsim.clouds/anisotropic cloud-data)
+                                      ^double (phase {:sfsim.atmosphere/scatter-g 0.76} -1.0))
+                           ^double (- 1.0 ^double (:sfsim.clouds/anisotropic cloud-data)))
         light-direction (:sfsim.render/light-direction render-vars)
         opacities       (render-opacity-cascade opacity-renderer matrix-cascade light-direction scatter-amount opacity-step)
         shadows         (render-shadow-cascade planet-shadow-renderer ::matrix-cascade matrix-cascade :tree tree)]

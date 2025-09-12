@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.t-atmosphere
   (:require
     [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
@@ -16,7 +22,7 @@
                               sun-elevation-to-index surface-intersection surface-point? surface-radiance
                               surface-radiance-base surface-radiance-space transmittance transmittance-outer
                               transmittance-space transmittance-track transmittance-point vertex-atmosphere extinction
-                              attenuation-point temperature-at-height pressure-at-height density-at-height)
+                              attenuation-point temperature-at-height pressure-at-height density-at-height speed-of-sound)
      :as atmosphere]
     [sfsim.conftest :refer (roughly-vector is-image shader-test)]
     [sfsim.image :refer (convert-4d-to-2d get-vector3)]
@@ -191,6 +197,15 @@
            (surface-radiance-base earth [] 10 intensity (vec3 0 radius 0) (vec3 0 -1 0)) => (vec3 0.0 0.0 0.0))))
 
 
+(defn phase-mock-1
+  "Mie scattering phase function by Henyey-Greenstein depending on assymetry g and mu = cos(theta)"
+  ^double ^double [mie ^double mu]
+  (facts "Phase function gets called with correct arguments"
+         (:sfsim.atmosphere/scatter-g mie) => 0.76
+         mu => 0.36)
+  0.1)
+
+
 (fact "Single-scatter in-scattered light at a point in the atmosphere (J[L0])"
       (let [radius           6378000.0
             height           100000.0
@@ -214,11 +229,7 @@
                                x => (vec3 0 (+ radius 1000) 0))
                         (vec3 2e-5 2e-5 2e-5))
                       atmosphere/phase
-                      (fn [mie mu]
-                        (facts "Phase function gets called with correct arguments"
-                               (:sfsim.atmosphere/scatter-g mie) => 0.76
-                               mu => 0.36)
-                        0.1)
+                      phase-mock-1
                       atmosphere/transmittance
                       (fn [planet scatter steps origin direction above-horizon]
                         (facts "Transmittance function gets called with correct arguments"
@@ -290,6 +301,11 @@
          => (roughly-vector (point-scatter-component earth scatter mie steps intensity x view-direction light-direction true) 1e-12)))
 
 
+(defn phase-mock-2
+  ^double [mie ^double _mu]
+  0.5)
+
+
 (facts "Compute in-scattering of light at a point (J) depending on in-scattering from direction (S) and surface radiance (E)"
        (let [radius           6378000.0
              height           100000.0
@@ -316,11 +332,11 @@
                                 (facts x => x1
                                        light-direction => (vec3 0.36 0.48 0.8))
                                 (vec3 3 4 5))]
-         (with-redefs [atmosphere/phase (fn [mie mu] 0.5)]
+         (with-redefs [atmosphere/phase phase-mock-2]
            (with-redefs [atmosphere/ray-extremity
                          (fn [planet ray] (vec3 0 (+ radius height) 0))
                          sphere/integral-sphere
-                         (fn [steps normal fun]
+                         (fn [^long steps ^Vec3 normal fun]
                            (facts steps => 64
                                   normal => (roughly-vector (vec3 0 1 0) 1e-6)
                                   (fun (vec3 0 1 0)) => (roughly-vector (mult (emult (vec3 1 2 3) (vec3 2e-5 2e-5 2e-5)) 0.5) 1e-10))
@@ -340,7 +356,7 @@
                                     x0 => (vec3 0 radius 0))
                              (vec3 0.9 0.8 0.7))
                          sphere/integral-sphere
-                         (fn [steps normal fun]
+                         (fn [^long steps ^Vec3 normal fun]
                              (facts steps => 64
                                     normal => (roughly-vector (vec3 0 1 0) 1e-6)
                                     (fun (vec3 0 -1 0)) =>
@@ -364,7 +380,7 @@
                                       above-horizon => true)
                                (vec3 1 2 3))]
          (with-redefs [sphere/integral-half-sphere
-                       (fn [steps normal fun]
+                       (fn [^long steps ^Vec3 normal fun]
                          (facts steps => 64
                                 normal => (roughly-vector (vec3 0 1 0) 1e-6)
                                 (fun (vec3 0.36 0.48 0.8)) => (mult (vec3 1 2 3) 0.48))
@@ -1012,6 +1028,12 @@ void main()
        (density-at-height (* 65617 foot)) => (roughly (* 1.7083e-4 (/ slugs foot foot foot)) 1e-5)
        (density-at-height (* 80000 foot)) => (roughly (* 8.4459e-5 (/ slugs foot foot foot)) 1e-5)
        (density-at-height (* 104990 foot)) => (roughly (* 2.5660E-5 (/ slugs foot foot foot)) 1e-5))
+
+
+(facts "Speed of sound as a function of temperature"
+       (speed-of-sound 273.15) => (roughly 331.3 1e-1)
+       (speed-of-sound 293.15) => (roughly 343.2 1e-1)
+       (speed-of-sound 223.15) => (roughly 299.4 1e-1))
 
 
 (GLFW/glfwTerminate)

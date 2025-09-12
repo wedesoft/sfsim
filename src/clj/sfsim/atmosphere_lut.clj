@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.atmosphere-lut
   "Compute lookup tables for atmospheric scattering"
   (:require
@@ -23,8 +29,8 @@
 
 
 (def mie
-  #:sfsim.atmosphere{:scatter-base (vec3 5e-6 5e-6 5e-6)
-                     :scatter-scale 2000.0
+  #:sfsim.atmosphere{:scatter-base (vec3 2e-5 2e-5 2e-5)
+                     :scatter-scale 1200.0
                      :scatter-g 0.76
                      :scatter-quotient 0.9})
 

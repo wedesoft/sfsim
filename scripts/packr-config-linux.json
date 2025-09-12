@@ -1,0 +1,10 @@
+{
+  "platform": "linux64",
+  "jdk": "/usr/lib/jvm/jdk-24.0.2-oracle-x64",
+  "executable": "sfsim",
+  "classpath": ["target/sfsim.jar"],
+  "mainclass": "sfsim.core",
+  "resources": ["LICENSE", "libjolt.so", "venturestar.glb", "resources"],
+  "vmargs": ["Xms2g", "Xmx4g", "XX:+UseZGC", "-XX:+UseDynamicNumberOfGCThreads"],
+  "output": "out-linux"
+}

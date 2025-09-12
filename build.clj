@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 ; See https://clojure.github.io/tools.build/clojure.tools.build.api.html
 (ns build
     (:require [clojure.tools.build.api :as b]
@@ -96,7 +102,7 @@
            (.println *err* (str "Downloading " url " ..."))
            (io/copy
              (io/input-stream url)
-             (io/file filename)))))
+             (io/file (str "tmp/" filename))))))
 
 (defn download-blackmarble
   "Download some NASA Blackmarble data from https://earthobservatory.nasa.gov/features/NightLights/page3.php"
@@ -107,7 +113,7 @@
            (.println *err* (str "Downloading " url " ..."))
            (io/copy
              (io/input-stream url)
-             (io/file filename)))))
+             (io/file (str "tmp/" filename))))))
 
 (defn download-elevation
   "Download NOAA elevation data from https://www.ngdc.noaa.gov/mgg/topo/gltiles.html"
@@ -117,7 +123,7 @@
     (.println *err* (str "Downloading " url " ..."))
     (io/copy
       (io/input-stream url)
-      (io/file filename))))
+      (io/file (str "tmp/" filename)))))
 
 
 (defn download-lunar-color
@@ -128,7 +134,7 @@
     (.println *err* (str "Downloading " url " ..."))
     (io/copy
       (io/input-stream url)
-      (io/file filename))))
+      (io/file (str "tmp/" filename)))))
 
 
 (defn download-lunar-elevation
@@ -139,29 +145,29 @@
     (.println *err* (str "Downloading " url " ..."))
     (io/copy
       (io/input-stream url)
-      (io/file filename))))
+      (io/file (str "tmp/" filename)))))
 
 
 (defn extract-elevation
   "Extract and concatenate elevation files"
   [& _]
-  (b/unzip {:zip-file "all10g.zip" :target-dir "."})
-  (with-open [out (io/output-stream "elevation.A1.raw")]
-    (io/copy (io/file "all10/a10g") out) (io/copy (io/file "all10/e10g") out))
-  (with-open [out (io/output-stream "elevation.B1.raw")]
-    (io/copy (io/file "all10/b10g") out) (io/copy (io/file "all10/f10g") out))
-  (with-open [out (io/output-stream "elevation.C1.raw")]
-    (io/copy (io/file "all10/c10g") out) (io/copy (io/file "all10/g10g") out))
-  (with-open [out (io/output-stream "elevation.D1.raw")]
-    (io/copy (io/file "all10/d10g") out) (io/copy (io/file "all10/h10g") out))
-  (with-open [out (io/output-stream "elevation.A2.raw")]
-    (io/copy (io/file "all10/i10g") out) (io/copy (io/file "all10/m10g") out))
-  (with-open [out (io/output-stream "elevation.B2.raw")]
-    (io/copy (io/file "all10/j10g") out) (io/copy (io/file "all10/n10g") out))
-  (with-open [out (io/output-stream "elevation.C2.raw")]
-    (io/copy (io/file "all10/k10g") out) (io/copy (io/file "all10/o10g") out))
-  (with-open [out (io/output-stream "elevation.D2.raw")]
-    (io/copy (io/file "all10/l10g") out) (io/copy (io/file "all10/p10g") out)))
+  (b/unzip {:zip-file "tmp/all10g.zip" :target-dir "tmp"})
+  (with-open [out (io/output-stream "tmp/elevation.A1.raw")]
+    (io/copy (io/file "tmp/all10/a10g") out) (io/copy (io/file "tmp/all10/e10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.B1.raw")]
+    (io/copy (io/file "tmp/all10/b10g") out) (io/copy (io/file "tmp/all10/f10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.C1.raw")]
+    (io/copy (io/file "tmp/all10/c10g") out) (io/copy (io/file "tmp/all10/g10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.D1.raw")]
+    (io/copy (io/file "tmp/all10/d10g") out) (io/copy (io/file "tmp/all10/h10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.A2.raw")]
+    (io/copy (io/file "tmp/all10/i10g") out) (io/copy (io/file "tmp/all10/m10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.B2.raw")]
+    (io/copy (io/file "tmp/all10/j10g") out) (io/copy (io/file "tmp/all10/n10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.C2.raw")]
+    (io/copy (io/file "tmp/all10/k10g") out) (io/copy (io/file "tmp/all10/o10g") out))
+  (with-open [out (io/output-stream "tmp/elevation.D2.raw")]
+    (io/copy (io/file "tmp/all10/l10g") out) (io/copy (io/file "tmp/all10/p10g") out)))
 
 (defn map-tiles
   "Generate map tiles from specified image"
@@ -171,40 +177,40 @@
 (defn map-sector-day-tiles
   "Generate pyramid of daytime map tiles for given sector of world map"
   [& {:keys [sector prefix y x]}]
-  (map-tiles {:image (str "world.200404.3x21600x21600." sector ".png") :level 5 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "world." sector "." 2 ".png") :level 4 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "world." sector "." 3 ".png") :level 3 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "world." sector "." 4 ".png") :level 2 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "world." sector "." 5 ".png") :level 1 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "world." sector "." 6 ".png") :level 0 :prefix prefix :y-offset y :x-offset x}))
+  (map-tiles {:image (str "tmp/world.200404.3x21600x21600." sector ".png") :level 5 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/world." sector "." 2 ".png") :level 4 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/world." sector "." 3 ".png") :level 3 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/world." sector "." 4 ".png") :level 2 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/world." sector "." 5 ".png") :level 1 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/world." sector "." 6 ".png") :level 0 :prefix prefix :y-offset y :x-offset x}))
 
 (defn map-sector-night-tiles
   "Generate pyramid of nighttime map tiles for given sector of world map"
   [& {:keys [sector prefix y x]}]
-  (map-tiles {:image (str "BlackMarble_2016_" sector ".jpg") :level 5 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "blackmarble." sector "." 2 ".png") :level 4 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "blackmarble." sector "." 3 ".png") :level 3 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "blackmarble." sector "." 4 ".png") :level 2 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "blackmarble." sector "." 5 ".png") :level 1 :prefix prefix :y-offset y :x-offset x})
-  (map-tiles {:image (str "blackmarble." sector "." 6 ".png") :level 0 :prefix prefix :y-offset y :x-offset x}))
+  (map-tiles {:image (str "tmp/BlackMarble_2016_" sector ".jpg") :level 5 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/blackmarble." sector "." 2 ".png") :level 4 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/blackmarble." sector "." 3 ".png") :level 3 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/blackmarble." sector "." 4 ".png") :level 2 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/blackmarble." sector "." 5 ".png") :level 1 :prefix prefix :y-offset y :x-offset x})
+  (map-tiles {:image (str "tmp/blackmarble." sector "." 6 ".png") :level 0 :prefix prefix :y-offset y :x-offset x}))
 
 (defn map-scales-day
   "Generate pyramid of daytime scales for given sector of world map"
   [& {:keys [sector]}]
-  (sh "convert" (str "world.200404.3x21600x21600." sector ".png") "-scale" "50%" (str "world." sector "." 2 ".png"))
-  (scale-image-file {:input (str "world." sector "." 2 ".png") :output (str "world." sector "." 3 ".png")})
-  (scale-image-file {:input (str "world." sector "." 3 ".png") :output (str "world." sector "." 4 ".png")})
-  (scale-image-file {:input (str "world." sector "." 4 ".png") :output (str "world." sector "." 5 ".png")})
-  (scale-image-file {:input (str "world." sector "." 5 ".png") :output (str "world." sector "." 6 ".png")}))
+  (sh "convert" (str "tmp/world.200404.3x21600x21600." sector ".png") "-scale" "50%" (str "tmp/world." sector "." 2 ".png"))
+  (scale-image-file {:input (str "tmp/world." sector "." 2 ".png") :output (str "tmp/world." sector "." 3 ".png")})
+  (scale-image-file {:input (str "tmp/world." sector "." 3 ".png") :output (str "tmp/world." sector "." 4 ".png")})
+  (scale-image-file {:input (str "tmp/world." sector "." 4 ".png") :output (str "tmp/world." sector "." 5 ".png")})
+  (scale-image-file {:input (str "tmp/world." sector "." 5 ".png") :output (str "tmp/world." sector "." 6 ".png")}))
 
 (defn map-scales-night
   "Generate pyramid of nighttime scales for given sector of world map"
   [& {:keys [sector]}]
-  (sh "convert" (str "BlackMarble_2016_" sector ".jpg") "-scale" "50%" (str "blackmarble." sector "." 2 ".png"))
-  (scale-image-file {:input (str "blackmarble." sector "." 2 ".png") :output (str "blackmarble." sector "." 3 ".png")})
-  (scale-image-file {:input (str "blackmarble." sector "." 3 ".png") :output (str "blackmarble." sector "." 4 ".png")})
-  (scale-image-file {:input (str "blackmarble." sector "." 4 ".png") :output (str "blackmarble." sector "." 5 ".png")})
-  (scale-image-file {:input (str "blackmarble." sector "." 5 ".png") :output (str "blackmarble." sector "." 6 ".png")}))
+  (sh "convert" (str "tmp/BlackMarble_2016_" sector ".jpg") "-scale" "50%" (str "tmp/blackmarble." sector "." 2 ".png"))
+  (scale-image-file {:input (str "tmp/blackmarble." sector "." 2 ".png") :output (str "tmp/blackmarble." sector "." 3 ".png")})
+  (scale-image-file {:input (str "tmp/blackmarble." sector "." 3 ".png") :output (str "tmp/blackmarble." sector "." 4 ".png")})
+  (scale-image-file {:input (str "tmp/blackmarble." sector "." 4 ".png") :output (str "tmp/blackmarble." sector "." 5 ".png")})
+  (scale-image-file {:input (str "tmp/blackmarble." sector "." 5 ".png") :output (str "tmp/blackmarble." sector "." 6 ".png")}))
 
 (defn map-sector-day
   "Generate daytime scale pyramid and map tiles for given sector"
@@ -245,10 +251,10 @@
 (defn elevation-scales
   "Generate pyramid of scales for given "
   [& {:keys [sector]}]
-  (scale-elevation {:input (str "elevation." sector ".raw") :output (str "elevation." sector "." 2 ".raw")})
-  (scale-elevation {:input (str "elevation." sector "." 2 ".raw") :output (str "elevation." sector "." 3 ".raw")})
-  (scale-elevation {:input (str "elevation." sector "." 3 ".raw") :output (str "elevation." sector "." 4 ".raw")})
-  (scale-elevation {:input (str "elevation." sector "." 4 ".raw") :output (str "elevation." sector "." 5 ".raw")}))
+  (scale-elevation {:input (str "tmp/elevation." sector ".raw") :output (str "tmp/elevation." sector "." 2 ".raw")})
+  (scale-elevation {:input (str "tmp/elevation." sector "." 2 ".raw") :output (str "tmp/elevation." sector "." 3 ".raw")})
+  (scale-elevation {:input (str "tmp/elevation." sector "." 3 ".raw") :output (str "tmp/elevation." sector "." 4 ".raw")})
+  (scale-elevation {:input (str "tmp/elevation." sector "." 4 ".raw") :output (str "tmp/elevation." sector "." 5 ".raw")}))
 
 (defn elevation-tiles
   "Generate map tiles from specified image"
@@ -258,11 +264,11 @@
 (defn elevation-sector-tiles
   "Generate pyramid of elevation tiles for given sector of world map"
   [& {:keys [sector prefix y x]}]
-  (elevation-tiles {:image (str "elevation." sector ".raw") :level 4 :prefix prefix :y-offset y :x-offset x})
-  (elevation-tiles {:image (str "elevation." sector "." 2 ".raw") :level 3 :prefix prefix :y-offset y :x-offset x})
-  (elevation-tiles {:image (str "elevation." sector "." 3 ".raw") :level 2 :prefix prefix :y-offset y :x-offset x})
-  (elevation-tiles {:image (str "elevation." sector "." 4 ".raw") :level 1 :prefix prefix :y-offset y :x-offset x})
-  (elevation-tiles {:image (str "elevation." sector "." 5 ".raw") :level 0 :prefix prefix :y-offset y :x-offset x}))
+  (elevation-tiles {:image (str "tmp/elevation." sector ".raw") :level 4 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "tmp/elevation." sector "." 2 ".raw") :level 3 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "tmp/elevation." sector "." 3 ".raw") :level 2 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "tmp/elevation." sector "." 4 ".raw") :level 1 :prefix prefix :y-offset y :x-offset x})
+  (elevation-tiles {:image (str "tmp/elevation." sector "." 5 ".raw") :level 0 :prefix prefix :y-offset y :x-offset x}))
 
 (defn elevation-sector
   "Generate scale pyramid and elevation tiles for given sector"
@@ -285,7 +291,8 @@
 (defn cube-map
   "Create cub map level from map and elevation tiles"
   [& {:keys [in-level out-level]}]
-  (g/make-cube-map in-level out-level))
+  (g/make-cube-map in-level out-level)
+  (g/make-cube-map-tars out-level))
 
 (defn cube-maps
   "Create pyramid of cube maps"
@@ -374,6 +381,11 @@
       (io/input-stream url)
       (io/file (str "data/astro/" filename)))))
 
+(defn quit
+  "Fast quit"
+  [& _]
+  (System/exit 0))
+
 (defn all [_]
   (worley)
   (perlin)
@@ -393,4 +405,5 @@
   (map-sectors-night)
   (elevation-sectors)
   (cube-maps)
-  (atmosphere-lut))
+  (atmosphere-lut)
+  (quit))

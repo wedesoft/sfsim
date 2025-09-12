@@ -1,6 +1,6 @@
 #version 410 core
 
-float M_PI = 3.14159265358;
+#define M_PI 3.1415926535897932384626433832795
 
 // Mie scattering phase function by Cornette and Shanks depending on assymetry g and mu = cos(theta)
 float phase(float g, float mu)

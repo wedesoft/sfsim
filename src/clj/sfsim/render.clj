@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.render
   "Functions for doing OpenGL rendering"
   (:require
@@ -29,7 +35,7 @@
       GL45)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -66,20 +72,22 @@
        result#)))
 
 
-(defn write-to-stencil-buffer
+(definline write-to-stencil-buffer
   "Write to stencil buffer when rendering"
   []
-  (GL11/glStencilFunc GL11/GL_ALWAYS 1 0xff)
-  (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
-  (GL11/glStencilMask 0xff))
+  `(do
+     (GL11/glStencilFunc GL11/GL_ALWAYS 1 0xff)
+     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+     (GL11/glStencilMask 0xff)))
 
 
-(defn mask-with-stencil-buffer
+(definline mask-with-stencil-buffer
   "Only render where stencil buffer is not set"
   []
-  (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
-  (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
-  (GL11/glStencilMask 0))
+  `(do
+     (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
+     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+     (GL11/glStencilMask 0)))
 
 
 (defmacro with-blending
@@ -104,20 +112,21 @@
        result#)))
 
 
-(defn set-scissor
+(definline set-scissor
   {:malli/schema [:=> [:cat number? number? number? number?] :nil]}
   [x y w h]
-  (GL11/glScissor (int x) (int y) (int w) (int h)))
+  `(GL11/glScissor (int ~x) (int ~y) (int ~w) (int ~h)))
 
 
-(defn setup-window-hints
+(definline setup-window-hints
   "Set GLFW window hints"
   [visible border]
-  (GLFW/glfwDefaultWindowHints)
-  (GLFW/glfwWindowHint GLFW/GLFW_DECORATED (if border GLFW/GLFW_TRUE GLFW/GLFW_FALSE))
-  (GLFW/glfwWindowHint GLFW/GLFW_DEPTH_BITS 24)
-  (GLFW/glfwWindowHint GLFW/GLFW_STENCIL_BITS 8)
-  (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE (if visible GLFW/GLFW_TRUE GLFW/GLFW_FALSE)))
+  `(do
+     (GLFW/glfwDefaultWindowHints)
+     (GLFW/glfwWindowHint GLFW/GLFW_DECORATED (if ~border GLFW/GLFW_TRUE GLFW/GLFW_FALSE))
+     (GLFW/glfwWindowHint GLFW/GLFW_DEPTH_BITS 24)
+     (GLFW/glfwWindowHint GLFW/GLFW_STENCIL_BITS 8)
+     (GLFW/glfwWindowHint GLFW/GLFW_VISIBLE (if ~visible GLFW/GLFW_TRUE GLFW/GLFW_FALSE))))
 
 
 (defmacro with-invisible-window
@@ -146,11 +155,11 @@
     window))
 
 
-(defn destroy-window
+(definline destroy-window
   "Destroy the window"
   {:malli/schema [:=> [:cat :int] :nil]}
   [window]
-  (GLFW/glfwDestroyWindow window))
+  `(GLFW/glfwDestroyWindow ~window))
 
 
 (defmacro onscreen-render
@@ -196,11 +205,11 @@
     shader))
 
 
-(defn destroy-shader
+(definline destroy-shader
   "Delete a shader"
   {:malli/schema [:=> [:cat :int] :nil]}
   [shader]
-  (GL20/glDeleteShader shader))
+  `(GL20/glDeleteShader ~shader))
 
 
 (defn make-program
@@ -233,11 +242,11 @@
     program))
 
 
-(defn destroy-program
+(definline destroy-program
   "Delete a program and associated shaders"
   {:malli/schema [:=> [:cat :int] :nil]}
   [program]
-  (GL20/glDeleteProgram program))
+  `(GL20/glDeleteProgram ~program))
 
 
 (def vertex-array-object
@@ -245,30 +254,33 @@
              [::attribute-locations [:vector :int]]]))
 
 
-(defn set-static-float-buffer-data
+(definline set-static-float-buffer-data
   "Use glBufferData to set up static buffer data"
   {:malli/schema [:=> [:cat :int :some] :nil]}
   [target data]
-  (GL15/glBufferData ^int target ^java.nio.DirectFloatBufferU data GL15/GL_STATIC_DRAW))
+  `(GL15/glBufferData ~(vary-meta target assoc :tag 'int)
+                      ~(vary-meta data assoc :tag 'java.nio.DirectFloatBufferU)
+                      GL15/GL_STATIC_DRAW))
 
 
-(defn set-static-int-buffer-data
+(definline set-static-int-buffer-data
   "Use glBufferData to set up static buffer data"
   {:malli/schema [:=> [:cat :int :some] :nil]}
   [target data]
-  (GL15/glBufferData ^int target ^java.nio.DirectIntBufferU data GL15/GL_STATIC_DRAW))
+  `(GL15/glBufferData ~(vary-meta target assoc :tag 'int)
+                      ~(vary-meta data assoc :tag 'java.nio.DirectIntBufferU)
+                      GL15/GL_STATIC_DRAW))
 
 
 (defn opengl-type-size
   "Get byte size of OpenGL type"
-  {:malli/schema [:=> [:cat :int] :int]}
-  [opengl-type]
-  (cond
-    (= opengl-type GL11/GL_UNSIGNED_BYTE)  Byte/BYTES
-    (= opengl-type GL11/GL_UNSIGNED_SHORT) Short/BYTES
-    (= opengl-type GL11/GL_UNSIGNED_INT)   Integer/BYTES
-    (= opengl-type GL11/GL_FLOAT)          Float/BYTES
-    (= opengl-type GL11/GL_DOUBLE)         Double/BYTES))
+  ^long [^long opengl-type]
+  (condp = opengl-type
+    GL11/GL_UNSIGNED_BYTE  Byte/BYTES
+    GL11/GL_UNSIGNED_SHORT Short/BYTES
+    GL11/GL_UNSIGNED_INT   Integer/BYTES
+    GL11/GL_FLOAT          Float/BYTES
+    GL11/GL_DOUBLE         Double/BYTES))
 
 
 (defn setup-vertex-attrib-pointers
@@ -276,7 +288,7 @@
   {:malli/schema [:=> [:cat :int [:and sequential? [:repeat [:cat :int :string N]]]] [:vector :int]]}
   [program attributes]
   (let [attribute-pairs (partition 3 attributes)
-        sizes           (mapv (fn [[opengl-type _name size]] (* (opengl-type-size opengl-type) size)) attribute-pairs)
+        sizes           (mapv (fn [[^long opengl-type _name ^long size]] (* (opengl-type-size opengl-type) size)) attribute-pairs)
         stride          (apply + sizes)
         offsets         (reductions + 0 (butlast sizes))
         attr-locations  (for [[[opengl-type attribute size] offset] (mapv list attribute-pairs offsets)]
@@ -354,46 +366,47 @@
   (GL30/glDeleteVertexArrays ^long vertex-array-object))
 
 
-(defn use-program
+(definline use-program
   "Use specified shader program"
   {:malli/schema [:=> [:cat :int] :nil]}
   [program]
-  (GL20/glUseProgram ^long program))
+  `(GL20/glUseProgram ~(vary-meta program assoc :tag 'long)))
 
 
-(defn- uniform-location
+(definline uniform-location
   "Get index of uniform variable"
   {:malli/schema [:=> [:cat :int :string] :int]}
   [program k]
-  (GL20/glGetUniformLocation ^long program ^String k))
+  `(GL20/glGetUniformLocation ~(vary-meta program assoc :tag 'long)
+                              ~(vary-meta k assoc :tag 'String)))
 
 
 (defn uniform-float
   "Set uniform float variable in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string :double] :nil]}
   [program k value]
-  (GL20/glUniform1f ^long (uniform-location program k) value))
+  (GL20/glUniform1f (uniform-location program k) value))
 
 
 (defn uniform-int
   "Set uniform integer variable in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string :int] :nil]}
   [program k value]
-  (GL20/glUniform1i ^long (uniform-location program k) value))
+  (GL20/glUniform1i (uniform-location program k) value))
 
 
 (defn uniform-vector3
   "Set uniform 3D vector in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string fvec3] :nil]}
   [program k value]
-  (GL20/glUniform3f ^long (uniform-location program k) (value 0) (value 1) (value 2)))
+  (GL20/glUniform3f (uniform-location program k) (value 0) (value 1) (value 2)))
 
 
 (defn uniform-matrix3
   "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string fmat3] :nil]}
   [program k value]
-  (GL20/glUniformMatrix3fv ^long (uniform-location program k) true
+  (GL20/glUniformMatrix3fv (uniform-location program k) true
                            ^java.nio.DirectFloatBufferU (make-float-buffer (mat->float-array value))))
 
 
@@ -401,7 +414,7 @@
   "Set uniform 4x4 matrix in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string fmat4] :nil]}
   [program k value]
-  (GL20/glUniformMatrix4fv ^long (uniform-location program k) true
+  (GL20/glUniformMatrix4fv (uniform-location program k) true
                            ^java.nio.DirectFloatBufferU (make-float-buffer (mat->float-array value))))
 
 
@@ -409,56 +422,61 @@
   "Set index of uniform sampler in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string :int] :nil]}
   [program k value]
-  (GL20/glUniform1i ^long (uniform-location program k) value))
+  (GL20/glUniform1i (uniform-location program k) value))
 
 
-(defn use-texture
+(definline use-texture
   "Set texture with specified index"
   {:malli/schema [:=> [:cat [:int {:min 0 :max 15}] texture] :nil]}
   [index texture]
-  (GL13/glActiveTexture ^long (+ GL13/GL_TEXTURE0 index))
-  (GL11/glBindTexture (:sfsim.texture/target texture) (:sfsim.texture/texture texture)))
+  `(do
+     (GL13/glActiveTexture (+ GL13/GL_TEXTURE0 (long ~index)))
+     (GL11/glBindTexture (:sfsim.texture/target ~texture) (:sfsim.texture/texture ~texture))))
 
 
-(defn use-textures
+(definline use-textures
   "Specify textures to be used in the next rendering operation"
   {:malli/schema [:=> [:cat [:map-of :int texture]] :nil]}
   [textures]
-  (doseq [[index texture] textures] (use-texture index texture)))
+  `(doseq [[index# texture#] ~textures] (use-texture index# texture#)))
 
 
-(defn setup-vertex-array-object
+(definline setup-vertex-array-object
   "Initialise rendering of a vertex array object"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
-  (GL30/glBindVertexArray ^long (::vertex-array-object vertex-array-object))
-  (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER (::array-buffer vertex-array-object))
-  (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER (::index-buffer vertex-array-object)))
+  `(do
+     (GL30/glBindVertexArray (::vertex-array-object ~vertex-array-object))
+     (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER (::array-buffer ~vertex-array-object))
+     (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER (::index-buffer ~vertex-array-object))))
 
 
-(defn render-quads
+(definline render-quads
   "Render one or more quads"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
-  (setup-vertex-array-object vertex-array-object)
-  (GL11/glDrawElements GL11/GL_QUADS ^long (::nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  `(do
+     (setup-vertex-array-object ~vertex-array-object)
+     (GL11/glDrawElements GL11/GL_QUADS ^long (::nrows ~vertex-array-object) GL11/GL_UNSIGNED_INT 0)))
 
 
-(defn render-triangles
+(definline render-triangles
   "Render one or more triangles"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
-  (setup-vertex-array-object vertex-array-object)
-  (GL11/glDrawElements GL11/GL_TRIANGLES ^long (::nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  `(do
+     (setup-vertex-array-object ~vertex-array-object)
+     (GL11/glDrawElements GL11/GL_TRIANGLES (::nrows ~vertex-array-object) GL11/GL_UNSIGNED_INT 0)))
 
 
-(defn render-patches
+(definline render-patches
   "Render one or more tessellated quads"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
-  (setup-vertex-array-object vertex-array-object)
-  (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
-  (GL11/glDrawElements GL40/GL_PATCHES ^long (::nrows vertex-array-object) GL11/GL_UNSIGNED_INT 0))
+  `(do
+     (setup-vertex-array-object ~vertex-array-object)
+     (GL40/glPatchParameteri GL40/GL_PATCH_VERTICES 4)
+     (GL11/glDrawElements GL40/GL_PATCHES (::nrows ~vertex-array-object) GL11/GL_UNSIGNED_INT 0)))
 
 
 (defmacro raster-lines
@@ -494,7 +512,7 @@
       (int-array
         (map-indexed
           (fn setup-color-attachment
-            [index texture]
+            [^long index texture]
             (let [color-attachment (+ GL30/GL_COLOR_ATTACHMENT0 index)]
               (if (:sfsim.texture/layer texture)
                 (GL30/glFramebufferTextureLayer GL30/GL_FRAMEBUFFER color-attachment (:sfsim.texture/texture texture) 0
@@ -577,8 +595,7 @@
 
 (defn diagonal-field-of-view
   "Compute diagonal field of view angle"
-  {:malli/schema [:=> [:cat :int :int :double] :double]}
-  [width height fov]
+  ^double [^long width ^long height ^double fov]
   (let [dx  (sin (* 0.5 fov))
         dy  (/ (* height dx) width)
         dxy (hypot dx dy)]
@@ -601,7 +618,7 @@
         rotation        (quaternion->matrix orientation)
         camera-to-world (transformation-matrix rotation position)
         z-offset        1.0
-        projection      (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
+        projection      (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)]
     {::origin position
      ::z-near z-near
      ::z-far z-far
@@ -621,8 +638,8 @@
         window-width    (::window-width vars-first)
         window-height   (::window-height vars-first)
         position        (::origin vars-first)
-        z-near          (min (::z-near vars-first) (::z-near vars-second))
-        z-far           (max (::z-far vars-first) (::z-far vars-second))
+        z-near          (min ^double (::z-near vars-first) ^double (::z-near vars-second))
+        z-far           (max ^double (::z-far vars-first) ^double (::z-far vars-second))
         light-direction (::light-direction vars-first)
         camera-to-world (::camera-to-world vars-first)
         z-offset        1.0
@@ -640,12 +657,11 @@
 
 (defn setup-shadow-and-opacity-maps
   "Set up cascade of deep opacity maps and cascade of shadow maps"
-  {:malli/schema [:=> [:cat :int :map :int] :nil]}
-  [program shadow-data sampler-offset]
+  [^long program shadow-data ^long sampler-offset]
   (doseq [i (range (:sfsim.opacity/num-steps shadow-data))]
-    (uniform-sampler program (str "shadow_map" i) (+ i sampler-offset)))
+    (uniform-sampler program (str "shadow_map" i) (+ ^long i sampler-offset)))
   (doseq [i (range (:sfsim.opacity/num-steps shadow-data))]
-    (uniform-sampler program (str "opacity" i) (+ i sampler-offset (:sfsim.opacity/num-steps shadow-data))))
+    (uniform-sampler program (str "opacity" i) (+ ^long i sampler-offset ^long (:sfsim.opacity/num-steps shadow-data))))
   (uniform-int program "num_opacity_layers" (:sfsim.opacity/num-opacity-layers shadow-data))
   (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
   (uniform-float program "depth" (:sfsim.opacity/depth shadow-data))
@@ -679,8 +695,7 @@
 
 (defn quad-splits-orientations
   "Function to determine quad tessellation orientation of diagonal split (true: 00->11, false: 10->01)"
-  {:malli/schema [:=> [:cat :int :int] [:vector [:vector :boolean]]]}
-  [tilesize zoom]
+  [^long tilesize ^long zoom]
   (let [indices  [0 1 3 2]
         vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
         detail   (dec tilesize)
@@ -696,13 +711,13 @@
                                        (uniform-int program "detail" detail)
                                        (render-patches vao))
         img      (texture->image tex)
-        result   (mapv (fn [y]
-                         (mapv (fn [x]
+        result   (mapv (fn [^long y]
+                         (mapv (fn [^long x]
                                  (let [value ((get-pixel img
                                                          (+ (quot zoom 2) (* y zoom))
                                                          (+ (quot zoom 2) (* x zoom))) 1)
                                        odd   (= (mod (+ x y) 2) 1)]
-                                   (= (>= value 127) odd)))
+                                   (= (>= ^long value 127) odd)))
                                (range detail)))
                        (range detail))]
     (destroy-texture tex)

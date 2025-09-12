@@ -3,20 +3,38 @@
 This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
 Requires OpenGL 4.5.
+See [sfsim homepage][1] for more details.
 
-[![Aerodynamic prototype](https://i.ytimg.com/vi/vmg0p5jawnY/hqdefault.jpg)](https://www.youtube.com/watch?v=vmg0p5jawnY)
+[![Aerodynamic prototype](https://i.ytimg.com/vi/38FGT7SWVh0/hqdefault.jpg)](https://www.youtube.com/watch?v=38FGT7SWVh0)
 
 # Installation
 
-* Tested on Debian 12 and Windows 11
-* Install JDK 23 (needed because of the shiny new foreign function and memory API)
+* Tested on Debian 13 and Windows 11
+* Install [JDK 24 Deb for Linux](https://www.oracle.com/uk/java/technologies/downloads/) or [JDK 24 MSI for Windows](https://adoptium.net/temurin/releases)
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
 * Install [NSIS](https://nsis.sourceforge.io/) for building Windows installer
 
+# Get Code for GNU/Linux
+
+```Shell
+git clone https://github.com/wedesoft/sfsim.git
+cd sfsim
+git checkout main
+```
+
+## Get Code for Windows
+
+```Shell
+git clone https://github.com/wedesoft/sfsim.git
+cd sfsim
+git checkout windows
+```
+
 ## Install JoltPhysics
 
-Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) and build it as follows.
+Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.3.0 and build it as follows.
+Note you might have to install glslc if you already have Vulkan installed.
 
 ### GCC/Linux
 
@@ -61,9 +79,18 @@ cd ..
 * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
 * Perform all build steps above: `clj -T:build all`
 * Enable integration tests (requiring results of above build steps): `touch .integration`
+
+## Further Build Steps under Windows
+
 * Build JAR file: `clj -T:build uber`
-* Create Windows executable: `java -jar packr-all-4.0.0.jar packr-config.json` (delete out-windows folder first)
-* Create Windows installer: `makensis nsis-config.nsi`
+* Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json` (delete out-windows folder first)
+* Upload to Steam: `sdk\tools\ContentBuilder\builder\steamcmd.exe +login <account_name> <password> +run_app_build C:\Users\....\sfsim\scripts\sfsim_playtest_windows.vdf +quit`
+
+## Further Build Steps under GNU/Linux
+
+* Build JAR file: `clj -T:build uber`
+* Create Linux executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json` (delete out-linux folder first)
+* Upload to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login <account_name> <password> +run_app_build /home/..../sfsim/scripts/sfsim_playtest_linux.vdf +quit`
 
 # Lint
 
@@ -73,7 +100,7 @@ cd ..
 # Run
 
 * Run tests (recommended to use xvfb-run): `xvfb-run clj -M:test`
-* Run test for specific module (rendering for example): `clj -M:test sfsim.t-render`
+* Run test for specific module (rendering for example): `xvfb-run clj -M:test sfsim.t-render`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run main program: `clj -M:run`
 
@@ -135,4 +162,4 @@ cd ..
   * [nREPL](https://nrepl.org/) server and [REPL-y](https://github.com/trptcolin/reply) client
   * [rebel-readline](https://github.com/bhauman/rebel-readline) REPL with colors :)
 
-  [1]: https://wedesoft.github.io/sfsim/
+[1]: https://wedesoft.github.io/sfsim/

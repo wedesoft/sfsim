@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.t-jolt
   (:require
     [clojure.math :refer (PI)]
@@ -54,20 +60,35 @@
        (get-orientation sphere) => (q/->Quaternion 1 0 0 0))
 
 
-(def sphere-mass (* (/ 4 3) PI 0.5 0.5 0.5 1000))
+(def sphere-mass (get-mass sphere))
 
 
 (facts "Test applying force to sphere for a single physics update"
        (set-gravity (vec3 0 0 0))
+       (set-translation sphere (vec3 0 0 0))
        (set-linear-velocity sphere (vec3 0 0 0))
        (add-force sphere (vec3 sphere-mass 0 0))
        (update-system 1.0 2)
-       (get-linear-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-6)
+       (get-linear-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-7)
+       (get-translation sphere) => (roughly-vector (vec3 0.75 0 0) 1e-7)
        (update-system 1.0 2)
-       (get-linear-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-6))
+       (get-linear-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-7)
+       (get-translation sphere) => (roughly-vector (vec3 1.75 0 0) 1e-7))
+
+
+(facts "Test applying impulse to sphere"
+       (set-linear-velocity sphere (vec3 0 0 0))
+       (add-impulse sphere (vec3 sphere-mass 0 0))
+       (get-linear-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-7))
 
 
 (def sphere-inertia (* (/ 2 5) sphere-mass 0.5 0.5))
+
+
+(facts "Test applying angular impulse to sphere"
+       (set-angular-velocity sphere (vec3 0 0 0))
+       (add-angular-impulse sphere (vec3 sphere-inertia 0 0))
+       (get-angular-velocity sphere) => (roughly-vector (vec3 1 0 0) 1e-7))
 
 
 (facts "Test applying torque to sphere for a single physics update"

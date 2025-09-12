@@ -17,13 +17,13 @@ in GEO_OUT
   vec2 colorcoord;
   vec3 point;
 <% (doseq [i (range num-scene-shadows)] %>
-  vec4 object_shadow_pos_<%= (inc i) %>;
+  vec4 object_shadow_pos_<%= (inc ^long i) %>;
 <% ) %>
 } fs_in;
 
 out vec4 fragColor;
 
-vec3 overall_shading(vec3 world_point<%= (apply str (map #(str ", vec4 object_shadow_pos_" (inc %)) (range num-scene-shadows))) %>);
+vec3 overall_shading(vec3 world_point<%= (apply str (map #(str ", vec4 object_shadow_pos_" (inc ^long %)) (range num-scene-shadows))) %>);
 vec3 environmental_shading(vec3 point);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 vec3 attenuation_point(vec3 point, vec3 incoming);
@@ -39,7 +39,7 @@ void main()
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
   vec3 water_normal = normalize(fs_in.point);
   vec3 normal = mix(land_normal, water_normal, wet);
-  vec3 light = overall_shading(fs_in.point<%= (apply str (map #(str ", fs_in.object_shadow_pos_" (inc %)) (range num-scene-shadows))) %>);
+  vec3 light = overall_shading(fs_in.point<%= (apply str (map #(str ", fs_in.object_shadow_pos_" (inc ^long %)) (range num-scene-shadows))) %>);
   vec3 ambient_light = surface_radiance_function(fs_in.point, light_direction);
   float land_modulation = 1.0 - land_noise_strength * land_noise(fs_in.point / land_noise_scale);
   vec3 day_color = texture(day_night, vec3(fs_in.colorcoord, 0.25)).rgb * land_modulation;

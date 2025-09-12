@@ -1,0 +1,10 @@
+Sfsim is a space flight simulator under development using Clojure and LWJGL among other libraries.
+The Lightweight Java Game Library (LWJGL) contains various bindings including OpenGL and it was used to implement Minecraft Java Edition.
+Clojure can utilize Java libraries and it facilitates compile time resolution of names which results in efficient byte code.
+OpenGL allows to offload the 3D rendering work to the GPU.
+While Vulkan is supposed to supersede OpenGL, learning OpenGL is less difficult and can be used as a stepping stone for learning Vulkan.
+This talk shows how Clojure can be used to do test driven development of OpenGL shaders, which facilitates developing and refactoring of more complex shader programs.
+
+* Midje OpenGL tests
+* templating
+* recording integration test images

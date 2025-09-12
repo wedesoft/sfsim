@@ -3,11 +3,20 @@
 
  :sfsim.render-config #:sfsim.render{:amplification 6.0
                                      :specular 1000.0
+                                     :window-width 854
+                                     :window-height 480
+                                     ; :window-width 1920
+                                     ; :window-height 1080
                                      :fov 1.0471975511965976  ; 60 degrees
+                                     ; :window-width 720
+                                     ; :window-height 1280
+                                     ; :fov 0.5
                                      :min-z-near 1.0}
 
  :sfsim.planet-config #:sfsim.planet{:radius 6378000.0
+                                     :mass 5.9722e+24
                                      :max-height 8000.0
+                                     :space-boundary 80467.2
                                      :albedo 0.9
                                      :dawn-start -0.2
                                      :dawn-end 0.0

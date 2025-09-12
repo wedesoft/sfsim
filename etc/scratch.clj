@@ -1,22 +1,18 @@
-(require '[sfsim.matrix :as matrix])
-(require '[fastmath.matrix :refer (mulm)])
-(require '[fastmath.vector :refer (vec3)])
-(require '[sfsim.aerodynamics :as aerodynamics])
-(require '[sfsim.model :as model])
-(require '[sfsim.util :as util])
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de> SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+(require '[clojure.math :refer (sqrt pow atan to-degrees)])
 
-(def model (model/remove-empty-meshes (model/read-gltf "venturestar.glb")))
-
-(keys model)
-(def node-names (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root model))))
-(def main-wheel-left-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Left")])
-(def main-wheel-right-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Main Wheel Right")])
-(def nose-wheel-path [:sfsim.model/root :sfsim.model/children (.indexOf node-names "Nose Wheel")])
+(def gamma 1.25)
 
 
-(get-in model main-wheel-left-path)
-(get-in model main-wheel-right-path)
-(get-in model nose-wheel-path)
 
-(get-in (:sfsim.model/meshes model) [(get-in model (concat main-wheel-left-path [:sfsim.model/children 0 :sfsim.model/mesh-indices 0])) :sfsim.model/material-index])
-(get-in (:sfsim.model/meshes model) [(get-in model (concat nose-wheel-path [:sfsim.model/children 0 :sfsim.model/mesh-indices 0])) :sfsim.model/material-index])
+; Prandtl-Meyer function
+(defn v [M] (- (* (sqrt (/ (+ gamma 1) (- gamma 1))) (atan (sqrt (* (/ (- gamma 1) (+ gamma 1)) (- (* M M) 1))) )) (atan (sqrt (- (* M M) 1)))))
+
+(def M0 10)
+(def p0 (* 200 101325))
+(def p (* 1.0 101325))
+(def M (sqrt (* (/ 2 (- gamma 1)) (- (pow (/ p0 p) (/ (- gamma 1) gamma)) 1))))
+(to-degrees (- (v M) (v M0)))

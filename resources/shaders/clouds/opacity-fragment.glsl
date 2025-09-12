@@ -16,7 +16,7 @@ in VS_OUT
 
 layout (location = 0) out float opacity_offset;
 <% (doseq [i (range num-layers)] %>
-layout (location = <%= (inc i) %>) out float opacity_layer_<%= i %>;
+layout (location = <%= (inc ^long i) %>) out float opacity_layer_<%= i %>;
 <% ) %>
 
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
@@ -30,7 +30,9 @@ void main()
   float start_segment = intersections.x;
   float extent_segment = intersections.y;
   int current_layer = 0;
-  opacity_layer_0 = 1.0;
+<% (doseq [i (range num-layers)] %>
+  opacity_layer_<%= i %> = 1.0;
+<% ) %>
   if (extent_segment > 0) {
     float s = start_segment;
     vec3 sample_point = fs_in.origin - start_segment * light_direction;
@@ -57,7 +59,7 @@ void main()
         };
       };
       previous_transmittance = transmittance;
-      if (current_layer >= <%= (dec num-layers ) %>)
+      if (current_layer >= <%= (dec ^long num-layers ) %>)
         break;
       s += opacity_step;
       sample_point -= light_step;

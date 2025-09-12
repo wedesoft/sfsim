@@ -1,9 +1,16 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.t-image
   (:require
     [fastmath.vector :refer (vec3 vec4)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
+    [sfsim.util :as util]
     [sfsim.image :refer :all])
   (:import
     (java.io
@@ -43,6 +50,14 @@
        (count (:sfsim.image/data (make-image 3 2))) => (* 3 2 4))
 
 
+(facts "Load PNG image"
+       (let [image (slurp-image "test/clj/sfsim/fixtures/image/pattern.png")]
+         (:sfsim.image/width image) => 2
+         (:sfsim.image/height image) => 2
+         (:sfsim.image/channels image) => 3
+         (seq (:sfsim.image/data image)) => [-1 0 0 -1, 0 0 0 -1, 0 0 0 -1, 0 -1 0 -1]))
+
+
 (facts "Saving and loading of PNG image"
        (let [file-name (.getPath (File/createTempFile "spit" ".png"))
              value     [1 2 3 -1]]
@@ -61,6 +76,14 @@
          (take 4 (:sfsim.image/data (slurp-image file-name))) => value))
 
 
+(facts "Load PNG image from tar file"
+       (let [image (util/with-tar tar "test/clj/sfsim/fixtures/image/image.tar" (slurp-image-tar tar "pattern.png"))]
+         (:sfsim.image/width image) => 2
+         (:sfsim.image/height image) => 2
+         (:sfsim.image/channels image) => 3
+         (seq (:sfsim.image/data image)) => [-1 0 0 -1, 0 0 0 -1, 0 0 0 -1, 0 -1 0 -1]))
+
+
 (facts "Try flipping an image when loading"
        (let [file-name (.getPath (File/createTempFile "spit" ".png"))
              values    [1 2 3 -1 4 5 6 -1]]
@@ -75,10 +98,26 @@
          (seq (:sfsim.image/data (slurp-image file-name))) => [4 5 6 -1 1 2 3 -1]))
 
 
-(fact "Save normal vectors"
+(fact "Save and load normal vectors PNG file"
       (let [file-name (.getPath (File/createTempFile "spit" ".png"))]
         (spit-normals file-name #:sfsim.image{:width 2 :height 1 :data (float-array [1.0 0.0 0.0 0.0 -1.0 0.0])}) => anything
         (let [normals (slurp-normals file-name)
+              n1      (get-vector3 normals 0 0)
+              n2      (get-vector3 normals 0 1)]
+          (:sfsim.image/width normals)  => 2
+          (:sfsim.image/height normals) => 1
+          (n1 0)            => (roughly  1.0 1e-2)
+          (n1 1)            => (roughly  0.0 1e-2)
+          (n2 0)            => (roughly  0.0 1e-2)
+          (n2 1)            => (roughly -1.0 1e-2))))
+
+
+(fact "Load normal vectors from PNG in a tar file"
+      (let [file-name (.getPath (File/createTempFile "normals" ".png"))
+            tar-name  (.getPath (File/createTempFile "normals" ".tar"))]
+        (spit-normals file-name #:sfsim.image{:width 2 :height 1 :data (float-array [1.0 0.0 0.0 0.0 -1.0 0.0])})
+        (util/create-tar tar-name ["normals.png" file-name])
+        (let [normals (util/with-tar tar tar-name (slurp-normals-tar tar "normals.png"))
               n1      (get-vector3 normals 0 0)
               n2      (get-vector3 normals 0 1)]
           (:sfsim.image/width normals)  => 2

@@ -1,14 +1,28 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.util
   "Various utility functions."
   (:require
+    [clojure.core.cache :as cache]
     [clojure.java.io :as io]
     [clojure.math :refer (sin)]
     [clojure.set :refer (map-invert)]
     [malli.core :as m]
     [progrock.core :as p])
   (:import
+    (clojure.core.cache
+      LRUCache)
     (java.io
+      File
+      BufferedInputStream
       ByteArrayOutputStream)
+    (java.util.zip
+      GZIPInputStream
+      GZIPOutputStream)
     (java.nio
       ByteBuffer
       ByteOrder)
@@ -17,11 +31,16 @@
     (java.nio.file
       Paths
       StandardOpenOption)
+    (org.apache.commons.compress.archivers.tar
+      TarFile
+      TarArchiveOutputStream
+      TarArchiveEntry
+      TarFile$BoundedTarEntryInputStream)
     (org.lwjgl
       BufferUtils)))
 
 
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
@@ -48,16 +67,84 @@
 
 
 (def non-empty-string (m/schema [:string {:min 1}]))
+(def tarfile (m/schema [:map [::tar :some] [::entries [:map-of :string :some]]]))
+
+
+(defn untar
+  "Open a tar file"
+  {:malli/schema [:=> [:cat non-empty-string] tarfile]}
+  [^String file-name]
+  (let [tar-file (TarFile. (File. file-name))
+        entries  (.getEntries tar-file)]
+    {::tar tar-file
+     ::entries (into {} (map (juxt #(.getName ^TarArchiveEntry %) identity) entries))}))
+
+
+(defn tar-close
+  "Close a tar file"
+  {:malli/schema [:=> [:cat tarfile] :any]}
+  [tar-file]
+  (.close ^TarFile (::tar tar-file)))
+
+
+(defmacro with-tar
+  "Macro for opening and closing a tar file"
+  [sym file-name & body]
+  `(let [~sym    (untar ~file-name)
+         result# (do ~@body)]
+     (tar-close ~sym)
+     result#))
+
+
+(defn get-tar-entry
+  "Open stream to read file from tar archive"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] :some]}
+  ^TarFile$BoundedTarEntryInputStream [tar ^String file-name]
+  (let [entry (get-in tar [::entries file-name])]
+    (when-not entry
+              (throw (Exception. (str "Entry " file-name " not found in tar file"))))
+    (BufferedInputStream. (.getInputStream ^TarFile (::tar tar) ^TarArchiveEntry entry))))
+
+
+(defn stream->bytes
+  "Read bytes from a stream"
+  {:malli/schema [:=> [:cat :some] bytes?]}
+  [^java.io.InputStream in]
+  (with-open [out (ByteArrayOutputStream.)]
+    (io/copy in out)
+    (.toByteArray out)))
 
 
 (defn slurp-bytes
   "Read bytes from a file"
   {:malli/schema [:=> [:cat non-empty-string] bytes?]}
   ^bytes [^String file-name]
-  (with-open [in  (io/input-stream file-name)
-              out (ByteArrayOutputStream.)]
-    (io/copy in out)
-    (.toByteArray out)))
+  (with-open [in (io/input-stream file-name)]
+    (stream->bytes in)))
+
+
+(defn slurp-bytes-gz
+  "Read bytes from a gzip compressed file"
+  {:malli/schema [:=> [:cat non-empty-string] bytes?]}
+  ^bytes [^String file-name]
+  (with-open [in (-> file-name io/input-stream GZIPInputStream.)]
+    (stream->bytes in)))
+
+
+(defn slurp-bytes-tar
+  "Read bytes from a file in a tar file"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] bytes?]}
+  ^bytes [tar ^String file-name]
+  (with-open [in (get-tar-entry tar file-name)]
+    (stream->bytes in)))
+
+
+(defn slurp-bytes-gz-tar
+  "Read compressed bytes from a file in a tar file"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] bytes?]}
+  ^bytes [tar ^String file-name]
+  (with-open [in (GZIPInputStream. (get-tar-entry tar file-name))]
+    (stream->bytes in)))
 
 
 (defn spit-bytes
@@ -65,6 +152,14 @@
   {:malli/schema [:=> [:cat non-empty-string bytes?] :nil]}
   [^String file-name ^bytes byte-data]
   (with-open [out (io/output-stream file-name)]
+    (.write out byte-data)))
+
+
+(defn spit-bytes-gz
+  "Compress bytes and write to a file"
+  {:malli/schema [:=> [:cat non-empty-string bytes?] :nil]}
+  [^String file-name ^bytes byte-data]
+  (with-open [out (-> file-name io/output-stream GZIPOutputStream.)]
     (.write out byte-data)))
 
 
@@ -90,26 +185,86 @@
     (spit-bytes file-name (.array byte-buffer))))
 
 
-(defn slurp-floats
-  "Read floating point numbers from a file"
-  {:malli/schema [:=> [:cat non-empty-string] seqable?]}
-  ^floats [^String file-name]
-  (let [byte-data    (slurp-bytes file-name)
-        n            (.count (seq byte-data))
+(defn bytes->floats
+  "Convert bytes to floating point numbers"
+  {:malli/schema [:=> [:cat bytes?] seqable?]}
+  ^floats [^bytes byte-data]
+  (let [n            (.count (seq byte-data))
         float-buffer (-> byte-data ByteBuffer/wrap (.order ByteOrder/LITTLE_ENDIAN) .asFloatBuffer)
         result       (float-array (/ n 4))]
     (.get float-buffer result)
     result))
 
 
+(defn slurp-floats
+  "Read floating point numbers from a file"
+  {:malli/schema [:=> [:cat non-empty-string] seqable?]}
+  ^floats [^String file-name]
+  (-> file-name slurp-bytes bytes->floats))
+
+
+(defn slurp-floats-gz
+  "Read floating point numbers from a compressed file"
+  {:malli/schema [:=> [:cat non-empty-string] seqable?]}
+  ^floats [^String file-name]
+  (-> file-name slurp-bytes-gz bytes->floats))
+
+
+(defn slurp-floats-tar
+  "Read floating point numbers from a file in a tar archive"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] seqable?]}
+  ^floats [tar ^String file-name]
+  (->> file-name (slurp-bytes-tar tar) bytes->floats))
+
+
+(defn slurp-floats-gz-tar
+  "Read compressed floating point numbers from a file in a tar archive"
+  {:malli/schema [:=> [:cat tarfile non-empty-string] seqable?]}
+  ^floats [tar ^String file-name]
+  (->> file-name (slurp-bytes-gz-tar tar) bytes->floats))
+
+
+(defn floats->bytes
+  "Convert float array to byte buffer"
+  [^floats float-data]
+  (let [n           (count float-data)
+        byte-buffer (.order (ByteBuffer/allocate (* n 4)) ByteOrder/LITTLE_ENDIAN)]
+    (.put (.asFloatBuffer byte-buffer) float-data)
+    (.array byte-buffer)))
+
+
 (defn spit-floats
   "Write floating point numbers to a file"
   {:malli/schema [:=> [:cat non-empty-string seqable?] :nil]}
   [^String file-name ^floats float-data]
-  (let [n           (count float-data)
-        byte-buffer (.order (ByteBuffer/allocate (* n 4)) ByteOrder/LITTLE_ENDIAN)]
-    (.put (.asFloatBuffer byte-buffer) float-data)
-    (spit-bytes file-name (.array byte-buffer))))
+  (spit-bytes file-name (floats->bytes float-data)))
+
+
+(defn spit-floats-gz
+  "Write floating point numbers to a compressed file"
+  {:malli/schema [:=> [:cat non-empty-string seqable?] :nil]}
+  [^String file-name ^floats float-data]
+  (spit-bytes-gz file-name (floats->bytes float-data)))
+
+
+(defn create-tar
+  "Create tar file from interleaved entry names and file names"
+  {:malli/schema [:=> [:cat non-empty-string
+                            [:and [:sequential non-empty-string]
+                                  [:fn {:error/message "Vector needs to have even number of values"} #(even? (count %))]]]
+                  :nil]}
+  [tar-file-name destinations-and-sources]
+  (let [tar (TarArchiveOutputStream. (io/output-stream tar-file-name))]
+    (.setBigNumberMode ^TarArchiveOutputStream tar TarArchiveOutputStream/BIGNUMBER_STAR)
+    (doseq [[dest src] (partition 2 destinations-and-sources)]
+           (let [file  (File. ^String src)
+                 entry (.createArchiveEntry ^TarArchiveOutputStream tar ^File file ^String dest)
+                 in    (io/input-stream file)]
+             (.putArchiveEntry tar entry)
+             (io/copy in tar)
+             (.closeArchiveEntry tar)
+             (.close in)))
+    (.close tar)))
 
 
 (defn slurp-byte-buffer
@@ -156,31 +311,47 @@
   (str prefix \/ (face->index face) \/ level \/ x))
 
 
+(defn cube-tar
+  "Determine tar file containing cube tile"
+  {:malli/schema [:=> [:cat :string face N0 N0] :string]}
+  [prefix face level x]
+  (str prefix \/ (face->index face) \/ level \/ x ".tar"))
+
+
+(defn cube-file-name
+  "Determine file name of cube tile"
+  {:malli/schema [:=> [:cat N0 :string] :string]}
+  [y suffix]
+  (str y suffix))
+
+
 (defn sinc
   "sin(x) / x function"
-  {:malli/schema [:=> [:cat :double] :double]}
-  [x]
+  ^double [^double x]
   (if (zero? x) 1.0 (/ (sin x) x)))
 
 
 (defn sqr
   "Square of x"
-  {:malli/schema [:=> [:cat number?] number?]}
-  [x]
+  ^double [^double x]
   (* x x))
+
+
+(defn cube
+  "Cube of x"
+  ^double [^double x]
+  (* x x x))
 
 
 (defn byte->ubyte
   "Convert byte to unsigned byte"
-  {:malli/schema [:=> [:cat :int] N0]}
-  [b]
+  ^long [^long b]
   (if (>= b 0) b (+ b 256)))
 
 
 (defn ubyte->byte
   "Convert unsigned byte to byte"
-  {:malli/schema [:=> [:cat N0] :int]}
-  [u]
+  ^long [^long u]
   (if (<= u 127) u (- u 256)))
 
 
@@ -195,8 +366,7 @@
 
 (defn align-address
   "Function for aligning an address with specified alignment"
-  {:malli/schema [:=> [:cat N0 N] N0]}
-  [address alignment]
+  ^long [^long address ^long alignment]
   (let [mask (dec alignment)]
     (bit-and (+ address mask) (bit-not mask))))
 
@@ -231,12 +401,17 @@
   (apply * shape))
 
 
+(defn clamp
+  "Clamp value between minimum and maximum"
+  ^double [^double x ^double lower ^double upper]
+  (-> x (min upper) (max lower)))
+
+
 (defn limit-quot
   "Compute quotient and limit it"
-  {:malli/schema [:function [:=> [:cat number? number? number? [:? number?]] number?]]}
-  ([a b limit]
+  (^double [^double a ^double b ^double limit]
    (limit-quot a b (- limit) limit))
-  ([a b limit-lower limit-upper]
+  (^double [^double a ^double b ^double limit-lower ^double limit-upper]
    (if (zero? a)
      a
      (if (< b 0)
@@ -264,9 +439,9 @@
   "Increase progress and occasionally update progress bar"
   {:malli/schema [:=> [:cat progress] progress]}
   [bar]
-  (let [done   (== (inc (:progress bar)) (:total bar))
+  (let [done   (== (inc ^long (:progress bar)) ^long (:total bar))
         result (assoc (p/tick bar 1) :done? done)]
-    (when (or (zero? (mod (:progress result) (:step bar))) done) (p/print result))
+    (when (or (zero? ^long (mod ^long (:progress result) ^long (:step bar))) done) (p/print result))
     result))
 
 
@@ -290,11 +465,10 @@
 
 (defn octaves
   "Creat eoctaves summing to one"
-  {:malli/schema [:=> [:cat N :double] [:vector :double]]}
-  [n decay]
-  (let [series (take n (iterate #(* % decay) 1.0))
+  [^long n ^double decay]
+  (let [series (take n (iterate #(* ^double % decay) 1.0))
         sum    (apply + series)]
-    (mapv #(/ % sum) series)))
+    (mapv #(/ ^double % ^double sum) series)))
 
 
 (defn find-if
@@ -302,6 +476,25 @@
   {:malli/schema [:=> [:cat fn? [:sequential :some]] :any]}
   [pred coll]
   (first (filter pred coll)))
+
+
+(defn make-lru-cache
+  "Create LRU cache with destructor"
+  {:malli/schema [:=> [:cat N0 fn? fn?] fn?]}
+  [cache-size fun destructor]
+  (let [state (atom (cache/lru-cache-factory {} :threshold cache-size))]
+    (fn lru-wrapper
+        [arg]
+        (if-let [result (cache/lookup @state arg)]
+          (do
+            (swap! state (memfn ^LRUCache hit arg) arg)
+            result)
+          (let [result  (fun arg)
+                old     @state
+                updated (swap! state cache/miss arg result)
+                evicted (remove (set (keys updated)) (keys old))]
+            (doseq [x evicted] (destructor (cache/lookup old x)))
+            result)))))
 
 
 (set! *warn-on-reflection* false)

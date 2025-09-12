@@ -1,3 +1,9 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 ; Linear algebra performance testing by wedesoft and genmeblog
 (require '[clojure.math :refer (sqrt)])
 (require '[clojure.core.matrix :refer (matrix mget add mul inverse det set-current-implementation dot mmul eseq)])
@@ -11,7 +17,7 @@
 (import '[org.ejml.data DMatrixRMaj])
 
 (set! *warn-on-reflection* true)
-(set! *unchecked-math* true)
+(set! *unchecked-math* :warn-on-boxed)
 (set-current-implementation :vectorz)
 
 (defmacro mybench [expr] `(do (println (quote ~expr)) (bench ~expr) (println)))
