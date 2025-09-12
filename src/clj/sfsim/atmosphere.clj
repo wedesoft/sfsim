@@ -245,7 +245,7 @@
         H             (sqrt (- (sqr top-radius) (sqr ground-radius)))]
     (* (dec ^long size)
        (if above-horizon
-         (- 0.5 (limit-quot (- (* radius sin-elevation) (sqrt (max 0.0 (+ Delta (sqr H))))) (+ (+ rho rho) (* 2 H)) -0.5 0.0))
+         (- 0.5 (limit-quot (- (* radius sin-elevation) (sqrt (max 0.0 (+ Delta (sqr H))))) (+ rho rho (* 2 H)) -0.5 0.0))
          (+ 0.5 (limit-quot (+ (* radius sin-elevation) (sqrt (max 0.0 Delta))) (+ rho rho) -0.5 0.0))))))
 
 

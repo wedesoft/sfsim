@@ -316,7 +316,7 @@
   ([speed-mach alpha beta gear air-brake]
    (mix (mix (+ (* (drag-multiplier gear air-brake) ^double (c-d-0 speed-mach))
                 (coefficient-of-induced-drag speed-mach alpha beta)) ^double (c-d-90 speed-mach) (* 2.0 ^double alpha))
-        (* (/ ^double body-length ^double body-width) (* (drag-multiplier gear 0.0) ^double (c-d-0 speed-mach)))
+        (* (/ ^double body-length ^double body-width) (drag-multiplier gear 0.0) ^double (c-d-0 speed-mach))
         (* 2.0 ^double beta))))
 
 
@@ -467,13 +467,13 @@
   (* 0.5 density (sqr speed)))
 
 
-(def c-l-q 4.2624)
+(def C-l-q 4.2624)
 
 
 (defn lift
   "Compute lift for given speed in body system"
   ^double [{::keys [^double alpha ^double beta ^double speed]} ^Vec3 rotation ^double speed-of-sound ^double density]
-  (* (+ (coefficient-of-lift (/ speed speed-of-sound) alpha beta) (* ^double c-l-q ^double (rotation 1) (cos alpha) (cos beta)))
+  (* (+ (coefficient-of-lift (/ speed speed-of-sound) alpha beta) (* ^double C-l-q ^double (rotation 1) (cos alpha) (cos beta)))
      (dynamic-pressure density speed) ^double reference-area))
 
 

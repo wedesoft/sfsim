@@ -25,7 +25,7 @@
         org.lwjgl/lwjgl-assimp$natives-windows {:mvn/version "3.3.6"}}
  :paths ["src/clj"]
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED" "-XX:+UseZGC"
-                            "--sun-misc-unsafe-memory-access=allow"]
+                            "-XX:+UseDynamicNumberOfGCThreads" "--sun-misc-unsafe-memory-access=allow"]
                  :main-opts ["-m" "sfsim.core"]}
            :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.10"}
                           sfsim/sfsim {:local/root "."}}

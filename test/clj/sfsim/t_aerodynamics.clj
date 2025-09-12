@@ -232,7 +232,7 @@
          (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0 0 0) 320.0 1.0)
          => (roughly (* 0.14 0.5 1.0 (* 160 160) reference-area) 1e-6)
          (lift (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) (vec3 0 0.5 0) 320.0 1.0)
-         => (roughly (* (+ 0.14 1.0) 0.5 1.0 (* 160 160) reference-area) 1e-6)))
+         => (roughly (* (+ 0.14 (* 0.5 4.2624)) 0.5 1.0 (* 160 160) reference-area) 1e-6)))
 
 
 (defn coefficient-of-drag-mock
