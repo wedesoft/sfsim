@@ -60,9 +60,11 @@ float diamond(vec2 uv)
     float tail_length = 0.8 * diamond_front_length;
     float diamond_length = diamond_longitudinal > 0.0 ? diamond_back_length : diamond_front_length;
     float diamond_radius = limit * max(0.0, 1.0 - abs(diamond_longitudinal / omega) / diamond_length);
-    diamond = abs(uv.y) <= diamond_radius ? 1.0 : 0.5;
+    float extent = 1.0;
+    float decay = max(0.0, 1.0 - abs(diamond_longitudinal / extent));
+    diamond = 0.8 + 0.1 / diamond_front_length * (1.0 - smoothstep(diamond_radius - 0.05, diamond_radius, abs(uv.y))) * decay;
   } else {
-    diamond = 0.5;
+    diamond = 0.8;
   };
   return diamond;
 }
