@@ -1,12 +1,13 @@
 #version 410 core
 
-uniform vec2 iResolution;
-uniform float iTime;
-uniform vec2 iMouse;
-
+#define M_PI 3.1415926535897932384626433832795
 #define nozzle 0.2
 #define scaling 0.1
 #define max_cone 1.5
+
+uniform vec2 iResolution;
+uniform float iTime;
+uniform vec2 iMouse;
 
 float sqr(float x)
 {
@@ -36,10 +37,34 @@ float bumps(float x)
     float start = log((limit - nozzle) / limit) / log(c);
     return limit - limit * pow(c, start + x);
   } else {
-    float omega = 100.0 * (nozzle - limit);
-    float bumps = (nozzle - limit) * abs(cos(x * omega));
+    float bulge = nozzle - limit;
+    float omega = 100.0 * bulge;
+    float bumps = bulge * abs(cos(x * omega));
     return limit + bumps;
   };
+}
+
+float diamond(vec2 uv)
+{
+  float pressure = pressure();
+  float limit = limit(pressure);
+  float diamond;
+  if (nozzle > limit) {
+    float bulge = nozzle - limit;
+    float omega = 100.0 * bulge;
+    float phase = omega * uv.x + M_PI / 2;
+    float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
+    float diamond_front_length = limit / (bulge * omega);
+    float diamond_back_length = diamond_front_length * 0.7;
+    float tail_start = 0.3 * diamond_front_length;
+    float tail_length = 0.8 * diamond_front_length;
+    float diamond_length = diamond_longitudinal > 0.0 ? diamond_back_length : diamond_front_length;
+    float diamond_radius = limit * max(0.0, 1.0 - abs(diamond_longitudinal / omega) / diamond_length);
+    diamond = abs(uv.y) <= diamond_radius ? 1.0 : 0.5;
+  } else {
+    diamond = 0.5;
+  };
+  return diamond;
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
@@ -52,7 +77,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   if (inside) {
     float a = radius * radius;
     float d = sqrt(radius * radius - uv.y * uv.y);
-    color = 0.1 * vec3(1, 1, 1) * d / a;
+    float diamond = diamond(uv);
+    color = 0.1 * diamond * vec3(1, 1, 1) * d / a;
   } else {
     color = vec3(0, 0, 0);
   };
