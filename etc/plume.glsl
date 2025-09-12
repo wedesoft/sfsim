@@ -5,19 +5,9 @@ uniform float iTime;
 uniform vec2 iMouse;
 
 
-float prandtl_meyer(float mach)
+float sqr(float x)
 {
-  float gamma = 1.25;
-  return sqrt((gamma + 1) / (gamma - 1)) * atan((gamma - 1) / (gamma + 1) * (mach * mach - 1)) - atan(sqrt(mach * mach - 1));
-}
-
-float bumps2(float x)
-{
-  float transition = 3 * iMouse.y / iResolution.y;
-  float omega = 20.0 * pow(0.1, transition);
-  float decay = exp(-x * 3);
-  float bell = 2 * transition * (1.0 - exp(-x * 2 / (transition + 0.1)));
-  return 0.1 + 0.1 * abs(cos(x * omega)) * decay + bell;
+  return x * x;
 }
 
 float bumps(float x)
@@ -25,10 +15,14 @@ float bumps(float x)
   float slider = iMouse.y / iResolution.y;
   float nozzle = 0.2;
   float pressure = pow(0.001, slider);
-  float limit = 0.1 * sqrt(1.0 / pressure);
-  float derivative = 2 * iResolution.x / iResolution.y;
-  float c = exp(-derivative / limit);
+  float scaling = 0.1;
+  float limit = scaling * sqrt(1.0 / pressure);
   if (nozzle < limit) {
+    float equal_pressure = sqr(scaling / nozzle);
+    float max_cone = 1.5;
+    float factor = max_cone * (equal_pressure - pressure) / equal_pressure;
+    float derivative = factor * 2.0 * iResolution.x / iResolution.y;
+    float c = exp(-derivative / limit);
     float start = log((limit - nozzle) / limit) / log(c);
     return limit - limit * pow(c, start + x);
   } else {
