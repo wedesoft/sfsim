@@ -26,7 +26,7 @@ float bumps(float x)
   float nozzle = 0.2;
   float pressure = pow(0.001, slider);
   float limit = 0.1 * sqrt(1.0 / pressure);
-  float derivative = 3;
+  float derivative = 2 * iResolution.x / iResolution.y;
   float c = exp(-derivative / limit);
   if (nozzle < limit) {
     float start = log((limit - nozzle) / limit) / log(c);
