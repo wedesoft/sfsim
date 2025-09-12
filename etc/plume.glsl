@@ -4,22 +4,32 @@ uniform vec2 iResolution;
 uniform float iTime;
 uniform vec2 iMouse;
 
+#define nozzle 0.2
+#define scaling 0.1
+#define max_cone 1.5
 
 float sqr(float x)
 {
   return x * x;
 }
 
-float bumps(float x)
+float pressure()
 {
   float slider = iMouse.y / iResolution.y;
-  float nozzle = 0.2;
-  float pressure = pow(0.001, slider);
-  float scaling = 0.1;
-  float limit = scaling * sqrt(1.0 / pressure);
+  return pow(0.001, slider);
+}
+
+float limit(float pressure)
+{
+  return scaling * sqrt(1.0 / pressure);
+}
+
+float bumps(float x)
+{
+  float pressure = pressure();
+  float limit = limit(pressure);
   if (nozzle < limit) {
     float equal_pressure = sqr(scaling / nozzle);
-    float max_cone = 1.5;
     float factor = max_cone * (equal_pressure - pressure) / equal_pressure;
     float derivative = factor * 2.0 * iResolution.x / iResolution.y;
     float c = exp(-derivative / limit);
@@ -34,7 +44,7 @@ float bumps(float x)
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
-  float fov = 5.0;
+  float fov = 2.0;
   vec2 uv = vec2(fragCoord.x / iResolution.x, 2.0 * fragCoord.y / iResolution.y - 1.0) * fov;
   float radius = bumps(uv.x);
   bool inside = abs(uv.y) <= radius;
