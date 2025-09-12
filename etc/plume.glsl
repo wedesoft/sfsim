@@ -1,13 +1,64 @@
 #version 410 core
 
+// References:
+// Mach diamonds: https://www.shadertoy.com/view/WdGBDc
+// fbm and domain warping: https://www.shadertoy.com/view/WsjGRz
+// flame thrower: https://www.shadertoy.com/view/XsVSDW
+
 #define M_PI 3.1415926535897932384626433832795
 #define nozzle 0.2
 #define scaling 0.1
 #define max_cone 1.5
+#define HASHSCALE 0.1031
 
 uniform vec2 iResolution;
 uniform float iTime;
 uniform vec2 iMouse;
+
+float hash(float p)
+{
+  vec3 p3  = fract(vec3(p) * HASHSCALE);
+  p3 += dot(p3, p3.yzx + 19.19);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+float fade(float t) { return t*t*t*(t*(6.*t-15.)+10.); }
+
+float grad(float hash, float p)
+{
+  int i = int(1e4*hash);
+  return (i & 1) == 0 ? p : -p;
+}
+
+float perlin(float p)
+{
+  float pi = floor(p), pf = p - pi, w = fade(pf);
+  return mix(grad(hash(pi), pf), grad(hash(pi + 1.0), pf - 1.0), w) * 2.0;
+}
+
+float hash21(vec2 v) {
+  return fract(sin(dot(v, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+float noise(vec2 uv) {
+  vec2 f = fract(uv);
+  vec2 i = floor(uv);
+  f = f * f * (3. - 2. * f);
+  return mix(
+      mix(hash21(i), hash21(i + vec2(1,0)), f.x),
+      mix(hash21(i + vec2(0,1)), hash21(i + vec2(1,1)), f.x), f.y);
+}
+
+float fbm(vec2 n) {
+  float total = 0.0, amplitude = 0.5;
+  for (int i = 0; i < 3; i++) {
+    total += noise(n) * amplitude;
+    n = n * 2.0;
+    amplitude *= 0.5;
+  }
+  return total;
+}
+
 
 float sqr(float x)
 {
@@ -52,7 +103,7 @@ float diamond(vec2 uv)
   if (nozzle > limit) {
     float bulge = nozzle - limit;
     float omega = 100.0 * bulge;
-    float phase = omega * uv.x + M_PI / 2;
+    float phase = omega * uv.x + M_PI / 2.0;
     float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
     float diamond_front_length = limit / (bulge * omega);
     float diamond_back_length = diamond_front_length * 0.7;
@@ -66,6 +117,12 @@ float diamond(vec2 uv)
   } else {
     diamond = 0.8;
   };
+  float bumps = bumps(uv.x);
+  float flame_frequency_longitudinal = 20.0;
+  float flame_frequency_lateral = 40.0;
+  float brightness = fbm(vec2(uv.x * flame_frequency_longitudinal - iTime * 200.0, uv.y * flame_frequency_lateral * nozzle / bumps));
+  brightness = clamp(brightness, 0.0, 1.0);
+  diamond += 0.3 * brightness;
   return diamond;
 }
 
@@ -73,6 +130,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   float fov = 2.0;
   vec2 uv = vec2(fragCoord.x / iResolution.x, 2.0 * fragCoord.y / iResolution.y - 1.0) * fov;
+  uv.y += .01*perlin(iTime*67.+uv.x)*(.1+uv.x);
+  uv.y += .005*perlin(iTime*101.+uv.x)*(.1+uv.x);
+  uv.x *= (1.0 + 0.01 * perlin(iTime*137.0));
   float radius = bumps(uv.x);
   bool inside = abs(uv.y) <= radius;
   vec3 color;
