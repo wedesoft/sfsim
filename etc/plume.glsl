@@ -81,8 +81,8 @@ float bumps(float x)
   float pressure = pressure();
   float limit = limit(pressure);
   if (nozzle < limit) {
-    float log_c = -0.5;
-    float c = exp(log_c);
+    float c = 0.2;
+    float log_c = log(c);
     float start = log((limit - nozzle) / limit) / log_c;
     return limit - limit * pow(c, start + x);
   } else {
