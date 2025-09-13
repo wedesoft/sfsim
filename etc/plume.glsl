@@ -81,11 +81,9 @@ float bumps(float x)
   float pressure = pressure();
   float limit = limit(pressure);
   if (nozzle < limit) {
-    float equal_pressure = sqr(scaling / nozzle);
-    float factor = max_cone * (equal_pressure - pressure) / equal_pressure;
-    float derivative = factor * 2.0 * iResolution.x / iResolution.y;
-    float c = exp(-derivative / limit);
-    float start = log((limit - nozzle) / limit) / log(c);
+    float log_c = -0.5;
+    float c = exp(log_c);
+    float start = log((limit - nozzle) / limit) / log_c;
     return limit - limit * pow(c, start + x);
   } else {
     float bulge = nozzle - limit;
@@ -93,6 +91,15 @@ float bumps(float x)
     float bumps = bulge * abs(cos(x * omega));
     return limit + bumps;
   };
+}
+
+float flame(vec2 uv)
+{
+  float bumps = bumps(uv.x);
+  float flame_frequency_longitudinal = 20.0;
+  float flame_frequency_lateral = 40.0;
+  float brightness = fbm(vec2(uv.x * flame_frequency_longitudinal - iTime * 200.0, uv.y * flame_frequency_lateral * nozzle / bumps));
+  return clamp(brightness, 0.0, 1.0);
 }
 
 float diamond(vec2 uv)
@@ -117,12 +124,6 @@ float diamond(vec2 uv)
   } else {
     diamond = 0.8;
   };
-  float bumps = bumps(uv.x);
-  float flame_frequency_longitudinal = 20.0;
-  float flame_frequency_lateral = 40.0;
-  float brightness = fbm(vec2(uv.x * flame_frequency_longitudinal - iTime * 200.0, uv.y * flame_frequency_lateral * nozzle / bumps));
-  brightness = clamp(brightness, 0.0, 1.0);
-  diamond += 0.3 * brightness;
   return diamond;
 }
 
@@ -140,7 +141,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float a = radius * radius;
     float d = sqrt(radius * radius - uv.y * uv.y);
     float diamond = diamond(uv);
-    color = 0.1 * diamond * vec3(1, 1, 1) * d / a;
+    float flame = flame(uv);
+    color = (0.1 * diamond + 0.03 * flame) * vec3(1, 1, 1) * d / a;
   } else {
     color = vec3(0, 0, 0);
   };
