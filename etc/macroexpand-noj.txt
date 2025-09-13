@@ -6,5 +6,5 @@ While Vulkan is supposed to supersede OpenGL, learning OpenGL is less difficult 
 This talk shows how Clojure can be used to do test driven development of OpenGL shaders, which facilitates developing and refactoring of more complex shader programs.
 
 * Midje OpenGL tests
-* templating
 * recording integration test images
+* templating (e.g. fractal brownian motion)

@@ -93,6 +93,14 @@ float bumps(float x)
   };
 }
 
+float fringe(vec2 uv)
+{
+  float pressure = pressure();
+  float radius = bumps(uv.x);
+  float dist = abs(uv.y) - radius;
+  return mix(0.5, max(1.0 - abs(dist) / 0.1, 0.0), pressure);
+}
+
 float flame(vec2 uv)
 {
   float bumps = bumps(uv.x);
@@ -120,9 +128,9 @@ float diamond(vec2 uv)
     float diamond_radius = limit * max(0.0, 1.0 - abs(diamond_longitudinal / omega) / diamond_length);
     float extent = 1.0;
     float decay = max(0.0, 1.0 - abs(diamond_longitudinal / extent));
-    diamond = 0.8 + 0.1 / diamond_front_length * (1.0 - smoothstep(diamond_radius - 0.05, diamond_radius, abs(uv.y))) * decay;
+    diamond = 0.1 / diamond_front_length * (1.0 - smoothstep(diamond_radius - 0.05, diamond_radius, abs(uv.y))) * decay;
   } else {
-    diamond = 0.8;
+    diamond = 0.0;
   };
   return diamond;
 }
@@ -142,7 +150,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float d = sqrt(radius * radius - uv.y * uv.y);
     float diamond = diamond(uv);
     float flame = flame(uv);
-    color = (0.1 * diamond + 0.03 * flame) * vec3(1, 1, 1) * d / a;
+    float fringe = fringe(uv);
+    vec3 flame_color = mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe);
+    color = vec3(1, 1, 1) * diamond * 0.7 + 0.1 * (0.8 + 0.3 * flame) * flame_color * d / a;
   } else {
     color = vec3(0, 0, 0);
   };
