@@ -6,9 +6,8 @@
 // flame thrower: https://www.shadertoy.com/view/XsVSDW
 
 #define M_PI 3.1415926535897932384626433832795
-#define nozzle 0.2
-#define scaling 0.1
-#define max_cone 1.5
+#define NOZZLE 0.2
+#define SCALING 0.1
 #define HASHSCALE 0.1031
 
 uniform vec2 iResolution;
@@ -73,20 +72,20 @@ float pressure()
 
 float limit(float pressure)
 {
-  return scaling * sqrt(1.0 / pressure);
+  return SCALING * sqrt(1.0 / pressure);
 }
 
 float bumps(float x)
 {
   float pressure = pressure();
   float limit = limit(pressure);
-  if (nozzle < limit) {
-    float c = 0.2;
+  if (NOZZLE < limit) {
+    float c = 0.4;
     float log_c = log(c);
-    float start = log((limit - nozzle) / limit) / log_c;
+    float start = log((limit - NOZZLE) / limit) / log_c;
     return limit - limit * pow(c, start + x);
   } else {
-    float bulge = nozzle - limit;
+    float bulge = NOZZLE - limit;
     float omega = 100.0 * bulge;
     float bumps = bulge * abs(cos(x * omega));
     return limit + bumps;
@@ -106,7 +105,7 @@ float flame(vec2 uv)
   float bumps = bumps(uv.x);
   float flame_frequency_longitudinal = 20.0;
   float flame_frequency_lateral = 40.0;
-  float brightness = fbm(vec2(uv.x * flame_frequency_longitudinal - iTime * 200.0, uv.y * flame_frequency_lateral * nozzle / bumps));
+  float brightness = fbm(vec2(uv.x * flame_frequency_longitudinal - iTime * 200.0, uv.y * flame_frequency_lateral * NOZZLE / bumps));
   return clamp(brightness, 0.0, 1.0);
 }
 
@@ -115,8 +114,8 @@ float diamond(vec2 uv)
   float pressure = pressure();
   float limit = limit(pressure);
   float diamond;
-  if (nozzle > limit) {
-    float bulge = nozzle - limit;
+  if (NOZZLE > limit) {
+    float bulge = NOZZLE - limit;
     float omega = 100.0 * bulge;
     float phase = omega * uv.x + M_PI / 2.0;
     float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
@@ -152,7 +151,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float flame = flame(uv);
     float fringe = fringe(uv);
     vec3 flame_color = mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe);
-    color = vec3(1, 1, 1) * diamond * 0.7 + 0.1 * (0.8 + 0.3 * flame) * flame_color * d / a;
+    color = vec3(1, 1, 1) * diamond * 0.7 + 0.1 * (1.5 + 0.75 * flame) * flame_color * d / a;
   } else {
     color = vec3(0, 0, 0);
   };
