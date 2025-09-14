@@ -34,17 +34,17 @@ float perlin(float p)
 }
 
 float hash21(vec2 v) {
-    return fract(sin(dot(v, vec2(12.9898, 78.233))) * 43758.5453123);
+  return fract(sin(dot(v, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
 // https://www.shadertoy.com/view/WsjGRz
 float noise(vec2 uv) {
-	vec2 f = fract(uv);
-	vec2 i = floor(uv);
-	f = f * f * (3. - 2. * f);
-	return mix(
-		mix(hash21(i), hash21(i + vec2(1,0)), f.x),
-		mix(hash21(i + vec2(0,1)), hash21(i + vec2(1,1)), f.x), f.y);
+  vec2 f = fract(uv);
+  vec2 i = floor(uv);
+  f = f * f * (3. - 2. * f);
+  return mix(
+      mix(hash21(i), hash21(i + vec2(1,0)), f.x),
+      mix(hash21(i + vec2(0,1)), hash21(i + vec2(1,1)), f.x), f.y);
 }
 
 
