@@ -8,8 +8,7 @@
   "Functions dealing with rays"
   (:require
     [fastmath.vector :refer (add mult mag vec3)]
-    [malli.core :as m]
-    [sfsim.util :refer (N)]))
+    [malli.core :as m]))
 
 
 (def ray (m/schema [:map [::origin [:vector :double]] [::direction [:vector :double]]]))
@@ -19,7 +18,6 @@
 
 (defn integral-ray
   "Integrate given function over a ray in 3D space"
-  {:malli/schema [:=> [:cat ray N :double [:=> [:cat [:vector :double]] :some]] :some]}
   [{::keys [origin direction]} ^long steps ^double distance fun]
   (let [stepsize      (/ distance steps)
         samples       (->Eduction (map (fn ^double [^long n] (* (+ 0.5 n) stepsize))) (range steps))
