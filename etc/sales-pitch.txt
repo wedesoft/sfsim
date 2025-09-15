@@ -1,0 +1,13 @@
+* What are players complaining most about in your genre?
+* What do you find frustrating about your genre?
+  Lack of space simulators with realistic physics
+* How is your game trying to solve those frustrations?
+  Realistic flight model and required flight instruments
+* What new features are you adding that aren't usually found in your genre?
+  Good physics for atmospheric flight, gear suspension, collisions, planet and moon, realistic celestial motions
+  Realistic Earth and Moon
+* What tropes in your genre are you challenging?
+  Spacecraft flying in the direction they are pointing at.
+* How are you doing something totally opposite in your genre (for example, while most medieval RPG games are fantasy, Kingdom Come: Deliverance did the opposite, and had NO fantasy in it's medieval RPG game
+* How are you rebelling in your genre?
+* What do you hate that AAA games do that hurt the genre?
