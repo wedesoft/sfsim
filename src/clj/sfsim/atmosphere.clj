@@ -50,7 +50,7 @@
 (defn extinction
   "Compute Mie or Rayleigh extinction for given atmosphere and height"
   {:malli/schema [:=> [:cat scatter :double] fvec3]}
-  [scattering-type height]
+  [scattering-type ^double height]
   (div (scattering scattering-type height) (or (::scatter-quotient scattering-type) 1.0)))
 
 
