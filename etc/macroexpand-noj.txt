@@ -8,3 +8,7 @@ This talk shows how Clojure can be used to do test driven development of OpenGL 
 * Midje OpenGL tests
 * recording integration test images
 * templating (e.g. fractal brownian motion)
+
+;; https://scicloj.github.io/clay/clay_book.examples.html
+;; clj -M:clay -A:markdown
+;; quarto render site
