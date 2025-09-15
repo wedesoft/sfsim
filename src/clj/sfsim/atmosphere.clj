@@ -117,7 +117,12 @@
   {:malli/schema [:function [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3] fvec3]
                   [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3 :boolean] fvec3]]}
   ([planet scatter steps x x0]
-   (let [overall-extinction (fn overall-extinction [point] (apply add (mapv #(extinction % (height planet point)) scatter)))]
+   (let [overall-extinction (if (= (count scatter) 1)
+                              (let [[u] scatter]
+                                (fn overall-extinction [point] (extinction u (height planet point))))
+                              (let [[u v] scatter]
+                                (fn overall-extinction [point] (add (extinction u (height planet point))
+                                                                   (extinction v (height planet point))))))]
      (-> (integral-ray #:sfsim.ray{:origin x :direction (sub x0 x)} steps 1.0 overall-extinction) sub fv/exp)))
   ([planet scatter steps x v above-horizon]
    (let [intersection (if above-horizon atmosphere-intersection surface-intersection)]
