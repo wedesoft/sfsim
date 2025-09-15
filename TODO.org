@@ -198,7 +198,10 @@
 *** TODO no skydome and just stars as pixels?
 ** TODO create windows using blending (reflections?)
 ** TODO introduce variation to cloud height
-* TODO [#C] smaller improvements
+* TODO [#C] other improvements
+  - Note taken on [2025-09-15 Mo 18:52] \\
+    https://www.reddit.com/user/bsless/
+    Willing to lend a hand with any perf work if you're interested
   - Note taken on [2025-09-15 Mo 12:59] \\
     Polish:
     * settings menu
