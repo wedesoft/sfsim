@@ -49,7 +49,6 @@
 
 (defn extinction
   "Compute Mie or Rayleigh extinction for given atmosphere and height"
-  {:malli/schema [:=> [:cat scatter :double] fvec3]}
   [scattering-type ^double height]
   (div (scattering scattering-type height) (or (::scatter-quotient scattering-type) 1.0)))
 
@@ -114,7 +113,7 @@
 
 (defn transmittance
   "Compute transmissiveness of atmosphere between two points x and x0 considering specified scattering effects"
-  {:malli/schema [:function [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3] fvec3]
+  {:malli/schema [:function [:=> [:cat atmosphere [:or [:tuple scatter] [:tuple scatter scatter]] N fvec3 fvec3] fvec3]
                   [:=> [:cat atmosphere [:vector scatter] N fvec3 fvec3 :boolean] fvec3]]}
   ([planet scatter steps x x0]
    (let [overall-extinction (if (= (count scatter) 1)
