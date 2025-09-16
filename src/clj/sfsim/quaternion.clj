@@ -88,10 +88,9 @@
 (defn norm2
   "Compute square of norm of quaternion"
   ^double [^Quaternion q]
-  (c/+ (sqr (.real q))
-       (sqr (.imag q))
-       (sqr (.jmag q))
-       (sqr (.kmag q))))
+  (c/+
+   (c/+ (sqr (.real q)) (sqr (.imag q)))
+   (c/+ (sqr (.jmag q)) (sqr (.kmag q)))))
 
 
 (defn norm
