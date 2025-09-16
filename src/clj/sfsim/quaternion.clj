@@ -158,8 +158,7 @@
 (defn rotation
   "Generate quaternion to represent rotation"
   ^Quaternion [^double theta ^Vec3 v]
-  (let [scale (c/* theta 0.5)]
-    (exp (vector->quaternion (mult v scale)))))
+  (exp (vector->quaternion (mult v (c/* theta 0.5)))))
 
 
 (defn rotate-vector
