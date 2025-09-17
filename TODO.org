@@ -39,8 +39,10 @@
     - [ ] deteriorating series of mach diamonds
     - [ ] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
     - [ ] expanding plume with decreasing atmospheric pressure
+  - [ ] add keyboard mapping help page
   - [ ] implement RCS thrusters
   - [ ] animate control surfaces and air brake
+  - [ ] Nose wheel steering
   - [ ] yaw stabilisation
   - [ ] kill rotation
   - [ ] physics and animation of steering front wheel (apply difference of two animation time stamps)
@@ -66,6 +68,7 @@
 * TODO [#B] sound effects                                            :immersion:
   - Note taken on [2025-08-16 Sa 22:05] \\
     [[https://freesound.org/people/Andrewkn/sounds/502864/]]
+    [[https://www.epidemicsound.com/sound-effects/]]
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
@@ -79,6 +82,7 @@
 ** TODO [[https://opengc.sourceforge.net/screenshots.html][open glass cockpit]]
 ** TODO [[https://www.youtube.com/watch?v=XhudXvmnYwU][Kerbal cockpit]]
 ** TODO [[https://iss-sim.spacex.com/][SpaceX cockpit]]
+** TODO checklist MFD
 ** TODO orbit plane alignment
 ** TODO docking view
 ** TODO horizon with height and variometer
@@ -167,6 +171,8 @@
    - [ ] integration test powder function
    - [ ] low FPS at 100km height was reported
    - [ ] cloud shadow flickering at large distance?
+** TODO peek faster than last on vectors
+** TODO use :let, :while, :when in for loops
 ** TODO use icosahedron for mapping 2D micro textures (better grass)
    - Note taken on [2025-08-16 Sa 22:05] \\
      [[https://uk.pinterest.com/pin/445223113163715012/]]
@@ -192,7 +198,16 @@
 *** TODO no skydome and just stars as pixels?
 ** TODO create windows using blending (reflections?)
 ** TODO introduce variation to cloud height
-* TODO [#C] smaller improvements
+* TODO [#C] other improvements
+  - Note taken on [2025-09-15 Mo 18:52] \\
+    https://www.reddit.com/user/bsless/
+    Willing to lend a hand with any perf work if you're interested
+  - Note taken on [2025-09-15 Mo 12:59] \\
+    Polish:
+    * settings menu
+    * Balanced colour palette
+    * Voice over
+    * Visual effects
 ** TODO r/daslu suggested talk at [[macroexpand_noj][https://scicloj.github.io/macroexpand-2025/macroexpand_noj]]
 ** TODO joystick hat to control camera
 ** TODO limit dt or pause
