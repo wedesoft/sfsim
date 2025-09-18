@@ -14,7 +14,7 @@ uniform vec2 iMouse;
 #define M_PI 3.1415926535897932384626433832795
 #define FOV (70.0 * M_PI / 180.0)
 #define F (1.0 / tan(FOV / 2.0))
-#define DIST 2.0
+#define DIST 1.0
 
 
 // rotation around x axis
@@ -39,6 +39,17 @@ mat3 rotation_y(float angle) {
   );
 }
 
+// rotation around z axis
+mat3 rotation_z(float angle) {
+  float s = sin(angle);
+  float c = cos(angle);
+  return mat3(
+    c, s, 0,
+    -s, c, 0,
+    0, 0, 1
+  );
+}
+
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
 {
   vec3 factors1 = (box_min - origin) / direction;
@@ -50,14 +61,33 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
   return vec2(near, max(far - near, 0));
 }
 
+// Distance to line
+float line_distance(vec3 p0, vec3 v, vec3 p)
+{
+  vec3 w = p - p0;
+  float c1 = length(cross(w, v));
+  float c2 = length(v);
+  return c1 / c2;
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   float aspect = iResolution.x / iResolution.y;
   vec2 uv = (fragCoord.xy / iResolution.xy * 2.0 - 1.0) * vec2(aspect, 1.0);
   vec2 mouse = iMouse.xy / iResolution.xy;
-  mat3 rotation = rotation_x((0.5 - mouse.y) * M_PI) * rotation_y((mouse.x - 0.5) * 2.0 * M_PI);
+  mat3 rotation = rotation_z((0.5 - mouse.y) * M_PI) * rotation_y((mouse.x - 0.5) * 2.0 * M_PI);
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
   vec3 direction = normalize(rotation * vec3(uv, F));
-  vec2 box = ray_box(vec3(-0.5, -0.5, -0.5), vec3(0.5, 0.5, 0.5), origin, direction);
-  fragColor = vec4(box.y, box.y, box.y, 1.0) / sqrt(3);
+  vec2 box = ray_box(vec3(-0.5, -0.2, -0.2), vec3(0.5, 0.2, 0.2), origin, direction);
+  float transparency = 1.0;
+  float ds = box.y / 100.0;
+  for (int i = 0; i <= 100; i++)
+  {
+    float s = box.x + i * ds;
+    float dist = line_distance(vec3(-0.5, 0.0, 0.0), vec3(1.0, 0.0, 0.0), origin + direction * s);
+    if (dist < 0.2)
+      transparency *= pow(0.5, ds);
+  };
+  float color = 1.0 - transparency;
+  fragColor = vec4(color, color, color, 1.0);
 }
