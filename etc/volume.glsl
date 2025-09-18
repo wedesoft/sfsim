@@ -120,7 +120,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec3 p = origin + direction * s;
     float dist = line_distance(vec3(-0.5, 0.0, 0.0), vec3(1.0, 0.0, 0.0), p);
     if (dist < 0.2)
-      transparency *= pow(0.2, ds * noise(p * 20));
+      transparency *= pow(0.2, ds * noise(p * 20 + iTime * vec3(-10.0, 0.0, 0.0)));
   };
   float color = 1.0 - transparency;
   fragColor = vec4(color, color, color, 1.0);
