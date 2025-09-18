@@ -4,6 +4,7 @@
 // Mach diamonds: https://www.shadertoy.com/view/WdGBDc
 // fbm and domain warping: https://www.shadertoy.com/view/WsjGRz
 // flame thrower: https://www.shadertoy.com/view/XsVSDW
+// 3D perlin noise: https://www.shadertoy.com/view/4djXzz
 
 #define M_PI 3.1415926535897932384626433832795
 
@@ -50,6 +51,38 @@ mat3 rotation_z(float angle) {
   );
 }
 
+float hash3d(vec3 coordinates)
+{
+  float hashValue = coordinates.x + coordinates.y * 37.0 + coordinates.z * 521.0;
+  return fract(sin(hashValue * 1.333) * 100003.9);
+}
+
+float interpolate_hermite(float value1, float value2, float factor)
+{
+    return mix(value1, value2, factor * factor * (3.0 - 2.0 * factor)); // Perform cubic Hermite interpolation
+}
+
+const vec2 vector01 = vec2(0.0, 1.0);
+
+float noise(vec3 coordinates)
+{
+  vec3 fractional = fract(coordinates.xyz);
+  vec3 integral = floor(coordinates.xyz);
+  float hash000 = hash3d(integral);
+  float hash100 = hash3d(integral + vector01.yxx);
+  float hash010 = hash3d(integral + vector01.xyx);
+  float hash110 = hash3d(integral + vector01.yyx);
+  float hash001 = hash3d(integral + vector01.xxy);
+  float hash101 = hash3d(integral + vector01.yxy);
+  float hash011 = hash3d(integral + vector01.xyy);
+  float hash111 = hash3d(integral + vector01.yyy);
+
+  return interpolate_hermite(
+      interpolate_hermite(interpolate_hermite(hash000, hash100, fractional.x), interpolate_hermite(hash010, hash110, fractional.x), fractional.y),
+      interpolate_hermite(interpolate_hermite(hash001, hash101, fractional.x), interpolate_hermite(hash011, hash111, fractional.x), fractional.y),
+      fractional.z);
+}
+
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
 {
   vec3 factors1 = (box_min - origin) / direction;
@@ -84,9 +117,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   for (int i = 0; i <= 100; i++)
   {
     float s = box.x + i * ds;
-    float dist = line_distance(vec3(-0.5, 0.0, 0.0), vec3(1.0, 0.0, 0.0), origin + direction * s);
+    vec3 p = origin + direction * s;
+    float dist = line_distance(vec3(-0.5, 0.0, 0.0), vec3(1.0, 0.0, 0.0), p);
     if (dist < 0.2)
-      transparency *= pow(0.5, ds);
+      transparency *= pow(0.2, ds * noise(p * 20));
   };
   float color = 1.0 - transparency;
   fragColor = vec4(color, color, color, 1.0);
