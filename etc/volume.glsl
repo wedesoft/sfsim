@@ -17,6 +17,7 @@ uniform vec2 iMouse;
 #define F (1.0 / tan(FOV / 2.0))
 #define DIST 1.0
 #define NOZZLE 0.2
+#define LIMIT 0.15
 #define SAMPLES 100
 
 // rotation around x axis
@@ -97,7 +98,7 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
 
 float bumps(float x)
 {
-  float limit = 0.12;
+  float limit = LIMIT;
   float bulge = NOZZLE - limit;
   float omega = 100.0 * bulge;
   float bumps = bulge * abs(cos(x * omega));
@@ -113,7 +114,7 @@ float fringe(vec2 uv)
 
 float diamond(vec2 uv)
 {
-  float limit = 0.12;
+  float limit = LIMIT;
   float diamond;
   if (NOZZLE > limit) {
     float bulge = NOZZLE - limit;
@@ -159,10 +160,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float diamond = diamond(uv);
     float fringe = fringe(uv);
     vec3 flame_color = mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe);
-    // float density = NOZZLE * NOZZLE / (radius * radius) + diamond * 20.0;
     float density = NOZZLE * NOZZLE / (radius * radius);
     if (dist <= radius)
       color += flame_color * density * ds * (0.8 + 0.2 * noise(p * scale + iTime * vec3(-20.0, 0.0, 0.0)));
+      color += diamond * 10.0 * ds * vec3(1, 1, 1);
   };
   fragColor = vec4(color, 1.0);
 }
