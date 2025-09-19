@@ -104,6 +104,13 @@ float bumps(float x)
   return limit + bumps;
 }
 
+float fringe(vec2 uv)
+{
+  float radius = bumps(uv.x);
+  float dist = abs(uv.y) - radius;
+  return max(1.0 - abs(dist) / 0.1, 0.0);
+}
+
 float diamond(vec2 uv)
 {
   float limit = 0.12;
@@ -130,28 +137,32 @@ float diamond(vec2 uv)
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
+  float start = -1.0;
+  float end = 1.0;
   float aspect = iResolution.x / iResolution.y;
   vec2 uv = (fragCoord.xy / iResolution.xy * 2.0 - 1.0) * vec2(aspect, 1.0);
   vec2 mouse = iMouse.xy / iResolution.xy;
   mat3 rotation = rotation_z((0.5 - mouse.y) * M_PI) * rotation_y((mouse.x - 0.5) * 2.0 * M_PI);
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
   vec3 direction = normalize(rotation * vec3(uv, F));
-  vec2 box = ray_box(vec3(-0.5, -NOZZLE, -NOZZLE), vec3(0.5, NOZZLE, NOZZLE), origin, direction);
-  float transparency = 1.0;
+  vec2 box = ray_box(vec3(start, -NOZZLE, -NOZZLE), vec3(end, NOZZLE, NOZZLE), origin, direction);
   float ds = box.y / SAMPLES;
+  vec3 color = vec3(0, 0, 0);
   for (int i = 0; i <= SAMPLES; i++)
   {
     float s = box.x + i * ds;
     vec3 p = origin + direction * s;
     float dist = length(p.yz);
-    vec2 uv = vec2(p.x + 0.5, dist);
-    float radius = bumps(p.x + 0.5);
+    vec2 uv = vec2(p.x - start, dist);
+    float radius = bumps(p.x - start);
     vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
     float diamond = diamond(uv);
-    float density = NOZZLE * NOZZLE / (radius * radius) + diamond * 20.0;
+    float fringe = fringe(uv);
+    vec3 flame_color = mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe);
+    // float density = NOZZLE * NOZZLE / (radius * radius) + diamond * 20.0;
+    float density = NOZZLE * NOZZLE / (radius * radius);
     if (dist <= radius)
-      transparency *= pow(0.4, density * ds * noise(p * scale + iTime * vec3(-10.0, 0.0, 0.0)));
+      color += flame_color * density * ds * (0.8 + 0.2 * noise(p * scale + iTime * vec3(-20.0, 0.0, 0.0)));
   };
-  float color = 1.0 - transparency;
-  fragColor = vec4(color, color, color, 1.0);
+  fragColor = vec4(color, 1.0);
 }
