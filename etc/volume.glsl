@@ -97,11 +97,35 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
 
 float bumps(float x)
 {
-  float limit = 0.1;
+  float limit = 0.12;
   float bulge = NOZZLE - limit;
   float omega = 100.0 * bulge;
   float bumps = bulge * abs(cos(x * omega));
   return limit + bumps;
+}
+
+float diamond(vec2 uv)
+{
+  float limit = 0.12;
+  float diamond;
+  if (NOZZLE > limit) {
+    float bulge = NOZZLE - limit;
+    float omega = 100.0 * bulge;
+    float phase = omega * uv.x + M_PI / 2.0;
+    float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
+    float diamond_front_length = limit / (bulge * omega);
+    float diamond_back_length = diamond_front_length * 0.7;
+    float tail_start = 0.3 * diamond_front_length;
+    float tail_length = 0.8 * diamond_front_length;
+    float diamond_length = diamond_longitudinal > 0.0 ? diamond_back_length : diamond_front_length;
+    float diamond_radius = limit * max(0.0, 1.0 - abs(diamond_longitudinal / omega) / diamond_length);
+    float extent = 1.0;
+    float decay = max(0.0, 1.0 - abs(diamond_longitudinal / extent));
+    diamond = 0.1 / diamond_front_length * (1.0 - smoothstep(diamond_radius - 0.05, diamond_radius, abs(uv.y))) * decay;
+  } else {
+    diamond = 0.0;
+  };
+  return diamond;
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
@@ -120,11 +144,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float s = box.x + i * ds;
     vec3 p = origin + direction * s;
     float dist = length(p.yz);
+    vec2 uv = vec2(p.x + 0.5, dist);
     float radius = bumps(p.x + 0.5);
-    vec3 scale = 20.0 * vec3(1.0, NOZZLE / radius, NOZZLE / radius);
-    float density = NOZZLE * NOZZLE / (radius * radius);
+    vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
+    float diamond = diamond(uv);
+    float density = NOZZLE * NOZZLE / (radius * radius) + diamond * 20.0;
     if (dist <= radius)
-      transparency *= pow(0.25, density * ds * noise(p * scale + iTime * vec3(-10.0, 0.0, 0.0)));
+      transparency *= pow(0.4, density * ds * noise(p * scale + iTime * vec3(-10.0, 0.0, 0.0)));
   };
   float color = 1.0 - transparency;
   fragColor = vec4(color, color, color, 1.0);
