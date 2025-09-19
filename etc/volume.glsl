@@ -16,7 +16,8 @@ uniform vec2 iMouse;
 #define FOV (70.0 * M_PI / 180.0)
 #define F (1.0 / tan(FOV / 2.0))
 #define DIST 1.0
-
+#define NOZZLE 0.2
+#define SAMPLES 100
 
 // rotation around x axis
 mat3 rotation_x(float angle) {
@@ -94,13 +95,13 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
   return vec2(near, max(far - near, 0));
 }
 
-// Distance to line
-float line_distance(vec3 p0, vec3 v, vec3 p)
+float bumps(float x)
 {
-  vec3 w = p - p0;
-  float c1 = length(cross(w, v));
-  float c2 = length(v);
-  return c1 / c2;
+  float limit = 0.1;
+  float bulge = NOZZLE - limit;
+  float omega = 100.0 * bulge;
+  float bumps = bulge * abs(cos(x * omega));
+  return limit + bumps;
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
@@ -111,16 +112,19 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   mat3 rotation = rotation_z((0.5 - mouse.y) * M_PI) * rotation_y((mouse.x - 0.5) * 2.0 * M_PI);
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
   vec3 direction = normalize(rotation * vec3(uv, F));
-  vec2 box = ray_box(vec3(-0.5, -0.2, -0.2), vec3(0.5, 0.2, 0.2), origin, direction);
+  vec2 box = ray_box(vec3(-0.5, -NOZZLE, -NOZZLE), vec3(0.5, NOZZLE, NOZZLE), origin, direction);
   float transparency = 1.0;
-  float ds = box.y / 100.0;
-  for (int i = 0; i <= 100; i++)
+  float ds = box.y / SAMPLES;
+  for (int i = 0; i <= SAMPLES; i++)
   {
     float s = box.x + i * ds;
     vec3 p = origin + direction * s;
-    float dist = line_distance(vec3(-0.5, 0.0, 0.0), vec3(1.0, 0.0, 0.0), p);
-    if (dist < 0.2)
-      transparency *= pow(0.2, ds * noise(p * 20 + iTime * vec3(-10.0, 0.0, 0.0)));
+    float dist = length(p.yz);
+    float radius = bumps(p.x + 0.5);
+    vec3 scale = 20.0 * vec3(1.0, NOZZLE / radius, NOZZLE / radius);
+    float density = NOZZLE * NOZZLE / (radius * radius);
+    if (dist <= radius)
+      transparency *= pow(0.25, density * ds * noise(p * scale + iTime * vec3(-10.0, 0.0, 0.0)));
   };
   float color = 1.0 - transparency;
   fragColor = vec4(color, color, color, 1.0);
