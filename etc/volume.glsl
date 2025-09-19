@@ -122,7 +122,7 @@ float diamond(vec2 uv)
     float phase = omega * uv.x + M_PI / 2.0;
     float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
     float diamond_front_length = limit / (bulge * omega);
-    float diamond_back_length = diamond_front_length * 0.7;
+    float diamond_back_length = diamond_front_length * 0.3;
     float tail_start = 0.3 * diamond_front_length;
     float tail_length = 0.8 * diamond_front_length;
     float diamond_length = diamond_longitudinal > 0.0 ? diamond_back_length : diamond_front_length;
@@ -162,9 +162,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec3 flame_color = mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe);
     float density = NOZZLE * NOZZLE / (radius * radius);
     if (dist <= radius) {
+      float attenuation = 0.8 + 0.2 * noise(p * scale + iTime * vec3(20.0, 0.0, 0.0));
       color = color * pow(0.2, ds * density);
-      color += flame_color * density * ds * (0.8 + 0.2 * noise(p * scale + iTime * vec3(-20.0, 0.0, 0.0)));
-      color += diamond * 10.0 * ds * vec3(1, 1, 1);
+      color += flame_color * density * ds * attenuation;
+      color += diamond * 20.0 * ds * vec3(1, 1, 1) * attenuation;
     };
   };
   fragColor = vec4(color, 1.0);
