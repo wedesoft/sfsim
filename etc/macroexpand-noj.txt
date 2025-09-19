@@ -16,3 +16,9 @@ This talk shows how Clojure can be used to do test driven development of OpenGL 
 Add generated qmd file to prevent rebuilding on server:
 clojure -M:clay -A:markdown scicloj/clay/skip_if_unchanged_example.clj
 git add -f site/scicloj/clay/skip_if_unchanged_example.qmd
+
+# Talk title:
+# Abstract
+
+Post code on Civitas 7 days before the conference
+https://bit.ly/macroexpand-noj-speaker
