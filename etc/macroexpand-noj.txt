@@ -10,7 +10,7 @@ This talk shows how Clojure can be used to do test driven development of OpenGL 
 * templating (e.g. fractal brownian motion)
 
 ;; https://scicloj.github.io/clay/clay_book.examples.html
-;; clj -M:clay -A:markdown
+;; clj -M:clay -A:markdown opengl_visualization/main.clj
 ;; quarto render site
 
 Add generated qmd file to prevent rebuilding on server:
