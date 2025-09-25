@@ -164,7 +164,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float aspect = iResolution.x / iResolution.y;
   vec2 uv = (fragCoord.xy / iResolution.xy * 2.0 - 1.0) * vec2(aspect, 1.0);
   vec2 mouse = iMouse.xy / iResolution.xy;
-  mat3 rotation = rotation_z(-0.1 * M_PI) * rotation_y((mouse.x + 1.0) * M_PI);
+  mat3 rotation = rotation_z(0.1 * M_PI) * rotation_y((mouse.x + 1.0) * M_PI);
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
   vec3 direction = normalize(rotation * vec3(uv, F));
   float box_size = max(NOZZLE, limit(pressure()));
@@ -182,9 +182,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float diamond = diamond(uv);
     float fringe = fringe(uv);
     vec3 flame_color = mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe);
-    float density = NOZZLE * NOZZLE / (radius * radius);
+    float density = 2.0 * NOZZLE * NOZZLE / (radius * radius);
     if (dist <= radius) {
-      float attenuation = 0.8 + 0.2 * noise(p * scale + iTime * vec3(20.0, 0.0, 0.0));
+      float attenuation = 0.8 + 0.2 * noise(p * scale + iTime * vec3(-20.0, 0.0, 0.0));
       color = color * pow(0.2, ds * density);
       color += flame_color * density * ds * attenuation;
       color += diamond * 20.0 * ds * vec3(1, 1, 1) * attenuation;
