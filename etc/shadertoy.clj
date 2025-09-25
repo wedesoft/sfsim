@@ -114,8 +114,6 @@ void main()
 (GL20/glUniform2f (GL20/glGetUniformLocation program "iResolution") width height)
 (GL20/glUniform2f (GL20/glGetUniformLocation program "iMouse") 0.0 0.0)
 
-; mouse press -> update iMouse.xy
-
 (while (not (GLFW/glfwWindowShouldClose window))
   (GL20/glUniform1f (GL20/glGetUniformLocation program "iTime") (GLFW/glfwGetTime))
   (when @mouse-button

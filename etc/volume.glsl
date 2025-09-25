@@ -17,7 +17,7 @@ uniform vec2 iMouse;
 #define F (1.0 / tan(FOV / 2.0))
 #define DIST 1.0
 #define NOZZLE 0.2
-#define LIMIT 0.15
+#define SCALING 0.1
 #define SAMPLES 100
 
 // rotation around x axis
@@ -96,25 +96,46 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
   return vec2(near, max(far - near, 0));
 }
 
+float pressure()
+{
+  float slider = iMouse.y / iResolution.y;
+  return pow(0.001, slider);
+}
+
+float limit(float pressure)
+{
+  return SCALING * sqrt(1.0 / pressure);
+}
+
 float bumps(float x)
 {
-  float limit = LIMIT;
-  float bulge = NOZZLE - limit;
-  float omega = 100.0 * bulge;
-  float bumps = bulge * abs(cos(x * omega));
-  return limit + bumps;
+  float pressure = pressure();
+  float limit = limit(pressure);
+  if (NOZZLE < limit) {
+    float c = 0.4;
+    float log_c = log(c);
+    float start = log((limit - NOZZLE) / limit) / log_c;
+    return limit - limit * pow(c, start + x);
+  } else {
+    float bulge = NOZZLE - limit;
+    float omega = 100.0 * bulge;
+    float bumps = bulge * abs(cos(x * omega));
+    return limit + bumps;
+  };
 }
 
 float fringe(vec2 uv)
 {
+  float pressure = pressure();
   float radius = bumps(uv.x);
   float dist = abs(uv.y) - radius;
-  return max(1.0 - abs(dist) / 0.1, 0.0);
+  return mix(0.5, max(1.0 - abs(dist) / 0.1, 0.0), pressure);
 }
 
 float diamond(vec2 uv)
 {
-  float limit = LIMIT;
+  float pressure = pressure();
+  float limit = limit(pressure);
   float diamond;
   if (NOZZLE > limit) {
     float bulge = NOZZLE - limit;
@@ -143,10 +164,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float aspect = iResolution.x / iResolution.y;
   vec2 uv = (fragCoord.xy / iResolution.xy * 2.0 - 1.0) * vec2(aspect, 1.0);
   vec2 mouse = iMouse.xy / iResolution.xy;
-  mat3 rotation = rotation_z((0.5 - mouse.y) * M_PI) * rotation_y((mouse.x - 0.5) * 2.0 * M_PI);
+  mat3 rotation = rotation_z(-0.1 * M_PI) * rotation_y((mouse.x + 1.0) * M_PI);
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
   vec3 direction = normalize(rotation * vec3(uv, F));
-  vec2 box = ray_box(vec3(start, -NOZZLE, -NOZZLE), vec3(end, NOZZLE, NOZZLE), origin, direction);
+  float box_size = max(NOZZLE, limit(pressure()));
+  vec2 box = ray_box(vec3(start, -box_size, -box_size), vec3(end, box_size, box_size), origin, direction);
   float ds = box.y / SAMPLES;
   vec3 color = vec3(0, 0, 0);
   for (int i = 0; i <= SAMPLES; i++)
@@ -166,7 +188,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       color = color * pow(0.2, ds * density);
       color += flame_color * density * ds * attenuation;
       color += diamond * 20.0 * ds * vec3(1, 1, 1) * attenuation;
-    };
+    }
   };
   fragColor = vec4(color, 1.0);
 }
