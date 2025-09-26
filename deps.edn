@@ -1,4 +1,4 @@
-{:deps {org.clojure/clojure {:mvn/version "1.12.2"}
+{:deps {org.clojure/clojure {:mvn/version "1.12.3"}
         metosin/malli {:mvn/version "0.19.1"}
         com.fzakaria/slf4j-timbre {:mvn/version "0.4.1"}
         levand/immuconf {:mvn/version "0.1.0"}
