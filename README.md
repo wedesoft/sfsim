@@ -108,6 +108,7 @@ cd ..
 
 * Simulators
   * [Orbiter 2016](https://github.com/mschweiger/orbiter)
+  * [Open Orbiter Sim](https://openorbiter.space/)
   * [Reentry](https://reentrygame.com/)
   * [Kerbal Space Program](https://www.kerbalspaceprogram.com/)
   * [Kitten Space Agency](https://kittenspaceagency.wiki.gg/)
