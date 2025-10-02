@@ -6,7 +6,7 @@ permalink: /faq/
 
 ### When will the game be released?
 
-I hope to release a demo in 2025, but for the full game there is no fixed release date yet since there is still some work left to do.
+I hope to release a demo in ~~2025~~ 2026, but for the full game there is no fixed release date yet since there is still some work left to do.
 You can [wishlist it on Steam][1] to get notified when it gets released.
 This also helps me reach more players by boosting visibility on Steam.
 
