@@ -16,3 +16,9 @@
 (def p (* 1.0 101325))
 (def M (sqrt (* (/ 2 (- gamma 1)) (- (pow (/ p0 p) (/ (- gamma 1) gamma)) 1))))
 (to-degrees (- (v M) (v M0)))
+
+
+; import ImageIO
+(def path "tmp/ldem_64_uint.tif")
+(defn load-image [path] (javax.imageio.ImageIO/read (java.io.File. path)))
+(def img (load-image path))
