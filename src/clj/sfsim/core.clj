@@ -122,10 +122,14 @@
 (def fix-fps false)
 ; (def fix-fps 30)
 
-(def window-width (atom (:sfsim.render/window-width config/render-config)))
-(def window-height (atom (:sfsim.render/window-height config/render-config)))
+(def monitor (GLFW/glfwGetPrimaryMonitor))
+(def mode (GLFW/glfwGetVideoMode monitor))
+(def desktop-width (.width ^GLFWVidMode mode))
+(def desktop-height (.height ^GLFWVidMode mode))
+(def window-width (atom desktop-width))
+(def window-height (atom desktop-height))
 
-(def window (make-window "sfsim" @window-width @window-height true))
+(def window (make-window "sfsim" @window-width @window-height false))
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
