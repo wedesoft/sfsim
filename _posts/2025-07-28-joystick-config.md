@@ -16,18 +16,6 @@ The configuration can be saved using the save button.
 The config gets saved in the `~/.config/sfsim` directory under GNU/Linux.
 Under windows the configuration directory is `%APPDATA%/sfsim`.
 
-Here are the updated key bindings for testing. Sorry for breaking the camera bindings in some earlier releases:
-* Esc: toggle the menu
-* Alt-Return: toggle fullscreen
-* P: pause/unpause
-* G: gear down/up
-* B: wheel brakes
-* Shift-B: parking brake
-* /: air brake
-* A, S, D, W: flight stick
-* Q, E: rudder
-* R, F: thrust
-* numerical keypad: change camera position
-* "," and ".": increase/decrease camera distance
+See [keyboard shortcut page](/sfsim/keyboard/) for up-to-date keyboard bindings.
 
 Enjoy!
