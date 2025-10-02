@@ -39,7 +39,7 @@
     - [ ] deteriorating series of mach diamonds
     - [ ] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
     - [ ] expanding plume with decreasing atmospheric pressure
-  - [ ] add keyboard mapping help page
+  - [ ] add keyboard mapping help page!
   - [ ] implement RCS thrusters
   - [ ] animate control surfaces and air brake
   - [ ] Nose wheel steering
