@@ -39,6 +39,9 @@
     - [ ] deteriorating series of mach diamonds
     - [ ] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
     - [ ] expanding plume with decreasing atmospheric pressure
+    - If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
+      A combination of pitch and roll can produce whatever attitude control you need. source
+      [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
   - [ ] add keyboard mapping help page!
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
