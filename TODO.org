@@ -41,6 +41,7 @@
     - [ ] expanding plume with decreasing atmospheric pressure
   - [ ] add keyboard mapping help page!
   - [ ] implement RCS thrusters
+  - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
   - [ ] Nose wheel steering
   - [ ] yaw stabilisation
@@ -199,6 +200,8 @@
 ** TODO create windows using blending (reflections?)
 ** TODO introduce variation to cloud height
 * TODO [#C] other improvements
+  - Note taken on [2025-10-04 Sa 13:42] \\
+    Press g? to get orgmode help
   - Note taken on [2025-09-15 Mo 18:52] \\
     https://www.reddit.com/user/bsless/
     Willing to lend a hand with any perf work if you're interested
@@ -208,22 +211,22 @@
     * Balanced colour palette
     * Voice over
     * Visual effects
-** TODO r/daslu suggested talk at [[macroexpand_noj][https://scicloj.github.io/macroexpand-2025/macroexpand_noj]]
-** TODO joystick hat to control camera
-** TODO limit dt or pause
-** TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
-** TODO add object radius to object?
-** TODO fix planet tessellation tests
-** TODO integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
-   - [ ] use multiplication of local shadow map and planet+cloud shadows?
-** TODO improve performance of quaternions (see fastmath implementation)
-** TODO extendability (modding)?
-** TODO put parameters like max-height, power, specular, radius in a configuration (edn?) file
-   only render sun glare when sun is above horizon, use single (normalised?) color from transmittance, bloom?
-   amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-** TODO separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
-  overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
-** TODO documentation how to create glTF with Blender
-   - [ ] normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
-   - [ ] apply all modifiers
-   - [ ] bake animation when exporting (use NLP track names)
+  - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
+  - [ ] TODO joystick hat to control camera
+  - [ ] TODO limit dt or pause
+  - [ ] TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
+  - [ ] TODO add object radius to object?
+  - [ ] TODO fix planet tessellation tests
+  - [ ] TODO integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
+    - [ ] use multiplication of local shadow map and planet+cloud shadows?
+  - [ ] TODO improve performance of quaternions (see fastmath implementation)
+  - [ ] TODO extendability (modding)?
+  - [ ] TODO put parameters like max-height, power, specular, radius in a configuration (edn?) file
+    - only render sun glare when sun is above horizon, use single (normalised?) color from transmittance, bloom?
+    - amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
+  - [ ] TODO separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
+    - overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
+  - [ ] TODO documentation how to create glTF with Blender
+    - [ ] normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
+    - [ ] apply all modifiers
+    - [ ] bake animation when exporting (use NLP track names)
