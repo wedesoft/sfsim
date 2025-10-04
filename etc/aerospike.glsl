@@ -16,6 +16,7 @@ uniform vec2 iMouse;
 #define FOV (60.0 * M_PI / 180.0)
 #define F (1.0 / tan(FOV / 2.0))
 #define DIST 2.0
+#define WIDTH2 0.4
 #define NOZZLE 0.2
 #define SCALING 0.1
 #define SAMPLES 100
@@ -302,11 +303,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 normal;
   vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction, normal);
   vec3 color = vec3(0, 0, 0);
-  vec2 engine = ray_box(vec3(START, -0.16, -0.4), vec3(START + 0.22, 0.16, 0.4), origin, direction, normal);
+  vec2 engine = ray_box(vec3(START, -0.16, -WIDTH2), vec3(START + 0.22, 0.16, WIDTH2), origin, direction, normal);
   vec3 normal1;
   vec3 normal2;
-  vec2 cylinder1 = intersectCylinder(origin, direction, vec3(START + 0.22, 0.22, -0.4), vec3(0, 0, 0.8), 0.2, normal1);
-  vec2 cylinder2 = intersectCylinder(origin, direction, vec3(START + 0.22, -0.22, -0.4), vec3(0, 0, 0.8), 0.2, normal2);
+  vec2 cylinder1 = intersectCylinder(origin, direction, vec3(START + 0.22, 0.22, -WIDTH2), vec3(0, 0, 2 * WIDTH2), 0.2, normal1);
+  vec2 cylinder2 = intersectCylinder(origin, direction, vec3(START + 0.22, -0.22, -WIDTH2), vec3(0, 0, 2 * WIDTH2), 0.2, normal2);
   vec2 joint = subtractInterval(subtractInterval(engine, cylinder1), cylinder2);
   if (joint.x == cylinder1.x + cylinder1.y)
     normal = normal1;
@@ -327,6 +328,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     {
       float s = box.x + i * ds;
       vec3 p = origin + direction * s;
+      if (p.z > 0.0)
+        p.z = max(0.0, p.z - WIDTH2);
+      else
+        p.z = min(0.0, p.z + WIDTH2);
       float dist = length(p.yz);
       vec2 uv = vec2(p.x - START, dist);
       float radius = bumps(p.x - START);
