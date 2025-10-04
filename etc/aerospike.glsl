@@ -329,9 +329,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       float s = box.x + i * ds;
       vec3 p = origin + direction * s;
       if (p.z > 0.0)
-        p.z = max(0.0, p.z - WIDTH2 + NOZZLE);
+        p.z = max(0.0, p.z - WIDTH2);
       else
-        p.z = min(0.0, p.z + WIDTH2 - NOZZLE);
+        p.z = min(0.0, p.z + WIDTH2);
       float dist = length(p.yz);
       vec2 uv = vec2(p.x - START, dist);
       float radius = bumps(p.x - START);
