@@ -20,7 +20,7 @@ uniform vec2 iMouse;
 #define NOZZLE 0.2
 #define SCALING 0.1
 #define SAMPLES 100
-#define OMEGA_FACTOR 75.0
+#define OMEGA_FACTOR 50.0
 #define SPEED 50.0
 #define START -1.0
 #define END 2.5
@@ -299,7 +299,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
   vec3 direction = normalize(rotation * vec3(uv, F));
   float pressure = pressure();
-  float box_size = max(NOZZLE, limit(pressure));
+  float box_size = max(NOZZLE, limit(pressure) + WIDTH2);
   vec3 normal;
   vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction, normal);
   vec3 color = vec3(0, 0, 0);
@@ -329,9 +329,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       float s = box.x + i * ds;
       vec3 p = origin + direction * s;
       if (p.z > 0.0)
-        p.z = max(0.0, p.z - WIDTH2);
+        p.z = max(0.0, p.z - WIDTH2 + NOZZLE);
       else
-        p.z = min(0.0, p.z + WIDTH2);
+        p.z = min(0.0, p.z + WIDTH2 - NOZZLE);
       float dist = length(p.yz);
       vec2 uv = vec2(p.x - START, dist);
       float radius = bumps(p.x - START);
