@@ -75,6 +75,7 @@
   - [ ] event-based radio (triggers as in Operation Flashpoint)
 * TODO [#C] 3D cockpit                                               :interface:
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
+** TODO update controls in background thread
 ** TODO ground slope warning
 ** TODO frontal and side view of moon lander, altitude visualisation?
 ** TODO cockpit and scene rendering looking downward so that horizon is in upper half of screen
@@ -213,21 +214,21 @@
     * Voice over
     * Visual effects
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
-  - [ ] TODO joystick hat to control camera
-  - [ ] TODO limit dt or pause
-  - [ ] TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
-  - [ ] TODO add object radius to object?
-  - [ ] TODO fix planet tessellation tests
-  - [ ] TODO integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
+  - [ ] joystick hat to control camera
+  - [ ] limit dt or pause
+  - [ ] shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
+  - [ ] add object radius to object?
+  - [ ] fix planet tessellation tests
+  - [ ] integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
     - [ ] use multiplication of local shadow map and planet+cloud shadows?
-  - [ ] TODO improve performance of quaternions (see fastmath implementation)
-  - [ ] TODO extendability (modding)?
-  - [ ] TODO put parameters like max-height, power, specular, radius in a configuration (edn?) file
+  - [ ] improve performance of quaternions (see fastmath implementation)
+  - [ ] extendability (modding)?
+  - [ ] put parameters like max-height, power, specular, radius in a configuration (edn?) file
     - only render sun glare when sun is above horizon, use single (normalised?) color from transmittance, bloom?
     - amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-  - [ ] TODO separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
+  - [ ] separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
     - overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
-  - [ ] TODO documentation how to create glTF with Blender
+  - [ ] documentation how to create glTF with Blender
     - [ ] normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
     - [ ] apply all modifiers
     - [ ] bake animation when exporting (use NLP track names)
