@@ -177,6 +177,7 @@
 ** TODO use icosahedron for mapping 2D micro textures (better grass)
    - Note taken on [2025-08-16 Sa 22:05] \\
      [[https://uk.pinterest.com/pin/445223113163715012/]]
+     [[https://stackoverflow.com/questions/4699568/opengl-icosahedron-texture-mapping]]
    - [ ] unroll icosahedron manually (20 surfaces)
    - [ ] find smallest cross product of vector with sum of corner vectors
    - [ ] use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
