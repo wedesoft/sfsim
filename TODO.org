@@ -35,14 +35,16 @@
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [X] integrate control surface scaling
-  - [ ] thrust graphics, opengl rocket plume
-    - [ ] deteriorating series of mach diamonds
-    - [ ] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
-    - [ ] expanding plume with decreasing atmospheric pressure
+  - [X] thrust graphics, opengl rocket plume
+    - [X] deteriorating series of mach diamonds
+    - [X] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
+    - [X] expanding plume with decreasing atmospheric pressure
     - If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
       A combination of pitch and roll can produce whatever attitude control you need. source
       [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
-  - [ ] add keyboard mapping help page!
+    - [ ] increasingly round shape of plume
+    - [ ] plume shape around aerospike
+    - [ ] effects of thrust vectoring
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
@@ -216,6 +218,7 @@
     * Balanced colour palette
     * Voice over
     * Visual effects
+  - [ ] add keyboard mapping help page!
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] joystick hat to control camera
   - [ ] limit dt or pause
