@@ -328,13 +328,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     {
       float s = box.x + i * ds;
       vec3 p = origin + direction * s;
-      if (p.z > 0.0)
-        p.z = max(0.0, p.z - WIDTH2);
-      else
-        p.z = min(0.0, p.z + WIDTH2);
-      float dist = length(p.yz);
-      vec2 uv = vec2(p.x - START, dist);
       float radius = bumps(p.x - START);
+      float dist;
+      if (radius < NOZZLE) {
+        dist = max(abs(p.y), abs(p.z) + NOZZLE - WIDTH2);
+      } else {
+        dist = max(abs(p.y), abs(p.z) + NOZZLE - WIDTH2);
+      };
+      vec2 uv = vec2(p.x - START, dist);
       vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
       float diamond = diamond(uv);
       float fringe = fringe(uv);
