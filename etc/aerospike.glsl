@@ -266,6 +266,11 @@ float sdfRectangle(vec2 p, vec2 size) {
     return result + length(max(d, 0.0));
 }
 
+float sdfCircle(vec2 p, float r)
+{
+    return length(p) - r;
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   float aspect = iResolution.x / iResolution.y;
@@ -306,13 +311,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       float s = box.x + i * ds;
       vec3 p = origin + direction * s;
       float radius = bumps(p.x - START);
-      float dist = sdfRectangle(p.yz, vec2(NOZZLE, WIDTH2)) + NOZZLE;
+      float decay = 1.0 - (p.x - START) / (END - START);
+      float dist = mix(sdfCircle(p.yz, radius) + radius, sdfRectangle(p.yz, vec2(NOZZLE, WIDTH2)) + NOZZLE, decay);
       vec2 uv = vec2(p.x - START, dist);
       vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
       float diamond = diamond(uv);
       float fringe = fringe(uv);
       vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
-      float decay = 1.0 - uv.x / (END - START);
       float density = 4.0 * NOZZLE * NOZZLE / (radius * radius) * decay;
       if (dist <= radius) {
         float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
