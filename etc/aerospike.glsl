@@ -90,11 +90,6 @@ float noise(vec3 coordinates)
       fractional.z);
 }
 
-// Ray-box intersection with normal
-// box_min, box_max: corners of the box
-// origin, direction: ray parameters
-// Returns vec2(near, length) of intersection segment
-// Outputs normal at entry point (or (0,0,0) if no hit)
 vec2 ray_box(vec3 box_min, vec3 box_max,
              vec3 origin, vec3 direction,
              out vec3 normal)
@@ -102,25 +97,24 @@ vec2 ray_box(vec3 box_min, vec3 box_max,
     vec3 factors1 = (box_min - origin) / direction;
     vec3 factors2 = (box_max - origin) / direction;
 
-    vec3 intersections1 = min(factors1, factors2); // entry distances
-    vec3 intersections2 = max(factors1, factors2); // exit distances
+    vec3 intersections1 = min(factors1, factors2);
+    vec3 intersections2 = max(factors1, factors2);
 
     float near = max(max(max(intersections1.x, intersections1.y), intersections1.z), 0.0);
     float far  = min(min(intersections2.x, intersections2.y), intersections2.z);
 
     if (far < near) {
-        normal = vec3(0.0); // no hit
+        normal = vec3(0.0);
         return vec2(-1.0, -1.0);
     }
 
-    // --- Determine which axis gave us 'near' ---
     if (near == intersections1.x) {
         normal = (factors1.x > factors2.x) ? vec3(1.0, 0.0, 0.0)
                                            : vec3(-1.0, 0.0, 0.0);
     } else if (near == intersections1.y) {
         normal = (factors1.y > factors2.y) ? vec3(0.0, 1.0, 0.0)
                                            : vec3(0.0, -1.0, 0.0);
-    } else { // z-plane
+    } else {
         normal = (factors1.z > factors2.z) ? vec3(0.0, 0.0, 1.0)
                                            : vec3(0.0, 0.0, -1.0);
     }
@@ -164,25 +158,16 @@ float fringe(vec2 uv)
   return max(1.0 - abs(dist) / 0.1, 0.0);
 }
 
-// Ray-cylinder intersection with normal
-// Cylinder: defined by axis point pa, axis vector va, radius r
-// Ray: origin ro, direction rd (normalized)
-// Returns vec2(tEnter, segmentLength), or vec2(-1,-1) if no hit
-// normal: surface normal at entry (or exit if starting inside)
 vec2 intersectCylinder(vec3 ro, vec3 rd,
                        vec3 pa, vec3 va, float r,
                        out vec3 normal)
 {
-    // Normalize axis
     vec3 vaN = normalize(va);
 
-    // Components of ray direction perpendicular to axis
     vec3 d = rd - dot(rd, vaN) * vaN;
 
-    // Vector from cylinder point to ray origin
     vec3 deltaP = ro - pa;
 
-    // Component perpendicular to axis
     vec3 m = deltaP - dot(deltaP, vaN) * vaN;
 
     float A = dot(d, d);
@@ -199,13 +184,11 @@ vec2 intersectCylinder(vec3 ro, vec3 rd,
     float t0 = (-B - sqrtDisc) / (2.0 * A);
     float t1 = (-B + sqrtDisc) / (2.0 * A);
 
-    // If both are behind the origin → no hit
     if (t1 < 0.0) {
         normal = vec3(0.0);
         return vec2(-1.0, -1.0);
     }
 
-    // Clamp entry point to 0 if inside
     float tEnter = max(t0, 0.0);
     float tExit  = t1;
     float segLen = tExit - tEnter;
@@ -217,10 +200,8 @@ vec2 intersectCylinder(vec3 ro, vec3 rd,
 
     vec3 hitPoint = ro + t1 * rd;
 
-    // Project hitPoint onto axis to find closest axis point
     vec3 axisProj = pa + dot(hitPoint - pa, vaN) * vaN;
 
-    // Normal is radial direction
     normal = normalize(hitPoint - axisProj);
 
     return vec2(tEnter, segLen);
@@ -251,10 +232,6 @@ float diamond(vec2 uv)
   return diamond;
 }
 
-// Subtract interval b from interval a
-// Both intervals as vec2(start, length)
-// Returns vec2(start, length) of the remaining interval
-// If empty, returns vec2(0.0, -1.0)
 vec2 subtractInterval(vec2 a, vec2 b)
 {
     float aStart = a.x;
@@ -265,27 +242,22 @@ vec2 subtractInterval(vec2 a, vec2 b)
     if (a.y < 0.0 || b.y < 0.0)
         return a;
 
-    // No overlap
     if (bEnd <= aStart || bStart >= aEnd)
         return a;
 
-    // B fully covers A
     if (bStart <= aStart && bEnd >= aEnd)
-        return vec2(0.0, -1.0); // empty
+        return vec2(0.0, -1.0);
 
-    // Overlap on left
     if (bStart <= aStart && bEnd < aEnd)
         return vec2(bEnd, aEnd - bEnd);
 
-    // Overlap on right
     if (bStart > aStart && bEnd >= aEnd)
         return vec2(aStart, bStart - aStart);
 
-    // B strictly inside A: pick left remainder
     if (bStart > aStart && bEnd < aEnd)
         return vec2(aStart, bStart - aStart);
 
-    return vec2(0.0, -1.0); // fallback
+    return vec2(0.0, -1.0);
 }
 
 
