@@ -6,8 +6,6 @@
 // flame thrower: https://www.shadertoy.com/view/XsVSDW
 // 3D perlin noise: https://www.shadertoy.com/view/4djXzz
 
-#define M_PI 3.1415926535897932384626433832795
-
 uniform vec2 iResolution;
 uniform float iTime;
 uniform vec2 iMouse;
@@ -276,7 +274,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float aspect = iResolution.x / iResolution.y;
   vec2 uv = (fragCoord.xy / iResolution.xy * 2.0 - 1.0) * vec2(aspect, 1.0);
   vec2 mouse = iMouse.xy / iResolution.xy;
-  mat3 rotation = rotation_z(0.1 * M_PI) * rotation_y((mouse.x + 1.0) * M_PI);
+  mat3 rotation = rotation_z(0.1 * M_PI) * rotation_y((2.0 * mouse.x + 1.0) * M_PI);
   vec3 light = rotation * normalize(vec3(1.0, 1.0, 0.0));
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
   vec3 direction = normalize(rotation * vec3(uv, F));
@@ -288,14 +286,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec2 engine = ray_box(vec3(START, -0.16, -WIDTH2), vec3(START + 0.22, 0.16, WIDTH2), origin, direction, normal);
   vec3 normal1;
   vec3 normal2;
-  vec2 cylinder1 = intersectCylinder(origin, direction, vec3(START + 0.22, 0.22, -WIDTH2), vec3(0, 0, 2 * WIDTH2), 0.2, normal1);
-  vec2 cylinder2 = intersectCylinder(origin, direction, vec3(START + 0.22, -0.22, -WIDTH2), vec3(0, 0, 2 * WIDTH2), 0.2, normal2);
+  vec2 cylinder1 = intersectCylinder(origin, direction, vec3(START + 0.22, 0.22, -WIDTH2), vec3(0.0, 0.0, 2.0 * WIDTH2), 0.2, normal1);
+  vec2 cylinder2 = intersectCylinder(origin, direction, vec3(START + 0.22, -0.22, -WIDTH2), vec3(0.0, 0.0, 2.0 * WIDTH2), 0.2, normal2);
   vec2 joint = subtractInterval(subtractInterval(engine, cylinder1), cylinder2);
   if (joint.x == cylinder1.x + cylinder1.y)
     normal = normal1;
   if (joint.x == cylinder2.x + cylinder2.y)
     normal = normal2;
-  if (joint.y > 0) {
+  if (joint.y > 0.0) {
     if (dot(normal, direction) > 0.0)
       normal = -normal;
     float diffuse = clamp(dot(normal, light), 0.0, 1.0);
@@ -305,10 +303,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     };
   };
   if (box.y > 0.0) {
-    float ds = box.y / SAMPLES;
+    float ds = box.y / float(SAMPLES);
     for (int i = 0; i <= SAMPLES; i++)
     {
-      float s = box.x + i * ds;
+      float s = box.x + float(i) * ds;
       vec3 p = origin + direction * s;
       float decay = 1.0 - (p.x - START) / (END - START);
       float radius = bumps(p.x - START) * mix(0.5 * (WIDTH2 + NOZZLE) / NOZZLE, 1.0, decay);
