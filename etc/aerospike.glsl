@@ -260,6 +260,11 @@ vec2 subtractInterval(vec2 a, vec2 b)
     return vec2(0.0, -1.0);
 }
 
+float sdfRectangle(vec2 p, vec2 size) {
+    vec2 d = abs(p) - size;
+    float result = min(max(d.x, d.y), 0.0);
+    return result + length(max(d, 0.0));
+}
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
@@ -301,13 +306,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       float s = box.x + i * ds;
       vec3 p = origin + direction * s;
       float radius = bumps(p.x - START);
-      float dist;
-      if (radius < NOZZLE) {
-        dist = max(abs(p.y), abs(p.z) + NOZZLE - WIDTH2);
-      } else {
-        vec2 nozzle = vec2(clamp(p.y, -NOZZLE, NOZZLE), clamp(p.z, -WIDTH2, WIDTH2));
-        dist = NOZZLE + length(p.yz - nozzle);
-      };
+      float dist = sdfRectangle(p.yz, vec2(NOZZLE, WIDTH2)) + NOZZLE;
       vec2 uv = vec2(p.x - START, dist);
       vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
       float diamond = diamond(uv);
