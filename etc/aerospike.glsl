@@ -305,7 +305,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       if (radius < NOZZLE) {
         dist = max(abs(p.y), abs(p.z) + NOZZLE - WIDTH2);
       } else {
-        dist = max(abs(p.y), abs(p.z) + NOZZLE - WIDTH2);
         vec2 nozzle = vec2(clamp(p.y, -NOZZLE, NOZZLE), clamp(p.z, -WIDTH2, WIDTH2));
         dist = NOZZLE + length(p.yz - nozzle);
       };
