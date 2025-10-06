@@ -310,8 +310,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     {
       float s = box.x + i * ds;
       vec3 p = origin + direction * s;
-      float radius = bumps(p.x - START);
       float decay = 1.0 - (p.x - START) / (END - START);
+      float radius = bumps(p.x - START) * mix(0.5 * (WIDTH2 + NOZZLE) / NOZZLE, 1.0, decay);
       float dist = mix(sdfCircle(p.yz, radius) + radius, sdfRectangle(p.yz, vec2(NOZZLE, WIDTH2)) + NOZZLE, decay);
       vec2 uv = vec2(p.x - START, dist);
       vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
