@@ -156,17 +156,17 @@ float fringe(vec2 uv)
   return max(1.0 - abs(dist) / 0.1, 0.0);
 }
 
-vec2 intersectCylinder(vec3 ro, vec3 rd,
-                       vec3 pa, vec3 va, float r,
+vec2 intersectCylinder(vec3 origin, vec3 direction,
+                       vec3 base, vec3 axis, float r,
                        out vec3 normal)
 {
-    vec3 vaN = normalize(va);
+    vec3 axisN = normalize(axis);
 
-    vec3 d = rd - dot(rd, vaN) * vaN;
+    vec3 d = direction - dot(direction, axisN) * axisN;
 
-    vec3 deltaP = ro - pa;
+    vec3 deltaP = origin - base;
 
-    vec3 m = deltaP - dot(deltaP, vaN) * vaN;
+    vec3 m = deltaP - dot(deltaP, axisN) * axisN;
 
     float A = dot(d, d);
     float B = 2.0 * dot(d, m);
@@ -196,9 +196,9 @@ vec2 intersectCylinder(vec3 ro, vec3 rd,
         return vec2(-1.0, -1.0);
     }
 
-    vec3 hitPoint = ro + t1 * rd;
+    vec3 hitPoint = origin + t1 * direction;
 
-    vec3 axisProj = pa + dot(hitPoint - pa, vaN) * vaN;
+    vec3 axisProj = base + dot(hitPoint - base, axisN) * axisN;
 
     normal = normalize(hitPoint - axisProj);
 
@@ -269,6 +269,19 @@ float sdfCircle(vec2 p, float r)
     return length(p) - r;
 }
 
+// Distance to line
+float distanceToLine(vec3 point, vec3 base, vec3 axis)
+{
+  vec3 axisN = normalize(axis);
+  vec3 axisProj = base + dot(point - base, axisN) * axisN;
+  return length(point - axisProj);
+}
+
+bool insideBox(vec3 point, vec3 box_min, vec3 box_max)
+{
+  return all(greaterThanEqual(point, box_min)) && all(lessThanEqual(point, box_max));
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   float aspect = iResolution.x / iResolution.y;
@@ -283,11 +296,17 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 normal;
   vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction, normal);
   vec3 color = vec3(0, 0, 0);
-  vec2 engine = ray_box(vec3(START, -0.16, -WIDTH2), vec3(START + 0.22, 0.16, WIDTH2), origin, direction, normal);
+  vec3 engine_min = vec3(START, -0.16, -WIDTH2);
+  vec3 engine_max = vec3(START + 0.22, 0.16, WIDTH2);
+  vec2 engine = ray_box(engine_min, engine_max, origin, direction, normal);
   vec3 normal1;
   vec3 normal2;
-  vec2 cylinder1 = intersectCylinder(origin, direction, vec3(START + 0.22, 0.22, -WIDTH2), vec3(0.0, 0.0, 2.0 * WIDTH2), 0.2, normal1);
-  vec2 cylinder2 = intersectCylinder(origin, direction, vec3(START + 0.22, -0.22, -WIDTH2), vec3(0.0, 0.0, 2.0 * WIDTH2), 0.2, normal2);
+  vec3 cylinder1_base = vec3(START + 0.22, 0.22, -WIDTH2);
+  vec3 cylinder1_axis = vec3(0.0, 0.0, 2.0 * WIDTH2);
+  vec3 cylinder2_base = vec3(START + 0.22, -0.22, -WIDTH2);
+  vec3 cylinder2_axis = vec3(0.0, 0.0, 2.0 * WIDTH2);
+  vec2 cylinder1 = intersectCylinder(origin, direction, cylinder1_base, cylinder1_axis, 0.2, normal1);
+  vec2 cylinder2 = intersectCylinder(origin, direction, cylinder2_base, cylinder2_axis, 0.2, normal2);
   vec2 joint = subtractInterval(subtractInterval(engine, cylinder1), cylinder2);
   if (joint.x == cylinder1.x + cylinder1.y)
     normal = normal1;
@@ -308,22 +327,34 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     {
       float s = box.x + float(i) * ds;
       vec3 p = origin + direction * s;
-      float decay = 1.0 - (p.x - START) / (END - START);
-      float radius = bumps(p.x - START) * mix(0.5 * (WIDTH2 + NOZZLE) / NOZZLE, 1.0, decay);
-      float dist = mix(sdfCircle(p.yz, radius) + radius, sdfRectangle(p.yz, vec2(NOZZLE, WIDTH2)) + NOZZLE, decay);
-      float falloff = clamp((radius - dist) / 0.05, 0.0, 1.0);
-      float density = 8.0 * WIDTH2 * NOZZLE / mix(M_PI * radius * radius, 4 * radius * (radius + WIDTH2 - NOZZLE), decay) * falloff;
-      vec2 uv = vec2(p.x - START, dist);
-      vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
-      float diamond = diamond(uv);
-      float fringe = fringe(uv);
-      vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
-      if (dist <= radius) {
-        float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
-        color = color * pow(0.2, ds * density);
-        color += flame_color * density * ds * attenuation;
-        color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
-      }
+      if (insideBox(p, engine_min, engine_max)) {
+        if ((p.y > 0.0 && distanceToLine(p, cylinder1_base, cylinder1_axis) > 0.17) ||
+            (p.y <= 0.0 && distanceToLine(p, cylinder2_base, cylinder2_axis) > 0.17)) {
+          vec3 flame_color = vec3(0.9, 0.59, 0.8);
+          vec3 scale = 20.0 * vec3(0.1, NOZZLE, NOZZLE);
+          float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
+          float density = 5.0;
+          color = color * pow(0.2, ds * density);
+          color += flame_color * density * ds * attenuation;
+        };
+      } else {
+        float decay = 1.0 - (p.x - START) / (END - START);
+        float radius = bumps(p.x - START) * mix(0.5 * (WIDTH2 + NOZZLE) / NOZZLE, 1.0, decay);
+        float dist = mix(sdfCircle(p.yz, radius) + radius, sdfRectangle(p.yz, vec2(NOZZLE, WIDTH2)) + NOZZLE, decay);
+        float falloff = clamp((radius - dist) / 0.05, 0.0, 1.0);
+        float density = 8.0 * WIDTH2 * NOZZLE / mix(M_PI * radius * radius, 4 * radius * (radius + WIDTH2 - NOZZLE), decay) * falloff;
+        vec2 uv = vec2(p.x - START, dist);
+        vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
+        float diamond = diamond(uv);
+        float fringe = fringe(uv);
+        vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
+        if (dist <= radius) {
+          float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
+          color = color * pow(0.2, ds * density);
+          color += flame_color * density * ds * attenuation;
+          color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
+        }
+      };
     };
   };
   fragColor = vec4(color, 1.0);
