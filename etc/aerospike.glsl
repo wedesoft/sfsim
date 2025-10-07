@@ -311,7 +311,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       float decay = 1.0 - (p.x - START) / (END - START);
       float radius = bumps(p.x - START) * mix(0.5 * (WIDTH2 + NOZZLE) / NOZZLE, 1.0, decay);
       float dist = mix(sdfCircle(p.yz, radius) + radius, sdfRectangle(p.yz, vec2(NOZZLE, WIDTH2)) + NOZZLE, decay);
-      float density = 8.0 * WIDTH2 * NOZZLE / mix(M_PI * radius * radius, 4 * radius * (radius + WIDTH2 - NOZZLE), decay);
+      float falloff = clamp((radius - dist) / 0.05, 0.0, 1.0);
+      float density = 8.0 * WIDTH2 * NOZZLE / mix(M_PI * radius * radius, 4 * radius * (radius + WIDTH2 - NOZZLE), decay) * falloff;
       vec2 uv = vec2(p.x - START, dist);
       vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
       float diamond = diamond(uv);
