@@ -143,7 +143,7 @@ float bumps(float x)
   } else {
     float bulge = NOZZLE - limit;
     float omega = OMEGA_FACTOR * bulge;
-    float bumps = bulge * abs(cos(x * omega));
+    float bumps = bulge * abs(sin(x * omega));
     return limit + bumps;
   };
 }
@@ -213,7 +213,7 @@ float diamond(vec2 uv)
   if (NOZZLE > limit) {
     float bulge = NOZZLE - limit;
     float omega = OMEGA_FACTOR * bulge;
-    float phase = omega * uv.x + M_PI / 2.0;
+    float phase = omega * uv.x; //  + M_PI / 2.0;
     float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
     float diamond_front_length = limit / (bulge * omega);
     float diamond_back_length = diamond_front_length * 0.3;
@@ -333,17 +333,17 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
           vec3 flame_color = vec3(0.9, 0.59, 0.8);
           vec3 scale = 20.0 * vec3(0.1, NOZZLE, NOZZLE);
           float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
-          float density = 5.0;
+          float density = 10.0;
           color = color * pow(0.2, ds * density);
           color += flame_color * density * ds * attenuation;
         };
       } else {
-        float decay = 1.0 - (p.x - START) / (END - START);
-        float radius = bumps(p.x - START) * mix(0.5 * (WIDTH2 + NOZZLE) / NOZZLE, 1.0, decay);
+        float decay = 1.0 - (p.x - engine_max.x) / (END - engine_max.x);
+        float radius = bumps(p.x - engine_max.x) * mix(0.5 * (WIDTH2 + NOZZLE) / NOZZLE, 1.0, decay);
         float dist = mix(sdfCircle(p.yz, radius) + radius, sdfRectangle(p.yz, vec2(NOZZLE, WIDTH2)) + NOZZLE, decay);
         float falloff = clamp((radius - dist) / 0.05, 0.0, 1.0);
         float density = 8.0 * WIDTH2 * NOZZLE / mix(M_PI * radius * radius, 4 * radius * (radius + WIDTH2 - NOZZLE), decay) * falloff;
-        vec2 uv = vec2(p.x - START, dist);
+        vec2 uv = vec2(p.x - engine_max.x, dist);
         vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
         float diamond = diamond(uv);
         float fringe = fringe(uv);
