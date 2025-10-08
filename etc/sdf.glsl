@@ -15,7 +15,7 @@ uniform vec2 iMouse;
 #define F (1.0 / tan(FOV / 2.0))
 #define DIST 2.0
 #define WIDTH2 0.4
-#define NOZZLE 0.2
+#define NOZZLE 0.16
 #define SCALING 0.1
 #define SAMPLES 100
 #define OMEGA_FACTOR 50.0
@@ -170,9 +170,45 @@ float sdfEngine(vec3 cylinder1_base, vec3 cylinder2_base, vec3 p)
   return p.y > 0.0 ? 0.15 - length(p.xy - cylinder1_base.xy) : 0.15 - length(p.xy - cylinder2_base.xy);
 }
 
+float sdfRectangle(vec2 p, vec2 size)
+{
+  vec2 d = abs(p) - size;
+  float result = min(max(d.x, d.y), 0.0);
+  return result + length(max(d, 0.0));
+}
+
 bool insideBox(vec3 point, vec3 box_min, vec3 box_max)
 {
   return all(greaterThanEqual(point, box_min)) && all(lessThanEqual(point, box_max));
+}
+
+float pressure()
+{
+  float slider = iMouse.y / iResolution.y;
+  return pow(0.01, slider);
+}
+
+float limit(float pressure)
+{
+  return SCALING * sqrt(1.0 / pressure);
+}
+
+float bumps(float x)
+{
+  float pressure = pressure();
+  float limit = limit(pressure);
+  if (NOZZLE < limit) {
+    // float c = 0.4;
+    // float log_c = log(c);
+    // float start = log((limit - NOZZLE) / limit) / log_c;
+    // return limit - limit * pow(c, start + x);
+    return NOZZLE;
+  } else {
+    float bulge = NOZZLE - limit;
+    float omega = OMEGA_FACTOR * bulge;
+    float bumps = bulge * abs(sin(x * omega));
+    return limit + bumps;
+  };
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
@@ -184,8 +220,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 light = rotation * normalize(vec3(1.0, 1.0, 0.0));
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
   vec3 direction = normalize(rotation * vec3(uv, F));
-  vec3 engine_min = vec3(START, -0.16, -WIDTH2);
-  vec3 engine_max = vec3(START + 0.22, 0.16, WIDTH2);
+  vec3 engine_min = vec3(START, -NOZZLE, -WIDTH2);
+  vec3 engine_max = vec3(START + 0.22, NOZZLE, WIDTH2);
   float box_size = 1.0;
   vec3 normal;
   vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction, normal);
@@ -213,14 +249,17 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       box.y = joint.x - box.x;
     };
   };
+  float pressure = pressure();
   if (box.y > 0.0) {
     float ds = box.y / float(SAMPLES);
     for (int i = 0; i <= SAMPLES; i++)
     {
       float s = box.x + float(i) * ds;
       vec3 p = origin + direction * s;
+      float height = bumps(p.x - engine_max.x);
       if (insideBox(p, engine_min, engine_max)) {
-        if (sdfEngine(cylinder1_base, cylinder2_base, p) < 0.0) {
+        float engine_pos = max((p.x - engine_max.x + 0.2) / (engine_max.x - engine_min.x), 0.0);
+        if (mix(sdfEngine(cylinder1_base, cylinder2_base, p), sdfRectangle(p.yz, vec2(height, WIDTH2)), engine_pos) < 0.0) {
           float density = 2.0;
           color = color * pow(0.2, ds * density);
           vec3 flame_color = vec3(1.0, 0.0, 0.0);

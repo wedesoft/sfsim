@@ -259,9 +259,9 @@ vec2 subtractInterval(vec2 a, vec2 b)
 }
 
 float sdfRectangle(vec2 p, vec2 size) {
-    vec2 d = abs(p) - size;
-    float result = min(max(d.x, d.y), 0.0);
-    return result + length(max(d, 0.0));
+  vec2 d = abs(p) - size;
+  float result = min(max(d.x, d.y), 0.0);
+  return result + length(max(d, 0.0));
 }
 
 float sdfCircle(vec2 p, float r)
