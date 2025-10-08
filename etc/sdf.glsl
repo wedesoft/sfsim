@@ -165,6 +165,16 @@ vec2 subtractInterval(vec2 a, vec2 b)
     return vec2(0.0, -1.0);
 }
 
+float sdfEngine(vec3 cylinder1_base, vec3 cylinder2_base, vec3 p)
+{
+  return p.y > 0.0 ? 0.15 - length(p.xy - cylinder1_base.xy) : 0.15 - length(p.xy - cylinder2_base.xy);
+}
+
+bool insideBox(vec3 point, vec3 box_min, vec3 box_max)
+{
+  return all(greaterThanEqual(point, box_min)) && all(lessThanEqual(point, box_max));
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   float aspect = iResolution.x / iResolution.y;
@@ -176,7 +186,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 direction = normalize(rotation * vec3(uv, F));
   vec3 engine_min = vec3(START, -0.16, -WIDTH2);
   vec3 engine_max = vec3(START + 0.22, 0.16, WIDTH2);
+  float box_size = 1.0;
   vec3 normal;
+  vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction, normal);
   vec2 engine = ray_box(engine_min, engine_max, origin, direction, normal);
   vec3 normal1;
   vec3 normal2;
@@ -197,6 +209,25 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       normal = -normal;
     float diffuse = clamp(dot(normal, light), 0.0, 1.0);
     color = vec3(1.0) * (diffuse * 0.9 + 0.1);
+    if (box.x + box.y > joint.x) {
+      box.y = joint.x - box.x;
+    };
+  };
+  if (box.y > 0.0) {
+    float ds = box.y / float(SAMPLES);
+    for (int i = 0; i <= SAMPLES; i++)
+    {
+      float s = box.x + float(i) * ds;
+      vec3 p = origin + direction * s;
+      if (insideBox(p, engine_min, engine_max)) {
+        if (sdfEngine(cylinder1_base, cylinder2_base, p) < 0.0) {
+          float density = 2.0;
+          color = color * pow(0.2, ds * density);
+          vec3 flame_color = vec3(1.0, 0.0, 0.0);
+          color += flame_color * ds * density;
+        };
+      };
+    };
   };
   fragColor = vec4(color, 1.0);
 }
