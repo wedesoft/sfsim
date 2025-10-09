@@ -193,7 +193,7 @@ bool insideBox(vec3 point, vec3 box_min, vec3 box_max)
 float pressure()
 {
   float slider = iMouse.y / iResolution.y;
-  return pow(0.01, slider);
+  return pow(0.001, slider);
 }
 
 float limit(float pressure)
@@ -210,7 +210,7 @@ float bumps(float x)
     // float log_c = log(c);
     // float start = log((limit - NOZZLE) / limit) / log_c;
     // return limit - limit * pow(c, start + x);
-    return limit;
+    return limit + (NOZZLE - limit) * pow(0.4, x + 0.2);
   } else {
     float bulge = NOZZLE - limit;
     float omega = OMEGA_FACTOR * bulge;
@@ -230,9 +230,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 direction = normalize(rotation * vec3(uv, F));
   vec3 engine_min = vec3(START, -NOZZLE, -WIDTH2);
   vec3 engine_max = vec3(START + 0.22, NOZZLE, WIDTH2);
-  float box_size = 1.0;
+  float pressure = pressure();
+  float box_size = max(limit(pressure), NOZZLE);
   vec3 normal;
-  vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction, normal);
+  vec2 box = ray_box(vec3(START, -box_size, -WIDTH2), vec3(END, box_size, WIDTH2), origin, direction, normal);
   vec2 engine = ray_box(engine_min, engine_max, origin, direction, normal);
   vec3 normal1;
   vec3 normal2;
@@ -257,7 +258,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       box.y = joint.x - box.x;
     };
   };
-  float pressure = pressure();
   if (box.y > 0.0) {
     float ds = box.y / float(SAMPLES);
     for (int i = 0; i <= SAMPLES; i++)
@@ -265,8 +265,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       float s = box.x + float(i) * ds;
       vec3 p = origin + direction * s;
       float height = bumps(p.x - engine_max.x);
-      if (p.x >= engine_min.x && p.x <= engine_max.x) {
-        float engine_pos = max((p.x - engine_max.x + 0.2) / 0.2, 0.0);
+      if (p.x >= engine_min.x) {
+        float engine_pos = clamp((p.x - engine_max.x + 0.2) / 0.2, 0.0, 1.0);
+        float transition = (limit(pressure) - SCALING) / (NOZZLE - SCALING);
+        engine_pos = 1.0 - (1.0 - engine_pos) * clamp(1.0 - transition, 0.0, 1.0);
         if (mix(sdfEngine(cylinder1_base, cylinder2_base, p), sdfRectangle(p.yz, vec2(height, WIDTH2)), engine_pos) < 0.0) {
           float density = 2.0;
           color = color * pow(0.2, ds * density);
