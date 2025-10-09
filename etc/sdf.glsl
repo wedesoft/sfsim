@@ -167,7 +167,15 @@ vec2 subtractInterval(vec2 a, vec2 b)
 
 float sdfEngine(vec3 cylinder1_base, vec3 cylinder2_base, vec3 p)
 {
-  return p.y > 0.0 ? 0.15 - length(p.xy - cylinder1_base.xy) : 0.15 - length(p.xy - cylinder2_base.xy);
+  if (abs(p.z) <= WIDTH2) {
+    if (abs(p.y) <= NOZZLE)
+      return p.y > 0.0 ? 0.15 - length(p.xy - cylinder1_base.xy) : 0.15 - length(p.xy - cylinder2_base.xy);
+    else {
+      vec2 o = vec2(min(p.x - (cylinder1_base.x - 0.15), p.x), NOZZLE);
+      return length(o - vec2(p.x, abs(p.y)));
+    };
+  } else
+    return abs(p.z) - WIDTH2;
 }
 
 float sdfRectangle(vec2 p, vec2 size)
@@ -202,7 +210,7 @@ float bumps(float x)
     // float log_c = log(c);
     // float start = log((limit - NOZZLE) / limit) / log_c;
     // return limit - limit * pow(c, start + x);
-    return NOZZLE;
+    return limit;
   } else {
     float bulge = NOZZLE - limit;
     float omega = OMEGA_FACTOR * bulge;
@@ -257,8 +265,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       float s = box.x + float(i) * ds;
       vec3 p = origin + direction * s;
       float height = bumps(p.x - engine_max.x);
-      if (insideBox(p, engine_min, engine_max)) {
-        float engine_pos = max((p.x - engine_max.x + 0.2) / (engine_max.x - engine_min.x), 0.0);
+      if (p.x >= engine_min.x && p.x <= engine_max.x) {
+        float engine_pos = max((p.x - engine_max.x + 0.2) / 0.2, 0.0);
         if (mix(sdfEngine(cylinder1_base, cylinder2_base, p), sdfRectangle(p.yz, vec2(height, WIDTH2)), engine_pos) < 0.0) {
           float density = 2.0;
           color = color * pow(0.2, ds * density);
