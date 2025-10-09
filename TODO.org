@@ -43,7 +43,7 @@
       A combination of pitch and roll can produce whatever attitude control you need. source
       [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
     - [X] increasingly round shape of plume
-    - [ ] plume shape around aerospike
+    - [X] plume shape around aerospike
     - [ ] effects of thrust vectoring
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
