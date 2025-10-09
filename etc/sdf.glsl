@@ -242,11 +242,7 @@ vec2 envelope(float x)
 {
   float pressure = pressure();
   float limit = limit(pressure);
-  if (NOZZLE < limit) {
-    // float c = 0.4;
-    // float log_c = log(c);
-    // float start = log((limit - NOZZLE) / limit) / log_c;
-    // return limit - limit * pow(c, start + x);
+  if (NOZZLE < limit) {  // TODO: linear expansion in vacuum
     float decay_vert = pow(0.6, x + 0.2);
     float decay_horiz = pow(0.6, x + 0.2);
     return vec2(limit + WIDTH2 - NOZZLE + (NOZZLE - limit) * decay_horiz, limit + (NOZZLE - limit) * decay_vert);
@@ -344,7 +340,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
           vec3 scale = 20.0 * vec3(0.1, NOZZLE / envelope.y, NOZZLE / envelope.x);
           float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
           vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
-          float diamond = mix(0.2, diamond(vec2(p.x - engine_max.x, max(0.0, sdf + dy))), engine_pos);
+          float diamond = mix(0.2, diamond(vec2(p.x - engine_max.x, max(0.0, sdf + dy))), engine_pos);  // TODO: Use density to infer diamond?
           color = color * pow(0.2, ds * density);
           color += flame_color * ds * density * attenuation;
           color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
