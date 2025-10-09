@@ -56,6 +56,38 @@ mat3 rotation_z(float angle) {
   );
 }
 
+float hash3d(vec3 coordinates)
+{
+  float hashValue = coordinates.x + coordinates.y * 37.0 + coordinates.z * 521.0;
+  return fract(sin(hashValue * 1.333) * 100003.9);
+}
+
+float interpolate_hermite(float value1, float value2, float factor)
+{
+    return mix(value1, value2, factor * factor * (3.0 - 2.0 * factor)); // Perform cubic Hermite interpolation
+}
+
+const vec2 vector01 = vec2(0.0, 1.0);
+
+float noise(vec3 coordinates)
+{
+  vec3 fractional = fract(coordinates.xyz);
+  vec3 integral = floor(coordinates.xyz);
+  float hash000 = hash3d(integral);
+  float hash100 = hash3d(integral + vector01.yxx);
+  float hash010 = hash3d(integral + vector01.xyx);
+  float hash110 = hash3d(integral + vector01.yyx);
+  float hash001 = hash3d(integral + vector01.xxy);
+  float hash101 = hash3d(integral + vector01.yxy);
+  float hash011 = hash3d(integral + vector01.xyy);
+  float hash111 = hash3d(integral + vector01.yyy);
+
+  return interpolate_hermite(
+      interpolate_hermite(interpolate_hermite(hash000, hash100, fractional.x), interpolate_hermite(hash010, hash110, fractional.x), fractional.y),
+      interpolate_hermite(interpolate_hermite(hash001, hash101, fractional.x), interpolate_hermite(hash011, hash111, fractional.x), fractional.y),
+      fractional.z);
+}
+
 vec2 ray_box(vec3 box_min, vec3 box_max,
              vec3 origin, vec3 direction,
              out vec3 normal)
@@ -226,6 +258,31 @@ vec2 envelope(float x)
   };
 }
 
+float diamond(vec2 uv)
+{
+  float pressure = pressure();
+  float limit = limit(pressure);
+  float diamond;
+  if (NOZZLE > limit) {
+    float bulge = NOZZLE - limit;
+    float omega = OMEGA_FACTOR * bulge;
+    float phase = omega * uv.x; //  + M_PI / 2.0;
+    float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
+    float diamond_front_length = limit / (bulge * omega);
+    float diamond_back_length = diamond_front_length * 0.3;
+    float tail_start = 0.3 * diamond_front_length;
+    float tail_length = 0.8 * diamond_front_length;
+    float diamond_length = diamond_longitudinal > 0.0 ? diamond_back_length : diamond_front_length;
+    float diamond_radius = limit * max(0.0, 1.0 - abs(diamond_longitudinal / omega) / diamond_length);
+    float extent = 1.0;
+    float decay = max(0.0, 1.0 - abs(diamond_longitudinal / extent));
+    diamond = 0.1 / diamond_front_length * (1.0 - smoothstep(diamond_radius - 0.05, diamond_radius, abs(uv.y))) * decay;
+  } else {
+    diamond = 0.0;
+  };
+  return diamond;
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   float aspect = iResolution.x / iResolution.y;
@@ -276,13 +333,21 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         float engine_pos = clamp((p.x - engine_max.x + 0.2) / 0.2, 0.0, 1.0);
         float transition = clamp((limit(pressure) - SCALING) / (NOZZLE - SCALING), 0.0, 1.0);
         float circular = clamp((p.x - engine_max.x) / (END - engine_max.x), 0.0, 1.0);
-        float radius = max(envelope.x, envelope.y);
+        float radius = 0.5 * (envelope.x + envelope.y);
         engine_pos = clamp(engine_pos + transition, 0.0, 1.0);
-        if (mix(sdfEngine(cylinder1_base, cylinder2_base, p), mix(sdfRectangle(p.zy, envelope), sdfCircle(p.zy, radius), circular), engine_pos) < 0.0) {
-          float density = 0.1 / mix(WIDTH2 * (0.2 - 0.15), envelope.x * envelope.y, engine_pos);
+        float sdf = mix(sdfEngine(cylinder1_base, cylinder2_base, p), mix(sdfRectangle(p.zy, envelope), sdfCircle(p.zy, radius), circular), engine_pos);
+        if (sdf < 0.0) {
+          float dz = mix(WIDTH2, envelope.x, engine_pos);
+          float dy = mix(0.2 - 0.15, envelope.y, engine_pos);
+          float density = 0.2 / (dz * dy) * (1.0 - circular);
+          float fringe = max(1.0 + sdf / 0.1, 0.0);
+          vec3 scale = 20.0 * vec3(0.1, NOZZLE / envelope.y, NOZZLE / envelope.x);
+          float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
+          vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
+          float diamond = mix(0.2, diamond(vec2(p.x - engine_max.x, max(0.0, sdf + dy))), engine_pos);
           color = color * pow(0.2, ds * density);
-          vec3 flame_color = vec3(1.0, 0.0, 0.0);
-          color += flame_color * ds * density;
+          color += flame_color * ds * density * attenuation;
+          color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
         };
       };
     };
