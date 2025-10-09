@@ -267,8 +267,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       float height = bumps(p.x - engine_max.x);
       if (p.x >= engine_min.x) {
         float engine_pos = clamp((p.x - engine_max.x + 0.2) / 0.2, 0.0, 1.0);
-        float transition = (limit(pressure) - SCALING) / (NOZZLE - SCALING);
-        engine_pos = 1.0 - (1.0 - engine_pos) * clamp(1.0 - transition, 0.0, 1.0);
+        float transition = clamp((limit(pressure) - SCALING) / (NOZZLE - SCALING), 0.0, 1.0);
+        engine_pos = clamp(engine_pos + transition, 0.0, 1.0);
         if (mix(sdfEngine(cylinder1_base, cylinder2_base, p), sdfRectangle(p.yz, vec2(height, WIDTH2)), engine_pos) < 0.0) {
           float density = 2.0;
           color = color * pow(0.2, ds * density);
