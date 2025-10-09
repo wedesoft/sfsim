@@ -185,6 +185,11 @@ float sdfRectangle(vec2 p, vec2 size)
   return result + length(max(d, 0.0));
 }
 
+float sdfCircle(vec2 p, float radius)
+{
+    return length(p) - radius;
+}
+
 bool insideBox(vec3 point, vec3 box_min, vec3 box_max)
 {
   return all(greaterThanEqual(point, box_min)) && all(lessThanEqual(point, box_max));
@@ -210,8 +215,8 @@ vec2 envelope(float x)
     // float log_c = log(c);
     // float start = log((limit - NOZZLE) / limit) / log_c;
     // return limit - limit * pow(c, start + x);
-    float decay_vert = pow(0.4, x + 0.2);
-    float decay_horiz = pow(0.4, x + 0.2);
+    float decay_vert = pow(0.6, x + 0.2);
+    float decay_horiz = pow(0.6, x + 0.2);
     return vec2(limit + WIDTH2 - NOZZLE + (NOZZLE - limit) * decay_horiz, limit + (NOZZLE - limit) * decay_vert);
   } else {
     float bulge = NOZZLE - limit;
@@ -233,9 +238,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 engine_min = vec3(START, -NOZZLE, -WIDTH2);
   vec3 engine_max = vec3(START + 0.22, NOZZLE, WIDTH2);
   float pressure = pressure();
-  float box_size = max(limit(pressure), NOZZLE);
+  float box_size = max(limit(pressure), NOZZLE) + WIDTH2 - NOZZLE;
   vec3 normal;
-  vec2 box = ray_box(vec3(START, -box_size, -box_size - WIDTH2 + NOZZLE), vec3(END, box_size, box_size + WIDTH2 - NOZZLE), origin, direction, normal);
+  vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction, normal);
   vec2 engine = ray_box(engine_min, engine_max, origin, direction, normal);
   vec3 normal1;
   vec3 normal2;
@@ -270,9 +275,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         vec2 envelope = envelope(p.x - engine_max.x);
         float engine_pos = clamp((p.x - engine_max.x + 0.2) / 0.2, 0.0, 1.0);
         float transition = clamp((limit(pressure) - SCALING) / (NOZZLE - SCALING), 0.0, 1.0);
+        float circular = clamp((p.x - engine_max.x) / (END - engine_max.x), 0.0, 1.0);
+        float radius = max(envelope.x, envelope.y);
         engine_pos = clamp(engine_pos + transition, 0.0, 1.0);
-        if (mix(sdfEngine(cylinder1_base, cylinder2_base, p), sdfRectangle(p.zy, envelope), engine_pos) < 0.0) {
-          float density = 0.1 / (envelope.x * envelope.y);
+        if (mix(sdfEngine(cylinder1_base, cylinder2_base, p), mix(sdfRectangle(p.zy, envelope), sdfCircle(p.zy, radius), circular), engine_pos) < 0.0) {
+          float density = 0.1 / mix(WIDTH2 * (0.2 - 0.15), envelope.x * envelope.y, engine_pos);
           color = color * pow(0.2, ds * density);
           vec3 flame_color = vec3(1.0, 0.0, 0.0);
           color += flame_color * ds * density;
