@@ -225,23 +225,19 @@ float limit(float pressure)
   return SCALING * sqrt(1.0 / pressure);
 }
 
-vec2 envelope(float x)
-{
+vec2 envelope(float x) {
   float pressure = pressure();
   float limit = limit(pressure);
+  float bulge = NOZZLE - limit;
   if (NOZZLE < limit) {
     float equilibrium = SCALING * SCALING / (NOZZLE * NOZZLE);
-    float derivative = MAX_CONE * (equilibrium - pressure) / equilibrium;
-    float c = exp(-derivative / limit);
-    float decay_vert = pow(c, x + 0.2);
-    float decay_horiz = pow(c, x + 0.2);
-    return vec2(limit + WIDTH2 - NOZZLE + (NOZZLE - limit) * decay_horiz, limit + (NOZZLE - limit) * decay_vert);
+    float c = exp(-MAX_CONE * (equilibrium - pressure) / (equilibrium * limit));
+    float decay = pow(c, x + 0.2);
+    return vec2(limit + WIDTH2 - NOZZLE + bulge * decay, limit + bulge * decay);
   } else {
-    float bulge = NOZZLE - limit;
-    float omega = OMEGA_FACTOR * bulge;
-    float bumps = bulge * abs(sin(x * omega));
+    float bumps = bulge * abs(sin(x * OMEGA_FACTOR * bulge));
     return vec2(limit + bumps + WIDTH2 - NOZZLE, limit + bumps);
-  };
+  }
 }
 
 float diamond(vec2 uv)
