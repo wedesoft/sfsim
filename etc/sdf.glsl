@@ -171,30 +171,16 @@ vec2 intersectCylinder(vec3 origin, vec3 direction,
 
 vec2 subtractInterval(vec2 a, vec2 b)
 {
-    float aStart = a.x;
-    float aEnd   = a.x + a.y;
-    float bStart = b.x;
-    float bEnd   = b.x + b.y;
-
-    if (a.y < 0.0 || b.y < 0.0)
+    if (a.y < 0.0 || b.y < 0.0 || b.x + b.y <= a.x || b.x >= a.x + a.y)
         return a;
 
-    if (bEnd <= aStart || bStart >= aEnd)
-        return a;
-
-    if (bStart <= aStart && bEnd >= aEnd)
+    if (b.x <= a.x && b.x + b.y >= a.x + a.y)
         return vec2(0.0, -1.0);
 
-    if (bStart <= aStart && bEnd < aEnd)
-        return vec2(bEnd, aEnd - bEnd);
+    if (b.x <= a.x)
+        return vec2(b.x + b.y, a.x + a.y - (b.x + b.y));
 
-    if (bStart > aStart && bEnd >= aEnd)
-        return vec2(aStart, bStart - aStart);
-
-    if (bStart > aStart && bEnd < aEnd)
-        return vec2(aStart, bStart - aStart);
-
-    return vec2(0.0, -1.0);
+    return vec2(a.x, b.x - a.x);
 }
 
 float sdfEngine(vec3 cylinder1_base, vec3 cylinder2_base, vec3 p)
