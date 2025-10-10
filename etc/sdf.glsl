@@ -22,6 +22,7 @@ uniform vec2 iMouse;
 #define SPEED 50.0
 #define START -1.0
 #define END 2.5
+#define MAX_CONE 0.5
 
 // rotation around x axis
 mat3 rotation_x(float angle) {
@@ -228,9 +229,12 @@ vec2 envelope(float x)
 {
   float pressure = pressure();
   float limit = limit(pressure);
-  if (NOZZLE < limit) {  // TODO: linear expansion in vacuum
-    float decay_vert = pow(0.6, x + 0.2);
-    float decay_horiz = pow(0.6, x + 0.2);
+  if (NOZZLE < limit) {
+    float equilibrium = SCALING * SCALING / (NOZZLE * NOZZLE);
+    float derivative = MAX_CONE * (equilibrium - pressure) / equilibrium;
+    float c = exp(-derivative / limit);
+    float decay_vert = pow(c, x + 0.2);
+    float decay_horiz = pow(c, x + 0.2);
     return vec2(limit + WIDTH2 - NOZZLE + (NOZZLE - limit) * decay_horiz, limit + (NOZZLE - limit) * decay_vert);
   } else {
     float bulge = NOZZLE - limit;
@@ -326,7 +330,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
           vec3 scale = 20.0 * vec3(0.1, NOZZLE / envelope.y, NOZZLE / envelope.x);
           float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
           vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
-          float diamond = mix(0.2, diamond(vec2(p.x - engine_max.x, max(0.0, sdf + dy))), engine_pos);  // TODO: Use density to infer diamond?
+          float diamond = mix(0.2, diamond(vec2(p.x - engine_max.x, max(0.0, sdf + dy))), engine_pos);
           color = color * pow(0.2, ds * density);
           color += flame_color * ds * density * attenuation;
           color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
