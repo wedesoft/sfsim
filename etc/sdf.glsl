@@ -225,8 +225,7 @@ float limit(float pressure)
   return SCALING * sqrt(1.0 / pressure);
 }
 
-vec2 envelope(float x) {
-  float pressure = pressure();
+vec2 envelope(float pressure, float x) {
   float limit = limit(pressure);
   float bulge = NOZZLE - limit;
   if (NOZZLE < limit) {
@@ -240,9 +239,8 @@ vec2 envelope(float x) {
   }
 }
 
-float diamond(vec2 uv)
+float diamond(float pressure, vec2 uv)
 {
-  float pressure = pressure();
   float limit = limit(pressure);
   float diamond;
   if (NOZZLE > limit) {
@@ -311,7 +309,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       float s = box.x + float(i) * ds;
       vec3 p = origin + direction * s;
       if (p.x >= engine_min.x) {
-        vec2 envelope = envelope(p.x - engine_max.x);
+        vec2 envelope = envelope(pressure, p.x - engine_max.x);
         float engine_pos = clamp((p.x - engine_max.x + 0.2) / 0.2, 0.0, 1.0);
         float transition = clamp((limit(pressure) - SCALING) / (NOZZLE - SCALING), 0.0, 1.0);
         float circular = clamp((p.x - engine_max.x) / (END - engine_max.x), 0.0, 1.0);
@@ -326,7 +324,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
           vec3 scale = 20.0 * vec3(0.1, NOZZLE / envelope.y, NOZZLE / envelope.x);
           float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
           vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
-          float diamond = mix(0.2, diamond(vec2(p.x - engine_max.x, max(0.0, sdf + dy))), engine_pos);
+          float diamond = mix(0.2, diamond(pressure, vec2(p.x - engine_max.x, max(0.0, sdf + dy))), engine_pos);
           color = color * pow(0.2, ds * density);
           color += flame_color * ds * density * attenuation;
           color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
