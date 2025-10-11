@@ -276,8 +276,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 engine_min = vec3(START, -NOZZLE, -WIDTH2);
   vec3 engine_max = vec3(START + 0.22, NOZZLE, WIDTH2);
   // float pressure = pressure();
-  float slider1 = iMouse.x / iResolution.x;
-  float slider2 = iMouse.y / iResolution.y;
   float pressure = 1.0;
   float box_size = max(limit(pressure), NOZZLE) + WIDTH2 - NOZZLE;
   vec3 normal;
@@ -319,9 +317,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         float circular = clamp((p.x - engine_max.x) / (END - engine_max.x), 0.0, 1.0);
         float radius = 0.5 * (envelope.x + envelope.y);
         engine_pos = clamp(engine_pos + transition, 0.0, 1.0);
+        float slider1 = iMouse.x / iResolution.x;
+        float slider2 = iMouse.y / iResolution.y;
         float distortion1 = max(0.0, 5.0 * p.y * p.z * (slider1 - 0.5));
         float distortion2 = max(0.0, 5.0 * p.y * (slider2 - 0.5));
-        float sdf = mix(sdfEngine(cylinder1_base, cylinder2_base, p), mix(sdfRectangle(p.zy, envelope), sdfCircle(p.zy, radius), circular), engine_pos) + distortion1 + distortion2;
+        float baseSdf = sdfEngine(cylinder1_base, cylinder2_base, p);
+        float shapeMix = mix(sdfRectangle(p.zy, envelope), sdfCircle(p.zy, radius), circular);
+        float sdf = mix(baseSdf, shapeMix, engine_pos) + distortion1 + distortion2;
         if (sdf < 0.0) {
           float dz = mix(WIDTH2, envelope.x, engine_pos);
           float dy = mix(0.2 - 0.15, envelope.y, engine_pos);
