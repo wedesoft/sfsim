@@ -319,7 +319,7 @@
 
 (def vehicle (atom nil))
 
-(def current-time (+ (long (astro/now)) (/ -5.0 24.0) (/ 27.0 60.0 24.0)))
+(def current-time (+ (long (astro/now)) (/ 0.0 24.0) (/ 0.0 60.0 24.0)))
 
 (def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body}))
 (physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
@@ -702,7 +702,7 @@
             (reset! suspension (:suspension frame)))
           (do
             (if (@state :sfsim.input/pause)
-              (when (@state :sfsim.input/air-brake)
+              (when (and @recording (@state :sfsim.input/air-brake))
                 (let [position      (physics/get-position :sfsim.physics/surface jd-ut physics-state)
                       speed         (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state))
                       orientation   (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)

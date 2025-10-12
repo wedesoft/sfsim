@@ -197,7 +197,9 @@
   (not (zero? (bit-and mods GLFW/GLFW_MOD_SHIFT))))
 
 
-(defmulti process-event (fn [event _handler] (::event event)))
+(defmulti process-event
+  "Dispatch event to different methods of handler depending on event type"
+  (fn [event _handler] (::event event)))
 
 
 (defmethod process-event ::char
@@ -322,11 +324,11 @@
       true)))
 
 
-; Simulation key handling when menu is hidden
-(defmulti simulator-key (fn [id _state _action _mods] id))
+(defmulti simulator-key
+  "Simulation key handling when menu is hidden"
+  (fn [id _state _action _mods] id))
 
 
-; Ignore keys without mapping
 (defmethod simulator-key nil
   [_id _state _action _mods])
 
@@ -515,10 +517,11 @@
   (swap! state assoc k (dead-zone epsilon value)))
 
 
-(defmulti simulator-joystick-axis (fn [id _epsilon _state _value] id))
+(defmulti simulator-joystick-axis
+  "Handle mapped joystick axis events"
+  (fn [id _epsilon _state _value] id))
 
 
-; Ignore axes without mapping
 (defmethod simulator-joystick-axis nil
   [_id _epsilon _state _value])
 
@@ -563,10 +566,11 @@
   (increment-clamp state ::throttle (* ^double (dead-zone epsilon value) -0.0625) 0.0 1.0))
 
 
-(defmulti simulator-joystick-button (fn [id _state _action] id))
+(defmulti simulator-joystick-button
+  "Handle mapped joystick button events"
+  (fn [id _state _action] id))
 
 
-; Ignore buttons without mapping
 (defmethod simulator-joystick-button nil
   [_id _state _action])
 
