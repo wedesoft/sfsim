@@ -218,6 +218,7 @@
     * Balanced colour palette
     * Voice over
     * Visual effects
+    * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
   - [ ] add keyboard mapping help page!
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] joystick hat to control camera
