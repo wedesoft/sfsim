@@ -184,17 +184,16 @@ vec2 subtractInterval(vec2 a, vec2 b)
     return vec2(a.x, b.x - a.x);
 }
 
-float sdfEngine(vec3 cylinder1_base, vec3 cylinder2_base, vec3 p)
-{
-  if (abs(p.z) <= WIDTH2) {
-    if (abs(p.y) <= NOZZLE)
-      return p.y > 0.0 ? 0.15 - length(p.xy - cylinder1_base.xy) : 0.15 - length(p.xy - cylinder2_base.xy);
-    else {
-      vec2 o = vec2(min(p.x - (cylinder1_base.x - 0.15), p.x), NOZZLE);
-      return length(o - vec2(p.x, abs(p.y)));
-    };
-  } else
+float sdfEngine(vec3 cylinder1_base, vec3 cylinder2_base, vec3 p) {
+  if (abs(p.z) > WIDTH2) {
     return abs(p.z) - WIDTH2;
+  }
+  if (abs(p.y) <= NOZZLE) {
+    vec2 base = p.y > 0.0 ? cylinder1_base.xy : cylinder2_base.xy;
+    return 0.15 - length(p.xy - base);
+  }
+  vec2 o = vec2(min(p.x - (cylinder1_base.x - 0.15), p.x), NOZZLE);
+  return length(o - vec2(p.x, abs(p.y)));
 }
 
 float sdfRectangle(vec2 p, vec2 size)
