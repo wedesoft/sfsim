@@ -45,7 +45,7 @@ void main()
 }"))
 
 
-(def ray-sphere-test (shader-test (fn [program]) ray-sphere-probe ray-sphere))
+(def ray-sphere-test (shader-test (fn [_program]) ray-sphere-probe ray-sphere))
 
 
 (tabular "Shader for intersection of ray with sphere"
@@ -71,7 +71,7 @@ void main()
 }"))
 
 
-(def convert-1d-index-test (shader-test (fn [program]) convert-1d-index-probe convert-1d-index))
+(def convert-1d-index-test (shader-test (fn [_program]) convert-1d-index-probe convert-1d-index))
 
 
 (tabular "Convert 1D index to 1D texture lookup index"
@@ -93,7 +93,7 @@ void main()
 }"))
 
 
-(def convert-2d-index-test (shader-test (fn [program]) convert-2d-index-probe convert-2d-index))
+(def convert-2d-index-test (shader-test (fn [_program]) convert-2d-index-probe convert-2d-index))
 
 
 (tabular "Convert 2D index to 2D texture lookup index"
@@ -115,7 +115,7 @@ void main()
 }"))
 
 
-(def convert-3d-index-test (shader-test (fn [program]) convert-3d-index-probe convert-3d-index))
+(def convert-3d-index-test (shader-test (fn [_program]) convert-3d-index-probe convert-3d-index))
 
 
 (tabular "Convert 2D index to 2D texture lookup index"
@@ -138,7 +138,7 @@ void main()
 }"))
 
 
-(def convert-cubemap-index-test (shader-test (fn [program]) convert-cubemap-index-probe convert-cubemap-index))
+(def convert-cubemap-index-test (shader-test (fn [_program]) convert-cubemap-index-probe convert-cubemap-index))
 
 
 (tabular "Convert cubemap index to avoid clamping regions"
@@ -195,7 +195,7 @@ void main()
 }"))
 
 
-(def shrink-shadow-index-test (shader-test (fn [program]) shrink-shadow-index-probe shrink-shadow-index))
+(def shrink-shadow-index-test (shader-test (fn [_program]) shrink-shadow-index-probe shrink-shadow-index))
 
 
 (tabular "Shrink sampling index to cover full NDC space"
@@ -218,7 +218,7 @@ void main()
 }"))
 
 
-(def grow-shadow-index-test (shader-test (fn [program]) grow-shadow-index-probe grow-shadow-index))
+(def grow-shadow-index-test (shader-test (fn [_program]) grow-shadow-index-probe grow-shadow-index))
 
 
 (tabular "grow sampling index to cover full NDC space"
@@ -401,7 +401,7 @@ void main()
 }"))
 
 
-(def make-2d-index-from-4d-test (shader-test (fn [program]) make-2d-index-from-4d-probe make-2d-index-from-4d))
+(def make-2d-index-from-4d-test (shader-test (fn [_program]) make-2d-index-from-4d-probe make-2d-index-from-4d))
 
 
 (tabular "Convert 4D index to 2D indices for part-manual interpolation"
@@ -626,7 +626,7 @@ void main()
 }"))
 
 
-(def ray-box-test (shader-test (fn [program]) ray-box-probe ray-box))
+(def ray-box-test (shader-test (fn [_program]) ray-box-probe ray-box))
 
 
 (tabular "Shader for intersection of ray with axis-aligned box"
@@ -755,7 +755,7 @@ void main()
 }"))
 
 
-(def ray-shell-test (shader-test (fn [program]) ray-shell-probe ray-shell))
+(def ray-shell-test (shader-test (fn [_program]) ray-shell-probe ray-shell))
 
 
 (tabular "Shader for computing intersections of ray with a shell"
@@ -785,7 +785,7 @@ void main()
 }"))
 
 
-(def clip-shell-intersections-test (shader-test (fn [program]) clip-shell-intersections-probe clip-shell-intersections))
+(def clip-shell-intersections-test (shader-test (fn [_program]) clip-shell-intersections-probe clip-shell-intersections))
 
 
 (tabular "Clip the intersection information of ray and shell using given limit"
@@ -846,7 +846,7 @@ void main()
 
 (def sun-elevation-to-index-test
   (shader-test
-    (fn [program])
+    (fn [_program])
     sun-elevation-to-index-probe sun-elevation-to-index))
 
 
@@ -875,7 +875,7 @@ void main()
 
 (def sun-angle-to-index-test
   (shader-test
-    (fn [program])
+    (fn [_program])
     sun-angle-to-index-probe sun-angle-to-index))
 
 
@@ -1047,7 +1047,7 @@ void main()
 
 (defn noise-octaves-test
   [octaves x y z]
-  ((shader-test (fn [program]) noise-octaves-probe (noise-octaves "octaves" "noise" octaves)) [] [x y z]))
+  ((shader-test (fn [_program]) noise-octaves-probe (noise-octaves "octaves" "noise" octaves)) [] [x y z]))
 
 
 (tabular "Shader function to sum octaves of noise"
@@ -1081,7 +1081,7 @@ void main()
 
 (defn noise-octaves-lod-test
   [octaves x y z lod]
-  ((shader-test (fn [program]) noise-octaves-lod-probe (noise-octaves-lod "octaves" "noise" octaves)) [] [x y z lod]))
+  ((shader-test (fn [_program]) noise-octaves-lod-probe (noise-octaves-lod "octaves" "noise" octaves)) [] [x y z lod]))
 
 
 (tabular "Shader function to sum octaves of noise with level-of-detail"
@@ -1221,7 +1221,7 @@ void main()
 }"))
 
 
-(def orthogonal-test (shader-test (fn [program]) orthogonal-probe orthogonal-vector))
+(def orthogonal-test (shader-test (fn [_program]) orthogonal-probe orthogonal-vector))
 
 
 (facts "Shader for generating an orthogonal vector"
@@ -1247,7 +1247,7 @@ void main()
 }"))
 
 
-(def oriented-matrix-test (shader-test (fn [program]) oriented-matrix-probe oriented-matrix))
+(def oriented-matrix-test (shader-test (fn [_program]) oriented-matrix-probe oriented-matrix))
 
 
 (facts "Shader for creating isometry with given normal vector as first row"
@@ -1270,7 +1270,7 @@ void main()
 }"))
 
 
-(def project-vector-test (shader-test (fn [program]) project-vector-probe project-vector))
+(def project-vector-test (shader-test (fn [_program]) project-vector-probe project-vector))
 
 
 (tabular "Shader to project vector x onto vector n"
@@ -1298,7 +1298,7 @@ void main()
 }"))
 
 
-(def rotate-vector-test (shader-test (fn [program]) rotate-vector-probe rotate-vector))
+(def rotate-vector-test (shader-test (fn [_program]) rotate-vector-probe rotate-vector))
 
 
 (tabular "Shader for rotating vector around specified axis"
@@ -1310,6 +1310,33 @@ void main()
          0   0   1   1  2  3  (/ PI 2) -2   1   3
          0   0   1   1  0  0  (/ PI 2)  0   1   0)
 
+
+(def rotation-matrix-probe
+  (template/fn [x y z axis angle]
+"#version 410 core
+out vec3 fragColor;
+mat3 rotation_<%= axis %>(float angle);
+void main()
+{
+  vec3 v = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float angle = <%= angle %>;
+  fragColor = rotation_<%= axis %>(angle) * v;
+}"))
+
+(def rotation-matrix-test (shader-test (fn [_program]) rotation-matrix-probe rotation-x rotation-y rotation-z))
+
+(tabular "Shaders for creating rotation matrices"
+         (fact (rotation-matrix-test [] [?x ?y ?z ?axis ?angle]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-6))
+         ?x ?y ?z ?axis ?angle    ?rx ?ry ?rz
+         2  3  5  "x"   0         2   3   5
+         0  1  0  "x"   (/ PI 2)  0   0   1
+         0  0  1  "x"   (/ PI 2)  0  -1   0
+         2  3  5  "y"   0         2   3   5
+         1  0  0  "y"   (/ PI 2)  0   0  -1
+         0  0  1  "y"   (/ PI 2)  1   0   0
+         2  3  5  "z"   0         2   3   5
+         1  0  0  "z"   (/ PI 2)  0   1   0
+         0  1  0  "z"   (/ PI 2) -1   0   0)
 
 (def scale-noise-probe
   (template/fn [x y z]
@@ -1352,7 +1379,7 @@ void main()
 }"))
 
 
-(def remap-test (shader-test (fn [program]) remap-probe remap))
+(def remap-test (shader-test (fn [_program]) remap-probe remap))
 
 
 (tabular "Shader for mapping linear range to a new linear range"

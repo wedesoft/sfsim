@@ -250,3 +250,18 @@
 (def phong
   "Shader for phong shading (ambient, diffuse, and specular lighting)"
   (slurp "resources/shaders/core/phong.glsl"))
+
+
+(def rotation-x
+  "Shader for creating matrix for rotation around x axis"
+  (slurp "resources/shaders/core/rotation-x.glsl"))
+
+
+(def rotation-y
+  "Shader for creating matrix for rotation around y axis"
+  (slurp "resources/shaders/core/rotation-y.glsl"))
+
+
+(def rotation-z
+  "Shader for creating matrix for rotation around z axis"
+  (slurp "resources/shaders/core/rotation-z.glsl"))
