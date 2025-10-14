@@ -44,7 +44,17 @@
       [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
     - [X] increasingly round shape of plume
     - [X] plume shape around aerospike
-    - [ ] effects of thrust vectoring
+    - [X] effects of thrust vectoring
+    - [ ] shaders for
+      - [ ] signed distance function cylinder
+      - [ ] signed distance function box
+      - [ ] signed distance function rectangle
+      - [ ] signed distance function circle
+      - [ ] signed distance function engine
+      - [ ] 3d noise
+      - [ ] plume envelope
+      - [ ] plume diamonds
+      - [ ] joined sampling of clouds and engine plume
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
