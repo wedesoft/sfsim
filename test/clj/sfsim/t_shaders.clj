@@ -1466,4 +1466,33 @@ void main()
           2.0  2.0 2.0 3.0 1.0      0.0)
 
 
+(def sdf-box-probe
+  (template/fn [x y z box-min-x box-min-y box-min-z box-max-x box-max-y box-max-z]
+"#version 410 core
+out vec3 fragColor;
+float sdf_box(vec3 point, vec3 box_min, vec3 box_max);
+void main()
+{
+  vec3 box_min = vec3(<%= box-min-x %>, <%= box-min-y %>, <%= box-min-z %>);
+  vec3 box_max = vec3(<%= box-max-x %>, <%= box-max-y %>, <%= box-max-z %>);
+  float result = sdf_box(vec3(<%= x %>, <%= y %>, <%= z %>), box_min, box_max);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def sdf-box-test (shader-test (fn [_program]) sdf-box-probe sdf-box))
+
+(tabular "Shader for testing box signed distance function"
+         (fact ((sdf-box-test [] [?x ?y ?z ?box-min-x ?box-min-y ?box-min-z ?box-max-x ?box-max-y ?box-max-z]) 0) => ?result)
+          ?x   ?y  ?z  ?box-min-x ?box-min-y ?box-min-z ?box-max-x ?box-max-y ?box-max-z ?result
+          1.0  2.0  3.0  1.0        2.0        3.0        3.0        6.0        11.0       0.0
+          1.5  4.0  7.0  1.0        2.0        3.0        3.0        6.0        11.0      -0.5
+          2.0  2.5  7.0  1.0        2.0        3.0        3.0        6.0        11.0      -0.5
+          2.0  4.0  3.5  1.0        2.0        3.0        3.0        6.0        11.0      -0.5
+          2.5  4.0  7.0  1.0        2.0        3.0        3.0        6.0        11.0      -0.5
+          2.0  5.5  7.0  1.0        2.0        3.0        3.0        6.0        11.0      -0.5
+          2.0  4.0 10.5  1.0        2.0        3.0        3.0        6.0        11.0      -0.5
+          3.0  4.0  0.0  0.0        0.0        0.0        0.0        0.0         0.0       5.0
+          1.0  1.0  0.0  0.0        0.0        0.0        2.0        0.0         0.0       1.0)
+
+
 (GLFW/glfwTerminate)

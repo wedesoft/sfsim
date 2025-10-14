@@ -270,3 +270,8 @@
 (def sdf-circle
   "Shader for computing signed distance function of a circle"
   (slurp "resources/shaders/core/sdf-circle.glsl"))
+
+
+(def sdf-box
+  "Shader for computing signed distance function of a box"
+  (slurp "resources/shaders/core/sdf-box.glsl"))
