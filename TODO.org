@@ -45,11 +45,10 @@
     - [X] increasingly round shape of plume
     - [X] plume shape around aerospike
     - [X] effects of thrust vectoring
-    - [ ] shaders for
-      - [ ] signed distance function cylinder
+    - [-] shaders for
       - [ ] signed distance function box
       - [ ] signed distance function rectangle
-      - [ ] signed distance function circle
+      - [X] signed distance function circle
       - [ ] signed distance function engine
       - [ ] 3d noise
       - [ ] plume envelope

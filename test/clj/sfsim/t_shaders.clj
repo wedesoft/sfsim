@@ -1437,4 +1437,33 @@ void main()
          PI      10.0      (vec3 0 -0.6 0.8) (vec3 0 0.6 0.8) 1.0           0.0      1.0    0.0      0.25     0.25)
 
 
+(def sdf-circle-probe
+  (template/fn [x y cx cy radius]
+"#version 410 core
+out vec3 fragColor;
+float sdf_circle(vec2 point, vec2 center, float radius);
+void main()
+{
+  float result = sdf_circle(vec2(<%= x %>, <%= y %>), vec2(<%= cx %>, <%= cy %>), <%= radius %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def sdf-circle-test (shader-test (fn [_program]) sdf-circle-probe sdf-circle))
+
+(tabular "Shader for testing circle signed distance function"
+         (fact ((sdf-circle-test [] [?x ?y ?cx ?cy ?radius]) 0) => ?result)
+          ?x   ?y  ?cx ?cy ?radius ?result
+          0.0  0.0 0.0 0.0 0.0      0.0
+          0.0  0.0 0.0 0.0 1.0     -1.0
+          1.0  0.0 0.0 0.0 1.0      0.0
+         -1.0  0.0 0.0 0.0 1.0      0.0
+          0.0  1.0 0.0 0.0 1.0      0.0
+          0.0 -1.0 0.0 0.0 1.0      0.0
+          2.0  3.0 2.0 3.0 1.0     -1.0
+          3.0  3.0 2.0 3.0 1.0      0.0
+          1.0  3.0 2.0 3.0 1.0      0.0
+          2.0  4.0 2.0 3.0 1.0      0.0
+          2.0  2.0 2.0 3.0 1.0      0.0)
+
+
 (GLFW/glfwTerminate)

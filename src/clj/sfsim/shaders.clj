@@ -224,6 +224,21 @@
   [oriented-matrix (slurp "resources/shaders/core/rotate-vector.glsl")])
 
 
+(def rotation-x
+  "Shader for creating matrix for rotation around x axis"
+  (slurp "resources/shaders/core/rotation-x.glsl"))
+
+
+(def rotation-y
+  "Shader for creating matrix for rotation around y axis"
+  (slurp "resources/shaders/core/rotation-y.glsl"))
+
+
+(def rotation-z
+  "Shader for creating matrix for rotation around z axis"
+  (slurp "resources/shaders/core/rotation-z.glsl"))
+
+
 (def vertex-passthrough
   "Vertex shader to simply pass vertex through"
   (slurp "resources/shaders/core/vertex-passthrough.glsl"))
@@ -252,16 +267,6 @@
   (slurp "resources/shaders/core/phong.glsl"))
 
 
-(def rotation-x
-  "Shader for creating matrix for rotation around x axis"
-  (slurp "resources/shaders/core/rotation-x.glsl"))
-
-
-(def rotation-y
-  "Shader for creating matrix for rotation around y axis"
-  (slurp "resources/shaders/core/rotation-y.glsl"))
-
-
-(def rotation-z
-  "Shader for creating matrix for rotation around z axis"
-  (slurp "resources/shaders/core/rotation-z.glsl"))
+(def sdf-circle
+  "Shader for computing signed distance function of a circle"
+  (slurp "resources/shaders/core/sdf-circle.glsl"))
