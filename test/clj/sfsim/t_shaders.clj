@@ -1224,16 +1224,17 @@ void main()
 (def orthogonal-test (shader-test (fn [_program]) orthogonal-probe orthogonal-vector))
 
 
-(facts "Shader for generating an orthogonal vector"
-       (dot (orthogonal-test [] [1 0 0]) (vec3 1 0 0)) => 0.0
-       (mag (orthogonal-test [] [1 0 0])) => 1.0
-       (mag (orthogonal-test [] [2 0 0])) => 1.0
-       (dot (orthogonal-test [] [0 1 0]) (vec3 0 1 0)) => 0.0
-       (mag (orthogonal-test [] [0 1 0])) => 1.0
-       (mag (orthogonal-test [] [0 2 0])) => 1.0
-       (dot (orthogonal-test [] [0 0 1]) (vec3 0 0 1)) => 0.0
-       (mag (orthogonal-test [] [0 0 1])) => 1.0
-       (mag (orthogonal-test [] [0 0 2])) => 1.0)
+(tabular "Shader for generating an orthogonal vector"
+         (fact (orthogonal-test [] [?x ?y ?z]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-6))
+         ?x  ?y  ?z ?rx  ?ry  ?rz
+         1   0   0  0    0    1
+         2   0   0  0    0    1
+         0   1   0  0    0   -1
+         0   2   0  0    0   -1
+         0   0   1  0    1    0
+         0   0   2  0    1    0
+         0.6 0.8 0  0.8 -0.6  0
+         3   4   0  0.8 -0.6  0)
 
 
 (def oriented-matrix-probe
