@@ -1517,4 +1517,38 @@ void main()
           2.0  3.0  0.25 2.15625
           2.0  3.0  0.75 2.84375)
 
+(def interpolate-function-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float f(vec3 point)
+{
+  return dot(floor(point), vec3(2, 3, 5));
+}
+float g(vec3 point);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float result = g(point);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def interpolate-function-test (shader-test (fn [_program]) interpolate-function-probe (interpolate-function "g" "mix" "f")))
+
+(tabular "Shader to interpolate a function using only samples from whole coordinates"
+         (fact ((interpolate-function-test [] [?x ?y ?z]) 0) => ?result)
+          ?x   ?y  ?z   ?result
+          1.0  0.0  0.0  2.0
+          0.0  1.0  0.0  3.0
+          0.0  0.0  1.0  5.0
+          0.0  0.0  0.0  0.0
+          0.5  0.0  0.0  1.0
+          0.0  0.5  0.0  1.5
+          0.5  0.5  0.0  2.5
+          0.0  0.0  0.5  2.5
+          0.5  0.0  0.5  3.5
+          0.0  0.5  0.5  4.0
+          0.5  0.5  0.5  5.0)
+
+
 (GLFW/glfwTerminate)

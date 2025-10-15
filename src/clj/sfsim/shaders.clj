@@ -280,3 +280,8 @@
 (def hermite-interpolate
   "Shader for performing cubic Hermite interpolation"
   (slurp "resources/shaders/core/hermite-interpolate.glsl"))
+
+
+(def interpolate-function
+  "Shader to interpolate a function using only samples from whole coordinates"
+  (template/fn [method-name interpolation base-function] (slurp "resources/shaders/core/interpolate-function.glsl")))
