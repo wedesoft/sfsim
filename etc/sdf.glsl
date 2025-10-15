@@ -29,10 +29,10 @@ mat3 rotation_x(float angle) {
   float s = sin(angle);
   float c = cos(angle);
   return mat3(
-    1, 0, 0,
-    0, c, s,
-    0, -s, c
-  );
+      1, 0, 0,
+      0, c, s,
+      0, -s, c
+      );
 }
 
 // rotation around y axis
@@ -40,10 +40,10 @@ mat3 rotation_y(float angle) {
   float s = sin(angle);
   float c = cos(angle);
   return mat3(
-    c, 0, -s,
-    0, 1, 0,
-    s, 0, c
-  );
+      c, 0, -s,
+      0, 1, 0,
+      s, 0, c
+      );
 }
 
 // rotation around z axis
@@ -51,10 +51,10 @@ mat3 rotation_z(float angle) {
   float s = sin(angle);
   float c = cos(angle);
   return mat3(
-    c, s, 0,
-    -s, c, 0,
-    0, 0, 1
-  );
+      c, s, 0,
+      -s, c, 0,
+      0, 0, 1
+      );
 }
 
 float hash3d(vec3 coordinates)
@@ -65,7 +65,7 @@ float hash3d(vec3 coordinates)
 
 float interpolate_hermite(float value1, float value2, float factor)
 {
-    return mix(value1, value2, factor * factor * (3.0 - 2.0 * factor)); // Perform cubic Hermite interpolation
+  return mix(value1, value2, factor * factor * (3.0 - 2.0 * factor)); // Perform cubic Hermite interpolation
 }
 
 const vec2 vector01 = vec2(0.0, 1.0);
@@ -90,98 +90,98 @@ float noise(vec3 coordinates)
 }
 
 vec2 ray_box(vec3 box_min, vec3 box_max,
-             vec3 origin, vec3 direction,
-             out vec3 normal)
+    vec3 origin, vec3 direction,
+    out vec3 normal)
 {
-    vec3 factors1 = (box_min - origin) / direction;
-    vec3 factors2 = (box_max - origin) / direction;
+  vec3 factors1 = (box_min - origin) / direction;
+  vec3 factors2 = (box_max - origin) / direction;
 
-    vec3 intersections1 = min(factors1, factors2);
-    vec3 intersections2 = max(factors1, factors2);
+  vec3 intersections1 = min(factors1, factors2);
+  vec3 intersections2 = max(factors1, factors2);
 
-    float near = max(max(max(intersections1.x, intersections1.y), intersections1.z), 0.0);
-    float far  = min(min(intersections2.x, intersections2.y), intersections2.z);
+  float near = max(max(max(intersections1.x, intersections1.y), intersections1.z), 0.0);
+  float far  = min(min(intersections2.x, intersections2.y), intersections2.z);
 
-    if (far < near) {
-        normal = vec3(0.0);
-        return vec2(-1.0, -1.0);
-    }
+  if (far < near) {
+    normal = vec3(0.0);
+    return vec2(-1.0, -1.0);
+  }
 
-    if (near == intersections1.x) {
-        normal = (factors1.x > factors2.x) ? vec3(1.0, 0.0, 0.0)
-                                           : vec3(-1.0, 0.0, 0.0);
-    } else if (near == intersections1.y) {
-        normal = (factors1.y > factors2.y) ? vec3(0.0, 1.0, 0.0)
-                                           : vec3(0.0, -1.0, 0.0);
-    } else {
-        normal = (factors1.z > factors2.z) ? vec3(0.0, 0.0, 1.0)
-                                           : vec3(0.0, 0.0, -1.0);
-    }
+  if (near == intersections1.x) {
+    normal = (factors1.x > factors2.x) ? vec3(1.0, 0.0, 0.0)
+      : vec3(-1.0, 0.0, 0.0);
+  } else if (near == intersections1.y) {
+    normal = (factors1.y > factors2.y) ? vec3(0.0, 1.0, 0.0)
+      : vec3(0.0, -1.0, 0.0);
+  } else {
+    normal = (factors1.z > factors2.z) ? vec3(0.0, 0.0, 1.0)
+      : vec3(0.0, 0.0, -1.0);
+  }
 
-    return vec2(near, max(far - near, 0.0));
+  return vec2(near, max(far - near, 0.0));
 }
 
 vec2 intersectCylinder(vec3 origin, vec3 direction,
-                       vec3 base, vec3 axis, float r,
-                       out vec3 normal)
+    vec3 base, vec3 axis, float r,
+    out vec3 normal)
 {
-    vec3 axisN = normalize(axis);
+  vec3 axisN = normalize(axis);
 
-    vec3 d = direction - dot(direction, axisN) * axisN;
+  vec3 d = direction - dot(direction, axisN) * axisN;
 
-    vec3 deltaP = origin - base;
+  vec3 deltaP = origin - base;
 
-    vec3 m = deltaP - dot(deltaP, axisN) * axisN;
+  vec3 m = deltaP - dot(deltaP, axisN) * axisN;
 
-    float A = dot(d, d);
-    float B = 2.0 * dot(d, m);
-    float C = dot(m, m) - r * r;
+  float A = dot(d, d);
+  float B = 2.0 * dot(d, m);
+  float C = dot(m, m) - r * r;
 
-    float disc = B * B - 4.0 * A * C;
-    if (disc < 0.0) {
-        normal = vec3(0.0);
-        return vec2(-1.0, -1.0);
-    }
+  float disc = B * B - 4.0 * A * C;
+  if (disc < 0.0) {
+    normal = vec3(0.0);
+    return vec2(-1.0, -1.0);
+  }
 
-    float sqrtDisc = sqrt(disc);
-    float t0 = (-B - sqrtDisc) / (2.0 * A);
-    float t1 = (-B + sqrtDisc) / (2.0 * A);
+  float sqrtDisc = sqrt(disc);
+  float t0 = (-B - sqrtDisc) / (2.0 * A);
+  float t1 = (-B + sqrtDisc) / (2.0 * A);
 
-    if (t1 < 0.0) {
-        normal = vec3(0.0);
-        return vec2(-1.0, -1.0);
-    }
+  if (t1 < 0.0) {
+    normal = vec3(0.0);
+    return vec2(-1.0, -1.0);
+  }
 
-    float tEnter = max(t0, 0.0);
-    float tExit  = t1;
-    float segLen = tExit - tEnter;
+  float tEnter = max(t0, 0.0);
+  float tExit  = t1;
+  float segLen = tExit - tEnter;
 
-    if (segLen <= 0.0) {
-        normal = vec3(0.0);
-        return vec2(-1.0, -1.0);
-    }
+  if (segLen <= 0.0) {
+    normal = vec3(0.0);
+    return vec2(-1.0, -1.0);
+  }
 
-    vec3 hitPoint = origin + t1 * direction;
+  vec3 hitPoint = origin + t1 * direction;
 
-    vec3 axisProj = base + dot(hitPoint - base, axisN) * axisN;
+  vec3 axisProj = base + dot(hitPoint - base, axisN) * axisN;
 
-    normal = normalize(hitPoint - axisProj);
+  normal = normalize(hitPoint - axisProj);
 
-    return vec2(tEnter, segLen);
+  return vec2(tEnter, segLen);
 }
 
 vec2 subtractInterval(vec2 a, vec2 b)
 {
-    if (a.y < 0.0 || b.y < 0.0 || b.x + b.y <= a.x || b.x >= a.x + a.y)
-        return a;
+  if (a.y < 0.0 || b.y < 0.0 || b.x + b.y <= a.x || b.x >= a.x + a.y)
+    return a;
 
-    if (b.x <= a.x && b.x + b.y >= a.x + a.y)
-        return vec2(0.0, -1.0);
+  if (b.x <= a.x && b.x + b.y >= a.x + a.y)
+    return vec2(0.0, -1.0);
 
-    if (b.x <= a.x)
-        return vec2(b.x + b.y, a.x + a.y - (b.x + b.y));
+  if (b.x <= a.x)
+    return vec2(b.x + b.y, a.x + a.y - (b.x + b.y));
 
-    return vec2(a.x, b.x - a.x);
+  return vec2(a.x, b.x - a.x);
 }
 
 float sdfEngine(vec3 cylinder1_base, vec3 cylinder2_base, vec3 p) {
@@ -205,7 +205,7 @@ float sdfRectangle(vec2 p, vec2 size)
 
 float sdfCircle(vec2 p, float radius)
 {
-    return length(p) - radius;
+  return length(p) - radius;
 }
 
 bool intersectRaySphere(vec3 rayOrigin, vec3 rayDir, vec3 sphereCenter, float sphereRadius, out float t) {
