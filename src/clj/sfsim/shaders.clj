@@ -275,3 +275,8 @@
 (def sdf-rectangle
   "Shader for computing signed distance function of a rectangle"
   (slurp "resources/shaders/core/sdf-rectangle.glsl"))
+
+
+(def hermite-interpolate
+  "Shader for performing cubic Hermite interpolation"
+  (slurp "resources/shaders/core/hermite-interpolate.glsl"))

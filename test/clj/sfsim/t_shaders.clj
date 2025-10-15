@@ -1494,4 +1494,27 @@ void main()
           1.0  1.0  0.0         0.0         2.0         0.0          0.0        1.0)
 
 
+(def hermite-interpolate-probe
+  (template/fn [a b t]
+"#version 410 core
+out vec3 fragColor;
+float hermite_interpolate(float a, float b, float t);
+void main()
+{
+  float result = hermite_interpolate(<%= a %>, <%= b %>, <%= t %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+
+(def hermite-interpolate-test (shader-test (fn [_program]) hermite-interpolate-probe hermite-interpolate))
+
+(tabular "Shader for cubic hermite interpolation"
+         (fact ((hermite-interpolate-test [] [?a ?b ?t]) 0) => ?result)
+          ?a   ?b  ?t   ?result
+          2.0  3.0  0.0  2.0
+          2.0  3.0  0.5  2.5
+          2.0  3.0  1.0  3.0
+          2.0  3.0  0.25 2.15625
+          2.0  3.0  0.75 2.84375)
+
 (GLFW/glfwTerminate)
