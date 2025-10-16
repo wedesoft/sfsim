@@ -1563,11 +1563,29 @@ void main()
 
 (def hash3d-test (shader-test (fn [_program]) hash3d-probe hash3d))
 
-(facts "Shader function to create 3D noise"
+(facts "Shader function to create random noise"
        ((hash3d-test [] [0.0 0.0 0.0]) 0) => (roughly 0.0000000 1e-6)
        ((hash3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7265625 1e-6)
        ((hash3d-test [] [0.0 1.0 0.0]) 0) => (roughly 0.4218750 1e-6)
        ((hash3d-test [] [0.0 0.0 1.0]) 0) => (roughly 0.8496094 1e-6))
+
+(def noise3d-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float noise3d(vec3 p);
+void main()
+{
+  float result = noise3d(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def noise3d-test (apply shader-test (fn [_program]) noise3d-probe noise3d))
+
+(facts "Shader function to create 3D noise"
+       ((noise3d-test [] [0.0 0.0 0.0]) 0) => (roughly 0.0000000 1e-6)
+       ((noise3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7265625 1e-6)
+       ((noise3d-test [] [0.5 0.0 0.0]) 0) => (roughly 0.3632813 1e-6))
 
 
 (GLFW/glfwTerminate)

@@ -288,5 +288,10 @@
 
 
 (def hash3d
-  "Shader function to create 3D noise"
+  "Shader function to create random noise"
   (slurp "resources/shaders/core/hash3d.glsl"))
+
+
+(def noise3d
+  "Shader function to create continuous 3D noise"
+  [(interpolate-function "noise3d" "hermite_interpolate" "hash3d") hermite-interpolate hash3d])

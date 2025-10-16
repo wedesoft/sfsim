@@ -3,6 +3,9 @@
 
 const vec2 vector01 = vec2(0.0, 1.0);
 
+<% (when (not= interpolation "mix") %>
+float <%= interpolation %>(float x, float y, float a);
+<% ) %>
 float <%= base-function %>(vec3 point);
 
 float <%= method-name %>(vec3 point)
