@@ -49,7 +49,7 @@
       - [X] signed distance function rectangle
       - [X] signed distance function circle
       - [ ] signed distance function engine
-      - [-] 3d noise
+      - [X] 3d noise
       - [ ] plume envelope
       - [ ] plume diamonds
       - [ ] joined sampling of clouds and engine plume
