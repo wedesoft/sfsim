@@ -1239,14 +1239,13 @@ void main()
 
 (def oriented-matrix-probe
   (template/fn [x y z]
-    "#version 410 core
+"#version 410 core
 out vec3 fragColor;
 mat3 oriented_matrix(vec3 n);
 void main()
 {
   fragColor = oriented_matrix(vec3(0.36, 0.48, 0.8)) * vec3(<%= x %>, <%= y %>, <%= z %>);
 }"))
-
 
 (def oriented-matrix-test (shader-test (fn [_program]) oriented-matrix-probe oriented-matrix))
 
@@ -1550,6 +1549,25 @@ void main()
           0.5  0.0  0.5  3.5
           0.0  0.5  0.5  4.0
           0.5  0.5  0.5  5.0)
+
+(def hash3d-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float hash3d(vec3 p);
+void main()
+{
+  float result = hash3d(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def hash3d-test (shader-test (fn [_program]) hash3d-probe hash3d))
+
+(facts "Shader function to create 3D noise"
+       ((hash3d-test [] [0.0 0.0 0.0]) 0) => (roughly 0.0000000 1e-6)
+       ((hash3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7265625 1e-6)
+       ((hash3d-test [] [0.0 1.0 0.0]) 0) => (roughly 0.4218750 1e-6)
+       ((hash3d-test [] [0.0 0.0 1.0]) 0) => (roughly 0.8496094 1e-6))
 
 
 (GLFW/glfwTerminate)

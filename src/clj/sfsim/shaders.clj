@@ -285,3 +285,8 @@
 (def interpolate-function
   "Shader to interpolate a function using only samples from whole coordinates"
   (template/fn [method-name interpolation base-function] (slurp "resources/shaders/core/interpolate-function.glsl")))
+
+
+(def hash3d
+  "Shader function to create 3D noise"
+  (slurp "resources/shaders/core/hash3d.glsl"))
