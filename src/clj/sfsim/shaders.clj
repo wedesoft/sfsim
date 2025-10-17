@@ -224,6 +224,21 @@
   [oriented-matrix (slurp "resources/shaders/core/rotate-vector.glsl")])
 
 
+(def rotation-x
+  "Shader for creating matrix for rotation around x axis"
+  (slurp "resources/shaders/core/rotation-x.glsl"))
+
+
+(def rotation-y
+  "Shader for creating matrix for rotation around y axis"
+  (slurp "resources/shaders/core/rotation-y.glsl"))
+
+
+(def rotation-z
+  "Shader for creating matrix for rotation around z axis"
+  (slurp "resources/shaders/core/rotation-z.glsl"))
+
+
 (def vertex-passthrough
   "Vertex shader to simply pass vertex through"
   (slurp "resources/shaders/core/vertex-passthrough.glsl"))
@@ -250,3 +265,33 @@
 (def phong
   "Shader for phong shading (ambient, diffuse, and specular lighting)"
   (slurp "resources/shaders/core/phong.glsl"))
+
+
+(def sdf-circle
+  "Shader for computing signed distance function of a circle"
+  (slurp "resources/shaders/core/sdf-circle.glsl"))
+
+
+(def sdf-rectangle
+  "Shader for computing signed distance function of a rectangle"
+  (slurp "resources/shaders/core/sdf-rectangle.glsl"))
+
+
+(def hermite-interpolate
+  "Shader for performing cubic Hermite interpolation"
+  (slurp "resources/shaders/core/hermite-interpolate.glsl"))
+
+
+(def interpolate-function
+  "Shader to interpolate a function using only samples from whole coordinates"
+  (template/fn [method-name interpolation base-function] (slurp "resources/shaders/core/interpolate-function.glsl")))
+
+
+(def hash3d
+  "Shader function to create random noise"
+  (slurp "resources/shaders/core/hash3d.glsl"))
+
+
+(def noise3d
+  "Shader function to create continuous 3D noise"
+  [(interpolate-function "noise3d" "hermite_interpolate" "hash3d") hermite-interpolate hash3d])

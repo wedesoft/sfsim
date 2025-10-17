@@ -133,7 +133,7 @@ float fringe(vec2 uv)
   float pressure = pressure();
   float radius = bumps(uv.x);
   float dist = abs(uv.y) - radius;
-  return mix(0.5, max(1.0 - abs(dist) / 0.1, 0.0), pressure);
+  return max(1.0 - abs(dist) / 0.1, 0.0);
 }
 
 float diamond(vec2 uv)
@@ -238,7 +238,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 light = rotation * normalize(vec3(1.0, 1.0, 0.0));
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
   vec3 direction = normalize(rotation * vec3(uv, F));
-  float box_size = max(NOZZLE, limit(pressure()));
+  float pressure = pressure();
+  float box_size = max(NOZZLE, limit(pressure));
   vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction);
   vec3 color = vec3(0, 0, 0);
   float t;
@@ -263,9 +264,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
       float diamond = diamond(uv);
       float fringe = fringe(uv);
-      vec3 flame_color = mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe);
+      vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
       float decay = 1.0 - uv.x / (END - START);
-      float density = 2.0 * NOZZLE * NOZZLE / (radius * radius) * decay;
+      float density = 4.0 * NOZZLE * NOZZLE / (radius * radius) * decay;
       if (dist <= radius) {
         float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
         color = color * pow(0.2, ds * density);
