@@ -32,9 +32,7 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float sdf_circle(vec2 point, vec2 center, float radius);
 float sdf_rectangle(vec2 point, vec2 rectangle_min, vec2 rectangle_max);
 
-vec2 intersectCylinder(vec3 origin, vec3 direction,
-    vec3 base, vec3 axis, float r,
-    out vec3 normal)
+vec2 intersectCylinder(vec3 origin, vec3 direction, vec3 base, vec3 axis, float r)
 {
   vec3 axisN = normalize(axis);
 
@@ -50,7 +48,6 @@ vec2 intersectCylinder(vec3 origin, vec3 direction,
 
   float disc = B * B - 4.0 * A * C;
   if (disc < 0.0) {
-    normal = vec3(0.0);
     return vec2(-1.0, -1.0);
   }
 
@@ -59,24 +56,12 @@ vec2 intersectCylinder(vec3 origin, vec3 direction,
   float t1 = (-B + sqrtDisc) / (2.0 * A);
 
   if (t1 < 0.0) {
-    normal = vec3(0.0);
     return vec2(-1.0, -1.0);
   }
 
   float tEnter = max(t0, 0.0);
   float tExit  = t1;
   float segLen = tExit - tEnter;
-
-  if (segLen <= 0.0) {
-    normal = vec3(0.0);
-    return vec2(-1.0, -1.0);
-  }
-
-  vec3 hitPoint = origin + t1 * direction;
-
-  vec3 axisProj = base + dot(hitPoint - base, axisN) * axisN;
-
-  normal = normalize(hitPoint - axisProj);
 
   return vec2(tEnter, segLen);
 }
@@ -171,27 +156,18 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   // float pressure = pressure();
   float pressure = 1.0;
   float box_size = max(limit(pressure), NOZZLE) + WIDTH2 - NOZZLE;
-  vec3 normal = vec3(0.5, 0.5, 0.5);
   vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction);
   vec2 engine = ray_box(engine_min, engine_max, origin, direction);
-  vec3 normal1;
-  vec3 normal2;
   vec3 cylinder1_base = vec3(START + 0.22, 0.22, -WIDTH2);
   vec3 cylinder1_axis = vec3(0.0, 0.0, 2.0 * WIDTH2);
   vec3 cylinder2_base = vec3(START + 0.22, -0.22, -WIDTH2);
   vec3 cylinder2_axis = vec3(0.0, 0.0, 2.0 * WIDTH2);
-  vec2 cylinder1 = intersectCylinder(origin, direction, cylinder1_base, cylinder1_axis, 0.2, normal1);
-  vec2 cylinder2 = intersectCylinder(origin, direction, cylinder2_base, cylinder2_axis, 0.2, normal2);
+  vec2 cylinder1 = intersectCylinder(origin, direction, cylinder1_base, cylinder1_axis, 0.2);
+  vec2 cylinder2 = intersectCylinder(origin, direction, cylinder2_base, cylinder2_axis, 0.2);
   vec2 joint = subtractInterval(subtractInterval(engine, cylinder1), cylinder2);
   vec3 color = vec3(0, 0, 0);
-  if (joint.x == cylinder1.x + cylinder1.y)
-    normal = normal1;
-  if (joint.x == cylinder2.x + cylinder2.y)
-    normal = normal2;
   if (joint.y > 0.0) {
-    if (dot(normal, direction) > 0.0)
-      normal = -normal;
-    float diffuse = clamp(dot(normal, light), 0.0, 1.0);
+    float diffuse = 0.5;
     color = vec3(1.0) * (diffuse * 0.9 + 0.1);
     if (box.x + box.y > joint.x) {
       box.y = joint.x - box.x;
