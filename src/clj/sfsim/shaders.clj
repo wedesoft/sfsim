@@ -10,9 +10,19 @@
     [comb.template :as template]))
 
 
+(def ray-hypersphere
+  "Shader function for computing intersection of ray with hypersphere"
+  (template/fn [method-name vector-type] (slurp "resources/shaders/core/ray-hypersphere.glsl")))
+
+
+(def ray-circle
+  "Shader function for computing intersection of ray with circle"
+  (ray-hypersphere "ray_circle" "vec2"))
+
+
 (def ray-sphere
   "Shader function for computing intersection of ray with sphere"
-  (slurp "resources/shaders/core/ray-sphere.glsl"))
+  (ray-hypersphere "ray_sphere" "vec3"))
 
 
 (def convert-1d-index

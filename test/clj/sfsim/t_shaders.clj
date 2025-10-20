@@ -59,6 +59,32 @@ void main()
          0   0   0   0   0   2   0   0   1   0.0 0.0)
 
 
+(def ray-circle-probe
+  (template/fn [cx cy ox oy dx dy]
+    "#version 410 core
+out vec3 fragColor;
+vec2 ray_circle(vec2 centre, float radius, vec2 origin, vec2 direction);
+void main()
+{
+  vec2 result = ray_circle(vec2(<%= cx %>, <%= cy %>),
+                           1,
+                           vec2(<%= ox %>, <%= oy %>),
+                           vec2(<%= dx %>, <%= dy %>));
+  fragColor = vec3(result.x, result.y, 0);
+}"))
+
+
+(def ray-circle-test (shader-test (fn [_program]) ray-circle-probe ray-circle))
+
+
+(tabular "Shader for intersection of ray with circle"
+         (fact (ray-circle-test [] [?cx ?cy ?ox ?oy ?dx ?dy]) => (vec3 ?ix ?iy 0))
+         ?cx ?cy ?ox ?oy ?dx ?dy ?ix ?iy
+         0   0  -1    0   1   0   0.0 2.0
+         0   0   0    0   1   0   0.0 1.0
+         0   0  -2    0   1   0   1.0 2.0)
+
+
 (def convert-1d-index-probe
   (template/fn [x]
     "#version 410 core
