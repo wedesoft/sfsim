@@ -107,26 +107,6 @@ float sdfEngine(vec3 cylinder1_base, vec3 cylinder2_base, vec3 p) {
   return length(o - vec2(p.x, abs(p.y)));
 }
 
-bool intersectRaySphere(vec3 rayOrigin, vec3 rayDir, vec3 sphereCenter, float sphereRadius, out float t) {
-  vec3 oc = rayOrigin - sphereCenter;
-  float a = dot(rayDir, rayDir);
-  float b = 2.0 * dot(oc, rayDir);
-  float c = dot(oc, oc) - sphereRadius * sphereRadius;
-  float discriminant = b * b - 4.0 * a * c;
-
-  if (discriminant < 0.0) {
-    return false;
-  } else {
-    t = (-b - sqrt(discriminant)) / (2.0 * a);
-    return true;
-  }
-}
-
-bool insideBox(vec3 point, vec3 box_min, vec3 box_max)
-{
-  return all(greaterThanEqual(point, box_min)) && all(lessThanEqual(point, box_max));
-}
-
 float pressure()
 {
   float slider = iMouse.y / iResolution.y;
