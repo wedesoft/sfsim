@@ -48,7 +48,8 @@
     - [-] shaders for
       - [X] signed distance function rectangle
       - [X] signed distance function circle
-      - [ ] signed distance function engine
+      - [ ] signed distance function engine exhaust
+      - [ ] use density scaled signed distance values
       - [X] 3d noise
       - [ ] plume envelope
       - [ ] plume diamonds
