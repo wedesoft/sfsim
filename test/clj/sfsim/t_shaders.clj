@@ -1613,5 +1613,25 @@ void main()
        ((noise3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7265625 1e-6)
        ((noise3d-test [] [0.5 0.0 0.0]) 0) => (roughly 0.3632813 1e-6))
 
+(def bulge-probe
+  (template/fn [limit x]
+"#version 410 core
+out vec3 fragColor;
+float bulge(float limit, float x);
+void main()
+{
+  float result = bulge(<%= limit %>, <%= x %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def bulge-test (shader-test (fn [program nozzle] (uniform-float program "nozzle" nozzle)) bulge-probe bulge))
+
+(tabular "Shader function to determine shape of rocket exhaust plume"
+         (fact ((bulge-test [?nozzle] [?limit ?x]) 0) => (roughly ?result 1e-3))
+          ?nozzle   ?limit  ?x    ?result
+          0.5       0.0      0.0  0.5
+          0.5       0.0    100.0  0.0
+          0.5       5.0    100.0  5.0
+          )
 
 (GLFW/glfwTerminate)

@@ -305,3 +305,8 @@
 (def noise3d
   "Shader function to create continuous 3D noise"
   [(interpolate-function "noise3d" "hermite_interpolate" "hash3d") hermite-interpolate hash3d])
+
+
+(def bulge
+  "Shader function to determine shape of rocket exhaust plume"
+  (slurp "resources/shaders/plume/bulge.glsl"))
