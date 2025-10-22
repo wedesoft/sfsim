@@ -16,13 +16,13 @@ uniform vec2 iMouse;
 #define DIST 2.0
 #define WIDTH2 0.4
 #define NOZZLE 0.16
-#define SCALING 0.1
+#define MIN_LIMIT 0.1
 #define SAMPLES 100
 #define OMEGA_FACTOR 50.0
 #define SPEED 50.0
 #define START -1.0
 #define END 2.5
-#define MAX_CONE 0.5
+#define MAX_SLOPE 0.5
 
 mat3 rotation_x(float angle);
 mat3 rotation_y(float angle);
@@ -67,21 +67,27 @@ float pressure()
 
 float limit(float pressure)
 {
-  return SCALING * sqrt(1.0 / pressure);
+  return MIN_LIMIT / sqrt(pressure);
+}
+
+float bulge(float pressure, float x)
+{
+  float limit = limit(pressure);
+  float range = NOZZLE - limit;
+  if (NOZZLE < limit) {
+    float equilibrium = MIN_LIMIT * MIN_LIMIT / (NOZZLE * NOZZLE);
+    float base = exp(-MAX_SLOPE * (equilibrium - pressure) / (equilibrium * limit));
+    float decay = pow(base, x);
+    return limit + range * decay;
+  } else {
+    float bumps = range * abs(sin(x * OMEGA_FACTOR * range));
+    return limit + bumps;
+  };
 }
 
 vec2 envelope(float pressure, float x) {
-  float limit = limit(pressure);
-  float bulge = NOZZLE - limit;
-  if (NOZZLE < limit) {
-    float equilibrium = SCALING * SCALING / (NOZZLE * NOZZLE);
-    float c = exp(-MAX_CONE * (equilibrium - pressure) / (equilibrium * limit));
-    float decay = pow(c, x + 0.2);
-    return vec2(limit + WIDTH2 - NOZZLE + bulge * decay, limit + bulge * decay);
-  } else {
-    float bumps = bulge * abs(sin(x * OMEGA_FACTOR * bulge));
-    return vec2(limit + bumps + WIDTH2 - NOZZLE, limit + bumps);
-  }
+  float bulge = bulge(pressure, x);
+  return vec2(bulge + WIDTH2 - NOZZLE, bulge);
 }
 
 float diamond(float pressure, vec2 uv)
@@ -147,7 +153,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       if (p.x >= engine_min.x) {
         vec2 envelope = envelope(pressure, p.x - engine_max.x);
         float engine_pos = clamp((p.x - engine_max.x + 0.2) / 0.2, 0.0, 1.0);
-        float transition = clamp((limit(pressure) - SCALING) / (NOZZLE - SCALING), 0.0, 1.0);
+        float transition = clamp((limit(pressure) - MIN_LIMIT) / (NOZZLE - MIN_LIMIT), 0.0, 1.0);
         float circular = clamp((p.x - engine_max.x) / (END - engine_max.x), 0.0, 1.0);
         float radius = 0.5 * (envelope.x + envelope.y);
         engine_pos = clamp(engine_pos + transition, 0.0, 1.0);

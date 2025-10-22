@@ -1614,24 +1614,36 @@ void main()
        ((noise3d-test [] [0.5 0.0 0.0]) 0) => (roughly 0.3632813 1e-6))
 
 (def bulge-probe
-  (template/fn [limit x]
+  (template/fn [pressure x]
 "#version 410 core
 out vec3 fragColor;
-float bulge(float limit, float x);
+float bulge(float pressure, float x);
 void main()
 {
-  float result = bulge(<%= limit %>, <%= x %>);
+  float result = bulge(<%= pressure %>, <%= x %>);
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def bulge-test (shader-test (fn [program nozzle] (uniform-float program "nozzle" nozzle)) bulge-probe bulge))
+(def bulge-test (shader-test (fn [program nozzle min-limit max-slope]
+                                 (uniform-float program "nozzle" nozzle)
+                                 (uniform-float program "min_limit" min-limit)
+                                 (uniform-float program "max_slope" max-slope)
+                                 (uniform-float program "omega_factor" PI))
+                             bulge-probe bulge))
 
 (tabular "Shader function to determine shape of rocket exhaust plume"
-         (fact ((bulge-test [?nozzle] [?limit ?x]) 0) => (roughly ?result 1e-3))
-          ?nozzle   ?limit  ?x    ?result
-          0.5       0.0      0.0  0.5
-          0.5       0.0    100.0  0.0
-          0.5       5.0    100.0  5.0
-          )
+         (fact ((bulge-test [?nozzle ?min-limit ?max-slope] [?pressure ?x]) 0) => (roughly ?result 1e-3))
+          ?nozzle   ?min-limit ?max-slope ?pressure  ?x    ?result
+          0.5       2.0        1.0         1.0          0.0  0.5
+          0.5       3.0        1.0         1.0        100.0  3.0
+          0.5       0.2        1.0         0.01       100.0  2.0
+          1.0       1.0        1.0         0.000001     0.1  1.1
+          1.0       0.1        1.0         0.01        10.0  1.0
+          1.0       0.5        1.0         1.0          0.0  0.5
+          1.0       0.5        1.0         1.0          1.0  1.0
+          1.0       0.5        1.0         1.0          2.0  0.5
+          1.0       0.5        1.0         1.0          3.0  1.0
+          1.0       0.75       1.0         1.0          0.0  0.75
+          1.0       0.75       1.0         1.0          2.0  1.0)
 
 (GLFW/glfwTerminate)
