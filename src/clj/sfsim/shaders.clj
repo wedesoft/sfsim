@@ -310,3 +310,7 @@
 (def bulge
   "Shader function to determine shape of rocket exhaust plume"
   (slurp "resources/shaders/plume/bulge.glsl"))
+
+(def subtract-interval
+  "Shader function to subtract two intervals"
+  (slurp "resources/shaders/core/subtract-interval.glsl"))

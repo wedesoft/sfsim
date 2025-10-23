@@ -9,7 +9,7 @@
     [clojure.math :refer (PI sqrt)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye)]
-    [fastmath.vector :refer (vec3 div ediv dot mag cross)]
+    [fastmath.vector :refer (vec2 vec3 div ediv dot mag cross)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -1645,5 +1645,29 @@ void main()
           1.0       0.5        1.0         1.0          3.0  1.0
           1.0       0.75       1.0         1.0          0.0  0.75
           1.0       0.75       1.0         1.0          2.0  1.0)
+
+
+(def subtract-interval-probe
+  (template/fn [ax ay bx by]
+"#version 410 core
+out vec3 fragColor;
+vec2 subtract_interval(vec2 a, vec2 b);
+void main()
+{
+  vec2 result = subtract_interval(vec2(<%= ax %>, <%= ay %>), vec2(<%= bx %>, <%= by %>));
+  fragColor = vec3(result, 0);
+}"))
+
+
+(def subtract-interval-test (shader-test (fn [_program]) subtract-interval-probe subtract-interval))
+
+(tabular "Shader function to subtract two intervals"
+         (fact (take 2 (subtract-interval-test [] [?ax ?ay ?bx ?by])) => (vec2 ?rx ?ry))
+          ?ax  ?ay  ?bx  ?by  ?rx  ?ry
+          1.0  2.0  5.0  3.0  1.0  2.0
+          1.0  4.0  3.0  6.0  1.0  2.0
+          1.0  4.0  0.0  6.0  6.0 -1.0
+          2.0  3.0  1.0  2.0  3.0  2.0
+          4.0  1.0  1.0  2.0  4.0  1.0)
 
 (GLFW/glfwTerminate)
