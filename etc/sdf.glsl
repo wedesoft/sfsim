@@ -33,20 +33,7 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float sdf_circle(vec2 point, vec2 center, float radius);
 float sdf_rectangle(vec2 point, vec2 rectangle_min, vec2 rectangle_max);
 vec2 ray_circle(vec2 centre, float radius, vec2 origin, vec2 direction);
-
-vec2 subtractInterval(vec2 a, vec2 b)
-{
-  if (a.y < 0.0 || b.y < 0.0 || b.x + b.y <= a.x || b.x >= a.x + a.y)
-    return a;
-
-  if (b.x <= a.x && b.x + b.y >= a.x + a.y)
-    return vec2(0.0, -1.0);
-
-  if (b.x <= a.x)
-    return vec2(b.x + b.y, a.x + a.y - (b.x + b.y));
-
-  return vec2(a.x, b.x - a.x);
-}
+vec2 subtract_interval(vec2 a, vec2 b);
 
 float sdfEngine(vec2 cylinder1_base, vec2 cylinder2_base, vec3 p) {
   if (abs(p.z) > WIDTH2) {
@@ -106,8 +93,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   float aspect = iResolution.x / iResolution.y;
   vec2 uv = (fragCoord.xy / iResolution.xy * 2.0 - 1.0) * vec2(aspect, 1.0);
-  // float ry = iMouse.x / iResolution.x;
-  float ry = 0.3;
+  float ry = iMouse.x / iResolution.x;
+  // float ry = 0.3;
   mat3 rotation = rotation_z(0.1 * M_PI) * rotation_y((2.0 * ry + 1.0) * M_PI);
   vec3 light = rotation * normalize(vec3(1.0, 1.0, 0.0));
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
@@ -123,7 +110,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec2 cylinder2_base = vec2(START + 0.22, -0.22);
   vec2 cylinder1 = ray_circle(cylinder1_base, 0.2, origin.xy, direction.xy);
   vec2 cylinder2 = ray_circle(cylinder2_base, 0.2, origin.xy, direction.xy);
-  vec2 joint = subtractInterval(subtractInterval(engine, cylinder1), cylinder2);
+  vec2 joint = subtract_interval(subtract_interval(engine, cylinder1), cylinder2);
   vec3 color = vec3(0, 0, 0);
   if (joint.y > 0.0) {
     float diffuse = 0.5;

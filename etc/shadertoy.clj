@@ -49,7 +49,7 @@ void main()
 ; parse first command line argument
 (def shadertoy-source (slurp (-> *command-line-args* first)))
 
-(def shader-functions [rotation-x rotation-y rotation-z noise3d ray-box sdf-circle sdf-rectangle ray-circle bulge])
+(def shader-functions [rotation-x rotation-y rotation-z noise3d ray-box sdf-circle sdf-rectangle ray-circle bulge subtract-interval])
 
 (def vertices
   (float-array [ 1.0  1.0 0.0
