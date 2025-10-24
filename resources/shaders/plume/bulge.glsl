@@ -3,7 +3,8 @@
 uniform float nozzle;
 uniform float min_limit;
 uniform float max_slope;
-uniform float omega_factor;
+
+float plume_phase(float x, float limit);
 
 float bulge(float pressure, float x)
 {
@@ -15,7 +16,8 @@ float bulge(float pressure, float x)
     float decay = pow(base, x);
     return limit + range * decay;
   } else {
-    float bumps = range * abs(sin(x * omega_factor * range));
+    float phase = plume_phase(x, limit);
+    float bumps = range * abs(sin(phase));
     return limit + bumps;
   };
 }

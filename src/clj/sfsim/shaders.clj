@@ -307,9 +307,15 @@
   [(interpolate-function "noise3d" "hermite_interpolate" "hash3d") hermite-interpolate hash3d])
 
 
+(def plume-phase
+  "Shader function for phase function of mach cone positions"
+  (slurp "resources/shaders/plume/plume-phase.glsl"))
+
+
 (def bulge
   "Shader function to determine shape of rocket exhaust plume"
-  (slurp "resources/shaders/plume/bulge.glsl"))
+  [(slurp "resources/shaders/plume/bulge.glsl") plume-phase])
+
 
 (def subtract-interval
   "Shader function to subtract two intervals"

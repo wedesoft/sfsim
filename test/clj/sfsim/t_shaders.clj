@@ -1624,12 +1624,12 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def bulge-test (shader-test (fn [program nozzle min-limit max-slope]
-                                 (uniform-float program "nozzle" nozzle)
-                                 (uniform-float program "min_limit" min-limit)
-                                 (uniform-float program "max_slope" max-slope)
-                                 (uniform-float program "omega_factor" PI))
-                             bulge-probe bulge))
+(def bulge-test (apply shader-test (fn [program nozzle min-limit max-slope]
+                                       (uniform-float program "nozzle" nozzle)
+                                       (uniform-float program "min_limit" min-limit)
+                                       (uniform-float program "max_slope" max-slope)
+                                       (uniform-float program "omega_factor" PI))
+                       bulge-probe bulge))
 
 (tabular "Shader function to determine shape of rocket exhaust plume"
          (fact ((bulge-test [?nozzle ?min-limit ?max-slope] [?pressure ?x]) 0) => (roughly ?result 1e-3))

@@ -34,6 +34,9 @@ float sdf_circle(vec2 point, vec2 center, float radius);
 float sdf_rectangle(vec2 point, vec2 rectangle_min, vec2 rectangle_max);
 vec2 ray_circle(vec2 centre, float radius, vec2 origin, vec2 direction);
 vec2 subtract_interval(vec2 a, vec2 b);
+float plume_phase(float x, float limit);
+float plume_omega(float limit);
+float bulge(float pressure, float x);
 
 float sdfEngine(vec2 cylinder1_base, vec2 cylinder2_base, vec3 p) {
   if (abs(p.z) > WIDTH2) {
@@ -58,8 +61,6 @@ float limit(float pressure)
   return min_limit * sqrt(1.0 / pressure);
 }
 
-float bulge(float pressure, float x);
-
 vec2 envelope(float pressure, float x) {
   float bulge = bulge(pressure, x);
   return vec2(bulge + WIDTH2 - nozzle, bulge);
@@ -71,8 +72,8 @@ float diamond(float pressure, vec2 uv)
   float diamond;
   if (nozzle > limit) {
     float bulge = nozzle - limit;
-    float omega = omega_factor * bulge;
-    float phase = omega * uv.x; //  + M_PI / 2.0;
+    float omega = plume_omega(limit);
+    float phase = plume_phase(uv.x, limit);
     float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
     float diamond_front_length = limit / (bulge * omega);
     float diamond_back_length = diamond_front_length * 0.3;
