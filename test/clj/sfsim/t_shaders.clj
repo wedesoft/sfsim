@@ -1646,6 +1646,29 @@ void main()
           1.0       0.75       1.0         1.0          0.0  0.75
           1.0       0.75       1.0         1.0          2.0  1.0)
 
+(def plume-phase-probe
+  (template/fn [x limit]
+"#version 410 core
+out vec3 fragColor;
+float plume_phase(float x, float limit);
+void main()
+{
+  float result = plume_phase(<%= x %>, <%= limit %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def plume-phase-test (shader-test (fn [program nozzle]
+                                       (uniform-float program "nozzle" nozzle)
+                                       (uniform-float program "omega_factor" 10.0))
+                                   plume-phase-probe plume-phase))
+
+(tabular "Shader function to determine phase of rocket exhaust plume"
+         (fact ((plume-phase-test [?nozzle] [?x ?limit]) 0) => (roughly ?result 1e-6))
+          ?nozzle   ?x    ?limit  ?result
+          1.0       0.0   0.5      0.0
+          1.0       1.0   0.5      5.0
+          1.0       2.0   0.5     10.0
+          1.0       1.0   0.0     10.0)
 
 (def subtract-interval-probe
   (template/fn [ax ay bx by]
@@ -1657,7 +1680,6 @@ void main()
   vec2 result = subtract_interval(vec2(<%= ax %>, <%= ay %>), vec2(<%= bx %>, <%= by %>));
   fragColor = vec3(result, 0);
 }"))
-
 
 (def subtract-interval-test (shader-test (fn [_program]) subtract-interval-probe subtract-interval))
 
