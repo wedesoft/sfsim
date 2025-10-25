@@ -77,8 +77,6 @@ float diamond(float pressure, vec2 uv)
     float diamond_longitudinal = diamond_phase(uv.x, limit);
     float diamond_front_length = limit / (bulge * omega);
     float diamond_back_length = diamond_front_length * 0.3;
-    float tail_start = 0.3 * diamond_front_length;
-    float tail_length = 0.8 * diamond_front_length;
     float diamond_length = diamond_longitudinal > 0.0 ? diamond_back_length : diamond_front_length;
     float diamond_radius = limit * max(0.0, 1.0 - abs(diamond_longitudinal / omega) / diamond_length);
     float extent = 1.0;
