@@ -49,7 +49,8 @@ void main()
 ; parse first command line argument
 (def shadertoy-source (slurp (-> *command-line-args* first)))
 
-(def shader-functions [rotation-x rotation-y rotation-z noise3d ray-box sdf-circle sdf-rectangle ray-circle bulge subtract-interval])
+(def shader-functions [rotation-x rotation-y rotation-z noise3d ray-box sdf-circle sdf-rectangle ray-circle bulge subtract-interval
+                       diamond-phase])
 
 (def vertices
   (float-array [ 1.0  1.0 0.0
@@ -94,7 +95,7 @@ void main()
 (def vertex-shader (make-shader vertex-source GL20/GL_VERTEX_SHADER))
 (def fragment-shader (make-shader fragment-source GL20/GL_FRAGMENT_SHADER))
 (def shadertoy-shader (make-shader shadertoy-source GL30/GL_FRAGMENT_SHADER))
-(def shader-functions-shaders (map #(make-shader % GL30/GL_FRAGMENT_SHADER) (flatten shader-functions)))
+(def shader-functions-shaders (map #(make-shader % GL30/GL_FRAGMENT_SHADER) (distinct (flatten shader-functions))))
 (def program (apply make-program vertex-shader fragment-shader shadertoy-shader shader-functions-shaders))
 
 (def vao (GL30/glGenVertexArrays))

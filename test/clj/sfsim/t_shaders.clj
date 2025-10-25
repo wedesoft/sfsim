@@ -1670,6 +1670,34 @@ void main()
           1.0       2.0   0.5     10.0
           1.0       1.0   0.0     10.0)
 
+(def diamond-phase-probe
+  (template/fn [x limit]
+"#version 410 core
+out vec3 fragColor;
+float plume_phase(float x, float limit)
+{
+  return x * (1.0 - limit);
+}
+float diamond_phase(float x, float limit);
+void main()
+{
+  float result = diamond_phase(<%= x %>, <%= limit %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def diamond-phase-test (shader-test (fn [_program]) diamond-phase-probe (first diamond-phase)))
+
+(tabular "Shader function to determine phase of Mach cones"
+         (fact ((diamond-phase-test [] [?x ?limit]) 0) => (roughly ?result 1e-6))
+          ?x         ?limit   ?result
+          0.0        0.0      0.0
+          (* 0.2 PI) 0.0      (*  0.2 PI)
+          (* 0.4 PI) 0.0      (* -0.6 PI)
+          PI         0.0      0.0
+          (* 1.2 PI) 0.0      (*  0.2 PI)
+          (* 1.4 PI) 0.0      (* -0.6 PI)
+          (* 0.4 PI) 0.5      (*  0.2 PI))
+
 (def subtract-interval-probe
   (template/fn [ax ay bx by]
 "#version 410 core

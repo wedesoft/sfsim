@@ -312,6 +312,11 @@
   (slurp "resources/shaders/plume/plume-phase.glsl"))
 
 
+(def diamond-phase
+  "Shader function to determine phase of Mach diamonds in rocket exhaust plume"
+  [(slurp "resources/shaders/plume/diamond-phase.glsl") plume-phase])
+
+
 (def bulge
   "Shader function to determine shape of rocket exhaust plume"
   [(slurp "resources/shaders/plume/bulge.glsl") plume-phase])
