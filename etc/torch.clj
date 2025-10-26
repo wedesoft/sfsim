@@ -1,5 +1,8 @@
-(require '[libpython-clj2.require :refer (require-python)]
-         '[libpython-clj2.python :refer [py. py.. py.-] :as py])
+(require '[libpython-clj2.python :refer [py. py.. py.-] :as py])
+; (py/initialize! :python-executable "/home/jan/venv/bin/python")
+(require '[libpython-clj2.require :refer (require-python)])
+
+(require-python '[tqdm :refer (tqdm)])
 (require-python '[numpy :as np])
 (require-python '[torch])
 (require-python '[torch.nn :as nn])
