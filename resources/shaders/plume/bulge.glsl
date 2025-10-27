@@ -4,11 +4,12 @@ uniform float nozzle;
 uniform float min_limit;
 uniform float max_slope;
 
+float limit(float pressure);
 float plume_phase(float x, float limit);
 
 float bulge(float pressure, float x)
 {
-  float limit = min_limit / sqrt(pressure);
+  float limit = limit(pressure);
   float range = nozzle - limit;
   if (nozzle < limit) {
     float equilibrium = min_limit * min_limit / (nozzle * nozzle);

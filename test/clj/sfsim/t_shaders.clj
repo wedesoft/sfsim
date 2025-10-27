@@ -1685,7 +1685,7 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def diamond-phase-test (shader-test (fn [_program]) diamond-phase-probe (first diamond-phase)))
+(def diamond-phase-test (shader-test (fn [_program]) diamond-phase-probe (last diamond-phase)))
 
 (tabular "Shader function to determine phase of Mach cones"
          (fact ((diamond-phase-test [] [?x ?limit]) 0) => (roughly ?result 1e-6))
@@ -1719,5 +1719,47 @@ void main()
           1.0  4.0  0.0  6.0  6.0 -1.0
           2.0  3.0  1.0  2.0  3.0  2.0
           4.0  1.0  1.0  2.0  4.0  1.0)
+
+(def diamond-probe
+  (template/fn [pressure x y]
+"#version 410 core
+out vec3 fragColor;
+float limit(float pressure)
+{
+  return 0.5 / pressure;
+}
+float plume_omega(float limit)
+{
+  return 2.0 * limit;
+}
+float diamond_phase(float x, float limit)
+{
+  return mod(plume_omega(limit) * x + 1.0, 2.0) - 1.0;
+}
+float diamond(float pressure, vec2 uv);
+void main()
+{
+  float result = diamond(<%= pressure %>, vec2(<%= x %>, <%= y %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def diamond-test (shader-test (fn [program strength]
+                                   (uniform-float program "diamond_strength" strength)
+                                   (uniform-float program "nozzle" 1.0))
+                               diamond-probe (last (diamond 0.05))))
+
+(tabular "Shader function for volumetric Mach diamonds"
+         (fact (first (diamond-test [?strength] [?pressure ?x ?y])) => (roughly ?result 1e-3))
+          ?pressure ?strength ?x   ?y    ?result
+          1.0       1.0       0.0  0.0   1.0
+          1.0       0.5       0.0  0.0   0.5
+          1.0       1.0       0.0  2.0   0.0
+          1.0       1.0       0.0 -2.0   0.0
+          1.0       1.0       0.0  0.975 0.5
+          1.0       1.0       1.0  0.0   0.0
+          1.0       1.0       2.0  0.95  1.0
+          1.0       1.0       1.5  0.45  1.0
+          1.0       1.0       0.5  0.45  0.0
+          0.25      1.0       0.0  0.0   0.0)
 
 (GLFW/glfwTerminate)

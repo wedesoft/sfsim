@@ -314,12 +314,23 @@
 
 (def diamond-phase
   "Shader function to determine phase of Mach diamonds in rocket exhaust plume"
-  [(slurp "resources/shaders/plume/diamond-phase.glsl") plume-phase])
+  [plume-phase (slurp "resources/shaders/plume/diamond-phase.glsl")])
+
+
+(def plume-limit
+  "Shader function to get extent of rocket plume"
+  (slurp "resources/shaders/plume/limit.glsl"))
 
 
 (def bulge
   "Shader function to determine shape of rocket exhaust plume"
-  [(slurp "resources/shaders/plume/bulge.glsl") plume-phase])
+  [plume-limit plume-phase (slurp "resources/shaders/plume/bulge.glsl")])
+
+
+(defn diamond
+  "Shader function for volumetric Mach diamonds"
+  [fringe]
+  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
 
 
 (def subtract-interval

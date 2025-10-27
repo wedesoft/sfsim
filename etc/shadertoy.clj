@@ -50,7 +50,7 @@ void main()
 (def shadertoy-source (slurp (-> *command-line-args* first)))
 
 (def shader-functions [rotation-x rotation-y rotation-z noise3d ray-box sdf-circle sdf-rectangle ray-circle bulge subtract-interval
-                       diamond-phase])
+                       (diamond 0.05)])
 
 (def vertices
   (float-array [ 1.0  1.0 0.0
@@ -123,6 +123,7 @@ void main()
 (GL20/glUniform1f (GL20/glGetUniformLocation program "min_limit") 0.1)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "max_slope") 0.5)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "omega_factor") 50.0)
+(GL20/glUniform1f (GL20/glGetUniformLocation program "diamond_strength") 0.2)
 
 (while (not (GLFW/glfwWindowShouldClose window))
   (GL20/glUniform1f (GL20/glGetUniformLocation program "iTime") (GLFW/glfwGetTime))

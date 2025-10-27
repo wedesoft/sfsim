@@ -34,10 +34,11 @@ float sdf_circle(vec2 point, vec2 center, float radius);
 float sdf_rectangle(vec2 point, vec2 rectangle_min, vec2 rectangle_max);
 vec2 ray_circle(vec2 centre, float radius, vec2 origin, vec2 direction);
 vec2 subtract_interval(vec2 a, vec2 b);
+float limit(float pressure);
 float plume_phase(float x, float limit);
 float plume_omega(float limit);
-float diamond_phase(float x, float limit);
 float bulge(float pressure, float x);
+float diamond(float pressure, vec2 uv);
 
 float sdfEngine(vec2 cylinder1_base, vec2 cylinder2_base, vec3 p) {
   if (abs(p.z) > WIDTH2) {
@@ -57,33 +58,9 @@ float pressure()
   return pow(0.001, slider);
 }
 
-float limit(float pressure)
-{
-  return min_limit * sqrt(1.0 / pressure);
-}
-
 vec2 envelope(float pressure, float x) {
   float bulge = bulge(pressure, x);
   return vec2(bulge + WIDTH2 - nozzle, bulge);
-}
-
-float diamond(float pressure, vec2 uv)
-{
-  float limit = limit(pressure);
-  float diamond;
-  if (nozzle > limit) {
-    float bulge = nozzle - limit;
-    float omega = plume_omega(limit);
-    float diamond_longitudinal = diamond_phase(uv.x, limit);
-    float diamond_front_length = limit / (bulge * omega);
-    float diamond_back_length = diamond_front_length * 0.3;
-    float diamond_radius = limit * min(1.0 - diamond_longitudinal / diamond_back_length, 1.0 + diamond_longitudinal / diamond_front_length);
-    float strength = 0.2 * max(0.0, 1.0 - abs(diamond_longitudinal / diamond_front_length));
-    diamond = strength * (1.0 - smoothstep(diamond_radius - 0.05, diamond_radius, abs(uv.y)));
-  } else {
-    diamond = 0.0;
-  };
-  return diamond;
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
