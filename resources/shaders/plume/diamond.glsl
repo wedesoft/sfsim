@@ -14,9 +14,9 @@ float diamond(float pressure, vec2 uv)
     float bulge = nozzle - limit;
     float omega = plume_omega(limit);
     float diamond_longitudinal = diamond_phase(uv.x, limit);
-    float diamond_front_length = limit / (bulge * omega);
+    float diamond_front_length = limit / bulge;
     float diamond_back_length = diamond_front_length * 0.3;
-    float diamond_radius = nozzle * min(1.0 - diamond_longitudinal / diamond_back_length, 1.0 + diamond_longitudinal / diamond_front_length);
+    float diamond_radius = limit * min(1.0 - diamond_longitudinal / diamond_back_length, 1.0 + diamond_longitudinal / diamond_front_length);
     return diamond_strength * (1.0 - smoothstep(diamond_radius - <%= fringe %>, diamond_radius, abs(uv.y)));
   } else
     return 0.0;
