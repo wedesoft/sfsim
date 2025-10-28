@@ -65,6 +65,7 @@ vec2 envelope(float pressure, float x) {
 
 // circle: x = -10.9544, z =  4.3511, radius = 3.9011
 // circle: x = -10.9544, z = -4.3511, radius = 3.9011
+// engine: x = -11.18 to -7.5047, z up to 2.5296 or maybe 2.7549
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
