@@ -44,7 +44,16 @@
       [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
     - [X] increasingly round shape of plume
     - [X] plume shape around aerospike
-    - [ ] effects of thrust vectoring
+    - [X] effects of thrust vectoring
+    - [-] shaders for
+      - [X] signed distance function rectangle
+      - [X] signed distance function circle
+      - [ ] signed distance function engine exhaust
+      - [ ] use density scaled signed distance values
+      - [X] 3d noise
+      - [ ] plume envelope
+      - [ ] plume diamonds
+      - [ ] joined sampling of clouds and engine plume
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
@@ -218,6 +227,7 @@
     * Balanced colour palette
     * Voice over
     * Visual effects
+    * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
   - [ ] add keyboard mapping help page!
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] joystick hat to control camera
