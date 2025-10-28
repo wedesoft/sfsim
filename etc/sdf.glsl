@@ -63,6 +63,9 @@ vec2 envelope(float pressure, float x) {
   return vec2(bulge + WIDTH2 - nozzle, bulge);
 }
 
+// circle: x = -10.9544, z =  4.3511, radius = 3.9011
+// circle: x = -10.9544, z = -4.3511, radius = 3.9011
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   float aspect = iResolution.x / iResolution.y;
