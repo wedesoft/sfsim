@@ -119,10 +119,10 @@ void main()
 (GL20/glUniform2f (GL20/glGetUniformLocation program "iResolution") width height)
 (GL20/glUniform2f (GL20/glGetUniformLocation program "iMouse") 0.0 0.0)
 
-(GL20/glUniform1f (GL20/glGetUniformLocation program "nozzle") 0.16)
-(GL20/glUniform1f (GL20/glGetUniformLocation program "min_limit") 0.1)
+(GL20/glUniform1f (GL20/glGetUniformLocation program "nozzle") 2.7549)
+(GL20/glUniform1f (GL20/glGetUniformLocation program "min_limit") 1.2)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "max_slope") 0.5)
-(GL20/glUniform1f (GL20/glGetUniformLocation program "omega_factor") 50.0)
+(GL20/glUniform1f (GL20/glGetUniformLocation program "omega_factor") 0.2)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "diamond_strength") 0.2)
 
 (while (not (GLFW/glfwWindowShouldClose window))

@@ -6,4 +6,3 @@ float limit(float pressure)
 {
   return min_limit / sqrt(pressure);
 }
-
