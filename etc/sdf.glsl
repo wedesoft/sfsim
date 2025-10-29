@@ -78,7 +78,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float aspect = iResolution.x / iResolution.y;
   vec2 uv = (fragCoord.xy / iResolution.xy * 2.0 - 1.0) * vec2(aspect, 1.0);
   float ry = iMouse.x / iResolution.x;
-  // float ry = 0.3;
   mat3 rotation = rotation_z(-0.1 * M_PI) * rotation_y((2.0 * ry + 1.0) * M_PI);
   vec3 light = rotation * normalize(vec3(1.0, 1.0, 0.0));
   vec3 origin = rotation * vec3(0.0, 0.0, -DIST) + vec3(OFFSET, 0.0, 0.0);
@@ -114,7 +113,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         vec2 envelope = envelope(pressure, engine_max.x - p.x - mix(ENGINE_SIZE, 0.0, transition));
         float engine_pos = clamp((engine_max.x - p.x) / ENGINE_SIZE, 0.0, 1.0);
         float radius = 0.5 * (envelope.x + envelope.y);
-        // engine_pos = clamp(engine_pos + transition, 0.0, 1.0);
         // float slider1 = iMouse.x / iResolution.x;
         // float slider2 = iMouse.y / iResolution.y;
         // //float distortion1 = max(0.0, 5.0 * p.y * p.z * (slider1 - 0.5));
