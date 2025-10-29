@@ -6,15 +6,21 @@
 // flame thrower: https://www.shadertoy.com/view/XsVSDW
 // 3D perlin noise: https://www.shadertoy.com/view/4djXzz
 
+// circle: x = -10.9544, z =  4.3511, radius = 3.9011
+// circle: x = -10.9544, z = -4.3511, radius = 3.9011
+// engine: x = -11.18 to -7.5047, z up to 2.5296 or maybe 2.7549
+
 #define M_PI 3.1415926535897932384626433832795
 #define FOV (60.0 * M_PI / 180.0)
 #define F (1.0 / tan(FOV / 2.0))
-#define DIST 2.0
-#define WIDTH2 0.4
+#define DIST 30.0
+#define WIDTH2 7.4266
 #define SAMPLES 100
 #define SPEED 50.0
-#define START -1.0
-#define END 2.5
+#define START -7.5047
+#define ENGINE -11.18
+#define OFFSET -15.0
+#define END -40.0
 
 uniform vec2 iResolution;
 uniform float iTime;
@@ -63,31 +69,27 @@ vec2 envelope(float pressure, float x) {
   return vec2(bulge + WIDTH2 - nozzle, bulge);
 }
 
-// circle: x = -10.9544, z =  4.3511, radius = 3.9011
-// circle: x = -10.9544, z = -4.3511, radius = 3.9011
-// engine: x = -11.18 to -7.5047, z up to 2.5296 or maybe 2.7549
-
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   float aspect = iResolution.x / iResolution.y;
   vec2 uv = (fragCoord.xy / iResolution.xy * 2.0 - 1.0) * vec2(aspect, 1.0);
   float ry = iMouse.x / iResolution.x;
   // float ry = 0.3;
-  mat3 rotation = rotation_z(0.1 * M_PI) * rotation_y((2.0 * ry + 1.0) * M_PI);
+  mat3 rotation = rotation_z(-0.1 * M_PI) * rotation_y((2.0 * ry + 1.0) * M_PI);
   vec3 light = rotation * normalize(vec3(1.0, 1.0, 0.0));
-  vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
+  vec3 origin = rotation * vec3(0.0, 0.0, -DIST) + vec3(OFFSET, 0.0, 0.0);
   vec3 direction = normalize(rotation * vec3(uv, F));
-  vec3 engine_min = vec3(START, -nozzle, -WIDTH2);
-  vec3 engine_max = vec3(START + 0.22, nozzle, WIDTH2);
+  vec3 engine_min = vec3(ENGINE, -nozzle, -WIDTH2);
+  vec3 engine_max = vec3(START, nozzle, WIDTH2);
   float pressure = pressure();
   // float pressure = 1.0;
   float box_size = max(limit(pressure), nozzle) + WIDTH2 - nozzle;
-  vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction);
+  vec2 box = ray_box(vec3(END, -box_size, -box_size), vec3(START, box_size, box_size), origin, direction);
   vec2 engine = ray_box(engine_min, engine_max, origin, direction);
-  vec2 cylinder1_base = vec2(START + 0.22, 0.22);
-  vec2 cylinder2_base = vec2(START + 0.22, -0.22);
-  vec2 cylinder1 = ray_circle(cylinder1_base, 0.2, origin.xy, direction.xy);
-  vec2 cylinder2 = ray_circle(cylinder2_base, 0.2, origin.xy, direction.xy);
+  vec2 cylinder1_base = vec2(-10.9544,  4.3511);
+  vec2 cylinder2_base = vec2(-10.9544, -4.3511);
+  vec2 cylinder1 = ray_circle(cylinder1_base, 3.9011, origin.xy, direction.xy);
+  vec2 cylinder2 = ray_circle(cylinder2_base, 3.9011, origin.xy, direction.xy);
   vec2 joint = subtract_interval(subtract_interval(engine, cylinder1), cylinder2);
   vec3 color = vec3(0, 0, 0);
   if (joint.y > 0.0) {
@@ -103,11 +105,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     {
       float s = box.x + float(i) * ds;
       vec3 p = origin + direction * s;
-      if (p.x >= engine_min.x) {
-        vec2 envelope = envelope(pressure, p.x - engine_max.x);
-        float engine_pos = clamp((p.x - engine_max.x + 0.2) / 0.2, 0.0, 1.0);
+      if (p.x <= engine_max.x) {
+        vec2 envelope = envelope(pressure, engine_min.x - p.x);
+        float engine_pos = clamp((engine_min.x - p.x + 3.6753) / 3.6753, 0.0, 1.0);
         float transition = clamp((limit(pressure) - min_limit) / (nozzle - min_limit), 0.0, 1.0);
-        float circular = clamp((p.x - engine_max.x) / (END - engine_max.x), 0.0, 1.0);
+        float circular = clamp((engine_min.x - p.x) / (engine_max.x - END), 0.0, 1.0);
         float radius = 0.5 * (envelope.x + envelope.y);
         engine_pos = clamp(engine_pos + transition, 0.0, 1.0);
         float slider1 = iMouse.x / iResolution.x;
@@ -122,12 +124,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         if (sdf < 0.0) {
           float dz = mix(WIDTH2, envelope.x, engine_pos);
           float dy = mix(0.2 - 0.15, envelope.y, engine_pos);
-          float density = 0.2 / (dz * dy) * (1.0 - circular);
-          float fringe = max(1.0 + sdf / 0.1, 0.0);
-          vec3 scale = 20.0 * vec3(0.1, nozzle / envelope.y, nozzle / envelope.x);
-          float attenuation = 0.7 + 0.3 * noise3d(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
+          float density = 1.0 / (dz * dy) * (1.0 - circular);
+          float fringe = max(1.0 + sdf / 1.0, 0.0);
+          vec3 scale = 2.0 * vec3(0.1, nozzle / envelope.y, nozzle / envelope.x);
+          float attenuation = 0.7 + 0.3 * noise3d(p * scale + iTime * vec3(SPEED, 0.0, 0.0));
           vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
-          float diamond = mix(0.2, diamond(pressure, vec2(p.x - engine_max.x, max(0.0, sdf + dy))), engine_pos);
+          float diamond = mix(0.2, diamond(pressure, vec2(engine_min.x - p.x, max(0.0, sdf + dy))), engine_pos);
           color = color * pow(0.2, ds * density);
           color += flame_color * ds * density * attenuation;
           color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
