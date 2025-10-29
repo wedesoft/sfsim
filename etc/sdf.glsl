@@ -136,7 +136,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
           float attenuation = 0.7 + 0.3 * noise3d(p * scale + iTime * vec3(SPEED, 0.0, 0.0));
           vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
           // float diamond = mix(0.2, diamond(pressure, vec2(engine_max.x - p.x, max(0.0, sdf + dy))), engine_pos);
-          float diamond = diamond(pressure, vec2(engine_min.x - p.x, max(0.0, sdf + dy)));
+          float diamond = diamond(pressure, vec2(engine_max.x - p.x, max(0.0, sdf + dy)));
           color = color * pow(0.2, ds * density);
           color += flame_color * ds * density * attenuation;
           color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
