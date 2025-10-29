@@ -21,6 +21,8 @@
 #define ENGINE -11.18
 #define OFFSET -15.0
 #define END -40.0
+#define ENGINE_SIZE (START - ENGINE)
+#define RADIUS 3.9011
 
 uniform vec2 iResolution;
 uniform float iTime;
@@ -88,8 +90,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec2 engine = ray_box(engine_min, engine_max, origin, direction);
   vec2 cylinder1_base = vec2(-10.9544,  4.3511);
   vec2 cylinder2_base = vec2(-10.9544, -4.3511);
-  vec2 cylinder1 = ray_circle(cylinder1_base, 3.9011, origin.xy, direction.xy);
-  vec2 cylinder2 = ray_circle(cylinder2_base, 3.9011, origin.xy, direction.xy);
+  vec2 cylinder1 = ray_circle(cylinder1_base, RADIUS, origin.xy, direction.xy);
+  vec2 cylinder2 = ray_circle(cylinder2_base, RADIUS, origin.xy, direction.xy);
   vec2 joint = subtract_interval(subtract_interval(engine, cylinder1), cylinder2);
   vec3 color = vec3(0, 0, 0);
   if (joint.y > 0.0) {
@@ -106,30 +108,35 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       float s = box.x + float(i) * ds;
       vec3 p = origin + direction * s;
       if (p.x <= engine_max.x) {
-        vec2 envelope = envelope(pressure, engine_min.x - p.x);
-        float engine_pos = clamp((engine_min.x - p.x + 3.6753) / 3.6753, 0.0, 1.0);
-        float transition = clamp((limit(pressure) - min_limit) / (nozzle - min_limit), 0.0, 1.0);
-        float circular = clamp((engine_min.x - p.x) / (engine_max.x - END), 0.0, 1.0);
-        float radius = 0.5 * (envelope.x + envelope.y);
-        engine_pos = clamp(engine_pos + transition, 0.0, 1.0);
-        float slider1 = iMouse.x / iResolution.x;
-        float slider2 = iMouse.y / iResolution.y;
-        //float distortion1 = max(0.0, 5.0 * p.y * p.z * (slider1 - 0.5));
-        //float distortion2 = max(0.0, 5.0 * p.y * (slider2 - 0.5));
-        float distortion1 = 0.0;
-        float distortion2 = 0.0;
-        float baseSdf = sdfEngine(cylinder1_base, cylinder2_base, p);
-        float shapeMix = mix(sdf_rectangle(p.zy, -envelope, +envelope), sdf_circle(p.zy, vec2(0, 0), radius), circular);
-        float sdf = mix(baseSdf, shapeMix, engine_pos) + distortion1 + distortion2;
+        vec2 envelope = envelope(pressure, engine_max.x - p.x);
+        // float engine_pos = clamp((engine_max.x - p.x + ENGINE_SIZE) / ENGINE_SIZE, 0.0, 1.0);
+        // float transition = clamp((limit(pressure) - min_limit) / (nozzle - min_limit), 0.0, 1.0);
+        // float circular = clamp((engine_max.x - p.x) / (engine_max.x - END), 0.0, 1.0);
+        // float radius = 0.5 * (envelope.x + envelope.y);
+        // engine_pos = clamp(engine_pos + transition, 0.0, 1.0);
+        // float slider1 = iMouse.x / iResolution.x;
+        // float slider2 = iMouse.y / iResolution.y;
+        // //float distortion1 = max(0.0, 5.0 * p.y * p.z * (slider1 - 0.5));
+        // //float distortion2 = max(0.0, 5.0 * p.y * (slider2 - 0.5));
+        // float distortion1 = 0.0;
+        // float distortion2 = 0.0;
+        // float baseSdf = sdfEngine(cylinder1_base, cylinder2_base, p);
+        float sdf = sdf_rectangle(p.zy, -envelope, +envelope);
+        // float shapeMix = mix(sdf_rectangle(p.zy, -envelope, +envelope), sdf_circle(p.zy, vec2(0, 0), radius), circular);
+        // float sdf = mix(baseSdf, shapeMix, engine_pos) + distortion1 + distortion2;
         if (sdf < 0.0) {
-          float dz = mix(WIDTH2, envelope.x, engine_pos);
-          float dy = mix(0.2 - 0.15, envelope.y, engine_pos);
-          float density = 1.0 / (dz * dy) * (1.0 - circular);
+          // float dz = mix(WIDTH2, envelope.x, engine_pos);
+          // float dy = mix(0.2 - 0.15, envelope.y, engine_pos);
+          float dz = envelope.x;
+          float dy = envelope.y;
+          // float density = 1.0 / (dz * dy) * (1.0 - circular);
+          float density = 1.0 / (dz * dy);
           float fringe = max(1.0 + sdf / 1.0, 0.0);
           vec3 scale = 2.0 * vec3(0.1, nozzle / envelope.y, nozzle / envelope.x);
           float attenuation = 0.7 + 0.3 * noise3d(p * scale + iTime * vec3(SPEED, 0.0, 0.0));
           vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
-          float diamond = mix(0.2, diamond(pressure, vec2(engine_min.x - p.x, max(0.0, sdf + dy))), engine_pos);
+          // float diamond = mix(0.2, diamond(pressure, vec2(engine_max.x - p.x, max(0.0, sdf + dy))), engine_pos);
+          float diamond = diamond(pressure, vec2(engine_min.x - p.x, max(0.0, sdf + dy)));
           color = color * pow(0.2, ds * density);
           color += flame_color * ds * density * attenuation;
           color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
