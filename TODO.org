@@ -48,12 +48,13 @@
     - [-] shaders for
       - [X] signed distance function rectangle
       - [X] signed distance function circle
-      - [ ] signed distance function engine exhaust
+      - [X] signed distance function engine exhaust
       - [ ] use density scaled signed distance values
       - [X] 3d noise
-      - [ ] plume envelope
-      - [ ] plume diamonds
-      - [ ] joined sampling of clouds and engine plume
+      - [X] plume envelope
+      - [X] plume diamonds
+      - [ ] joined sampling of clouds and engine plume: cloud_point, cloud_outer
+            cloud-planet, cloud-atmosphere, render-scene
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
