@@ -49,13 +49,16 @@
       - [X] signed distance function rectangle
       - [X] signed distance function circle
       - [X] signed distance function engine exhaust
-      - [ ] use density scaled signed distance values
       - [X] 3d noise
       - [X] plume envelope
       - [X] plume diamonds
-      - [ ] joined sampling of clouds and engine plume: cloud_point, cloud_outer
-            cloud-planet, cloud-atmosphere, render-scene
-            when rendering planet, atmosphere, or model: plume pixel != 0 triggers additional rendering of cloud and atmosphere in front of plume
+      - [ ] apply transform of space ship to plume
+      - [ ] joined sampling of clouds and engine plume: replace cloud_point and cloud_outer with joint sampling of clouds and plume
+        - [ ] model rendering: uses cloud_point
+        - [ ] planet rendering: uses cloud overlay
+          - [ ] cloud overlay planet: cloud_point
+        - [ ] atmosphere rendering: uses cloud overlay
+          - [ ] cloud overlay atmosphere: cloud_outer
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
