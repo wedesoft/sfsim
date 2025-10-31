@@ -96,8 +96,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec2 joint = subtract_interval(subtract_interval(engine, cylinder1), cylinder2);
   vec3 color = vec3(0, 0, 0);
   if (joint.y > 0.0) {
-    float diffuse = 0.5;
-    color = vec3(1.0) * (diffuse * 0.9 + 0.1);
+    color = vec3(0.5);
     if (box.x + box.y > joint.x) {
       box.y = joint.x - box.x;
     };
