@@ -55,6 +55,7 @@
       - [X] plume diamonds
       - [ ] joined sampling of clouds and engine plume: cloud_point, cloud_outer
             cloud-planet, cloud-atmosphere, render-scene
+            when rendering planet, atmosphere, or model: plume pixel != 0 triggers additional rendering of cloud and atmosphere in front of plume
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
