@@ -104,9 +104,10 @@ vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
     float attenuation = 0.7 + 0.3 * noise3d(point * scale + iTime * vec3(SPEED, 0.0, 0.0));
     vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
     float diamond = mix(diamond_strength, diamond(pressure, vec2(START - point.x - mix(ENGINE_SIZE, 0.0, transition), max(0.0, sdf + dy))), mix(engine_pos, 1.0, transition));
-    plume_scatter.a += plume_step * density;
-    plume_scatter.rgb += flame_color * plume_step * density * attenuation;
-    plume_scatter.rgb += DIAMOND_DENSITY * diamond * density * plume_step * vec3(1, 1, 1) * attenuation;
+    float plume_transmittance = exp(-density * plume_step);
+    plume_scatter.rgb += flame_color * plume_step * density * attenuation * plume_scatter.a;
+    plume_scatter.rgb += DIAMOND_DENSITY * diamond * density * plume_step * attenuation * plume_scatter.a;
+    plume_scatter.a *= plume_transmittance;
   };
   return plume_scatter;
 };
@@ -148,8 +149,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       box.y = joint.x - box.x;
     };
   };
-  vec4 plume_scatter = vec4(0, 0, 0, 0);
+  vec4 plume_scatter = vec4(0, 0, 0, 1);
   plume_scatter = sample_plume(origin, direction, box, plume_scatter);
-  color = plume_scatter.rgb + color * (1.0 - plume_scatter.a);
+  color = plume_scatter.rgb + color * plume_scatter.a;
   fragColor = vec4(color, 1.0);
 }
