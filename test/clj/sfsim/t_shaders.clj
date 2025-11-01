@@ -1762,4 +1762,20 @@ void main()
           1.0       1.0       0.5  0.15  0.0
           0.25      1.0       0.0  0.0   0.0)
 
+(def cloud-plume-point-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+uniform vec3 origin;
+vec4 cloud_segment(vec3 direction, vec2 segment)
+{
+  float transmittance = pow(0.5, segment.t);
+  return vec4(1.0 - transmittance, 0.0, 0.0, 1.0 - transmittance);
+}
+void main()
+{
+  vec4 result = cloud_plume_point(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = result.rgb;
+}"))
+
 (GLFW/glfwTerminate)
