@@ -1096,9 +1096,9 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
   float end = max(origin.z - inner_radius, 0);
   return vec4(start, (start - end) / direction.z, 0, 0);
 }
-vec4 clip_shell_intersections(vec4 intersections, float limit)
+vec4 clip_shell_intersections(vec4 intersections, vec2 clip)
 {
-  return vec4(intersections.x, min(limit, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
+  return vec4(intersections.x, min(clip.s + clip.t, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
 }
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
 {
@@ -1224,9 +1224,9 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 {
   return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
 }
-vec4 clip_shell_intersections(vec4 intersections, float limit)
+vec4 clip_shell_intersections(vec4 intersections, vec2 clip)
 {
-  return vec4(intersections.x, min(limit, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
+  return vec4(intersections.x, min(clip.s + clip.t, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
 }
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
 {

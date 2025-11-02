@@ -798,33 +798,56 @@ void main()
          0   0   0   2        3          0 0   0   1   0   0   "pq"       0   0)
 
 
-(def clip-shell-intersections-probe
-  (template/fn [a b c d limit selector]
-    "#version 410 core
+(def clip-interval-probe
+  (template/fn [x l cx cl]
+"#version 410 core
 out vec3 fragColor;
-vec4 clip_shell_intersections(vec4 intersections, float limit);
+vec2 clip_interval(vec2 interval, vec2 clip);
 void main()
 {
-  vec4 result = clip_shell_intersections(vec4(<%= a %>, <%= b %>, <%= c %>, <%= d %>), <%= limit %>);
+  vec2 result = clip_interval(vec2(<%= x %>, <%= l %>), vec2(<%= cx %>, <%= cl %>));
+  fragColor = vec3(result, 0);
+}"))
+
+
+(def clip-interval-test (shader-test (fn [_program]) clip-interval-probe clip-interval))
+
+
+(tabular "Clip the interval information of ray and shell using given limit"
+         (fact (clip-interval-test [] [?x ?l ?cx ?cl]) => (roughly-vector (vec3 ?rx ?rl 0) 1e-6))
+         ?x ?l ?cx ?cl ?rx ?rl
+         2  3  0   8   2   3
+         2  3  4   8   4   1
+         2  3  0   3   2   1)
+
+
+(def clip-shell-intersections-probe
+  (template/fn [a b c d ca cb selector]
+    "#version 410 core
+out vec3 fragColor;
+vec4 clip_shell_intersections(vec4 intersections, vec2 clip);
+void main()
+{
+  vec4 result = clip_shell_intersections(vec4(<%= a %>, <%= b %>, <%= c %>, <%= d %>), vec2(<%= ca %>, <%= cb %>));
   fragColor.xy = result.<%= selector %>;
   fragColor.z = 0;
 }"))
 
 
-(def clip-shell-intersections-test (shader-test (fn [_program]) clip-shell-intersections-probe clip-shell-intersections))
+(def clip-shell-intersections-test (apply shader-test (fn [_program]) clip-shell-intersections-probe clip-shell-intersections))
 
 
 (tabular "Clip the intersection information of ray and shell using given limit"
-         (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?limit ?selector])
+         (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?ca ?cb ?selector])
                => (roughly-vector (vec3 ?ix ?iy 0) 1e-6))
-         ?a ?b ?c ?d ?limit ?selector ?ix ?iy
-         2  3  6  2  9      "xy"      2   3
-         2  3  6  2  9      "zw"      6   2
-         2  3  6  2  7      "zw"      6   1
-         2  3  6  2  5      "zw"      0   0
-         2  3  0  0  9      "zw"      0   0
-         2  3  6  2  3      "xy"      2   1
-         2  3  6  2  1      "xy"      0   0)
+         ?a ?b ?c ?d ?ca ?cb ?selector ?ix ?iy
+         2  3  6  2  0   9   "xy"      2   3
+         2  3  6  2  0   9   "zw"      6   2
+         2  3  6  2  0   7   "zw"      6   1
+         2  3  6  2  0   5   "zw"      6  -1
+         2  3  0  0  0   9   "zw"      0   0
+         2  3  6  2  0   3   "xy"      2   1
+         2  3  6  2  0   1   "xy"      2  -1)
 
 
 (def height-to-index-probe

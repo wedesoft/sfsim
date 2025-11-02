@@ -53,6 +53,9 @@
       - [X] plume envelope
       - [X] plume diamonds
       - [ ] apply transform of space ship to plume
+      - [ ] cloud functions refactor
+        - [ ] clip interval using other segment
+        - [ ] clip shell intersections using segment
       - [ ] joined sampling of clouds and engine plume: replace cloud_point and cloud_outer with joint sampling of clouds and plume
         - [ ] model rendering: uses cloud_point
         - [ ] planet rendering: uses cloud overlay

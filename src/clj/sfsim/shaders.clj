@@ -143,9 +143,14 @@
   [ray-sphere (slurp "resources/shaders/core/ray-shell.glsl")])
 
 
+(def clip-interval
+  "Shader function to apply clipping interval to input interval"
+  (slurp "resources/shaders/core/clip-interval.glsl"))
+
+
 (def clip-shell-intersections
   "Clip the intersection information of ray and shell using given limit"
-  (slurp "resources/shaders/core/clip-shell-intersections.glsl"))
+  [clip-interval (slurp "resources/shaders/core/clip-shell-intersections.glsl")])
 
 
 (def horizon-distance
