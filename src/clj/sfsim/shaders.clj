@@ -312,6 +312,11 @@
   [(interpolate-function "noise3d" "hermite_interpolate" "hash3d") hermite-interpolate hash3d])
 
 
+(def subtract-interval
+  "Shader function to subtract two intervals"
+  (slurp "resources/shaders/core/subtract-interval.glsl"))
+
+
 (def plume-phase
   "Shader function for phase function of mach cone positions"
   (slurp "resources/shaders/plume/plume-phase.glsl"))
@@ -338,6 +343,6 @@
   [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
 
 
-(def subtract-interval
-  "Shader function to subtract two intervals"
-  (slurp "resources/shaders/core/subtract-interval.glsl"))
+(def cloud-plume-point
+  "Shader function to compute cloud and plume RGBA values"
+  (slurp "resources/shaders/plume/cloud-plume-point.glsl"))

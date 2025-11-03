@@ -1786,10 +1786,11 @@ void main()
           0.25      1.0       0.0  0.0   0.0)
 
 (def cloud-plume-point-probe
-  (template/fn [x y z]
+  (template/fn [x]
 "#version 410 core
 out vec3 fragColor;
 uniform vec3 origin;
+vec4 cloud_plume_point(vec3 point);
 vec4 cloud_segment(vec3 direction, vec2 segment)
 {
   float transmittance = pow(0.5, segment.t);
@@ -1797,8 +1798,19 @@ vec4 cloud_segment(vec3 direction, vec2 segment)
 }
 void main()
 {
-  vec4 result = cloud_plume_point(vec3(<%= x %>, <%= y %>, <%= z %>));
+  vec4 result = cloud_plume_point(vec3(<%= x %>, 0.0, 0.0));
   fragColor = result.rgb;
 }"))
+
+(def cloud-plume-point-test (shader-test (fn [program origin-x]
+                                             (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
+                                         cloud-plume-point-probe cloud-plume-point))
+
+
+(tabular "Shader function to determine cloud plume point"
+         (fact (cloud-plume-point-test [?ox] [?x]) => (roughly-vector (vec3 ?r ?g ?b) 1e-3))
+         ?ox ?x  ?r  ?g  ?b
+         0.0 0.0 0.0 0.0 0.0
+         )
 
 (GLFW/glfwTerminate)
