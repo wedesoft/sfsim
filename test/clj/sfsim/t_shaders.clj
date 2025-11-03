@@ -1791,7 +1791,7 @@ void main()
 out vec3 fragColor;
 uniform vec3 origin;
 vec4 cloud_plume_point(vec3 point);
-vec4 cloud_segment(vec3 direction, vec2 segment)
+vec4 cloud_segment(vec3 direction, vec3 start, vec2 segment)
 {
   float transmittance = pow(0.5, segment.t);
   return vec4(1.0 - transmittance, 0.0, 0.0, 1.0 - transmittance);

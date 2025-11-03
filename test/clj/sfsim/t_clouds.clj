@@ -1096,10 +1096,6 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
   float end = max(origin.z - inner_radius, 0);
   return vec4(start, (start - end) / direction.z, 0, 0);
 }
-vec4 clip_shell_intersections(vec4 intersections, vec2 clip)
-{
-  return vec4(intersections.x, min(clip.s + clip.t, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
-}
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
 {
   return vec4(start.z, cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
@@ -1123,6 +1119,9 @@ void main()
       (uniform-float program "depth" depth)
       (uniform-vector3 program "origin" (vec3 0 0 origin)))
     cloud-point-probe
+    shaders/clip-interval
+    (last shaders/clip-shell-intersections)
+    (last (cloud-segment 3 [] []))
     (last (cloud-point 3 [] []))))
 
 
@@ -1191,6 +1190,9 @@ void main()
       (uniform-float program "cloud_top" 2.0)
       (uniform-vector3 program "origin" (vec3 0 0 z)))
     cloud-outer-probe
+    shaders/clip-interval
+    (last shaders/clip-shell-intersections)
+    (last (cloud-segment 3 [] []))
     (last (cloud-outer 3 [] []))))
 
 
@@ -1223,10 +1225,6 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
   return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
-}
-vec4 clip_shell_intersections(vec4 intersections, vec2 clip)
-{
-  return vec4(intersections.x, min(clip.s + clip.t, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
 }
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
 {
@@ -1286,12 +1284,20 @@ void main()
                                             :sfsim.render/tess-control [tess-control-planet]
                                             :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
                                             :sfsim.render/geometry [(geometry-planet 0)]
-                                            :sfsim.render/fragment [fragment-planet-clouds (last (cloud-point 3 [] []))])
+                                            :sfsim.render/fragment [fragment-planet-clouds
+                                                                    shaders/clip-interval
+                                                                    (last shaders/clip-shell-intersections)
+                                                                    (last (cloud-segment 3 [] []))
+                                                                    (last (cloud-point 3 [] []))])
               indices         [0 1 3 2]
               vertices        [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
               tile            (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
               atmosphere      (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                            :sfsim.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-outer 3 [] []))])
+                                            :sfsim.render/fragment [fragment-atmosphere-clouds-mock
+                                                                    shaders/clip-interval
+                                                                    (last shaders/clip-shell-intersections)
+                                                                    (last (cloud-segment 3 [] []))
+                                                                    (last (cloud-outer 3 [] []))])
               indices         [0 1 3 2]
               vertices        [-1 -1, 1 -1, -1 1, 1 1]
               vao             (make-vertex-array-object atmosphere indices vertices ["ndc" 2])
