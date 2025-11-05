@@ -1812,27 +1812,29 @@ void main()
   fragColor = result.rga;
 }"))
 
-(def cloud-plume-point-test (shader-test (fn [program origin-x object-distance]
+(defn cloud-plume-point-test
+  [clouds-behind]
+  (shader-test (fn [program origin-x object-distance]
                                              (uniform-float program "radius" 2.0)
                                              (uniform-float program "max_height" 1.0)
                                              (uniform-float program "object_distance" object-distance)
                                              (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
-                                         cloud-plume-point-probe (cloud-plume-point true)))
+                                         cloud-plume-point-probe (cloud-plume-point clouds-behind)))
 
 
 (tabular "Shader function to determine cloud plume point"
-         (fact (cloud-plume-point-test [?ox ?d] [?x ?plume]) => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
-         ?ox  ?x   ?d  ?plume ?r    ?g   ?a
-          0.0  0.0 0.0 0.0    0.0   0.0  0.0
-         -1.0  1.0 2.0 0.0    0.75  0.0  0.75
-          0.0  0.0 0.0 1.0    0.0   1.0  1.0
-         -1.0  0.0 1.0 1.0    0.5   0.5  1.0
-         -1.0  1.0 1.0 0.5    0.625 0.25 0.875
-         -4.0 -2.0 2.0 0.0    0.5   0.0  0.5
-         -6.0 -4.0 2.0 0.0    0.0   0.0  0.0
-          2.0  4.0 2.0 0.0    0.5   0.0  0.5
-         -4.0 -2.0 0.0 0.0    0.5   0.0  0.5
-          2.0  4.0 0.0 0.0    0.5   0.0  0.5
-         )
+         (fact ((cloud-plume-point-test ?behind) [?ox ?d] [?x ?plume]) => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
+         ?ox  ?x   ?d  ?plume ?behind ?r    ?g   ?a
+          0.0  0.0 0.0 0.0    true    0.0   0.0  0.0
+         -1.0  1.0 2.0 0.0    true    0.75  0.0  0.75
+          0.0  0.0 0.0 1.0    true    0.0   1.0  1.0
+         -1.0  0.0 1.0 1.0    true    0.5   0.5  1.0
+         -1.0  1.0 1.0 0.5    true    0.625 0.25 0.875
+         -4.0 -2.0 2.0 0.0    true    0.5   0.0  0.5
+         -6.0 -4.0 2.0 0.0    true    0.0   0.0  0.0
+          2.0  4.0 2.0 0.0    true    0.5   0.0  0.5
+         -4.0 -2.0 0.0 0.0    true    0.5   0.0  0.5
+          2.0  4.0 0.0 0.0    true    0.5   0.0  0.5
+         -1.0  1.0 1.0 0.0    false   0.5   0.0  0.5)
 
 (GLFW/glfwTerminate)
