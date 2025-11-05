@@ -53,6 +53,8 @@
       - [X] plume envelope
       - [X] plume diamonds
       - [ ] apply transform of space ship to plume
+      - [ ] implement plume_point with atmospheric transmittance
+      - [ ] use space ship or camera coordinates for higher precision?
       - [ ] cloud functions refactor
         - [ ] clip interval using other segment
         - [ ] clip shell intersections using segment

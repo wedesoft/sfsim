@@ -7,7 +7,7 @@ uniform float object_distance;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 cloud_segment(vec3 direction, vec3 start, vec2 segment);
-vec4 plume_point(vec3 point); // TODO: implement plume_point with atmospheric transmittance
+vec4 plume_point(vec3 point);
 
 vec4 cloud_plume_point(vec3 point)
 {
@@ -22,7 +22,6 @@ vec4 cloud_plume_point(vec3 point)
     result = cloud_segment(direction, vec3(0, 0, 0), segment_back);
   else
     result = vec4(0, 0, 0, 0);
-  // TODO: use space ship or camera coordinates for higher precision?
   vec4 plume = plume_point(point);
   result = vec4(plume.rgb + result.rgb * (1.0 - plume.a), 1.0 - (1.0 - plume.a) * (1.0 - result.a));
   float segment_front_start = atmosphere_intersection.x;

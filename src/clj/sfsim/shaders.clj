@@ -343,6 +343,7 @@
   [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
 
 
-(def cloud-plume-point
+(defn cloud-plume-point
   "Shader function to compute cloud and plume RGBA values"
-  (slurp "resources/shaders/plume/cloud-plume-point.glsl"))
+  [clouds-behind]
+  (template/eval (slurp "resources/shaders/plume/cloud-plume-point.glsl") {:cloud-behind clouds-behind}))

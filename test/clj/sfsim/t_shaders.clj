@@ -1817,7 +1817,7 @@ void main()
                                              (uniform-float program "max_height" 1.0)
                                              (uniform-float program "object_distance" object-distance)
                                              (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
-                                         cloud-plume-point-probe cloud-plume-point))
+                                         cloud-plume-point-probe (cloud-plume-point true)))
 
 
 (tabular "Shader function to determine cloud plume point"
