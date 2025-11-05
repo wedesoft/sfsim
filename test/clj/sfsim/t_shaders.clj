@@ -1790,6 +1790,12 @@ void main()
 "#version 410 core
 out vec3 fragColor;
 vec4 cloud_plume_point(vec3 point);
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  float start = max(0.0, -3.0 - origin.x);
+  float end = 3.0 - origin.x;
+  return vec2(start, end - start);
+}
 vec4 cloud_segment(vec3 direction, vec3 start, vec2 segment)
 {
   float transmittance = pow(0.5, segment.t);
@@ -1807,7 +1813,8 @@ void main()
 }"))
 
 (def cloud-plume-point-test (shader-test (fn [program origin-x object-distance]
-                                             (uniform-float program "radius" 8.0)
+                                             (uniform-float program "radius" 2.0)
+                                             (uniform-float program "max_height" 1.0)
                                              (uniform-float program "object_distance" object-distance)
                                              (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
                                          cloud-plume-point-probe cloud-plume-point))
@@ -1815,11 +1822,17 @@ void main()
 
 (tabular "Shader function to determine cloud plume point"
          (fact (cloud-plume-point-test [?ox ?d] [?x ?plume]) => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
-         ?ox  ?x  ?d  ?plume ?r    ?g   ?a
-          0.0 0.0 0.0 0.0    0.0   0.0  0.0
-         -1.0 1.0 2.0 0.0    0.75  0.0  0.75
-          0.0 0.0 0.0 1.0    0.0   1.0  1.0
-         -1.0 0.0 1.0 1.0    0.5   0.5  1.0
-         -1.0 1.0 1.0 0.5    0.625 0.25 0.875)
+         ?ox  ?x   ?d  ?plume ?r    ?g   ?a
+          0.0  0.0 0.0 0.0    0.0   0.0  0.0
+         -1.0  1.0 2.0 0.0    0.75  0.0  0.75
+          0.0  0.0 0.0 1.0    0.0   1.0  1.0
+         -1.0  0.0 1.0 1.0    0.5   0.5  1.0
+         -1.0  1.0 1.0 0.5    0.625 0.25 0.875
+         -4.0 -2.0 2.0 0.0    0.5   0.0  0.5
+         -6.0 -4.0 2.0 0.0    0.0   0.0  0.0
+          2.0  4.0 2.0 0.0    0.5   0.0  0.5
+         -4.0 -2.0 0.0 0.0    0.5   0.0  0.5
+          2.0  4.0 0.0 0.0    0.5   0.0  0.5
+         )
 
 (GLFW/glfwTerminate)
