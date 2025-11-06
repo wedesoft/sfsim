@@ -1820,7 +1820,7 @@ void main()
                    (uniform-float program "object_distance" object-distance)
                    (uniform-float program "depth" depth)
                    (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
-               cloud-plume-point-probe (cloud-plume-point clouds-behind)))
+               cloud-plume-point-probe (last (cloud-plume-segment clouds-behind)) (last (cloud-plume-point clouds-behind))))
 
 
 (tabular "Shader function to determine cloud plume point"
@@ -1872,7 +1872,7 @@ void main()
                    (uniform-float program "max_height" 1.0)
                    (uniform-float program "object_distance" object-distance)
                    (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
-               cloud-plume-outer-probe cloud-plume-outer))
+               cloud-plume-outer-probe (last (cloud-plume-segment true)) (last cloud-plume-outer)))
 
 (tabular "Shader function to determine cloud plume and clouds above horizon"
          (fact (cloud-plume-outer-test [?ox ?d][?plume]) => (roughly-vector (vec3 ?r ?g ?a) 1e-3))

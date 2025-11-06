@@ -343,12 +343,18 @@
   [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
 
 
+(defn cloud-plume-segment
+  "Shader function to compute cloud and plume RGBA values for segment around plume in space"
+  [clouds-behind]
+  [ray-sphere (template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:clouds-behind clouds-behind})])
+
+
 (defn cloud-plume-point
   "Shader function to compute cloud and plume RGBA values in front of planet or spaceship"
   [clouds-behind]
-  (template/eval (slurp "resources/shaders/plume/cloud-plume-point.glsl") {:clouds-behind clouds-behind}))
+  [ray-sphere (cloud-plume-segment clouds-behind) (template/eval (slurp "resources/shaders/plume/cloud-plume-point.glsl") {:clouds-behind clouds-behind})])
 
 
 (def cloud-plume-outer
   "Shader function to compute cloud and plume RGBA values above horizon"
-  (slurp "resources/shaders/plume/cloud-plume-outer.glsl"))
+  [ray-sphere (cloud-plume-segment true) (slurp "resources/shaders/plume/cloud-plume-outer.glsl")])
