@@ -52,9 +52,13 @@
       - [X] 3d noise
       - [X] plume envelope
       - [X] plume diamonds
-      - [ ] apply transform of space ship to plume
+      - [ ] clip cloud_plume_point with depth
+      - [ ] implement cloud_plume_outer
       - [ ] implement plume_point with atmospheric transmittance
-      - [ ] use space ship or camera coordinates for higher precision?
+      - [ ] apply transform of space ship to plume
+      - [ ] is "depth" initialised when rendering space ship or planet?
+      - [ ] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
+      - [ ] don't split sampling interval if there is no plume
       - [ ] cloud functions refactor
         - [ ] clip interval using other segment
         - [ ] clip shell intersections using segment
