@@ -52,8 +52,9 @@
       - [X] 3d noise
       - [X] plume envelope
       - [X] plume diamonds
-      - [ ] clip cloud_plume_point with depth
-      - [ ] implement cloud_plume_outer
+      - [X] clip cloud_plume_point with depth
+      - [X] implement cloud_plume_outer
+      - [ ] refactor cloud_plume_outer
       - [ ] implement plume_point with atmospheric transmittance
       - [ ] apply transform of space ship to plume
       - [ ] is "depth" initialised when rendering space ship or planet?

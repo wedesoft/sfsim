@@ -7,9 +7,8 @@ uniform vec3 origin;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 cloud_segment(vec3 direction, vec3 start, vec2 segment);
 
-vec4 cloud_outer(vec3 fs_in_direction)
+vec4 cloud_outer(vec3 direction)
 {
-  vec3 direction = normalize(fs_in_direction);
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   vec3 start = origin + atmosphere_intersection.x * direction;
   return cloud_segment(direction, start, atmosphere_intersection);

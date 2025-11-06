@@ -1839,4 +1839,53 @@ void main()
          -1.0  1.0 1.0 100.0  0.0    false   0.5   0.0  0.5
          -1.0  1.0 2.0   1.0  0.0    true    0.5   0.0  0.5)
 
+(def cloud-plume-outer-probe
+  (template/fn [plume]
+"#version 410 core
+out vec3 fragColor;
+vec4 cloud_plume_outer(vec3 direction);
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  float start = max(0.0, -3.0 - origin.x);
+  float end = 3.0 - origin.x;
+  return vec2(start, end - start);
+}
+vec4 cloud_segment(vec3 direction, vec3 start, vec2 segment)
+{
+  float transmittance = pow(0.5, segment.t);
+  return vec4(1.0 - transmittance, 0.0, 0.0, 1.0 - transmittance);
+}
+vec4 plume_point(vec3 point)
+{
+  float plume = <%= plume %>;
+  return vec4(0.0, plume, 0.0, plume);
+}
+void main()
+{
+  vec4 result = cloud_plume_outer(vec3(1.0, 0.0, 0.0));
+  fragColor = result.rga;
+}"))
+
+(def cloud-plume-outer-test
+  (shader-test (fn [program origin-x object-distance]
+                   (uniform-float program "radius" 2.0)
+                   (uniform-float program "max_height" 1.0)
+                   (uniform-float program "object_distance" object-distance)
+                   (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
+               cloud-plume-outer-probe cloud-plume-outer))
+
+(tabular "Shader function to determine cloud plume and clouds above horizon"
+         (fact (cloud-plume-outer-test [?ox ?d][?plume]) => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
+         ?ox   ?d  ?plume ?r    ?g   ?a
+          4.0  0.0 0.0    0.0   0.0  0.0
+          1.0  2.0 0.0    0.75  0.0  0.75
+          4.0  0.0 1.0    0.0   1.0  1.0
+          2.0  1.0 1.0    0.5   0.5  1.0
+          1.0  1.0 0.5    0.625 0.25 0.875
+          2.0  2.0 0.0    0.5   0.0  0.5
+          4.0  2.0 0.0    0.0   0.0  0.0
+          2.0  2.0 0.0    0.5   0.0  0.5
+          2.0  0.0 0.0    0.5   0.0  0.5
+          2.0  1.0 0.0    0.5   0.0  0.5)
+
 (GLFW/glfwTerminate)

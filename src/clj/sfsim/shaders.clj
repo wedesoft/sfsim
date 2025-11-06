@@ -344,6 +344,11 @@
 
 
 (defn cloud-plume-point
-  "Shader function to compute cloud and plume RGBA values"
+  "Shader function to compute cloud and plume RGBA values in front of planet or spaceship"
   [clouds-behind]
   (template/eval (slurp "resources/shaders/plume/cloud-plume-point.glsl") {:clouds-behind clouds-behind}))
+
+
+(def cloud-plume-outer
+  "Shader function to compute cloud and plume RGBA values above horizon"
+  (slurp "resources/shaders/plume/cloud-plume-outer.glsl"))

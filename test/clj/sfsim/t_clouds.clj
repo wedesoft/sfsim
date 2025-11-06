@@ -1259,10 +1259,10 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 {
   return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
 }
-vec4 cloud_outer(vec3 fs_in_direction);
+vec4 cloud_outer(vec3 direction);
 void main()
 {
-  fragColor = cloud_outer(fs_in.direction);
+  fragColor = cloud_outer(normalize(fs_in.direction));
 }")
 
 

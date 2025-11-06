@@ -11,5 +11,5 @@ vec4 cloud_outer(vec3 fs_in_direction);
 
 void main()
 {
-  fragColor = cloud_outer(fs_in.direction);
+  fragColor = cloud_outer(normalize(fs_in.direction));
 }
