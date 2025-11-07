@@ -297,23 +297,23 @@
 
 (defn cloud-segment
   "Shader to compute segment of cloud layer"
-  [num-steps perlin-octaves cloud-octaves]
-  [shaders/ray-shell (sample-cloud num-steps perlin-octaves cloud-octaves) shaders/clip-shell-intersections
-   (slurp "resources/shaders/clouds/cloud-segment.glsl")])
+  [num-steps perlin-octaves cloud-octaves outer]
+  [shaders/ray-shell shaders/ray-sphere (sample-cloud num-steps perlin-octaves cloud-octaves) shaders/clip-shell-intersections
+   (template/eval (slurp "resources/shaders/clouds/cloud-segment.glsl") {:outer outer})])
 
 
 (defn cloud-point
   "Shader to compute pixel of cloud foreground overlay for planet"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [shaders/ray-sphere (cloud-segment num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/clouds/cloud-point.glsl")])
+  (cloud-segment num-steps perlin-octaves cloud-octaves false))
 
 
 (defn cloud-outer
   "Shader to compute pixel of cloud foreground overlay for atmosphere"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [shaders/ray-sphere (cloud-segment num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/clouds/cloud-outer.glsl")])
+  (cloud-segment num-steps perlin-octaves cloud-octaves true))
 
 
 (defmacro opacity-cascade

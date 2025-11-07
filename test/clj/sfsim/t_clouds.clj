@@ -1122,7 +1122,6 @@ void main()
     cloud-point-probe
     shaders/clip-interval
     (last shaders/clip-shell-intersections)
-    (last (cloud-segment 3 [] []))
     (last (cloud-point 3 [] []))))
 
 
@@ -1194,7 +1193,6 @@ void main()
     cloud-outer-probe
     shaders/clip-interval
     (last shaders/clip-shell-intersections)
-    (last (cloud-segment 3 [] []))
     (last (cloud-outer 3 [] []))))
 
 
@@ -1291,7 +1289,6 @@ void main()
                                             :sfsim.render/fragment [fragment-planet-clouds
                                                                     shaders/clip-interval
                                                                     (last shaders/clip-shell-intersections)
-                                                                    (last (cloud-segment 3 [] []))
                                                                     (last (cloud-point 3 [] []))])
               indices         [0 1 3 2]
               vertices        [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
@@ -1300,7 +1297,6 @@ void main()
                                             :sfsim.render/fragment [fragment-atmosphere-clouds-mock
                                                                     shaders/clip-interval
                                                                     (last shaders/clip-shell-intersections)
-                                                                    (last (cloud-segment 3 [] []))
                                                                     (last (cloud-outer 3 [] []))])
               indices         [0 1 3 2]
               vertices        [-1 -1, 1 -1, -1 1, 1 1]
