@@ -1082,6 +1082,7 @@ void main()
 (def cloud-point-probe
   (template/fn [z selector]
     "#version 410 core
+uniform vec3 origin;
 uniform float radius;
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
@@ -1100,11 +1101,11 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(start.z, cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_point(vec3 point);
+vec4 cloud_point(vec3 origin, vec3 direction, vec3 point);
 void main()
 {
   vec3 point = vec3(0, 0, <%= z %>);
-  vec4 result = cloud_point(point);
+  vec4 result = cloud_point(origin, normalize(point - origin), point);
   fragColor.r = result.<%= selector %>;
 }"))
 
@@ -1212,6 +1213,7 @@ void main()
 
 (def fragment-planet-clouds
   "#version 410 core
+uniform vec3 origin;
 in GEO_OUT
 {
   vec2 colorcoord;
@@ -1230,10 +1232,10 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(cloud_shell.y, 0, 0, 0.25);
 }
-vec4 cloud_point(vec3 point);
+vec4 cloud_point(vec3 origin, vec3 direction, vec3 point);
 void main()
 {
-  fragColor = cloud_point(fs_in.point);
+  fragColor = cloud_point(origin, normalize(fs_in.point - origin), fs_in.point);
 }")
 
 

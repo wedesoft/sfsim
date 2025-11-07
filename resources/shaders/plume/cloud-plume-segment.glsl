@@ -1,6 +1,5 @@
 #version 410 core
 
-uniform vec3 camera_to_object;
 uniform mat4 world_to_object;
 uniform float object_distance;
 
