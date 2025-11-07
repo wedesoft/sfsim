@@ -10,6 +10,7 @@
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [fastmath.vector :refer (vec3)]
+      [fastmath.matrix :refer (diagonal)]
       [comb.template :as template]
       [sfsim.conftest :refer (roughly-vector shader-test)]
       [midje.sweet :refer :all]
@@ -156,6 +157,7 @@ void main()
   (template/fn [x plume]
 "#version 410 core
 out vec3 fragColor;
+uniform mat4 world_to_object;
 vec4 cloud_plume_point(vec3 point);
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
@@ -168,9 +170,14 @@ vec4 cloud_segment(vec3 direction, vec3 start, vec2 segment)
   float transmittance = pow(0.5, segment.t);
   return vec4(1.0 - transmittance, 0.0, 0.0, 1.0 - transmittance);
 }
-vec4 plume_point(vec3 point)
+vec4 plume_point(vec3 point, vec3 direction)
 {
-  float plume = <%= plume %>;
+  float plume = <%= plume %> * direction.x;
+  return vec4(0.0, plume, 0.0, plume);
+}
+vec4 plume_outer(vec3 point, vec3 direction)
+{
+  float plume = <%= plume %> * direction.x;
   return vec4(0.0, plume, 0.0, plume);
 }
 void main()
@@ -181,30 +188,35 @@ void main()
 
 (defn cloud-plume-point-test
   [clouds-behind]
-  (shader-test (fn [program origin-x object-distance depth]
+  (shader-test (fn [program origin-x object-distance depth scale]
                    (uniform-float program "radius" 2.0)
                    (uniform-float program "max_height" 1.0)
                    (uniform-float program "object_distance" object-distance)
                    (uniform-float program "depth" depth)
+                   (uniform-vector3 program "camera_to_object" (vec3 0 0 0))
+                   (uniform-matrix4 program "world_to_object" (diagonal scale scale 1.0 1.0))
                    (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
                cloud-plume-point-probe (last (cloud-plume-segment clouds-behind)) (last (cloud-plume-point clouds-behind))))
 
 
 (tabular "Shader function to determine cloud plume point"
-         (fact ((cloud-plume-point-test ?behind) [?ox ?d ?depth] [?x ?plume]) => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
-         ?ox  ?x   ?d  ?depth ?plume ?behind ?r    ?g   ?a
-          0.0  0.0 0.0 100.0  0.0    true    0.0   0.0  0.0
-         -1.0  1.0 2.0 100.0  0.0    true    0.75  0.0  0.75
-          0.0  0.0 0.0 100.0  1.0    true    0.0   1.0  1.0
-         -1.0  0.0 1.0 100.0  1.0    true    0.5   0.5  1.0
-         -1.0  1.0 1.0 100.0  0.5    true    0.625 0.25 0.875
-         -4.0 -2.0 2.0 100.0  0.0    true    0.5   0.0  0.5
-         -6.0 -4.0 2.0 100.0  0.0    true    0.0   0.0  0.0
-          2.0  4.0 2.0 100.0  0.0    true    0.5   0.0  0.5
-         -4.0 -2.0 0.0 100.0  0.0    true    0.5   0.0  0.5
-          2.0  4.0 0.0 100.0  0.0    true    0.5   0.0  0.5
-         -1.0  1.0 1.0 100.0  0.0    false   0.5   0.0  0.5
-         -1.0  1.0 2.0   1.0  0.0    true    0.5   0.0  0.5)
+         (fact ((cloud-plume-point-test ?behind) [?ox ?d ?depth ?scale] [?x ?plume]) => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
+         ?ox  ?x   ?d  ?depth ?plume ?scale ?behind ?r    ?g   ?a
+          0.0  0.0 0.0 100.0  0.0    1.0    true    0.0   0.0  0.0
+         -1.0  1.0 2.0 100.0  0.0    1.0    true    0.75  0.0  0.75
+         -6.0 -5.0 1.0 100.0  1.0    1.0    true    0.0   1.0  1.0
+         -6.0 -5.0 1.0 100.0  1.0   -1.0    true    0.0  -1.0 -1.0
+         -1.0  0.0 1.0 100.0  1.0    1.0    true    0.5   0.5  1.0
+         -1.0  1.0 1.0 100.0  0.5    1.0    true    0.625 0.25 0.875
+         -4.0 -2.0 2.0 100.0  0.0    1.0    true    0.5   0.0  0.5
+         -6.0 -4.0 2.0 100.0  0.0    1.0    true    0.0   0.0  0.0
+          2.0  4.0 2.0 100.0  0.0    1.0    true    0.5   0.0  0.5
+         -4.0 -2.0 0.0 100.0  0.0    1.0    true    0.5   0.0  0.5
+          2.0  4.0 0.0 100.0  0.0    1.0    true    0.5   0.0  0.5
+         -1.0  1.0 1.0 100.0  0.0    1.0    false   0.5   0.0  0.5
+         -1.0  1.0 2.0   1.0  0.0    1.0    true    0.5   0.0  0.5
+         -6.0 -5.0 1.0 100.0  1.0    1.0    false   0.0   1.0  1.0
+         -6.0 -5.0 1.0 100.0  1.0   -1.0    false   0.0  -1.0 -1.0)
 
 (def cloud-plume-outer-probe
   (template/fn [plume]
@@ -222,7 +234,7 @@ vec4 cloud_segment(vec3 direction, vec3 start, vec2 segment)
   float transmittance = pow(0.5, segment.t);
   return vec4(1.0 - transmittance, 0.0, 0.0, 1.0 - transmittance);
 }
-vec4 plume_point(vec3 point)
+vec4 plume_outer(vec3 point, vec3 direction)
 {
   float plume = <%= plume %>;
   return vec4(0.0, plume, 0.0, plume);
@@ -238,6 +250,8 @@ void main()
                    (uniform-float program "radius" 2.0)
                    (uniform-float program "max_height" 1.0)
                    (uniform-float program "object_distance" object-distance)
+                   (uniform-vector3 program "camera_to_object" (vec3 0 0 0))
+                   (uniform-matrix4 program "world_to_object" (diagonal 1.0 1.0 1.0 1.0))
                    (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
                cloud-plume-outer-probe (last (cloud-plume-segment true)) (last cloud-plume-outer)))
 

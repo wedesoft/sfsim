@@ -10,10 +10,13 @@ vec4 cloud_plume_segment(vec3 direction, vec3 start, vec2 segment);
 
 vec4 cloud_plume_point(vec3 point)
 {
-  vec3 direction = normalize(point - origin);
   float dist = distance(origin, point);
-  vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  atmosphere_intersection.y = min(dist - atmosphere_intersection.x, min(depth, atmosphere_intersection.y));
-  vec3 start = origin + atmosphere_intersection.x * direction;
-  return cloud_plume_segment(direction, start, atmosphere_intersection);
+  if (dist > 0) {
+    vec3 direction = normalize(point - origin);
+    vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+    atmosphere_intersection.y = min(dist - atmosphere_intersection.x, min(depth, atmosphere_intersection.y));
+    vec3 start = origin + atmosphere_intersection.x * direction;
+    return cloud_plume_segment(direction, start, atmosphere_intersection);
+  } else
+    return vec4(0, 0, 0, 0);
 }

@@ -1,12 +1,23 @@
 #version 410 core
 
+uniform vec3 camera_to_object;
+uniform mat4 world_to_object;
 uniform float object_distance;
 
 vec4 cloud_segment(vec3 direction, vec3 start, vec2 segment);
-vec4 plume_point(vec3 point);
+<% (if clouds-behind %>
+vec4 plume_outer(vec3 point, vec3 direction);
+<% %>
+vec4 plume_point(vec3 point, vec3 direction);
+<% ) %>
 
 vec4 cloud_plume_segment(vec3 direction, vec3 start, vec2 segment)
 {
+<% (if clouds-behind %>
+  vec4 plume = plume_outer(camera_to_object, mat3(world_to_object) * direction);
+<% %>
+  vec4 plume = plume_point(camera_to_object, mat3(world_to_object) * direction);
+<% ) %>
 <% (if clouds-behind %>
   vec4 result;
   float segment_back_start = max(object_distance, segment.x);
@@ -16,10 +27,9 @@ vec4 cloud_plume_segment(vec3 direction, vec3 start, vec2 segment)
     result = cloud_segment(direction, vec3(0, 0, 0), segment_back);
   else
     result = vec4(0, 0, 0, 0);
-  vec4 plume = plume_point(vec3(0, 0, 0)); // TODO: pass in camera point and direction relative to object
   result = vec4(plume.rgb + result.rgb * (1.0 - plume.a), 1.0 - (1.0 - plume.a) * (1.0 - result.a));
 <% %>
-  vec4 result = plume_point(vec3(0, 0, 0)); // TODO: pass in camera point and direction relative to object
+  vec4 result = plume;
 <% ) %>
   float segment_front_start = segment.x;
   float segment_front_end = min(object_distance, segment.x + segment.y);
