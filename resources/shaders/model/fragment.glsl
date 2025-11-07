@@ -12,6 +12,7 @@ uniform sampler2D normals;
 
 in VS_OUT
 {
+  vec3 vertex;
   vec3 world_point;
   vec3 normal;
 <% (if bump %>

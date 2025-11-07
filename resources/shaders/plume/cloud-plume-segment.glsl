@@ -14,9 +14,9 @@ vec4 plume_point(vec3 point, vec3 direction);
 vec4 cloud_plume_segment(vec3 direction, vec3 start, vec2 segment)
 {
 <% (if clouds-behind %>
-  vec4 plume = plume_outer(camera_to_object, mat3(world_to_object) * direction);
+  vec4 plume = plume_outer(vec3(0, 0, 0), mat3(world_to_object) * direction);
 <% %>
-  vec4 plume = plume_point(camera_to_object, mat3(world_to_object) * direction);
+  vec4 plume = plume_point(vec3(0, 0, 0), mat3(world_to_object) * direction);
 <% ) %>
 <% (if clouds-behind %>
   vec4 result;
