@@ -1142,6 +1142,7 @@ void main()
 (def cloud-outer-probe
   (template/fn [dz selector]
     "#version 410 core
+uniform vec3 origin;
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
@@ -1173,11 +1174,11 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(start.z, cloud_scatter.g + cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_outer(vec3 fs_in_direction);
+vec4 cloud_outer(vec3 origin, vec3 direction);
 void main()
 {
   vec3 direction = vec3(0, 0, <%= dz %>);
-  vec4 result = cloud_outer(direction);
+  vec4 result = cloud_outer(origin, direction);
   fragColor.r = result.<%= selector %>;
 }"))
 
@@ -1241,6 +1242,7 @@ void main()
 
 (def fragment-atmosphere-clouds-mock
   "#version 410 core
+uniform vec3 origin;
 in VS_OUT
 {
   vec3 direction;
@@ -1261,10 +1263,10 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 {
   return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
 }
-vec4 cloud_outer(vec3 direction);
+vec4 cloud_outer(vec3 origin, vec3 direction);
 void main()
 {
-  fragColor = cloud_outer(normalize(fs_in.direction));
+  fragColor = cloud_outer(origin, normalize(fs_in.direction));
 }")
 
 

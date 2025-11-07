@@ -201,7 +201,7 @@
     (GL20/glShaderSource shader ^String source)
     (GL20/glCompileShader shader)
     (when (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
-      (throw (Exception. (str context " shader: " (GL20/glGetShaderInfoLog shader 1024)))))
+      (throw (Exception. (str context " shader: " (GL20/glGetShaderInfoLog shader 1024) "\n" source))))
     shader))
 
 
