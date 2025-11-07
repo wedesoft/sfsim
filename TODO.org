@@ -57,7 +57,7 @@
       - [X] refactor cloud_plume_outer
       - [X] move plume shaders into plume module and add cloud_segment as dependency
       - [X] generate cloud_point and cloud_outer from same code using boolean (optional end point)
-      - [ ] generate cloud_plume_point and cloud_plume_outer from same code using boolean (optional end point)
+      - [ ] generate cloud_plume_point, cloud_plume_outer, and cloud_plume_model from same code using booleans (optional end points)
       - [ ] cloud_plume shader should take origin, direction, (and optionally end point), in object coordinates
       - [ ] implement plume_point with atmospheric transmittance
       - [ ] apply transform of space ship to plume
