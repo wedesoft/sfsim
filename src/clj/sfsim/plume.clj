@@ -1,0 +1,54 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
+(ns sfsim.plume
+    "Module with shader functions for plume rendering"
+    (:require
+      [comb.template :as template]
+      [sfsim.shaders :as shaders]))
+
+
+(def plume-phase
+  "Shader function for phase function of mach cone positions"
+  (slurp "resources/shaders/plume/plume-phase.glsl"))
+
+
+(def diamond-phase
+  "Shader function to determine phase of Mach diamonds in rocket exhaust plume"
+  [plume-phase (slurp "resources/shaders/plume/diamond-phase.glsl")])
+
+
+(def plume-limit
+  "Shader function to get extent of rocket plume"
+  (slurp "resources/shaders/plume/limit.glsl"))
+
+
+(def bulge
+  "Shader function to determine shape of rocket exhaust plume"
+  [plume-limit plume-phase (slurp "resources/shaders/plume/bulge.glsl")])
+
+
+(defn diamond
+  "Shader function for volumetric Mach diamonds"
+  [fringe]
+  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
+
+
+(defn cloud-plume-segment
+  "Shader function to compute cloud and plume RGBA values for segment around plume in space"
+  [clouds-behind]
+  [(template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:clouds-behind clouds-behind})])
+
+
+(defn cloud-plume-point
+  "Shader function to compute cloud and plume RGBA values in front of planet or spaceship"
+  [clouds-behind]
+  [shaders/ray-sphere (cloud-plume-segment clouds-behind) (template/eval (slurp "resources/shaders/plume/cloud-plume-point.glsl") {:clouds-behind clouds-behind})])
+
+
+(def cloud-plume-outer
+  "Shader function to compute cloud and plume RGBA values above horizon"
+  [shaders/ray-sphere (cloud-plume-segment true) (slurp "resources/shaders/plume/cloud-plume-outer.glsl")])

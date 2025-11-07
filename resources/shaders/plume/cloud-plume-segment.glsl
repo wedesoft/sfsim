@@ -30,4 +30,3 @@ vec4 cloud_plume_segment(vec3 direction, vec3 start, vec2 segment)
   };
   return result;
 }
-
