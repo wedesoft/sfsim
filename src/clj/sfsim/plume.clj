@@ -34,21 +34,10 @@
 (defn diamond
   "Shader function for volumetric Mach diamonds"
   [fringe]
-  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
+  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])\
 
 
 (defn cloud-plume-segment
   "Shader function to compute cloud and plume RGBA values for segment around plume in space"
-  [clouds-behind]
-  [(template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:clouds-behind clouds-behind})])
-
-
-(defn cloud-plume-point
-  "Shader function to compute cloud and plume RGBA values in front of planet or spaceship"
-  [clouds-behind]
-  [shaders/ray-sphere (cloud-plume-segment clouds-behind) (template/eval (slurp "resources/shaders/plume/cloud-plume-point.glsl") {:clouds-behind clouds-behind})])
-
-
-(def cloud-plume-outer
-  "Shader function to compute cloud and plume RGBA values above horizon"
-  [shaders/ray-sphere (cloud-plume-segment true) (slurp "resources/shaders/plume/cloud-plume-outer.glsl")])
+  [model-point planet-point]
+  [(template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])
