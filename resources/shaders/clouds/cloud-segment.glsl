@@ -13,7 +13,11 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 vec4 clip_shell_intersections(vec4 intersections, vec2 clip);
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter);
 
-vec4 cloud_<%= (if outer "outer" "point") %>(vec3 origin, vec3 direction<% (if (not outer) %>, vec3 point <% ) %>)
+<% (if outer %>
+vec4 cloud_outer(vec3 origin, vec3 direction)
+<% %>
+vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
+<% ) %>
 {
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
 <% (if (not outer) %>
