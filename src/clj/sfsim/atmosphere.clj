@@ -544,6 +544,11 @@
    (slurp "resources/shaders/atmosphere/ray-scatter-track.glsl")])
 
 
+(def attenuate
+  "Basic function for computing attenuation of light within the atmosphere"
+  [transmittance-track ray-scatter-track (slurp "resources/shaders/atmosphere/attenuate.glsl")])
+
+
 (def attenuation-outer
   "Shader function combining transmittance and in-scattered light between point in the atmosphere and space"
   [transmittance-outer ray-scatter-outer (slurp "resources/shaders/atmosphere/attenuation-outer.glsl")])
@@ -551,7 +556,7 @@
 
 (def attenuation-track
   "Shader function combining transmittance and in-scattered light between two points in the atmosphere"
-  [transmittance-track ray-scatter-track (slurp "resources/shaders/atmosphere/attenuation-track.glsl")])
+  [attenuate (slurp "resources/shaders/atmosphere/attenuation-track.glsl")])
 
 
 (def attenuation-point

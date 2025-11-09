@@ -283,8 +283,8 @@
   "Single cloud scattering update step"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [(planet-and-cloud-shadows num-steps) atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
-   powder-shader (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
+  [(planet-and-cloud-shadows num-steps) atmosphere/transmittance-outer atmosphere/attenuate powder-shader
+   (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
 
 
 (defn sample-cloud
