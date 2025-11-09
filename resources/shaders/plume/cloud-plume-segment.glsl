@@ -43,8 +43,11 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
 <% ) %>
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
   atmosphere.y = min(atmosphere.y, object_distance - atmosphere.x);
-  if (atmosphere.y > 0)
-    result.rgb = attenuate(light_direction, origin, origin + direction * object_distance, result.rgb);
+  if (atmosphere.y > 0) {
+    vec3 start = origin + direction * atmosphere.x;
+    vec3 end = origin + direction * (atmosphere.x + atmosphere.y);
+    result.rgb = attenuate(light_direction, start, end, result.rgb);
+  };
   vec4 cloud_scatter = cloud_point(origin, direction, origin + direction * object_distance);
   result = vec4(cloud_scatter.rgb + result.rgb * (1.0 - cloud_scatter.a), 1.0 - (1.0 - cloud_scatter.a) * (1.0 - result.a));
   return result;
