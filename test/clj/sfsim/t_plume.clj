@@ -154,7 +154,7 @@ void main()
           0.25      1.0       0.0  0.0   0.0)
 
 (def cloud-plume-segment-probe
-  (template/fn [x plume model-point planet-point]
+  (template/fn [x plume model-point planet-point attenuation]
 "#version 410 core
 uniform vec3 origin;
 uniform float radius;
@@ -187,6 +187,11 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
     return vec4(1.0 - transmittance, 0.0, 0.0, 1.0 - transmittance);
   } else
     return vec4(0, 0, 0, 0);
+}
+vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec3 incoming)
+{
+  float dist = distance(point, start);
+  return incoming * pow(0.5, <%= attenuation %> * dist);
 }
 vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
@@ -222,37 +227,39 @@ void main()
                    (uniform-float program "max_height" 1.0)
                    (uniform-float program "object_distance" object-distance)
                    (uniform-float program "depth" depth)
-                   (uniform-vector3 program "camera_to_object" (vec3 0 0 0))
+                   (uniform-vector3 program "light_direction" (vec3 0 1 0))
                    (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
                cloud-plume-segment-probe (last (cloud-plume-segment model-point planet-point))))
 
 (tabular "Shader function to determine cloud and rocket plume contribution"
-         (fact ((cloud-plume-segment-test ?model ?planet) [?ox ?d ?depth] [?x ?plume ?model ?planet])
+         (fact ((cloud-plume-segment-test ?model ?planet) [?ox ?d ?depth] [?x ?plume ?model ?planet ?attenuation])
                => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
-         ?ox  ?x  ?d  ?depth ?plume ?model ?planet ?r    ?g   ?a
-         4.0  0.0 0.0 100.0  0.0    false  false   0.0   0.0  0.0
-         1.0  0.0 2.0 100.0  0.0    false  false   0.75  0.0  0.75
-         4.0  0.0 0.0 100.0  1.0    false  false   0.0   1.0  1.0
-         2.0  0.0 1.0 100.0  1.0    false  false   0.5   0.5  1.0
-         1.0  0.0 1.0 100.0  0.5    false  false   0.625 0.25 0.875
-         2.0  0.0 2.0 100.0  0.0    false  false   0.5   0.0  0.5
-         4.0  0.0 2.0 100.0  0.0    false  false   0.0   0.0  0.0
-         2.0  0.0 2.0 100.0  0.0    false  false   0.5   0.0  0.5
-         2.0  0.0 0.0 100.0  0.0    false  false   0.5   0.0  0.5
-         2.0  0.0 1.0 100.0  0.0    false  false   0.5   0.0  0.5
-         0.0  0.0 0.0 100.0  0.0    true   false   0.0   0.0  0.0
-        -1.0  1.0 2.0 100.0  0.0    true   false   0.75  0.0  0.75
-        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0   1.0  1.0
-        -1.0  0.0 1.0 100.0  1.0    true   false   0.5   0.5  1.0
-        -1.0  1.0 1.0 100.0  0.5    false  true    0.625 0.25 0.875
-        -4.0 -2.0 2.0 100.0  0.0    true   false   0.5   0.0  0.5
-        -6.0 -4.0 2.0 100.0  0.0    true   false   0.0   0.0  0.0
-         2.0  4.0 2.0 100.0  0.0    true   false   0.5   0.0  0.5
-        -4.0 -2.0 0.0 100.0  0.0    false  true    0.5   0.0  0.5
-         2.0  4.0 0.0 100.0  0.0    false  true    0.5   0.0  0.5
-        -1.0  1.0 1.0 100.0  0.0    true   false   0.5   0.0  0.5
-        -1.0  1.0 2.0   1.0  0.0    false  true    0.5   0.0  0.5
-        -6.0 -5.0 1.0 100.0  1.0    false  true    0.0   1.0  1.0
-        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0   1.0  1.0)
+         ?ox  ?x  ?d  ?depth ?plume ?model ?planet ?attenuation ?r    ?g   ?a
+         4.0  0.0 0.0 100.0  0.0    false  false   0.0          0.0   0.0  0.0
+         1.0  0.0 2.0 100.0  0.0    false  false   0.0          0.75  0.0  0.75
+         4.0  0.0 0.0 100.0  1.0    false  false   0.0          0.0   1.0  1.0
+         2.0  0.0 1.0 100.0  1.0    false  false   0.0          0.5   0.5  1.0
+         1.0  0.0 1.0 100.0  0.5    false  false   0.0          0.625 0.25 0.875
+         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
+         4.0  0.0 2.0 100.0  0.0    false  false   0.0          0.0   0.0  0.0
+         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
+         2.0  0.0 0.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
+         2.0  0.0 1.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
+         0.0  0.0 0.0 100.0  0.0    true   false   0.0          0.0   0.0  0.0
+        -1.0  1.0 2.0 100.0  0.0    true   false   0.0          0.75  0.0  0.75
+        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0  1.0
+        -1.0  0.0 1.0 100.0  1.0    true   false   0.0          0.5   0.5  1.0
+        -1.0  1.0 1.0 100.0  0.5    false  true    0.0          0.625 0.25 0.875
+        -4.0 -2.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
+        -6.0 -4.0 2.0 100.0  0.0    true   false   0.0          0.0   0.0  0.0
+         2.0  4.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
+        -4.0 -2.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0  0.5
+         2.0  4.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0  0.5
+        -1.0  1.0 1.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
+        -1.0  1.0 2.0   1.0  0.0    false  true    0.0          0.5   0.0  0.5
+        -6.0 -5.0 1.0 100.0  1.0    false  true    0.0          0.0   1.0  1.0
+        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0  1.0
+        -1.0  1.0 1.0 100.0  1.0    false  false   1.0          0.5   0.25 1.0
+        -6.0 -5.0 1.0 100.0  1.0    false  false   1.0          0.0   1.0  1.0)
 
 (GLFW/glfwTerminate)

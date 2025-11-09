@@ -11,4 +11,3 @@ vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec3 incoming)
   vec3 in_scatter = ray_scatter_track(light_direction, start, point) * amplification;
   return incoming * transmittance + in_scatter;
 }
-
