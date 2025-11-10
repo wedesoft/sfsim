@@ -50,6 +50,7 @@ void main()
 <% ) %>
   vec3 incoming = phong(ambient_light, light, fs_in.world_point, normal, diffuse_color, 0.0);
   incoming = attenuation_point(fs_in.world_point, incoming);
-  vec4 cloud_scatter = cloud_point(origin, normalize(fs_in.world_point - origin), fs_in.world_point);  // TODO: get more accurate direction
+  vec3 direction = normalize(fs_in.world_point - origin);
+  vec4 cloud_scatter = cloud_point(origin, direction, fs_in.world_point);  // TODO: get more accurate direction
   fragColor = vec4(incoming, 1.0) * (1 - cloud_scatter.a) + cloud_scatter;
 }

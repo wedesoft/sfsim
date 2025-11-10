@@ -708,7 +708,9 @@
   [program transform internal-transform camera-to-world scene-shadow-matrices]
   (use-program program)
   (uniform-matrix4 program "object_to_world" transform)
+  (uniform-matrix4 program "camera_to_object" (mulm (inverse transform) camera-to-world))
   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
+  ; TODO: object distance
   (doseq [i (range (count scene-shadow-matrices))]
     (uniform-matrix4 program
                      (str "object_to_shadow_map_" (inc ^long i))
