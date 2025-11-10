@@ -12,6 +12,14 @@ vec4 plume_outer(vec3 object_origin, vec3 object_direction);
 vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
 vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec3 incoming);
 
+// Cloud and plume mixed overlay.
+// origin: world coordinate of camera position
+// direction: world coordinate of viewing direction for current pixel rendered by fragment shader.
+// point: world coordinates of point of planet surface
+// object_origin: camera position coordinates in object (plume) coordinate system.
+// object_direction: viewing direction coordinates in object (plume) coordinate system.
+// object_point: model surface point in object (plume) coordinate system.
+
 <% (if (and (not planet-point) (not model-point)) %>
 // Shader to render overlay with clouds, then plume, and then clouds again with outer space in the background.
 vec4 cloud_plume_cloud(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
