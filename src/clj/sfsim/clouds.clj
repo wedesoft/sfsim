@@ -283,8 +283,8 @@
   "Single cloud scattering update step"
   {:malli/schema [:=> [:cat N] render/shaders]}
   [num-steps]
-  [(planet-and-cloud-shadows num-steps) atmosphere/transmittance-outer atmosphere/transmittance-track atmosphere/ray-scatter-track
-   powder-shader (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
+  [(planet-and-cloud-shadows num-steps) atmosphere/transmittance-outer atmosphere/attenuate powder-shader
+   (slurp "resources/shaders/clouds/cloud-transfer.glsl")])
 
 
 (defn sample-cloud
@@ -295,20 +295,25 @@
    (cloud-density perlin-octaves cloud-octaves) (cloud-transfer num-steps) (slurp "resources/shaders/clouds/sample-cloud.glsl")])
 
 
+(defn cloud-segment
+  "Shader to compute segment of cloud layer"
+  [num-steps perlin-octaves cloud-octaves outer]
+  [shaders/ray-shell shaders/ray-sphere (sample-cloud num-steps perlin-octaves cloud-octaves) shaders/clip-shell-intersections
+   (template/eval (slurp "resources/shaders/clouds/cloud-segment.glsl") {:outer outer})])
+
+
 (defn cloud-point
   "Shader to compute pixel of cloud foreground overlay for planet"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [shaders/ray-sphere shaders/ray-shell (sample-cloud num-steps perlin-octaves cloud-octaves) shaders/clip-shell-intersections
-   (slurp "resources/shaders/clouds/cloud-point.glsl")])
+  (cloud-segment num-steps perlin-octaves cloud-octaves false))
 
 
 (defn cloud-outer
   "Shader to compute pixel of cloud foreground overlay for atmosphere"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [shaders/ray-sphere shaders/ray-shell (sample-cloud num-steps perlin-octaves cloud-octaves)
-   (slurp "resources/shaders/clouds/cloud-outer.glsl")])
+  (cloud-segment num-steps perlin-octaves cloud-octaves true))
 
 
 (defmacro opacity-cascade

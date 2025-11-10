@@ -576,7 +576,7 @@ void main()
 (def cloud-point-mock
   "#version 410 core
 uniform vec3 origin;
-vec4 cloud_point(vec3 point)
+vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
 {
   float dist = distance(origin, point);
   float transparency = exp(-dist / 10.0);
@@ -866,7 +866,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 {
   return vec3(0.2, 0.2, 0.2);
 }
-vec4 cloud_point(vec3 point)
+vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
 {
   return vec4(0, 0, 0, 0);
 }")

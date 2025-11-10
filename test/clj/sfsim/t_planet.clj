@@ -406,6 +406,19 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 }")
 
 
+(def fake-attenuation
+"#version 410 core
+uniform float amplification;
+vec3 transmittance_track(vec3 p, vec3 q);
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
+vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec3 incoming)
+{
+  vec3 transmittance = transmittance_track(start, point);
+  vec3 in_scatter = ray_scatter_track(light_direction, start, point) * amplification;
+  return incoming * transmittance + in_scatter;
+}")
+
+
 (def opacity-lookup-mock
   "#version 410 core
 float opacity_cascade_lookup(vec4 point)
@@ -453,9 +466,9 @@ float land_noise(vec3 point)
   []
   (make-program :sfsim.render/vertex [vertex-planet-probe]
                 :sfsim.render/fragment [(last (fragment-planet 3 0)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
-                                        planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter shaders/ray-shell
-                                        shaders/is-above-horizon atmosphere/transmittance-point surface-radiance-function
-                                        land-noise-mock shaders/remap (last (clouds/environmental-shading 3))
+                                        planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter fake-attenuation
+                                        shaders/ray-shell shaders/is-above-horizon atmosphere/transmittance-point
+                                        surface-radiance-function land-noise-mock shaders/remap (last (clouds/environmental-shading 3))
                                         (last (clouds/overall-shading 3 [])) (last atmosphere/attenuation-track) shaders/phong
                                         (last atmosphere/attenuation-point)]))
 

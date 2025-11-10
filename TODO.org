@@ -48,11 +48,32 @@
     - [-] shaders for
       - [X] signed distance function rectangle
       - [X] signed distance function circle
-      - [ ] signed distance function engine
+      - [X] signed distance function engine exhaust
       - [X] 3d noise
-      - [ ] plume envelope
-      - [ ] plume diamonds
-      - [ ] joined sampling of clouds and engine plume
+      - [X] plume envelope
+      - [X] plume diamonds
+      - [X] clip cloud_plume_point with depth
+      - [X] implement cloud_plume_outer
+      - [X] refactor cloud_plume_outer
+      - [X] move plume shaders into plume module and add cloud_segment as dependency
+      - [X] generate cloud_point and cloud_outer from same code using boolean (optional end point)
+      - [X] generate cloud_plume_point, cloud_plume_cloud, and cloud_plume_cloud_point from same code using booleans
+      - [X] cloud_plume shader should take origin, direction, (and optionally end point), in object coordinates
+      - [ ] implement plume_point
+      - [X] atmospheric transmittance for clouds behind plume
+      - [ ] provide origin, direction and point in plume coordinates
+      - [ ] is "depth" initialised when rendering space ship or planet?
+      - [ ] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
+      - [ ] don't split sampling interval if there is no plume
+      - [ ] cloud functions refactor
+        - [ ] clip interval using other segment
+        - [ ] clip shell intersections using segment
+      - [ ] joined sampling of clouds and engine plume: replace cloud_point and cloud_outer with joint sampling of clouds and plume
+        - [ ] model rendering: uses cloud_point
+        - [ ] planet rendering: uses cloud overlay
+          - [ ] cloud overlay planet: cloud_point
+        - [ ] atmosphere rendering: uses cloud overlay
+          - [ ] cloud overlay atmosphere: cloud_outer
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake

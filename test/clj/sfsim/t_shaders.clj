@@ -9,7 +9,7 @@
     [clojure.math :refer (PI sqrt)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye)]
-    [fastmath.vector :refer (vec3 div ediv dot mag cross)]
+    [fastmath.vector :refer (vec2 vec3 div ediv dot mag cross)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -57,6 +57,32 @@ void main()
          0   0   0   0   0  -2   0   0   2   0.5 1.0
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
+
+
+(def ray-circle-probe
+  (template/fn [cx cy ox oy dx dy]
+    "#version 410 core
+out vec3 fragColor;
+vec2 ray_circle(vec2 centre, float radius, vec2 origin, vec2 direction);
+void main()
+{
+  vec2 result = ray_circle(vec2(<%= cx %>, <%= cy %>),
+                           1,
+                           vec2(<%= ox %>, <%= oy %>),
+                           vec2(<%= dx %>, <%= dy %>));
+  fragColor = vec3(result.x, result.y, 0);
+}"))
+
+
+(def ray-circle-test (shader-test (fn [_program]) ray-circle-probe ray-circle))
+
+
+(tabular "Shader for intersection of ray with circle"
+         (fact (ray-circle-test [] [?cx ?cy ?ox ?oy ?dx ?dy]) => (vec3 ?ix ?iy 0))
+         ?cx ?cy ?ox ?oy ?dx ?dy ?ix ?iy
+         0   0  -1    0   1   0   0.0 2.0
+         0   0   0    0   1   0   0.0 1.0
+         0   0  -2    0   1   0   1.0 2.0)
 
 
 (def convert-1d-index-probe
@@ -772,33 +798,56 @@ void main()
          0   0   0   2        3          0 0   0   1   0   0   "pq"       0   0)
 
 
-(def clip-shell-intersections-probe
-  (template/fn [a b c d limit selector]
-    "#version 410 core
+(def clip-interval-probe
+  (template/fn [x l cx cl]
+"#version 410 core
 out vec3 fragColor;
-vec4 clip_shell_intersections(vec4 intersections, float limit);
+vec2 clip_interval(vec2 interval, vec2 clip);
 void main()
 {
-  vec4 result = clip_shell_intersections(vec4(<%= a %>, <%= b %>, <%= c %>, <%= d %>), <%= limit %>);
+  vec2 result = clip_interval(vec2(<%= x %>, <%= l %>), vec2(<%= cx %>, <%= cl %>));
+  fragColor = vec3(result, 0);
+}"))
+
+
+(def clip-interval-test (shader-test (fn [_program]) clip-interval-probe clip-interval))
+
+
+(tabular "Clip the interval information of ray and shell using given limit"
+         (fact (clip-interval-test [] [?x ?l ?cx ?cl]) => (roughly-vector (vec3 ?rx ?rl 0) 1e-6))
+         ?x ?l ?cx ?cl ?rx ?rl
+         2  3  0   8   2   3
+         2  3  4   8   4   1
+         2  3  0   3   2   1)
+
+
+(def clip-shell-intersections-probe
+  (template/fn [a b c d ca cb selector]
+    "#version 410 core
+out vec3 fragColor;
+vec4 clip_shell_intersections(vec4 intersections, vec2 clip);
+void main()
+{
+  vec4 result = clip_shell_intersections(vec4(<%= a %>, <%= b %>, <%= c %>, <%= d %>), vec2(<%= ca %>, <%= cb %>));
   fragColor.xy = result.<%= selector %>;
   fragColor.z = 0;
 }"))
 
 
-(def clip-shell-intersections-test (shader-test (fn [_program]) clip-shell-intersections-probe clip-shell-intersections))
+(def clip-shell-intersections-test (apply shader-test (fn [_program]) clip-shell-intersections-probe clip-shell-intersections))
 
 
 (tabular "Clip the intersection information of ray and shell using given limit"
-         (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?limit ?selector])
+         (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?ca ?cb ?selector])
                => (roughly-vector (vec3 ?ix ?iy 0) 1e-6))
-         ?a ?b ?c ?d ?limit ?selector ?ix ?iy
-         2  3  6  2  9      "xy"      2   3
-         2  3  6  2  9      "zw"      6   2
-         2  3  6  2  7      "zw"      6   1
-         2  3  6  2  5      "zw"      0   0
-         2  3  0  0  9      "zw"      0   0
-         2  3  6  2  3      "xy"      2   1
-         2  3  6  2  1      "xy"      0   0)
+         ?a ?b ?c ?d ?ca ?cb ?selector ?ix ?iy
+         2  3  6  2  0   9   "xy"      2   3
+         2  3  6  2  0   9   "zw"      6   2
+         2  3  6  2  0   7   "zw"      6   1
+         2  3  6  2  0   5   "zw"      6  -1
+         2  3  0  0  0   9   "zw"      0   0
+         2  3  6  2  0   3   "xy"      2   1
+         2  3  6  2  0   1   "xy"      2  -1)
 
 
 (def height-to-index-probe
@@ -1587,5 +1636,26 @@ void main()
        ((noise3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7265625 1e-6)
        ((noise3d-test [] [0.5 0.0 0.0]) 0) => (roughly 0.3632813 1e-6))
 
+(def subtract-interval-probe
+  (template/fn [ax ay bx by]
+"#version 410 core
+out vec3 fragColor;
+vec2 subtract_interval(vec2 a, vec2 b);
+void main()
+{
+  vec2 result = subtract_interval(vec2(<%= ax %>, <%= ay %>), vec2(<%= bx %>, <%= by %>));
+  fragColor = vec3(result, 0);
+}"))
+
+(def subtract-interval-test (shader-test (fn [_program]) subtract-interval-probe subtract-interval))
+
+(tabular "Shader function to subtract two intervals"
+         (fact (take 2 (subtract-interval-test [] [?ax ?ay ?bx ?by])) => (vec2 ?rx ?ry))
+          ?ax  ?ay  ?bx  ?by  ?rx  ?ry
+          1.0  2.0  5.0  3.0  1.0  2.0
+          1.0  4.0  3.0  6.0  1.0  2.0
+          1.0  4.0  0.0  6.0  6.0 -1.0
+          2.0  3.0  1.0  2.0  3.0  2.0
+          4.0  1.0  1.0  2.0  4.0  1.0)
 
 (GLFW/glfwTerminate)
