@@ -121,7 +121,7 @@ void main()
 
 (GL20/glUniform1f (GL20/glGetUniformLocation program "nozzle") 2.7549)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "min_limit") 1.2)
-(GL20/glUniform1f (GL20/glGetUniformLocation program "max_slope") 0.5)
+(GL20/glUniform1f (GL20/glGetUniformLocation program "max_slope") 1.0)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "omega_factor") 0.2)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "diamond_strength") 0.2)
 

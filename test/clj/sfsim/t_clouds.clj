@@ -950,6 +950,7 @@ uniform float shadow;
 uniform float transmittance;
 uniform float atmosphere;
 uniform float in_scatter;
+uniform float amplification;
 float planet_and_cloud_shadows(vec4 point)
 {
   return shadow;
@@ -965,6 +966,12 @@ vec3 transmittance_track(vec3 p, vec3 q)
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
   return (q - p) * in_scatter;
+}
+vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec3 incoming)
+{
+  vec3 transmittance = transmittance_track(start, point);
+  vec3 in_scatter = ray_scatter_track(light_direction, start, point) * amplification;
+  return incoming * transmittance + in_scatter;
 }
 float powder (float d)
 {
@@ -1082,6 +1089,7 @@ void main()
 (def cloud-point-probe
   (template/fn [z selector]
     "#version 410 core
+uniform vec3 origin;
 uniform float radius;
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
@@ -1096,19 +1104,15 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
   float end = max(origin.z - inner_radius, 0);
   return vec4(start, (start - end) / direction.z, 0, 0);
 }
-vec4 clip_shell_intersections(vec4 intersections, float limit)
-{
-  return vec4(intersections.x, min(limit, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
-}
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
 {
   return vec4(start.z, cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_point(vec3 point);
+vec4 cloud_point(vec3 origin, vec3 direction, vec3 point);
 void main()
 {
   vec3 point = vec3(0, 0, <%= z %>);
-  vec4 result = cloud_point(point);
+  vec4 result = cloud_point(origin, normalize(point - origin), point);
   fragColor.r = result.<%= selector %>;
 }"))
 
@@ -1123,6 +1127,8 @@ void main()
       (uniform-float program "depth" depth)
       (uniform-vector3 program "origin" (vec3 0 0 origin)))
     cloud-point-probe
+    shaders/clip-interval
+    (last shaders/clip-shell-intersections)
     (last (cloud-point 3 [] []))))
 
 
@@ -1142,6 +1148,7 @@ void main()
 (def cloud-outer-probe
   (template/fn [dz selector]
     "#version 410 core
+uniform vec3 origin;
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
@@ -1173,11 +1180,11 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(start.z, cloud_scatter.g + cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_outer(vec3 fs_in_direction);
+vec4 cloud_outer(vec3 origin, vec3 direction);
 void main()
 {
   vec3 direction = vec3(0, 0, <%= dz %>);
-  vec4 result = cloud_outer(direction);
+  vec4 result = cloud_outer(origin, direction);
   fragColor.r = result.<%= selector %>;
 }"))
 
@@ -1191,6 +1198,8 @@ void main()
       (uniform-float program "cloud_top" 2.0)
       (uniform-vector3 program "origin" (vec3 0 0 z)))
     cloud-outer-probe
+    shaders/clip-interval
+    (last shaders/clip-shell-intersections)
     (last (cloud-outer 3 [] []))))
 
 
@@ -1210,6 +1219,7 @@ void main()
 
 (def fragment-planet-clouds
   "#version 410 core
+uniform vec3 origin;
 in GEO_OUT
 {
   vec2 colorcoord;
@@ -1224,23 +1234,20 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 {
   return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
 }
-vec4 clip_shell_intersections(vec4 intersections, float limit)
-{
-  return vec4(intersections.x, min(limit, intersections.x + intersections.y) - intersections.x, 0.0, 0.0);
-}
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
 {
   return vec4(cloud_shell.y, 0, 0, 0.25);
 }
-vec4 cloud_point(vec3 point);
+vec4 cloud_point(vec3 origin, vec3 direction, vec3 point);
 void main()
 {
-  fragColor = cloud_point(fs_in.point);
+  fragColor = cloud_point(origin, normalize(fs_in.point - origin), fs_in.point);
 }")
 
 
 (def fragment-atmosphere-clouds-mock
   "#version 410 core
+uniform vec3 origin;
 in VS_OUT
 {
   vec3 direction;
@@ -1261,10 +1268,10 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 {
   return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
 }
-vec4 cloud_outer(vec3 fs_in_direction);
+vec4 cloud_outer(vec3 origin, vec3 direction);
 void main()
 {
-  fragColor = cloud_outer(fs_in.direction);
+  fragColor = cloud_outer(origin, normalize(fs_in.direction));
 }")
 
 
@@ -1286,12 +1293,18 @@ void main()
                                             :sfsim.render/tess-control [tess-control-planet]
                                             :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
                                             :sfsim.render/geometry [(geometry-planet 0)]
-                                            :sfsim.render/fragment [fragment-planet-clouds (last (cloud-point 3 [] []))])
+                                            :sfsim.render/fragment [fragment-planet-clouds
+                                                                    shaders/clip-interval
+                                                                    (last shaders/clip-shell-intersections)
+                                                                    (last (cloud-point 3 [] []))])
               indices         [0 1 3 2]
               vertices        [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
               tile            (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
               atmosphere      (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                            :sfsim.render/fragment [fragment-atmosphere-clouds-mock (last (cloud-outer 3 [] []))])
+                                            :sfsim.render/fragment [fragment-atmosphere-clouds-mock
+                                                                    shaders/clip-interval
+                                                                    (last shaders/clip-shell-intersections)
+                                                                    (last (cloud-outer 3 [] []))])
               indices         [0 1 3 2]
               vertices        [-1 -1, 1 -1, -1 1, 1 1]
               vao             (make-vertex-array-object atmosphere indices vertices ["ndc" 2])

@@ -143,9 +143,14 @@
   [ray-sphere (slurp "resources/shaders/core/ray-shell.glsl")])
 
 
+(def clip-interval
+  "Shader function to apply clipping interval to input interval"
+  (slurp "resources/shaders/core/clip-interval.glsl"))
+
+
 (def clip-shell-intersections
   "Clip the intersection information of ray and shell using given limit"
-  (slurp "resources/shaders/core/clip-shell-intersections.glsl"))
+  [clip-interval (slurp "resources/shaders/core/clip-shell-intersections.glsl")])
 
 
 (def horizon-distance
@@ -305,32 +310,6 @@
 (def noise3d
   "Shader function to create continuous 3D noise"
   [(interpolate-function "noise3d" "hermite_interpolate" "hash3d") hermite-interpolate hash3d])
-
-
-(def plume-phase
-  "Shader function for phase function of mach cone positions"
-  (slurp "resources/shaders/plume/plume-phase.glsl"))
-
-
-(def diamond-phase
-  "Shader function to determine phase of Mach diamonds in rocket exhaust plume"
-  [plume-phase (slurp "resources/shaders/plume/diamond-phase.glsl")])
-
-
-(def plume-limit
-  "Shader function to get extent of rocket plume"
-  (slurp "resources/shaders/plume/limit.glsl"))
-
-
-(def bulge
-  "Shader function to determine shape of rocket exhaust plume"
-  [plume-limit plume-phase (slurp "resources/shaders/plume/bulge.glsl")])
-
-
-(defn diamond
-  "Shader function for volumetric Mach diamonds"
-  [fringe]
-  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
 
 
 (def subtract-interval

@@ -798,33 +798,56 @@ void main()
          0   0   0   2        3          0 0   0   1   0   0   "pq"       0   0)
 
 
-(def clip-shell-intersections-probe
-  (template/fn [a b c d limit selector]
-    "#version 410 core
+(def clip-interval-probe
+  (template/fn [x l cx cl]
+"#version 410 core
 out vec3 fragColor;
-vec4 clip_shell_intersections(vec4 intersections, float limit);
+vec2 clip_interval(vec2 interval, vec2 clip);
 void main()
 {
-  vec4 result = clip_shell_intersections(vec4(<%= a %>, <%= b %>, <%= c %>, <%= d %>), <%= limit %>);
+  vec2 result = clip_interval(vec2(<%= x %>, <%= l %>), vec2(<%= cx %>, <%= cl %>));
+  fragColor = vec3(result, 0);
+}"))
+
+
+(def clip-interval-test (shader-test (fn [_program]) clip-interval-probe clip-interval))
+
+
+(tabular "Clip the interval information of ray and shell using given limit"
+         (fact (clip-interval-test [] [?x ?l ?cx ?cl]) => (roughly-vector (vec3 ?rx ?rl 0) 1e-6))
+         ?x ?l ?cx ?cl ?rx ?rl
+         2  3  0   8   2   3
+         2  3  4   8   4   1
+         2  3  0   3   2   1)
+
+
+(def clip-shell-intersections-probe
+  (template/fn [a b c d ca cb selector]
+    "#version 410 core
+out vec3 fragColor;
+vec4 clip_shell_intersections(vec4 intersections, vec2 clip);
+void main()
+{
+  vec4 result = clip_shell_intersections(vec4(<%= a %>, <%= b %>, <%= c %>, <%= d %>), vec2(<%= ca %>, <%= cb %>));
   fragColor.xy = result.<%= selector %>;
   fragColor.z = 0;
 }"))
 
 
-(def clip-shell-intersections-test (shader-test (fn [_program]) clip-shell-intersections-probe clip-shell-intersections))
+(def clip-shell-intersections-test (apply shader-test (fn [_program]) clip-shell-intersections-probe clip-shell-intersections))
 
 
 (tabular "Clip the intersection information of ray and shell using given limit"
-         (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?limit ?selector])
+         (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?ca ?cb ?selector])
                => (roughly-vector (vec3 ?ix ?iy 0) 1e-6))
-         ?a ?b ?c ?d ?limit ?selector ?ix ?iy
-         2  3  6  2  9      "xy"      2   3
-         2  3  6  2  9      "zw"      6   2
-         2  3  6  2  7      "zw"      6   1
-         2  3  6  2  5      "zw"      0   0
-         2  3  0  0  9      "zw"      0   0
-         2  3  6  2  3      "xy"      2   1
-         2  3  6  2  1      "xy"      0   0)
+         ?a ?b ?c ?d ?ca ?cb ?selector ?ix ?iy
+         2  3  6  2  0   9   "xy"      2   3
+         2  3  6  2  0   9   "zw"      6   2
+         2  3  6  2  0   7   "zw"      6   1
+         2  3  6  2  0   5   "zw"      6  -1
+         2  3  0  0  0   9   "zw"      0   0
+         2  3  6  2  0   3   "xy"      2   1
+         2  3  6  2  0   1   "xy"      2  -1)
 
 
 (def height-to-index-probe
@@ -1613,91 +1636,6 @@ void main()
        ((noise3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7265625 1e-6)
        ((noise3d-test [] [0.5 0.0 0.0]) 0) => (roughly 0.3632813 1e-6))
 
-(def bulge-probe
-  (template/fn [pressure x]
-"#version 410 core
-out vec3 fragColor;
-float bulge(float pressure, float x);
-void main()
-{
-  float result = bulge(<%= pressure %>, <%= x %>);
-  fragColor = vec3(result, 0, 0);
-}"))
-
-(def bulge-test (apply shader-test (fn [program nozzle min-limit max-slope]
-                                       (uniform-float program "nozzle" nozzle)
-                                       (uniform-float program "min_limit" min-limit)
-                                       (uniform-float program "max_slope" max-slope)
-                                       (uniform-float program "omega_factor" PI))
-                       bulge-probe bulge))
-
-(tabular "Shader function to determine shape of rocket exhaust plume"
-         (fact ((bulge-test [?nozzle ?min-limit ?max-slope] [?pressure ?x]) 0) => (roughly ?result 1e-3))
-          ?nozzle   ?min-limit ?max-slope ?pressure  ?x    ?result
-          0.5       2.0        1.0         1.0          0.0  0.5
-          0.5       3.0        1.0         1.0        100.0  3.0
-          0.5       0.2        1.0         0.01       100.0  2.0
-          1.0       1.0        1.0         0.000001     0.1  1.1
-          1.0       0.1        1.0         0.01        10.0  1.0
-          1.0       0.5        1.0         1.0          0.0  0.5
-          1.0       0.5        1.0         1.0          1.0  1.0
-          1.0       0.5        1.0         1.0          2.0  0.5
-          1.0       0.5        1.0         1.0          3.0  1.0
-          1.0       0.75       1.0         1.0          0.0  0.75
-          1.0       0.75       1.0         1.0          2.0  1.0)
-
-(def plume-phase-probe
-  (template/fn [x limit]
-"#version 410 core
-out vec3 fragColor;
-float plume_phase(float x, float limit);
-void main()
-{
-  float result = plume_phase(<%= x %>, <%= limit %>);
-  fragColor = vec3(result, 0, 0);
-}"))
-
-(def plume-phase-test (shader-test (fn [program nozzle]
-                                       (uniform-float program "nozzle" nozzle)
-                                       (uniform-float program "omega_factor" 10.0))
-                                   plume-phase-probe plume-phase))
-
-(tabular "Shader function to determine phase of rocket exhaust plume"
-         (fact ((plume-phase-test [?nozzle] [?x ?limit]) 0) => (roughly ?result 1e-6))
-          ?nozzle   ?x    ?limit  ?result
-          1.0       0.0   0.5      0.0
-          1.0       1.0   0.5      5.0
-          1.0       2.0   0.5     10.0
-          1.0       1.0   0.0     10.0)
-
-(def diamond-phase-probe
-  (template/fn [x limit]
-"#version 410 core
-out vec3 fragColor;
-float plume_phase(float x, float limit)
-{
-  return x * (1.0 - limit);
-}
-float diamond_phase(float x, float limit);
-void main()
-{
-  float result = diamond_phase(<%= x %>, <%= limit %>);
-  fragColor = vec3(result, 0, 0);
-}"))
-
-(def diamond-phase-test (shader-test (fn [_program]) diamond-phase-probe (last diamond-phase)))
-
-(tabular "Shader function to determine phase of Mach cones"
-         (fact ((diamond-phase-test [] [?x ?limit]) 0) => (roughly ?result 1e-6))
-          ?x         ?limit   ?result
-          0.0        0.0      0.0
-          (* 0.2 PI) 0.0      (*  0.2 PI)
-          (* 0.4 PI) 0.0      (* -0.6 PI)
-          PI         0.0      0.0
-          (* 1.2 PI) 0.0      (*  0.2 PI)
-          (* 1.4 PI) 0.0      (* -0.6 PI)
-          (* 0.4 PI) 0.5      (*  0.2 PI))
-
 (def subtract-interval-probe
   (template/fn [ax ay bx by]
 "#version 410 core
@@ -1719,47 +1657,5 @@ void main()
           1.0  4.0  0.0  6.0  6.0 -1.0
           2.0  3.0  1.0  2.0  3.0  2.0
           4.0  1.0  1.0  2.0  4.0  1.0)
-
-(def diamond-probe
-  (template/fn [pressure x y]
-"#version 410 core
-out vec3 fragColor;
-float limit(float pressure)
-{
-  return 0.5 / pressure;
-}
-float plume_omega(float limit)
-{
-  return 2.0 * limit;
-}
-float diamond_phase(float x, float limit)
-{
-  return mod(plume_omega(limit) * x + 1.0, 2.0) - 1.0;
-}
-float diamond(float pressure, vec2 uv);
-void main()
-{
-  float result = diamond(<%= pressure %>, vec2(<%= x %>, <%= y %>));
-  fragColor = vec3(result, 0, 0);
-}"))
-
-(def diamond-test (shader-test (fn [program strength]
-                                   (uniform-float program "diamond_strength" strength)
-                                   (uniform-float program "nozzle" 1.0))
-                               diamond-probe (last (diamond 0.05))))
-
-(tabular "Shader function for volumetric Mach diamonds"
-         (fact (first (diamond-test [?strength] [?pressure ?x ?y])) => (roughly ?result 1e-3))
-          ?pressure ?strength ?x   ?y    ?result
-          1.0       1.0       0.0  0.0   0.5
-          1.0       0.5       0.0  0.0   0.25
-          1.0       1.0       0.0  2.0   0.0
-          1.0       1.0       0.0 -2.0   0.0
-          1.0       1.0       0.0  0.475 0.25
-          1.0       1.0       1.0  0.0   0.0
-          1.0       1.0       2.0  0.45  0.5
-          1.0       1.0       1.5  0.15  0.386
-          1.0       1.0       0.5  0.15  0.0
-          0.25      1.0       0.0  0.0   0.0)
 
 (GLFW/glfwTerminate)

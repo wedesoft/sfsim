@@ -15,13 +15,15 @@
 #define F (1.0 / tan(FOV / 2.0))
 #define DIST 30.0
 #define WIDTH2 7.4266
-#define SAMPLES 100
 #define SPEED 50.0
 #define START -7.5047
 #define ENGINE -11.18
 #define OFFSET -15.0
 #define END -50.0
 #define ENGINE_SIZE (START - ENGINE)
+#define ENGINE_STEP 0.2
+#define BASE_DENSITY 2.0
+#define DIAMOND_DENSITY 5.0
 #define RADIUS 3.9011
 #define LAYER 0.6
 
@@ -73,6 +75,54 @@ vec2 envelope(float pressure, float x) {
   return vec2(bulge + WIDTH2 - nozzle, bulge);
 }
 
+vec2 cylinder1_base = vec2(-10.9544,  4.3511);
+vec2 cylinder2_base = vec2(-10.9544, -4.3511);
+
+vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
+{
+  float pressure = pressure();
+  float transition = clamp((limit(pressure) - min_limit) / (nozzle - min_limit), 0.0, 1.0);
+  vec2 envelope = envelope(pressure, START - point.x - mix(ENGINE_SIZE, 0.0, transition));
+  float engine_pos = clamp((START - point.x) / ENGINE_SIZE, 0.0, 1.0);
+  float radius = 0.5 * (envelope.x + envelope.y);
+  // float slider1 = iMouse.x / iResolution.x;
+  // float slider2 = iMouse.y / iResolution.y;
+  // //float distortion1 = max(0.0, 5.0 * point.y * point.z * (slider1 - 0.5));
+  // //float distortion2 = max(0.0, 5.0 * point.y * (slider2 - 0.5));
+  // float distortion1 = 0.0;
+  // float distortion2 = 0.0;
+  float baseSdf = sdfEngine(cylinder1_base, cylinder2_base, point);
+  float fade = clamp((point.x - END) / (START - END), 0.0, 1.0);
+  float shapeMix = mix(sdf_circle(point.zy, vec2(0, 0), radius), sdf_rectangle(point.zy, -envelope, +envelope), fade);
+  float sdf = mix(baseSdf, shapeMix, mix(engine_pos, 1.0, transition)); // + distortion1 + distortion2;
+  if (sdf < 0.0) {
+    float dz = mix(WIDTH2, envelope.x, engine_pos);
+    float dy = mix(LAYER, envelope.y, engine_pos);
+    float density = BASE_DENSITY / (dz * dy) * fade;
+    float fringe = max(1.0 + sdf / 1.0, 0.0);
+    vec3 scale = 2.0 * vec3(0.1, nozzle / envelope.y, nozzle / envelope.x);
+    float attenuation = 0.7 + 0.3 * noise3d(point * scale + iTime * vec3(SPEED, 0.0, 0.0));
+    vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
+    float diamond = mix(diamond_strength, diamond(pressure, vec2(START - point.x - mix(ENGINE_SIZE, 0.0, transition), max(0.0, sdf + dy))), mix(engine_pos, 1.0, transition));
+    float plume_transmittance = exp(-density * plume_step);
+    plume_scatter.rgb += flame_color * plume_step * density * attenuation * plume_scatter.a;
+    plume_scatter.rgb += DIAMOND_DENSITY * diamond * density * plume_step * attenuation * plume_scatter.a;
+    plume_scatter.a *= plume_transmittance;
+  };
+  return plume_scatter;
+};
+
+vec4 sample_plume(vec3 origin, vec3 direction, vec2 plume_box, vec4 plume_scatter)
+{
+  float l = plume_box.x;
+  while (l < plume_box.x + plume_box.y) {
+    vec3 point = origin + l * direction;
+    plume_scatter = plume_transfer(point, ENGINE_STEP, plume_scatter);
+    l += ENGINE_STEP;
+  }
+  return plume_scatter;
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
   float aspect = iResolution.x / iResolution.y;
@@ -89,55 +139,18 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float box_size = max(limit(pressure), nozzle) + WIDTH2 - nozzle;
   vec2 box = ray_box(vec3(END, -box_size, -box_size), vec3(START, box_size, box_size), origin, direction);
   vec2 engine = ray_box(engine_min, engine_max, origin, direction);
-  vec2 cylinder1_base = vec2(-10.9544,  4.3511);
-  vec2 cylinder2_base = vec2(-10.9544, -4.3511);
   vec2 cylinder1 = ray_circle(cylinder1_base, RADIUS, origin.xy, direction.xy);
   vec2 cylinder2 = ray_circle(cylinder2_base, RADIUS, origin.xy, direction.xy);
   vec2 joint = subtract_interval(subtract_interval(engine, cylinder1), cylinder2);
   vec3 color = vec3(0, 0, 0);
   if (joint.y > 0.0) {
-    float diffuse = 0.5;
-    color = vec3(1.0) * (diffuse * 0.9 + 0.1);
+    color = vec3(0.5);
     if (box.x + box.y > joint.x) {
       box.y = joint.x - box.x;
     };
   };
-  if (box.y > 0.0) {
-    float ds = box.y / float(SAMPLES);
-    for (int i = 0; i <= SAMPLES; i++)
-    {
-      float s = box.x + float(i) * ds;
-      vec3 p = origin + direction * s;
-      if (p.x <= engine_max.x) {
-        float transition = clamp((limit(pressure) - min_limit) / (nozzle - min_limit), 0.0, 1.0);
-        vec2 envelope = envelope(pressure, engine_max.x - p.x - mix(ENGINE_SIZE, 0.0, transition));
-        float engine_pos = clamp((engine_max.x - p.x) / ENGINE_SIZE, 0.0, 1.0);
-        float radius = 0.5 * (envelope.x + envelope.y);
-        // float slider1 = iMouse.x / iResolution.x;
-        // float slider2 = iMouse.y / iResolution.y;
-        // //float distortion1 = max(0.0, 5.0 * p.y * p.z * (slider1 - 0.5));
-        // //float distortion2 = max(0.0, 5.0 * p.y * (slider2 - 0.5));
-        // float distortion1 = 0.0;
-        // float distortion2 = 0.0;
-        float baseSdf = sdfEngine(cylinder1_base, cylinder2_base, p);
-        float fade = clamp((p.x - END) / (engine_max.x - END), 0.0, 1.0);
-        float shapeMix = mix(sdf_circle(p.zy, vec2(0, 0), radius), sdf_rectangle(p.zy, -envelope, +envelope), fade);
-        float sdf = mix(baseSdf, shapeMix, mix(engine_pos, 1.0, transition)); // + distortion1 + distortion2;
-        if (sdf < 0.0) {
-          float dz = mix(WIDTH2, envelope.x, engine_pos);
-          float dy = mix(LAYER, envelope.y, engine_pos);
-          float density = 1.0 / (dz * dy) * fade;
-          float fringe = max(1.0 + sdf / 1.0, 0.0);
-          vec3 scale = 2.0 * vec3(0.1, nozzle / envelope.y, nozzle / envelope.x);
-          float attenuation = 0.7 + 0.3 * noise3d(p * scale + iTime * vec3(SPEED, 0.0, 0.0));
-          vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
-          float diamond = mix(diamond_strength, diamond(pressure, vec2(engine_max.x - p.x - mix(ENGINE_SIZE, 0.0, transition), max(0.0, sdf + dy))), mix(engine_pos, 1.0, transition));
-          color = color * pow(0.2, ds * density);
-          color += flame_color * ds * density * attenuation;
-          color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
-        };
-      };
-    };
-  };
+  vec4 plume_scatter = vec4(0, 0, 0, 1);
+  plume_scatter = sample_plume(origin, direction, box, plume_scatter);
+  color = plume_scatter.rgb + color * plume_scatter.a;
   fragColor = vec4(color, 1.0);
 }
