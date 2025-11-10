@@ -59,6 +59,7 @@
       - [X] generate cloud_point and cloud_outer from same code using boolean (optional end point)
       - [X] generate cloud_plume_point, cloud_plume_cloud, and cloud_plume_cloud_point from same code using booleans
       - [X] cloud_plume shader should take origin, direction, (and optionally end point), in object coordinates
+      - [ ] use object matrix (top-level transform) instead of individual mesh transform
       - [ ] implement plume_point
       - [X] atmospheric transmittance for clouds behind plume
       - [ ] provide origin, direction and point in plume coordinates

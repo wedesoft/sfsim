@@ -803,17 +803,17 @@
 
 (defn make-scene-render-vars
   "Create hashmap with render variables for rendering a scene outside the atmosphere"
-  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 :double] render-vars]}
-  [render-config window-width window-height position orientation light-direction object-position object-radius]
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double] render-vars]}
+  [render-config window-width window-height camera-position camera-orientation light-direction object-position object-orientation
+   object-radius]
   (let [min-z-near           (:sfsim.render/min-z-near render-config)
-        rotation             (quaternion->matrix orientation)
-        camera-to-world      (transformation-matrix rotation position)
+        camera-to-world      (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-camera      (inverse camera-to-world)
         object-camera-vector (mulv world-to-camera (vec3->vec4 object-position 1.0))
         object-depth         (- ^double (object-camera-vector 2))
         z-near               (max ^double (- ^double object-depth ^double object-radius) ^double min-z-near)
         z-far                (+ ^double z-near ^double object-radius ^double object-radius)]
-    (make-render-vars render-config window-width window-height position orientation light-direction z-near z-far)))
+    (make-render-vars render-config window-width window-height camera-position camera-orientation light-direction z-near z-far)))
 
 
 (defn vertex-shadow-scene

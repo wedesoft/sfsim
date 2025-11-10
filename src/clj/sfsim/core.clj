@@ -786,6 +786,8 @@
             (swap! camera-dx + (* ^double dt ^double (@state :sfsim.input/camera-shift-x)))
             (swap! camera-dy + (* ^double dt ^double (@state :sfsim.input/camera-shift-y)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+              object-orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+              object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
               [origin camera-orientation] (if playback [@camera-position @camera-orientation]
                                             (get-camera-pose physics-state jd-ut dt state))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
@@ -795,15 +797,12 @@
                                                                  @window-width @window-height origin camera-orientation
                                                                  light-direction)
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
-                                                               camera-orientation light-direction object-position
+                                                               camera-orientation light-direction object-position object-orientation
                                                                config/object-radius)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) opacity-base)
-              object-to-world    (transformation-matrix
-                                   (quaternion->matrix (physics/get-orientation :sfsim.physics/surface jd-ut physics-state))
-                                   object-position)
               wheels-scene       (if (= ^double @gear 1.0)
                                    (model/apply-transforms
                                      scene

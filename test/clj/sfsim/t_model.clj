@@ -717,14 +717,18 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
              pos2            (vec3 0 0 -20)
              pos3            (vec3 0 0 -100)
              orientation1    (q/rotation 0.0 (vec3 0 0 1))
+             orientation2    (q/rotation 0.5 (vec3 0 0 1))
+             orientation3    (q/rotation 0.0 (vec3 0 0 1))
              light-direction (vec3 1 0 0)
-             object-pos      (vec3 0 0 -100)
+             obj-pos         (vec3 0 0 -100)
+             obj-orient      (q/rotation 0.0 (vec3 0 0 1))
              object-radius   10.0
-             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction object-pos object-radius)
-             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation1 light-direction object-pos object-radius)
-             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation1 light-direction object-pos object-radius)]
+             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient object-radius)
+             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient object-radius)
+             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient object-radius)]
          (:sfsim.render/origin render-vars1) => pos1
          (:sfsim.render/camera-to-world render-vars1) => (eye 4)
+         (:sfsim.render/camera-to-world render-vars2) => (transformation-matrix (quaternion->matrix orientation2) (vec3 0 0 -20))
          (:sfsim.render/z-near render-vars1) => 90.0
          (:sfsim.render/z-far render-vars1) => 110.0
          (:sfsim.render/z-near render-vars2) => 70.0

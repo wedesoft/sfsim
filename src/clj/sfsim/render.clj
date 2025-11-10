@@ -613,13 +613,12 @@
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame with specified depth range"
   {:malli/schema [:=> [:cat [:map [::fov :double]] N N fvec3 quaternion fvec3 :double :double] render-vars]}
-  [render-config window-width window-height position orientation light-direction z-near z-far]
+  [render-config window-width window-height camera-position camera-orientation light-direction z-near z-far]
   (let [fov             (::fov render-config)
-        rotation        (quaternion->matrix orientation)
-        camera-to-world (transformation-matrix rotation position)
+        camera-to-world (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         z-offset        1.0
         projection      (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)]
-    {::origin position
+    {::origin camera-position
      ::z-near z-near
      ::z-far z-far
      ::fov fov
