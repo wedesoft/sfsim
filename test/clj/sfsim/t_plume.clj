@@ -1,0 +1,267 @@
+;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
+(ns sfsim.t-plume
+    (:require
+      [clojure.math :refer (PI)]
+      [malli.dev.pretty :as pretty]
+      [malli.instrument :as mi]
+      [fastmath.vector :refer (vec3)]
+      [fastmath.matrix :refer (diagonal)]
+      [comb.template :as template]
+      [sfsim.conftest :refer (roughly-vector shader-test)]
+      [midje.sweet :refer :all]
+      [sfsim.render :refer :all]
+      [sfsim.plume :refer :all])
+    (:import
+      (org.lwjgl.glfw
+        GLFW)))
+
+
+(mi/collect! {:ns (all-ns)})
+(mi/instrument! {:report (pretty/thrower)})
+
+(GLFW/glfwInit)
+
+(def bulge-probe
+  (template/fn [pressure x]
+"#version 410 core
+out vec3 fragColor;
+float bulge(float pressure, float x);
+void main()
+{
+  float result = bulge(<%= pressure %>, <%= x %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def bulge-test (apply shader-test (fn [program nozzle min-limit max-slope]
+                                       (uniform-float program "nozzle" nozzle)
+                                       (uniform-float program "min_limit" min-limit)
+                                       (uniform-float program "max_slope" max-slope)
+                                       (uniform-float program "omega_factor" PI))
+                       bulge-probe bulge))
+
+(tabular "Shader function to determine shape of rocket exhaust plume"
+         (fact ((bulge-test [?nozzle ?min-limit ?max-slope] [?pressure ?x]) 0) => (roughly ?result 1e-3))
+          ?nozzle   ?min-limit ?max-slope ?pressure  ?x    ?result
+          0.5       2.0        1.0         1.0          0.0  0.5
+          0.5       3.0        1.0         1.0        100.0  3.0
+          0.5       0.2        1.0         0.01       100.0  2.0
+          1.0       1.0        1.0         0.000001     0.1  1.1
+          1.0       0.1        1.0         0.01        10.0  1.0
+          1.0       0.5        1.0         1.0          0.0  0.5
+          1.0       0.5        1.0         1.0          1.0  1.0
+          1.0       0.5        1.0         1.0          2.0  0.5
+          1.0       0.5        1.0         1.0          3.0  1.0
+          1.0       0.75       1.0         1.0          0.0  0.75
+          1.0       0.75       1.0         1.0          2.0  1.0)
+
+(def plume-phase-probe
+  (template/fn [x limit]
+"#version 410 core
+out vec3 fragColor;
+float plume_phase(float x, float limit);
+void main()
+{
+  float result = plume_phase(<%= x %>, <%= limit %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def plume-phase-test (shader-test (fn [program nozzle]
+                                       (uniform-float program "nozzle" nozzle)
+                                       (uniform-float program "omega_factor" 10.0))
+                                   plume-phase-probe plume-phase))
+
+(tabular "Shader function to determine phase of rocket exhaust plume"
+         (fact ((plume-phase-test [?nozzle] [?x ?limit]) 0) => (roughly ?result 1e-6))
+          ?nozzle   ?x    ?limit  ?result
+          1.0       0.0   0.5      0.0
+          1.0       1.0   0.5      5.0
+          1.0       2.0   0.5     10.0
+          1.0       1.0   0.0     10.0)
+
+(def diamond-phase-probe
+  (template/fn [x limit]
+"#version 410 core
+out vec3 fragColor;
+float plume_phase(float x, float limit)
+{
+  return x * (1.0 - limit);
+}
+float diamond_phase(float x, float limit);
+void main()
+{
+  float result = diamond_phase(<%= x %>, <%= limit %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def diamond-phase-test (shader-test (fn [_program]) diamond-phase-probe (last diamond-phase)))
+
+(tabular "Shader function to determine phase of Mach cones"
+         (fact ((diamond-phase-test [] [?x ?limit]) 0) => (roughly ?result 1e-6))
+          ?x         ?limit   ?result
+          0.0        0.0      0.0
+          (* 0.2 PI) 0.0      (*  0.2 PI)
+          (* 0.4 PI) 0.0      (* -0.6 PI)
+          PI         0.0      0.0
+          (* 1.2 PI) 0.0      (*  0.2 PI)
+          (* 1.4 PI) 0.0      (* -0.6 PI)
+          (* 0.4 PI) 0.5      (*  0.2 PI))
+
+(def diamond-probe
+  (template/fn [pressure x y]
+"#version 410 core
+out vec3 fragColor;
+float limit(float pressure)
+{
+  return 0.5 / pressure;
+}
+float plume_omega(float limit)
+{
+  return 2.0 * limit;
+}
+float diamond_phase(float x, float limit)
+{
+  return mod(plume_omega(limit) * x + 1.0, 2.0) - 1.0;
+}
+float diamond(float pressure, vec2 uv);
+void main()
+{
+  float result = diamond(<%= pressure %>, vec2(<%= x %>, <%= y %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def diamond-test (shader-test (fn [program strength]
+                                   (uniform-float program "diamond_strength" strength)
+                                   (uniform-float program "nozzle" 1.0))
+                               diamond-probe (last (diamond 0.05))))
+
+(tabular "Shader function for volumetric Mach diamonds"
+         (fact (first (diamond-test [?strength] [?pressure ?x ?y])) => (roughly ?result 1e-3))
+          ?pressure ?strength ?x   ?y    ?result
+          1.0       1.0       0.0  0.0   0.5
+          1.0       0.5       0.0  0.0   0.25
+          1.0       1.0       0.0  2.0   0.0
+          1.0       1.0       0.0 -2.0   0.0
+          1.0       1.0       0.0  0.475 0.25
+          1.0       1.0       1.0  0.0   0.0
+          1.0       1.0       2.0  0.45  0.5
+          1.0       1.0       1.5  0.15  0.386
+          1.0       1.0       0.5  0.15  0.0
+          0.25      1.0       0.0  0.0   0.0)
+
+(def cloud-plume-segment-probe
+  (template/fn [x plume model-point planet-point attenuation]
+"#version 410 core
+uniform vec3 origin;
+uniform float radius;
+uniform float depth;
+out vec3 fragColor;
+vec4 cloud_plume_cloud(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
+vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point);
+vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction);
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+{
+  float start = max(0.0, -3.0 - origin.x);
+  float end = 3.0 - origin.x;
+  return vec2(start, end - start);
+}
+vec4 cloud_outer(vec3 origin, vec3 direction)
+{
+  vec2 segment = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
+  if (segment.t > 0) {
+    float transmittance = pow(0.5, segment.t);
+    return vec4(1.0 - transmittance, 0.0, 0.0, 1.0 - transmittance);
+  } else
+    return vec4(0, 0, 0, 0);
+}
+vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
+{
+  vec2 segment = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
+  segment.t = min(distance(point, origin) - segment.s, min(depth, segment.t));
+  if (segment.t > 0) {
+    float transmittance = pow(0.5, segment.t);
+    return vec4(1.0 - transmittance, 0.0, 0.0, 1.0 - transmittance);
+  } else
+    return vec4(0, 0, 0, 0);
+}
+vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec3 incoming)
+{
+  float dist = distance(point, start);
+  return incoming * pow(0.5, <%= attenuation %> * dist);
+}
+vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
+{
+  float plume = object_origin.y;
+  return vec4(0.0, plume, 0.0, plume);
+}
+vec4 plume_outer(vec3 object_origin, vec3 object_direction)
+{
+  float plume = object_origin.y;
+  return vec4(0.0, plume, 0.0, plume);
+}
+void main()
+{
+  vec3 point = vec3(<%= x %>, 0.0, 0.0);
+  vec3 direction = vec3(1.0, 0.0, 0.0);
+  vec3 object_origin = vec3(0.0, <%= plume %>, 0.0);
+<% (if (and (not planet-point) (not model-point)) %>
+  vec4 result = cloud_plume_cloud(origin, direction, object_origin, direction);
+<% ) %>
+<% (if (and planet-point (not model-point)) %>
+  vec4 result = cloud_plume_cloud_point(origin, direction, point, object_origin, direction);
+<% ) %>
+<% (if model-point %>
+  vec4 result = cloud_plume_point(origin, direction, object_origin, direction, point);
+<% ) %>
+  fragColor = result.rga;
+}"))
+
+(defn cloud-plume-segment-test
+  [model-point planet-point]
+  (shader-test (fn [program origin-x object-distance depth]
+                   (uniform-float program "radius" 2.0)
+                   (uniform-float program "max_height" 1.0)
+                   (uniform-float program "object_distance" object-distance)
+                   (uniform-float program "depth" depth)
+                   (uniform-vector3 program "light_direction" (vec3 0 1 0))
+                   (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
+               cloud-plume-segment-probe (last (cloud-plume-segment model-point planet-point))))
+
+(tabular "Shader function to determine cloud and rocket plume contribution"
+         (fact ((cloud-plume-segment-test ?model ?planet) [?ox ?d ?depth] [?x ?plume ?model ?planet ?attenuation])
+               => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
+         ?ox  ?x  ?d  ?depth ?plume ?model ?planet ?attenuation ?r    ?g   ?a
+         4.0  0.0 0.0 100.0  0.0    false  false   0.0          0.0   0.0  0.0
+         1.0  0.0 2.0 100.0  0.0    false  false   0.0          0.75  0.0  0.75
+         4.0  0.0 0.0 100.0  1.0    false  false   0.0          0.0   1.0  1.0
+         2.0  0.0 1.0 100.0  1.0    false  false   0.0          0.5   0.5  1.0
+         1.0  0.0 1.0 100.0  0.5    false  false   0.0          0.625 0.25 0.875
+         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
+         4.0  0.0 2.0 100.0  0.0    false  false   0.0          0.0   0.0  0.0
+         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
+         2.0  0.0 0.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
+         2.0  0.0 1.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
+         0.0  0.0 0.0 100.0  0.0    true   false   0.0          0.0   0.0  0.0
+        -1.0  1.0 2.0 100.0  0.0    true   false   0.0          0.75  0.0  0.75
+        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0  1.0
+        -1.0  0.0 1.0 100.0  1.0    true   false   0.0          0.5   0.5  1.0
+        -1.0  1.0 1.0 100.0  0.5    false  true    0.0          0.625 0.25 0.875
+        -4.0 -2.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
+        -6.0 -4.0 2.0 100.0  0.0    true   false   0.0          0.0   0.0  0.0
+         2.0  4.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
+        -4.0 -2.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0  0.5
+         2.0  4.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0  0.5
+        -1.0  1.0 1.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
+        -1.0  1.0 2.0   1.0  0.0    false  true    0.0          0.5   0.0  0.5
+        -6.0 -5.0 1.0 100.0  1.0    false  true    0.0          0.0   1.0  1.0
+        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0  1.0
+        -1.0  1.0 1.0 100.0  1.0    false  false   1.0          0.5   0.25 1.0
+        -6.0 -5.0 1.0 100.0  1.0    false  false   1.0          0.0   1.0  1.0
+        -4.0 -2.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0
+         2.0  4.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0)
+
+(GLFW/glfwTerminate)

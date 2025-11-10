@@ -89,7 +89,9 @@
 
 (def interpolation (m/schema [:enum ::nearest ::linear]))
 
-(defmulti setup-interpolation (comp second vector))
+(defmulti setup-interpolation
+  "Initialize different types of texture interpolation"
+  (fn [_target interpolation] interpolation))
 (m/=> setup-interpolation [:=> [:cat :int interpolation] :nil])
 
 
@@ -107,7 +109,9 @@
 
 (def boundary (m/schema [:enum ::clamp ::repeat]))
 
-(defmulti setup-boundary-1d identity)
+(defmulti setup-boundary-1d
+  "Configure different types of boundary threatment for 1D texture"
+  identity)
 (m/=> setup-boundary-1d [:=> [:cat boundary] :nil])
 
 
@@ -131,7 +135,9 @@
                    {::texture texture# ::target GL11/GL_TEXTURE_1D ::width ~width}))
 
 
-(defmulti setup-boundary-2d identity)
+(defmulti setup-boundary-2d
+  "Configure different types of boundary threatment for 2D texture"
+  identity)
 (m/=> setup-boundary-2d [:=> [:cat boundary] :nil])
 
 
@@ -166,7 +172,9 @@
                       ~@body))
 
 
-(defmulti setup-boundary-3d (comp second vector))
+(defmulti setup-boundary-3d
+  "Configure different types of boundary threatment for 3D texture"
+  (fn [_target boundary] boundary))
 (m/=> setup-boundary-3d [:=> [:cat :int boundary] :nil])
 
 

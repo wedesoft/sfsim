@@ -35,12 +35,47 @@
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [X] integrate control surface scaling
-  - [ ] thrust graphics, opengl rocket plume
-    - [ ] deteriorating series of mach diamonds
-    - [ ] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
-    - [ ] expanding plume with decreasing atmospheric pressure
-  - [ ] add keyboard mapping help page
+  - [-] thrust graphics, opengl rocket plume
+    - [X] deteriorating series of mach diamonds
+    - [X] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
+    - [X] expanding plume with decreasing atmospheric pressure
+    - If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
+      A combination of pitch and roll can produce whatever attitude control you need. source
+      [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
+    - [X] increasingly round shape of plume
+    - [X] plume shape around aerospike
+    - [X] effects of thrust vectoring
+    - [-] shaders for
+      - [X] signed distance function rectangle
+      - [X] signed distance function circle
+      - [X] signed distance function engine exhaust
+      - [X] 3d noise
+      - [X] plume envelope
+      - [X] plume diamonds
+      - [X] clip cloud_plume_point with depth
+      - [X] implement cloud_plume_outer
+      - [X] refactor cloud_plume_outer
+      - [X] move plume shaders into plume module and add cloud_segment as dependency
+      - [X] generate cloud_point and cloud_outer from same code using boolean (optional end point)
+      - [X] generate cloud_plume_point, cloud_plume_cloud, and cloud_plume_cloud_point from same code using booleans
+      - [X] cloud_plume shader should take origin, direction, (and optionally end point), in object coordinates
+      - [ ] implement plume_point
+      - [X] atmospheric transmittance for clouds behind plume
+      - [ ] provide origin, direction and point in plume coordinates
+      - [ ] is "depth" initialised when rendering space ship or planet?
+      - [ ] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
+      - [ ] don't split sampling interval if there is no plume
+      - [ ] cloud functions refactor
+        - [ ] clip interval using other segment
+        - [ ] clip shell intersections using segment
+      - [ ] joined sampling of clouds and engine plume: replace cloud_point and cloud_outer with joint sampling of clouds and plume
+        - [ ] model rendering: uses cloud_point
+        - [ ] planet rendering: uses cloud overlay
+          - [ ] cloud overlay planet: cloud_point
+        - [ ] atmosphere rendering: uses cloud overlay
+          - [ ] cloud overlay atmosphere: cloud_outer
   - [ ] implement RCS thrusters
+  - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
   - [ ] Nose wheel steering
   - [ ] yaw stabilisation
@@ -74,6 +109,7 @@
   - [ ] event-based radio (triggers as in Operation Flashpoint)
 * TODO [#C] 3D cockpit                                               :interface:
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
+** TODO update controls in background thread
 ** TODO ground slope warning
 ** TODO frontal and side view of moon lander, altitude visualisation?
 ** TODO cockpit and scene rendering looking downward so that horizon is in upper half of screen
@@ -176,6 +212,7 @@
 ** TODO use icosahedron for mapping 2D micro textures (better grass)
    - Note taken on [2025-08-16 Sa 22:05] \\
      [[https://uk.pinterest.com/pin/445223113163715012/]]
+     [[https://stackoverflow.com/questions/4699568/opengl-icosahedron-texture-mapping]]
    - [ ] unroll icosahedron manually (20 surfaces)
    - [ ] find smallest cross product of vector with sum of corner vectors
    - [ ] use inverse of corners matrix to get linear combination of corner vectors and normalise sum to one
@@ -199,6 +236,8 @@
 ** TODO create windows using blending (reflections?)
 ** TODO introduce variation to cloud height
 * TODO [#C] other improvements
+  - Note taken on [2025-10-04 Sa 13:42] \\
+    Press g? to get orgmode help
   - Note taken on [2025-09-15 Mo 18:52] \\
     https://www.reddit.com/user/bsless/
     Willing to lend a hand with any perf work if you're interested
@@ -208,22 +247,24 @@
     * Balanced colour palette
     * Voice over
     * Visual effects
-** TODO r/daslu suggested talk at [[macroexpand_noj][https://scicloj.github.io/macroexpand-2025/macroexpand_noj]]
-** TODO joystick hat to control camera
-** TODO limit dt or pause
-** TODO shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
-** TODO add object radius to object?
-** TODO fix planet tessellation tests
-** TODO integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
-   - [ ] use multiplication of local shadow map and planet+cloud shadows?
-** TODO improve performance of quaternions (see fastmath implementation)
-** TODO extendability (modding)?
-** TODO put parameters like max-height, power, specular, radius in a configuration (edn?) file
-   only render sun glare when sun is above horizon, use single (normalised?) color from transmittance, bloom?
-   amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
-** TODO separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
-  overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
-** TODO documentation how to create glTF with Blender
-   - [ ] normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
-   - [ ] apply all modifiers
-   - [ ] bake animation when exporting (use NLP track names)
+    * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
+  - [ ] add keyboard mapping help page!
+  - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
+  - [ ] joystick hat to control camera
+  - [ ] limit dt or pause
+  - [ ] shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
+  - [ ] add object radius to object?
+  - [ ] fix planet tessellation tests
+  - [ ] integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
+    - [ ] use multiplication of local shadow map and planet+cloud shadows?
+  - [ ] improve performance of quaternions (see fastmath implementation)
+  - [ ] extendability (modding)?
+  - [ ] put parameters like max-height, power, specular, radius in a configuration (edn?) file
+    - only render sun glare when sun is above horizon, use single (normalised?) color from transmittance, bloom?
+    - amplify glare? appearance of sun? s2016-pbs-frostbite-sky-clouds-new.pdf page 28
+  - [ ] separate atmosphere from environmental shadow code, setup-shadow-matrices support for no environmental shadow,
+    - overall-shading with object shadows only, aggregate shadow-vars with scene-shadows?
+  - [ ] documentation how to create glTF with Blender
+    - [ ] normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
+    - [ ] apply all modifiers
+    - [ ] bake animation when exporting (use NLP track names)

@@ -1,127 +1,362 @@
 #version 410 core
 
-#define M_PI 3.1415926535897932384626433832795
-#define HASHSCALE 0.1031
-
 // References:
 // Mach diamonds: https://www.shadertoy.com/view/WdGBDc
 // fbm and domain warping: https://www.shadertoy.com/view/WsjGRz
 // flame thrower: https://www.shadertoy.com/view/XsVSDW
+// 3D perlin noise: https://www.shadertoy.com/view/4djXzz
 
 uniform vec2 iResolution;
 uniform float iTime;
 uniform vec2 iMouse;
 
-float hash(float p)
+#define M_PI 3.1415926535897932384626433832795
+#define FOV (60.0 * M_PI / 180.0)
+#define F (1.0 / tan(FOV / 2.0))
+#define DIST 2.0
+#define WIDTH2 0.4
+#define NOZZLE 0.2
+#define SCALING 0.1
+#define SAMPLES 100
+#define OMEGA_FACTOR 50.0
+#define SPEED 50.0
+#define START -1.0
+#define END 2.5
+
+// rotation around x axis
+mat3 rotation_x(float angle) {
+  float s = sin(angle);
+  float c = cos(angle);
+  return mat3(
+    1, 0, 0,
+    0, c, s,
+    0, -s, c
+  );
+}
+
+// rotation around y axis
+mat3 rotation_y(float angle) {
+  float s = sin(angle);
+  float c = cos(angle);
+  return mat3(
+    c, 0, -s,
+    0, 1, 0,
+    s, 0, c
+  );
+}
+
+// rotation around z axis
+mat3 rotation_z(float angle) {
+  float s = sin(angle);
+  float c = cos(angle);
+  return mat3(
+    c, s, 0,
+    -s, c, 0,
+    0, 0, 1
+  );
+}
+
+float hash3d(vec3 coordinates)
 {
-  vec3 p3  = fract(vec3(p) * HASHSCALE);
-  p3 += dot(p3, p3.yzx + 19.19);
-  return fract((p3.x + p3.y) * p3.z);
+  float hashValue = coordinates.x + coordinates.y * 37.0 + coordinates.z * 521.0;
+  return fract(sin(hashValue * 1.333) * 100003.9);
 }
 
-float fade(float t) { return t*t*t*(t*(6.*t-15.)+10.); }
-
-float grad(float hash, float p)
+float interpolate_hermite(float value1, float value2, float factor)
 {
-  int i = int(1e4*hash);
-  return (i & 1) == 0 ? p : -p;
+    return mix(value1, value2, factor * factor * (3.0 - 2.0 * factor)); // Perform cubic Hermite interpolation
 }
 
-float perlin(float p)
+const vec2 vector01 = vec2(0.0, 1.0);
+
+float noise(vec3 coordinates)
 {
-  float pi = floor(p), pf = p - pi, w = fade(pf);
-  return mix(grad(hash(pi), pf), grad(hash(pi + 1.0), pf - 1.0), w) * 2.0;
+  vec3 fractional = fract(coordinates.xyz);
+  vec3 integral = floor(coordinates.xyz);
+  float hash000 = hash3d(integral);
+  float hash100 = hash3d(integral + vector01.yxx);
+  float hash010 = hash3d(integral + vector01.xyx);
+  float hash110 = hash3d(integral + vector01.yyx);
+  float hash001 = hash3d(integral + vector01.xxy);
+  float hash101 = hash3d(integral + vector01.yxy);
+  float hash011 = hash3d(integral + vector01.xyy);
+  float hash111 = hash3d(integral + vector01.yyy);
+
+  return interpolate_hermite(
+      interpolate_hermite(interpolate_hermite(hash000, hash100, fractional.x), interpolate_hermite(hash010, hash110, fractional.x), fractional.y),
+      interpolate_hermite(interpolate_hermite(hash001, hash101, fractional.x), interpolate_hermite(hash011, hash111, fractional.x), fractional.y),
+      fractional.z);
 }
 
-float hash21(vec2 v) {
-  return fract(sin(dot(v, vec2(12.9898, 78.233))) * 43758.5453123);
+vec2 ray_box(vec3 box_min, vec3 box_max,
+             vec3 origin, vec3 direction,
+             out vec3 normal)
+{
+    vec3 factors1 = (box_min - origin) / direction;
+    vec3 factors2 = (box_max - origin) / direction;
+
+    vec3 intersections1 = min(factors1, factors2);
+    vec3 intersections2 = max(factors1, factors2);
+
+    float near = max(max(max(intersections1.x, intersections1.y), intersections1.z), 0.0);
+    float far  = min(min(intersections2.x, intersections2.y), intersections2.z);
+
+    if (far < near) {
+        normal = vec3(0.0);
+        return vec2(-1.0, -1.0);
+    }
+
+    if (near == intersections1.x) {
+        normal = (factors1.x > factors2.x) ? vec3(1.0, 0.0, 0.0)
+                                           : vec3(-1.0, 0.0, 0.0);
+    } else if (near == intersections1.y) {
+        normal = (factors1.y > factors2.y) ? vec3(0.0, 1.0, 0.0)
+                                           : vec3(0.0, -1.0, 0.0);
+    } else {
+        normal = (factors1.z > factors2.z) ? vec3(0.0, 0.0, 1.0)
+                                           : vec3(0.0, 0.0, -1.0);
+    }
+
+    return vec2(near, max(far - near, 0.0));
 }
 
-// https://www.shadertoy.com/view/WsjGRz
-float noise(vec2 uv) {
-  vec2 f = fract(uv);
-  vec2 i = floor(uv);
-  f = f * f * (3. - 2. * f);
-  return mix(
-      mix(hash21(i), hash21(i + vec2(1,0)), f.x),
-      mix(hash21(i + vec2(0,1)), hash21(i + vec2(1,1)), f.x), f.y);
+float pressure()
+{
+  float slider = iMouse.y / iResolution.y;
+  return pow(0.001, slider);
 }
 
-
-float fbm(vec2 n) {
-  float total = 0.0, amplitude = 0.5;
-  for (int i = 0; i < 3; i++) {
-    total += noise(n) * amplitude;
-    n = n * 2.0;
-    amplitude *= 0.5;
-  }
-  return total;
+float limit(float pressure)
+{
+  return SCALING * sqrt(1.0 / pressure);
 }
 
-float current_bulge(float phase) {
-  return abs(sin(phase));
+float bumps(float x)
+{
+  float pressure = pressure();
+  float limit = limit(pressure);
+  if (NOZZLE < limit) {
+    float c = 0.4;
+    float log_c = log(c);
+    float start = log((limit - NOZZLE) / limit) / log_c;
+    return limit - limit * pow(c, start + x);
+  } else {
+    float bulge = NOZZLE - limit;
+    float omega = OMEGA_FACTOR * bulge;
+    float bumps = bulge * abs(sin(x * omega));
+    return limit + bumps;
+  };
 }
 
-float current_dilation(float phase) {
-  return 1.0 + 0.02 * phase;
+float fringe(vec2 uv)
+{
+  float pressure = pressure();
+  float radius = bumps(uv.x);
+  float dist = abs(uv.y) - radius;
+  return max(1.0 - abs(dist) / 0.1, 0.0);
 }
 
-float smooth_bulge(float phase) {
-  float weight = exp(-phase * 0.1);
-  float growth = current_dilation(phase);
-  return growth * (current_bulge(phase) * weight + (1.0 - weight));
+vec2 intersectCylinder(vec3 origin, vec3 direction,
+                       vec3 base, vec3 axis, float r,
+                       out vec3 normal)
+{
+    vec3 axisN = normalize(axis);
+
+    vec3 d = direction - dot(direction, axisN) * axisN;
+
+    vec3 deltaP = origin - base;
+
+    vec3 m = deltaP - dot(deltaP, axisN) * axisN;
+
+    float A = dot(d, d);
+    float B = 2.0 * dot(d, m);
+    float C = dot(m, m) - r * r;
+
+    float disc = B * B - 4.0 * A * C;
+    if (disc < 0.0) {
+        normal = vec3(0.0);
+        return vec2(-1.0, -1.0);
+    }
+
+    float sqrtDisc = sqrt(disc);
+    float t0 = (-B - sqrtDisc) / (2.0 * A);
+    float t1 = (-B + sqrtDisc) / (2.0 * A);
+
+    if (t1 < 0.0) {
+        normal = vec3(0.0);
+        return vec2(-1.0, -1.0);
+    }
+
+    float tEnter = max(t0, 0.0);
+    float tExit  = t1;
+    float segLen = tExit - tEnter;
+
+    if (segLen <= 0.0) {
+        normal = vec3(0.0);
+        return vec2(-1.0, -1.0);
+    }
+
+    vec3 hitPoint = origin + t1 * direction;
+
+    vec3 axisProj = base + dot(hitPoint - base, axisN) * axisN;
+
+    normal = normalize(hitPoint - axisProj);
+
+    return vec2(tEnter, segLen);
 }
 
-float current_radius(float min_radius, float bulge, float phase) {
-  return min_radius + bulge * smooth_bulge(phase);
+float diamond(vec2 uv)
+{
+  float pressure = pressure();
+  float limit = limit(pressure);
+  float diamond;
+  if (NOZZLE > limit) {
+    float bulge = NOZZLE - limit;
+    float omega = OMEGA_FACTOR * bulge;
+    float phase = omega * uv.x; //  + M_PI / 2.0;
+    float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
+    float diamond_front_length = limit / (bulge * omega);
+    float diamond_back_length = diamond_front_length * 0.3;
+    float tail_start = 0.3 * diamond_front_length;
+    float tail_length = 0.8 * diamond_front_length;
+    float diamond_length = diamond_longitudinal > 0.0 ? diamond_back_length : diamond_front_length;
+    float diamond_radius = limit * max(0.0, 1.0 - abs(diamond_longitudinal / omega) / diamond_length);
+    float extent = 1.0;
+    float decay = max(0.0, 1.0 - abs(diamond_longitudinal / extent));
+    diamond = 0.1 / diamond_front_length * (1.0 - smoothstep(diamond_radius - 0.05, diamond_radius, abs(uv.y))) * decay;
+  } else {
+    diamond = 0.0;
+  };
+  return diamond;
 }
 
-float intersection(float radius, float radial_coord) {
-  return sqrt(radius * radius - radial_coord * radial_coord);
+vec2 subtractInterval(vec2 a, vec2 b)
+{
+    float aStart = a.x;
+    float aEnd   = a.x + a.y;
+    float bStart = b.x;
+    float bEnd   = b.x + b.y;
+
+    if (a.y < 0.0 || b.y < 0.0)
+        return a;
+
+    if (bEnd <= aStart || bStart >= aEnd)
+        return a;
+
+    if (bStart <= aStart && bEnd >= aEnd)
+        return vec2(0.0, -1.0);
+
+    if (bStart <= aStart && bEnd < aEnd)
+        return vec2(bEnd, aEnd - bEnd);
+
+    if (bStart > aStart && bEnd >= aEnd)
+        return vec2(aStart, bStart - aStart);
+
+    if (bStart > aStart && bEnd < aEnd)
+        return vec2(aStart, bStart - aStart);
+
+    return vec2(0.0, -1.0);
+}
+
+float sdfRectangle(vec2 p, vec2 size) {
+  vec2 d = abs(p) - size;
+  float result = min(max(d.x, d.y), 0.0);
+  return result + length(max(d, 0.0));
+}
+
+float sdfCircle(vec2 p, float r)
+{
+    return length(p) - r;
+}
+
+// Distance to line
+float distanceToLine(vec3 point, vec3 base, vec3 axis)
+{
+  vec3 axisN = normalize(axis);
+  vec3 axisProj = base + dot(point - base, axisN) * axisN;
+  return length(point - axisProj);
+}
+
+bool insideBox(vec3 point, vec3 box_min, vec3 box_max)
+{
+  return all(greaterThanEqual(point, box_min)) && all(lessThanEqual(point, box_max));
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
-  vec2 uv = vec2(fragCoord.x / iResolution.x, 2.0 * fragCoord.y / iResolution.y - 1.0);
-  float left = uv.x;
-  float t = iTime;
-  float min_radius = 0.1;
-  float pressure_ratio = pow(20.0, iMouse.y / iResolution.y);
-  float mach_diamond_distance = 0.69 * min_radius * sqrt(pressure_ratio);
-  float factor = mach_diamond_distance / (0.69 * min_radius);
-  uv.y += .01*perlin(t*67.+left)*(.1+left);
-  uv.y += .005*perlin(t*101.+left)*(.1+left);
-  float omega = 20.0 / factor;
-  float bulge = 0.05 * factor;
-  float phase = omega * uv.x + M_PI / 4;
-  float diamond_longitudinal = mod(phase - 0.3 * M_PI, M_PI) - 0.7 * M_PI;
-  float radius = current_radius(min_radius, bulge, phase);
-  float radial_coord = abs(uv.y);
-  float cross_section = radius > radial_coord ? intersection(radius, radial_coord) : 0.0;
-  vec3 background = vec3(0.12, 0.27, 0.42);
-  vec3 fringe_color = vec3(0.9, 0.5, 0.6);
-  float smoothing = 0.03;
-  float flame_frequency_longitudinal = 20.0;
-  float flame_frequency_lateral = 40.0;
-  float brightness = fbm(vec2(uv.x * flame_frequency_longitudinal - t * 200.0, uv.y * flame_frequency_lateral * min_radius / radius));
-  brightness = clamp(brightness, 0.0, 1.0);
-  float variation = 0.08;
-  cross_section += brightness * variation - variation * 0.5;
-  float dilation = current_dilation(phase);
-  float strength = 4.0 * (1.0 - smoothstep(radius - smoothing, radius, abs(uv.y))) / (dilation * dilation);
-  vec3 luminocity = strength * cross_section * (fringe_color - background);
-  float diamond_front_length = min_radius / (bulge * omega);
-  float diamond_back_length = diamond_front_length * 0.7;
-  float tail_start = 0.3 * diamond_front_length;
-  float tail_length = 0.8 * diamond_front_length;
-  float diamond_length = diamond_longitudinal > 0.0 ? diamond_back_length : diamond_front_length;
-  float diamond_radius = min_radius * max(0.0, 1.0 - abs(diamond_longitudinal / omega) / diamond_length);
-  float diamond_strength = min(1.0, max(0.0, 1.0 - (tail_start + diamond_longitudinal / omega) / tail_length));
-  float blur = dilation - 1.0;
-  diamond_strength = 3.0 * diamond_strength * (1.0 - smoothstep(diamond_radius - blur, diamond_radius, abs(uv.y)));
-  float diamond_cross_section = sqrt(max(0.0, diamond_radius * diamond_radius - radial_coord * radial_coord));
-  float diamond = 1.5 * diamond_cross_section * diamond_strength;
-  vec3 diamond_color = diamond * vec3(0.98, 0.93, 1.0);
-  vec3 color = background + luminocity + diamond_color;
-  fragColor = vec4(color, 1);
+  float aspect = iResolution.x / iResolution.y;
+  vec2 uv = (fragCoord.xy / iResolution.xy * 2.0 - 1.0) * vec2(aspect, 1.0);
+  vec2 mouse = iMouse.xy / iResolution.xy;
+  mat3 rotation = rotation_z(0.1 * M_PI) * rotation_y((2.0 * mouse.x + 1.0) * M_PI);
+  vec3 light = rotation * normalize(vec3(1.0, 1.0, 0.0));
+  vec3 origin = rotation * vec3(0.0, 0.0, -DIST);
+  vec3 direction = normalize(rotation * vec3(uv, F));
+  float pressure = pressure();
+  float box_size = max(NOZZLE, limit(pressure) + WIDTH2);
+  vec3 normal;
+  vec2 box = ray_box(vec3(START, -box_size, -box_size), vec3(END, box_size, box_size), origin, direction, normal);
+  vec3 color = vec3(0, 0, 0);
+  vec3 engine_min = vec3(START, -0.16, -WIDTH2);
+  vec3 engine_max = vec3(START + 0.22, 0.16, WIDTH2);
+  vec2 engine = ray_box(engine_min, engine_max, origin, direction, normal);
+  vec3 normal1;
+  vec3 normal2;
+  vec3 cylinder1_base = vec3(START + 0.22, 0.22, -WIDTH2);
+  vec3 cylinder1_axis = vec3(0.0, 0.0, 2.0 * WIDTH2);
+  vec3 cylinder2_base = vec3(START + 0.22, -0.22, -WIDTH2);
+  vec3 cylinder2_axis = vec3(0.0, 0.0, 2.0 * WIDTH2);
+  vec2 cylinder1 = intersectCylinder(origin, direction, cylinder1_base, cylinder1_axis, 0.2, normal1);
+  vec2 cylinder2 = intersectCylinder(origin, direction, cylinder2_base, cylinder2_axis, 0.2, normal2);
+  vec2 joint = subtractInterval(subtractInterval(engine, cylinder1), cylinder2);
+  if (joint.x == cylinder1.x + cylinder1.y)
+    normal = normal1;
+  if (joint.x == cylinder2.x + cylinder2.y)
+    normal = normal2;
+  if (joint.y > 0.0) {
+    if (dot(normal, direction) > 0.0)
+      normal = -normal;
+    float diffuse = clamp(dot(normal, light), 0.0, 1.0);
+    color = vec3(1.0) * (diffuse * 0.9 + 0.1);
+    if (box.x + box.y > joint.x) {
+      box.y = joint.x - box.x;
+    };
+  };
+  if (box.y > 0.0) {
+    float ds = box.y / float(SAMPLES);
+    for (int i = 0; i <= SAMPLES; i++)
+    {
+      float s = box.x + float(i) * ds;
+      vec3 p = origin + direction * s;
+      float radius;
+      float decay;
+      float density;
+      if (insideBox(p, engine_min, engine_max)) {
+        float dx = engine_max.x - p.x;
+        float dy2 = 0.15 * 0.15 - dx * dx;
+        float dy = dy2 <= 0.0 ? 0.0 : sqrt(dy2);
+        radius = 0.22 - dy;
+        decay = 1.0;
+        density = 8.0;
+      } else {
+        radius = bumps(p.x - engine_max.x) * mix(0.5 * (WIDTH2 + NOZZLE) / NOZZLE, 1.0, decay);
+        decay = 1.0 - (p.x - engine_max.x) / (END - engine_max.x);
+        // density = 8.0 * WIDTH2 * NOZZLE / mix(M_PI * radius * radius, 4 * radius * (radius + WIDTH2 - NOZZLE), decay) * falloff;
+        density = 8.0 * WIDTH2 * NOZZLE / mix(M_PI * radius * radius, 4 * radius * (radius + WIDTH2 - NOZZLE), decay);
+      };
+      float dist = mix(sdfCircle(p.yz, radius) + radius, sdfRectangle(p.yz, vec2(NOZZLE, WIDTH2)) + NOZZLE, decay);
+      // float falloff = clamp((radius - dist) / 0.05, 0.0, 1.0);
+      vec2 uv = vec2(p.x - engine_max.x, dist);
+      vec3 scale = 20.0 * vec3(0.1, NOZZLE / radius, NOZZLE / radius);
+      float diamond = diamond(uv);
+      float fringe = fringe(uv);
+      vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
+      if (dist <= radius) {
+        float attenuation = 0.7 + 0.3 * noise(p * scale + iTime * vec3(-SPEED, 0.0, 0.0));
+        color = color * pow(0.2, ds * density);
+        color += flame_color * density * ds * attenuation;
+        color += diamond * density * 10.0 * ds * vec3(1, 1, 1) * attenuation;
+      }
+    };
+  };
+  fragColor = vec4(color, 1.0);
 }

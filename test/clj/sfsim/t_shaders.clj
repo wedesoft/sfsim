@@ -9,7 +9,7 @@
     [clojure.math :refer (PI sqrt)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye)]
-    [fastmath.vector :refer (vec3 div ediv dot mag cross)]
+    [fastmath.vector :refer (vec2 vec3 div ediv dot mag cross)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -45,7 +45,7 @@ void main()
 }"))
 
 
-(def ray-sphere-test (shader-test (fn [program]) ray-sphere-probe ray-sphere))
+(def ray-sphere-test (shader-test (fn [_program]) ray-sphere-probe ray-sphere))
 
 
 (tabular "Shader for intersection of ray with sphere"
@@ -57,6 +57,32 @@ void main()
          0   0   0   0   0  -2   0   0   2   0.5 1.0
          0   0   0   0   0   0   0   0   1   0.0 1.0
          0   0   0   0   0   2   0   0   1   0.0 0.0)
+
+
+(def ray-circle-probe
+  (template/fn [cx cy ox oy dx dy]
+    "#version 410 core
+out vec3 fragColor;
+vec2 ray_circle(vec2 centre, float radius, vec2 origin, vec2 direction);
+void main()
+{
+  vec2 result = ray_circle(vec2(<%= cx %>, <%= cy %>),
+                           1,
+                           vec2(<%= ox %>, <%= oy %>),
+                           vec2(<%= dx %>, <%= dy %>));
+  fragColor = vec3(result.x, result.y, 0);
+}"))
+
+
+(def ray-circle-test (shader-test (fn [_program]) ray-circle-probe ray-circle))
+
+
+(tabular "Shader for intersection of ray with circle"
+         (fact (ray-circle-test [] [?cx ?cy ?ox ?oy ?dx ?dy]) => (vec3 ?ix ?iy 0))
+         ?cx ?cy ?ox ?oy ?dx ?dy ?ix ?iy
+         0   0  -1    0   1   0   0.0 2.0
+         0   0   0    0   1   0   0.0 1.0
+         0   0  -2    0   1   0   1.0 2.0)
 
 
 (def convert-1d-index-probe
@@ -71,7 +97,7 @@ void main()
 }"))
 
 
-(def convert-1d-index-test (shader-test (fn [program]) convert-1d-index-probe convert-1d-index))
+(def convert-1d-index-test (shader-test (fn [_program]) convert-1d-index-probe convert-1d-index))
 
 
 (tabular "Convert 1D index to 1D texture lookup index"
@@ -93,7 +119,7 @@ void main()
 }"))
 
 
-(def convert-2d-index-test (shader-test (fn [program]) convert-2d-index-probe convert-2d-index))
+(def convert-2d-index-test (shader-test (fn [_program]) convert-2d-index-probe convert-2d-index))
 
 
 (tabular "Convert 2D index to 2D texture lookup index"
@@ -115,7 +141,7 @@ void main()
 }"))
 
 
-(def convert-3d-index-test (shader-test (fn [program]) convert-3d-index-probe convert-3d-index))
+(def convert-3d-index-test (shader-test (fn [_program]) convert-3d-index-probe convert-3d-index))
 
 
 (tabular "Convert 2D index to 2D texture lookup index"
@@ -138,7 +164,7 @@ void main()
 }"))
 
 
-(def convert-cubemap-index-test (shader-test (fn [program]) convert-cubemap-index-probe convert-cubemap-index))
+(def convert-cubemap-index-test (shader-test (fn [_program]) convert-cubemap-index-probe convert-cubemap-index))
 
 
 (tabular "Convert cubemap index to avoid clamping regions"
@@ -195,7 +221,7 @@ void main()
 }"))
 
 
-(def shrink-shadow-index-test (shader-test (fn [program]) shrink-shadow-index-probe shrink-shadow-index))
+(def shrink-shadow-index-test (shader-test (fn [_program]) shrink-shadow-index-probe shrink-shadow-index))
 
 
 (tabular "Shrink sampling index to cover full NDC space"
@@ -218,7 +244,7 @@ void main()
 }"))
 
 
-(def grow-shadow-index-test (shader-test (fn [program]) grow-shadow-index-probe grow-shadow-index))
+(def grow-shadow-index-test (shader-test (fn [_program]) grow-shadow-index-probe grow-shadow-index))
 
 
 (tabular "grow sampling index to cover full NDC space"
@@ -401,7 +427,7 @@ void main()
 }"))
 
 
-(def make-2d-index-from-4d-test (shader-test (fn [program]) make-2d-index-from-4d-probe make-2d-index-from-4d))
+(def make-2d-index-from-4d-test (shader-test (fn [_program]) make-2d-index-from-4d-probe make-2d-index-from-4d))
 
 
 (tabular "Convert 4D index to 2D indices for part-manual interpolation"
@@ -626,7 +652,7 @@ void main()
 }"))
 
 
-(def ray-box-test (shader-test (fn [program]) ray-box-probe ray-box))
+(def ray-box-test (shader-test (fn [_program]) ray-box-probe ray-box))
 
 
 (tabular "Shader for intersection of ray with axis-aligned box"
@@ -755,7 +781,7 @@ void main()
 }"))
 
 
-(def ray-shell-test (shader-test (fn [program]) ray-shell-probe ray-shell))
+(def ray-shell-test (shader-test (fn [_program]) ray-shell-probe ray-shell))
 
 
 (tabular "Shader for computing intersections of ray with a shell"
@@ -772,33 +798,56 @@ void main()
          0   0   0   2        3          0 0   0   1   0   0   "pq"       0   0)
 
 
-(def clip-shell-intersections-probe
-  (template/fn [a b c d limit selector]
-    "#version 410 core
+(def clip-interval-probe
+  (template/fn [x l cx cl]
+"#version 410 core
 out vec3 fragColor;
-vec4 clip_shell_intersections(vec4 intersections, float limit);
+vec2 clip_interval(vec2 interval, vec2 clip);
 void main()
 {
-  vec4 result = clip_shell_intersections(vec4(<%= a %>, <%= b %>, <%= c %>, <%= d %>), <%= limit %>);
+  vec2 result = clip_interval(vec2(<%= x %>, <%= l %>), vec2(<%= cx %>, <%= cl %>));
+  fragColor = vec3(result, 0);
+}"))
+
+
+(def clip-interval-test (shader-test (fn [_program]) clip-interval-probe clip-interval))
+
+
+(tabular "Clip the interval information of ray and shell using given limit"
+         (fact (clip-interval-test [] [?x ?l ?cx ?cl]) => (roughly-vector (vec3 ?rx ?rl 0) 1e-6))
+         ?x ?l ?cx ?cl ?rx ?rl
+         2  3  0   8   2   3
+         2  3  4   8   4   1
+         2  3  0   3   2   1)
+
+
+(def clip-shell-intersections-probe
+  (template/fn [a b c d ca cb selector]
+    "#version 410 core
+out vec3 fragColor;
+vec4 clip_shell_intersections(vec4 intersections, vec2 clip);
+void main()
+{
+  vec4 result = clip_shell_intersections(vec4(<%= a %>, <%= b %>, <%= c %>, <%= d %>), vec2(<%= ca %>, <%= cb %>));
   fragColor.xy = result.<%= selector %>;
   fragColor.z = 0;
 }"))
 
 
-(def clip-shell-intersections-test (shader-test (fn [program]) clip-shell-intersections-probe clip-shell-intersections))
+(def clip-shell-intersections-test (apply shader-test (fn [_program]) clip-shell-intersections-probe clip-shell-intersections))
 
 
 (tabular "Clip the intersection information of ray and shell using given limit"
-         (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?limit ?selector])
+         (fact (clip-shell-intersections-test [] [?a ?b ?c ?d ?ca ?cb ?selector])
                => (roughly-vector (vec3 ?ix ?iy 0) 1e-6))
-         ?a ?b ?c ?d ?limit ?selector ?ix ?iy
-         2  3  6  2  9      "xy"      2   3
-         2  3  6  2  9      "zw"      6   2
-         2  3  6  2  7      "zw"      6   1
-         2  3  6  2  5      "zw"      0   0
-         2  3  0  0  9      "zw"      0   0
-         2  3  6  2  3      "xy"      2   1
-         2  3  6  2  1      "xy"      0   0)
+         ?a ?b ?c ?d ?ca ?cb ?selector ?ix ?iy
+         2  3  6  2  0   9   "xy"      2   3
+         2  3  6  2  0   9   "zw"      6   2
+         2  3  6  2  0   7   "zw"      6   1
+         2  3  6  2  0   5   "zw"      6  -1
+         2  3  0  0  0   9   "zw"      0   0
+         2  3  6  2  0   3   "xy"      2   1
+         2  3  6  2  0   1   "xy"      2  -1)
 
 
 (def height-to-index-probe
@@ -846,7 +895,7 @@ void main()
 
 (def sun-elevation-to-index-test
   (shader-test
-    (fn [program])
+    (fn [_program])
     sun-elevation-to-index-probe sun-elevation-to-index))
 
 
@@ -875,7 +924,7 @@ void main()
 
 (def sun-angle-to-index-test
   (shader-test
-    (fn [program])
+    (fn [_program])
     sun-angle-to-index-probe sun-angle-to-index))
 
 
@@ -1047,7 +1096,7 @@ void main()
 
 (defn noise-octaves-test
   [octaves x y z]
-  ((shader-test (fn [program]) noise-octaves-probe (noise-octaves "octaves" "noise" octaves)) [] [x y z]))
+  ((shader-test (fn [_program]) noise-octaves-probe (noise-octaves "octaves" "noise" octaves)) [] [x y z]))
 
 
 (tabular "Shader function to sum octaves of noise"
@@ -1081,7 +1130,7 @@ void main()
 
 (defn noise-octaves-lod-test
   [octaves x y z lod]
-  ((shader-test (fn [program]) noise-octaves-lod-probe (noise-octaves-lod "octaves" "noise" octaves)) [] [x y z lod]))
+  ((shader-test (fn [_program]) noise-octaves-lod-probe (noise-octaves-lod "octaves" "noise" octaves)) [] [x y z lod]))
 
 
 (tabular "Shader function to sum octaves of noise with level-of-detail"
@@ -1221,24 +1270,25 @@ void main()
 }"))
 
 
-(def orthogonal-test (shader-test (fn [program]) orthogonal-probe orthogonal-vector))
+(def orthogonal-test (shader-test (fn [_program]) orthogonal-probe orthogonal-vector))
 
 
-(facts "Shader for generating an orthogonal vector"
-       (dot (orthogonal-test [] [1 0 0]) (vec3 1 0 0)) => 0.0
-       (mag (orthogonal-test [] [1 0 0])) => 1.0
-       (mag (orthogonal-test [] [2 0 0])) => 1.0
-       (dot (orthogonal-test [] [0 1 0]) (vec3 0 1 0)) => 0.0
-       (mag (orthogonal-test [] [0 1 0])) => 1.0
-       (mag (orthogonal-test [] [0 2 0])) => 1.0
-       (dot (orthogonal-test [] [0 0 1]) (vec3 0 0 1)) => 0.0
-       (mag (orthogonal-test [] [0 0 1])) => 1.0
-       (mag (orthogonal-test [] [0 0 2])) => 1.0)
+(tabular "Shader for generating an orthogonal vector"
+         (fact (orthogonal-test [] [?x ?y ?z]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-6))
+         ?x  ?y  ?z ?rx  ?ry  ?rz
+         1   0   0  0    0    1
+         2   0   0  0    0    1
+         0   1   0  0    0   -1
+         0   2   0  0    0   -1
+         0   0   1  0    1    0
+         0   0   2  0    1    0
+         0.6 0.8 0  0.8 -0.6  0
+         3   4   0  0.8 -0.6  0)
 
 
 (def oriented-matrix-probe
   (template/fn [x y z]
-    "#version 410 core
+"#version 410 core
 out vec3 fragColor;
 mat3 oriented_matrix(vec3 n);
 void main()
@@ -1246,8 +1296,7 @@ void main()
   fragColor = oriented_matrix(vec3(0.36, 0.48, 0.8)) * vec3(<%= x %>, <%= y %>, <%= z %>);
 }"))
 
-
-(def oriented-matrix-test (shader-test (fn [program]) oriented-matrix-probe oriented-matrix))
+(def oriented-matrix-test (shader-test (fn [_program]) oriented-matrix-probe oriented-matrix))
 
 
 (facts "Shader for creating isometry with given normal vector as first row"
@@ -1270,7 +1319,7 @@ void main()
 }"))
 
 
-(def project-vector-test (shader-test (fn [program]) project-vector-probe project-vector))
+(def project-vector-test (shader-test (fn [_program]) project-vector-probe project-vector))
 
 
 (tabular "Shader to project vector x onto vector n"
@@ -1298,7 +1347,7 @@ void main()
 }"))
 
 
-(def rotate-vector-test (shader-test (fn [program]) rotate-vector-probe rotate-vector))
+(def rotate-vector-test (shader-test (fn [_program]) rotate-vector-probe rotate-vector))
 
 
 (tabular "Shader for rotating vector around specified axis"
@@ -1310,6 +1359,33 @@ void main()
          0   0   1   1  2  3  (/ PI 2) -2   1   3
          0   0   1   1  0  0  (/ PI 2)  0   1   0)
 
+
+(def rotation-matrix-probe
+  (template/fn [x y z axis angle]
+"#version 410 core
+out vec3 fragColor;
+mat3 rotation_<%= axis %>(float angle);
+void main()
+{
+  vec3 v = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float angle = <%= angle %>;
+  fragColor = rotation_<%= axis %>(angle) * v;
+}"))
+
+(def rotation-matrix-test (shader-test (fn [_program]) rotation-matrix-probe rotation-x rotation-y rotation-z))
+
+(tabular "Shaders for creating rotation matrices"
+         (fact (rotation-matrix-test [] [?x ?y ?z ?axis ?angle]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-6))
+         ?x ?y ?z ?axis ?angle    ?rx ?ry ?rz
+         2  3  5  "x"   0         2   3   5
+         0  1  0  "x"   (/ PI 2)  0   0   1
+         0  0  1  "x"   (/ PI 2)  0  -1   0
+         2  3  5  "y"   0         2   3   5
+         1  0  0  "y"   (/ PI 2)  0   0  -1
+         0  0  1  "y"   (/ PI 2)  1   0   0
+         2  3  5  "z"   0         2   3   5
+         1  0  0  "z"   (/ PI 2)  0   1   0
+         0  1  0  "z"   (/ PI 2) -1   0   0)
 
 (def scale-noise-probe
   (template/fn [x y z]
@@ -1352,7 +1428,7 @@ void main()
 }"))
 
 
-(def remap-test (shader-test (fn [program]) remap-probe remap))
+(def remap-test (shader-test (fn [_program]) remap-probe remap))
 
 
 (tabular "Shader for mapping linear range to a new linear range"
@@ -1409,5 +1485,177 @@ void main()
          PI      10.0      (vec3 0  0   1) (vec3 0 0.6 0.8)   1.0           0.0      1.0    0.0      0.25     0.026844
          PI      10.0      (vec3 0 -0.6 0.8) (vec3 0 0.6 0.8) 1.0           0.0      1.0    0.0      0.25     0.25)
 
+
+(def sdf-circle-probe
+  (template/fn [x y cx cy radius]
+"#version 410 core
+out vec3 fragColor;
+float sdf_circle(vec2 point, vec2 center, float radius);
+void main()
+{
+  float result = sdf_circle(vec2(<%= x %>, <%= y %>), vec2(<%= cx %>, <%= cy %>), <%= radius %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def sdf-circle-test (shader-test (fn [_program]) sdf-circle-probe sdf-circle))
+
+(tabular "Shader for testing circle signed distance function"
+         (fact ((sdf-circle-test [] [?x ?y ?cx ?cy ?radius]) 0) => ?result)
+          ?x   ?y  ?cx ?cy ?radius ?result
+          0.0  0.0 0.0 0.0 0.0      0.0
+          0.0  0.0 0.0 0.0 1.0     -1.0
+          1.0  0.0 0.0 0.0 1.0      0.0
+         -1.0  0.0 0.0 0.0 1.0      0.0
+          0.0  1.0 0.0 0.0 1.0      0.0
+          0.0 -1.0 0.0 0.0 1.0      0.0
+          2.0  3.0 2.0 3.0 1.0     -1.0
+          3.0  3.0 2.0 3.0 1.0      0.0
+          1.0  3.0 2.0 3.0 1.0      0.0
+          2.0  4.0 2.0 3.0 1.0      0.0
+          2.0  2.0 2.0 3.0 1.0      0.0)
+
+
+(def sdf-rectangle-probe
+  (template/fn [x y rectangle-min-x rectangle-min-y rectangle-max-x rectangle-max-y]
+"#version 410 core
+out vec3 fragColor;
+float sdf_rectangle(vec2 point, vec2 rectangle_min, vec2 rectangle_max);
+void main()
+{
+  vec2 rectangle_min = vec2(<%= rectangle-min-x %>, <%= rectangle-min-y %>);
+  vec2 rectangle_max = vec2(<%= rectangle-max-x %>, <%= rectangle-max-y %>);
+  float result = sdf_rectangle(vec2(<%= x %>, <%= y %>), rectangle_min, rectangle_max);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def sdf-rectangle-test (shader-test (fn [_program]) sdf-rectangle-probe sdf-rectangle))
+
+(tabular "Shader for testing rectangle signed distance function"
+         (fact ((sdf-rectangle-test [] [?x ?y ?rect-min-x ?rect-min-y ?rect-max-x ?rect-max-y]) 0)
+               => ?result)
+          ?x   ?y  ?rect-min-x ?rect-min-y ?rect-max-x ?rect-max-y ?rect-max-z ?result
+          1.0  2.0  1.0         2.0         3.0         6.0         11.0        0.0
+          1.5  4.0  1.0         2.0         3.0         6.0         11.0       -0.5
+          2.0  2.5  1.0         2.0         3.0         6.0         11.0       -0.5
+          2.5  4.0  1.0         2.0         3.0         6.0         11.0       -0.5
+          2.0  5.5  1.0         2.0         3.0         6.0         11.0       -0.5
+          3.0  4.0  0.0         0.0         0.0         0.0          0.0        5.0
+          1.0  1.0  0.0         0.0         2.0         0.0          0.0        1.0)
+
+
+(def hermite-interpolate-probe
+  (template/fn [a b t]
+"#version 410 core
+out vec3 fragColor;
+float hermite_interpolate(float a, float b, float t);
+void main()
+{
+  float result = hermite_interpolate(<%= a %>, <%= b %>, <%= t %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+
+(def hermite-interpolate-test (shader-test (fn [_program]) hermite-interpolate-probe hermite-interpolate))
+
+(tabular "Shader for cubic hermite interpolation"
+         (fact ((hermite-interpolate-test [] [?a ?b ?t]) 0) => ?result)
+          ?a   ?b  ?t   ?result
+          2.0  3.0  0.0  2.0
+          2.0  3.0  0.5  2.5
+          2.0  3.0  1.0  3.0
+          2.0  3.0  0.25 2.15625
+          2.0  3.0  0.75 2.84375)
+
+(def interpolate-function-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float f(vec3 point)
+{
+  return dot(floor(point), vec3(2, 3, 5));
+}
+float g(vec3 point);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  float result = g(point);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def interpolate-function-test (shader-test (fn [_program]) interpolate-function-probe (interpolate-function "g" "mix" "f")))
+
+(tabular "Shader to interpolate a function using only samples from whole coordinates"
+         (fact ((interpolate-function-test [] [?x ?y ?z]) 0) => ?result)
+          ?x   ?y  ?z   ?result
+          1.0  0.0  0.0  2.0
+          0.0  1.0  0.0  3.0
+          0.0  0.0  1.0  5.0
+          0.0  0.0  0.0  0.0
+          0.5  0.0  0.0  1.0
+          0.0  0.5  0.0  1.5
+          0.5  0.5  0.0  2.5
+          0.0  0.0  0.5  2.5
+          0.5  0.0  0.5  3.5
+          0.0  0.5  0.5  4.0
+          0.5  0.5  0.5  5.0)
+
+(def hash3d-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float hash3d(vec3 p);
+void main()
+{
+  float result = hash3d(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def hash3d-test (shader-test (fn [_program]) hash3d-probe hash3d))
+
+(facts "Shader function to create random noise"
+       ((hash3d-test [] [0.0 0.0 0.0]) 0) => (roughly 0.0000000 1e-6)
+       ((hash3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7265625 1e-6)
+       ((hash3d-test [] [0.0 1.0 0.0]) 0) => (roughly 0.4218750 1e-6)
+       ((hash3d-test [] [0.0 0.0 1.0]) 0) => (roughly 0.8496094 1e-6))
+
+(def noise3d-probe
+  (template/fn [x y z]
+"#version 410 core
+out vec3 fragColor;
+float noise3d(vec3 p);
+void main()
+{
+  float result = noise3d(vec3(<%= x %>, <%= y %>, <%= z %>));
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def noise3d-test (apply shader-test (fn [_program]) noise3d-probe noise3d))
+
+(facts "Shader function to create 3D noise"
+       ((noise3d-test [] [0.0 0.0 0.0]) 0) => (roughly 0.0000000 1e-6)
+       ((noise3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7265625 1e-6)
+       ((noise3d-test [] [0.5 0.0 0.0]) 0) => (roughly 0.3632813 1e-6))
+
+(def subtract-interval-probe
+  (template/fn [ax ay bx by]
+"#version 410 core
+out vec3 fragColor;
+vec2 subtract_interval(vec2 a, vec2 b);
+void main()
+{
+  vec2 result = subtract_interval(vec2(<%= ax %>, <%= ay %>), vec2(<%= bx %>, <%= by %>));
+  fragColor = vec3(result, 0);
+}"))
+
+(def subtract-interval-test (shader-test (fn [_program]) subtract-interval-probe subtract-interval))
+
+(tabular "Shader function to subtract two intervals"
+         (fact (take 2 (subtract-interval-test [] [?ax ?ay ?bx ?by])) => (vec2 ?rx ?ry))
+          ?ax  ?ay  ?bx  ?by  ?rx  ?ry
+          1.0  2.0  5.0  3.0  1.0  2.0
+          1.0  4.0  3.0  6.0  1.0  2.0
+          1.0  4.0  0.0  6.0  6.0 -1.0
+          2.0  3.0  1.0  2.0  3.0  2.0
+          4.0  1.0  1.0  2.0  4.0  1.0)
 
 (GLFW/glfwTerminate)

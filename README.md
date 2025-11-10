@@ -33,7 +33,7 @@ git checkout windows
 
 ## Install JoltPhysics
 
-Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.3.0 and build it as follows.
+Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.4.0 and build it as follows.
 Note you might have to install glslc if you already have Vulkan installed.
 
 ### GCC/Linux
@@ -108,6 +108,7 @@ cd ..
 
 * Simulators
   * [Orbiter 2016](https://github.com/mschweiger/orbiter)
+  * [Open Orbiter Sim](https://openorbiter.space/)
   * [Reentry](https://reentrygame.com/)
   * [Kerbal Space Program](https://www.kerbalspaceprogram.com/)
   * [Kitten Space Agency](https://kittenspaceagency.wiki.gg/)
@@ -161,5 +162,7 @@ cd ..
   * [antq](https://github.com/liquidz/antq) (detect available updates for dependencies)
   * [nREPL](https://nrepl.org/) server and [REPL-y](https://github.com/trptcolin/reply) client
   * [rebel-readline](https://github.com/bhauman/rebel-readline) REPL with colors :)
+* Data
+  * [NASA CGI moon toolkit](https://svs.gsfc.nasa.gov/4720/)
 
 [1]: https://wedesoft.github.io/sfsim/

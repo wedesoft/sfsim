@@ -1,9 +1,9 @@
 #version 410 core
 
 // Determine intersection of ray with sphere (returns distance and length of intersection).
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
+vec2 <%= method-name %>(<%= vector-type %> centre, float radius, <%= vector-type %> origin, <%= vector-type %> direction)
 {
-  vec3 pos = origin - centre;
+  <%= vector-type %> pos = origin - centre;
   float direction_sqr = dot(direction, direction);
   float direction_pos = dot(direction, pos);
   float discriminant = direction_pos * direction_pos - direction_sqr * (dot(pos, pos) - radius * radius);

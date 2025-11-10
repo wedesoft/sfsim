@@ -10,5 +10,28 @@ This talk shows how Clojure can be used to do test driven development of OpenGL 
 * templating (e.g. fractal brownian motion)
 
 ;; https://scicloj.github.io/clay/clay_book.examples.html
-;; clj -M:clay -A:markdown
+;; clj -M:clay -A:markdown opengl_visualization/main.clj
 ;; quarto render site
+
+Add generated qmd file to prevent rebuilding on server:
+clojure -M:clay -A:markdown scicloj/clay/skip_if_unchanged_example.clj
+git add -f site/scicloj/clay/skip_if_unchanged_example.qmd
+
+# Talk title: Computer Graphics with Clojure, LWJGL, and Fastmath
+# Abstract
+sfsim is a space flight simulator under development.
+It makes use of Clojure, LWJGL, and Fastmath among other libraries.
+More than half of the code deals with graphics.
+This talk gives a short introduction using LWJGL's OpenGL bindings to get started with rendering data from NASA's CGI Moon Kit.
+
+# Bio
+Jan studied compiler construction and robotics and later did a PhD in computer vision.
+He currently works in industry developing inspection software.
+His first programming languages were Omikron Basic and later Borland Pascal.
+In industry he used C++, Ruby, and Python.
+In his spare time he got interested in Ruby, GNU Guile, and finally Clojure.
+
+October 18th, 10am to 9pm
+
+Post code on Civitas 7 days before the conference
+https://bit.ly/macroexpand-noj-speaker
