@@ -10,14 +10,15 @@
     [clojure.math :refer (floor)]
     [comb.template :as template]
     [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
-    [fastmath.vector :refer (vec3 vec4 mult add)]
+    [fastmath.vector :refer (vec3 vec4 mult add mag)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
     [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
-                                      overall-shading overall-shading-parameters)]
+                          overall-shading overall-shading-parameters)]
+    [sfsim.plume :refer (cloud-plume-segment plume-point)]
     [sfsim.image :refer (image)]
-    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
-                                                fmat4)]
+    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3 fvec3
+                          fmat4)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
@@ -561,7 +562,7 @@
   [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
    (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
    (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function
-   (cloud-point num-steps perlin-octaves cloud-octaves)
+   (cloud-point num-steps perlin-octaves cloud-octaves) (cloud-plume-segment true false) plume-point
    (template/eval (slurp "resources/shaders/model/fragment.glsl")
                   {:textured textured :bump bump :num-scene-shadows num-scene-shadows})])
 
@@ -706,15 +707,20 @@
 (defn setup-camera-world-and-shadow-matrices
   {:malli/schema [:=> [:cat :int fmat4 fmat4 fmat4 [:vector fmat4]] :nil]}
   [program transform internal-transform camera-to-world scene-shadow-matrices]
-  (use-program program)
-  (uniform-matrix4 program "object_to_world" transform)
-  (uniform-matrix4 program "camera_to_object" (mulm (inverse transform) camera-to-world))
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
-  ; TODO: object distance
-  (doseq [i (range (count scene-shadow-matrices))]
-    (uniform-matrix4 program
-                     (str "object_to_shadow_map_" (inc ^long i))
-                     (mulm (nth scene-shadow-matrices i) internal-transform))))
+  (let [camera-to-object (mulm (inverse transform) camera-to-world)
+        object-to-camera (mulm (inverse camera-to-world) transform)
+        object-origin    (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
+        object-distance  (mag object-origin)]
+    (use-program program)
+    (uniform-matrix4 program "object_to_world" transform)
+    (uniform-matrix4 program "camera_to_object" camera-to-object)
+    (uniform-matrix4 program "object_to_camera" object-to-camera)
+    (uniform-vector3 program "object_origin" object-origin)
+    (uniform-float program "object_distance" object-distance)
+    (doseq [i (range (count scene-shadow-matrices))]
+           (uniform-matrix4 program
+                            (str "object_to_shadow_map_" (inc ^long i))
+                            (mulm (nth scene-shadow-matrices i) internal-transform)))))
 
 
 (defmulti render-mesh (fn [material _render-vars] (material-type material)))

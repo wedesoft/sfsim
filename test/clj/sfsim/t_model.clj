@@ -573,13 +573,13 @@ void main()
 (def bump (read-gltf "test/clj/sfsim/fixtures/model/bump.gltf"))
 
 
-(def cloud-point-mock
+(def cloud-plume-point-mock
   "#version 410 core
 uniform vec3 origin;
-vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
+uniform float object_distance;
+vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
-  float dist = distance(origin, point);
-  float transparency = exp(-dist / 10.0);
+  float transparency = exp(-object_distance / 10.0);
   return vec4(0.5, 0.5, 0.5, 1 - transparency);
 }")
 
@@ -638,7 +638,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 
 
 (def model-shader-mocks
-  [cloud-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock
+  [cloud-plume-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock
    planet-and-cloud-shadows-mock ray-sphere-mock attenuation-mock shaders/phong
    (last atmosphere/attenuation-point) (last (clouds/environmental-shading 3))
    (last (clouds/overall-shading 3 []))])
@@ -866,7 +866,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 {
   return vec3(0.2, 0.2, 0.2);
 }
-vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
+vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
   return vec4(0, 0, 0, 0);
 }")

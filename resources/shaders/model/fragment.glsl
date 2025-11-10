@@ -2,6 +2,7 @@
 
 uniform vec3 origin;
 uniform vec3 light_direction;
+uniform vec3 object_origin;
 <% (if textured %>
 uniform sampler2D colors;
 <% %>
@@ -33,7 +34,7 @@ vec3 overall_shading(vec3 world_point<%= (apply str (map #(str ", vec4 object_sh
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 vec3 attenuation_point(vec3 point, vec3 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
-vec4 cloud_point(vec3 origin, vec3 direction, vec3 point);
+vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point);
 
 void main()
 {
@@ -50,7 +51,8 @@ void main()
 <% ) %>
   vec3 incoming = phong(ambient_light, light, fs_in.world_point, normal, diffuse_color, 0.0);
   incoming = attenuation_point(fs_in.world_point, incoming);
-  vec3 direction = normalize(fs_in.world_point - origin);
-  vec4 cloud_scatter = cloud_point(origin, direction, fs_in.world_point);  // TODO: get more accurate direction
+  vec3 direction = normalize(fs_in.world_point - origin);  // TODO: get more accurate direction
+  vec3 object_direction = normalize(fs_in.vertex - object_origin);
+  vec4 cloud_scatter = cloud_plume_point(origin, direction, object_origin, object_direction, fs_in.vertex);
   fragColor = vec4(incoming, 1.0) * (1 - cloud_scatter.a) + cloud_scatter;
 }

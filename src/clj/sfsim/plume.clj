@@ -34,7 +34,15 @@
 (defn diamond
   "Shader function for volumetric Mach diamonds"
   [fringe]
-  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])\
+  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
+
+
+(def plume-point  ; TODO: implement this
+"#version 410 core
+vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
+{
+  return vec4(0, 0, 0, 0);
+}")
 
 
 (defn cloud-plume-segment
