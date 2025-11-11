@@ -17,7 +17,7 @@
                           overall-shading overall-shading-parameters)]
     [sfsim.plume :refer (cloud-plume-segment plume-point)]
     [sfsim.image :refer (image)]
-    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3 fvec3
+    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
                           fmat4)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
@@ -707,16 +707,10 @@
 (defn setup-camera-world-and-shadow-matrices
   {:malli/schema [:=> [:cat :int fmat4 fmat4 fmat4 [:vector fmat4]] :nil]}
   [program transform internal-transform camera-to-world scene-shadow-matrices]
-  (let [camera-to-object (mulm (inverse transform) camera-to-world)
-        object-to-camera (mulm (inverse camera-to-world) transform)
-        object-origin    (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
-        object-distance  (mag object-origin)]
+  (let [object-to-camera (mulm (inverse camera-to-world) transform)]
     (use-program program)
     (uniform-matrix4 program "object_to_world" transform)
-    (uniform-matrix4 program "camera_to_object" camera-to-object)
     (uniform-matrix4 program "object_to_camera" object-to-camera)
-    (uniform-vector3 program "object_origin" object-origin)
-    (uniform-float program "object_distance" object-distance)
     (doseq [i (range (count scene-shadow-matrices))]
            (uniform-matrix4 program
                             (str "object_to_shadow_map_" (inc ^long i))
@@ -776,6 +770,8 @@
       (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
       (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
       (uniform-matrix4 program "world_to_camera" world-to-camera)
+      (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
+      (uniform-float program "object_distance" (mag (:sfsim.render/object-origin render-vars)))
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
       (setup-shadow-matrices program shadow-vars))
@@ -813,7 +809,8 @@
         object-depth         (- ^double (object-camera-vector 2))
         z-near               (max ^double (- ^double object-depth ^double object-radius) ^double min-z-near)
         z-far                (+ ^double z-near ^double object-radius ^double object-radius)]
-    (make-render-vars render-config window-width window-height camera-position camera-orientation light-direction z-near z-far)))
+    (make-render-vars render-config window-width window-height camera-position camera-orientation light-direction
+                      object-position object-orientation z-near z-far)))
 
 
 (defn vertex-shadow-scene

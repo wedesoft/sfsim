@@ -2,7 +2,6 @@
 
 uniform mat4 projection;
 uniform mat4 object_to_world;
-uniform mat4 camera_to_object;
 uniform mat4 object_to_camera;
 <% (doseq [i (range num-scene-shadows)] %>
 uniform mat4 object_to_shadow_map_<%= (inc ^long i) %>;

@@ -1125,12 +1125,16 @@ void main()
 (facts "Join z-ranges and projection matrices of two render variable hashmaps"
        (let [render-config {:sfsim.render/fov (to-radians 60.0)}
              origin        (vec3 1 2 3)
+             object-origin (vec3 4 0 0)
              orientation   (q/->Quaternion 1 0 0 0)
              light-dir     (vec3 0 0 1)
-             planet-vars   (make-render-vars render-config 320 240 origin orientation light-dir 1000.0 10000.0)
-             scene-vars    (make-render-vars render-config 320 240 origin orientation light-dir 10.0 100.0)
+             planet-vars   (make-render-vars render-config 320 240 origin orientation light-dir object-origin orientation
+                                             1000.0 10000.0)
+             scene-vars    (make-render-vars render-config 320 240 origin orientation light-dir object-origin orientation
+                                             10.0 100.0)
              joined-vars   (joined-render-vars planet-vars scene-vars)]
          (:sfsim.render/origin joined-vars) => origin
+         (:sfsim.render/object-origin planet-vars) => (vec3 -3 2 3)
          (:sfsim.render/window-width joined-vars) => 320
          (:sfsim.render/window-height joined-vars) => 240
          (:sfsim.render/origin joined-vars) => origin

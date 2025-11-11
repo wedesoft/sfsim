@@ -8,11 +8,11 @@
   "Functions for doing OpenGL rendering"
   (:require
     [clojure.math :refer (sin asin hypot)]
-    [fastmath.matrix :refer (mat->float-array)]
-    [fastmath.vector :refer (vec3)]
+    [fastmath.matrix :refer (mulm mulv inverse mat->float-array)]
+    [fastmath.vector :refer (vec3 vec4)]
     [malli.core :as m]
     [sfsim.image :refer (get-pixel)]
-    [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix)]
+    [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix vec4->vec3)]
     [sfsim.quaternion :refer (quaternion)]
     [sfsim.shaders :refer (vertex-passthrough)]
     [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
@@ -607,17 +607,22 @@
 
 (def render-vars
   (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
-             [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]]))
+             [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]
+             [::object-origin fvec3]]))
 
 
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame with specified depth range"
-  {:malli/schema [:=> [:cat [:map [::fov :double]] N N fvec3 quaternion fvec3 :double :double] render-vars]}
-  [render-config window-width window-height camera-position camera-orientation light-direction z-near z-far]
-  (let [fov             (::fov render-config)
-        camera-to-world (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
-        z-offset        1.0
-        projection      (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)]
+  {:malli/schema [:=> [:cat [:map [::fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double :double] render-vars]}
+  [render-config window-width window-height camera-position camera-orientation light-direction object-position object-orientation
+   z-near z-far]
+  (let [fov              (::fov render-config)
+        camera-to-world  (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
+        object-to-world  (transformation-matrix (quaternion->matrix object-orientation) object-position)
+        camera-to-object (mulm (inverse object-to-world) camera-to-world)
+        object-origin    (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
+        z-offset         1.0
+        projection       (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)]
     {::origin camera-position
      ::z-near z-near
      ::z-far z-far
@@ -625,6 +630,7 @@
      ::window-width window-width
      ::window-height window-height
      ::light-direction light-direction
+     ::object-origin object-origin
      ::camera-to-world camera-to-world
      ::projection projection}))
 
@@ -636,6 +642,7 @@
   (let [fov             (::fov vars-first)
         window-width    (::window-width vars-first)
         window-height   (::window-height vars-first)
+        object-origin   (::object-origin vars-first)
         position        (::origin vars-first)
         z-near          (min ^double (::z-near vars-first) ^double (::z-near vars-second))
         z-far           (max ^double (::z-far vars-first) ^double (::z-far vars-second))
@@ -649,6 +656,7 @@
      ::fov fov
      ::window-width window-width
      ::window-height window-height
+     ::object-origin object-origin
      ::light-direction light-direction
      ::camera-to-world camera-to-world
      ::projection projection}))

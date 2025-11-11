@@ -795,10 +795,10 @@
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
-                                                                 light-direction)
+                                                                 light-direction object-position object-orientation )
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
-                                                               camera-orientation light-direction object-position object-orientation
-                                                               config/object-radius)
+                                                               camera-orientation light-direction object-position
+                                                               object-orientation config/object-radius)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
