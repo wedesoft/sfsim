@@ -2,6 +2,7 @@
 
 uniform mat4 projection;
 uniform mat4 object_to_world;
+uniform mat4 object_to_scene;
 uniform mat4 object_to_camera;
 <% (doseq [i (range num-scene-shadows)] %>
 uniform mat4 object_to_shadow_map_<%= (inc ^long i) %>;
@@ -35,7 +36,7 @@ out VS_OUT
 
 void main()
 {
-  vs_out.vertex = vertex;  // TODO: transform to root coordinate system of object (scene)
+  vs_out.vertex = (object_to_scene * vec4(vertex, 1)).xyz;  // TODO: rename vertex
   vs_out.world_point = (object_to_world * vec4(vertex, 1)).xyz;
   vs_out.normal = mat3(object_to_world) * normal;
 <% (if bump %>

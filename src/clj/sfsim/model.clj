@@ -710,6 +710,7 @@
   (let [object-to-camera (mulm (inverse camera-to-world) transform)]
     (use-program program)
     (uniform-matrix4 program "object_to_world" transform)
+    (uniform-matrix4 program "object_to_scene" internal-transform)
     (uniform-matrix4 program "object_to_camera" object-to-camera)
     (doseq [i (range (count scene-shadow-matrices))]
            (uniform-matrix4 program
