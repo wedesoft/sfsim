@@ -35,7 +35,7 @@ out VS_OUT
 
 void main()
 {
-  vs_out.vertex = vertex;
+  vs_out.vertex = vertex;  // TODO: transform to root coordinate system of object (scene)
   vs_out.world_point = (object_to_world * vec4(vertex, 1)).xyz;
   vs_out.normal = mat3(object_to_world) * normal;
 <% (if bump %>
