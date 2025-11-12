@@ -608,7 +608,7 @@
 (def render-vars
   (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
              [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]
-             [::object-origin fvec3]]))
+             [::object-origin fvec3] [::camera-to-object fmat4]]))
 
 
 (defn make-render-vars
@@ -618,8 +618,8 @@
    z-near z-far]
   (let [fov              (::fov render-config)
         camera-to-world  (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
-        object-to-world  (transformation-matrix (quaternion->matrix object-orientation) object-position)
-        camera-to-object (mulm (inverse object-to-world) camera-to-world)
+        world-to-object  (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
+        camera-to-object (mulm world-to-object camera-to-world)
         object-origin    (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
         z-offset         1.0
         projection       (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)]
@@ -631,6 +631,7 @@
      ::window-height window-height
      ::light-direction light-direction
      ::object-origin object-origin
+     ::camera-to-object camera-to-object
      ::camera-to-world camera-to-world
      ::projection projection}))
 
@@ -639,17 +640,18 @@
   "Create hash map with render variables using joined z-range of input render variables"
   {:malli/schema [:=> [:cat render-vars render-vars] render-vars]}
   [vars-first vars-second]
-  (let [fov             (::fov vars-first)
-        window-width    (::window-width vars-first)
-        window-height   (::window-height vars-first)
-        object-origin   (::object-origin vars-first)
-        position        (::origin vars-first)
-        z-near          (min ^double (::z-near vars-first) ^double (::z-near vars-second))
-        z-far           (max ^double (::z-far vars-first) ^double (::z-far vars-second))
-        light-direction (::light-direction vars-first)
-        camera-to-world (::camera-to-world vars-first)
-        z-offset        1.0
-        projection      (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
+  (let [fov              (::fov vars-first)
+        window-width     (::window-width vars-first)
+        window-height    (::window-height vars-first)
+        object-origin    (::object-origin vars-first)
+        camera-to-object (::camera-to-object vars-first)
+        position         (::origin vars-first)
+        z-near           (min ^double (::z-near vars-first) ^double (::z-near vars-second))
+        z-far            (max ^double (::z-far vars-first) ^double (::z-far vars-second))
+        light-direction  (::light-direction vars-first)
+        camera-to-world  (::camera-to-world vars-first)
+        z-offset         1.0
+        projection       (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
     {::origin position
      ::z-near z-near
      ::z-far z-far
@@ -657,6 +659,7 @@
      ::window-width window-width
      ::window-height window-height
      ::object-origin object-origin
+     ::camera-to-object camera-to-object
      ::light-direction light-direction
      ::camera-to-world camera-to-world
      ::projection projection}))

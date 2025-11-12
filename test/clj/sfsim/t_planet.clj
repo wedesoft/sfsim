@@ -148,6 +148,7 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } frag_in;
 out vec3 fragColor;
 void main()
@@ -377,6 +378,7 @@ out GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } vs_out;
 void main()
 {
@@ -602,6 +604,7 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } fs_in;
 out vec3 fragColor;
 void main()

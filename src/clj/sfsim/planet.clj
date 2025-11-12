@@ -262,6 +262,8 @@
     (uniform-matrix4 program "world_to_camera" world-to-camera)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
+    (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
+    (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
     (setup-shadow-matrices program shadow-vars)
     (use-textures {1 (:sfsim.atmosphere/transmittance atmosphere-luts) 2 (:sfsim.atmosphere/scatter atmosphere-luts)
                    3 (:sfsim.atmosphere/mie atmosphere-luts) 4 (:sfsim.clouds/worley cloud-data)

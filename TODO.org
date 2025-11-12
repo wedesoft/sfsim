@@ -59,12 +59,14 @@
       - [X] generate cloud_point and cloud_outer from same code using boolean (optional end point)
       - [X] generate cloud_plume_point, cloud_plume_cloud, and cloud_plume_cloud_point from same code using booleans
       - [X] cloud_plume shader should take origin, direction, (and optionally end point), in object coordinates
-      - [ ] use scene matrix (top-level transform) instead of individual mesh transform
+      - [X] use scene matrix (top-level transform) instead of individual mesh transform
+      - [ ] render-cloud-planet should use cloud_plume_cloud_point
+      - [ ] render-cloud-atmosphere should use cloud_plume_cloud
       - [ ] implement plume_point
-      - [ ] make-render-vars needs to add object-origin
+      - [X] make-render-vars needs to add object-origin
       - [X] atmospheric transmittance for clouds behind plume
-      - [ ] object_origin, object_direction, fs_in.vertex needs to be in scene and not mesh coordinates
-      - [ ] provide origin, direction and point in plume coordinates
+      - [X] object_origin, object_direction, fs_in.vertex needs to be in scene and not mesh coordinates
+      - [X] provide origin, direction and point in plume coordinates
       - [ ] is "depth" initialised when rendering space ship or planet?
       - [ ] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
       - [ ] don't split sampling interval if there is no plume

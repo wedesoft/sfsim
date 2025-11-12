@@ -1224,6 +1224,7 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } fs_in;
 out vec4 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)

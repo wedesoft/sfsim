@@ -7,8 +7,7 @@
 (ns sfsim.plume
     "Module with shader functions for plume rendering"
     (:require
-      [comb.template :as template]
-      [sfsim.shaders :as shaders]))
+      [comb.template :as template]))
 
 
 (def plume-phase
