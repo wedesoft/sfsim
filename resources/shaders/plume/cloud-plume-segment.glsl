@@ -26,14 +26,14 @@ vec4 cloud_plume_cloud(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
 <% ) %>
 <% (if (and planet-point (not model-point)) %>
 // Shader to render overlay with clouds, then plume, and then clouds again with planet in the background.
-vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction)  // TODO: add object point
+vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
 <% ) %>
 <% (if model-point %>
 // Shader to render overlay with clouds, then plume with model in the background.
 vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point)
 <% ) %>
 {
-<% (if (not model-point) %>
+<% (if (and (not planet-point) (not model-point)) %>
   vec4 plume = plume_outer(object_origin, object_direction);
 <% %>
   vec4 plume = plume_point(object_origin, object_direction, object_point);

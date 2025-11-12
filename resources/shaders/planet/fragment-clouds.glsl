@@ -12,11 +12,11 @@ in GEO_OUT
 
 out vec4 fragColor;
 
-vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction);
+vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point);
 
 void main()
 {
   vec3 object_direction = normalize(fs_in.object_point - object_origin);
   //.TODO: get more accurate direction
-  fragColor = cloud_plume_cloud_point(origin, normalize(fs_in.point - origin), fs_in.point, object_origin, object_direction);
+  fragColor = cloud_plume_cloud_point(origin, normalize(fs_in.point - origin), fs_in.point, object_origin, object_direction, fs_in.object_point);
 }

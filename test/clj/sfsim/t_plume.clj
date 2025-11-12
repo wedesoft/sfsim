@@ -162,7 +162,7 @@ uniform float depth;
 out vec3 fragColor;
 vec4 cloud_plume_cloud(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
 vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point);
-vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction);
+vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point);
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
   float start = max(0.0, -3.0 - origin.x);
@@ -212,7 +212,7 @@ void main()
   vec4 result = cloud_plume_cloud(origin, direction, object_origin, direction);
 <% ) %>
 <% (if (and planet-point (not model-point)) %>
-  vec4 result = cloud_plume_cloud_point(origin, direction, point, object_origin, direction);
+  vec4 result = cloud_plume_cloud_point(origin, direction, point, object_origin, direction, point);
 <% ) %>
 <% (if model-point %>
   vec4 result = cloud_plume_point(origin, direction, object_origin, direction, point);
