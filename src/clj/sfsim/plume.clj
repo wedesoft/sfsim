@@ -48,6 +48,13 @@ vec2 ray_box_copy(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
   float far = min(min(intersections2.x, intersections2.y), intersections2.z);
   return vec2(near, max(far - near, 0));
 }
+vec4 plume_outer(vec3 object_origin, vec3 object_direction)
+{
+  return vec4(0, 0, 0, 0);
+  vec2 intersection = ray_box_copy(vec3(-30), vec3(30), object_origin, object_direction);
+  float transparency = pow(0.98, max(intersection.t, 0.0));
+  return vec4(1.0 - transparency);
+}
 vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
   return vec4(0, 0, 0, 0);
@@ -61,4 +68,5 @@ vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
 (defn cloud-plume-segment
   "Shader function to compute cloud and plume RGBA values for segment around plume in space"
   [model-point planet-point]
-  [(template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])
+  [plume-point
+   (template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])
