@@ -654,6 +654,7 @@ in vec3 point;
 out VS_OUT
 {
   vec3 point;
+  vec3 object_direction;
 } vs_out;
 void main()
 {
@@ -670,6 +671,7 @@ uniform float multiplier;
 in VS_OUT
 {
   vec3 point;
+  vec3 object_direction;
 } fs_in;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 out vec4 fragColor;
@@ -1252,6 +1254,7 @@ uniform vec3 origin;
 in VS_OUT
 {
   vec3 direction;
+  vec3 object_direction;
 } fs_in;
 out vec4 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)

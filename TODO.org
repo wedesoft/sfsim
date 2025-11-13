@@ -64,6 +64,7 @@
       - [X] render-cloud-planet should use cloud_plume_cloud_point
       - [ ] render-cloud-atmosphere should use cloud_plume_cloud
       - [ ] implement plume_point
+      - [ ] fix schema errors of main program
       - [X] make-render-vars needs to add object-origin
       - [X] atmospheric transmittance for clouds behind plume
       - [X] object_origin, object_direction, fs_in.vertex needs to be in scene and not mesh coordinates

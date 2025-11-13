@@ -17,6 +17,7 @@
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
                           uniform-matrix4 use-program) :as render]
     [sfsim.shaders :as shaders]
+    [sfsim.plume :refer (cloud-plume-segment)]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
                            texture-2d)]
@@ -359,7 +360,8 @@
   "Shader for rendering clouds above horizon"
   {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
   [num-steps perlin-octaves cloud-octaves]
-  [(cloud-outer num-steps perlin-octaves cloud-octaves) (slurp "resources/shaders/clouds/fragment-atmosphere.glsl")])
+  [(cloud-outer num-steps perlin-octaves cloud-octaves) (cloud-point num-steps perlin-octaves cloud-octaves)
+   (cloud-plume-segment false false) (slurp "resources/shaders/clouds/fragment-atmosphere.glsl")])
 
 
 (defn lod-offset
