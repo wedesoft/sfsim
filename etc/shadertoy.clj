@@ -1,4 +1,5 @@
-(require '[sfsim.shaders :refer :all])
+(require '[sfsim.shaders :refer :all]
+         '[sfsim.plume :refer :all])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL GL11 GL15 GL20 GL30]
         '[org.lwjgl BufferUtils])
