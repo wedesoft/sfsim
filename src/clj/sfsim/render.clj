@@ -9,7 +9,7 @@
   (:require
     [clojure.math :refer (sin asin hypot)]
     [fastmath.matrix :refer (mulm mulv inverse mat->float-array)]
-    [fastmath.vector :refer (vec3 vec4)]
+    [fastmath.vector :refer (vec3 vec4 mag)]
     [malli.core :as m]
     [sfsim.image :refer (get-pixel)]
     [sfsim.matrix :refer (fvec3 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix vec4->vec3)]
@@ -608,7 +608,7 @@
 (def render-vars
   (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
              [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]
-             [::object-origin fvec3] [::camera-to-object fmat4]]))
+             [::object-origin fvec3] [::camera-to-object fmat4] [::object-distance :double]]))
 
 
 (defn make-render-vars
@@ -632,6 +632,7 @@
      ::light-direction light-direction
      ::object-origin object-origin
      ::camera-to-object camera-to-object
+     ::object-distance (mag object-origin)
      ::camera-to-world camera-to-world
      ::projection projection}))
 
@@ -644,6 +645,7 @@
         window-width     (::window-width vars-first)
         window-height    (::window-height vars-first)
         object-origin    (::object-origin vars-first)
+        object-distance  (::object-distance vars-first)
         camera-to-object (::camera-to-object vars-first)
         position         (::origin vars-first)
         z-near           (min ^double (::z-near vars-first) ^double (::z-near vars-second))
@@ -659,6 +661,7 @@
      ::window-width window-width
      ::window-height window-height
      ::object-origin object-origin
+     ::object-distance object-distance
      ::camera-to-object camera-to-object
      ::light-direction light-direction
      ::camera-to-world camera-to-world
