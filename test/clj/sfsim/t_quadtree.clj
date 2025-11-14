@@ -502,13 +502,13 @@
                              tilesize => 65
                              row => 1
                              column => 3
-                             tile-y => 0
-                             tile-x => 5
+                             tile-y => 0.0
+                             tile-x => 5.0
                              rotation => 0
                              (contains? #{-1 0 1 2} dy) => true
                              (contains? #{-1 0 1 2} dx) => true)
                       #:sfsim.quadtree{:face face :row (if (>= dy 0) 1 0) :column column
-                                       :tile-y (mod dy 64) :tile-x (+ tile-x dx)})
+                                       :tile-y (mod dy 64.0) :tile-x (+ tile-x dx)})
                     quadtree/tile-center-to-surface
                     (fn [level tilesize face row column tile-y tile-x]
                       (facts face => face2
@@ -516,8 +516,8 @@
                              tilesize => 65
                              (contains? #{0 1} row) => true
                              column => 3
-                             (contains? #{63 0 1 2} tile-y) => true
-                             (contains? #{4 5 6 7} tile-x) => true)
+                             (contains? #{63.0 0.0 1.0 2.0} tile-y) => true
+                             (contains? #{4.0 5.0 6.0 7.0} tile-x) => true)
                       (vec3 tile-y (- tile-x 5) 0))
                     cubemap/tile-center
                     (fn [face level row column radius]

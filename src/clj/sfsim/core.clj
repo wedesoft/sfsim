@@ -8,10 +8,13 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
+    [clojure.java.io :as io]
     [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt pow)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
+    [malli.dev :as dev]
+    [malli.dev.pretty :as pretty]
     [fastmath.matrix :refer (inverse mulv mulm cols->mat)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize dot cross)]
     [sfsim.astro :as astro]
@@ -63,9 +66,8 @@
 ;; (require '[nrepl.server :refer [start-server stop-server]])
 ;; (defonce server (start-server :port 7888))
 
-;; (require '[malli.dev :as dev])
-;; (require '[malli.dev.pretty :as pretty])
-;; (dev/start! {:report (pretty/thrower)})
+(when (.exists (io/file ".integration"))
+  (dev/start! {:report (pretty/thrower)}))
 
 ; Ensure floating point numbers use a dot as decimal separator
 (java.util.Locale/setDefault java.util.Locale/US)
