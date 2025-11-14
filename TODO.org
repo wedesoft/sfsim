@@ -1,6 +1,12 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2025-11-14 Fr 22:28] \\
+    float slider1 = iMouse.x / iResolution.x;
+    float slider2 = iMouse.y / iResolution.y;
+    float distortion1 = max(0.0, 5.0 * point.y * point.z * (slider1 - 0.5));
+    float distortion2 = max(0.0, 5.0 * point.y * (slider2 - 0.5));
+    float sdf = mix(baseSdf, shapeMix, mix(engine_pos, 1.0, transition)) + distortion1 + distortion2;
   - Note taken on [2025-08-28 Do 12:50] \\
     No, the shock diamonds in a series are not the same size; they decrease in both size and intensity further down the exhaust plume.
     This happens as the supersonic exhaust jet dissipates energy and gradually adjusts its pressure to match the surrounding atmospheric pressure.

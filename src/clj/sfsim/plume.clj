@@ -7,7 +7,8 @@
 (ns sfsim.plume
     "Module with shader functions for plume rendering"
     (:require
-      [comb.template :as template]))
+      [comb.template :as template]
+      [sfsim.shaders :as shaders]))
 
 
 (def plume-phase
@@ -34,6 +35,13 @@
   "Shader function for volumetric Mach diamonds"
   [fringe]
   [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
+
+
+(defn plume-transfer
+  "Shader for computing engine plume light transfer at a point"
+  [fringe]
+  [plume-limit bulge (diamond fringe) shaders/noise3d shaders/sdf-circle shaders/sdf-rectangle
+   (slurp "resources/shaders/plume/plume-transfer.glsl")])
 
 
 (def plume-point  ; TODO: implement this
