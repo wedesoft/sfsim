@@ -72,8 +72,8 @@
       - [X] error in cloud-plume-segment shader (different brightness in front of object)
       - [X] implement plume_point and plume_outer
       - [ ] implement plume_box
-      - [ ] rendering errors when object_distance is behind horizon
-      - [ ] fix schema errors of main program
+      - [X] rendering errors when object_distance is behind horizon
+      - [X] fix schema errors of main program
       - [ ] optimize cloud-plume-point for pixels without plume
       - [X] make-render-vars needs to add object-origin
       - [X] atmospheric transmittance for clouds behind plume
