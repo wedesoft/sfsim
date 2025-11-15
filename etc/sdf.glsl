@@ -21,7 +21,6 @@
 #define OFFSET -15.0
 #define END -50.0
 #define ENGINE_SIZE (START - ENGINE)
-#define ENGINE_STEP 0.2
 #define BASE_DENSITY 2.0
 #define DIAMOND_DENSITY 5.0
 #define RADIUS 3.9011
@@ -41,6 +40,8 @@ vec2 ray_circle(vec2 centre, float radius, vec2 origin, vec2 direction);
 vec2 subtract_interval(vec2 a, vec2 b);
 float limit(float pressure);
 vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter);
+vec4 plume_outer(vec3 object_origin, vec3 object_direction);
+vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
 
 vec2 cylinder1_base_ = vec2(-10.9544,  4.3511);
 vec2 cylinder2_base_ = vec2(-10.9544, -4.3511);
@@ -49,18 +50,6 @@ vec2 plume_box(vec3 origin, vec3 direction)
 {
   float box_size = max(limit(pressure), nozzle) + WIDTH2 - nozzle;
   return ray_box(vec3(END, -box_size, -box_size), vec3(START, box_size, box_size), origin, direction);
-}
-
-vec4 sample_plume(vec3 origin, vec3 direction, vec2 plume_box)
-{
-  vec4 plume_scatter = vec4(0, 0, 0, 1);
-  float l = plume_box.x;
-  while (l < plume_box.x + plume_box.y) {
-    vec3 point = origin + l * direction;
-    plume_scatter = plume_transfer(point, ENGINE_STEP, plume_scatter);
-    l += ENGINE_STEP;
-  }
-  return plume_scatter;
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
@@ -80,13 +69,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec2 cylinder2 = ray_circle(cylinder2_base_, RADIUS, origin.xy, direction.xy);
   vec2 joint = subtract_interval(subtract_interval(engine, cylinder1), cylinder2);
   vec3 color = vec3(0, 0, 0);
+  vec4 plume_scatter;
   if (joint.y > 0.0) {
     color = vec3(0.5);
-    if (box.x + box.y > joint.x) {
-      box.y = joint.x - box.x;
-    };
+    vec3 point = origin + joint.x * direction;
+    plume_scatter = plume_point(origin, direction, point);
+  } else {
+    plume_scatter = plume_outer(origin, direction);
   };
-  vec4 plume_scatter = sample_plume(origin, direction, box);
   color = plume_scatter.rgb + color * plume_scatter.a;
   fragColor = vec4(color, 1.0);
 }

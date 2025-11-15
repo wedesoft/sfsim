@@ -276,7 +276,8 @@ vec4 plume_outer(vec3 object_origin, vec3 object_direction);
 vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
 vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
 {
-  return plume_scatter + vec4(plume_step * <%= strength %>);
+  float x = plume_step * <%= strength %>;
+  return plume_scatter + vec4(x, x, x, -x);
 }
 vec2 plume_box(vec3 origin, vec3 direction)
 {
@@ -299,12 +300,15 @@ void main()
   [outer]
   (shader-test (fn [program engine-step]
                    (uniform-float program "engine_step" engine-step))
-               plume-segment-probe (plume-segment outer)))
+               plume-segment-probe (last (plume-segment outer))))
 
 (tabular "Shader function to determine rocket plume contribution"
-         (fact (first ((plume-segment-test ?outer) [?engine-step] [?outer ?o-x ?x ?size ?strength])) => (roughly ?result 1e-3))
-         ?engine-step ?outer ?o-x ?x   ?size ?strength ?result
-         0.1          true   -10.0 0.0 0.0   0.1       0.0
-         0.1          true   -10.0 0.0 2.0   0.1       0.2)
+         (fact ((plume-segment-test ?outer) [?engine-step] [?outer ?o-x ?x ?size ?strength])
+               => (roughly-vector (vec3 ?result ?result ?alpha) 1e-3))
+         ?engine-step ?outer ?o-x  ?x   ?size ?strength ?result ?alpha
+         0.1          true   -10.0  0.0  0.0   0.1       0.0    0.0
+         0.1          true   -10.0  0.0  2.0   0.1       0.2    0.2
+         0.1          false  -10.0 10.0  2.0   0.1       0.2    0.2
+         0.1          false  -10.0 -5.0  2.0   0.1       0.0    0.0)
 
 (GLFW/glfwTerminate)

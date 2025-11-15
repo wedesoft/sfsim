@@ -44,9 +44,12 @@
    (slurp "resources/shaders/plume/plume-transfer.glsl")])
 
 
+(def plume-fringe 0.05)
+
+
 (defn plume-segment
   [outer]
-  (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer}))
+  [(plume-transfer plume-fringe) (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer})])
 
 
 (def plume-point  ; TODO: implement this
