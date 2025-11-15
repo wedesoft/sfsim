@@ -35,36 +35,46 @@ vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 objec
 vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point)
 <% ) %>
 {
-  vec4 result = cloud_point(origin, direction, origin + direction * object_distance);
-<% (if (or model-point planet-point) %>
-  vec4 plume = plume_point(object_origin, object_direction, object_point);
-<% %>
-  vec4 plume = plume_outer(object_origin, object_direction);
-<% ) %>
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  atmosphere.y = min(atmosphere.y, object_distance - atmosphere.x);
-  vec3 transmittance;
-  vec3 in_scatter;
-  if (atmosphere.y > 0) {
-    vec3 start = origin + direction * atmosphere.x;
-    vec3 end = origin + direction * (atmosphere.x + atmosphere.y);
-    transmittance = transmittance_track(start, end);
-    in_scatter = ray_scatter_track(light_direction, start, end) * amplification;
+  vec4 result;
+<% (if planet-point %>
+  float planet_distance = distance(point, origin);
+  if (planet_distance < object_distance) {
+    result = cloud_point(origin, direction, origin + direction * planet_distance);
   } else {
-    transmittance = vec3(1, 1, 1);
-    in_scatter = vec3(0, 0, 0);
-  };
-  plume.rgb = plume.rgb * transmittance + plume.a * in_scatter;
-  result = vec4(result.rgb + plume.rgb * (1.0 - result.a), 1.0 - (1.0 - plume.a) * (1.0 - result.a));
+<% ) %>
+    result = cloud_point(origin, direction, origin + direction * object_distance);
+<% (if (or model-point planet-point) %>
+    vec4 plume = plume_point(object_origin, object_direction, object_point);
+<% %>
+    vec4 plume = plume_outer(object_origin, object_direction);
+<% ) %>
+    vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+    atmosphere.y = min(atmosphere.y, object_distance - atmosphere.x);
+    vec3 transmittance;
+    vec3 in_scatter;
+    if (atmosphere.y > 0) {
+      vec3 start = origin + direction * atmosphere.x;
+      vec3 end = origin + direction * (atmosphere.x + atmosphere.y);
+      transmittance = transmittance_track(start, end);
+      in_scatter = ray_scatter_track(light_direction, start, end) * amplification;
+    } else {
+      transmittance = vec3(1, 1, 1);
+      in_scatter = vec3(0, 0, 0);
+    };
+    plume.rgb = plume.rgb * transmittance + plume.a * in_scatter;
+    result = vec4(result.rgb + plume.rgb * (1.0 - result.a), 1.0 - (1.0 - plume.a) * (1.0 - result.a));
 <% (if (and planet-point (not model-point)) %>
-  vec4 cloud_scatter = cloud_point(origin + direction * object_distance, direction, point);
+    vec4 cloud_scatter = cloud_point(origin + direction * object_distance, direction, point);
 <% ) %>
 <% (if (and (not planet-point) (not model-point)) %>
-  vec4 cloud_scatter = cloud_outer(origin + direction * object_distance, direction);
+    vec4 cloud_scatter = cloud_outer(origin + direction * object_distance, direction);
 <% ) %>
 <% (if (not model-point) %>
-  cloud_scatter.rgb = cloud_scatter.rgb * transmittance + cloud_scatter.a * in_scatter;
-  result = vec4(result.rgb + cloud_scatter.rgb * (1.0 - result.a), 1.0 - (1.0 - cloud_scatter.a) * (1.0 - result.a));
+    cloud_scatter.rgb = cloud_scatter.rgb * transmittance + cloud_scatter.a * in_scatter;
+    result = vec4(result.rgb + cloud_scatter.rgb * (1.0 - result.a), 1.0 - (1.0 - cloud_scatter.a) * (1.0 - result.a));
+<% ) %>
+<% (if planet-point %>
+  };
 <% ) %>
   return result;
 }

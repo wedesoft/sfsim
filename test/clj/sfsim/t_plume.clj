@@ -266,7 +266,8 @@ void main()
         -1.0  1.0 1.0 100.0  1.0    false  false   1.0          0.5   0.25 1.0
         -6.0 -5.0 1.0 100.0  1.0    false  false   1.0          0.0   1.0  1.0
         -4.0 -2.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0
-         2.0  4.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0)
+         2.0  4.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0
+        -1.0  1.0 3.0 100.0  0.5    false  true    1.0          0.75  0.0  0.75)
 
 (def plume-segment-probe
   (template/fn [outer origin-x x size strength]
