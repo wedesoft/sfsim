@@ -268,4 +268,43 @@ void main()
         -4.0 -2.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0
          2.0  4.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0)
 
+(def plume-segment-probe
+  (template/fn [outer origin-x x size strength]
+"#version 410 core
+out vec3 fragColor;
+vec4 plume_outer(vec3 object_origin, vec3 object_direction);
+vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
+vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
+{
+  return plume_scatter + vec4(plume_step * <%= strength %>);
+}
+vec2 plume_box(vec3 origin, vec3 direction)
+{
+  return vec2(-0.5 * <%= size %> - origin.x, <%= size %>);
+}
+void main()
+{
+  vec3 origin = vec3(<%= origin-x %>, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  vec3 object_point = vec3(<%= x %>, 0, 0);
+<% (if outer %>
+  vec4 plume = plume_outer(origin, direction);
+<% %>
+  vec4 plume = plume_point(origin, direction, object_point);
+<% ) %>
+  fragColor = plume.rga;
+}"))
+
+(defn plume-segment-test
+  [outer]
+  (shader-test (fn [program engine-step]
+                   (uniform-float program "engine_step" engine-step))
+               plume-segment-probe (plume-segment outer)))
+
+(tabular "Shader function to determine rocket plume contribution"
+         (fact (first ((plume-segment-test ?outer) [?engine-step] [?outer ?o-x ?x ?size ?strength])) => (roughly ?result 1e-3))
+         ?engine-step ?outer ?o-x ?x   ?size ?strength ?result
+         0.1          true   -10.0 0.0 0.0   0.1       0.0
+         0.1          true   -10.0 0.0 2.0   0.1       0.2)
+
 (GLFW/glfwTerminate)

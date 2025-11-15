@@ -45,8 +45,15 @@ vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter);
 vec2 cylinder1_base_ = vec2(-10.9544,  4.3511);
 vec2 cylinder2_base_ = vec2(-10.9544, -4.3511);
 
-vec4 sample_plume(vec3 origin, vec3 direction, vec2 plume_box, vec4 plume_scatter)
+vec2 plume_box(vec3 origin, vec3 direction)
 {
+  float box_size = max(limit(pressure), nozzle) + WIDTH2 - nozzle;
+  return ray_box(vec3(END, -box_size, -box_size), vec3(START, box_size, box_size), origin, direction);
+}
+
+vec4 sample_plume(vec3 origin, vec3 direction, vec2 plume_box)
+{
+  vec4 plume_scatter = vec4(0, 0, 0, 1);
   float l = plume_box.x;
   while (l < plume_box.x + plume_box.y) {
     vec3 point = origin + l * direction;
@@ -67,8 +74,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 direction = normalize(rotation * vec3(uv, F));
   vec3 engine_min = vec3(ENGINE, -nozzle, -WIDTH2);
   vec3 engine_max = vec3(START, nozzle, WIDTH2);
-  float box_size = max(limit(pressure), nozzle) + WIDTH2 - nozzle;
-  vec2 box = ray_box(vec3(END, -box_size, -box_size), vec3(START, box_size, box_size), origin, direction);
+  vec2 box = plume_box(origin, direction);
   vec2 engine = ray_box(engine_min, engine_max, origin, direction);
   vec2 cylinder1 = ray_circle(cylinder1_base_, RADIUS, origin.xy, direction.xy);
   vec2 cylinder2 = ray_circle(cylinder2_base_, RADIUS, origin.xy, direction.xy);
@@ -80,8 +86,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
       box.y = joint.x - box.x;
     };
   };
-  vec4 plume_scatter = vec4(0, 0, 0, 1);
-  plume_scatter = sample_plume(origin, direction, box, plume_scatter);
+  vec4 plume_scatter = sample_plume(origin, direction, box);
   color = plume_scatter.rgb + color * plume_scatter.a;
   fragColor = vec4(color, 1.0);
 }

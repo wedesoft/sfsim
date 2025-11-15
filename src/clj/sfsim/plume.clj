@@ -44,6 +44,11 @@
    (slurp "resources/shaders/plume/plume-transfer.glsl")])
 
 
+(defn plume-segment
+  [outer]
+  (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer}))
+
+
 (def plume-point  ; TODO: implement this
 "#version 410 core
 vec2 ray_box_copy(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)

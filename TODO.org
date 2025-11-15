@@ -69,9 +69,10 @@
       - [X] use plume_point when computing cloud_plume_cloud_point!
       - [X] render-cloud-planet should use cloud_plume_cloud_point
       - [X] render-cloud-atmosphere should use cloud_plume_cloud
-      - [ ] error in cloud-plume-segment shader (different brightness in front of object)
-      - [ ] implement plume_point
+      - [X] error in cloud-plume-segment shader (different brightness in front of object)
+      - [ ] implement plume_point and plume_outer
       - [ ] fix schema errors of main program
+      - [ ] optimize cloud-plume-point for pixels without plume
       - [X] make-render-vars needs to add object-origin
       - [X] atmospheric transmittance for clouds behind plume
       - [X] object_origin, object_direction, fs_in.vertex needs to be in scene and not mesh coordinates
