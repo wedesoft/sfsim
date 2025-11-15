@@ -68,7 +68,8 @@
       - [X] use scene matrix (top-level transform) instead of individual mesh transform
       - [X] use plume_point when computing cloud_plume_cloud_point!
       - [X] render-cloud-planet should use cloud_plume_cloud_point
-      - [ ] render-cloud-atmosphere should use cloud_plume_cloud
+      - [X] render-cloud-atmosphere should use cloud_plume_cloud
+      - [ ] error in cloud-plume-segment shader (different brightness in front of object)
       - [ ] implement plume_point
       - [ ] fix schema errors of main program
       - [X] make-render-vars needs to add object-origin
