@@ -267,6 +267,13 @@
     (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
     (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
     (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
+    (uniform-float program "nozzle" 2.7549)  ; TODO: get from config
+    (uniform-float program "min_limit" 1.2)  ; TODO: get from config
+    (uniform-float program "max_slope" 1.0)  ; TODO: get from config
+    (uniform-float program "omega_factor" 0.2)  ; TODO: get from config
+    (uniform-float program "diamond_strength" 0.2)  ; TODO: get from config
+    (uniform-float program "pressure" 1.0)  ; TODO: compute from height
+    (uniform-float program "engine_step" 0.2)  ; TODO: get from config
     (setup-shadow-matrices program shadow-vars)
     (use-textures {1 (:sfsim.atmosphere/transmittance atmosphere-luts) 2 (:sfsim.atmosphere/scatter atmosphere-luts)
                    3 (:sfsim.atmosphere/mie atmosphere-luts) 4 (:sfsim.clouds/worley cloud-data)
@@ -340,6 +347,13 @@
     (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
     (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
     (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
+    (uniform-float program "nozzle" 2.7549)  ; TODO: get from config
+    (uniform-float program "min_limit" 1.2)  ; TODO: get from config
+    (uniform-float program "max_slope" 1.0)  ; TODO: get from config
+    (uniform-float program "omega_factor" 0.2)  ; TODO: get from config
+    (uniform-float program "diamond_strength" 0.2)  ; TODO: get from config
+    (uniform-float program "pressure" 1.0)  ; TODO: compute from height
+    (uniform-float program "engine_step" 0.2)  ; TODO: get from config
     (setup-shadow-matrices program shadow-vars)
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.clouds/worley data) 4 (:sfsim.clouds/perlin-worley data)

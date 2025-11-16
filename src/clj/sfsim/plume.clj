@@ -64,37 +64,16 @@
   [plume-box (plume-transfer plume-fringe) (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer})])
 
 
-(def plume-point  ; TODO: implement this
-"#version 410 core
-vec2 ray_box_copy(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
-{
-  vec3 factors1 = (box_min - origin) / direction;
-  vec3 factors2 = (box_max - origin) / direction;
-  vec3 intersections1 = min(factors1, factors2);
-  vec3 intersections2 = max(factors1, factors2);
-  float near = max(max(max(intersections1.x, intersections1.y), intersections1.z), 0);
-  float far = min(min(intersections2.x, intersections2.y), intersections2.z);
-  return vec2(near, max(far - near, 0));
-}
-vec4 plume_outer(vec3 object_origin, vec3 object_direction)
-{
-  return vec4(0, 0, 0, 0);
-  vec2 intersection = ray_box_copy(vec3(-30), vec3(30), object_origin, object_direction);
-  float transparency = pow(0.98, max(intersection.t, 0.0));
-  return vec4(1.0 - transparency);
-}
-vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
-{
-  return vec4(0, 0, 0, 0);
-  vec2 intersection = ray_box_copy(vec3(-30), vec3(30), object_origin, object_direction);
-  intersection.t = min(intersection.t, distance(object_point, object_origin) - intersection.s);
-  float transparency = pow(0.98, max(intersection.t, 0.0));
-  return vec4(1.0 - transparency);
-}")
+(def plume-point
+  (plume-segment false))
+
+
+(def plume-outer
+  (plume-segment true))
 
 
 (defn cloud-plume-segment
   "Shader function to compute cloud and plume RGBA values for segment around plume in space"
   [model-point planet-point]
-  [plume-point
+  [plume-point plume-outer
    (template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])

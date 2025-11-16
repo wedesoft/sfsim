@@ -773,6 +773,13 @@
       (uniform-matrix4 program "world_to_camera" world-to-camera)
       (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
       (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
+      (uniform-float program "nozzle" 2.7549)  ; TODO: get from config
+      (uniform-float program "min_limit" 1.2)  ; TODO: get from config
+      (uniform-float program "max_slope" 1.0)  ; TODO: get from config
+      (uniform-float program "omega_factor" 0.2)  ; TODO: get from config
+      (uniform-float program "diamond_strength" 0.2)  ; TODO: get from config
+      (uniform-float program "pressure" 1.0)  ; TODO: compute from height
+      (uniform-float program "engine_step" 0.2)  ; TODO: get from config
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
       (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
