@@ -19,8 +19,6 @@
 #define START -7.5047
 #define ENGINE -11.18
 #define OFFSET -15.0
-#define END -50.0
-#define ENGINE_SIZE (START - ENGINE)
 #define BASE_DENSITY 2.0
 #define DIAMOND_DENSITY 5.0
 #define RADIUS 3.9011
@@ -38,19 +36,11 @@ mat3 rotation_z(float angle);
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 vec2 ray_circle(vec2 centre, float radius, vec2 origin, vec2 direction);
 vec2 subtract_interval(vec2 a, vec2 b);
-float limit(float pressure);
-vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter);
 vec4 plume_outer(vec3 object_origin, vec3 object_direction);
 vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
 
 vec2 cylinder1_base_ = vec2(-10.9544,  4.3511);
 vec2 cylinder2_base_ = vec2(-10.9544, -4.3511);
-
-vec2 plume_box(vec3 origin, vec3 direction)
-{
-  float box_size = max(limit(pressure), nozzle) + WIDTH2 - nozzle;
-  return ray_box(vec3(END, -box_size, -box_size), vec3(START, box_size, box_size), origin, direction);
-}
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
@@ -63,7 +53,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   vec3 direction = normalize(rotation * vec3(uv, F));
   vec3 engine_min = vec3(ENGINE, -nozzle, -WIDTH2);
   vec3 engine_max = vec3(START, nozzle, WIDTH2);
-  vec2 box = plume_box(origin, direction);
   vec2 engine = ray_box(engine_min, engine_max, origin, direction);
   vec2 cylinder1 = ray_circle(cylinder1_base_, RADIUS, origin.xy, direction.xy);
   vec2 cylinder2 = ray_circle(cylinder2_base_, RADIUS, origin.xy, direction.xy);

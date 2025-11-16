@@ -313,4 +313,45 @@ void main()
          0.1          false  -10.0 10.0  2.0   0.1       0.2    0.2
          0.1          false  -10.0 -5.0  2.0   0.1       0.0    0.0)
 
+(def plume-box-probe
+  (template/fn [limit x-range y-range z-range]
+"#version 410 core
+out vec3 fragColor;
+float limit(float pressure)
+{
+  return <%= limit %>;
+}
+vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
+{
+<% (if x-range %>
+  return vec2(box_min.x, box_max.x);
+<% ) %>
+<% (if y-range %>
+  return vec2(box_min.y, box_max.y);
+<% ) %>
+<% (if z-range %>
+  return vec2(box_min.z, box_max.z);
+<% ) %>
+}
+vec2 plume_box(vec3 origin, vec3 direction);
+void main()
+{
+  vec3 origin = vec3(-5, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  fragColor = vec3(plume_box(origin, direction), 0.0);
+}"))
+
+(def plume-box-test
+  (shader-test (fn [program nozzle]
+                   (uniform-float program "nozzle" nozzle))
+               plume-box-probe (last plume-box)))
+
+(tabular "Shader for bounding box computation of plume"
+         (fact (plume-box-test [?nozzle] [?limit ?x-range ?y-range ?z-range]) => (roughly-vector (vec3 ?a ?b 0) 1e-6))
+         ?limit ?nozzle ?x-range ?y-range ?z-range ?a                ?b
+         0.5    1.0     true     false    false    plume-end            plume-start
+         0.5    1.0     false    true     false    (- plume-width-2)    plume-width-2
+         2.0    1.0     false    true     false    (- -1 plume-width-2) (+ 1 plume-width-2)
+         0.5    1.0     false    false    true     (- plume-width-2)    plume-width-2)
+
 (GLFW/glfwTerminate)

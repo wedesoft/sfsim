@@ -1,8 +1,8 @@
-#define START -7.5047
+#define START <%= plume-start %>
 #define SPIKE -11.18
 #define ENGINE_SIZE (START - SPIKE)
-#define END -50.0
-#define WIDTH2 7.4266
+#define END <%= plume-end %>
+#define WIDTH2 <%= plume-width-2 %>
 #define RADIUS 3.9011
 #define LAYER 0.6
 #define BASE_DENSITY 2.0
