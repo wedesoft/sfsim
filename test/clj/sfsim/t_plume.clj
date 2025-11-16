@@ -238,36 +238,36 @@ void main()
 (tabular "Shader function to determine cloud and rocket plume contribution"
          (fact ((cloud-plume-segment-test ?model ?planet) [?ox ?d ?depth] [?x ?plume ?model ?planet ?attenuation])
                => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
-         ?ox  ?x  ?d  ?depth ?plume ?model ?planet ?attenuation ?r    ?g   ?a
-         4.0  0.0 0.0 100.0  0.0    false  false   0.0          0.0   0.0  0.0
-         1.0  0.0 2.0 100.0  0.0    false  false   0.0          0.75  0.0  0.75
-         4.0  0.0 0.0 100.0  1.0    false  false   0.0          0.0   1.0  1.0
-         2.0  0.0 1.0 100.0  1.0    false  false   0.0          0.5   0.5  1.0
-         1.0  0.0 1.0 100.0  0.5    false  false   0.0          0.625 0.25 0.875
-         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
-         4.0  0.0 2.0 100.0  0.0    false  false   0.0          0.0   0.0  0.0
-         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
-         2.0  0.0 0.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
-         2.0  0.0 1.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
-         0.0  0.0 0.0 100.0  0.0    true   false   0.0          0.0   0.0  0.0
-        -1.0  1.0 2.0 100.0  0.0    true   false   0.0          0.75  0.0  0.75
-        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0  1.0
-        -1.0  0.0 1.0 100.0  1.0    true   false   0.0          0.5   0.5  1.0
-        -1.0  1.0 1.0 100.0  0.5    false  true    0.0          0.625 0.25 0.875
-        -4.0 -2.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
-        -6.0 -4.0 2.0 100.0  0.0    true   false   0.0          0.0   0.0  0.0
-         2.0  4.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
-        -4.0 -2.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0  0.5
-         2.0  4.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0  0.5
-        -1.0  1.0 1.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
-        -1.0  1.0 2.0   1.0  0.0    false  true    0.0          0.5   0.0  0.5
-        -6.0 -5.0 1.0 100.0  1.0    false  true    0.0          0.0   1.0  1.0
-        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0  1.0
-        -1.0  1.0 1.0 100.0  1.0    false  false   1.0          0.5   0.25 1.0
-        -6.0 -5.0 1.0 100.0  1.0    false  false   1.0          0.0   1.0  1.0
-        -4.0 -2.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0
-         2.0  4.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0
-        -1.0  1.0 3.0 100.0  0.5    false  true    1.0          0.75  0.0  0.75)
+         ?ox  ?x  ?d  ?depth ?plume ?model ?planet ?attenuation ?r    ?g    ?a
+         4.0  0.0 0.0 100.0  0.0    false  false   0.0          0.0   0.0   0.0
+         1.0  0.0 2.0 100.0  0.0    false  false   0.0          0.75  0.0   0.75
+         4.0  0.0 0.0 100.0  1.0    false  false   0.0          0.0   1.0   1.0
+         2.0  0.0 1.0 100.0  1.0    false  false   0.0          0.5   0.5   1.0
+         1.0  0.0 1.0 100.0  0.5    false  false   0.0          0.625 0.25  0.875
+         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0   0.5
+         4.0  0.0 2.0 100.0  0.0    false  false   0.0          0.0   0.0   0.0
+         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0   0.5
+         2.0  0.0 0.0 100.0  0.0    false  false   0.0          0.5   0.0   0.5
+         2.0  0.0 1.0 100.0  0.0    false  false   0.0          0.5   0.0   0.5
+         0.0  0.0 0.0 100.0  0.0    true   false   0.0          0.0   0.0   0.0
+        -1.0  1.0 2.0 100.0  0.0    true   false   0.0          0.75  0.0   0.75
+        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0   1.0
+        -1.0  0.0 1.0 100.0  1.0    true   false   0.0          0.5   0.5   1.0
+        -1.0  1.0 1.0 100.0  0.5    false  true    0.0          0.625 0.25  0.875
+        -4.0 -2.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0   0.5
+        -6.0 -4.0 2.0 100.0  0.0    true   false   0.0          0.0   0.0   0.0
+         2.0  4.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0   0.5
+        -4.0 -2.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0   0.5
+         2.0  4.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0   0.5
+        -1.0  1.0 1.0 100.0  0.0    true   false   0.0          0.5   0.0   0.5
+        -1.0  1.0 2.0   1.0  0.0    false  true    0.0          0.5   0.0   0.5
+        -6.0 -5.0 1.0 100.0  1.0    false  true    0.0          0.0   1.0   1.0
+        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0   1.0
+        -1.0  1.0 1.0 100.0  1.0    false  false   1.0          0.5   0.25  1.0
+        -6.0 -5.0 1.0 100.0  1.0    false  false   1.0          0.0   1.0   1.0
+        -4.0 -2.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25  1.0
+         2.0  4.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25  1.0
+        -1.0  1.0 3.0 100.0  0.5    false  true    1.0          0.75  0.016 0.875)
 
 (def plume-segment-probe
   (template/fn [outer origin-x x size strength]
