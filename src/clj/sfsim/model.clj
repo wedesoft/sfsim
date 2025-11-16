@@ -775,6 +775,7 @@
       (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
+      (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
       (setup-shadow-matrices program shadow-vars))
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)

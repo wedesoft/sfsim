@@ -229,6 +229,7 @@ void main()
   (shader-test (fn [program origin-x object-distance depth]
                    (uniform-float program "radius" 2.0)
                    (uniform-float program "max_height" 1.0)
+                   (uniform-float program "opacity_cutoff" 0.0)
                    (uniform-float program "object_distance" object-distance)
                    (uniform-float program "depth" depth)
                    (uniform-vector3 program "light_direction" (vec3 0 1 0))
