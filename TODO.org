@@ -83,6 +83,7 @@
       - [X] coordinate system for plume needs to be rotated
       - [ ] turn off plume when no trust
       - [ ] increased density near spike
+      - [ ] constrain sides of plume up to end of engine
       - [ ] add blue noise offsets to plume sampling
       - [ ] set uniforms for plume in config or compute in main program
       - [ ] only set mesh specific uniforms in the loop
