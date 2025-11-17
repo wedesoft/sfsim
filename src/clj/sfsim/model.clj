@@ -18,7 +18,7 @@
     [sfsim.plume :refer (cloud-plume-segment plume-point)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
-                          fmat4)]
+                          fmat4 rotation-matrix)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
@@ -27,6 +27,7 @@
                           setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap)]
+    [sfsim.aerodynamics :as aerodynamics]
     [sfsim.util :refer (N0 N third)])
   (:import
     (java.nio
@@ -704,13 +705,16 @@
     opengl-object))
 
 
+(def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
+
+
 (defn setup-camera-world-and-shadow-matrices
   {:malli/schema [:=> [:cat :int fmat4 fmat4 fmat4 [:vector fmat4]] :nil]}
   [program transform internal-transform camera-to-world scene-shadow-matrices]
   (let [object-to-camera (mulm (inverse camera-to-world) transform)]
     (use-program program)
     (uniform-matrix4 program "object_to_world" transform)
-    (uniform-matrix4 program "object_to_scene" internal-transform)
+    (uniform-matrix4 program "object_to_scene" (mulm gltf-to-aerodynamic internal-transform))
     (uniform-matrix4 program "object_to_camera" object-to-camera)
     (doseq [i (range (count scene-shadow-matrices))]
            (uniform-matrix4 program
