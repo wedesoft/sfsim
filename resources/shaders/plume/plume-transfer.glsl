@@ -5,10 +5,9 @@
 #define WIDTH2 <%= plume-width-2 %>
 #define RADIUS 3.9011
 #define LAYER 0.6
-#define BASE_DENSITY 2.0
+#define BASE_DENSITY 3.0
 #define SPEED 50.0
-#define DIAMOND_STRENGTH 0.2
-#define DIAMOND_DENSITY 5.0
+#define DIAMOND_DENSITY 7.0
 
 vec2 cylinder1_base = vec2(-10.9544,  4.3511);
 vec2 cylinder2_base = vec2(-10.9544, -4.3511);
@@ -16,6 +15,7 @@ vec2 cylinder2_base = vec2(-10.9544, -4.3511);
 uniform float pressure;
 uniform float nozzle;
 uniform float min_limit;
+uniform float diamond_strength;
 uniform float time;
 
 float limit(float pressure);
@@ -60,7 +60,7 @@ vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
     vec3 scale = 2.0 * vec3(0.1, nozzle / envelope.x, nozzle / envelope.y);
     float attenuation = 0.7 + 0.3 * noise3d(point * scale + time * vec3(SPEED, 0.0, 0.0));
     vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
-    float diamond = mix(DIAMOND_STRENGTH, diamond(pressure, vec2(START - point.x - mix(ENGINE_SIZE, 0.0, transition), max(0.0, sdf + dy))), mix(engine_pos, 1.0, transition));
+    float diamond = mix(diamond_strength, diamond(pressure, vec2(START - point.x - mix(ENGINE_SIZE, 0.0, transition), max(0.0, sdf + dy))), mix(engine_pos, 1.0, transition));
     float plume_transmittance = exp(-density * plume_step);
     plume_scatter.rgb += flame_color * plume_step * density * attenuation * plume_scatter.a;
     plume_scatter.rgb += DIAMOND_DENSITY * diamond * density * plume_step * attenuation * plume_scatter.a;

@@ -788,6 +788,8 @@
             (swap! camera-dx + (* ^double dt ^double (@state :sfsim.input/camera-shift-x)))
             (swap! camera-dy + (* ^double dt ^double (@state :sfsim.input/camera-shift-y)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+              height             (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
+              pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
               object-orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
               object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
               [origin camera-orientation] (if playback [@camera-position @camera-orientation]
@@ -797,10 +799,11 @@
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
-                                                                 light-direction object-position object-orientation @t0)
+                                                                 light-direction object-position object-orientation @t0
+                                                                 pressure)
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
                                                                camera-orientation light-direction object-position
-                                                               object-orientation config/object-radius @t0)
+                                                               object-orientation config/object-radius @t0 pressure)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars

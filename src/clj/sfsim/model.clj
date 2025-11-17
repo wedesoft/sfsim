@@ -781,9 +781,9 @@
       (uniform-float program "min_limit" 1.2)  ; TODO: get from config
       (uniform-float program "max_slope" 1.0)  ; TODO: get from config
       (uniform-float program "omega_factor" 0.2)  ; TODO: get from config
-      (uniform-float program "diamond_strength" 0.2)  ; TODO: get from config
-      (uniform-float program "pressure" 1.0)  ; TODO: compute from height
+      (uniform-float program "diamond_strength" 0.3)  ; TODO: get from config
       (uniform-float program "engine_step" 0.2)  ; TODO: get from config
+      (uniform-float program "pressure" (:sfsim.render/pressure render-vars))
       (uniform-float program "time" (:sfsim.render/time render-vars))
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
@@ -813,10 +813,10 @@
 
 (defn make-scene-render-vars
   "Create hashmap with render variables for rendering a scene outside the atmosphere"
-  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double :double]
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double :double :double]
                       render-vars]}
   [render-config window-width window-height camera-position camera-orientation light-direction object-position object-orientation
-   object-radius time_]
+   object-radius time_ pressure]
   (let [min-z-near           (:sfsim.render/min-z-near render-config)
         camera-to-world      (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-camera      (inverse camera-to-world)
@@ -825,7 +825,7 @@
         z-near               (max ^double (- ^double object-depth ^double object-radius) ^double min-z-near)
         z-far                (+ ^double z-near ^double object-radius ^double object-radius)]
     (make-render-vars render-config window-width window-height camera-position camera-orientation light-direction
-                      object-position object-orientation z-near z-far time_)))
+                      object-position object-orientation z-near z-far time_ pressure)))
 
 
 (defn vertex-shadow-scene

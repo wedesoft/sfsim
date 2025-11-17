@@ -609,14 +609,15 @@
   (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
              [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]
              [::object-origin fvec3] [::camera-to-object fmat4] [::object-distance :double]
-             [::time :double]]))
+             [::time :double] [::pressure :double]]))
 
 
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame with specified depth range"
-  {:malli/schema [:=> [:cat [:map [::fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double :double :double] render-vars]}
+  {:malli/schema [:=> [:cat [:map [::fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double :double :double :double]
+                      render-vars]}
   [render-config window-width window-height camera-position camera-orientation light-direction object-position object-orientation
-   z-near z-far time_]
+   z-near z-far time_ pressure]
   (let [fov              (::fov render-config)
         camera-to-world  (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-object  (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
@@ -636,7 +637,8 @@
      ::object-distance (mag object-origin)
      ::camera-to-world camera-to-world
      ::projection projection
-     ::time time_}))
+     ::time time_
+     ::pressure pressure}))
 
 
 (defn joined-render-vars
@@ -656,7 +658,8 @@
         camera-to-world  (::camera-to-world vars-first)
         z-offset         1.0
         projection       (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)
-        time_            (::time vars-first)]
+        time_            (::time vars-first)
+        pressure         (::pressure vars-first)]
     {::origin position
      ::z-near z-near
      ::z-far z-far
@@ -669,7 +672,8 @@
      ::light-direction light-direction
      ::camera-to-world camera-to-world
      ::projection projection
-     ::time time_}))
+     ::time time_
+     ::pressure pressure}))
 
 
 (defn setup-shadow-and-opacity-maps
