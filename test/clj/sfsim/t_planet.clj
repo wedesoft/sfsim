@@ -704,18 +704,19 @@ void main()
              pos2   (vec3 (+ 1000 75) 0 0)
              opos   (vec3 0 0 0)
              o      (q/rotation 0.0 (vec3 0 0 1))
+             t      0.0
              light  (vec3 1 0 0)]
          (with-redefs [planet/render-depth render-depth-mock
                        matrix/quaternion->matrix (fn [orientation] (fact [orientation] orientation => o) :rotation-matrix)
                        matrix/transformation-matrix (fn [rot _pos] (fact rot => :rotation-matrix) (eye 4))
                        matrix/projection-matrix (fn [w h _near _far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
-           (:sfsim.render/origin (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o)) => pos1
-           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o)) => (roughly 47.549 1e-3)
-           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos2 o light opos o)) => 1.0
-           (:sfsim.render/z-far (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o)) => 300.0
-           (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o)) => (eye 4)
-           (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o)) => (diagonal 1 2 3 4)
-           (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o)) => light)))
+           (:sfsim.render/origin (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o t)) => pos1
+           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o t)) => (roughly 47.549 1e-3)
+           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos2 o light opos o t)) => 1.0
+           (:sfsim.render/z-far (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o t)) => 300.0
+           (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o t)) => (eye 4)
+           (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o t)) => (diagonal 1 2 3 4)
+           (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o t)) => light)))
 
 
 (GLFW/glfwTerminate)

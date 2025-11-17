@@ -72,10 +72,9 @@
                      object-position           (add ?position (q/rotate-vector ?orientation (vec3 0 0 -1)))
                      render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                                width height ?position ?orientation (vec3 1 0 0)
-                                                                               object-position (q/->Quaternion 1 0 0 0))
+                                                                               object-position (q/->Quaternion 1 0 0 0) 0.0)
                      shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                                    cloud-data render-vars tree opacity-base)
-
                      clouds                    (texture-render-color-depth width height true
                                                                            (clear (vec3 0 0 0) 0.0)
                                                                            (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars tree)
@@ -133,7 +132,7 @@
                      tree                      (load-tile-tree planet-renderer {} width ?position level)
                      render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                                width height ?position ?orientation (vec3 1 0 0)
-                                                                               object-position (q/->Quaternion 1 0 0 0))
+                                                                               object-position (q/->Quaternion 1 0 0 0) 0.0)
                      shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                                    cloud-data render-vars tree opacity-base)
                      clouds                    (texture-render-color-depth width height true
@@ -203,7 +202,7 @@
                 tree                      (load-tile-tree planet-renderer {} width position level)
                 render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                           width height position orientation light-direction
-                                                                          object-position (q/->Quaternion 1 0 0 0))
+                                                                          object-position (q/->Quaternion 1 0 0 0) 0.0)
                 shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                               cloud-data render-vars tree opacity-base)
                 object-shadow             (model/scene-shadow-map scene-shadow-renderer light-direction object)

@@ -66,7 +66,7 @@
 ;; (require '[nrepl.server :refer [start-server stop-server]])
 ;; (defonce server (start-server :port 7888))
 
-(when (.exists (io/file ".integration"))
+(when (.exists (io/file ".schemas"))
   (dev/start! {:report (pretty/thrower)}))
 
 ; Ensure floating point numbers use a dot as decimal separator
@@ -797,10 +797,10 @@
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
-                                                                 light-direction object-position object-orientation )
+                                                                 light-direction object-position object-orientation @t0)
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
                                                                camera-orientation light-direction object-position
-                                                               object-orientation config/object-radius)
+                                                               object-orientation config/object-radius @t0)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars

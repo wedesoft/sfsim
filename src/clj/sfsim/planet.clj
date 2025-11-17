@@ -274,6 +274,7 @@
     (uniform-float program "diamond_strength" 0.2)  ; TODO: get from config
     (uniform-float program "pressure" 1.0)  ; TODO: compute from height
     (uniform-float program "engine_step" 0.2)  ; TODO: get from config
+    (uniform-float program "time" (:sfsim.render/time render-vars))
     (setup-shadow-matrices program shadow-vars)
     (use-textures {1 (:sfsim.atmosphere/transmittance atmosphere-luts) 2 (:sfsim.atmosphere/scatter atmosphere-luts)
                    3 (:sfsim.atmosphere/mie atmosphere-luts) 4 (:sfsim.clouds/worley cloud-data)
@@ -354,6 +355,7 @@
     (uniform-float program "diamond_strength" 0.2)  ; TODO: get from config
     (uniform-float program "pressure" 1.0)  ; TODO: compute from height
     (uniform-float program "engine_step" 0.2)  ; TODO: get from config
+    (uniform-float program "time" (:sfsim.render/time render-vars))
     (setup-shadow-matrices program shadow-vars)
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.clouds/worley data) 4 (:sfsim.clouds/perlin-worley data)
@@ -576,9 +578,9 @@
 (defn make-planet-render-vars
   "Create hash map with render variables for rendering current frame of planet"
   {:malli/schema [:=> [:cat [:map [::radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
-                       [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion] render-vars]}
+                       [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double] render-vars]}
   [planet-config cloud-data render-config window-width window-height camera-position camera-orientation light-direction
-   object-position object-orientation]
+   object-position object-orientation time_]
   (let [distance        (mag camera-position)
         radius          (::radius planet-config)
         cloud-top       (:sfsim.clouds/cloud-top cloud-data)
@@ -589,7 +591,7 @@
         z-near          (max (* (- height ^double cloud-top) (cos (* 0.5 diagonal-fov))) ^double min-z-near)
         z-far           (render-depth radius height cloud-top)]
     (make-render-vars render-config window-width window-height camera-position camera-orientation light-direction
-                     object-position object-orientation z-near z-far)))
+                     object-position object-orientation z-near z-far time_)))
 
 
 (set! *warn-on-reflection* false)

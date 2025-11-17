@@ -608,14 +608,15 @@
 (def render-vars
   (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
              [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]
-             [::object-origin fvec3] [::camera-to-object fmat4] [::object-distance :double]]))
+             [::object-origin fvec3] [::camera-to-object fmat4] [::object-distance :double]
+             [::time :double]]))
 
 
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame with specified depth range"
-  {:malli/schema [:=> [:cat [:map [::fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double :double] render-vars]}
+  {:malli/schema [:=> [:cat [:map [::fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double :double :double] render-vars]}
   [render-config window-width window-height camera-position camera-orientation light-direction object-position object-orientation
-   z-near z-far]
+   z-near z-far time_]
   (let [fov              (::fov render-config)
         camera-to-world  (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-object  (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
@@ -634,7 +635,8 @@
      ::camera-to-object camera-to-object
      ::object-distance (mag object-origin)
      ::camera-to-world camera-to-world
-     ::projection projection}))
+     ::projection projection
+     ::time time_}))
 
 
 (defn joined-render-vars
@@ -653,7 +655,8 @@
         light-direction  (::light-direction vars-first)
         camera-to-world  (::camera-to-world vars-first)
         z-offset         1.0
-        projection       (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)]
+        projection       (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)
+        time_            (::time vars-first)]
     {::origin position
      ::z-near z-near
      ::z-far z-far
@@ -665,7 +668,8 @@
      ::camera-to-object camera-to-object
      ::light-direction light-direction
      ::camera-to-world camera-to-world
-     ::projection projection}))
+     ::projection projection
+     ::time time_}))
 
 
 (defn setup-shadow-and-opacity-maps
