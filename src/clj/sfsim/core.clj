@@ -680,6 +680,7 @@
                        (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0)))))) (/ 1.0 ^double fix-fps))
                        (- t1 ^double @t0))
             jd-ut    (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
+            time_    (mod (+ (* ^double @time-delta 86400.0) ^double @t0) 3600.0)
             aileron  (@state :sfsim.input/aileron)
             elevator (@state :sfsim.input/elevator)
             rudder   (@state :sfsim.input/rudder)
@@ -799,11 +800,11 @@
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
-                                                                 light-direction object-position object-orientation @t0
+                                                                 light-direction object-position object-orientation time_
                                                                  pressure)
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
                                                                camera-orientation light-direction object-position
-                                                               object-orientation config/object-radius @t0 pressure)
+                                                               object-orientation config/object-radius time_ pressure)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars

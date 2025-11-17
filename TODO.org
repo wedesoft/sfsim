@@ -79,8 +79,11 @@
       - [X] atmospheric transmittance for clouds behind plume
       - [X] object_origin, object_direction, fs_in.vertex needs to be in scene and not mesh coordinates
       - [X] provide origin, direction and point in plume coordinates
-      - [ ] bug with rendering plume over object
-      - [ ] coordinate system for plume needs to be rotated
+      - [X] bug with rendering plume over object
+      - [X] coordinate system for plume needs to be rotated
+      - [ ] turn off plume when no trust
+      - [ ] increased density near spike
+      - [ ] add blue noise offsets to plume sampling
       - [ ] set uniforms for plume in config or compute in main program
       - [ ] only set mesh specific uniforms in the loop
       - [ ] is "depth" initialised when rendering space ship or planet?
