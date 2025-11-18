@@ -669,7 +669,8 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
            (fact
              (offscreen-render 160 120
                                (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/scene-shadow-counts [0]}
-                                                       :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}}
+                                                       :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}
+                                                       :sfsim.model/data {:sfsim.model/object-radius 30.0}}
                                      renderer         (make-scene-renderer data)
                                      opengl-scene     (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-and-shadow-type) ?model)
                                      camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
@@ -722,12 +723,12 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
              light-direction (vec3 1 0 0)
              obj-pos         (vec3 0 0 -100)
              obj-orient      (q/rotation 0.0 (vec3 0 0 1))
-             object-radius   10.0
+             object-config   {:sfsim.model/object-radius 10.0}
              t               0.0
              p               1.0
-             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient object-radius t p)
-             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient object-radius t p)
-             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient object-radius t p)]
+             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient object-config t p)
+             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient object-config t p)
+             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient object-config t p)]
          (:sfsim.render/origin render-vars1) => pos1
          (:sfsim.render/camera-to-world render-vars1) => (eye 4)
          (:sfsim.render/camera-to-world render-vars2) => (transformation-matrix (quaternion->matrix orientation2) (vec3 0 0 -20))
@@ -908,7 +909,8 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
                                                                                 (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                                                (uniform-vector3 program "light_direction" (normalize (vec3 5 2 1))))]
                (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/scene-shadow-counts [0 1]}
-                                       :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}}
+                                       :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}
+                                       :sfsim.model/data {:sfsim.model/object-radius 30.0}}
                      renderer         (make-scene-renderer data)
                      shadow-size      256
                      object-radius    4.0

@@ -139,6 +139,7 @@
    :sfsim.planet/config config/planet-config
    :sfsim.opacity/data shadow-data
    :sfsim.clouds/data cloud-data
+   :sfsim.model/data config/model-config
    :sfsim.atmosphere/luts atmosphere-luts})
 
 
@@ -170,7 +171,7 @@
 
 (def scene-shadow-renderer
   (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
-                                    config/object-radius))
+                                    (:sfsim.model/object-radius config/model-config)))
 
 
 (def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
@@ -804,7 +805,7 @@
                                                                  pressure)
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
                                                                camera-orientation light-direction object-position
-                                                               object-orientation config/object-radius time_ pressure)
+                                                               object-orientation config/model-config time_ pressure)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
