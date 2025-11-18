@@ -799,13 +799,13 @@
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
+              model-vars         (model/make-model-vars config/model-config time_ pressure)
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
-                                                                 light-direction object-position object-orientation time_
-                                                                 pressure)
+                                                                 light-direction object-position object-orientation model-vars)
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
                                                                camera-orientation light-direction object-position
-                                                               object-orientation config/model-config time_ pressure)
+                                                               object-orientation model-vars)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars

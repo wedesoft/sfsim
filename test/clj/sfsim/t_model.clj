@@ -723,12 +723,10 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
              light-direction (vec3 1 0 0)
              obj-pos         (vec3 0 0 -100)
              obj-orient      (q/rotation 0.0 (vec3 0 0 1))
-             object-config   {:sfsim.model/object-radius 10.0}
-             t               0.0
-             p               1.0
-             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient object-config t p)
-             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient object-config t p)
-             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient object-config t p)]
+             model-vars      {:sfsim.model/object-radius 10.0 :sfsim.model/time 0.0 :sfsim.model/pressure 1.0}
+             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient model-vars)
+             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient model-vars)
+             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient model-vars)]
          (:sfsim.render/origin render-vars1) => pos1
          (:sfsim.render/camera-to-world render-vars1) => (eye 4)
          (:sfsim.render/camera-to-world render-vars2) => (transformation-matrix (quaternion->matrix orientation2) (vec3 0 0 -20))
@@ -998,6 +996,13 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
                                                  :sfsim.model/children []}}
                              "Node")
          => nil))
+
+
+(facts "Create model configuration"
+       (let [model-vars (model/make-model-vars {:sfsim.model/object-radius 30.0} 1234.0 0.5)]
+         (:sfsim.model/object-radius model-vars) => 30.0
+         (:sfsim.model/time model-vars) => 1234.0
+         (:sfsim.model/pressure model-vars) => 0.5))
 
 
 (GLFW/glfwTerminate)

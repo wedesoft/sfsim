@@ -261,6 +261,11 @@
                   [:sfsim.model/engine-step :double]]))
 
 
+(def model-vars (m/schema [:map [:sfsim.model/object-radius :double]
+                                [:sfsim.model/time :double]
+                                [:sfsim.model/pressure :double]]))
+
+
 (defn setup-plume-uniforms
   {:malli/schema [:=> [:cat :int render-vars model-data] :nil]}
   [program render-vars model-data]
@@ -592,14 +597,16 @@
 (defn make-planet-render-vars
   "Create hash map with render variables for rendering current frame of planet"
   {:malli/schema [:=> [:cat [:map [::radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
-                       [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double :double] render-vars]}
+                       [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion model-vars] render-vars]}
   [planet-config cloud-data render-config window-width window-height camera-position camera-orientation light-direction
-   object-position object-orientation time_ pressure]
+   object-position object-orientation model-vars]
   (let [distance        (mag camera-position)
         radius          (::radius planet-config)
         cloud-top       (:sfsim.clouds/cloud-top cloud-data)
         fov             (:sfsim.render/fov render-config)
         min-z-near      (:sfsim.render/min-z-near render-config)
+        time_           (:sfsim.model/time model-vars)
+        pressure        (:sfsim.model/pressure model-vars)
         height          (- ^double distance ^double radius)
         diagonal-fov    (diagonal-field-of-view window-width window-height fov)
         z-near          (max (* (- height ^double cloud-top) (cos (* 0.5 diagonal-fov))) ^double min-z-near)

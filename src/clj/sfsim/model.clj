@@ -19,7 +19,7 @@
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
                           fmat4 rotation-matrix)]
-    [sfsim.planet :refer (surface-radiance-function shadow-vars setup-plume-uniforms)]
+    [sfsim.planet :refer (surface-radiance-function shadow-vars setup-plume-uniforms model-vars)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
@@ -806,19 +806,27 @@
   (doseq [program (vals programs)] (destroy-program program)))
 
 
+(defn make-model-vars
+  "Create hashmap with model configuration and variables"
+  {:malli/schema [:=> [:cat [:map [:sfsim.model/object-radius :double]] :double :double] model-vars]}
+  [model-config time_ pressure]
+  (assoc model-config ::time time_ ::pressure pressure))
+
+
 (defn make-scene-render-vars
   "Create hashmap with render variables for rendering a scene outside the atmosphere"
-  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion
-                            [:map [:sfsim.model/object-radius :double]] :double :double]
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion model-vars]
                       render-vars]}
   [render-config window-width window-height camera-position camera-orientation light-direction object-position object-orientation
-   model-config time_ pressure]
+   model-vars]
   (let [min-z-near           (:sfsim.render/min-z-near render-config)
         camera-to-world      (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-camera      (inverse camera-to-world)
         object-camera-vector (mulv world-to-camera (vec3->vec4 object-position 1.0))
         object-depth         (- ^double (object-camera-vector 2))
-        object-radius        (::object-radius model-config)
+        object-radius        (::object-radius model-vars)
+        time_                (::time model-vars)
+        pressure             (::pressure model-vars)
         z-near               (max ^double (- ^double object-depth ^double object-radius) ^double min-z-near)
         z-far                (+ ^double z-near ^double object-radius ^double object-radius)]
     (make-render-vars render-config window-width window-height camera-position camera-orientation light-direction
