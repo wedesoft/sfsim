@@ -274,6 +274,7 @@
     * Visual effects
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
   - [ ] winter daytime is too dark, adjust range?
+  - [ ] limit timestep on startup to prevent numerical problems
   - [ ] add keyboard mapping help page!
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] joystick hat to control camera
