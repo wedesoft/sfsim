@@ -3,8 +3,8 @@
 
  :sfsim.render-config #:sfsim.render{:amplification 6.0
                                      :specular 1000.0
-                                     :window-width 1920
-                                     :window-height 1080
+                                     :window-width 854
+                                     :window-height 480
                                      ; :window-width 1920
                                      ; :window-height 1080
                                      :fov 1.0471975511965976  ; 60 degrees
