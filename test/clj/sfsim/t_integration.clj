@@ -116,6 +116,7 @@
                                                 :sfsim.planet/config config/planet-config
                                                 :sfsim.opacity/data shadow-data
                                                 :sfsim.clouds/data cloud-data
+                                                :sfsim.model/data config/model-config
                                                 :sfsim.atmosphere/luts atmosphere-luts}
                      object-position           (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
                      object-to-world           (transformation-matrix (mulm (rotation-y (/ PI 4)) (rotation-x (/ PI 6))) object-position)
@@ -180,6 +181,7 @@
                                            :sfsim.planet/config config/planet-config
                                            :sfsim.opacity/data shadow-data
                                            :sfsim.clouds/data cloud-data
+                                           :sfsim.model/data config/model-config
                                            :sfsim.atmosphere/luts atmosphere-luts}
                 light-direction           (vec3 1 0 0)
                 orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
