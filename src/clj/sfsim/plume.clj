@@ -8,7 +8,8 @@
     "Module with shader functions for plume rendering"
     (:require
       [comb.template :as template]
-      [sfsim.shaders :as shaders]))
+      [sfsim.shaders :as shaders]
+      [sfsim.bluenoise :refer (sampling-offset)]))
 
 
 (def plume-phase
@@ -38,7 +39,7 @@
 
 
 (def plume-start -7.5047)
-(def plume-end -50.0)
+(def plume-end -70.0)
 (def plume-width-2 7.4266)
 
 
@@ -61,7 +62,8 @@
 
 (defn plume-segment
   [outer]
-  [plume-box (plume-transfer plume-fringe) (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer})])
+  [sampling-offset plume-box (plume-transfer plume-fringe)
+   (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer})])
 
 
 (def plume-point

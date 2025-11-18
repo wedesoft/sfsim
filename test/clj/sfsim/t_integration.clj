@@ -61,6 +61,7 @@
                                                 :sfsim.planet/config config/planet-config
                                                 :sfsim.opacity/data shadow-data
                                                 :sfsim.clouds/data cloud-data
+                                                :sfsim.model/data config/model-config
                                                 :sfsim.atmosphere/luts atmosphere-luts}
                      opacity-renderer          (opacity/make-opacity-renderer data)
                      planet-shadow-renderer    (planet/make-planet-shadow-renderer data)

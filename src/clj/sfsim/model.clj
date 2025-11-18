@@ -638,6 +638,7 @@
   [data]
   (let [num-steps            (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
         scene-shadow-counts  (-> data :sfsim.opacity/data :sfsim.opacity/scene-shadow-counts)
+        model-data           (::data data)
         cloud-data           (:sfsim.clouds/data data)
         render-config        (:sfsim.render/config data)
         atmosphere-luts      (:sfsim.atmosphere/luts data)
@@ -647,6 +648,7 @@
         programs             (mapv #(make-scene-program (first %) (second %) texture-offset (third %) data) variations)]
     {::programs              (zipmap variations programs)
      ::texture-offset        texture-offset
+     ::data                  model-data
      :sfsim.clouds/data      cloud-data
      :sfsim.render/config    render-config
      :sfsim.atmosphere/luts  atmosphere-luts}))
@@ -765,6 +767,7 @@
   [scene-renderer render-vars shadow-vars scene-shadows scenes]
   (let [render-config      (:sfsim.render/config scene-renderer)
         cloud-data         (:sfsim.clouds/data scene-renderer)
+        model-data         (::data scene-renderer)
         atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)
         camera-to-world    (:sfsim.render/camera-to-world render-vars)
         texture-offset     (::texture-offset scene-renderer)
@@ -776,7 +779,7 @@
       (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
       (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
       (uniform-matrix4 program "world_to_camera" world-to-camera)
-      (setup-plume-uniforms program render-vars)
+      (setup-plume-uniforms program render-vars model-data)
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
       (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))

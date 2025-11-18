@@ -5,7 +5,7 @@
 #define WIDTH2 <%= plume-width-2 %>
 #define RADIUS 3.9011
 #define LAYER 0.6
-#define BASE_DENSITY 3.0
+#define BASE_DENSITY 5.0
 #define SPEED 50.0
 #define DIAMOND_DENSITY 7.0
 

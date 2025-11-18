@@ -286,6 +286,10 @@ vec2 plume_box(vec3 origin, vec3 direction)
 {
   return vec2(-0.5 * <%= size %> - origin.x, <%= size %>);
 }
+float sampling_offset()
+{
+  return 0.5;
+}
 void main()
 {
   vec3 origin = vec3(<%= origin-x %>, 0, 0);

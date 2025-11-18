@@ -219,6 +219,7 @@
         atmosphere-luts (:sfsim.atmosphere/luts data)
         shadow-data     (:sfsim.opacity/data data)
         cloud-data      (:sfsim.clouds/data data)
+        model-data      (:sfsim.model/data data)
         tilesize        (::tilesize planet-config)
         program         (make-program :sfsim.render/vertex [vertex-planet]
                                       :sfsim.render/tess-control [tess-control-planet]
@@ -240,6 +241,7 @@
     {::program program
      :sfsim.atmosphere/luts atmosphere-luts
      :sfsim.clouds/data cloud-data
+     :sfsim.model/data model-data
      :sfsim.render/config render-config}))
 
 
@@ -249,18 +251,28 @@
              [:sfsim.opacity/shadows [:vector texture-2d]] [:sfsim.opacity/opacities [:vector texture-3d]]]))
 
 
+(def model-data
+  (m/schema [:map [:sfsim.model/object-radius :double]
+                  [:sfsim.model/nozzle :double]
+                  [:sfsim.model/min-limit :double]
+                  [:sfsim.model/max-slope :double]
+                  [:sfsim.model/omega-factor :double]
+                  [:sfsim.model/diamond-strength :double]
+                  [:sfsim.model/engine-step :double]]))
+
+
 (defn setup-plume-uniforms
-  {:malli/schema [:=> [:cat :int render-vars] :nil]}
-  [program render-vars]
+  {:malli/schema [:=> [:cat :int render-vars model-data] :nil]}
+  [program render-vars model-data]
   (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
   (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
   (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
-  (uniform-float program "nozzle" 2.7549)  ; TODO: get from config
-  (uniform-float program "min_limit" 1.2)  ; TODO: get from config
-  (uniform-float program "max_slope" 1.0)  ; TODO: get from config
-  (uniform-float program "omega_factor" 0.2)  ; TODO: get from config
-  (uniform-float program "diamond_strength" 0.3)  ; TODO: get from config
-  (uniform-float program "engine_step" 0.2)  ; TODO: get from config
+  (uniform-float program "nozzle" (:sfsim.model/nozzle model-data))
+  (uniform-float program "min_limit" (:sfsim.model/min-limit model-data))
+  (uniform-float program "max_slope" (:sfsim.model/max-slope model-data))
+  (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-data))
+  (uniform-float program "diamond_strength" (:sfsim.model/diamond-strength model-data))
+  (uniform-float program "engine_step" (:sfsim.model/engine-step model-data))
   (uniform-float program "pressure" (:sfsim.render/pressure render-vars))
   (uniform-float program "time" (:sfsim.render/time render-vars)))
 
@@ -271,6 +283,7 @@
   [{::keys [program] :as other} render-vars shadow-vars tree]
   (let [atmosphere-luts (:sfsim.atmosphere/luts other)
         cloud-data      (:sfsim.clouds/data other)
+        model-data      (:sfsim.model/data other)
         render-config   (:sfsim.render/config other)
         world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
     (use-program program)
@@ -278,7 +291,7 @@
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
     (uniform-matrix4 program "world_to_camera" world-to-camera)
-    (setup-plume-uniforms program render-vars)
+    (setup-plume-uniforms program render-vars model-data)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
@@ -311,6 +324,7 @@
   [other]
   (let [render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
+        model-data      (:sfsim.model/data other)
         planet-config   (::config other)
         shadow-data     (:sfsim.opacity/data other)
         data            (:sfsim.clouds/data other)
@@ -331,6 +345,7 @@
     {:sfsim.clouds/program program
      :sfsim.atmosphere/luts atmosphere-luts
      :sfsim.render/config render-config
+     :sfsim.model/data model-data
      :sfsim.clouds/data data}))
 
 
@@ -340,6 +355,7 @@
   [{:sfsim.clouds/keys [program data] :as other} render-vars shadow-vars]
   (let [render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
+        model-data      (:sfsim.model/data other)
         indices         [0 1 3 2]
         vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao             (make-vertex-array-object program indices vertices ["ndc" 2])
@@ -350,7 +366,7 @@
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
     (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
     (uniform-matrix4 program "world_to_camera" world-to-camera)
-    (setup-plume-uniforms program render-vars)
+    (setup-plume-uniforms program render-vars model-data)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))

@@ -82,23 +82,23 @@
       - [X] bug with rendering plume over object
       - [X] coordinate system for plume needs to be rotated
       - [ ] turn off plume when no trust
-      - [ ] increased density near spike
+      - [X] increased density near spike
       - [ ] constrain sides of plume up to end of engine
-      - [ ] add blue noise offsets to plume sampling
-      - [ ] set uniforms for plume in config or compute in main program
-      - [ ] only set mesh specific uniforms in the loop
+      - [X] add blue noise offsets to plume sampling
+      - [X] set uniforms for plume in config or compute in main program
+      - [X] only set mesh specific uniforms in the loop
       - [ ] is "depth" initialised when rendering space ship or planet?
-      - [ ] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
-      - [ ] don't split sampling interval if there is no plume
-      - [ ] cloud functions refactor
-        - [ ] clip interval using other segment
-        - [ ] clip shell intersections using segment
-      - [ ] joined sampling of clouds and engine plume: replace cloud_point and cloud_outer with joint sampling of clouds and plume
-        - [ ] model rendering: uses cloud_point
-        - [ ] planet rendering: uses cloud overlay
-          - [ ] cloud overlay planet: cloud_point
-        - [ ] atmosphere rendering: uses cloud overlay
-          - [ ] cloud overlay atmosphere: cloud_outer
+      - [X] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
+      - [X] don't split sampling interval if there is no plume
+      - [X] cloud functions refactor
+        - [X] clip interval using other segment
+        - [X] clip shell intersections using segment
+      - [X] joined sampling of clouds and engine plume: replace cloud_point and cloud_outer with joint sampling of clouds and plume
+        - [X] model rendering: uses cloud_point
+        - [X] planet rendering: uses cloud overlay
+          - [X] cloud overlay planet: cloud_point
+        - [X] atmosphere rendering: uses cloud overlay
+          - [X] cloud overlay atmosphere: cloud_outer
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
