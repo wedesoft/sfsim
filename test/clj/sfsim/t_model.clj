@@ -723,7 +723,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
              light-direction (vec3 1 0 0)
              obj-pos         (vec3 0 0 -100)
              obj-orient      (q/rotation 0.0 (vec3 0 0 1))
-             model-vars      {:sfsim.model/object-radius 10.0 :sfsim.model/time 0.0 :sfsim.model/pressure 1.0}
+             model-vars      {:sfsim.model/object-radius 10.0 :sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
              render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient model-vars)
              render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient model-vars)
              render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient model-vars)]
@@ -999,10 +999,11 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
 
 
 (facts "Create model configuration"
-       (let [model-vars (model/make-model-vars {:sfsim.model/object-radius 30.0} 1234.0 0.5)]
+       (let [model-vars (model/make-model-vars {:sfsim.model/object-radius 30.0} 1234.0 0.5 0.8)]
          (:sfsim.model/object-radius model-vars) => 30.0
          (:sfsim.model/time model-vars) => 1234.0
-         (:sfsim.model/pressure model-vars) => 0.5))
+         (:sfsim.model/pressure model-vars) => 0.5
+         (:sfsim.model/throttle model-vars) => 0.8))
 
 
 (GLFW/glfwTerminate)

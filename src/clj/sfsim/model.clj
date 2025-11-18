@@ -763,8 +763,9 @@
 
 (defn render-scenes
   "Render a list of scenes"
-  {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector scene-shadow] [:vector [:map [::root node]]]] :nil]}
-  [scene-renderer render-vars shadow-vars scene-shadows scenes]
+  {:malli/schema [:=> [:cat scene-renderer render-vars model-vars shadow-vars [:vector scene-shadow] [:vector [:map [::root node]]]]
+                      :nil]}
+  [scene-renderer render-vars model-vars shadow-vars scene-shadows scenes]
   (let [render-config      (:sfsim.render/config scene-renderer)
         cloud-data         (:sfsim.clouds/data scene-renderer)
         model-data         (::data scene-renderer)
@@ -779,7 +780,7 @@
       (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
       (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
       (uniform-matrix4 program "world_to_camera" world-to-camera)
-      (setup-plume-uniforms program render-vars model-data)
+      (setup-plume-uniforms program render-vars model-vars)
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
       (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
@@ -808,9 +809,9 @@
 
 (defn make-model-vars
   "Create hashmap with model configuration and variables"
-  {:malli/schema [:=> [:cat [:map [:sfsim.model/object-radius :double]] :double :double] model-vars]}
-  [model-config time_ pressure]
-  (assoc model-config ::time time_ ::pressure pressure))
+  {:malli/schema [:=> [:cat [:map [:sfsim.model/object-radius :double]] :double :double :double] model-vars]}
+  [model-config time_ pressure throttle]
+  (assoc model-config ::time time_ ::pressure pressure ::throttle throttle))
 
 
 (defn make-scene-render-vars

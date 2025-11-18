@@ -799,7 +799,7 @@
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
-              model-vars         (model/make-model-vars config/model-config time_ pressure)
+              model-vars         (model/make-model-vars config/model-config time_ pressure throttle)
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
                                                                  light-direction object-position object-orientation model-vars)
@@ -848,17 +848,19 @@
                                    true
                                    (clear (vec3 0 0 0) 1.0)
                                    ;; Render clouds in front of planet
-                                   (planet/render-cloud-planet cloud-planet-renderer planet-render-vars shadow-vars
+                                   (planet/render-cloud-planet cloud-planet-renderer planet-render-vars model-vars shadow-vars
                                                                (planet/get-current-tree tile-tree))
                                    ;; Render clouds above the horizon
-                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
+                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars model-vars
+                                                                   shadow-vars))]
           (onscreen-render window
                            (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
                                (clear (vec3 0 1 0) 1.0 0)
                                ;; Render model
                                (write-to-stencil-buffer)
-                               (model/render-scenes scene-renderer scene-render-vars shadow-vars [object-shadow] [moved-scene])
+                               (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
+                                                    [moved-scene])
                                (clear)  ; Only clear depth buffer
                                ;; Render planet with cloud overlay
                                (mask-with-stencil-buffer)
@@ -869,7 +871,8 @@
                              (do
                                (clear (vec3 0 1 0) 1.0)
                                ;; Render model
-                               (model/render-scenes scene-renderer planet-render-vars shadow-vars [object-shadow] [moved-scene])
+                               (model/render-scenes scene-renderer planet-render-vars model-vars shadow-vars [object-shadow]
+                                                    [moved-scene])
                                ;; Render planet with cloud overlay
                                (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
                                                      (planet/get-current-tree tile-tree))

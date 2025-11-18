@@ -704,7 +704,7 @@ void main()
              pos2   (vec3 (+ 1000 75) 0 0)
              opos   (vec3 0 0 0)
              o      (q/rotation 0.0 (vec3 0 0 1))
-             m-vars {:sfsim.model/object-radius 30.0 :sfsim.model/time 0.0 :sfsim.model/pressure 1.0}
+             m-vars {:sfsim.model/object-radius 30.0 :sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
              light  (vec3 1 0 0)]
          (with-redefs [planet/render-depth render-depth-mock
                        matrix/quaternion->matrix (fn [orientation] (fact [orientation] orientation => o) :rotation-matrix)

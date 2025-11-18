@@ -81,13 +81,13 @@
       - [X] provide origin, direction and point in plume coordinates
       - [X] bug with rendering plume over object
       - [X] coordinate system for plume needs to be rotated
-      - [ ] turn off plume when no trust
       - [X] increased density near spike
       - [ ] constrain sides of plume up to end of engine
       - [X] add blue noise offsets to plume sampling
       - [X] set uniforms for plume in config or compute in main program
-      - [X] only set mesh specific uniforms in the loop
+      - [ ] set all static plume config values when initialising shader programs
       - [ ] is "depth" initialised when rendering space ship or planet?
+      - [X] vary plume end with thrust, turn of plume when no thrust
       - [X] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
       - [X] don't split sampling interval if there is no plume
       - [X] cloud functions refactor
