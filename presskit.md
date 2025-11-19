@@ -11,3 +11,5 @@ permalink: /presskit/
 ![inspace](pics/inspace.jpg)
 
 ![alps](pics/alps.jpg)
+
+![thrusters](pics/thrusters.jpg)
