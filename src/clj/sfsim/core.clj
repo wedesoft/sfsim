@@ -8,10 +8,13 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
+    [clojure.java.io :as io]
     [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt pow)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
+    [malli.dev :as dev]
+    [malli.dev.pretty :as pretty]
     [fastmath.matrix :refer (inverse mulv mulm cols->mat)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize dot cross)]
     [sfsim.astro :as astro]
@@ -63,9 +66,8 @@
 ;; (require '[nrepl.server :refer [start-server stop-server]])
 ;; (defonce server (start-server :port 7888))
 
-;; (require '[malli.dev :as dev])
-;; (require '[malli.dev.pretty :as pretty])
-;; (dev/start! {:report (pretty/thrower)})
+(when (.exists (io/file ".schemas"))
+  (dev/start! {:report (pretty/thrower)}))
 
 ; Ensure floating point numbers use a dot as decimal separator
 (java.util.Locale/setDefault java.util.Locale/US)
@@ -137,6 +139,7 @@
    :sfsim.planet/config config/planet-config
    :sfsim.opacity/data shadow-data
    :sfsim.clouds/data cloud-data
+   :sfsim.model/data config/model-config
    :sfsim.atmosphere/luts atmosphere-luts})
 
 
@@ -168,7 +171,7 @@
 
 (def scene-shadow-renderer
   (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
-                                    config/object-radius))
+                                    (:sfsim.model/object-radius config/model-config)))
 
 
 (def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
@@ -319,7 +322,8 @@
 
 (def vehicle (atom nil))
 
-(def current-time (+ (long (astro/now)) (/ 0.0 24.0) (/ 0.0 60.0 24.0)))
+; Start with fixed summer date for better illumination.
+(def current-time (- (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}) astro/T0))
 
 (def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body}))
 (physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
@@ -678,6 +682,7 @@
                        (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0)))))) (/ 1.0 ^double fix-fps))
                        (- t1 ^double @t0))
             jd-ut    (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
+            time_    (mod (+ (* ^double @time-delta 86400.0) ^double @t0) 3600.0)
             aileron  (@state :sfsim.input/aileron)
             elevator (@state :sfsim.input/elevator)
             rudder   (@state :sfsim.input/rudder)
@@ -786,24 +791,26 @@
             (swap! camera-dx + (* ^double dt ^double (@state :sfsim.input/camera-shift-x)))
             (swap! camera-dy + (* ^double dt ^double (@state :sfsim.input/camera-shift-y)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+              height             (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
+              pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
+              object-orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+              object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
               [origin camera-orientation] (if playback [@camera-position @camera-orientation]
                                             (get-camera-pose physics-state jd-ut dt state))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
+              model-vars         (model/make-model-vars config/model-config time_ pressure throttle)
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
-                                                                 light-direction)
+                                                                 light-direction object-position object-orientation model-vars)
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
                                                                camera-orientation light-direction object-position
-                                                               config/object-radius)
+                                                               object-orientation model-vars)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) opacity-base)
-              object-to-world    (transformation-matrix
-                                   (quaternion->matrix (physics/get-orientation :sfsim.physics/surface jd-ut physics-state))
-                                   object-position)
               wheels-scene       (if (= ^double @gear 1.0)
                                    (model/apply-transforms
                                      scene
@@ -842,17 +849,19 @@
                                    true
                                    (clear (vec3 0 0 0) 1.0)
                                    ;; Render clouds in front of planet
-                                   (planet/render-cloud-planet cloud-planet-renderer planet-render-vars shadow-vars
+                                   (planet/render-cloud-planet cloud-planet-renderer planet-render-vars model-vars shadow-vars
                                                                (planet/get-current-tree tile-tree))
                                    ;; Render clouds above the horizon
-                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
+                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars model-vars
+                                                                   shadow-vars))]
           (onscreen-render window
                            (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
                                (clear (vec3 0 1 0) 1.0 0)
                                ;; Render model
                                (write-to-stencil-buffer)
-                               (model/render-scenes scene-renderer scene-render-vars shadow-vars [object-shadow] [moved-scene])
+                               (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
+                                                    [moved-scene])
                                (clear)  ; Only clear depth buffer
                                ;; Render planet with cloud overlay
                                (mask-with-stencil-buffer)
@@ -863,7 +872,8 @@
                              (do
                                (clear (vec3 0 1 0) 1.0)
                                ;; Render model
-                               (model/render-scenes scene-renderer planet-render-vars shadow-vars [object-shadow] [moved-scene])
+                               (model/render-scenes scene-renderer planet-render-vars model-vars shadow-vars [object-shadow]
+                                                    [moved-scene])
                                ;; Render planet with cloud overlay
                                (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
                                                      (planet/get-current-tree tile-tree))

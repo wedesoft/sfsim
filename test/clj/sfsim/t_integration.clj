@@ -61,6 +61,7 @@
                                                 :sfsim.planet/config config/planet-config
                                                 :sfsim.opacity/data shadow-data
                                                 :sfsim.clouds/data cloud-data
+                                                :sfsim.model/data config/model-config
                                                 :sfsim.atmosphere/luts atmosphere-luts}
                      opacity-renderer          (opacity/make-opacity-renderer data)
                      planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
@@ -69,16 +70,21 @@
                      planet-renderer           (planet/make-planet-renderer data)
                      atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
                      tree                      (load-tile-tree planet-renderer {} width ?position level)
-                     object-position           (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
+                     object-position           (add ?position (q/rotate-vector ?orientation (vec3 0 0 -1)))
+                     model-vars                (model/make-model-vars config/model-config 0.0 1.0 0.0)
                      render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
-                                                                               width height ?position ?orientation (vec3 1 0 0))
+                                                                               width height ?position ?orientation (vec3 1 0 0)
+                                                                               object-position (q/->Quaternion 1 0 0 0) model-vars)
                      shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                                    cloud-data render-vars tree opacity-base)
-
                      clouds                    (texture-render-color-depth width height true
                                                                            (clear (vec3 0 0 0) 0.0)
-                                                                           (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars tree)
-                                                                           (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
+                                                                           (planet/render-cloud-planet cloud-planet-renderer
+                                                                                                       render-vars model-vars
+                                                                                                       shadow-vars tree)
+                                                                           (planet/render-cloud-atmosphere cloud-atmosphere-renderer
+                                                                                                           render-vars model-vars
+                                                                                                           shadow-vars))
                      tex                       (texture-render-color-depth width height true
                                                                            (clear (vec3 0 1 0) 0.0)
                                                                            (planet/render-planet planet-renderer render-vars shadow-vars [] clouds tree)
@@ -116,6 +122,7 @@
                                                 :sfsim.planet/config config/planet-config
                                                 :sfsim.opacity/data shadow-data
                                                 :sfsim.clouds/data cloud-data
+                                                :sfsim.model/data config/model-config
                                                 :sfsim.atmosphere/luts atmosphere-luts}
                      object-position           (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
                      object-to-world           (transformation-matrix (mulm (rotation-y (/ PI 4)) (rotation-x (/ PI 6))) object-position)
@@ -130,17 +137,24 @@
                      object                    (assoc-in (model/load-scene scene-renderer model)
                                                          [:sfsim.model/root :sfsim.model/transform] object-to-world)
                      tree                      (load-tile-tree planet-renderer {} width ?position level)
+                     model-vars                (model/make-model-vars config/model-config 0.0 1.0 0.0)
                      render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
-                                                                               width height ?position ?orientation (vec3 1 0 0))
+                                                                               width height ?position ?orientation (vec3 1 0 0)
+                                                                               object-position (q/->Quaternion 1 0 0 0) model-vars)
                      shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                                    cloud-data render-vars tree opacity-base)
                      clouds                    (texture-render-color-depth width height true
                                                                            (clear (vec3 0 0 0) 0.0)
-                                                                           (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars tree)
-                                                                           (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
+                                                                           (planet/render-cloud-planet cloud-planet-renderer
+                                                                                                       render-vars model-vars
+                                                                                                       shadow-vars tree)
+                                                                           (planet/render-cloud-atmosphere cloud-atmosphere-renderer
+                                                                                                           render-vars model-vars
+                                                                                                           shadow-vars))
                      tex                       (texture-render-color-depth width height true
                                                                            (clear (vec3 0 1 0) 0.0)
-                                                                           (model/render-scenes scene-renderer render-vars shadow-vars [] [object])
+                                                                           (model/render-scenes scene-renderer render-vars model-vars
+                                                                                                shadow-vars [] [object])
                                                                            (planet/render-planet planet-renderer render-vars shadow-vars [] clouds tree)
                                                                            (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
                  (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.0)
@@ -179,6 +193,7 @@
                                            :sfsim.planet/config config/planet-config
                                            :sfsim.opacity/data shadow-data
                                            :sfsim.clouds/data cloud-data
+                                           :sfsim.model/data config/model-config
                                            :sfsim.atmosphere/luts atmosphere-luts}
                 light-direction           (vec3 1 0 0)
                 orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
@@ -199,18 +214,24 @@
                 object                    (assoc-in (model/load-scene scene-renderer model)
                                                     [:sfsim.model/root :sfsim.model/transform] object-to-world)
                 tree                      (load-tile-tree planet-renderer {} width position level)
+                model-vars                (model/make-model-vars config/model-config 0.0 1.0 0.0)
                 render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
-                                                                          width height position orientation light-direction)
+                                                                          width height position orientation light-direction
+                                                                          object-position (q/->Quaternion 1 0 0 0) model-vars)
                 shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                               cloud-data render-vars tree opacity-base)
                 object-shadow             (model/scene-shadow-map scene-shadow-renderer light-direction object)
                 clouds                    (texture-render-color-depth width height true
                                                                       (clear (vec3 0 0 0) 0.0)
-                                                                      (planet/render-cloud-planet cloud-planet-renderer render-vars shadow-vars tree)
-                                                                      (planet/render-cloud-atmosphere cloud-atmosphere-renderer render-vars shadow-vars))
+                                                                      (planet/render-cloud-planet cloud-planet-renderer render-vars
+                                                                                                  model-vars shadow-vars tree)
+                                                                      (planet/render-cloud-atmosphere cloud-atmosphere-renderer
+                                                                                                      render-vars model-vars
+                                                                                                      shadow-vars))
                 tex                       (texture-render-color-depth width height true
                                                                       (clear (vec3 0 1 0) 0.0)
-                                                                      (model/render-scenes scene-renderer render-vars shadow-vars [object-shadow] [object])
+                                                                      (model/render-scenes scene-renderer render-vars model-vars
+                                                                                           shadow-vars [object-shadow] [object])
                                                                       (planet/render-planet planet-renderer render-vars shadow-vars [object-shadow] clouds tree)
                                                                       (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
             (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.0)

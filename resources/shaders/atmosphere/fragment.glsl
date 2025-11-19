@@ -9,6 +9,7 @@ uniform vec3 origin;
 in VS_OUT
 {
   vec3 direction;
+  vec3 object_direction;
 } fs_in;
 
 out vec4 fragColor;
@@ -29,10 +30,10 @@ void main()
   vec3 direction = normalize(fs_in.direction);
   vec3 incoming = sun_color(direction);
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  vec4 cloud_scatter = cloud_overlay();
   if (atmosphere_intersection.y > 0) {
     incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
-    vec4 cloud_scatter = cloud_overlay();
-    incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
   };
+  incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
   fragColor = vec4(incoming, 1.0);
 }

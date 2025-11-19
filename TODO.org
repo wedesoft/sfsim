@@ -1,6 +1,12 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2025-11-14 Fr 22:28] \\
+    float slider1 = iMouse.x / iResolution.x;
+    float slider2 = iMouse.y / iResolution.y;
+    float distortion1 = max(0.0, 5.0 * point.y * point.z * (slider1 - 0.5));
+    float distortion2 = max(0.0, 5.0 * point.y * (slider2 - 0.5));
+    float sdf = mix(baseSdf, shapeMix, mix(engine_pos, 1.0, transition)) + distortion1 + distortion2;
   - Note taken on [2025-08-28 Do 12:50] \\
     No, the shock diamonds in a series are not the same size; they decrease in both size and intensity further down the exhaust plume.
     This happens as the supersonic exhaust jet dissipates energy and gradually adjusts its pressure to match the surrounding atmospheric pressure.
@@ -59,21 +65,41 @@
       - [X] generate cloud_point and cloud_outer from same code using boolean (optional end point)
       - [X] generate cloud_plume_point, cloud_plume_cloud, and cloud_plume_cloud_point from same code using booleans
       - [X] cloud_plume shader should take origin, direction, (and optionally end point), in object coordinates
-      - [ ] implement plume_point
+      - [X] use scene matrix (top-level transform) instead of individual mesh transform
+      - [X] use plume_point when computing cloud_plume_cloud_point!
+      - [X] render-cloud-planet should use cloud_plume_cloud_point
+      - [X] render-cloud-atmosphere should use cloud_plume_cloud
+      - [X] error in cloud-plume-segment shader (different brightness in front of object)
+      - [X] implement plume_point and plume_outer
+      - [X] implement plume_box
+      - [X] rendering errors when object_distance is behind horizon
+      - [X] fix schema errors of main program
+      - [X] optimize cloud-plume-point for pixels without plume
+      - [X] make-render-vars needs to add object-origin
       - [X] atmospheric transmittance for clouds behind plume
-      - [ ] provide origin, direction and point in plume coordinates
+      - [X] object_origin, object_direction, fs_in.vertex needs to be in scene and not mesh coordinates
+      - [X] provide origin, direction and point in plume coordinates
+      - [X] bug with rendering plume over object
+      - [X] coordinate system for plume needs to be rotated
+      - [X] increased density near spike
+      - [X] start with fixed summer date for better illumination
+      - [X] constrain sides of plume up to end of engine
+      - [X] add blue noise offsets to plume sampling
+      - [X] set uniforms for plume in config or compute in main program
+      - [ ] set all static plume config values when initialising shader programs
       - [ ] is "depth" initialised when rendering space ship or planet?
-      - [ ] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
-      - [ ] don't split sampling interval if there is no plume
-      - [ ] cloud functions refactor
-        - [ ] clip interval using other segment
-        - [ ] clip shell intersections using segment
-      - [ ] joined sampling of clouds and engine plume: replace cloud_point and cloud_outer with joint sampling of clouds and plume
-        - [ ] model rendering: uses cloud_point
-        - [ ] planet rendering: uses cloud overlay
-          - [ ] cloud overlay planet: cloud_point
-        - [ ] atmosphere rendering: uses cloud overlay
-          - [ ] cloud overlay atmosphere: cloud_outer
+      - [X] vary plume end with thrust, turn of plume when no thrust
+      - [X] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
+      - [X] don't split sampling interval if there is no plume
+      - [X] cloud functions refactor
+        - [X] clip interval using other segment
+        - [X] clip shell intersections using segment
+      - [X] joined sampling of clouds and engine plume: replace cloud_point and cloud_outer with joint sampling of clouds and plume
+        - [X] model rendering: uses cloud_point
+        - [X] planet rendering: uses cloud overlay
+          - [X] cloud overlay planet: cloud_point
+        - [X] atmosphere rendering: uses cloud overlay
+          - [X] cloud overlay atmosphere: cloud_outer
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
@@ -108,6 +134,9 @@
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
 * TODO [#C] 3D cockpit                                               :interface:
+  - Note taken on [2025-11-19 Mi 19:49] \\
+    [[https://uxdesign.cc/how-i-recreated-crew-dragons-ui-15877eddf3ed]]
+    [[https://github.com/Neel-Dandiwala/SpaceX-Dragon2-UI?tab=readme-ov-file]]
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
 ** TODO update controls in background thread
 ** TODO ground slope warning
@@ -248,6 +277,8 @@
     * Voice over
     * Visual effects
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
+  - [ ] winter daytime is too dark, adjust range?
+  - [ ] limit timestep on startup to prevent numerical problems
   - [ ] add keyboard mapping help page!
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] joystick hat to control camera

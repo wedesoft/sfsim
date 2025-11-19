@@ -162,7 +162,7 @@ uniform float depth;
 out vec3 fragColor;
 vec4 cloud_plume_cloud(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
 vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point);
-vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction);
+vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point);
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
   float start = max(0.0, -3.0 - origin.x);
@@ -188,10 +188,14 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
   } else
     return vec4(0, 0, 0, 0);
 }
-vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec3 incoming)
+vec3 transmittance_track(vec3 p, vec3 q)
 {
-  float dist = distance(point, start);
-  return incoming * pow(0.5, <%= attenuation %> * dist);
+  float dist = distance(p, q);
+  return vec3(pow(0.5, <%= attenuation %> * dist));
+}
+vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
+{
+  return vec3(0, 0, 0);
 }
 vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
@@ -212,7 +216,7 @@ void main()
   vec4 result = cloud_plume_cloud(origin, direction, object_origin, direction);
 <% ) %>
 <% (if (and planet-point (not model-point)) %>
-  vec4 result = cloud_plume_cloud_point(origin, direction, point, object_origin, direction);
+  vec4 result = cloud_plume_cloud_point(origin, direction, point, object_origin, direction, point);
 <% ) %>
 <% (if model-point %>
   vec4 result = cloud_plume_point(origin, direction, object_origin, direction, point);
@@ -225,6 +229,7 @@ void main()
   (shader-test (fn [program origin-x object-distance depth]
                    (uniform-float program "radius" 2.0)
                    (uniform-float program "max_height" 1.0)
+                   (uniform-float program "opacity_cutoff" 0.0)
                    (uniform-float program "object_distance" object-distance)
                    (uniform-float program "depth" depth)
                    (uniform-vector3 program "light_direction" (vec3 0 1 0))
@@ -234,34 +239,126 @@ void main()
 (tabular "Shader function to determine cloud and rocket plume contribution"
          (fact ((cloud-plume-segment-test ?model ?planet) [?ox ?d ?depth] [?x ?plume ?model ?planet ?attenuation])
                => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
-         ?ox  ?x  ?d  ?depth ?plume ?model ?planet ?attenuation ?r    ?g   ?a
-         4.0  0.0 0.0 100.0  0.0    false  false   0.0          0.0   0.0  0.0
-         1.0  0.0 2.0 100.0  0.0    false  false   0.0          0.75  0.0  0.75
-         4.0  0.0 0.0 100.0  1.0    false  false   0.0          0.0   1.0  1.0
-         2.0  0.0 1.0 100.0  1.0    false  false   0.0          0.5   0.5  1.0
-         1.0  0.0 1.0 100.0  0.5    false  false   0.0          0.625 0.25 0.875
-         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
-         4.0  0.0 2.0 100.0  0.0    false  false   0.0          0.0   0.0  0.0
-         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
-         2.0  0.0 0.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
-         2.0  0.0 1.0 100.0  0.0    false  false   0.0          0.5   0.0  0.5
-         0.0  0.0 0.0 100.0  0.0    true   false   0.0          0.0   0.0  0.0
-        -1.0  1.0 2.0 100.0  0.0    true   false   0.0          0.75  0.0  0.75
-        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0  1.0
-        -1.0  0.0 1.0 100.0  1.0    true   false   0.0          0.5   0.5  1.0
-        -1.0  1.0 1.0 100.0  0.5    false  true    0.0          0.625 0.25 0.875
-        -4.0 -2.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
-        -6.0 -4.0 2.0 100.0  0.0    true   false   0.0          0.0   0.0  0.0
-         2.0  4.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
-        -4.0 -2.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0  0.5
-         2.0  4.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0  0.5
-        -1.0  1.0 1.0 100.0  0.0    true   false   0.0          0.5   0.0  0.5
-        -1.0  1.0 2.0   1.0  0.0    false  true    0.0          0.5   0.0  0.5
-        -6.0 -5.0 1.0 100.0  1.0    false  true    0.0          0.0   1.0  1.0
-        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0  1.0
-        -1.0  1.0 1.0 100.0  1.0    false  false   1.0          0.5   0.25 1.0
-        -6.0 -5.0 1.0 100.0  1.0    false  false   1.0          0.0   1.0  1.0
-        -4.0 -2.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0
-         2.0  4.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25 1.0)
+         ?ox  ?x  ?d  ?depth ?plume ?model ?planet ?attenuation ?r    ?g    ?a
+         4.0  0.0 0.0 100.0  0.0    false  false   0.0          0.0   0.0   0.0
+         1.0  0.0 2.0 100.0  0.0    false  false   0.0          0.75  0.0   0.75
+         4.0  0.0 0.0 100.0  1.0    false  false   0.0          0.0   1.0   1.0
+         2.0  0.0 1.0 100.0  1.0    false  false   0.0          0.5   0.5   1.0
+         1.0  0.0 1.0 100.0  0.5    false  false   0.0          0.625 0.25  0.875
+         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0   0.5
+         4.0  0.0 2.0 100.0  0.0    false  false   0.0          0.0   0.0   0.0
+         2.0  0.0 2.0 100.0  0.0    false  false   0.0          0.5   0.0   0.5
+         2.0  0.0 0.0 100.0  0.0    false  false   0.0          0.5   0.0   0.5
+         2.0  0.0 1.0 100.0  0.0    false  false   0.0          0.5   0.0   0.5
+         0.0  0.0 0.0 100.0  0.0    true   false   0.0          0.0   0.0   0.0
+        -1.0  1.0 2.0 100.0  0.0    true   false   0.0          0.75  0.0   0.75
+        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0   1.0
+        -1.0  0.0 1.0 100.0  1.0    true   false   0.0          0.5   0.5   1.0
+        -1.0  1.0 1.0 100.0  0.5    false  true    0.0          0.625 0.25  0.875
+        -4.0 -2.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0   0.5
+        -6.0 -4.0 2.0 100.0  0.0    true   false   0.0          0.0   0.0   0.0
+         2.0  4.0 2.0 100.0  0.0    true   false   0.0          0.5   0.0   0.5
+        -4.0 -2.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0   0.5
+         2.0  4.0 0.0 100.0  0.0    false  true    0.0          0.5   0.0   0.5
+        -1.0  1.0 1.0 100.0  0.0    true   false   0.0          0.5   0.0   0.5
+        -1.0  1.0 2.0   1.0  0.0    false  true    0.0          0.5   0.0   0.5
+        -6.0 -5.0 1.0 100.0  1.0    false  true    0.0          0.0   1.0   1.0
+        -6.0 -5.0 1.0 100.0  1.0    true   false   0.0          0.0   1.0   1.0
+        -1.0  1.0 1.0 100.0  1.0    false  false   1.0          0.5   0.25  1.0
+        -6.0 -5.0 1.0 100.0  1.0    false  false   1.0          0.0   1.0   1.0
+        -4.0 -2.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25  1.0
+         2.0  4.0 2.0 100.0  1.0    true   false   1.0          0.5   0.25  1.0
+        -1.0  1.0 3.0 100.0  0.5    false  true    1.0          0.75  0.016 0.875
+         5.0  7.0 2.0 100.0  0.5    false  false   1.0          0.0   0.5   0.5)
+
+(def plume-segment-probe
+  (template/fn [outer origin-x x size strength]
+"#version 410 core
+out vec3 fragColor;
+vec4 plume_outer(vec3 object_origin, vec3 object_direction);
+vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
+vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
+{
+  float x = plume_step * <%= strength %>;
+  return plume_scatter + vec4(x, x, x, -x);
+}
+vec2 plume_box(vec3 origin, vec3 direction)
+{
+  return vec2(-0.5 * <%= size %> - origin.x, <%= size %>);
+}
+float sampling_offset()
+{
+  return 0.5;
+}
+void main()
+{
+  vec3 origin = vec3(<%= origin-x %>, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  vec3 object_point = vec3(<%= x %>, 0, 0);
+<% (if outer %>
+  vec4 plume = plume_outer(origin, direction);
+<% %>
+  vec4 plume = plume_point(origin, direction, object_point);
+<% ) %>
+  fragColor = plume.rga;
+}"))
+
+(defn plume-segment-test
+  [outer]
+  (shader-test (fn [program engine-step]
+                   (uniform-float program "engine_step" engine-step))
+               plume-segment-probe (last (plume-segment outer))))
+
+(tabular "Shader function to determine rocket plume contribution"
+         (fact ((plume-segment-test ?outer) [?engine-step] [?outer ?o-x ?x ?size ?strength])
+               => (roughly-vector (vec3 ?result ?result ?alpha) 1e-3))
+         ?engine-step ?outer ?o-x  ?x   ?size ?strength ?result ?alpha
+         0.1          true   -10.0  0.0  0.0   0.1       0.0    0.0
+         0.1          true   -10.0  0.0  2.0   0.1       0.2    0.2
+         0.1          false  -10.0 10.0  2.0   0.1       0.2    0.2
+         0.1          false  -10.0 -5.0  2.0   0.1       0.0    0.0)
+
+(def plume-box-probe
+  (template/fn [limit x-range y-range z-range]
+"#version 410 core
+out vec3 fragColor;
+float limit(float pressure)
+{
+  return <%= limit %>;
+}
+vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
+{
+<% (if x-range %>
+  return vec2(box_min.x, box_max.x);
+<% ) %>
+<% (if y-range %>
+  return vec2(box_min.y, box_max.y);
+<% ) %>
+<% (if z-range %>
+  return vec2(box_min.z, box_max.z);
+<% ) %>
+}
+vec2 plume_box(vec3 origin, vec3 direction);
+void main()
+{
+  vec3 origin = vec3(-5, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  fragColor = vec3(plume_box(origin, direction), 0.0);
+}"))
+
+(def plume-box-test
+  (shader-test (fn [program nozzle throttle]
+                   (uniform-float program "nozzle" nozzle)
+                   (uniform-float program "throttle" throttle))
+               plume-box-probe (last plume-box)))
+
+(tabular "Shader for bounding box computation of plume"
+         (fact (plume-box-test [?nozzle ?throttle] [?limit ?x-range ?y-range ?z-range]) => (roughly-vector (vec3 ?a ?b 0) 1e-6))
+         ?limit ?nozzle ?throttle ?x-range ?y-range ?z-range ?a                ?b
+         0.5    1.0     1.0       true     false    false    plume-end            plume-start
+         0.5    1.0     0.0       true     false    false    plume-start          plume-start
+         0.5    1.0     1.0       false    true     false    (- plume-width-2)    plume-width-2
+         2.0    1.0     1.0       false    true     false    (- -1 plume-width-2) (+ 1 plume-width-2)
+         0.5    1.0     1.0       false    false    true     (- plume-width-2)    plume-width-2)
 
 (GLFW/glfwTerminate)

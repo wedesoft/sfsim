@@ -148,6 +148,7 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } frag_in;
 out vec3 fragColor;
 void main()
@@ -377,6 +378,7 @@ out GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } vs_out;
 void main()
 {
@@ -602,6 +604,7 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } fs_in;
 out vec3 fragColor;
 void main()
@@ -699,19 +702,21 @@ void main()
              render {:sfsim.render/fov 0.5 :sfsim.render/min-z-near 1.0}
              pos1   (vec3 (+ 1000 150) 0 0)
              pos2   (vec3 (+ 1000 75) 0 0)
+             opos   (vec3 0 0 0)
              o      (q/rotation 0.0 (vec3 0 0 1))
+             m-vars {:sfsim.model/object-radius 30.0 :sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
              light  (vec3 1 0 0)]
          (with-redefs [planet/render-depth render-depth-mock
                        matrix/quaternion->matrix (fn [orientation] (fact [orientation] orientation => o) :rotation-matrix)
-                       matrix/transformation-matrix (fn [rot pos] (fact rot => :rotation-matrix) (eye 4))
-                       matrix/projection-matrix (fn [w h near far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
-           (:sfsim.render/origin (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => pos1
-           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => (roughly 47.549 1e-3)
-           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos2 o light)) => 1.0
-           (:sfsim.render/z-far (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => 300.0
-           (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => (eye 4)
-           (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => (diagonal 1 2 3 4)
-           (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => light)))
+                       matrix/transformation-matrix (fn [rot _pos] (fact rot => :rotation-matrix) (eye 4))
+                       matrix/projection-matrix (fn [w h _near _far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
+           (:sfsim.render/origin (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => pos1
+           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (roughly 47.549 1e-3)
+           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos2 o light opos o m-vars)) => 1.0
+           (:sfsim.render/z-far (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => 300.0
+           (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (eye 4)
+           (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (diagonal 1 2 3 4)
+           (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => light)))
 
 
 (GLFW/glfwTerminate)

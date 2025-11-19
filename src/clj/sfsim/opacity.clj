@@ -115,6 +115,7 @@
         opacities       (render-opacity-cascade opacity-renderer matrix-cascade light-direction scatter-amount opacity-step)
         shadows         (render-shadow-cascade planet-shadow-renderer ::matrix-cascade matrix-cascade :tree tree)]
     {::opacity-step opacity-step
+     ::opacity-cutoff (:sfsim.clouds/opacity-cutoff (:sfsim.clouds/data opacity-renderer))
      ::splits splits
      ::biases biases
      ::matrix-cascade matrix-cascade

@@ -408,7 +408,7 @@
 
 (defn tile-center-to-surface
   "Get vector from tile center to surface mesh point"
-  {:malli/schema [:=> [:cat :int :int :keyword :int :int :int :int] fvec3]}
+  {:malli/schema [:=> [:cat :int :int :keyword :int :int :double :double] fvec3]}
   [level tilesize face row column tile-y tile-x]
   (let [terrain (load-surface-tile level tilesize face row column)]
     (get-vector3 terrain tile-y tile-x)))
@@ -629,7 +629,8 @@
   [face level tilesize row column tile-y tile-x radius center]
   (vec
     (for [dy [-1 0 1 2] dx [-1 0 1 2]]
-      (let [{::keys [face row column tile-y tile-x]} (neighbour-tile face level tilesize row column tile-y tile-x dy dx 0)
+      (let [{::keys [face row column tile-y tile-x]} (neighbour-tile face level tilesize row column (double tile-y) (double tile-x)
+                                                                     dy dx 0)
             surface-vector                           (tile-center-to-surface level tilesize face row column tile-y tile-x)
             center-of-current-tile                   (tile-center face level row column radius)]
         (sub (add center-of-current-tile surface-vector) center)))))
