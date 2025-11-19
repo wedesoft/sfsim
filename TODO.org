@@ -134,6 +134,9 @@
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
 * TODO [#C] 3D cockpit                                               :interface:
+  - Note taken on [2025-11-19 Mi 19:49] \\
+    [[https://uxdesign.cc/how-i-recreated-crew-dragons-ui-15877eddf3ed]]
+    [[https://github.com/Neel-Dandiwala/SpaceX-Dragon2-UI?tab=readme-ov-file]]
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
 ** TODO update controls in background thread
 ** TODO ground slope warning

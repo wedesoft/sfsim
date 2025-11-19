@@ -322,7 +322,8 @@
 
 (def vehicle (atom nil))
 
-(def current-time (+ (long (astro/now)) (/ 0.0 24.0) (/ 0.0 60.0 24.0)))
+; Start with fixed summer date for better illumination.
+(def current-time (- (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}) astro/T0))
 
 (def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body}))
 (physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
