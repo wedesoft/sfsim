@@ -103,7 +103,7 @@
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timeseconds position orientation camera-position camera-orientation dist gear wheel-angles suspension
-                             camera-dx camera-dy]}]
+                             camera-dx camera-dy throttle]}]
                     {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
@@ -112,6 +112,7 @@
                                                          (:jmag camera-orientation) (:kmag camera-orientation))
                      :dist dist
                      :gear gear
+                     :throttle throttle
                      :wheel-angles wheel-angles
                      :suspension suspension
                      :camera-dx camera-dx
@@ -650,6 +651,7 @@
 (def frame-index (atom 0))
 (def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
+(def throttle (atom 0.0))
 
 
 (def gear (atom 1.0))
@@ -686,7 +688,6 @@
             aileron  (@state :sfsim.input/aileron)
             elevator (@state :sfsim.input/elevator)
             rudder   (@state :sfsim.input/rudder)
-            throttle (@state :sfsim.input/throttle)
             brake    (if (@state :sfsim.input/brake) 1.0 (if (@state :sfsim.input/parking-brake) 0.1 0.0))]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface jd-ut physics-state))
@@ -703,6 +704,7 @@
             (reset! camera-dy (:camera-dy frame))
             (reset! dist (:dist frame))
             (reset! gear (:gear frame))
+            (reset! throttle (:throttle frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
           (do
@@ -714,11 +716,13 @@
                       orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double elevator) (vec3 0 1 0)))
                       orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double rudder  ) (vec3 0 0 1)))
                       orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double aileron ) (vec3 1 0 0)))
-                      position      (add position (mult (q/rotate-vector orientation (vec3 1 0 0)) (* ^double dt 1000.0 ^double throttle)))]
+                      position      (add position (mult (q/rotate-vector orientation (vec3 1 0 0))
+                                                        (* ^double dt 1000.0 ^double (@state :sfsim.input/throttle))))]
                   (physics/set-pose :sfsim.physics/surface physics-state position orientation)
                   (physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector orientation (vec3 1 0 0)) speed)
                                      (vec3 0 0 0))))
               (do
+                (reset! throttle (@state :sfsim.input/throttle))
                 (if (@state :sfsim.input/air-brake)
                   (swap! air-brake + (* ^double dt 2.0))
                   (swap! air-brake - (* ^double dt 2.0)))
@@ -752,7 +756,7 @@
                                                               @air-brake)]
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state
                                        (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                                                        (vec3 (* ^double throttle ^double thrust) 0 0)))
+                                                        (vec3 (* ^double @throttle ^double thrust) 0 0)))
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/forces loads))
                     (physics/add-torque :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/moments loads))
                     (physics/update-state physics-state dt (physics/gravitation (vec3 0 0 0) earth-mass))))
@@ -777,6 +781,7 @@
                                :camera-dy @camera-dy
                                :dist @dist
                                :gear @gear
+                               :throttle @throttle
                                :wheel-angles (if @vehicle
                                                [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
                                                 (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
@@ -800,7 +805,7 @@
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
-              model-vars         (model/make-model-vars config/model-config time_ pressure throttle)
+              model-vars         (model/make-model-vars config/model-config time_ pressure @throttle)
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
                                                                  light-direction object-position object-orientation model-vars)
@@ -884,7 +889,7 @@
                              (@menu gui @window-width @window-height))
                            (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                            (when (not playback)
-                             (stick gui aileron elevator rudder throttle)
+                             (stick gui aileron elevator rudder @throttle)
                              (info gui @window-height
                                    (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s%s%s"
                                            (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
