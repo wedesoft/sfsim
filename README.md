@@ -10,7 +10,7 @@ See [sfsim homepage][1] for more details.
 # Installation
 
 * Tested on Debian 13 and Windows 11
-* Install [JDK 24 Deb for Linux](https://www.oracle.com/uk/java/technologies/downloads/) or [JDK 24 MSI for Windows](https://adoptium.net/temurin/releases)
+* Install [JDK 25 Deb for Linux](https://www.oracle.com/uk/java/technologies/downloads/) or [JDK 25 MSI for Windows](https://adoptium.net/temurin/releases)
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
 * Install [NSIS](https://nsis.sourceforge.io/) for building Windows installer
@@ -82,12 +82,14 @@ cd ..
 
 ## Further Build Steps under Windows
 
+* Update version number in `src/clj/sfsim/version.clj`
 * Build JAR file: `clj -T:build uber`
 * Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json` (delete out-windows folder first)
 * Upload to Steam: `sdk\tools\ContentBuilder\builder\steamcmd.exe +login <account_name> <password> +run_app_build C:\Users\....\sfsim\scripts\sfsim_playtest_windows.vdf +quit`
 
 ## Further Build Steps under GNU/Linux
 
+* Update version number in `src/clj/sfsim/version.clj`
 * Build JAR file: `clj -T:build uber`
 * Create Linux executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json` (delete out-linux folder first)
 * Upload to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login <account_name> <password> +run_app_build /home/..../sfsim/scripts/sfsim_playtest_linux.vdf +quit`
