@@ -103,7 +103,7 @@
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timeseconds position orientation camera-position camera-orientation dist gear wheel-angles suspension
-                             camera-dx camera-dy throttle]}]
+                             camera-dx camera-dy throttle time_]}]
                     {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
@@ -112,6 +112,7 @@
                                                          (:jmag camera-orientation) (:kmag camera-orientation))
                      :dist dist
                      :gear gear
+                     :time_ time_
                      :throttle throttle
                      :wheel-angles wheel-angles
                      :suspension suspension
@@ -652,6 +653,7 @@
 (def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
 (def throttle (atom 0.0))
+(def time_ (atom 0.0))
 
 
 (def gear (atom 1.0))
@@ -684,7 +686,6 @@
                        (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0)))))) (/ 1.0 ^double fix-fps))
                        (- t1 ^double @t0))
             jd-ut    (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
-            time_    (mod (+ (* ^double @time-delta 86400.0) ^double @t0) 3600.0)
             aileron  (@state :sfsim.input/aileron)
             elevator (@state :sfsim.input/elevator)
             rudder   (@state :sfsim.input/rudder)
@@ -704,6 +705,7 @@
             (reset! camera-dy (:camera-dy frame))
             (reset! dist (:dist frame))
             (reset! gear (:gear frame))
+            (reset! time_ (:time_ frame))
             (reset! throttle (:throttle frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
@@ -722,6 +724,7 @@
                   (physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector orientation (vec3 1 0 0)) speed)
                                      (vec3 0 0 0))))
               (do
+                (swap! time_ + dt)
                 (reset! throttle (@state :sfsim.input/throttle))
                 (if (@state :sfsim.input/air-brake)
                   (swap! air-brake + (* ^double dt 2.0))
@@ -781,6 +784,7 @@
                                :camera-dy @camera-dy
                                :dist @dist
                                :gear @gear
+                               :time_ @time_
                                :throttle @throttle
                                :wheel-angles (if @vehicle
                                                [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
@@ -805,7 +809,7 @@
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
-              model-vars         (model/make-model-vars config/model-config time_ pressure @throttle)
+              model-vars         (model/make-model-vars config/model-config @time_ pressure @throttle)
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
                                                                  light-direction object-position object-orientation model-vars)
