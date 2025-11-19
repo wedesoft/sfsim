@@ -82,7 +82,7 @@
       - [X] bug with rendering plume over object
       - [X] coordinate system for plume needs to be rotated
       - [X] increased density near spike
-      - [ ] start with fixed summer date for better illumination
+      - [X] start with fixed summer date for better illumination
       - [X] constrain sides of plume up to end of engine
       - [X] add blue noise offsets to plume sampling
       - [X] set uniforms for plume in config or compute in main program
