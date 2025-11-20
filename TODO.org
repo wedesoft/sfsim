@@ -41,17 +41,14 @@
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [X] integrate control surface scaling
-  - [-] thrust graphics, opengl rocket plume
+  - [X] thrust graphics, opengl rocket plume
     - [X] deteriorating series of mach diamonds
     - [X] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
     - [X] expanding plume with decreasing atmospheric pressure
-    - If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
-      A combination of pitch and roll can produce whatever attitude control you need. source
-      [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
     - [X] increasingly round shape of plume
     - [X] plume shape around aerospike
     - [X] effects of thrust vectoring
-    - [-] shaders for
+    - [X] shaders for
       - [X] signed distance function rectangle
       - [X] signed distance function circle
       - [X] signed distance function engine exhaust
@@ -86,8 +83,6 @@
       - [X] constrain sides of plume up to end of engine
       - [X] add blue noise offsets to plume sampling
       - [X] set uniforms for plume in config or compute in main program
-      - [ ] set all static plume config values when initialising shader programs
-      - [ ] is "depth" initialised when rendering space ship or planet?
       - [X] vary plume end with thrust, turn of plume when no thrust
       - [X] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
       - [X] don't split sampling interval if there is no plume
@@ -100,6 +95,11 @@
           - [X] cloud overlay planet: cloud_point
         - [X] atmosphere rendering: uses cloud overlay
           - [X] cloud overlay atmosphere: cloud_outer
+  - [ ] set all static plume config values when initialising shader programs
+  - [ ] integration test plume shader
+  - [ ] If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
+    A combination of pitch and roll can produce whatever attitude control you need. source
+    [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
   - [ ] implement RCS thrusters
   - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
@@ -299,3 +299,4 @@
     - [ ] normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
     - [ ] apply all modifiers
     - [ ] bake animation when exporting (use NLP track names)
+      - [ ] is "depth" initialised when rendering space ship or planet?
