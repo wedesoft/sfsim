@@ -10,7 +10,7 @@
     [clojure.math :refer (floor)]
     [comb.template :as template]
     [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
-    [fastmath.vector :refer (vec3 vec4 mult add mag)]
+    [fastmath.vector :refer (vec3 vec4 mult add)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
     [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
@@ -19,7 +19,8 @@
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
                           fmat4 rotation-matrix)]
-    [sfsim.planet :refer (surface-radiance-function shadow-vars setup-plume-uniforms model-vars)]
+    [sfsim.planet :refer (surface-radiance-function shadow-vars setup-static-plume-uniforms setup-dynamic-plume-uniforms
+                          model-data model-vars)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
@@ -625,10 +626,12 @@
   (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
         perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
         cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
+        model-data            (:sfsim.model/data data)
         fragment-shader       (fragment-scene textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves)
         program               (make-program :sfsim.render/vertex [(vertex-scene textured bump num-scene-shadows)]
                                             :sfsim.render/fragment fragment-shader)]
     (setup-scene-static-uniforms program texture-offset num-scene-shadows textured bump data)
+    (setup-static-plume-uniforms program model-data)
     program))
 
 
@@ -768,7 +771,6 @@
   [scene-renderer render-vars model-vars shadow-vars scene-shadows scenes]
   (let [render-config      (:sfsim.render/config scene-renderer)
         cloud-data         (:sfsim.clouds/data scene-renderer)
-        model-data         (::data scene-renderer)
         atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)
         camera-to-world    (:sfsim.render/camera-to-world render-vars)
         texture-offset     (::texture-offset scene-renderer)
@@ -780,7 +782,7 @@
       (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
       (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
       (uniform-matrix4 program "world_to_camera" world-to-camera)
-      (setup-plume-uniforms program render-vars model-vars)
+      (setup-dynamic-plume-uniforms program render-vars model-vars)
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
       (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
@@ -809,23 +811,23 @@
 
 (defn make-model-vars
   "Create hashmap with model configuration and variables"
-  {:malli/schema [:=> [:cat [:map [:sfsim.model/object-radius :double]] :double :double :double] model-vars]}
-  [model-config time_ pressure throttle]
-  (assoc model-config ::time time_ ::pressure pressure ::throttle throttle))
+  {:malli/schema [:=> [:cat :double :double :double] model-vars]}
+  [time_ pressure throttle]
+  {::time time_ ::pressure pressure ::throttle throttle})
 
 
 (defn make-scene-render-vars
   "Create hashmap with render variables for rendering a scene outside the atmosphere"
-  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion model-vars]
-                      render-vars]}
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion
+                       model-data model-vars] render-vars]}
   [render-config window-width window-height camera-position camera-orientation light-direction object-position object-orientation
-   model-vars]
+   model-data model-vars]
   (let [min-z-near           (:sfsim.render/min-z-near render-config)
         camera-to-world      (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-camera      (inverse camera-to-world)
         object-camera-vector (mulv world-to-camera (vec3->vec4 object-position 1.0))
         object-depth         (- ^double (object-camera-vector 2))
-        object-radius        (::object-radius model-vars)
+        object-radius        (::object-radius model-data)
         time_                (::time model-vars)
         pressure             (::pressure model-vars)
         z-near               (max ^double (- ^double object-depth ^double object-radius) ^double min-z-near)

@@ -208,6 +208,43 @@
              [:sfsim.clouds/data cloud-data] [:sfsim.render/config render-config]]))
 
 
+(def model-data
+  (m/schema [:map [:sfsim.model/object-radius :double]
+                  [:sfsim.model/nozzle :double]
+                  [:sfsim.model/min-limit :double]
+                  [:sfsim.model/max-slope :double]
+                  [:sfsim.model/omega-factor :double]
+                  [:sfsim.model/diamond-strength :double]
+                  [:sfsim.model/engine-step :double]]))
+
+
+(def model-vars (m/schema [:map [:sfsim.model/time :double]
+                                [:sfsim.model/pressure :double]
+                                [:sfsim.model/throttle :double]]))
+
+
+(defn setup-static-plume-uniforms
+  {:malli/schema [:=> [:cat :int model-data] :nil]}
+  [program model-data]
+  (uniform-float program "nozzle" (:sfsim.model/nozzle model-data))
+  (uniform-float program "min_limit" (:sfsim.model/min-limit model-data))
+  (uniform-float program "max_slope" (:sfsim.model/max-slope model-data))
+  (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-data))
+  (uniform-float program "diamond_strength" (:sfsim.model/diamond-strength model-data))
+  (uniform-float program "engine_step" (:sfsim.model/engine-step model-data)))
+
+
+(defn setup-dynamic-plume-uniforms
+  {:malli/schema [:=> [:cat :int render-vars model-vars] :nil]}
+  [program render-vars model-vars]
+  (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
+  (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
+  (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
+  (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
+  (uniform-float program "time" (:sfsim.model/time model-vars))
+  (uniform-float program "throttle" (:sfsim.model/throttle model-vars)))
+
+
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon"
   {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [::config planet-config]
@@ -234,6 +271,7 @@
     (setup-cloud-render-uniforms program cloud-data 4)
     (setup-cloud-sampling-uniforms program cloud-data 7)
     (setup-atmosphere-uniforms program atmosphere-luts 1 false)
+    (setup-static-plume-uniforms program model-data)
     (uniform-float program "radius" (::radius planet-config))
     (uniform-int program "high_detail" (dec ^long tilesize))
     (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
@@ -251,39 +289,6 @@
              [:sfsim.opacity/shadows [:vector texture-2d]] [:sfsim.opacity/opacities [:vector texture-3d]]]))
 
 
-(def model-data
-  (m/schema [:map [:sfsim.model/object-radius :double]
-                  [:sfsim.model/nozzle :double]
-                  [:sfsim.model/min-limit :double]
-                  [:sfsim.model/max-slope :double]
-                  [:sfsim.model/omega-factor :double]
-                  [:sfsim.model/diamond-strength :double]
-                  [:sfsim.model/engine-step :double]]))
-
-
-(def model-vars (m/schema [:map [:sfsim.model/object-radius :double]
-                                [:sfsim.model/time :double]
-                                [:sfsim.model/pressure :double]
-                                [:sfsim.model/throttle :double]]))
-
-
-(defn setup-plume-uniforms
-  {:malli/schema [:=> [:cat :int render-vars [:and model-data model-vars]] :nil]}
-  [program render-vars model-vars]
-  (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
-  (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
-  (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
-  (uniform-float program "nozzle" (:sfsim.model/nozzle model-vars))
-  (uniform-float program "min_limit" (:sfsim.model/min-limit model-vars))
-  (uniform-float program "max_slope" (:sfsim.model/max-slope model-vars))
-  (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-vars))
-  (uniform-float program "diamond_strength" (:sfsim.model/diamond-strength model-vars))
-  (uniform-float program "engine_step" (:sfsim.model/engine-step model-vars))
-  (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
-  (uniform-float program "time" (:sfsim.model/time model-vars))
-  (uniform-float program "throttle" (:sfsim.model/throttle model-vars)))
-
-
 (defn render-cloud-planet
   "Render clouds below horizon"
   {:malli/schema [:=> [:cat cloud-planet-renderer render-vars model-vars shadow-vars [:maybe :map]] :nil]}
@@ -297,7 +302,7 @@
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
     (uniform-matrix4 program "world_to_camera" world-to-camera)
-    (setup-plume-uniforms program render-vars model-vars)
+    (setup-dynamic-plume-uniforms program render-vars model-vars)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
@@ -344,6 +349,7 @@
     (setup-cloud-render-uniforms program data 3)
     (setup-cloud-sampling-uniforms program data 6)
     (setup-atmosphere-uniforms program atmosphere-luts 0 false)
+    (setup-static-plume-uniforms program model-data)
     (uniform-float program "radius" (::radius planet-config))
     (uniform-int program "high_detail" (dec ^long tilesize))
     (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
@@ -361,7 +367,6 @@
   [{:sfsim.clouds/keys [program data] :as other} render-vars model-vars shadow-vars]
   (let [render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
-        model-data      (:sfsim.model/data other)
         indices         [0 1 3 2]
         vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao             (make-vertex-array-object program indices vertices ["ndc" 2])
@@ -372,7 +377,7 @@
     (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
     (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
     (uniform-matrix4 program "world_to_camera" world-to-camera)
-    (setup-plume-uniforms program render-vars model-vars)
+    (setup-dynamic-plume-uniforms program render-vars model-vars)
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))

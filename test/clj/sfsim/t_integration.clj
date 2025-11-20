@@ -71,7 +71,7 @@
                      atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
                      tree                      (load-tile-tree planet-renderer {} width ?position level)
                      object-position           (add ?position (q/rotate-vector ?orientation (vec3 0 0 -1)))
-                     model-vars                (model/make-model-vars config/model-config 0.0 1.0 0.0)
+                     model-vars                (model/make-model-vars 0.0 1.0 0.0)
                      render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                                width height ?position ?orientation (vec3 1 0 0)
                                                                                object-position (q/->Quaternion 1 0 0 0) model-vars)
@@ -137,7 +137,7 @@
                      object                    (assoc-in (model/load-scene scene-renderer model)
                                                          [:sfsim.model/root :sfsim.model/transform] object-to-world)
                      tree                      (load-tile-tree planet-renderer {} width ?position level)
-                     model-vars                (model/make-model-vars config/model-config 0.0 1.0 0.0)
+                     model-vars                (model/make-model-vars 0.0 1.0 0.0)
                      render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                                width height ?position ?orientation (vec3 1 0 0)
                                                                                object-position (q/->Quaternion 1 0 0 0) model-vars)
@@ -214,7 +214,7 @@
                 object                    (assoc-in (model/load-scene scene-renderer model)
                                                     [:sfsim.model/root :sfsim.model/transform] object-to-world)
                 tree                      (load-tile-tree planet-renderer {} width position level)
-                model-vars                (model/make-model-vars config/model-config 0.0 1.0 0.0)
+                model-vars                (model/make-model-vars 0.0 1.0 0.0)
                 render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                           width height position orientation light-direction
                                                                           object-position (q/->Quaternion 1 0 0 0) model-vars)
