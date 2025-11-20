@@ -126,6 +126,7 @@ void main()
 (GL20/glUniform1f (GL20/glGetUniformLocation program "omega_factor") 0.2)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "diamond_strength") 0.2)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "pressure") 1.0)
+(GL20/glUniform1f (GL20/glGetUniformLocation program "throttle") 1.0)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "engine_step") 0.2)
 
 (while (not (GLFW/glfwWindowShouldClose window))
