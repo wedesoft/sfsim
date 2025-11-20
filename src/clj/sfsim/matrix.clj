@@ -26,6 +26,7 @@
 
 (def fmat3 (m/schema [:and ifn? [:fn (fn check-3x3-matrix [m] (= (fm/ncol m) (fm/nrow m) 3))]]))
 (def fmat4 (m/schema [:and ifn? [:fn (fn check-4x4-matrix [m] (= (fm/ncol m) (fm/nrow m) 4))]]))
+(def fvec2 (m/schema [:tuple :double :double]))
 (def fvec3 (m/schema [:tuple :double :double :double]))
 (def fvec4 (m/schema [:tuple :double :double :double :double]))
 

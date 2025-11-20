@@ -41,69 +41,22 @@
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [X] integrate control surface scaling
-  - [-] thrust graphics, opengl rocket plume
+  - [X] thrust graphics, opengl rocket plume
     - [X] deteriorating series of mach diamonds
     - [X] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
     - [X] expanding plume with decreasing atmospheric pressure
-    - If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
-      A combination of pitch and roll can produce whatever attitude control you need. source
-      [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
     - [X] increasingly round shape of plume
     - [X] plume shape around aerospike
     - [X] effects of thrust vectoring
-    - [-] shaders for
-      - [X] signed distance function rectangle
-      - [X] signed distance function circle
-      - [X] signed distance function engine exhaust
-      - [X] 3d noise
-      - [X] plume envelope
-      - [X] plume diamonds
-      - [X] clip cloud_plume_point with depth
-      - [X] implement cloud_plume_outer
-      - [X] refactor cloud_plume_outer
-      - [X] move plume shaders into plume module and add cloud_segment as dependency
-      - [X] generate cloud_point and cloud_outer from same code using boolean (optional end point)
-      - [X] generate cloud_plume_point, cloud_plume_cloud, and cloud_plume_cloud_point from same code using booleans
-      - [X] cloud_plume shader should take origin, direction, (and optionally end point), in object coordinates
-      - [X] use scene matrix (top-level transform) instead of individual mesh transform
-      - [X] use plume_point when computing cloud_plume_cloud_point!
-      - [X] render-cloud-planet should use cloud_plume_cloud_point
-      - [X] render-cloud-atmosphere should use cloud_plume_cloud
-      - [X] error in cloud-plume-segment shader (different brightness in front of object)
-      - [X] implement plume_point and plume_outer
-      - [X] implement plume_box
-      - [X] rendering errors when object_distance is behind horizon
-      - [X] fix schema errors of main program
-      - [X] optimize cloud-plume-point for pixels without plume
-      - [X] make-render-vars needs to add object-origin
-      - [X] atmospheric transmittance for clouds behind plume
-      - [X] object_origin, object_direction, fs_in.vertex needs to be in scene and not mesh coordinates
-      - [X] provide origin, direction and point in plume coordinates
-      - [X] bug with rendering plume over object
-      - [X] coordinate system for plume needs to be rotated
-      - [X] increased density near spike
-      - [X] start with fixed summer date for better illumination
-      - [X] constrain sides of plume up to end of engine
-      - [X] add blue noise offsets to plume sampling
-      - [X] set uniforms for plume in config or compute in main program
-      - [ ] set all static plume config values when initialising shader programs
-      - [ ] is "depth" initialised when rendering space ship or planet?
-      - [X] vary plume end with thrust, turn of plume when no thrust
-      - [X] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
-      - [X] don't split sampling interval if there is no plume
-      - [X] cloud functions refactor
-        - [X] clip interval using other segment
-        - [X] clip shell intersections using segment
-      - [X] joined sampling of clouds and engine plume: replace cloud_point and cloud_outer with joint sampling of clouds and plume
-        - [X] model rendering: uses cloud_point
-        - [X] planet rendering: uses cloud overlay
-          - [X] cloud overlay planet: cloud_point
-        - [X] atmosphere rendering: uses cloud overlay
-          - [X] cloud overlay atmosphere: cloud_outer
+  - [X] set all static plume config values when initialising shader programs
+  - [X] integration test plume shader
+  - [ ] If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
+    A combination of pitch and roll can produce whatever attitude control you need. source
+    [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
   - [ ] implement RCS thrusters
-  - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
   - [ ] Nose wheel steering
+  - [ ] post on r/linux_gaming
   - [ ] yaw stabilisation
   - [ ] kill rotation
   - [ ] physics and animation of steering front wheel (apply difference of two animation time stamps)
@@ -299,3 +252,4 @@
     - [ ] normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
     - [ ] apply all modifiers
     - [ ] bake animation when exporting (use NLP track names)
+      - [ ] is "depth" initialised when rendering space ship or planet?
