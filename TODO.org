@@ -54,9 +54,9 @@
     A combination of pitch and roll can produce whatever attitude control you need. source
     [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
   - [ ] implement RCS thrusters
-  - [ ] post on r/linux_gaming
   - [ ] animate control surfaces and air brake
   - [ ] Nose wheel steering
+  - [ ] post on r/linux_gaming
   - [ ] yaw stabilisation
   - [ ] kill rotation
   - [ ] physics and animation of steering front wheel (apply difference of two animation time stamps)
