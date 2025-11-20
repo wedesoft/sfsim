@@ -49,7 +49,7 @@
     - [X] plume shape around aerospike
     - [X] effects of thrust vectoring
   - [X] set all static plume config values when initialising shader programs
-  - [ ] integration test plume shader
+  - [X] integration test plume shader
   - [ ] If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
     A combination of pitch and roll can produce whatever attitude control you need. source
     [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
