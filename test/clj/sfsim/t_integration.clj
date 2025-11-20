@@ -9,7 +9,7 @@
     [clojure.java.io :as io]
     [clojure.math :refer (PI to-radians)]
     [fastmath.matrix :refer (mat3x3 mulm mulv)]
-    [fastmath.vector :refer (vec3 add div sub)]
+    [fastmath.vector :refer (vec2 vec3 add div sub)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -22,6 +22,7 @@
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
+    [sfsim.plume :as plume]
     [sfsim.quadtree :refer :all]
     [sfsim.quaternion :as q]
     [sfsim.render :refer :all]
@@ -108,7 +109,7 @@
 
 
 (when (.exists (io/file ".integration"))
-  (tabular "Integration test rendering of planet, atmosphere, and clouds"
+  (tabular "Integration test rendering of object with planet, atmosphere, and clouds"
            (fact
              (with-invisible-window
                (let [width                     320
@@ -251,6 +252,55 @@
             (opacity/destroy-opacity-renderer opacity-renderer)
             (atmosphere/destroy-atmosphere-luts atmosphere-luts)
             (clouds/destroy-cloud-data cloud-data)))))
+
+
+(def vertex-plume "#version 130
+in vec3 point;
+void main()
+{
+  gl_Position = vec4(point, 1);
+}")
+
+
+(def fragment-plume "#version 130
+uniform vec2 resolution;
+out vec4 fragColor;
+vec4 plume_outer(vec3 object_origin, vec3 object_direction);
+void main()
+{
+  vec2 uv = gl_FragCoord.xy / resolution;
+  fragColor = vec4(plume_outer(vec3(-uv.x * 80, uv.y * 50 - 25, -20), vec3(0, 0, 1)).xyz, 1.0);
+}")
+
+
+(when (.exists (io/file ".integration"))
+  (fact "Integration test rendering of rocket plume"
+        (with-invisible-window
+          (let [width 320
+                height 240
+                indices  [0 1 3 2]
+                vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
+                program (make-program :sfsim.render/vertex [vertex-plume]
+                                      :sfsim.render/fragment [fragment-plume plume/plume-outer])
+                vao     (make-vertex-array-object program indices vertices ["point" 3])]
+            (use-program program)
+            (uniform-vector2 program "resolution" (vec2 width height))
+            (uniform-float program "nozzle" 2.7549)
+            (uniform-float program "min_limit" 1.2)
+            (uniform-float program "max_slope" 1.0)
+            (uniform-float program "omega_factor" 0.2)
+            (uniform-float program "diamond_strength" 0.2)
+            (uniform-float program "engine_step" 0.2)
+            (uniform-float program "pressure" 1.0)
+            (uniform-float program "throttle" 1.0)
+            (uniform-float program "time" 0.0)
+            (let [tex (texture-render-color width height true
+                                            (clear (vec3 0 0 0))
+                                            (render-quads vao))]
+              (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/plume.png" 0.0)
+              (destroy-texture tex))
+            (destroy-vertex-array-object vao)
+            (destroy-program program)))))
 
 
 (when (.exists (io/file ".integration"))
