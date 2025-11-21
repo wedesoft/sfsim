@@ -19,6 +19,7 @@
     [sfsim.image :refer (floats->image)]
     [sfsim.matrix :refer :all]
     [sfsim.model :refer :all :as model]
+    [sfsim.planet :as planet]
     [sfsim.quaternion :refer (->Quaternion) :as q]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
@@ -649,6 +650,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                               (conj model-shader-mocks
                                                     (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                    {:textured textured :bump bump :num-scene-shadows 0})))
+                       planet/setup-static-plume-uniforms (fn [_program _model-data])
                        model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                            (use-program program)
                                                            (setup-scene-samplers program 0 0 textured bump)
@@ -723,10 +725,20 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
              light-direction (vec3 1 0 0)
              obj-pos         (vec3 0 0 -100)
              obj-orient      (q/rotation 0.0 (vec3 0 0 1))
-             model-vars      {:sfsim.model/object-radius 10.0 :sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
-             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient model-vars)
-             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient model-vars)
-             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient model-vars)]
+             model-data      #:sfsim.model{:object-radius 10.0
+                                           :nozzle 2.7549
+                                           :min-limit 1.2
+                                           :max-slope 1.0
+                                           :omega-factor 0.2
+                                           :diamond-strength 0.4
+                                           :engine-step 0.2}
+             model-vars      {:sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
+             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient
+                                                     model-data model-vars)
+             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient
+                                                     model-data model-vars)
+             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient
+                                                     model-data model-vars)]
          (:sfsim.render/origin render-vars1) => pos1
          (:sfsim.render/camera-to-world render-vars1) => (eye 4)
          (:sfsim.render/camera-to-world render-vars2) => (transformation-matrix (quaternion->matrix orientation2) (vec3 0 0 -20))
@@ -895,6 +907,7 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
                                                                        {:textured textured
                                                                         :bump bump
                                                                         :num-scene-shadows num-scene-shadows})))
+                           planet/setup-static-plume-uniforms (fn [_program _model-data])
                            model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                                (use-program program)
                                                                (setup-scene-samplers program 0 0 textured bump)
@@ -999,8 +1012,7 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
 
 
 (facts "Create model configuration"
-       (let [model-vars (model/make-model-vars {:sfsim.model/object-radius 30.0} 1234.0 0.5 0.8)]
-         (:sfsim.model/object-radius model-vars) => 30.0
+       (let [model-vars (model/make-model-vars 1234.0 0.5 0.8)]
          (:sfsim.model/time model-vars) => 1234.0
          (:sfsim.model/pressure model-vars) => 0.5
          (:sfsim.model/throttle model-vars) => 0.8))

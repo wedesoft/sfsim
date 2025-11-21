@@ -53,11 +53,11 @@
                                       :mix 0.6
                                       :shadow-bias 1e-6}
 
- :sfsim.model-config #:sfsim.model {:object-radius 30.0
-                                    :nozzle 2.7549
-                                    :min-limit 1.2
-                                    :max-slope 1.0
-                                    :omega-factor 0.2
-                                    :diamond-strength 0.4
-                                    :engine-step 0.2}
+ :sfsim.model-config #:sfsim.model{:object-radius 30.0
+                                   :nozzle 2.7549
+                                   :min-limit 1.2
+                                   :max-slope 1.0
+                                   :omega-factor 0.2
+                                   :diamond-strength 0.4
+                                   :engine-step 0.2}
 }

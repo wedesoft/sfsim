@@ -9,7 +9,7 @@
   (:gen-class)
   (:require
     [clojure.java.io :as io]
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt pow)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp pow)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -325,7 +325,7 @@
 (def vehicle (atom nil))
 
 ; Start with fixed summer date for better illumination.
-(def current-time (- (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}) astro/T0))
+(def current-time (- (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}) ^double astro/T0))
 
 (def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body}))
 (physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
@@ -809,13 +809,13 @@
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
-              model-vars         (model/make-model-vars config/model-config @time_ pressure @throttle)
+              model-vars         (model/make-model-vars @time_ pressure @throttle)
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
                                                                  light-direction object-position object-orientation model-vars)
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
                                                                camera-orientation light-direction object-position
-                                                               object-orientation model-vars)
+                                                               object-orientation config/model-config model-vars)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars

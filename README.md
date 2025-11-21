@@ -119,6 +119,7 @@ cd ..
   * [Eagle Lander 3D](http://eaglelander3d.com/)
   * [Tungsten Moon](https://tungstenmoon.com/)
   * [Rogue System](http://imagespaceinc.com/rogsys/)
+  * [Endless Abyss](https://smoothiegames.itch.io/endless-abyss)
   * [UniVoyager](https://www.univoyager.com/)
   * [Space Nerds in Space](https://smcameron.github.io/space-nerds-in-space/)
   * [Alliance Space Guard](https://alliancespaceguard.com/)
