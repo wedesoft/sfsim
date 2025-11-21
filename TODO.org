@@ -50,7 +50,7 @@
     - [X] effects of thrust vectoring
   - [X] set all static plume config values when initialising shader programs
   - [X] integration test plume shader
-  - [ ] use deferred rendering
+  - [ ] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]]
     - [ ] -> render opacity -> opacity cascade
     - [ ] -> render shadows -> shadow cascade
     - [ ] -> render object shadow
@@ -62,6 +62,7 @@
     - [ ] planet depth map, cloud overlay -> render clouds nearer than object -> cloud overlay
     - [ ] object stencil, planet depth map -> render atmosphere -> atmosphere
     - [ ] atmosphere, planet colours, object colours, object stencil -> final rendering
+  - [ ] cloud segment with full attenuation?, attenuation segment for plume (render front to back with cutoff)
   - [ ] Thrust vectoring:
         If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
         A combination of pitch and roll can produce whatever attitude control you need. source
