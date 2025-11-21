@@ -51,7 +51,7 @@
 
 
 (def vertex-passthrough
-  "#version 410 core
+"#version 410 core
 in vec3 point;
 void main()
 {

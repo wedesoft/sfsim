@@ -365,7 +365,7 @@
 
 
 (defn- make-float-texture-4d
-  "Initialise a 2D texture"
+  "Initialise a 2D texture representing a 4D array"
   {:malli/schema [:=> [:cat float-image-4d interpolation boundary :int :int :int] texture-4d]}
   [image interpolation boundary internalformat format_ type_]
   (let [buffer     (make-float-buffer (:sfsim.image/data image))
