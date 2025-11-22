@@ -2,7 +2,7 @@
 
 This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
-Requires OpenGL 4.5.
+Requires OpenGL 4.5 (glClipControl for reversed-z rendering)
 See [sfsim homepage][1] for more details.
 
 [![Aerodynamic prototype](https://i.ytimg.com/vi/38FGT7SWVh0/hqdefault.jpg)](https://www.youtube.com/watch?v=38FGT7SWVh0)
