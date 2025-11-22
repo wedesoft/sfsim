@@ -66,6 +66,7 @@
     - [ ] object stencil, planet depth map -> render atmosphere -> atmosphere
     - [ ] atmosphere, planet colours, object colours, object stencil -> final rendering
   - [ ] cloud segment with full attenuation?, attenuation segment for plume (render front to back with cutoff)
+  - [ ] limit time step to avoid physics problems
   - [ ] Thrust vectoring:
         If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
         A combination of pitch and roll can produce whatever attitude control you need. source
