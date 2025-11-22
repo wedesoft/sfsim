@@ -51,6 +51,9 @@
   - [X] set all static plume config values when initialising shader programs
   - [X] integration test plume shader
   - [ ] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]]
+    - [ ] cloud-outer and cloud-point (cloud-segment) should accept near and optional far limit
+    - [ ] render plume and cloud segments in separate passes
+    - [ ] render plume box with cull front
     - [ ] -> render opacity -> opacity cascade
     - [ ] -> render shadows -> shadow cascade
     - [ ] -> render object shadow
