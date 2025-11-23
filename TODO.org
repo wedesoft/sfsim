@@ -41,17 +41,18 @@
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [ ] cloud-outer and cloud-point (cloud-segment) should accept near and optional far limit
-  - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling
+  - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
+        also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
     - [X] as before render opacity and shadow cascade and object shadows
-    - [ ] render opaque objects (scenes, planet, stars, stars) filling a depth texture, and color buffer, with atmosphere in front
-    - [ ] render low-res foreground volume (with atmospheric contribution)
-      - [ ] pass 1: render foreground cloud segment in front of object clipping with downsampled depth buffer (nearest)
-      - [ ] pass 2: render engine plume and RCS plumes in correct order using downsampled depth buffer (nearest) using backfaces of bounding shapes
-    - [ ] render low-res background volume (with atmospheric contribution)
-      - [ ] pass 1: render background clouds clipping with downsampled depth buffer
-    - [ ] write depth to a downsampled depth buffer
-    - [ ] final: render color buffer combining with volumetric contribution using depth-aware upsampling of foreground and background combined with foreground
+    - [ ] render opaque objects (scenes, planet, atmosphere) creating point and normal relative to camera, and color texture, with atmosphere in front
+    - [ ] render low-res cloud and plume volume (with atmospheric contribution
+      - [ ] pass 1: render low-res depth buffer or point texture
+      - [ ] pass 2: render foreground cloud segment in front of object clipping using low-res depth information
+      - [ ] pass 3: render engine plume and RCS plumes in correct order using downsampled depth buffer (nearest) using backfaces of bounding shapes
+      - [ ] pass 4: render far clouds (with atmospheric contribution)
+    - [ ] final: render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
   - [ ] cloud segment with full attenuation?, attenuation segment for plume (render front to back with cutoff)
+  - [ ] use #version 450 (OpenGL 4.5)?
   - [ ] limit time step to avoid physics problems
   - [ ] Thrust vectoring:
         If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
