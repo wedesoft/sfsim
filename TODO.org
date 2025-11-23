@@ -50,10 +50,7 @@
     - [ ] render low-res background volume (with atmospheric contribution)
       - [ ] pass 1: render background clouds clipping with downsampled depth buffer
     - [ ] write depth to a downsampled depth buffer
-
-      - [ ] pass 1: render object filling: depth buffer, stencil buffer, object point, foreground cloud value
-      - [ ] pass 2: render plume and RCS thrusters sorted with BSP using object origin and object point buffer with atmospheric contr.
-    - [ ] render color buffer combining with volumetric contribution using depth-aware upsampling of foreground and background combined with foreground
+    - [ ] final: render color buffer combining with volumetric contribution using depth-aware upsampling of foreground and background combined with foreground
   - [ ] cloud segment with full attenuation?, attenuation segment for plume (render front to back with cutoff)
   - [ ] limit time step to avoid physics problems
   - [ ] Thrust vectoring:
