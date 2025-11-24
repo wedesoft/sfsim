@@ -965,9 +965,9 @@ void main()
     "#version 410 core
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
+vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec4 incoming)
 {
-  return incoming * (1.0 - <%= attenuate %> * (b - a));
+  return incoming.rgb * (1.0 - <%= attenuate %> * (b - a));
 }
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {

@@ -969,11 +969,11 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
   return (q - p) * in_scatter;
 }
-vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec3 incoming)
+vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec4 incoming)
 {
   vec3 transmittance = transmittance_track(start, point);
   vec3 in_scatter = ray_scatter_track(light_direction, start, point) * amplification;
-  return incoming * transmittance + in_scatter;
+  return incoming.rgb * transmittance + in_scatter * incoming.a;
 }
 float powder (float d)
 {

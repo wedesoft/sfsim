@@ -45,7 +45,8 @@
       - [ ] pass 3: render engine plume and RCS plumes in correct order using downsampled depth buffer (nearest) using backfaces of bounding shapes
       - [ ] pass 4: render far clouds (with atmospheric contribution)
     - [ ] final: render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
-  - [ ] cloud segment with full attenuation?, attenuation segment for plume (render front to back with cutoff)
+  - [ ] attenuation segment for plume (render front to back with cutoff)
+  - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] use #version 450 (OpenGL 4.5)?
   - [ ] limit time step to avoid physics problems
   - [ ] Thrust vectoring:

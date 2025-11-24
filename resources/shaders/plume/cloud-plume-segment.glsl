@@ -14,6 +14,7 @@ vec4 plume_outer(vec3 object_origin, vec3 object_direction);
 vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
+vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec4 incoming);
 
 // Cloud and plume mixed overlay.
 // origin: world coordinate of camera position
@@ -22,6 +23,14 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 // object_origin: camera position coordinates in object (plume) coordinate system.
 // object_direction: viewing direction coordinates in object (plume) coordinate system.
 // object_point: model surface point in object (plume) coordinate system.
+
+vec3 attenuate_segment(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)
+{
+  if (segment.y > 0) {
+    return attenuate(light_direction, origin + segment.x * direction, origin + (segment.x + segment.y) * direction, incoming);
+  } else
+    return incoming.rgb;
+}
 
 <% (if (and (not planet-point) (not model-point)) %>
 // Shader to render overlay with clouds, then plume, and then clouds again with outer space in the background.
@@ -52,18 +61,7 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
     if (result.a <= 1.0 - opacity_cutoff) {
       vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
       atmosphere.y = min(atmosphere.y, object_distance - atmosphere.x);
-      vec3 transmittance;
-      vec3 in_scatter;
-      if (atmosphere.y > 0) {
-        vec3 start = origin + direction * atmosphere.x;
-        vec3 end = origin + direction * (atmosphere.x + atmosphere.y);
-        transmittance = transmittance_track(start, end);
-        in_scatter = ray_scatter_track(light_direction, start, end) * amplification;
-      } else {
-        transmittance = vec3(1, 1, 1);
-        in_scatter = vec3(0, 0, 0);
-      };
-      plume.rgb = plume.rgb * transmittance + plume.a * in_scatter;
+      plume.rgb = attenuate_segment(light_direction, origin, direction, atmosphere, plume);
       result = vec4(result.rgb + plume.rgb * (1.0 - result.a), 1.0 - (1.0 - plume.a) * (1.0 - result.a));
 <% (if planet-point %>
       if (object_distance <= min_distance && result.a <= 1.0 - opacity_cutoff) {
@@ -75,7 +73,7 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
         vec4 cloud_scatter = cloud_outer(origin + direction * object_distance, direction);
 <% ) %>
 <% (if (not model-point) %>
-        cloud_scatter.rgb = cloud_scatter.rgb * transmittance + cloud_scatter.a * in_scatter;
+        cloud_scatter.rgb = attenuate_segment(light_direction, origin, direction, atmosphere, cloud_scatter);
         result = vec4(result.rgb + cloud_scatter.rgb * (1.0 - result.a), 1.0 - (1.0 - cloud_scatter.a) * (1.0 - result.a));
 <% ) %>
 <% (if planet-point %>
