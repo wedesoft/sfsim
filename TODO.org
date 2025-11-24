@@ -40,32 +40,19 @@
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
-  - [X] integrate control surface scaling
-  - [X] thrust graphics, opengl rocket plume
-    - [X] deteriorating series of mach diamonds
-    - [X] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
-    - [X] expanding plume with decreasing atmospheric pressure
-    - [X] increasingly round shape of plume
-    - [X] plume shape around aerospike
-    - [X] effects of thrust vectoring
-  - [X] set all static plume config values when initialising shader programs
-  - [X] integration test plume shader
-  - [ ] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]]
-    - [ ] cloud-outer and cloud-point (cloud-segment) should accept near and optional far limit
-    - [ ] render plume and cloud segments in separate passes
-    - [ ] render plume box with cull front
-    - [ ] -> render opacity -> opacity cascade
-    - [ ] -> render shadows -> shadow cascade
-    - [ ] -> render object shadow
-    - [ ] -> render space craft -> colors
-    - [ ] opacity cascade, shadow cascade -> render object -> object stencil, object depth map, object colours
-    - [ ] opacity cascade, shadow cascade, object stencil -> render planet -> planet depth map, planet colours, object stencil?
-    - [ ] planet depth map, object stencil -> render clouds farther than object -> cloud overlay
-    - [ ] object depth map, cloud overlay -> render rcs thruster, render plume, ... -> cloud overlay
-    - [ ] planet depth map, cloud overlay -> render clouds nearer than object -> cloud overlay
-    - [ ] object stencil, planet depth map -> render atmosphere -> atmosphere
-    - [ ] atmosphere, planet colours, object colours, object stencil -> final rendering
+  - [ ] cloud-outer and cloud-point (cloud-segment) should accept near and optional far limit
+  - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
+        also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
+    - [X] as before render opacity and shadow cascade and object shadows
+    - [ ] render opaque objects (scenes, planet, atmosphere) creating point and normal relative to camera, and color texture, with atmosphere in front
+    - [ ] render low-res cloud and plume volume (with atmospheric contribution
+      - [ ] pass 1: render low-res depth buffer or point texture
+      - [ ] pass 2: render foreground cloud segment in front of object clipping using low-res depth information
+      - [ ] pass 3: render engine plume and RCS plumes in correct order using downsampled depth buffer (nearest) using backfaces of bounding shapes
+      - [ ] pass 4: render far clouds (with atmospheric contribution)
+    - [ ] final: render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
   - [ ] cloud segment with full attenuation?, attenuation segment for plume (render front to back with cutoff)
+  - [ ] use #version 450 (OpenGL 4.5)?
   - [ ] limit time step to avoid physics problems
   - [ ] Thrust vectoring:
         If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
