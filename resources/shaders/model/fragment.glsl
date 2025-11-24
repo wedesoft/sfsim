@@ -32,7 +32,7 @@ out vec4 fragColor;
 
 vec3 overall_shading(vec3 world_point<%= (apply str (map #(str ", vec4 object_shadow_pos_" (inc ^long %)) (range num-scene-shadows))) %>);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
-vec3 attenuation_point(vec3 point, vec3 incoming);
+vec4 attenuation_point(vec3 point, vec4 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point);
 
@@ -50,7 +50,7 @@ void main()
   vec3 diffuse_color = texture(colors, fs_in.texcoord).rgb;
 <% ) %>
   vec3 incoming = phong(ambient_light, light, fs_in.world_point, normal, diffuse_color, 0.0);
-  incoming = attenuation_point(fs_in.world_point, incoming);
+  incoming = attenuation_point(fs_in.world_point, vec4(incoming, 1.0)).rgb;
   vec3 direction = normalize(fs_in.world_point - origin);  // TODO: get more accurate direction
   vec3 object_direction = normalize(fs_in.vertex - object_origin);
   vec4 cloud_scatter = cloud_plume_point(origin, direction, object_origin, object_direction, fs_in.vertex);

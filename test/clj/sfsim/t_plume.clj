@@ -197,11 +197,11 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
   return vec3(0, 0, 0);
 }
-vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec4 incoming)
+vec4 attenuate(vec3 light_direction, vec3 start, vec3 point, vec4 incoming)
 {
   vec3 transmittance = transmittance_track(start, point);
   vec3 in_scatter = ray_scatter_track(light_direction, start, point);
-  return incoming.rgb * transmittance + in_scatter * incoming.a;
+  return vec4(incoming.rgb * transmittance + in_scatter * incoming.a, incoming.a);
 }
 vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
 {

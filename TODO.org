@@ -34,7 +34,10 @@
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
-  - [ ] cloud-outer and cloud-point (cloud-segment) should accept near and optional far limit
+  - [ ] replace attenuate_segment with attenuation_track using vec2 segment variable
+  - [ ] cloud-outer (cloud-point) should accept near (and far) limit and combine full attenuation given atmosphere segment
+  - [ ] combined attenuation (atmosphere segment and world coordinates) and plume function (object coordinates, near and far limit?)
+  - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
         also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
     - [X] as before render opacity and shadow cascade and object shadows
@@ -45,8 +48,6 @@
       - [ ] pass 3: render engine plume and RCS plumes in correct order using downsampled depth buffer (nearest) using backfaces of bounding shapes
       - [ ] pass 4: render far clouds (with atmospheric contribution)
     - [ ] final: render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
-  - [ ] attenuation segment for plume (render front to back with cutoff)
-  - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] use #version 450 (OpenGL 4.5)?
   - [ ] limit time step to avoid physics problems
   - [ ] Thrust vectoring:
