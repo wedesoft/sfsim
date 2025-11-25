@@ -8,11 +8,14 @@
   "Space flight simulator main program."
   (:gen-class)
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp sqrt pow)]
+    [clojure.java.io :as io]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp pow)]
     [clj-async-profiler.core :as prof]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
+    [malli.dev :as dev]
+    [malli.dev.pretty :as pretty]
     [fastmath.matrix :refer (inverse mulv mulm cols->mat)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize dot cross)]
     [sfsim.astro :as astro]
@@ -64,9 +67,8 @@
 ;; (require '[nrepl.server :refer [start-server stop-server]])
 ;; (defonce server (start-server :port 7888))
 
-;; (require '[malli.dev :as dev])
-;; (require '[malli.dev.pretty :as pretty])
-;; (dev/start! {:report (pretty/thrower)})
+; (when (.exists (io/file ".schemas"))
+;   (dev/start! {:report (pretty/thrower)}))
 
 ; Ensure floating point numbers use a dot as decimal separator
 (java.util.Locale/setDefault java.util.Locale/US)
@@ -102,7 +104,7 @@
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timeseconds position orientation camera-position camera-orientation dist gear wheel-angles suspension
-                             camera-dx camera-dy]}]
+                             camera-dx camera-dy throttle time_]}]
                     {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
@@ -111,6 +113,8 @@
                                                          (:jmag camera-orientation) (:kmag camera-orientation))
                      :dist dist
                      :gear gear
+                     :time_ time_
+                     :throttle throttle
                      :wheel-angles wheel-angles
                      :suspension suspension
                      :camera-dx camera-dx
@@ -138,6 +142,7 @@
    :sfsim.planet/config config/planet-config
    :sfsim.opacity/data shadow-data
    :sfsim.clouds/data cloud-data
+   :sfsim.model/data config/model-config
    :sfsim.atmosphere/luts atmosphere-luts})
 
 
@@ -169,7 +174,7 @@
 
 (def scene-shadow-renderer
   (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
-                                    config/object-radius))
+                                    (:sfsim.model/object-radius config/model-config)))
 
 
 (def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
@@ -320,9 +325,10 @@
 
 (def vehicle (atom nil))
 
-(def current-time (+ (long (astro/now)) (/ 0.0 24.0) (/ 0.0 60.0 24.0)))
+; Start with fixed summer date for better illumination.
+(def current-time (- (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}) ^double astro/T0))
 
-(def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body}))
+(def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body :sfsim.physics/display-speed 0.0}))
 (physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
 (physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector (:orientation pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
 ; (physics/set-pose :sfsim.physics/orbit physics-state (:position pose) (:orientation pose))
@@ -647,6 +653,8 @@
 (def frame-index (atom 0))
 (def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
+(def throttle (atom 0.0))
+(def time_ (atom 0.0))
 
 
 (def gear (atom 1.0))
@@ -683,7 +691,6 @@
             aileron  (@state :sfsim.input/aileron)
             elevator (@state :sfsim.input/elevator)
             rudder   (@state :sfsim.input/rudder)
-            throttle (@state :sfsim.input/throttle)
             brake    (if (@state :sfsim.input/brake) 1.0 (if (@state :sfsim.input/parking-brake) 0.1 0.0))]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface jd-ut physics-state))
@@ -700,6 +707,8 @@
             (reset! camera-dy (:camera-dy frame))
             (reset! dist (:dist frame))
             (reset! gear (:gear frame))
+            (reset! time_ (:time_ frame))
+            (reset! throttle (:throttle frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
           (do
@@ -711,11 +720,14 @@
                       orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double elevator) (vec3 0 1 0)))
                       orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double rudder  ) (vec3 0 0 1)))
                       orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double aileron ) (vec3 1 0 0)))
-                      position      (add position (mult (q/rotate-vector orientation (vec3 1 0 0)) (* ^double dt 1000.0 ^double throttle)))]
+                      position      (add position (mult (q/rotate-vector orientation (vec3 1 0 0))
+                                                        (* ^double dt 1000.0 ^double (@state :sfsim.input/throttle))))]
                   (physics/set-pose :sfsim.physics/surface physics-state position orientation)
                   (physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector orientation (vec3 1 0 0)) speed)
                                      (vec3 0 0 0))))
               (do
+                (swap! time_ + dt)
+                (reset! throttle (@state :sfsim.input/throttle))
                 (if (@state :sfsim.input/air-brake)
                   (swap! air-brake + (* ^double dt 2.0))
                   (swap! air-brake - (* ^double dt 2.0)))
@@ -749,7 +761,7 @@
                                                               @air-brake)]
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state
                                        (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                                                        (vec3 (* ^double throttle ^double thrust) 0 0)))
+                                                        (vec3 (* ^double @throttle ^double thrust) 0 0)))
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/forces loads))
                     (physics/add-torque :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/moments loads))
                     (physics/update-state physics-state dt (physics/gravitation (vec3 0 0 0) earth-mass))))
@@ -774,6 +786,8 @@
                                :camera-dy @camera-dy
                                :dist @dist
                                :gear @gear
+                               :time_ @time_
+                               :throttle @throttle
                                :wheel-angles (if @vehicle
                                                [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
                                                 (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
@@ -788,24 +802,26 @@
             (swap! camera-dx + (* ^double dt ^double (@state :sfsim.input/camera-shift-x)))
             (swap! camera-dy + (* ^double dt ^double (@state :sfsim.input/camera-shift-y)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+              height             (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
+              pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
+              object-orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+              object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
               [origin camera-orientation] (if playback [@camera-position @camera-orientation]
                                             (get-camera-pose physics-state jd-ut dt state))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
+              model-vars         (model/make-model-vars @time_ pressure @throttle)
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
-                                                                 light-direction)
+                                                                 light-direction object-position object-orientation model-vars)
               scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
                                                                camera-orientation light-direction object-position
-                                                               config/object-radius)
+                                                               object-orientation config/model-config model-vars)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) opacity-base)
-              object-to-world    (transformation-matrix
-                                   (quaternion->matrix (physics/get-orientation :sfsim.physics/surface jd-ut physics-state))
-                                   object-position)
               wheels-scene       (if (= ^double @gear 1.0)
                                    (model/apply-transforms
                                      scene
@@ -844,17 +860,19 @@
                                    true
                                    (clear (vec3 0 0 0) 1.0)
                                    ;; Render clouds in front of planet
-                                   (planet/render-cloud-planet cloud-planet-renderer planet-render-vars shadow-vars
+                                   (planet/render-cloud-planet cloud-planet-renderer planet-render-vars model-vars shadow-vars
                                                                (planet/get-current-tree tile-tree))
                                    ;; Render clouds above the horizon
-                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars shadow-vars))]
+                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars model-vars
+                                                                   shadow-vars))]
           (onscreen-render window
                            (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
                                (clear (vec3 0 1 0) 1.0 0)
                                ;; Render model
                                (write-to-stencil-buffer)
-                               (model/render-scenes scene-renderer scene-render-vars shadow-vars [object-shadow] [moved-scene])
+                               (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
+                                                    [moved-scene])
                                (clear)  ; Only clear depth buffer
                                ;; Render planet with cloud overlay
                                (mask-with-stencil-buffer)
@@ -865,7 +883,8 @@
                              (do
                                (clear (vec3 0 1 0) 1.0)
                                ;; Render model
-                               (model/render-scenes scene-renderer planet-render-vars shadow-vars [object-shadow] [moved-scene])
+                               (model/render-scenes scene-renderer planet-render-vars model-vars shadow-vars [object-shadow]
+                                                    [moved-scene])
                                ;; Render planet with cloud overlay
                                (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
                                                      (planet/get-current-tree tile-tree))
@@ -876,7 +895,7 @@
                              (@menu gui @window-width @window-height))
                            (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                            (when (not playback)
-                             (stick gui aileron elevator rudder throttle)
+                             (stick gui aileron elevator rudder @throttle)
                              (info gui @window-height
                                    (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s%s%s"
                                            (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))

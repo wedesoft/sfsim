@@ -19,6 +19,7 @@
     [sfsim.image :refer (floats->image)]
     [sfsim.matrix :refer :all]
     [sfsim.model :refer :all :as model]
+    [sfsim.planet :as planet]
     [sfsim.quaternion :refer (->Quaternion) :as q]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
@@ -115,7 +116,7 @@
 
 
 (def vertex-cube
-  "#version 410 core
+  "#version 450 core
 uniform mat4 projection;
 uniform mat4 object_to_camera;
 in vec3 vertex;
@@ -132,7 +133,7 @@ void main()
 
 
 (def fragment-cube
-  "#version 410 core
+  "#version 450 core
 uniform vec3 light;
 uniform vec3 diffuse_color;
 in VS_OUT
@@ -240,7 +241,7 @@ void main()
 
 
 (def vertex-dice
-  "#version 410 core
+  "#version 450 core
 uniform mat4 projection;
 uniform mat4 object_to_camera;
 in vec3 vertex;
@@ -260,7 +261,7 @@ void main()
 
 
 (def fragment-dice
-  "#version 410 core
+  "#version 450 core
 uniform vec3 light;
 uniform sampler2D colors;
 in VS_OUT
@@ -308,7 +309,7 @@ void main()
 
 
 (def vertex-bricks
-  "#version 410 core
+  "#version 450 core
 uniform mat4 projection;
 uniform mat4 object_to_camera;
 in vec3 vertex;
@@ -330,7 +331,7 @@ void main()
 
 
 (def fragment-bricks
-  "#version 410 core
+  "#version 450 core
 uniform vec3 light;
 uniform sampler2D colors;
 uniform sampler2D normals;
@@ -573,19 +574,19 @@ void main()
 (def bump (read-gltf "test/clj/sfsim/fixtures/model/bump.gltf"))
 
 
-(def cloud-point-mock
-  "#version 410 core
+(def cloud-plume-point-mock
+  "#version 450 core
 uniform vec3 origin;
-vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
+uniform float object_distance;
+vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
-  float dist = distance(origin, point);
-  float transparency = exp(-dist / 10.0);
+  float transparency = exp(-object_distance / 10.0);
   return vec4(0.5, 0.5, 0.5, 1 - transparency);
 }")
 
 
 (def transmittance-point-mock
-  "#version 410 core
+  "#version 450 core
 uniform float transmittance;
 vec3 transmittance_point(vec3 point)
 {
@@ -594,7 +595,7 @@ vec3 transmittance_point(vec3 point)
 
 
 (def above-horizon-mock
-  "#version 410 core
+  "#version 450 core
 uniform int above;
 bool is_above_horizon(vec3 point, vec3 direction)
 {
@@ -603,7 +604,7 @@ bool is_above_horizon(vec3 point, vec3 direction)
 
 
 (def surface-radiance-mock
-  "#version 410 core
+  "#version 450 core
 uniform float ambient;
 vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 {
@@ -612,7 +613,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 
 
 (def planet-and-cloud-shadows-mock
-  "#version 410 core
+  "#version 450 core
 uniform float shadow;
 float planet_and_cloud_shadows(vec4 point)
 {
@@ -621,7 +622,7 @@ float planet_and_cloud_shadows(vec4 point)
 
 
 (def ray-sphere-mock
-  "#version 410 core
+  "#version 450 core
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
   return vec2(0, 10);
@@ -629,16 +630,16 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 
 
 (def attenuation-mock
-  "#version 410 core
+  "#version 450 core
 uniform float attenuation;
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
+vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)
 {
-  return incoming * attenuation;
+  return vec4(incoming.rgb * attenuation, incoming.a);
 }")
 
 
 (def model-shader-mocks
-  [cloud-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock
+  [cloud-plume-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock
    planet-and-cloud-shadows-mock ray-sphere-mock attenuation-mock shaders/phong
    (last atmosphere/attenuation-point) (last (clouds/environmental-shading 3))
    (last (clouds/overall-shading 3 []))])
@@ -649,6 +650,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
                                               (conj model-shader-mocks
                                                     (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                    {:textured textured :bump bump :num-scene-shadows 0})))
+                       planet/setup-static-plume-uniforms (fn [_program _model-data])
                        model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                            (use-program program)
                                                            (setup-scene-samplers program 0 0 textured bump)
@@ -669,7 +671,8 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
            (fact
              (offscreen-render 160 120
                                (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/scene-shadow-counts [0]}
-                                                       :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}}
+                                                       :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}
+                                                       :sfsim.model/data {:sfsim.model/object-radius 30.0}}
                                      renderer         (make-scene-renderer data)
                                      opengl-scene     (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-and-shadow-type) ?model)
                                      camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
@@ -717,14 +720,28 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
              pos2            (vec3 0 0 -20)
              pos3            (vec3 0 0 -100)
              orientation1    (q/rotation 0.0 (vec3 0 0 1))
+             orientation2    (q/rotation 0.5 (vec3 0 0 1))
+             orientation3    (q/rotation 0.0 (vec3 0 0 1))
              light-direction (vec3 1 0 0)
-             object-pos      (vec3 0 0 -100)
-             object-radius   10.0
-             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction object-pos object-radius)
-             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation1 light-direction object-pos object-radius)
-             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation1 light-direction object-pos object-radius)]
+             obj-pos         (vec3 0 0 -100)
+             obj-orient      (q/rotation 0.0 (vec3 0 0 1))
+             model-data      #:sfsim.model{:object-radius 10.0
+                                           :nozzle 2.7549
+                                           :min-limit 1.2
+                                           :max-slope 1.0
+                                           :omega-factor 0.2
+                                           :diamond-strength 0.4
+                                           :engine-step 0.2}
+             model-vars      {:sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
+             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient
+                                                     model-data model-vars)
+             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient
+                                                     model-data model-vars)
+             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient
+                                                     model-data model-vars)]
          (:sfsim.render/origin render-vars1) => pos1
          (:sfsim.render/camera-to-world render-vars1) => (eye 4)
+         (:sfsim.render/camera-to-world render-vars2) => (transformation-matrix (quaternion->matrix orientation2) (vec3 0 0 -20))
          (:sfsim.render/z-near render-vars1) => 90.0
          (:sfsim.render/z-far render-vars1) => 110.0
          (:sfsim.render/z-near render-vars2) => 70.0
@@ -760,7 +777,7 @@ vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float 
 
 
 (def vertex-torus
-  "#version 410 core
+  "#version 450 core
 uniform mat4 projection;
 uniform mat4 object_to_world;
 uniform mat4 object_to_camera;
@@ -781,7 +798,7 @@ void main()
 
 
 (def fragment-torus
-  "#version 410 core
+  "#version 450 core
 uniform sampler2DShadow shadow_map;
 uniform vec3 light_direction;
 uniform vec3 diffuse_color;
@@ -853,12 +870,12 @@ void main()
 
 
 (def model-shadow-mocks
-  "#version 410 core
+  "#version 450 core
 vec3 environmental_shading(vec3 point)
 {
   return vec3(1, 1, 1);
 }
-vec3 attenuation_point(vec3 point, vec3 incoming)
+vec4 attenuation_point(vec3 point, vec4 incoming)
 {
   return incoming;
 }
@@ -866,7 +883,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 {
   return vec3(0.2, 0.2, 0.2);
 }
-vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
+vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
   return vec4(0, 0, 0, 0);
 }")
@@ -890,6 +907,7 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
                                                                        {:textured textured
                                                                         :bump bump
                                                                         :num-scene-shadows num-scene-shadows})))
+                           planet/setup-static-plume-uniforms (fn [_program _model-data])
                            model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                                (use-program program)
                                                                (setup-scene-samplers program 0 0 textured bump)
@@ -902,7 +920,8 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
                                                                                 (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                                                (uniform-vector3 program "light_direction" (normalize (vec3 5 2 1))))]
                (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/scene-shadow-counts [0 1]}
-                                       :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}}
+                                       :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}
+                                       :sfsim.model/data {:sfsim.model/object-radius 30.0}}
                      renderer         (make-scene-renderer data)
                      shadow-size      256
                      object-radius    4.0
@@ -990,6 +1009,13 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
                                                  :sfsim.model/children []}}
                              "Node")
          => nil))
+
+
+(facts "Create model configuration"
+       (let [model-vars (model/make-model-vars 1234.0 0.5 0.8)]
+         (:sfsim.model/time model-vars) => 1234.0
+         (:sfsim.model/pressure model-vars) => 0.5
+         (:sfsim.model/throttle model-vars) => 0.8))
 
 
 (GLFW/glfwTerminate)

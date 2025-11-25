@@ -51,7 +51,7 @@
 
 
 (def vertex-passthrough
-  "#version 410 core
+"#version 450 core
 in vec3 point;
 void main()
 {
@@ -60,7 +60,7 @@ void main()
 
 
 (def fragment-blue
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 void main()
 {
@@ -95,7 +95,7 @@ void main()
 
 
 (def vertex-color
-  "#version 410 core
+  "#version 450 core
 in vec3 point;
 in vec2 uv;
 out vec3 color;
@@ -107,7 +107,7 @@ void main()
 
 
 (def fragment-color
-  "#version 410 core
+  "#version 450 core
 in vec3 color;
 out vec3 fragColor;
 void main()
@@ -144,7 +144,7 @@ void main()
 
 
 (def fragment-red
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 void main()
 {
@@ -186,7 +186,7 @@ void main()
 
 
 (def fragment-uniform-floats
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 uniform float red;
 uniform float green;
@@ -214,7 +214,7 @@ void main()
 
 
 (def fragment-uniform-ints
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 uniform int red;
 uniform int green;
@@ -242,7 +242,7 @@ void main()
 
 
 (def fragment-uniform-vector3
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 uniform vec3 color;
 void main()
@@ -266,7 +266,7 @@ void main()
 
 
 (def vertex-transform3
-  "#version 410 core
+  "#version 450 core
 in vec3 point;
 uniform mat3 world_to_camera;
 void main()
@@ -290,7 +290,7 @@ void main()
 
 
 (def vertex-transform4
-  "#version 410 core
+  "#version 450 core
 in vec3 point;
 uniform mat4 world_to_camera;
 void main()
@@ -314,7 +314,7 @@ void main()
 
 
 (def vertex-texture
-  "#version 410 core
+  "#version 450 core
 in vec3 point;
 in vec2 uv;
 out vec3 color;
@@ -327,7 +327,7 @@ void main()
 
 
 (def fragment-texture-1d
-  "#version 410 core
+  "#version 450 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler1D tex;
@@ -363,7 +363,7 @@ void main()
 
 
 (def fragment-texture-2d
-  "#version 410 core
+  "#version 450 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler2D tex;
@@ -391,7 +391,7 @@ void main()
 
 
 (def fragment-texture-array
-  "#version 410 core
+  "#version 450 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler2DArray tex;
@@ -483,7 +483,7 @@ void main()
 
 
 (def vertex-interpolate
-  "#version 410 core
+  "#version 450 core
 in vec3 point;
 out vec3 pos;
 void main()
@@ -494,7 +494,7 @@ void main()
 
 
 (def fragment-sample-shadow
-  "#version 410 core
+  "#version 450 core
 uniform sampler2DShadow shadow_map;
 in vec3 pos;
 out vec3 fragColor;
@@ -526,7 +526,7 @@ void main(void)
 
 
 (def fragment-texture-3d
-  "#version 410 core
+  "#version 450 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler3D tex;
@@ -564,7 +564,7 @@ void main()
 
 
 (def fragment-two-textures
-  "#version 410 core
+  "#version 450 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler2D tex1;
@@ -602,7 +602,7 @@ void main()
 
 
 (def control-uniform
-  "#version 410 core
+  "#version 450 core
 layout(vertices = 4) out;
 void main(void)
 {
@@ -619,7 +619,7 @@ void main(void)
 
 
 (def evaluation-mix
-  "#version 410 core
+  "#version 450 core
 layout(quads, equal_spacing, ccw) in;
 void main()
 {
@@ -630,7 +630,7 @@ void main()
 
 
 (def geometry-triangle
-  "#version 410 core
+  "#version 450 core
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
 void main(void)
@@ -661,7 +661,7 @@ void main(void)
 
 
 (def fragment-part1
-  "#version 410 core
+  "#version 450 core
 vec3 fun()
 {
   return vec3(0.0, 0.0, 1.0);
@@ -670,7 +670,7 @@ vec3 fun()
 
 
 (def fragment-part2
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 vec3 fun();
 void main()
@@ -709,7 +709,7 @@ void main()
 
 
 (def fragment-two-attachments
-  "#version 410 core
+  "#version 450 core
 layout (location = 0) out float output1;
 layout (location = 1) out float output2;
 void main()
@@ -762,7 +762,7 @@ void main()
 
 
 (def fragment-noop
-  "#version 410 core
+  "#version 450 core
 void main(void)
 {
 }")
@@ -786,7 +786,7 @@ void main(void)
 
 
 (def lod-texture-1d
-  "#version 410 core
+  "#version 450 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler1D tex;
@@ -825,7 +825,7 @@ void main()
 
 (def alpha-probe
   (template/fn [alpha]
-    "#version 410 core
+    "#version 450 core
 out vec4 fragColor;
 void main()
 {
@@ -877,7 +877,7 @@ void main()
 
 
 (def vertex-shadow
-  "#version 410 core
+  "#version 450 core
 uniform mat4 world_to_shadow_ndc;
 in vec3 point;
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
@@ -888,14 +888,14 @@ void main(void)
 
 
 (def fragment-shadow
-  "#version 410 core
+  "#version 450 core
 void main(void)
 {
 }")
 
 
 (def vertex-scene
-  "#version 410 core
+  "#version 450 core
 uniform mat4 projection;
 in vec3 point;
 out vec4 pos;
@@ -909,7 +909,7 @@ void main(void)
 
 
 (def fragment-scene
-  "#version 410 core
+  "#version 450 core
 uniform sampler2DShadow shadow_map;
 uniform mat4 world_to_shadow_map;
 in vec4 pos;
@@ -968,7 +968,7 @@ void main(void)
 
 
 (def fragment-scene-cascade
-  "#version 410 core
+  "#version 450 core
 in vec4 pos;
 in float ambient;
 out vec4 fragColor;
@@ -1032,7 +1032,7 @@ void main(void)
 
 
 (def fragment-cubemap-attachment
-  "#version 410 core
+  "#version 450 core
 layout (location = 0) out float output1;
 layout (location = 1) out float output2;
 layout (location = 2) out float output3;
@@ -1079,26 +1079,31 @@ void main()
           (destroy-texture cubemap))))
 
 
-(fact "Render two quads with stencil test"
-      (offscreen-render 160 120
-                        (let [indices1  [0 1 3 2]
-                              vertices1 [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0]
-                              indices2  [0 1 3 2]
-                              vertices2 [-0.5 -0.5 0.3 0.0 1.0, 1.0 -0.5 0.3 0.0 1.0, -0.5 1.0 0.3 0.0 1.0, 1.0 1.0 0.3 0.0 1.0]
-                              program   (make-program :sfsim.render/vertex [vertex-color] :sfsim.render/fragment [fragment-color])
-                              vao1      (make-vertex-array-object program indices1 vertices1 ["point" 3 "uv" 2])
-                              vao2      (make-vertex-array-object program indices2 vertices2 ["point" 3 "uv" 2])]
-                          (with-stencils
-                            (clear (vec3 0.0 0.0 0.0) 1.0 0)
-                            (write-to-stencil-buffer)
-                            (use-program program)
-                            (render-quads vao1)
-                            (clear)
-                            (mask-with-stencil-buffer)
-                            (render-quads vao2)
-                            (destroy-vertex-array-object vao2)
-                            (destroy-vertex-array-object vao1)
-                            (destroy-program program)))) => (is-image "test/clj/sfsim/fixtures/render/stencil.png" 0.0))
+(tabular "Render two quads with positive or negative stencil test"
+         (fact
+           (offscreen-render
+             160 120
+             (let [indices1  [0 1 3 2]
+                   vertices1 [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0]
+                   indices2  [0 1 3 2]
+                   vertices2 [-0.5 -0.5 0.3 0.0 1.0, 1.0 -0.5 0.3 0.0 1.0, -0.5 1.0 0.3 0.0 1.0, 1.0 1.0 0.3 0.0 1.0]
+                   program   (make-program :sfsim.render/vertex [vertex-color] :sfsim.render/fragment [fragment-color])
+                   vao1      (make-vertex-array-object program indices1 vertices1 ["point" 3 "uv" 2])
+                   vao2      (make-vertex-array-object program indices2 vertices2 ["point" 3 "uv" 2])]
+               (with-stencils
+                 (clear (vec3 0.0 0.0 0.0) 1.0 0)
+                 (write-to-stencil-buffer)
+                 (use-program program)
+                 (render-quads vao1)
+                 (clear)
+                 (?method)
+                 (render-quads vao2)
+                 (destroy-vertex-array-object vao2)
+                 (destroy-vertex-array-object vao1)
+                 (destroy-program program)))) => (is-image (str "test/clj/sfsim/fixtures/render/" ?image) 0.0))
+         ?method                          ?image
+         mask-with-stencil-buffer         "stencil.png"
+         mask-with-negated-stencil-buffer "not-stencil.png")
 
 
 (fact "Render a quad with scissor test"
@@ -1125,12 +1130,16 @@ void main()
 (facts "Join z-ranges and projection matrices of two render variable hashmaps"
        (let [render-config {:sfsim.render/fov (to-radians 60.0)}
              origin        (vec3 1 2 3)
+             object-origin (vec3 4 0 0)
              orientation   (q/->Quaternion 1 0 0 0)
              light-dir     (vec3 0 0 1)
-             planet-vars   (make-render-vars render-config 320 240 origin orientation light-dir 1000.0 10000.0)
-             scene-vars    (make-render-vars render-config 320 240 origin orientation light-dir 10.0 100.0)
+             planet-vars   (make-render-vars render-config 320 240 origin orientation light-dir object-origin orientation
+                                             1000.0 10000.0 0.0 1.0)
+             scene-vars    (make-render-vars render-config 320 240 origin orientation light-dir object-origin orientation
+                                             10.0 100.0 0.0 1.0)
              joined-vars   (joined-render-vars planet-vars scene-vars)]
          (:sfsim.render/origin joined-vars) => origin
+         (:sfsim.render/object-origin planet-vars) => (vec3 -3 2 3)
          (:sfsim.render/window-width joined-vars) => 320
          (:sfsim.render/window-height joined-vars) => 240
          (:sfsim.render/origin joined-vars) => origin

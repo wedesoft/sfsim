@@ -9,6 +9,7 @@ recording.edn
 venturestar.glb
 .cache
 .clj-kondo/metosin
+.clj-kondo/imports
 .cpcache
 .eastwood
 .integration

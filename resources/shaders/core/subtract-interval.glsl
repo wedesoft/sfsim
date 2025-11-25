@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 
 vec2 subtract_interval(vec2 a, vec2 b)

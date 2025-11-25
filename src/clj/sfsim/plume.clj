@@ -8,7 +8,9 @@
     "Module with shader functions for plume rendering"
     (:require
       [comb.template :as template]
-      [sfsim.shaders :as shaders]))
+      [sfsim.shaders :as shaders]
+      [sfsim.atmosphere :as atmosphere]
+      [sfsim.bluenoise :refer (sampling-offset)]))
 
 
 (def plume-phase
@@ -34,10 +36,47 @@
 (defn diamond
   "Shader function for volumetric Mach diamonds"
   [fringe]
-  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])\
+  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
+
+
+(def plume-start -7.5047)
+(def plume-end -70.0)
+(def plume-width-2 7.4266)
+
+
+(defn plume-transfer
+  "Shader for computing engine plume light transfer at a point"
+  [fringe]
+  [plume-limit bulge (diamond fringe) shaders/noise3d shaders/sdf-circle shaders/sdf-rectangle
+   (template/eval (slurp "resources/shaders/plume/plume-transfer.glsl")
+                  {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
+
+
+(def plume-box
+  [shaders/ray-box plume-limit
+   (template/eval (slurp "resources/shaders/plume/plume-box.glsl")
+                  {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
+
+
+(def plume-fringe 0.05)
+
+
+(defn plume-segment
+  [outer]
+  [sampling-offset plume-box (plume-transfer plume-fringe)
+   (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer})])
+
+
+(def plume-point
+  (plume-segment false))
+
+
+(def plume-outer
+  (plume-segment true))
 
 
 (defn cloud-plume-segment
   "Shader function to compute cloud and plume RGBA values for segment around plume in space"
   [model-point planet-point]
-  [(template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])
+  [plume-point plume-outer atmosphere/attenuation-track
+   (template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])

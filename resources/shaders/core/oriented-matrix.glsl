@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 vec3 orthogonal_vector(vec3 n);
 
