@@ -236,6 +236,7 @@
   - [ ] limit timestep on startup to prevent numerical problems
   - [ ] add keyboard mapping help page!
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
+  - [ ] configurable key controls
   - [ ] joystick hat to control camera
   - [ ] limit dt or pause
   - [ ] shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
