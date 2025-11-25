@@ -49,19 +49,18 @@
       - [ ] pass 3: render engine plume and RCS plumes in correct order using downsampled depth buffer (nearest) using backfaces of bounding shapes
       - [ ] pass 4: render far clouds (with atmospheric contribution)
     - [ ] final: render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
-  - [ ] use #version 450 (OpenGL 4.5)?
-  - [ ] limit time step to avoid physics problems
+  - [ ] implement RCS thrusters
+  - [X] use #version 450 (OpenGL 4.5)?
   - [ ] Thrust vectoring:
         If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
         A combination of pitch and roll can produce whatever attitude control you need. source
         [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
-  - [ ] implement RCS thrusters
   - [ ] animate control surfaces and air brake
-  - [ ] Nose wheel steering
+  - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
+  - [ ] limit time step to avoid physics problems
   - [ ] yaw stabilisation
   - [ ] kill rotation
-  - [ ] physics and animation of steering front wheel (apply difference of two animation time stamps)
   - [ ] display perihel aphel and time to, Check out poliastro and hapsira
   - [ ] block gear up when on the ground
   - [ ] Radar altitude
@@ -242,6 +241,7 @@
   - [ ] shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
   - [ ] add object radius to object?
   - [ ] fix planet tessellation tests
+  - [ ] use anisotropic mipmapping
   - [ ] integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
     - [ ] use multiplication of local shadow map and planet+cloud shadows?
   - [ ] improve performance of quaternions (see fastmath implementation)
