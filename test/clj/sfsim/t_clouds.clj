@@ -1089,7 +1089,7 @@ void main()
 
 
 (def cloud-point-probe
-  (template/fn [z selector]
+  (template/fn [z skip selector]
     "#version 450 core
 uniform vec3 origin;
 uniform float radius;
@@ -1110,11 +1110,13 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(start.z, cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_point(vec3 origin, vec3 direction, vec3 point);
+vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
 void main()
 {
   vec3 point = vec3(0, 0, <%= z %>);
-  vec4 result = cloud_point(origin, normalize(point - origin), point);
+  vec3 direction = normalize(point - origin);
+  vec2 segment = vec2(<%= skip %>, distance(point, origin));
+  vec4 result = cloud_point(origin, direction, segment);
   fragColor.r = result.<%= selector %>;
 }"))
 
@@ -1135,20 +1137,22 @@ void main()
 
 
 (tabular "Shader to compute pixel of cloud foreground overlay for planet"
-         (fact ((cloud-point-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
-         ?origin ?z ?depth ?selector ?result
-         11      10 100.0  "g"        0.0
-         11      10 100.0  "a"        0.0
-         12      10 100.0  "g"        1.0
-         12      10 100.0  "a"        1.0
-         12      10 100.0  "r"       12.0
-         14      10 100.0  "r"       13.0
-         13      10 100.0  "a"        1.0
-         13      10   1.5  "a"        0.5)
+         (fact ((cloud-point-test [?origin ?depth] [?z ?skip ?selector]) 0) => (roughly ?result 1e-6))
+         ?origin ?z ?skip ?depth ?selector ?result
+         11      10 0     100.0  "g"        0.0
+         11      10 0     100.0  "a"        0.0
+         12      10 0     100.0  "g"        1.0
+         12      10 0     100.0  "a"        1.0
+         12      10 0     100.0  "r"       12.0
+         14      10 0     100.0  "r"       13.0
+         13      10 0     100.0  "a"        1.0
+         13      10 0       1.5  "a"        0.5
+         12      10 1     100.0  "g"        0.0
+         12      10 1     100.0  "a"        0.0)
 
 
 (def cloud-outer-probe
-  (template/fn [dz selector]
+  (template/fn [dz skip selector]
     "#version 450 core
 uniform vec3 origin;
 out vec3 fragColor;
@@ -1182,11 +1186,11 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(start.z, cloud_scatter.g + cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_outer(vec3 origin, vec3 direction);
+vec4 cloud_outer(vec3 origin, vec3 direction, float skip);
 void main()
 {
   vec3 direction = vec3(0, 0, <%= dz %>);
-  vec4 result = cloud_outer(origin, direction);
+  vec4 result = cloud_outer(origin, direction, <%= skip %>);
   fragColor.r = result.<%= selector %>;
 }"))
 
@@ -1206,17 +1210,20 @@ void main()
 
 
 (tabular "Shader to compute pixel of cloud foreground overlay for atmosphere"
-         (fact ((cloud-outer-test [?z] [?dz ?selector]) 0) => (roughly ?result 1e-6))
-         ?z   ?dz ?selector ?result
-         14    1  "g"        0.0
-         14    1  "a"        0.0
-         11    1  "g"        1.0
-         11    1  "a"        1.0
-         11.5  1  "g"        0.5
-         11.5  1  "a"        0.5
-         13   -1  "g"        2.0
-         12   -1  "r"       12.0
-         15   -1  "r"       13.0)
+         (fact ((cloud-outer-test [?z] [?dz ?skip ?selector]) 0) => (roughly ?result 1e-6))
+         ?z   ?dz ?skip ?selector ?result
+         14    1  0     "g"        0.0
+         14    1  0     "a"        0.0
+         11    1  0     "g"        1.0
+         11    1  0     "a"        1.0
+         11.5  1  0     "g"        0.5
+         11.5  1  0     "a"        0.5
+         13   -1  0     "g"        2.0
+         12   -1  0     "r"       12.0
+         15   -1  0     "r"       13.0
+         11    1  3     "g"        0.0
+         11    1  3     "a"        0.0
+         15   -1  3     "r"       12.0)
 
 
 (def fragment-planet-clouds
@@ -1241,10 +1248,12 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(cloud_shell.y, 0, 0, 0.25);
 }
-vec4 cloud_point(vec3 origin, vec3 direction, vec3 point);
+vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
 void main()
 {
-  fragColor = cloud_point(origin, normalize(fs_in.point - origin), fs_in.point);
+  vec2 segment = vec2(0, distance(fs_in.point, origin));
+  vec3 direction = normalize(fs_in.point - origin);
+  fragColor = cloud_point(origin, direction, segment);
 }")
 
 
@@ -1272,10 +1281,10 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 {
   return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
 }
-vec4 cloud_outer(vec3 origin, vec3 direction);
+vec4 cloud_outer(vec3 origin, vec3 direction, float skip);
 void main()
 {
-  fragColor = cloud_outer(origin, normalize(fs_in.direction));
+  fragColor = cloud_outer(origin, normalize(fs_in.direction), 0.0);
 }")
 
 
