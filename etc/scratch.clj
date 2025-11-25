@@ -2,14 +2,14 @@
 (require '[sfsim.texture :refer :all])
 (require '[sfsim.image :refer :all])
 (require '[comb.template :as template])
-(require '[fastmath.vector :refer (vec3)])
+(require '[fastmath.vector :refer (vec2 vec3)])
 (import '[org.lwjgl.glfw GLFW])
 (import '[org.lwjgl.opengl GL GL30])
 
 (GLFW/glfwInit)
 
 (def big 256)
-(def small 32)
+(def small 128)
 (def rate (quot big small))
 
 (setup-window-hints true true)
@@ -147,6 +147,8 @@ uniform sampler2D color;
 uniform sampler2D fog;
 uniform sampler2D dist;
 uniform sampler2D dist_small;
+uniform float big;
+uniform float small;
 in vec2 fs_uv;
 out vec4 fragColor;
 void main()
@@ -154,25 +156,26 @@ void main()
   vec2 p = gl_FragCoord.xy;
   vec2 q = p / <%= rate %>;
   vec2 q0 = floor(q);
-  vec2 q1 = q0 + vec2(1.0);
+  vec2 q1 = ceil(q);
 
-  float d00 = texture(dist_small, q0 + vec2(0.5, 0.5)).r;
-  float d01 = texture(dist_small, q0 + vec2(1.5, 0.5)).r;
-  float d10 = texture(dist_small, q0 + vec2(0.5, 1.5)).r;
-  float d11 = texture(dist_small, q0 + vec2(1.5, 1.5)).r;
-  float d = texture(dist, p).r;
+  float d00 = texture(dist_small, (q0 + vec2(0.5, 0.5)) / small).r;
+  float d01 = texture(dist_small, (q0 + vec2(1.5, 0.5)) / small).r;
+  float d10 = texture(dist_small, (q0 + vec2(0.5, 1.5)) / small).r;
+  float d11 = texture(dist_small, (q0 + vec2(1.5, 1.5)) / small).r;
+  float d = texture(dist, p / big).r;
 
-  vec4 f00 = texture(fog, q0 + vec2(0.5, 0.5));
-  vec4 f01 = texture(fog, q0 + vec2(1.5, 0.5));
-  vec4 f10 = texture(fog, q0 + vec2(0.5, 1.5));
-  vec4 f11 = texture(fog, q0 + vec2(1.5, 1.5));
+  vec4 f00 = texture(fog, (q0 + vec2(0.5, 0.5)) / small);
+  vec4 f01 = texture(fog, (q0 + vec2(1.5, 0.5)) / small);
+  vec4 f10 = texture(fog, (q0 + vec2(0.5, 1.5)) / small);
+  vec4 f11 = texture(fog, (q0 + vec2(1.5, 1.5)) / small);
 
-  float w00 = abs(d - d00) < 0.1 ? (q1.x - q.x) * (q1.y - q.y) : 0.0;
-  float w01 = abs(d - d01) < 0.1 ? (q.x - q0.x) * (q1.y - q.y) : 0.0;
-  float w10 = abs(d - d10) < 0.1 ? (q1.x - q.x) * (q.y - q0.y) : 0.0;
-  float w11 = abs(d - d11) < 0.1 ? (q.x - q0.x) * (q.y - q0.y) : 0.0;
+  float w00 = exp(-(d - d00) * (d - d00) / 0.01) * (q1.x - q.x) * (q1.y - q.y);
+  float w01 = exp(-(d - d01) * (d - d01) / 0.01) * (q.x - q0.x) * (q1.y - q.y);
+  float w10 = exp(-(d - d10) * (d - d10) / 0.01) * (q1.x - q.x) * (q.y - q0.y);
+  float w11 = exp(-(d - d11) * (d - d11) / 0.01) * (q.x - q0.x) * (q.y - q0.y);
 
   vec4 fog_ = (f00 * w00 + f01 * w01 + f10 * w10 + f11 * w11) / (w00 + w01 + w10 + w11);
+  // fog_ = texture(fog, q / small);
 
   vec4 color_ = texture(color, fs_uv);
   fragColor = vec4(color_.rgb * (1.0 - fog_.a) + fog_.rgb * fog_.a, 1.0);
@@ -182,6 +185,8 @@ void main()
 
 (onscreen-render window
                  (use-program program-final)
+                 (uniform-float program-final "big" big)
+                 (uniform-float program-final "small" small)
                  (uniform-sampler program-final "color" 0)
                  (uniform-sampler program-final "fog" 1)
                  (uniform-sampler program-final "dist" 2)
