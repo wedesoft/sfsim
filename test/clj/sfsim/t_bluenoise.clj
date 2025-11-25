@@ -118,7 +118,7 @@
 
 
 (def fragment-noise
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 float sampling_offset();
 void main()

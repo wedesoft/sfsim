@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 vec4 attenuate(vec3 light_direction, vec3 start, vec3 point, vec4 incoming);
 

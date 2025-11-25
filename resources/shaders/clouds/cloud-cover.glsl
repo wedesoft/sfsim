@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform samplerCube cover;
 uniform int cover_size;

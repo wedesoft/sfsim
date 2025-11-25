@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 // Shrink sampling index to cover full NDC space
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x)

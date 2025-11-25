@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform mat4 shadow_ndc_to_world;
 uniform int shadow_size;

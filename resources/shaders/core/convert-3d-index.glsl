@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 // Convert 3D index to texture lookup coordinates with margin where the texture is clamped.
 vec3 convert_3d_index(vec3 idx, int size_z, int size_y, int size_x)

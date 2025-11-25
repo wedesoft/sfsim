@@ -116,7 +116,7 @@
 
 
 (def vertex-cube
-  "#version 410 core
+  "#version 450 core
 uniform mat4 projection;
 uniform mat4 object_to_camera;
 in vec3 vertex;
@@ -133,7 +133,7 @@ void main()
 
 
 (def fragment-cube
-  "#version 410 core
+  "#version 450 core
 uniform vec3 light;
 uniform vec3 diffuse_color;
 in VS_OUT
@@ -241,7 +241,7 @@ void main()
 
 
 (def vertex-dice
-  "#version 410 core
+  "#version 450 core
 uniform mat4 projection;
 uniform mat4 object_to_camera;
 in vec3 vertex;
@@ -261,7 +261,7 @@ void main()
 
 
 (def fragment-dice
-  "#version 410 core
+  "#version 450 core
 uniform vec3 light;
 uniform sampler2D colors;
 in VS_OUT
@@ -309,7 +309,7 @@ void main()
 
 
 (def vertex-bricks
-  "#version 410 core
+  "#version 450 core
 uniform mat4 projection;
 uniform mat4 object_to_camera;
 in vec3 vertex;
@@ -331,7 +331,7 @@ void main()
 
 
 (def fragment-bricks
-  "#version 410 core
+  "#version 450 core
 uniform vec3 light;
 uniform sampler2D colors;
 uniform sampler2D normals;
@@ -575,7 +575,7 @@ void main()
 
 
 (def cloud-plume-point-mock
-  "#version 410 core
+  "#version 450 core
 uniform vec3 origin;
 uniform float object_distance;
 vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point)
@@ -586,7 +586,7 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
 
 
 (def transmittance-point-mock
-  "#version 410 core
+  "#version 450 core
 uniform float transmittance;
 vec3 transmittance_point(vec3 point)
 {
@@ -595,7 +595,7 @@ vec3 transmittance_point(vec3 point)
 
 
 (def above-horizon-mock
-  "#version 410 core
+  "#version 450 core
 uniform int above;
 bool is_above_horizon(vec3 point, vec3 direction)
 {
@@ -604,7 +604,7 @@ bool is_above_horizon(vec3 point, vec3 direction)
 
 
 (def surface-radiance-mock
-  "#version 410 core
+  "#version 450 core
 uniform float ambient;
 vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 {
@@ -613,7 +613,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 
 
 (def planet-and-cloud-shadows-mock
-  "#version 410 core
+  "#version 450 core
 uniform float shadow;
 float planet_and_cloud_shadows(vec4 point)
 {
@@ -622,7 +622,7 @@ float planet_and_cloud_shadows(vec4 point)
 
 
 (def ray-sphere-mock
-  "#version 410 core
+  "#version 450 core
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
   return vec2(0, 10);
@@ -630,7 +630,7 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 
 
 (def attenuation-mock
-  "#version 410 core
+  "#version 450 core
 uniform float attenuation;
 vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)
 {
@@ -777,7 +777,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 
 
 (def vertex-torus
-  "#version 410 core
+  "#version 450 core
 uniform mat4 projection;
 uniform mat4 object_to_world;
 uniform mat4 object_to_camera;
@@ -798,7 +798,7 @@ void main()
 
 
 (def fragment-torus
-  "#version 410 core
+  "#version 450 core
 uniform sampler2DShadow shadow_map;
 uniform vec3 light_direction;
 uniform vec3 diffuse_color;
@@ -870,7 +870,7 @@ void main()
 
 
 (def model-shadow-mocks
-  "#version 410 core
+  "#version 450 core
 vec3 environmental_shading(vec3 point)
 {
   return vec3(1, 1, 1);

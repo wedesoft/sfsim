@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 float sun_angle_to_index(vec3 direction, vec3 light_direction)
 {

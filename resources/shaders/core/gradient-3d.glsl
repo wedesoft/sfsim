@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform float <%= epsilon %>;
 float <%= function-name %>(vec3 point);

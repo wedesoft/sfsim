@@ -41,7 +41,7 @@
 (def cloud-cover-tex (atom nil))
 
 (def vertex-shader
-"#version 410 core
+"#version 450 core
 in vec3 point;
 out VS_OUT
 {
@@ -54,7 +54,7 @@ void main()
 }")
 
 (def fragment-shader
-"#version 410 core
+"#version 450 core
 uniform samplerCube cubemap;
 uniform mat3 rotation;
 uniform float threshold;

@@ -254,7 +254,7 @@
             (clouds/destroy-cloud-data cloud-data)))))
 
 
-(def vertex-plume "#version 130
+(def vertex-plume "#version 450
 in vec3 point;
 void main()
 {
@@ -262,7 +262,7 @@ void main()
 }")
 
 
-(def fragment-plume "#version 130
+(def fragment-plume "#version 450
 uniform vec2 resolution;
 out vec4 fragColor;
 vec4 plume_outer(vec3 object_origin, vec3 object_direction);

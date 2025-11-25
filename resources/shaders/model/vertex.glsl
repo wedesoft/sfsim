@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform mat4 projection;
 uniform mat4 object_to_world;

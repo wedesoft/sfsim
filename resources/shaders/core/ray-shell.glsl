@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 

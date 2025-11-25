@@ -75,7 +75,7 @@
 
 
 (def fragment-white
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 void main()
 {
@@ -143,7 +143,7 @@ void main()
 
 (def texture-coordinates-probe
   (template/fn [selector]
-    "#version 410 core
+    "#version 450 core
 in GEO_OUT
 {
   vec2 colorcoord;
@@ -339,7 +339,7 @@ void main()
 
 (def surface-radiance-probe
   (template/fn [px py pz lx ly lz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 void main()
@@ -370,7 +370,7 @@ void main()
 
 
 (def vertex-planet-probe
-  "#version 410 core
+  "#version 450 core
 in vec3 point;
 in vec2 colorcoord;
 uniform float radius;
@@ -389,7 +389,7 @@ void main()
 
 
 (def fake-transmittance
-  "#version 410 core
+  "#version 450 core
 vec3 transmittance_track(vec3 p, vec3 q)
 {
   float dist = distance(p, q);
@@ -400,7 +400,7 @@ vec3 transmittance_track(vec3 p, vec3 q)
 
 
 (def fake-ray-scatter
-  "#version 410 core
+  "#version 450 core
 uniform vec3 scatter;
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
@@ -409,7 +409,7 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 
 
 (def fake-attenuation
-"#version 410 core
+"#version 450 core
 uniform float amplification;
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
@@ -422,7 +422,7 @@ vec4 attenuate(vec3 light_direction, vec3 start, vec3 point, vec4 incoming)
 
 
 (def opacity-lookup-mock
-  "#version 410 core
+  "#version 450 core
 float opacity_cascade_lookup(vec4 point)
 {
   return 1.0;
@@ -430,7 +430,7 @@ float opacity_cascade_lookup(vec4 point)
 
 
 (def sampling-offset-mock
-  "#version 410 core
+  "#version 450 core
 float sampling_offset()
 {
   return 0.5;
@@ -438,7 +438,7 @@ float sampling_offset()
 
 
 (def cloud-overlay-mock
-  "#version 410 core
+  "#version 450 core
 uniform float clouds;
 vec4 cloud_overlay()
 {
@@ -447,7 +447,7 @@ vec4 cloud_overlay()
 
 
 (def planet-and-cloud-shadows-mock
-  "#version 410 core
+  "#version 450 core
 uniform float shadow;
 float planet_and_cloud_shadows(vec4 point)
 {
@@ -456,7 +456,7 @@ float planet_and_cloud_shadows(vec4 point)
 
 
 (def land-noise-mock
-  "#version 410 core
+  "#version 450 core
 uniform float land_noise_value;
 float land_noise(vec3 point)
 {
@@ -599,7 +599,7 @@ float land_noise(vec3 point)
 
 
 (def fragment-white-tree
-  "#version 410 core
+  "#version 450 core
 in GEO_OUT
 {
   vec2 colorcoord;

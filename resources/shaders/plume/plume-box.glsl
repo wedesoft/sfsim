@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 #define START <%= plume-start %>
 #define END <%= plume-end %>

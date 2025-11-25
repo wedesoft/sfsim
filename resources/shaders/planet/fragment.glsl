@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform sampler2DArray day_night;
 uniform sampler2D normals;

@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform sampler2D bluenoise;
 uniform int noise_size;

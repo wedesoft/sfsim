@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 vec2 clip_interval(vec2 interval, vec2 clip)
 {

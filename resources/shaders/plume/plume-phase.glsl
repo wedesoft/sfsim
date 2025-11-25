@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform float nozzle;
 uniform float omega_factor;

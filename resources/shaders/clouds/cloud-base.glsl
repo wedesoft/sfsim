@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform float cover_multiplier;
 uniform float cloud_multiplier;

@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform int <%= shadow-size %>;
 uniform float shadow_bias;

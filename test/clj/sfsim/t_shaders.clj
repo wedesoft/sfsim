@@ -32,7 +32,7 @@
 
 (def ray-sphere-probe
   (template/fn [cx cy cz ox oy oz dx dy dz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 void main()
@@ -61,7 +61,7 @@ void main()
 
 (def ray-circle-probe
   (template/fn [cx cy ox oy dx dy]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec2 ray_circle(vec2 centre, float radius, vec2 origin, vec2 direction);
 void main()
@@ -87,7 +87,7 @@ void main()
 
 (def convert-1d-index-probe
   (template/fn [x]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float convert_1d_index(float idx, int size);
 void main()
@@ -109,7 +109,7 @@ void main()
 
 (def convert-2d-index-probe
   (template/fn [x y]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec2 convert_2d_index(vec2 idx, int size_y, int size_x);
 void main()
@@ -132,7 +132,7 @@ void main()
 
 (def convert-3d-index-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 convert_3d_index(vec3 idx, int size_z, int size_y, int size_x);
 void main()
@@ -155,7 +155,7 @@ void main()
 
 (def convert-cubemap-index-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 convert_cubemap_index(vec3 idx, int size);
 void main()
@@ -185,7 +185,7 @@ void main()
 
 (def convert-shadow-index-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec4 convert_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
@@ -212,7 +212,7 @@ void main()
 
 (def shrink-shadow-index-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
@@ -235,7 +235,7 @@ void main()
 
 (def grow-shadow-index-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec4 grow_shadow_index(vec4 idx, int size_y, int size_x);
 void main()
@@ -258,7 +258,7 @@ void main()
 
 (def shadow-lookup-probe
   (template/fn [lookup-depth]
-    "#version 410 core
+    "#version 450 core
 uniform sampler2DShadow shadows;
 out vec3 fragColor;
 float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
@@ -306,7 +306,7 @@ void main()
 
 
 (def shadow-lookup-mock
-  "#version 410 core
+  "#version 450 core
 uniform int selector;
 float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos)
 {
@@ -319,7 +319,7 @@ float shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos)
 
 (def shadow-cascade-lookup-probe
   (template/fn [z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float shadow_cascade_lookup(vec4 point);
 void main()
@@ -384,7 +384,7 @@ void main()
 
 (def percentage-closer-filtering-probe
   (template/fn [x]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float f(float scale, vec4 point)
 {
@@ -416,7 +416,7 @@ void main()
 
 (def make-2d-index-from-4d-probe
   (template/fn [x y z w selector]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec4 make_2d_index_from_4d(vec4 idx, int size_w, int size_z, int size_y, int size_x);
 void main()
@@ -446,7 +446,7 @@ void main()
 
 (def interpolate-2d-probe
   (template/fn [x y]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 uniform sampler2D table;
 vec3 interpolate_2d(sampler2D table, int size_y, int size_x, vec2 idx);
@@ -493,7 +493,7 @@ void main()
 
 (def interpolate-3d-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 uniform sampler3D table;
 float interpolate_3d(sampler3D table, int size_z, int size_y, int size_x, vec3 idx);
@@ -542,7 +542,7 @@ void main()
 
 (def interpolate-cubemap-probe
   (template/fn [method selector x y z]
-    "#version 410 core
+    "#version 450 core
 uniform samplerCube cube;
 out vec3 fragColor;
 float interpolate_float_cubemap(samplerCube cube, int size, vec3 idx);
@@ -593,7 +593,7 @@ void main()
 
 (def interpolate-4d-probe
   (template/fn [x y z w]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 uniform sampler2D table;
 vec4 interpolate_4d(sampler2D table, int size_w, int size_z, int size_y, int size_x, vec4 idx);
@@ -641,7 +641,7 @@ void main()
 
 (def ray-box-probe
   (template/fn [ax ay az bx by bz ox oy oz dx dy dz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 void main()
@@ -671,7 +671,7 @@ void main()
 
 (def lookup-3d-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float lookup_3d(vec3 point);
 void main()
@@ -718,7 +718,7 @@ void main()
 
 (def lookup-3d-lod-probe
   (template/fn [x y z lod]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float lookup_3d_lod(vec3 point, float lod);
 void main()
@@ -768,7 +768,7 @@ void main()
 
 (def ray-shell-probe
   (template/fn [cx cy cz radius1 radius2 ox oy oz dx dy dz selector]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction);
 void main()
@@ -801,7 +801,7 @@ void main()
 
 (def clip-interval-probe
   (template/fn [x l cx cl]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 vec2 clip_interval(vec2 interval, vec2 clip);
 void main()
@@ -824,7 +824,7 @@ void main()
 
 (def clip-shell-intersections-probe
   (template/fn [a b c d ca cb selector]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec4 clip_shell_intersections(vec4 intersections, vec2 clip);
 void main()
@@ -853,7 +853,7 @@ void main()
 
 (def height-to-index-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float height_to_index(vec3 point);
 void main()
@@ -882,7 +882,7 @@ void main()
 
 (def sun-elevation-to-index-probe
   (template/fn [x y z dx dy dz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float sun_elevation_to_index(vec3 point, vec3 light_direction);
 void main()
@@ -911,7 +911,7 @@ void main()
 
 (def sun-angle-to-index-probe
   (template/fn [dx dy dz lx ly lz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float sun_angle_to_index(vec3 direction, vec3 light_direction);
 void main()
@@ -939,7 +939,7 @@ void main()
 
 (def elevation-to-index-probe
   (template/fn [x y z dx dy dz above-horizon]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float elevation_to_index(vec3 point, vec3 direction, bool above_horizon);
 void main()
@@ -977,7 +977,7 @@ void main()
 
 (def transmittance-forward-probe
   (template/fn [x y z dx dy dz above]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec2 transmittance_forward(vec3 point, vec3 direction, bool above_horizon);
 void main()
@@ -1008,7 +1008,7 @@ void main()
 
 (def surface-radiance-forward-probe
   (template/fn [x y z lx ly lz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec2 surface_radiance_forward(vec3 point, vec3 light_direction);
 void main()
@@ -1041,7 +1041,7 @@ void main()
 
 (def ray-scatter-forward-probe
   (template/fn [x y z dx dy dz lx ly lz above selector]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec4 ray_scatter_forward(vec3 point, vec3 direction, vec3 light_direction, bool above_horizon);
 void main()
@@ -1081,7 +1081,7 @@ void main()
 
 (def noise-octaves-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float octaves(vec3 idx);
 float noise(vec3 idx)
@@ -1112,7 +1112,7 @@ void main()
 
 (def noise-octaves-lod-probe
   (template/fn [x y z lod]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float octaves(vec3 idx, float lod);
 float noise(vec3 idx, float lod)
@@ -1148,7 +1148,7 @@ void main()
 
 
 (def fragment-cubemap-vectors
-  "#version 410 core
+  "#version 450 core
 layout (location = 0) out vec3 output1;
 layout (location = 1) out vec3 output2;
 layout (location = 2) out vec3 output3;
@@ -1175,7 +1175,7 @@ void main()
 
 (def face-vector-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 uniform samplerCube cubemap;
 out vec3 fragColor;
 vec3 convert_cubemap_index(vec3 idx, int size);
@@ -1231,7 +1231,7 @@ void main()
 
 (def gradient-3d-probe
   (template/fn [x y z c dx dy dz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float f(vec3 point)
 {
@@ -1262,7 +1262,7 @@ void main()
 
 (def orthogonal-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 orthogonal_vector(vec3 n);
 void main()
@@ -1289,7 +1289,7 @@ void main()
 
 (def oriented-matrix-probe
   (template/fn [x y z]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 mat3 oriented_matrix(vec3 n);
 void main()
@@ -1311,7 +1311,7 @@ void main()
 
 (def project-vector-probe
   (template/fn [nx ny nz x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 project_vector(vec3 n, vec3 v);
 void main()
@@ -1334,7 +1334,7 @@ void main()
 
 (def rotate-vector-probe
   (template/fn [ax ay az x y z angle]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 rotate_vector(vec3 axis, vec3 v, float cos_angle, float sin_angle);
 void main()
@@ -1363,7 +1363,7 @@ void main()
 
 (def rotation-matrix-probe
   (template/fn [x y z axis angle]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 mat3 rotation_<%= axis %>(float angle);
 void main()
@@ -1390,7 +1390,7 @@ void main()
 
 (def scale-noise-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float noise(vec3 point)
 {
@@ -1419,7 +1419,7 @@ void main()
 
 (def remap-probe
   (template/fn [value original-min original-max new-min new-max]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
 void main()
@@ -1445,7 +1445,7 @@ void main()
 
 (def phong-probe
   (template/fn [ambient light color reflectivity]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 void main()
@@ -1489,7 +1489,7 @@ void main()
 
 (def sdf-circle-probe
   (template/fn [x y cx cy radius]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float sdf_circle(vec2 point, vec2 center, float radius);
 void main()
@@ -1518,7 +1518,7 @@ void main()
 
 (def sdf-rectangle-probe
   (template/fn [x y rectangle-min-x rectangle-min-y rectangle-max-x rectangle-max-y]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float sdf_rectangle(vec2 point, vec2 rectangle_min, vec2 rectangle_max);
 void main()
@@ -1546,7 +1546,7 @@ void main()
 
 (def hermite-interpolate-probe
   (template/fn [a b t]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float hermite_interpolate(float a, float b, float t);
 void main()
@@ -1569,7 +1569,7 @@ void main()
 
 (def interpolate-function-probe
   (template/fn [x y z]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float f(vec3 point)
 {
@@ -1602,7 +1602,7 @@ void main()
 
 (def hash3d-probe
   (template/fn [x y z]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float hash3d(vec3 p);
 void main()
@@ -1621,7 +1621,7 @@ void main()
 
 (def noise3d-probe
   (template/fn [x y z]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float noise3d(vec3 p);
 void main()
@@ -1639,7 +1639,7 @@ void main()
 
 (def subtract-interval-probe
   (template/fn [ax ay bx by]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 vec2 subtract_interval(vec2 a, vec2 b);
 void main()
