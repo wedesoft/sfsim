@@ -9,6 +9,7 @@
     (:require
       [comb.template :as template]
       [sfsim.shaders :as shaders]
+      [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]))
 
 
@@ -77,5 +78,5 @@
 (defn cloud-plume-segment
   "Shader function to compute cloud and plume RGBA values for segment around plume in space"
   [model-point planet-point]
-  [plume-point plume-outer
+  [plume-point plume-outer atmosphere/attenuation-track
    (template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])
