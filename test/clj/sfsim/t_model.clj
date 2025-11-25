@@ -632,9 +632,9 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 (def attenuation-mock
   "#version 410 core
 uniform float attenuation;
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
+vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)
 {
-  return incoming * attenuation;
+  return vec4(incoming.rgb * attenuation, incoming.a);
 }")
 
 
@@ -875,7 +875,7 @@ vec3 environmental_shading(vec3 point)
 {
   return vec3(1, 1, 1);
 }
-vec3 attenuation_point(vec3 point, vec3 incoming)
+vec4 attenuation_point(vec3 point, vec4 incoming)
 {
   return incoming;
 }

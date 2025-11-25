@@ -7,14 +7,8 @@
     float distortion1 = max(0.0, 5.0 * point.y * point.z * (slider1 - 0.5));
     float distortion2 = max(0.0, 5.0 * point.y * (slider2 - 0.5));
     float sdf = mix(baseSdf, shapeMix, mix(engine_pos, 1.0, transition)) + distortion1 + distortion2;
-  - Note taken on [2025-08-28 Do 12:50] \\
-    No, the shock diamonds in a series are not the same size; they decrease in both size and intensity further down the exhaust plume.
-    This happens as the supersonic exhaust jet dissipates energy and gradually adjusts its pressure to match the surrounding atmospheric pressure.
   - Note taken on [2025-08-26 Di 21:59] \\
-    - [[https://github.com/wedesoft/sfsim/issues/135]]
-    - [[https://en.wikipedia.org/wiki/Shock_diamond][shock diamond position formula]]
     - [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
-    - [[https://www.quora.com/On-some-of-the-starship-launches-it-seems-to-have-shock-diamonds-and-shock-diamonds-mean-over-expansion-Is-this-bad-Why-or-why-not][mach diamonds diagram]]
   - Note taken on [2025-08-26 Tue 09:21] \\
     - Links by Substantial_Marzipan about linear aerospike:
       - https://aerospaceweb.org/design/aerospike/aerospike.shtml
@@ -40,28 +34,23 @@
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
-  - [X] integrate control surface scaling
-  - [X] thrust graphics, opengl rocket plume
-    - [X] deteriorating series of mach diamonds
-    - [X] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
-    - [X] expanding plume with decreasing atmospheric pressure
-    - [X] increasingly round shape of plume
-    - [X] plume shape around aerospike
-    - [X] effects of thrust vectoring
-  - [X] set all static plume config values when initialising shader programs
-  - [X] integration test plume shader
-  - [ ] use deferred rendering
-    - [ ] -> render opacity -> opacity cascade
-    - [ ] -> render shadows -> shadow cascade
-    - [ ] -> render object shadow
-    - [ ] -> render space craft -> colors
-    - [ ] opacity cascade, shadow cascade -> render object -> object stencil, object depth map, object colours
-    - [ ] opacity cascade, shadow cascade, object stencil -> render planet -> planet depth map, planet colours, object stencil?
-    - [ ] planet depth map, object stencil -> render clouds farther than object -> cloud overlay
-    - [ ] object depth map, cloud overlay -> render rcs thruster, render plume, ... -> cloud overlay
-    - [ ] planet depth map, cloud overlay -> render clouds nearer than object -> cloud overlay
-    - [ ] object stencil, planet depth map -> render atmosphere -> atmosphere
-    - [ ] atmosphere, planet colours, object colours, object stencil -> final rendering
+  - [X] replace attenuate_segment with attenuation_track using vec2 segment variable
+  - [ ] cloud-outer (cloud-point) should accept near (and far) limit and combine full attenuation given atmosphere segment
+  - [ ] attenuation_track for segment.y <= 0 needs to be tested
+  - [ ] combined attenuation (atmosphere segment and world coordinates) and plume function (object coordinates, near and far limit?)
+  - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
+  - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
+        also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
+    - [X] as before render opacity and shadow cascade and object shadows
+    - [ ] render opaque objects (scenes, planet, atmosphere) creating distance and color texture with atmosphere in front
+    - [ ] render low-res cloud and plume volume (with atmospheric contribution) create distance, and rgba with atmosphere
+      - [ ] pass 1: render low-res distance and point texture (relative to camera): planet, scene, atmosphere
+      - [ ] pass 2: render foreground cloud segment in front of object clipping using low-res depth information
+      - [ ] pass 3: render engine plume and RCS plumes in correct order using downsampled depth buffer (nearest) using backfaces of bounding shapes
+      - [ ] pass 4: render far clouds (with atmospheric contribution)
+    - [ ] final: render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
+  - [ ] use #version 450 (OpenGL 4.5)?
+  - [ ] limit time step to avoid physics problems
   - [ ] Thrust vectoring:
         If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
         A combination of pitch and roll can produce whatever attitude control you need. source

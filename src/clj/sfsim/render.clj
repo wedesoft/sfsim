@@ -86,7 +86,16 @@
   []
   `(do
      (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
-     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_KEEP)
+     (GL11/glStencilMask 0)))
+
+
+(definline mask-with-negated-stencil-buffer
+  "Only render where stencil buffer is set"
+  []
+  `(do
+     (GL11/glStencilFunc GL12/GL_EQUAL 1 0xff)
+     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_KEEP)
      (GL11/glStencilMask 0)))
 
 

@@ -51,7 +51,7 @@
 
 
 (def vertex-passthrough
-  "#version 410 core
+"#version 410 core
 in vec3 point;
 void main()
 {
@@ -1079,26 +1079,31 @@ void main()
           (destroy-texture cubemap))))
 
 
-(fact "Render two quads with stencil test"
-      (offscreen-render 160 120
-                        (let [indices1  [0 1 3 2]
-                              vertices1 [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0]
-                              indices2  [0 1 3 2]
-                              vertices2 [-0.5 -0.5 0.3 0.0 1.0, 1.0 -0.5 0.3 0.0 1.0, -0.5 1.0 0.3 0.0 1.0, 1.0 1.0 0.3 0.0 1.0]
-                              program   (make-program :sfsim.render/vertex [vertex-color] :sfsim.render/fragment [fragment-color])
-                              vao1      (make-vertex-array-object program indices1 vertices1 ["point" 3 "uv" 2])
-                              vao2      (make-vertex-array-object program indices2 vertices2 ["point" 3 "uv" 2])]
-                          (with-stencils
-                            (clear (vec3 0.0 0.0 0.0) 1.0 0)
-                            (write-to-stencil-buffer)
-                            (use-program program)
-                            (render-quads vao1)
-                            (clear)
-                            (mask-with-stencil-buffer)
-                            (render-quads vao2)
-                            (destroy-vertex-array-object vao2)
-                            (destroy-vertex-array-object vao1)
-                            (destroy-program program)))) => (is-image "test/clj/sfsim/fixtures/render/stencil.png" 0.0))
+(tabular "Render two quads with positive or negative stencil test"
+         (fact
+           (offscreen-render
+             160 120
+             (let [indices1  [0 1 3 2]
+                   vertices1 [-1.0 -1.0 0.2 1.0 0.0, 0.5 -1.0 0.2 1.0 0.0, -1.0 0.5 0.2 1.0 0.0, 0.5 0.5 0.2 1.0 0.0]
+                   indices2  [0 1 3 2]
+                   vertices2 [-0.5 -0.5 0.3 0.0 1.0, 1.0 -0.5 0.3 0.0 1.0, -0.5 1.0 0.3 0.0 1.0, 1.0 1.0 0.3 0.0 1.0]
+                   program   (make-program :sfsim.render/vertex [vertex-color] :sfsim.render/fragment [fragment-color])
+                   vao1      (make-vertex-array-object program indices1 vertices1 ["point" 3 "uv" 2])
+                   vao2      (make-vertex-array-object program indices2 vertices2 ["point" 3 "uv" 2])]
+               (with-stencils
+                 (clear (vec3 0.0 0.0 0.0) 1.0 0)
+                 (write-to-stencil-buffer)
+                 (use-program program)
+                 (render-quads vao1)
+                 (clear)
+                 (?method)
+                 (render-quads vao2)
+                 (destroy-vertex-array-object vao2)
+                 (destroy-vertex-array-object vao1)
+                 (destroy-program program)))) => (is-image (str "test/clj/sfsim/fixtures/render/" ?image) 0.0))
+         ?method                          ?image
+         mask-with-stencil-buffer         "stencil.png"
+         mask-with-negated-stencil-buffer "not-stencil.png")
 
 
 (fact "Render a quad with scissor test"
