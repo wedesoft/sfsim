@@ -211,12 +211,13 @@
        (let [state    (make-initial-state)
              mappings (:sfsim.input/keyboard default-mappings)]
          ; Pause
-         (-> GLFW/GLFW_KEY_P mappings (simulator-key state GLFW/GLFW_PRESS 0))
-         (-> GLFW/GLFW_KEY_P mappings (simulator-key state GLFW/GLFW_RELEASE 0))
          (:sfsim.input/pause @state) => true
          (-> GLFW/GLFW_KEY_P mappings (simulator-key state GLFW/GLFW_PRESS 0))
          (-> GLFW/GLFW_KEY_P mappings (simulator-key state GLFW/GLFW_RELEASE 0))
          (:sfsim.input/pause @state) => false
+         (-> GLFW/GLFW_KEY_P mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_P mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/pause @state) => true
          ; Brakes
          (-> GLFW/GLFW_KEY_B mappings (simulator-key state GLFW/GLFW_PRESS 0))
          ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [true false]

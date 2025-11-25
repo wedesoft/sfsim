@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform sampler2D ray_scatter;
 uniform sampler2D mie_strength;

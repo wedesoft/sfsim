@@ -1,4 +1,4 @@
-#version 410
+#version 450
 
 uniform float radius;
 uniform float max_height;

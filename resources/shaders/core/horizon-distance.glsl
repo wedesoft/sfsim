@@ -1,4 +1,4 @@
-#version 410
+#version 450
 
 float horizon_distance(float ground_radius, float radius_sqr)
 {

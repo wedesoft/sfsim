@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform float linear_range;
 uniform float stepsize_factor;

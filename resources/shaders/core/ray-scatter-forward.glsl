@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 float height_to_index(vec3 point);
 float elevation_to_index(vec3 point, vec3 direction, bool above_horizon);

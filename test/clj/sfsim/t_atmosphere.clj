@@ -610,7 +610,7 @@
 
 (def transmittance-track-probe
   (template/fn [px py pz qx qy qz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 transmittance_track(vec3 p, vec3 q);
 void main()
@@ -642,7 +642,7 @@ void main()
 
 (def transmittance-outer-probe
   (template/fn [px py pz dx dy dz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 transmittance_outer(vec3 point, vec3 direction);
 void main()
@@ -674,7 +674,7 @@ void main()
 
 (def transmittance-point-probe
   (template/fn [px offset distance]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
@@ -745,7 +745,7 @@ void main()
 
 (def ray-scatter-track-probe
   (template/fn [px py pz qx qy qz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 void main()
@@ -782,10 +782,11 @@ void main()
 
 (def vertex-atmosphere-probe
   (template/fn [selector]
-    "#version 410 core
+    "#version 450 core
 in VS_OUT
 {
   vec3 direction;
+  vec3 object_direction;
 } fs_in;
 out vec3 fragColor;
 void main()
@@ -830,7 +831,7 @@ void main()
 
 (def cloud-overlay-mock
   (template/fn [alpha]
-    "#version 410 core
+    "#version 450 core
 vec4 cloud_overlay()
 {
   float brightness = <%= alpha %>;
@@ -903,7 +904,7 @@ vec4 cloud_overlay()
 
 (def phase-probe
   (template/fn [g mu]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float phase(float g, float mu);
 void main()
@@ -927,7 +928,7 @@ void main()
 
 
 (def fragment-overlay-lookup
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 vec4 cloud_overlay();
 void main()
@@ -961,23 +962,23 @@ void main()
 
 (def attenuation-point-probe
   (template/fn [x2 incoming attenuate]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, float a, float b, vec3 incoming)
+vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)
 {
-  return incoming * (1.0 - <%= attenuate %> * (b - a));
+  return vec4(incoming.rgb * (1.0 - <%= attenuate %> * max(segment.y, 0.0)), incoming.a);
 }
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
   return vec2(max(abs(origin.x) - radius, 0), min(2.0 * radius, radius - origin.x));
 }
-vec3 attenuation_point(vec3 point, vec3 incoming);
+vec4 attenuation_point(vec3 point, vec4 incoming);
 void main()
 {
   vec3 point = vec3(<%= x2 %>, 0, 0);
-  vec3 incoming = vec3(<%= incoming %>, <%= incoming %>, <%= incoming %>);
-  fragColor = attenuation_point(point, incoming);
+  vec4 incoming = vec4(<%= incoming %>, <%= incoming %>, <%= incoming %>, 1.0);
+  fragColor = attenuation_point(point, incoming).rgb;
 }"))
 
 

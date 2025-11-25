@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 float opacity_cascade_lookup(vec4 point);
 float shadow_cascade_lookup(vec4 point);
 

@@ -1,4 +1,6 @@
-(require '[sfsim.shaders :refer :all])
+(require '[clojure.math :refer (pow)]
+         '[sfsim.shaders :refer :all]
+         '[sfsim.plume :refer :all])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL GL11 GL15 GL20 GL30]
         '[org.lwjgl BufferUtils])
@@ -49,8 +51,7 @@ void main()
 ; parse first command line argument
 (def shadertoy-source (slurp (-> *command-line-args* first)))
 
-(def shader-functions [rotation-x rotation-y rotation-z noise3d ray-box sdf-circle sdf-rectangle ray-circle bulge subtract-interval
-                       (diamond 0.05)])
+(def shader-functions [rotation-x rotation-y rotation-z ray-box ray-circle subtract-interval (plume-segment false) (plume-segment true)])
 
 (def vertices
   (float-array [ 1.0  1.0 0.0
@@ -78,7 +79,7 @@ void main()
     (GL20/glShaderSource shader source)
     (GL20/glCompileShader shader)
     (when (zero? (GL20/glGetShaderi shader GL20/GL_COMPILE_STATUS))
-      (throw (Exception. (GL20/glGetShaderInfoLog shader 1024))))
+      (throw (Exception. (str (GL20/glGetShaderInfoLog shader 1024) "\n" source))))
     shader))
 
 (defn make-program [vertex-shader & fragment-shaders]
@@ -124,11 +125,15 @@ void main()
 (GL20/glUniform1f (GL20/glGetUniformLocation program "max_slope") 1.0)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "omega_factor") 0.2)
 (GL20/glUniform1f (GL20/glGetUniformLocation program "diamond_strength") 0.2)
+(GL20/glUniform1f (GL20/glGetUniformLocation program "pressure") 1.0)
+(GL20/glUniform1f (GL20/glGetUniformLocation program "throttle") 1.0)
+(GL20/glUniform1f (GL20/glGetUniformLocation program "engine_step") 0.2)
 
 (while (not (GLFW/glfwWindowShouldClose window))
-  (GL20/glUniform1f (GL20/glGetUniformLocation program "iTime") (GLFW/glfwGetTime))
+  (GL20/glUniform1f (GL20/glGetUniformLocation program "time") (GLFW/glfwGetTime))
   (when @mouse-button
-    (GL20/glUniform2f (GL20/glGetUniformLocation program "iMouse") (@mouse-pos 0) (@mouse-pos 1)))
+    (GL20/glUniform2f (GL20/glGetUniformLocation program "iMouse") (@mouse-pos 0) (@mouse-pos 1))
+    (GL20/glUniform1f (GL20/glGetUniformLocation program "pressure") (pow 0.001 (/ (@mouse-pos 1) height))))
   (GL11/glDrawElements GL11/GL_QUADS 4 GL11/GL_UNSIGNED_INT 0)
   (GLFW/glfwSwapBuffers window)
   (GLFW/glfwPollEvents))

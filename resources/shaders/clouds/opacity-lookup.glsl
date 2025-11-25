@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform float opacity_step;
 uniform int shadow_size;

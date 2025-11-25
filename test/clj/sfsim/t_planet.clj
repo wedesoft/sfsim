@@ -75,7 +75,7 @@
 
 
 (def fragment-white
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 void main()
 {
@@ -143,11 +143,12 @@ void main()
 
 (def texture-coordinates-probe
   (template/fn [selector]
-    "#version 410 core
+    "#version 450 core
 in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } frag_in;
 out vec3 fragColor;
 void main()
@@ -338,7 +339,7 @@ void main()
 
 (def surface-radiance-probe
   (template/fn [px py pz lx ly lz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 void main()
@@ -369,7 +370,7 @@ void main()
 
 
 (def vertex-planet-probe
-  "#version 410 core
+  "#version 450 core
 in vec3 point;
 in vec2 colorcoord;
 uniform float radius;
@@ -377,6 +378,7 @@ out GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } vs_out;
 void main()
 {
@@ -387,7 +389,7 @@ void main()
 
 
 (def fake-transmittance
-  "#version 410 core
+  "#version 450 core
 vec3 transmittance_track(vec3 p, vec3 q)
 {
   float dist = distance(p, q);
@@ -398,7 +400,7 @@ vec3 transmittance_track(vec3 p, vec3 q)
 
 
 (def fake-ray-scatter
-  "#version 410 core
+  "#version 450 core
 uniform vec3 scatter;
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
@@ -407,20 +409,20 @@ vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 
 
 (def fake-attenuation
-"#version 410 core
+"#version 450 core
 uniform float amplification;
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
-vec3 attenuate(vec3 light_direction, vec3 start, vec3 point, vec3 incoming)
+vec4 attenuate(vec3 light_direction, vec3 start, vec3 point, vec4 incoming)
 {
   vec3 transmittance = transmittance_track(start, point);
   vec3 in_scatter = ray_scatter_track(light_direction, start, point) * amplification;
-  return incoming * transmittance + in_scatter;
+  return vec4(incoming.rgb * transmittance + in_scatter * incoming.a, incoming.a);
 }")
 
 
 (def opacity-lookup-mock
-  "#version 410 core
+  "#version 450 core
 float opacity_cascade_lookup(vec4 point)
 {
   return 1.0;
@@ -428,7 +430,7 @@ float opacity_cascade_lookup(vec4 point)
 
 
 (def sampling-offset-mock
-  "#version 410 core
+  "#version 450 core
 float sampling_offset()
 {
   return 0.5;
@@ -436,7 +438,7 @@ float sampling_offset()
 
 
 (def cloud-overlay-mock
-  "#version 410 core
+  "#version 450 core
 uniform float clouds;
 vec4 cloud_overlay()
 {
@@ -445,7 +447,7 @@ vec4 cloud_overlay()
 
 
 (def planet-and-cloud-shadows-mock
-  "#version 410 core
+  "#version 450 core
 uniform float shadow;
 float planet_and_cloud_shadows(vec4 point)
 {
@@ -454,7 +456,7 @@ float planet_and_cloud_shadows(vec4 point)
 
 
 (def land-noise-mock
-  "#version 410 core
+  "#version 450 core
 uniform float land_noise_value;
 float land_noise(vec3 point)
 {
@@ -597,11 +599,12 @@ float land_noise(vec3 point)
 
 
 (def fragment-white-tree
-  "#version 410 core
+  "#version 450 core
 in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } fs_in;
 out vec3 fragColor;
 void main()
@@ -699,19 +702,21 @@ void main()
              render {:sfsim.render/fov 0.5 :sfsim.render/min-z-near 1.0}
              pos1   (vec3 (+ 1000 150) 0 0)
              pos2   (vec3 (+ 1000 75) 0 0)
+             opos   (vec3 0 0 0)
              o      (q/rotation 0.0 (vec3 0 0 1))
+             m-vars {:sfsim.model/object-radius 30.0 :sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
              light  (vec3 1 0 0)]
          (with-redefs [planet/render-depth render-depth-mock
                        matrix/quaternion->matrix (fn [orientation] (fact [orientation] orientation => o) :rotation-matrix)
-                       matrix/transformation-matrix (fn [rot pos] (fact rot => :rotation-matrix) (eye 4))
-                       matrix/projection-matrix (fn [w h near far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
-           (:sfsim.render/origin (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => pos1
-           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => (roughly 47.549 1e-3)
-           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos2 o light)) => 1.0
-           (:sfsim.render/z-far (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => 300.0
-           (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => (eye 4)
-           (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => (diagonal 1 2 3 4)
-           (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light)) => light)))
+                       matrix/transformation-matrix (fn [rot _pos] (fact rot => :rotation-matrix) (eye 4))
+                       matrix/projection-matrix (fn [w h _near _far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
+           (:sfsim.render/origin (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => pos1
+           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (roughly 47.549 1e-3)
+           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos2 o light opos o m-vars)) => 1.0
+           (:sfsim.render/z-far (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => 300.0
+           (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (eye 4)
+           (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (diagonal 1 2 3 4)
+           (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => light)))
 
 
 (GLFW/glfwTerminate)

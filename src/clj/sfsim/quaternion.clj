@@ -25,10 +25,6 @@
 (defrecord Quaternion
     [^double real ^double imag ^double jmag ^double kmag])
 
-(defn ->Quaternion
-  ^Quaternion [^double real ^double imag ^double jmag ^double kmag]
-  (Quaternion. real imag jmag kmag))
-
 
 (def fvec3 (mc/schema [:tuple :double :double :double]))
 (def quaternion (mc/schema [:map [:real :double] [:imag :double] [:jmag :double] [:kmag :double]]))
@@ -88,9 +84,7 @@
 (defn norm2
   "Compute square of norm of quaternion"
   ^double [^Quaternion q]
-  (c/+
-   (c/+ (sqr (.real q)) (sqr (.imag q)))
-   (c/+ (sqr (.jmag q)) (sqr (.kmag q)))))
+  (c/+ (sqr (.real q)) (sqr (.imag q)) (sqr (.jmag q)) (sqr (.kmag q))))
 
 
 (defn norm

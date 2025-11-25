@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 vec2 convert_2d_index(vec2 idx, int size_y, int size_x);
 

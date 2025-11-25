@@ -244,12 +244,12 @@
 
 
 (defn make-initial-state
-  "Create initial state of game and space craft"
+  "Create initial state of game and space craft."
   []
   (atom {::menu                   false
          ::focus                  0
          ::fullscreen             false
-         ::pause                  false
+         ::pause                  true
          ::brake                  false
          ::parking-brake          false
          ::gear-down              true

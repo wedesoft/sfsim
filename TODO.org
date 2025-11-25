@@ -1,14 +1,14 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
-  - Note taken on [2025-08-28 Do 12:50] \\
-    No, the shock diamonds in a series are not the same size; they decrease in both size and intensity further down the exhaust plume.
-    This happens as the supersonic exhaust jet dissipates energy and gradually adjusts its pressure to match the surrounding atmospheric pressure.
+  - Note taken on [2025-11-14 Fr 22:28] \\
+    float slider1 = iMouse.x / iResolution.x;
+    float slider2 = iMouse.y / iResolution.y;
+    float distortion1 = max(0.0, 5.0 * point.y * point.z * (slider1 - 0.5));
+    float distortion2 = max(0.0, 5.0 * point.y * (slider2 - 0.5));
+    float sdf = mix(baseSdf, shapeMix, mix(engine_pos, 1.0, transition)) + distortion1 + distortion2;
   - Note taken on [2025-08-26 Di 21:59] \\
-    - [[https://github.com/wedesoft/sfsim/issues/135]]
-    - [[https://en.wikipedia.org/wiki/Shock_diamond][shock diamond position formula]]
     - [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
-    - [[https://www.quora.com/On-some-of-the-starship-launches-it-seems-to-have-shock-diamonds-and-shock-diamonds-mean-over-expansion-Is-this-bad-Why-or-why-not][mach diamonds diagram]]
   - Note taken on [2025-08-26 Tue 09:21] \\
     - Links by Substantial_Marzipan about linear aerospike:
       - https://aerospaceweb.org/design/aerospike/aerospike.shtml
@@ -34,53 +34,33 @@
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
-  - [X] integrate control surface scaling
-  - [-] thrust graphics, opengl rocket plume
-    - [X] deteriorating series of mach diamonds
-    - [X] increasing mach diamond distance 0.67 * D0 * sqrt(P0/P1)
-    - [X] expanding plume with decreasing atmospheric pressure
-    - If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
-      A combination of pitch and roll can produce whatever attitude control you need. source
-      [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
-    - [X] increasingly round shape of plume
-    - [X] plume shape around aerospike
-    - [X] effects of thrust vectoring
-    - [-] shaders for
-      - [X] signed distance function rectangle
-      - [X] signed distance function circle
-      - [X] signed distance function engine exhaust
-      - [X] 3d noise
-      - [X] plume envelope
-      - [X] plume diamonds
-      - [X] clip cloud_plume_point with depth
-      - [X] implement cloud_plume_outer
-      - [X] refactor cloud_plume_outer
-      - [X] move plume shaders into plume module and add cloud_segment as dependency
-      - [X] generate cloud_point and cloud_outer from same code using boolean (optional end point)
-      - [X] generate cloud_plume_point, cloud_plume_cloud, and cloud_plume_cloud_point from same code using booleans
-      - [X] cloud_plume shader should take origin, direction, (and optionally end point), in object coordinates
-      - [ ] implement plume_point
-      - [X] atmospheric transmittance for clouds behind plume
-      - [ ] provide origin, direction and point in plume coordinates
-      - [ ] is "depth" initialised when rendering space ship or planet?
-      - [ ] use camera coordinates and convert to space ship coordinates (direction and point) for higher precision
-      - [ ] don't split sampling interval if there is no plume
-      - [ ] cloud functions refactor
-        - [ ] clip interval using other segment
-        - [ ] clip shell intersections using segment
-      - [ ] joined sampling of clouds and engine plume: replace cloud_point and cloud_outer with joint sampling of clouds and plume
-        - [ ] model rendering: uses cloud_point
-        - [ ] planet rendering: uses cloud overlay
-          - [ ] cloud overlay planet: cloud_point
-        - [ ] atmosphere rendering: uses cloud overlay
-          - [ ] cloud overlay atmosphere: cloud_outer
+  - [X] replace attenuate_segment with attenuation_track using vec2 segment variable
+  - [ ] cloud-outer (cloud-point) should accept near (and far) limit and combine full attenuation given atmosphere segment
+  - [ ] attenuation_track for segment.y <= 0 needs to be tested
+  - [ ] combined attenuation (atmosphere segment and world coordinates) and plume function (object coordinates, near and far limit?)
+  - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
+  - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
+        also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
+    - [X] as before render opacity and shadow cascade and object shadows
+    - [ ] render opaque objects (scenes, planet, atmosphere) creating distance and color texture with atmosphere in front
+    - [ ] render low-res cloud and plume volume (with atmospheric contribution) create distance, and rgba with atmosphere
+      - [ ] pass 1: render low-res distance and point texture (relative to camera): planet, scene, atmosphere
+      - [ ] pass 2: render foreground cloud segment in front of object clipping using low-res depth information
+      - [ ] pass 3: render engine plume and RCS plumes in correct order using downsampled depth buffer (nearest) using backfaces of bounding shapes
+      - [ ] pass 4: render far clouds (with atmospheric contribution)
+    - [ ] final: render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
   - [ ] implement RCS thrusters
-  - [ ] post on r/linux_gaming
+  - [X] use #version 450 (OpenGL 4.5)?
+  - [ ] Thrust vectoring:
+        If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
+        A combination of pitch and roll can produce whatever attitude control you need. source
+        [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
   - [ ] animate control surfaces and air brake
-  - [ ] Nose wheel steering
+  - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
+  - [ ] post on r/linux_gaming
+  - [ ] limit time step to avoid physics problems
   - [ ] yaw stabilisation
   - [ ] kill rotation
-  - [ ] physics and animation of steering front wheel (apply difference of two animation time stamps)
   - [ ] display perihel aphel and time to, Check out poliastro and hapsira
   - [ ] block gear up when on the ground
   - [ ] Radar altitude
@@ -108,6 +88,9 @@
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
 * TODO [#C] 3D cockpit                                               :interface:
+  - Note taken on [2025-11-19 Mi 19:49] \\
+    [[https://uxdesign.cc/how-i-recreated-crew-dragons-ui-15877eddf3ed]]
+    [[https://github.com/Neel-Dandiwala/SpaceX-Dragon2-UI?tab=readme-ov-file]]
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
 ** TODO update controls in background thread
 ** TODO ground slope warning
@@ -248,13 +231,17 @@
     * Voice over
     * Visual effects
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
+  - [ ] winter daytime is too dark, adjust range?
+  - [ ] limit timestep on startup to prevent numerical problems
   - [ ] add keyboard mapping help page!
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
+  - [ ] configurable key controls
   - [ ] joystick hat to control camera
   - [ ] limit dt or pause
   - [ ] shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
   - [ ] add object radius to object?
   - [ ] fix planet tessellation tests
+  - [ ] use anisotropic mipmapping
   - [ ] integrate object shadows into direct light shader and maybe make template function for shadows which can be composed,
     - [ ] use multiplication of local shadow map and planet+cloud shadows?
   - [ ] improve performance of quaternions (see fastmath implementation)
@@ -268,3 +255,4 @@
     - [ ] normal map baking in blender: swizzle R=+X, G=-Y, B=+Z
     - [ ] apply all modifiers
     - [ ] bake animation when exporting (use NLP track names)
+      - [ ] is "depth" initialised when rendering space ship or planet?

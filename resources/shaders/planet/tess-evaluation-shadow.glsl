@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 layout(quads, equal_spacing, ccw) in;
 
@@ -17,6 +17,7 @@ out TES_OUT
 {
   vec2 colorcoord;
   vec3 point;
+  vec3 object_point;
 } tes_out;
 
 vec4 shrink_shadow_index(vec4 idx, int size_y, int size_x);

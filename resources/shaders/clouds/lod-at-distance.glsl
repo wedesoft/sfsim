@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 float lod_at_distance(float dist, float lod_offset)
 {

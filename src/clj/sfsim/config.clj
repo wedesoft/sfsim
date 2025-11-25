@@ -30,7 +30,7 @@
 (def planet-config (immuconf/get config :sfsim.planet-config))
 (def cloud-config (immuconf/get config :sfsim.cloud-config))
 (def shadow-config (immuconf/get config :sfsim.shadow-config))
-(def object-radius (immuconf/get config :sfsim.object-radius))
+(def model-config (immuconf/get config :sfsim.model-config))
 
 
 (defn read-user-config

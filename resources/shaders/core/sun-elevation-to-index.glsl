@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 float sun_elevation_to_index(vec3 point, vec3 light_direction)
 {
