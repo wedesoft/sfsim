@@ -14,7 +14,7 @@ vec4 clip_shell_intersections(vec4 intersections, vec2 clip);
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter);
 
 <% (if outer %>
-vec4 cloud_outer(vec3 origin, vec3 direction)
+vec4 cloud_outer(vec3 origin, vec3 direction, float skip)
 <% %>
 vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
 <% ) %>
@@ -23,6 +23,11 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
 <% (if (not outer) %>
   float dist = distance(origin, point);
   atmosphere_intersection.y = min(dist - atmosphere_intersection.x, min(depth, atmosphere_intersection.y));
+<%  %>
+  if (atmosphere_intersection.x < skip) {
+    atmosphere_intersection.y += atmosphere_intersection.x - skip;
+    atmosphere_intersection.x = skip;
+  };
 <% ) %>
   vec3 start = origin + atmosphere_intersection.x * direction;
   vec4 cloud_scatter = vec4(0, 0, 0, 1);

@@ -169,9 +169,10 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
   float end = 3.0 - origin.x;
   return vec2(start, end - start);
 }
-vec4 cloud_outer(vec3 origin, vec3 direction)
+vec4 cloud_outer(vec3 origin, vec3 direction, float skip)
 {
-  vec2 segment = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
+  vec3 point = origin + direction * skip;
+  vec2 segment = ray_sphere(vec3(0, 0, 0), radius, point, direction);
   if (segment.t > 0) {
     float transmittance = pow(0.5, segment.t);
     return vec4(1.0 - transmittance, 0.0, 0.0, 1.0 - transmittance);
