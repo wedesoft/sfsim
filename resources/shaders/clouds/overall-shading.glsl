@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 <% (doseq [[method-name shadow-map] parameters] %>
 uniform sampler2DShadow <%= shadow-map %>;

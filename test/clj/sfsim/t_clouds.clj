@@ -37,7 +37,7 @@
 
 (def cloud-noise-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 uniform sampler3D worley;
 float cloud_octaves(vec3 idx, float lod)
@@ -87,7 +87,7 @@ void main()
 
 (def lod-at-distance-probe
   (template/fn [distance lod-offset]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float lod_at_distance(float dist, float lod_offset);
 void main()
@@ -113,7 +113,7 @@ void main()
 
 (def sampling-probe
   (template/fn [distance stepsize]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float update_stepsize(float dist, float stepsize);
 void main()
@@ -153,7 +153,7 @@ void main()
 
 
 (def ray-shell-mock
-  "#version 410 core
+  "#version 450 core
 uniform int num_shell_intersections;
 vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
 {
@@ -171,7 +171,7 @@ vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin,
 
 
 (def cloud-density-mock
-  "#version 410 core
+  "#version 450 core
 uniform float radius;
 uniform float density_start;
 uniform float cloud_multiplier;
@@ -251,7 +251,7 @@ float cloud_density(vec3 point, float lod)
 
 (def opacity-lookup-probe
   (template/fn [x y z depth]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 uniform sampler3D opacity_layers;
 float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords);
@@ -305,7 +305,7 @@ void main()
 
 
 (def opacity-lookup-mock
-  "#version 410 core
+  "#version 450 core
 uniform int select;
 float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords)
 {
@@ -318,7 +318,7 @@ float opacity_lookup(sampler3D layers, float depth, vec4 opacity_map_coords)
 
 (def opacity-cascade-lookup-probe
   (template/fn [z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float opacity_cascade_lookup(vec4 point);
 void main()
@@ -385,7 +385,7 @@ void main()
 
 (def cubemap-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 uniform samplerCube cubemap;
 out vec3 fragColor;
 vec3 convert_cubemap_index(vec3 idx, int size);
@@ -431,7 +431,7 @@ void main()
 
 
 (def curl-field-mock
-  "#version 410 core
+  "#version 450 core
 uniform float x;
 uniform float y;
 uniform float z;
@@ -499,7 +499,7 @@ vec3 curl_field_mock(vec3 point)
 
 
 (def lookup-mock
-  "#version 410 core
+  "#version 450 core
 uniform int selector;
 float lookup_mock(vec3 point)
 {
@@ -558,7 +558,7 @@ float lookup_mock(vec3 point)
 
 
 (def noise-mock
-  "#version 410 core
+  "#version 450 core
 uniform float dx;
 uniform float dy;
 uniform float dz;
@@ -570,7 +570,7 @@ float noise_mock(vec3 point)
 
 (def curl-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 curl(vec3 point);
 void main()
@@ -604,7 +604,7 @@ void main()
 
 (def flow-field-probe
   (template/fn [north south x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float octaves_north(vec3 idx)
 {
@@ -649,7 +649,7 @@ void main()
 
 
 (def cover-vertex
-  "#version 410 core
+  "#version 450 core
 in vec3 point;
 out VS_OUT
 {
@@ -664,7 +664,7 @@ void main()
 
 
 (def cover-fragment
-  "#version 410 core
+  "#version 450 core
 uniform samplerCube cubemap;
 uniform float threshold;
 uniform float multiplier;
@@ -740,7 +740,7 @@ void main()
 
 (def cloud-profile-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float cloud_profile(vec3 point);
 void main()
@@ -774,7 +774,7 @@ void main()
 
 (def sphere-noise-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float base_noise(vec3 point)
 {
@@ -809,7 +809,7 @@ void main()
 
 (def cloud-base-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float cloud_cover(vec3 point)
 {
@@ -858,7 +858,7 @@ void main()
 
 (def cloud-cover-probe
   (template/fn [x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float cloud_cover(vec3 idx);
 void main()
@@ -904,7 +904,7 @@ void main()
 
 (def cloud-density-probe
   (template/fn [lod x y z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float cloud_base(vec3 point)
 {
@@ -947,7 +947,7 @@ void main()
 
 (def cloud-transfer-probe
   (template/fn [red alpha density stepsize selector scatter]
-    "#version 410 core
+    "#version 450 core
 uniform float shadow;
 uniform float transmittance;
 uniform float atmosphere;
@@ -1027,7 +1027,7 @@ void main()
 
 (def sample-cloud-probe
   (template/fn [cloud-begin cloud-length density red alpha selector]
-    "#version 410 core
+    "#version 450 core
 vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter);
 out vec3 fragColor;
 float sampling_offset()
@@ -1090,7 +1090,7 @@ void main()
 
 (def cloud-point-probe
   (template/fn [z selector]
-    "#version 410 core
+    "#version 450 core
 uniform vec3 origin;
 uniform float radius;
 out vec3 fragColor;
@@ -1149,7 +1149,7 @@ void main()
 
 (def cloud-outer-probe
   (template/fn [dz selector]
-    "#version 410 core
+    "#version 450 core
 uniform vec3 origin;
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
@@ -1220,7 +1220,7 @@ void main()
 
 
 (def fragment-planet-clouds
-  "#version 410 core
+  "#version 450 core
 uniform vec3 origin;
 in GEO_OUT
 {
@@ -1249,7 +1249,7 @@ void main()
 
 
 (def fragment-atmosphere-clouds-mock
-  "#version 410 core
+  "#version 450 core
 uniform vec3 origin;
 in VS_OUT
 {
@@ -1351,7 +1351,7 @@ void main()
 
 
 (def opacity-cascade-mocks
-  "#version 410 core
+  "#version 450 core
 float cloud_density(vec3 point, float lod)
 {
   if (abs(point.x) < 0.5 && abs(point.y) < 0.5)
@@ -1362,7 +1362,7 @@ float cloud_density(vec3 point, float lod)
 
 
 (def vertex-render-opacity
-  "#version 410 core
+  "#version 450 core
 uniform mat4 projection;
 uniform mat4 world_to_camera;
 in vec3 point;
@@ -1375,7 +1375,7 @@ void main()
 
 
 (def fragment-render-opacity
-  "#version 410 core
+  "#version 450 core
 uniform mat4 world_to_camera;
 in vec4 pos;
 out vec4 fragColor;
@@ -1450,7 +1450,7 @@ void main()
 
 (def planet-and-cloud-shadows-probe
   (template/fn []
-    "#version 410 core
+    "#version 450 core
 uniform float opacity;
 uniform float shadow;
 out vec3 fragColor;
@@ -1498,7 +1498,7 @@ void main()
 
 (def environmental-shading-probe
   (template/fn [z]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 bool is_above_horizon(vec3 point, vec3 direction)
 {
@@ -1539,7 +1539,7 @@ void main()
 
 (def overall-shading-probe
   (template/fn [x y z sx sy sz]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 vec3 environmental_shading(vec3 point)
 {
@@ -1573,7 +1573,7 @@ void main()
 
 (def powder-probe
   (template/fn [d]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float powder(float d);
 void main()

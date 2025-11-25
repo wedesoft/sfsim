@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 
 float sdf_rectangle(vec2 point, vec2 rectangle_min, vec2 rectangle_max)

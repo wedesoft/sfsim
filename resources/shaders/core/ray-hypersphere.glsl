@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 // Determine intersection of ray with sphere (returns distance and length of intersection).
 vec2 <%= method-name %>(<%= vector-type %> centre, float radius, <%= vector-type %> origin, <%= vector-type %> direction)

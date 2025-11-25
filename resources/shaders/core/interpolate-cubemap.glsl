@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 vec3 convert_cubemap_index(vec3 idx, int size);
 

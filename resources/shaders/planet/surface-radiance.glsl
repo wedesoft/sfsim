@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 uniform sampler2D surface_radiance;
 uniform int surface_sun_elevation_size;

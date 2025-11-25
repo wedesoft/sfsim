@@ -610,7 +610,7 @@
 
 (def transmittance-track-probe
   (template/fn [px py pz qx qy qz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 transmittance_track(vec3 p, vec3 q);
 void main()
@@ -642,7 +642,7 @@ void main()
 
 (def transmittance-outer-probe
   (template/fn [px py pz dx dy dz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 transmittance_outer(vec3 point, vec3 direction);
 void main()
@@ -674,7 +674,7 @@ void main()
 
 (def transmittance-point-probe
   (template/fn [px offset distance]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
@@ -745,7 +745,7 @@ void main()
 
 (def ray-scatter-track-probe
   (template/fn [px py pz qx qy qz]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
 void main()
@@ -782,7 +782,7 @@ void main()
 
 (def vertex-atmosphere-probe
   (template/fn [selector]
-    "#version 410 core
+    "#version 450 core
 in VS_OUT
 {
   vec3 direction;
@@ -831,7 +831,7 @@ void main()
 
 (def cloud-overlay-mock
   (template/fn [alpha]
-    "#version 410 core
+    "#version 450 core
 vec4 cloud_overlay()
 {
   float brightness = <%= alpha %>;
@@ -904,7 +904,7 @@ vec4 cloud_overlay()
 
 (def phase-probe
   (template/fn [g mu]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 float phase(float g, float mu);
 void main()
@@ -928,7 +928,7 @@ void main()
 
 
 (def fragment-overlay-lookup
-  "#version 410 core
+  "#version 450 core
 out vec3 fragColor;
 vec4 cloud_overlay();
 void main()
@@ -962,7 +962,7 @@ void main()
 
 (def attenuation-point-probe
   (template/fn [x2 incoming attenuate]
-    "#version 410 core
+    "#version 450 core
 out vec3 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)

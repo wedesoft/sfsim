@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 vec3 face1_vector(vec2 texcoord)
 {

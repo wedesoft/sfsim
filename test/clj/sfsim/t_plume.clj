@@ -28,7 +28,7 @@
 
 (def bulge-probe
   (template/fn [pressure x]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float bulge(float pressure, float x);
 void main()
@@ -61,7 +61,7 @@ void main()
 
 (def plume-phase-probe
   (template/fn [x limit]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float plume_phase(float x, float limit);
 void main()
@@ -85,7 +85,7 @@ void main()
 
 (def diamond-phase-probe
   (template/fn [x limit]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float plume_phase(float x, float limit)
 {
@@ -113,7 +113,7 @@ void main()
 
 (def diamond-probe
   (template/fn [pressure x y]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float limit(float pressure)
 {
@@ -155,7 +155,7 @@ void main()
 
 (def cloud-plume-segment-probe
   (template/fn [x plume model-point planet-point attenuation]
-"#version 410 core
+"#version 450 core
 uniform vec3 origin;
 uniform float radius;
 uniform float depth;
@@ -284,7 +284,7 @@ void main()
 
 (def plume-segment-probe
   (template/fn [outer origin-x x size strength]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 vec4 plume_outer(vec3 object_origin, vec3 object_direction);
 vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
@@ -331,7 +331,7 @@ void main()
 
 (def plume-box-probe
   (template/fn [limit x-range y-range z-range]
-"#version 410 core
+"#version 450 core
 out vec3 fragColor;
 float limit(float pressure)
 {

@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 vec3 <%= gradient-name %>(vec3 point);
 vec3 rotate_vector(vec3 axis, vec3 v, float cos_angle, float sin_angle);

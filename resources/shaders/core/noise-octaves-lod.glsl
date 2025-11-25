@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 float <%= base-function %>(vec3 idx, float lod);
 

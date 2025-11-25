@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 float hermite_interpolate(float a, float b, float t)
 {

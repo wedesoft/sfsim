@@ -20,7 +20,7 @@
 ; Test program: render triangle and merge low-resolution fog image using depth-aware upsampling.
 
 (def vertex-source
-"#version 410 core
+"#version 450 core
 in vec3 point;
 out vec3 fs_point;
 void main()
@@ -30,7 +30,7 @@ void main()
 }")
 
 (def fragment-source
-"#version 410 core
+"#version 450 core
 layout (location = 0) out vec4 color;
 layout (location = 1) out float dist;
 in vec3 fs_point;
@@ -60,7 +60,7 @@ void main()
 
 (def vertex-depth-source vertex-source)
 (def fragment-depth-source
-"#version 410 core
+"#version 450 core
 layout (location = 0) out vec4 vertex;
 layout (location = 1) out float dist;
 in vec3 fs_point;
@@ -92,7 +92,7 @@ void main()
 ; (println "background vertex:" (get-vector4 (rgba-texture->vectors4 vertex-small) 48 (- 128 48)))
 
 (def vertex-fog-source
-"#version 410 core
+"#version 450 core
 in vec3 point;
 in vec2 uv;
 out vec2 fs_uv;
@@ -103,7 +103,7 @@ void main()
 }")
 
 (def fragment-fog-source
-"#version 410 core
+"#version 450 core
 layout (location = 0) out vec4 color;
 uniform sampler2D vertex;
 in vec2 fs_uv;
@@ -142,7 +142,7 @@ void main()
 
 (def fragment-final-source
 (template/eval
-"#version 410 core
+"#version 450 core
 uniform sampler2D color;
 uniform sampler2D fog;
 uniform sampler2D dist;

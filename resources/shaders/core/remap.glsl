@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 // Remap function used in the Decima Engine
 // https://www.guerrilla-games.com/read/nubis-authoring-real-time-volumetric-cloudscapes-with-the-decima-engine

@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 // Determine intersection of ray with an axis-aligned box (returns distance and length of intersection).
 // https://gist.github.com/DomNomNom/46bb1ce47f68d255fd5d
