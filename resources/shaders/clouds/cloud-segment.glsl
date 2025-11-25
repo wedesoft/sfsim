@@ -16,13 +16,17 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 <% (if outer %>
 vec4 cloud_outer(vec3 origin, vec3 direction, float skip)
 <% %>
-vec4 cloud_point(vec3 origin, vec3 direction, vec3 point)
+vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment)
 <% ) %>
 {
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
 <% (if (not outer) %>
-  float dist = distance(origin, point);
+  float dist = segment.x + segment.y;
   atmosphere_intersection.y = min(dist - atmosphere_intersection.x, min(depth, atmosphere_intersection.y));
+  if (atmosphere_intersection.x < segment.x) {
+    atmosphere_intersection.y += atmosphere_intersection.x - segment.x;
+    atmosphere_intersection.x = segment.x;
+  };
 <%  %>
   if (atmosphere_intersection.x < skip) {
     atmosphere_intersection.y += atmosphere_intersection.x - skip;

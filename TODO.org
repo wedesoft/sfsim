@@ -35,7 +35,7 @@
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [X] replace attenuate_segment with attenuation_track using vec2 segment variable
-  - [-] cloud-outer (cloud-point) should accept near (and far) limit and combine full attenuation given atmosphere segment
+  - [X] cloud-outer (cloud-point) should accept near (and far) limit and combine full attenuation given atmosphere segment
   - [ ] attenuation_track for segment.y <= 0 needs to be tested
   - [ ] combined attenuation (atmosphere segment and world coordinates) and plume function (object coordinates, near and far limit?)
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
