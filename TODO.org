@@ -39,6 +39,7 @@
   - [ ] combined attenuation (atmosphere segment and world coordinates) and plume function (object coordinates, near and far limit?)
   - [ ] attenuation_track for segment.y <= 0 needs to be tested
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
+  - [ ] use correct cutoff for all rendered layers when rendering front to back
   - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
         also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
     - [X] as before render opacity and shadow cascade and object shadows
