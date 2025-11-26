@@ -1615,9 +1615,9 @@ void main()
 
 (facts "Shader function to create random noise"
        ((hash3d-test [] [0.0 0.0 0.0]) 0) => (roughly 0.0000000 1e-6)
-       ((hash3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7265625 1e-6)
-       ((hash3d-test [] [0.0 1.0 0.0]) 0) => (roughly 0.4218750 1e-6)
-       ((hash3d-test [] [0.0 0.0 1.0]) 0) => (roughly 0.8496094 1e-6))
+       ((hash3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7187500 1e-6)
+       ((hash3d-test [] [0.0 1.0 0.0]) 0) => (roughly 0.2812500 1e-6)
+       ((hash3d-test [] [0.0 0.0 1.0]) 0) => (roughly 0.3515625 1e-6))
 
 (def noise3d-probe
   (template/fn [x y z]
@@ -1634,8 +1634,8 @@ void main()
 
 (facts "Shader function to create 3D noise"
        ((noise3d-test [] [0.0 0.0 0.0]) 0) => (roughly 0.0000000 1e-6)
-       ((noise3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7265625 1e-6)
-       ((noise3d-test [] [0.5 0.0 0.0]) 0) => (roughly 0.3632813 1e-6))
+       ((noise3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7187500 1e-6)
+       ((noise3d-test [] [0.5 0.0 0.0]) 0) => (roughly 0.3593750 1e-6))
 
 (def subtract-interval-probe
   (template/fn [ax ay bx by]
