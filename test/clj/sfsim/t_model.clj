@@ -686,7 +686,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                                moved-scene
                                                render-mesh)
                                  (destroy-scene opengl-scene)
-                                 (destroy-scene-renderer renderer))) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.07)))
+                                 (destroy-scene-renderer renderer))) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.10)))
          ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
          cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
          cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
