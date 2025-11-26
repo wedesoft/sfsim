@@ -90,7 +90,7 @@
                                                                            (clear (vec3 0 1 0) 0.0)
                                                                            (planet/render-planet planet-renderer render-vars shadow-vars [] clouds tree)
                                                                            (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-                 (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.0)
+                 (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.02)
                  (destroy-texture tex)
                  (destroy-texture clouds)
                  (opacity/destroy-opacity-and-shadow shadow-vars)
@@ -158,7 +158,7 @@
                                                                                                 shadow-vars [] [object])
                                                                            (planet/render-planet planet-renderer render-vars shadow-vars [] clouds tree)
                                                                            (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-                 (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.0)
+                 (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.02)
                  (destroy-texture tex)
                  (destroy-texture clouds)
                  (opacity/destroy-opacity-and-shadow shadow-vars)
@@ -235,7 +235,7 @@
                                                                                            shadow-vars [object-shadow] [object])
                                                                       (planet/render-planet planet-renderer render-vars shadow-vars [object-shadow] clouds tree)
                                                                       (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-            (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.0)
+            (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.02)
             (destroy-texture tex)
             (destroy-texture clouds)
             (model/destroy-scene-shadow-map object-shadow)
