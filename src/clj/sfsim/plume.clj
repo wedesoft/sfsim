@@ -61,22 +61,36 @@
 (def plume-fringe 0.05)
 
 
-(defn plume-segment
+(defn sample-plume-segment
   [outer]
   [sampling-offset plume-box (plume-transfer plume-fringe)
+   (template/eval (slurp "resources/shaders/plume/sample-plume-segment.glsl") {:outer outer})])
+
+
+(def sample-plume-point
+  (sample-plume-segment false))
+
+
+(def sample-plume-outer
+  (sample-plume-segment true))
+
+
+(defn plume-segment
+  [outer]
+  [(sample-plume-segment outer) shaders/ray-sphere atmosphere/attenuation-track
    (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer})])
-
-
-(def plume-point
-  (plume-segment false))
 
 
 (def plume-outer
   (plume-segment true))
 
 
+(def plume-point
+  (plume-segment false))
+
+
 (defn cloud-plume-segment
   "Shader function to compute cloud and plume RGBA values for segment around plume in space"
   [model-point planet-point]
-  [plume-point plume-outer atmosphere/attenuation-track
+  [atmosphere/attenuation-track plume-outer plume-point
    (template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])

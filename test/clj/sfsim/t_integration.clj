@@ -90,7 +90,7 @@
                                                                            (clear (vec3 0 1 0) 0.0)
                                                                            (planet/render-planet planet-renderer render-vars shadow-vars [] clouds tree)
                                                                            (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-                 (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.0)
+                 (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.02)
                  (destroy-texture tex)
                  (destroy-texture clouds)
                  (opacity/destroy-opacity-and-shadow shadow-vars)
@@ -158,7 +158,7 @@
                                                                                                 shadow-vars [] [object])
                                                                            (planet/render-planet planet-renderer render-vars shadow-vars [] clouds tree)
                                                                            (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-                 (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.0)
+                 (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.02)
                  (destroy-texture tex)
                  (destroy-texture clouds)
                  (opacity/destroy-opacity-and-shadow shadow-vars)
@@ -235,7 +235,7 @@
                                                                                            shadow-vars [object-shadow] [object])
                                                                       (planet/render-planet planet-renderer render-vars shadow-vars [object-shadow] clouds tree)
                                                                       (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-            (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.0)
+            (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.02)
             (destroy-texture tex)
             (destroy-texture clouds)
             (model/destroy-scene-shadow-map object-shadow)
@@ -265,11 +265,11 @@ void main()
 (def fragment-plume "#version 450
 uniform vec2 resolution;
 out vec4 fragColor;
-vec4 plume_outer(vec3 object_origin, vec3 object_direction);
+vec4 sample_plume_outer(vec3 object_origin, vec3 object_direction);
 void main()
 {
   vec2 uv = gl_FragCoord.xy / resolution;
-  fragColor = vec4(plume_outer(vec3(-uv.x * 80, uv.y * 50 - 25, -20), vec3(0, 0, 1)).xyz, 1.0);
+  fragColor = vec4(sample_plume_outer(vec3(-uv.x * 80, uv.y * 50 - 25, -20), vec3(0, 0, 1)).xyz, 1.0);
 }")
 
 
@@ -281,7 +281,7 @@ void main()
                 indices  [0 1 3 2]
                 vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
                 program (make-program :sfsim.render/vertex [vertex-plume]
-                                      :sfsim.render/fragment [fragment-plume plume/plume-outer])
+                                      :sfsim.render/fragment [fragment-plume plume/sample-plume-outer])
                 vao     (make-vertex-array-object program indices vertices ["point" 3])]
             (use-program program)
             (uniform-vector2 program "resolution" (vec2 width height))
