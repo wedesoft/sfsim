@@ -10,20 +10,8 @@ uniform float opacity_cutoff;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 cloud_outer(vec3 origin, vec3 direction, float skip);
 vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
-vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
-vec3 transmittance_track(vec3 p, vec3 q);
-vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
-vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming);
 vec4 plume_outer_transfer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
-
-vec4 plume_point_transfer(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
-{
-  vec4 plume = plume_point(object_origin, object_direction, object_point);
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  atmosphere.y = min(atmosphere.y, object_distance - atmosphere.x);
-  plume.rgb = attenuation_track(light_direction, origin, direction, atmosphere, plume).rgb;
-  return plume;
-}
+vec4 plume_point_transfer(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point);
 
 vec4 blend(vec4 front, vec4 back)
 {

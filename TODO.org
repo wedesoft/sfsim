@@ -36,7 +36,7 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [X] replace attenuate_segment with attenuation_track using vec2 segment variable
   - [X] cloud-outer (cloud-point) should accept near (and far) limit and combine full attenuation given atmosphere segment
-  - [-] combined attenuation and plume function (object coordinates, near and far limit?), put under test
+  - [X] combined attenuation and plume function (object coordinates, near and far limit?), put under test
   - [ ] clip shell intersections using segment or far limit (use existing interval clipping for first case)
   - [ ] atmosphere segment clipping or far limit clipping
   - [ ] can we use OpenGL blending to render plume front to back or do we need input and output color texture?

@@ -75,12 +75,22 @@
   (plume-segment true))
 
 
+(defn plume-segment-transfer
+  [outer]
+  [(plume-segment outer) shaders/ray-sphere atmosphere/attenuation-track
+   (template/eval (slurp "resources/shaders/plume/plume-segment-transfer.glsl") {:outer outer})])
+
+
 (def plume-outer-transfer
-  [plume-outer shaders/ray-sphere atmosphere/attenuation-track (slurp "resources/shaders/plume/plume-outer-transfer.glsl")])
+  (plume-segment-transfer true))
+
+
+(def plume-point-transfer
+  (plume-segment-transfer false))
 
 
 (defn cloud-plume-segment
   "Shader function to compute cloud and plume RGBA values for segment around plume in space"
   [model-point planet-point]
-  [plume-point plume-outer atmosphere/attenuation-track plume-outer-transfer
+  [atmosphere/attenuation-track plume-outer-transfer plume-point-transfer
    (template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])

@@ -202,22 +202,7 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment)
   } else
     return vec4(0, 0, 0, 0);
 }
-vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
-{
-  return vec3(0, 0, 0);
-}
-vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)
-{
-  if (segment.y > 0.0) {
-    vec3 start = origin + direction * segment.x;
-    vec3 point = origin + direction * (segment.x + segment.y);
-    vec3 transmittance = transmittance_track(start, point);
-    vec3 in_scatter = ray_scatter_track(light_direction, start, point);
-    return vec4(incoming.rgb * transmittance + in_scatter * incoming.a, incoming.a);
-  } else
-    return incoming;
-}
-vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 plume_point_transfer(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
   float plume = object_origin.y;
   return vec4(0.0, plume, 0.0, plume);
@@ -284,9 +269,9 @@ void main()
         -6.0 -5.0 1.0 1.0    true   false   0.0          0.0   1.0   1.0
         -1.0  1.0 1.0 1.0    false  false   1.0          0.5   0.5   1.0
         -6.0 -5.0 1.0 1.0    false  false   1.0          0.0   1.0   1.0
-        -4.0 -2.0 2.0 1.0    true   false   1.0          0.5   0.25  1.0
-         2.0  4.0 2.0 1.0    true   false   1.0          0.5   0.25  1.0
-        -1.0  1.0 3.0 0.5    false  true    1.0          0.75  0.016 0.875
+        -4.0 -2.0 2.0 1.0    true   false   1.0          0.5   0.5   1.0
+         2.0  4.0 2.0 1.0    true   false   1.0          0.5   0.5   1.0
+        -1.0  1.0 3.0 0.5    false  true    1.0          0.75  0.125 0.875
          5.0  7.0 2.0 0.5    false  false   1.0          0.0   0.5   0.5)
 
 (def plume-segment-probe
@@ -380,10 +365,15 @@ void main()
          0.5    1.0     1.0       false    false    true     (- plume-width-2)    plume-width-2)
 
 (def plume-outer-transfer-probe
-  (template/fn [x object-x]
+  (template/fn [x object-x outer]
 "#version 450 core
 out vec3 fragColor;
+uniform float object_distance;
 vec4 plume_outer(vec3 object_origin, vec3 object_direction)
+{
+  return vec4(object_origin.x, 0.0, 0.0, 0.5);
+}
+vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
   return vec4(object_origin.x, 0.0, 0.0, 0.5);
 }
@@ -397,6 +387,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 {
   return incoming * pow(0.5, max(segment.y, 0.0));
 }
+vec4 plume_point_transfer(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point);
 vec4 plume_outer_transfer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
 void main()
 {
@@ -404,7 +395,13 @@ void main()
   vec3 object_origin = vec3(<%= object-x %>, 0, 0);
   vec3 direction = vec3(1, 0, 0);
   vec3 object_direction = vec3(1, 0, 0);
+  vec3 point = origin + vec3(object_distance, 0, 0);
+  vec3 object_point = object_origin + vec3(object_distance, 0, 0);
+<% (if outer %>
   fragColor = plume_outer_transfer(origin, direction, object_origin, object_direction).rga;
+<% %>
+  fragColor = plume_point_transfer(origin, direction, point, object_origin, object_direction, object_point).rga;
+<% ) %>
 }"))
 
 (def plume-outer-transfer-test
@@ -412,15 +409,19 @@ void main()
                    (uniform-float program "radius" 2.0)
                    (uniform-float program "max_height" 1.0)
                    (uniform-float program "object_distance" object-distance))
-               plume-outer-transfer-probe (last plume-outer-transfer)))
+               plume-outer-transfer-probe (last plume-outer-transfer) (last plume-point-transfer)))
 
 (tabular "Shader for combining plume and atmospheric attenuation"
-         (fact (plume-outer-transfer-test [?object-distance] [?x ?object-x]) => (roughly-vector (vec3 ?r ?g ?a) 1e-6))
-         ?x ?object-x ?object-distance ?r  ?g  ?a
-         5.0     0.0  2.0              0.0 0.0 0.5
-         5.0     1.0  2.0              1.0 0.0 0.5
-         2.0     1.0  2.0              0.5 0.0 0.5
-        -4.0     1.0  2.0              0.5 0.0 0.5)
+         (fact (plume-outer-transfer-test [?object-distance] [?x ?object-x ?outer]) => (roughly-vector (vec3 ?r ?g ?a) 1e-6))
+         ?x ?object-x ?object-distance ?outer ?r  ?g  ?a
+         5.0     0.0  2.0              true   0.0 0.0 0.5
+         5.0     1.0  2.0              true   1.0 0.0 0.5
+         2.0     1.0  2.0              true   0.5 0.0 0.5
+        -4.0     1.0  2.0              true   0.5 0.0 0.5
+         5.0     0.0  2.0              false  0.0 0.0 0.5
+         5.0     1.0  2.0              false  1.0 0.0 0.5
+         2.0     1.0  2.0              false  0.5 0.0 0.5
+        -4.0     1.0  2.0              false  0.5 0.0 0.5)
 
 
 (GLFW/glfwTerminate)
