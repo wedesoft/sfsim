@@ -7,9 +7,9 @@ vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter);
 float sampling_offset();
 
 <% (if outer %>
-vec4 plume_outer(vec3 object_origin, vec3 object_direction)
+vec4 sample_plume_outer(vec3 object_origin, vec3 object_direction)
 <% %>
-vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 sample_plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
 <% ) %>
 {
   vec2 segment = plume_box(object_origin, object_direction);

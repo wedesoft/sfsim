@@ -278,8 +278,8 @@ void main()
   (template/fn [outer origin-x x size strength]
 "#version 450 core
 out vec3 fragColor;
-vec4 plume_outer(vec3 object_origin, vec3 object_direction);
-vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
+vec4 sample_plume_outer(vec3 object_origin, vec3 object_direction);
+vec4 sample_plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
 vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
 {
   float x = plume_step * <%= strength %>;
@@ -299,9 +299,9 @@ void main()
   vec3 direction = vec3(1, 0, 0);
   vec3 object_point = vec3(<%= x %>, 0, 0);
 <% (if outer %>
-  vec4 plume = plume_outer(origin, direction);
+  vec4 plume = sample_plume_outer(origin, direction);
 <% %>
-  vec4 plume = plume_point(origin, direction, object_point);
+  vec4 plume = sample_plume_point(origin, direction, object_point);
 <% ) %>
   fragColor = plume.rga;
 }"))
@@ -310,7 +310,7 @@ void main()
   [outer]
   (shader-test (fn [program engine-step]
                    (uniform-float program "engine_step" engine-step))
-               plume-segment-probe (last (plume-segment outer))))
+               plume-segment-probe (last (sample-plume-segment outer))))
 
 (tabular "Shader function to determine rocket plume contribution"
          (fact ((plume-segment-test ?outer) [?engine-step] [?outer ?o-x ?x ?size ?strength])
@@ -369,11 +369,11 @@ void main()
 "#version 450 core
 out vec3 fragColor;
 uniform float object_distance;
-vec4 plume_outer(vec3 object_origin, vec3 object_direction)
+vec4 sample_plume_outer(vec3 object_origin, vec3 object_direction)
 {
   return vec4(object_origin.x, 0.0, 0.0, 0.5);
 }
-vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 sample_plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
   return vec4(object_origin.x, 0.0, 0.0, 0.5);
 }

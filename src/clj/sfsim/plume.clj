@@ -61,23 +61,23 @@
 (def plume-fringe 0.05)
 
 
-(defn plume-segment
+(defn sample-plume-segment
   [outer]
   [sampling-offset plume-box (plume-transfer plume-fringe)
-   (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer})])
+   (template/eval (slurp "resources/shaders/plume/sample-plume-segment.glsl") {:outer outer})])
 
 
-(def plume-point
-  (plume-segment false))
+(def sample-plume-point
+  (sample-plume-segment false))
 
 
-(def plume-outer
-  (plume-segment true))
+(def sample-plume-outer
+  (sample-plume-segment true))
 
 
 (defn plume-segment-transfer
   [outer]
-  [(plume-segment outer) shaders/ray-sphere atmosphere/attenuation-track
+  [(sample-plume-segment outer) shaders/ray-sphere atmosphere/attenuation-track
    (template/eval (slurp "resources/shaders/plume/plume-segment-transfer.glsl") {:outer outer})])
 
 

@@ -15,7 +15,7 @@
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
     [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
                           overall-shading overall-shading-parameters)]
-    [sfsim.plume :refer (cloud-plume-segment plume-point)]
+    [sfsim.plume :refer (cloud-plume-segment sample-plume-point)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
                           fmat4 rotation-matrix)]
@@ -564,7 +564,7 @@
   [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
    (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
    (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function
-   (cloud-point num-steps perlin-octaves cloud-octaves) (cloud-plume-segment true false) plume-point
+   (cloud-point num-steps perlin-octaves cloud-octaves) (cloud-plume-segment true false) sample-plume-point
    (template/eval (slurp "resources/shaders/model/fragment.glsl")
                   {:textured textured :bump bump :num-scene-shadows num-scene-shadows})])
 
