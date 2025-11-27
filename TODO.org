@@ -39,6 +39,9 @@
   - [-] combined attenuation and plume function (object coordinates, near and far limit?), put under test
   - [ ] clip shell intersections using segment or far limit (use existing interval clipping for first case)
   - [ ] atmosphere segment clipping or far limit clipping
+  - [ ] can we use OpenGL blending to render plume front to back or do we need input and output color texture?
+    - [ ] check out glBlendFuncSeparate
+  - [ ] can we use OpenGL blending to render cloud layers front to back or do we need input and output color texture?
   - [ ] attenuation_track for segment.y <= 0 needs to be tested
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] use correct cutoff for all rendered layers when rendering front to back
