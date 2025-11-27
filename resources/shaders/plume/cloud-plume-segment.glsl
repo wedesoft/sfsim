@@ -74,20 +74,20 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
 <% ) %>
   result = blend(result, plume);
   // result = vec4(result.rgb + plume.rgb * (1.0 - result.a), 1.0 - (1.0 - plume.a) * (1.0 - result.a));
-<% (if (and planet-point (not model-point)) %>
+<% (when (not model-point) %>
+<% (if planet-point %>
   if (object_distance <= min_distance && result.a <= 1.0 - opacity_cutoff) {
 <% ) %>
-<% (if (and planet-point (not model-point)) %>
+<% (if planet-point %>
     vec4 cloud_scatter = cloud_point(origin, direction, vec2(object_distance, distance(point, origin) - object_distance));
 <% ) %>
-<% (if (and (not planet-point) (not model-point)) %>
+<% (if (not planet-point) %>
     vec4 cloud_scatter = cloud_outer(origin, direction, object_distance);
 <% ) %>
-<% (if (not model-point) %>
     result = blend(result, cloud_scatter);
-<% ) %>
 <% (if (and planet-point (not model-point)) %>
   };
+<% ) %>
 <% ) %>
   return result;
 }
