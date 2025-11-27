@@ -34,6 +34,11 @@ vec4 plume_point_transfer(vec3 origin, vec3 direction, vec3 point, vec3 object_o
   return plume;
 }
 
+vec4 blend(vec4 front, vec4 back)
+{
+  return vec4(front.rgb + back.rgb * (1.0 - front.a), 1.0 - (1.0 - front.a) * (1.0 - back.a));
+}
+
 // Cloud and plume mixed overlay.
 // origin: world coordinate of camera position
 // direction: world coordinate of viewing direction for current pixel rendered by fragment shader.
@@ -67,7 +72,8 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
 <% %>
   vec4 plume = plume_outer_transfer(origin, direction, object_origin, direction);
 <% ) %>
-  result = vec4(result.rgb + plume.rgb * (1.0 - result.a), 1.0 - (1.0 - plume.a) * (1.0 - result.a));
+  result = blend(result, plume);
+  // result = vec4(result.rgb + plume.rgb * (1.0 - result.a), 1.0 - (1.0 - plume.a) * (1.0 - result.a));
 <% (if planet-point %>
   if (object_distance <= min_distance && result.a <= 1.0 - opacity_cutoff) {
 <% ) %>
@@ -78,7 +84,7 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
     vec4 cloud_scatter = cloud_outer(origin, direction, object_distance);
 <% ) %>
 <% (if (not model-point) %>
-    result = vec4(result.rgb + cloud_scatter.rgb * (1.0 - result.a), 1.0 - (1.0 - cloud_scatter.a) * (1.0 - result.a));
+    result = blend(result, cloud_scatter);
 <% ) %>
 <% (if planet-point %>
   };
