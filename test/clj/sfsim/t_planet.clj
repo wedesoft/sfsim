@@ -469,10 +469,10 @@ float land_noise(vec3 point)
   (make-program :sfsim.render/vertex [vertex-planet-probe]
                 :sfsim.render/fragment [(last (fragment-planet 3 0)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
                                         planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter fake-attenuation
-                                        shaders/ray-shell shaders/is-above-horizon atmosphere/transmittance-point
-                                        surface-radiance-function land-noise-mock shaders/remap (last (clouds/environmental-shading 3))
-                                        (last (clouds/overall-shading 3 [])) (last atmosphere/attenuation-track) shaders/phong
-                                        (last atmosphere/attenuation-point)]))
+                                        shaders/ray-shell shaders/is-above-horizon atmosphere/transmittance-point shaders/phong
+                                        shaders/limit-interval surface-radiance-function land-noise-mock shaders/remap
+                                        (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
+                                        (last atmosphere/attenuation-track) (last atmosphere/attenuation-point)]))
 
 
 (defn setup-static-uniforms

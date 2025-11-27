@@ -1130,8 +1130,7 @@ void main()
       (uniform-float program "cloud_top" 2.0)
       (uniform-float program "depth" depth)
       (uniform-vector3 program "origin" (vec3 0 0 origin)))
-    cloud-point-probe
-    shaders/clip-interval
+    cloud-point-probe shaders/clip-interval shaders/limit-interval
     (last shaders/clip-shell-intersections)
     (last (cloud-point 3 [] []))))
 
@@ -1306,8 +1305,8 @@ void main()
                                             :sfsim.render/tess-control [tess-control-planet]
                                             :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
                                             :sfsim.render/geometry [(geometry-planet 0)]
-                                            :sfsim.render/fragment [fragment-planet-clouds
-                                                                    shaders/clip-interval
+                                            :sfsim.render/fragment [fragment-planet-clouds shaders/clip-interval
+                                                                    shaders/limit-interval
                                                                     (last shaders/clip-shell-intersections)
                                                                     (last (cloud-point 3 [] []))])
               indices         [0 1 3 2]

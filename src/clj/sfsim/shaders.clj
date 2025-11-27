@@ -143,6 +143,11 @@
   [ray-sphere (slurp "resources/shaders/core/ray-shell.glsl")])
 
 
+(def limit-interval
+  "Shader function to limit clipping interval with a scalar value"
+  (slurp "resources/shaders/core/limit-interval.glsl"))
+
+
 (def clip-interval
   "Shader function to apply clipping interval to input interval"
   (slurp "resources/shaders/core/clip-interval.glsl"))

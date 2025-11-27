@@ -5,6 +5,8 @@ uniform float max_height;
 uniform vec3 light_direction;
 uniform float object_distance;
 
+vec2 limit_interval(vec2 interval, float limit);
+
 <% (if outer %>
 vec4 sample_plume_outer(vec3 object_origin, vec3 object_direction);
 <% %>
@@ -25,7 +27,7 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, ve
   vec4 plume = sample_plume_point(object_origin, object_direction, object_point);
 <% ) %>
   vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-  atmosphere.y = min(atmosphere.y, object_distance - atmosphere.x);
+  atmosphere = limit_interval(atmosphere, object_distance);
   plume.rgb = attenuation_track(light_direction, origin, direction, atmosphere, plume).rgb;
   return plume;
 }

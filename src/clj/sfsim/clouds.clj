@@ -299,7 +299,8 @@
 (defn cloud-segment
   "Shader to compute segment of cloud layer"
   [num-steps perlin-octaves cloud-octaves outer]
-  [shaders/ray-shell shaders/ray-sphere (sample-cloud num-steps perlin-octaves cloud-octaves) shaders/clip-shell-intersections
+  [shaders/ray-shell shaders/ray-sphere shaders/limit-interval shaders/clip-interval
+   (sample-cloud num-steps perlin-octaves cloud-octaves) shaders/clip-shell-intersections
    (template/eval (slurp "resources/shaders/clouds/cloud-segment.glsl") {:outer outer})])
 
 

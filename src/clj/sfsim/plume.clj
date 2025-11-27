@@ -63,7 +63,7 @@
 
 (defn sample-plume-segment
   [outer]
-  [sampling-offset plume-box (plume-transfer plume-fringe)
+  [sampling-offset plume-box (plume-transfer plume-fringe) shaders/limit-interval 
    (template/eval (slurp "resources/shaders/plume/sample-plume-segment.glsl") {:outer outer})])
 
 
@@ -77,7 +77,7 @@
 
 (defn plume-segment
   [outer]
-  [(sample-plume-segment outer) shaders/ray-sphere atmosphere/attenuation-track
+  [(sample-plume-segment outer) shaders/ray-sphere atmosphere/attenuation-track shaders/limit-interval
    (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer})])
 
 

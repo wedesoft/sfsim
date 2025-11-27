@@ -640,7 +640,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 
 (def model-shader-mocks
   [cloud-plume-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock
-   planet-and-cloud-shadows-mock ray-sphere-mock attenuation-mock shaders/phong
+   planet-and-cloud-shadows-mock ray-sphere-mock attenuation-mock shaders/phong shaders/limit-interval
    (last atmosphere/attenuation-point) (last (clouds/environmental-shading 3))
    (last (clouds/overall-shading 3 []))])
 

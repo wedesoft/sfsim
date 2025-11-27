@@ -15,7 +15,8 @@
       [sfsim.conftest :refer (roughly-vector shader-test)]
       [midje.sweet :refer :all]
       [sfsim.render :refer :all]
-      [sfsim.plume :refer :all])
+      [sfsim.plume :refer :all]
+      [sfsim.shaders :as shaders])
     (:import
       (org.lwjgl.glfw
         GLFW)))
@@ -310,7 +311,7 @@ void main()
   [outer]
   (shader-test (fn [program engine-step]
                    (uniform-float program "engine_step" engine-step))
-               plume-segment-probe (last (sample-plume-segment outer))))
+               plume-segment-probe (last (sample-plume-segment outer)) shaders/limit-interval))
 
 (tabular "Shader function to determine rocket plume contribution"
          (fact ((plume-segment-test ?outer) [?engine-step] [?outer ?o-x ?x ?size ?strength])
@@ -409,7 +410,7 @@ void main()
                    (uniform-float program "radius" 2.0)
                    (uniform-float program "max_height" 1.0)
                    (uniform-float program "object_distance" object-distance))
-               plume-outer-probe (last plume-outer) (last plume-point)))
+               plume-outer-probe (last plume-outer) (last plume-point) shaders/limit-interval))
 
 (tabular "Shader for combining plume and atmospheric attenuation"
          (fact (plume-outer-test [?object-distance] [?x ?object-x ?outer]) => (roughly-vector (vec3 ?r ?g ?a) 1e-6))
