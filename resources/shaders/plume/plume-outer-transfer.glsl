@@ -1,0 +1,19 @@
+#version 450 core
+
+uniform float radius;
+uniform float max_height;
+uniform vec3 light_direction;
+uniform float object_distance;
+
+vec4 plume_outer(vec3 object_origin, vec3 object_direction);
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming);
+
+vec4 plume_outer_transfer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
+{
+  vec4 plume = plume_outer(object_origin, object_direction);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  atmosphere.y = min(atmosphere.y, object_distance - atmosphere.x);
+  plume.rgb = attenuation_track(light_direction, origin, direction, atmosphere, plume).rgb;
+  return plume;
+}

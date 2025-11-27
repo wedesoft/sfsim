@@ -222,7 +222,7 @@ vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
   float plume = object_origin.y;
   return vec4(0.0, plume, 0.0, plume);
 }
-vec4 plume_outer(vec3 object_origin, vec3 object_direction)
+vec4 plume_outer_transfer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
 {
   float plume = object_origin.y;
   return vec4(0.0, plume, 0.0, plume);
@@ -378,5 +378,49 @@ void main()
          0.5    1.0     1.0       false    true     false    (- plume-width-2)    plume-width-2
          2.0    1.0     1.0       false    true     false    (- -1 plume-width-2) (+ 1 plume-width-2)
          0.5    1.0     1.0       false    false    true     (- plume-width-2)    plume-width-2)
+
+(def plume-outer-transfer-probe
+  (template/fn [x object-x]
+"#version 450 core
+out vec3 fragColor;
+vec4 plume_outer(vec3 object_origin, vec3 object_direction)
+{
+  return vec4(object_origin.x, 0.0, 0.0, 0.5);
+}
+vec2 ray_sphere(vec3 center, float radius, vec3 origin, vec3 direction)
+{
+  float start = max(0.0, - radius - origin.x);
+  float end = radius - origin.x;
+  return vec2(start, end - start);
+}
+vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)
+{
+  return incoming * pow(0.5, max(segment.y, 0.0));
+}
+vec4 plume_outer_transfer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
+void main()
+{
+  vec3 origin = vec3(<%= x %>, 0, 0);
+  vec3 object_origin = vec3(<%= object-x %>, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  vec3 object_direction = vec3(1, 0, 0);
+  fragColor = plume_outer_transfer(origin, direction, object_origin, object_direction).rga;
+}"))
+
+(def plume-outer-transfer-test
+  (shader-test (fn [program object-distance]
+                   (uniform-float program "radius" 2.0)
+                   (uniform-float program "max_height" 1.0)
+                   (uniform-float program "object_distance" object-distance))
+               plume-outer-transfer-probe (last plume-outer-transfer)))
+
+(tabular "Shader for combining plume and atmospheric attenuation"
+         (fact (plume-outer-transfer-test [?object-distance] [?x ?object-x]) => (roughly-vector (vec3 ?r ?g ?a) 1e-6))
+         ?x ?object-x ?object-distance ?r  ?g  ?a
+         5.0     0.0  2.0              0.0 0.0 0.5
+         5.0     1.0  2.0              1.0 0.0 0.5
+         2.0     1.0  2.0              0.5 0.0 0.5
+        -4.0     1.0  2.0              0.5 0.0 0.5)
+
 
 (GLFW/glfwTerminate)
