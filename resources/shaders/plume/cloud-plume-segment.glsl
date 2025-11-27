@@ -10,7 +10,6 @@ uniform float opacity_cutoff;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 cloud_outer(vec3 origin, vec3 direction, float skip);
 vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
-vec4 plume_outer(vec3 object_origin, vec3 object_direction);
 vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
 vec3 transmittance_track(vec3 p, vec3 q);
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q);
@@ -62,7 +61,7 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
 <% (if (or model-point planet-point) %>
   vec4 plume = plume_point_transfer(origin, direction, point, object_origin, object_direction, object_point);
 <% %>
-  vec4 plume = plume_outer_transfer(origin, direction, object_origin, direction);
+  vec4 plume = plume_outer_transfer(origin, direction, object_origin, object_direction);
 <% ) %>
   result = blend(result, plume);
 <% (when (not model-point) %>
