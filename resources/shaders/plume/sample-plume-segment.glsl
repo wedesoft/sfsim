@@ -5,6 +5,7 @@ uniform float engine_step;
 vec2 plume_box(vec3 origin, vec3 direction);
 vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter);
 float sampling_offset();
+vec2 limit_interval(vec2 interval, float limit);
 
 <% (if outer %>
 vec4 sample_plume_outer(vec3 object_origin, vec3 object_direction)
@@ -14,7 +15,7 @@ vec4 sample_plume_point(vec3 object_origin, vec3 object_direction, vec3 object_p
 {
   vec2 segment = plume_box(object_origin, object_direction);
 <% (if (not outer) %>
-  segment.y = min(segment.y, distance(object_point, object_origin) - segment.x);
+  segment = limit_interval(segment, distance(object_point, object_origin));
 <% ) %>
   vec4 result = vec4(0, 0, 0, 1);
   float x = segment.x + sampling_offset() * engine_step;

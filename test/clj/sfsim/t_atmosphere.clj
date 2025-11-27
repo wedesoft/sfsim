@@ -989,7 +989,7 @@ void main()
       (uniform-vector3 program "light_direction" (vec3 0.0 0.0 1.0))
       (uniform-float program "radius" radius)
       (uniform-float program "max_height" max-height))
-    attenuation-point-probe (last attenuation-point)))
+    attenuation-point-probe (last attenuation-point) shaders/limit-interval))
 
 
 (tabular "Shader determining atmospheric attenuation between a point and the camera origin"

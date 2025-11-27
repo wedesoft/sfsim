@@ -561,7 +561,7 @@
 
 (def attenuation-point
   "Shader determining atmospheric attenuation between a point and the camera origin"
-  [shaders/ray-sphere attenuation-track (slurp "resources/shaders/atmosphere/attenuation-point.glsl")])
+  [shaders/ray-sphere shaders/limit-interval attenuation-track (slurp "resources/shaders/atmosphere/attenuation-point.glsl")])
 
 
 (def vertex-atmosphere
