@@ -202,12 +202,12 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment)
   } else
     return vec4(0, 0, 0, 0);
 }
-vec4 plume_point_transfer(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
 {
   float plume = object_origin.y;
   return vec4(0.0, plume, 0.0, plume);
 }
-vec4 plume_outer_transfer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
+vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
 {
   float plume = object_origin.y;
   return vec4(0.0, plume, 0.0, plume);
@@ -364,7 +364,7 @@ void main()
          2.0    1.0     1.0       false    true     false    (- -1 plume-width-2) (+ 1 plume-width-2)
          0.5    1.0     1.0       false    false    true     (- plume-width-2)    plume-width-2)
 
-(def plume-outer-transfer-probe
+(def plume-outer-probe
   (template/fn [x object-x outer]
 "#version 450 core
 out vec3 fragColor;
@@ -387,8 +387,8 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 {
   return incoming * pow(0.5, max(segment.y, 0.0));
 }
-vec4 plume_point_transfer(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point);
-vec4 plume_outer_transfer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
+vec4 plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point);
+vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
 void main()
 {
   vec3 origin = vec3(<%= x %>, 0, 0);
@@ -398,21 +398,21 @@ void main()
   vec3 point = origin + vec3(object_distance, 0, 0);
   vec3 object_point = object_origin + vec3(object_distance, 0, 0);
 <% (if outer %>
-  fragColor = plume_outer_transfer(origin, direction, object_origin, object_direction).rga;
+  fragColor = plume_outer(origin, direction, object_origin, object_direction).rga;
 <% %>
-  fragColor = plume_point_transfer(origin, direction, point, object_origin, object_direction, object_point).rga;
+  fragColor = plume_point(origin, direction, point, object_origin, object_direction, object_point).rga;
 <% ) %>
 }"))
 
-(def plume-outer-transfer-test
+(def plume-outer-test
   (shader-test (fn [program object-distance]
                    (uniform-float program "radius" 2.0)
                    (uniform-float program "max_height" 1.0)
                    (uniform-float program "object_distance" object-distance))
-               plume-outer-transfer-probe (last plume-outer-transfer) (last plume-point-transfer)))
+               plume-outer-probe (last plume-outer) (last plume-point)))
 
 (tabular "Shader for combining plume and atmospheric attenuation"
-         (fact (plume-outer-transfer-test [?object-distance] [?x ?object-x ?outer]) => (roughly-vector (vec3 ?r ?g ?a) 1e-6))
+         (fact (plume-outer-test [?object-distance] [?x ?object-x ?outer]) => (roughly-vector (vec3 ?r ?g ?a) 1e-6))
          ?x ?object-x ?object-distance ?outer ?r  ?g  ?a
          5.0     0.0  2.0              true   0.0 0.0 0.5
          5.0     1.0  2.0              true   1.0 0.0 0.5

@@ -14,9 +14,9 @@ vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming);
 
 <% (if outer %>
-vec4 plume_outer_transfer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
+vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
 <% %>
-vec4 plume_point_transfer(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
 <% ) %>
 {
 <% (if outer %>
