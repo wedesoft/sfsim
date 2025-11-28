@@ -82,7 +82,7 @@
   (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE))
 
 
-(defmacro with-blending
+(defmacro with-src-alpha-blending
   "Enable alpha blending for the specified body of code"
   [& body]
   `(do
