@@ -37,12 +37,12 @@
   - [X] replace attenuate_segment with attenuation_track using vec2 segment variable
   - [X] cloud-outer (cloud-point) should accept near (and far) limit and combine full attenuation given atmosphere segment
   - [X] combined attenuation and plume function (object coordinates, near and far limit?), put under test
-  - [-] clip shell intersections using segment or far limit (use existing interval clipping for first case)
-  - [ ] atmosphere segment clipping or far limit clipping
-  - [ ] can we use OpenGL blending to render plume front to back or do we need input and output color texture?
-    - [ ] check out glBlendFuncSeparate
-  - [ ] can we use OpenGL blending to render cloud layers front to back or do we need input and output color texture?
-  - [ ] attenuation_track for segment.y <= 0 needs to be tested
+  - [X] clip shell intersections using segment or far limit (use existing interval clipping for first case)
+  - [X] atmosphere segment clipping or far limit clipping
+  - [X] can we use OpenGL blending to render plume front to back or do we need input and output color texture?
+    - [X] check out glBlendFuncSeparate
+  - [X] can we use OpenGL blending to render cloud layers front to back or do we need input and output color texture?
+  - [ ] plume and cloud functions should store transparency in alpha value (not opacity)
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] use correct cutoff for all rendered layers when rendering front to back
   - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
@@ -53,7 +53,7 @@
         - [ ] set stencil buffer to atmosphere
         - [ ] render model outputting camera points, camera distance. object stencil, and depth buffer
         - [ ] render planet using depth buffer outputting camera points overwritting object stencil
-      - [ ] cloud and plume rendering with atmospheric attenuation with alpha as transmittance
+      - [ ] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
         - [ ] render cloud front layer up to object depth on atmospheric background
         - [ ] render cloud front layer up to minimum planet or object depth on planet stencil
         - [ ] render cloud front layer up to object point on model stencil
