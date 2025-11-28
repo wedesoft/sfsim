@@ -1,27 +1,33 @@
 #version 450 core
 
-uniform float engine_step;
+uniform float radius;
+uniform float max_height;
+uniform vec3 light_direction;
+uniform float object_distance;
 
-vec2 plume_box(vec3 origin, vec3 direction);
-vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter);
-float sampling_offset();
+vec2 limit_interval(vec2 interval, float limit);
 
 <% (if outer %>
-vec4 plume_outer(vec3 object_origin, vec3 object_direction)
+vec4 sample_plume_outer(vec3 object_origin, vec3 object_direction);
 <% %>
-vec4 plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 sample_plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
+<% ) %>
+vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
+vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming);
+
+<% (if outer %>
+vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
+<% %>
+vec4 plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
 <% ) %>
 {
-  vec2 segment = plume_box(object_origin, object_direction);
-<% (if (not outer) %>
-  segment.y = min(segment.y, distance(object_point, object_origin) - segment.x);
+<% (if outer %>
+  vec4 plume = sample_plume_outer(object_origin, object_direction);
+<% %>
+  vec4 plume = sample_plume_point(object_origin, object_direction, object_point);
 <% ) %>
-  vec4 result = vec4(0, 0, 0, 1);
-  float x = segment.x + sampling_offset() * engine_step;
-  while (x < segment.x + segment.y) {
-    vec3 point = object_origin + x * object_direction;
-    result = plume_transfer(point, engine_step, result);
-    x += engine_step;
-  };
-  return vec4(result.rgb, 1 - result.a);
+  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  atmosphere = limit_interval(atmosphere, object_distance);
+  plume.rgb = attenuation_track(light_direction, origin, direction, atmosphere, plume).rgb;
+  return plume;
 }
