@@ -1091,19 +1091,19 @@ void main()
                    vao1      (make-vertex-array-object program indices1 vertices1 ["point" 3 "uv" 2])
                    vao2      (make-vertex-array-object program indices2 vertices2 ["point" 3 "uv" 2])]
                (with-stencils
-                 (clear (vec3 0.0 0.0 0.0) 1.0 0)
-                 (write-to-stencil-buffer)
+                 (clear (vec3 0.0 0.0 0.0) 1.0 0x1)
+                 (set-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4)
                  (use-program program)
-                 (render-quads vao1)
+                 (render-quads vao1)  ; render red quad
                  (clear)
-                 (?method)
-                 (render-quads vao2)
+                 (set-stencil-op-ref-and-mask ?operation ?reference ?mask)
+                 (render-quads vao2)  ; render blue quad
                  (destroy-vertex-array-object vao2)
                  (destroy-vertex-array-object vao1)
                  (destroy-program program)))) => (is-image (str "test/clj/sfsim/fixtures/render/" ?image) 0.0))
-         ?method                          ?image
-         mask-with-stencil-buffer         "stencil.png"
-         mask-with-negated-stencil-buffer "not-stencil.png")
+         ?reference ?operation       ?mask ?image
+         0x4        GL11/GL_EQUAL    0x4   "render-inside-red-quad.png"
+         0x2        GL11/GL_GREATER  0x6   "render-outside-red-quad.png")
 
 
 (fact "Render a quad with scissor test"

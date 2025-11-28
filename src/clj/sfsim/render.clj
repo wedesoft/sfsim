@@ -67,36 +67,19 @@
   [& body]
   `(do
      (GL11/glEnable GL11/GL_STENCIL_TEST)
+     (GL11/glStencilMask 0xff)
+     (GL11/glStencilFunc GL11/GL_ALWAYS 0 0xff)
+     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_KEEP)
      (let [result# (do ~@body)]
        (GL11/glDisable GL11/GL_STENCIL_TEST)
        result#)))
 
 
-(definline write-to-stencil-buffer
-  "Write to stencil buffer when rendering"
-  []
-  `(do
-     (GL11/glStencilFunc GL11/GL_ALWAYS 1 0xff)
-     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
-     (GL11/glStencilMask 0xff)))
-
-
-(definline mask-with-stencil-buffer
-  "Only render where stencil buffer is not set"
-  []
-  `(do
-     (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
-     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_KEEP)
-     (GL11/glStencilMask 0)))
-
-
-(definline mask-with-negated-stencil-buffer
-  "Only render where stencil buffer is set"
-  []
-  `(do
-     (GL11/glStencilFunc GL12/GL_EQUAL 1 0xff)
-     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_KEEP)
-     (GL11/glStencilMask 0)))
+(defn set-stencil-op-ref-and-mask
+  "Write bits to stencil buffer if they are not all set"
+  [op reference mask]
+  (GL11/glStencilFunc op reference mask)
+  (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE))
 
 
 (defmacro with-blending

@@ -36,7 +36,7 @@
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                          write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering
+                          set-stencil-op-ref-and-mask joined-render-vars setup-rendering
                           quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture)]
@@ -868,12 +868,12 @@
                              (with-stencils
                                (clear (vec3 0 1 0) 1.0 0)
                                ;; Render model
-                               (write-to-stencil-buffer)
+                               (set-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x1 0x1)
                                (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
                                                     [moved-scene])
                                (clear)  ; Only clear depth buffer
                                ;; Render planet with cloud overlay
-                               (mask-with-stencil-buffer)
+                               (set-stencil-op-ref-and-mask GL11/GL_EQUAL 0x0 0x1)
                                (planet/render-planet planet-renderer planet-render-vars shadow-vars [] clouds
                                                      (planet/get-current-tree tile-tree))
                                ;; Render atmosphere with cloud overlay
