@@ -13,6 +13,7 @@ venturestar.glb
 .cpcache
 .eastwood
 .integration
+.schemas
 .lein-*
 .nrepl-port
 *.class
