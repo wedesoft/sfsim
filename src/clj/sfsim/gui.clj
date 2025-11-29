@@ -455,7 +455,7 @@
   (let [buffer (float-array 1)]
     (aset-float buffer 0 value)
     (Nuklear/nk_slider_float ^NkContext (::context gui) ^float minimum buffer ^float maximum ^float step)
-    (aget buffer 0)))
+    (double (aget buffer 0))))
 
 
 (defn button-label

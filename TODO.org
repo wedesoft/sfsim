@@ -42,8 +42,8 @@
   - [X] can we use OpenGL blending to render plume front to back or do we need input and output color texture?
     - [X] check out glBlendFuncSeparate
   - [X] can we use OpenGL blending to render cloud layers front to back or do we need input and output color texture?
-  - [ ] crash when setting up joystick if joystick is not plugged in
-  - [-] test blending and add blending with adding color and multiplying alpha values:
+  - [X] crash when setting up joystick if joystick is not plugged in
+  - [X] test blending and add blending with adding color and multiplying alpha values:
         use srcAlphaFactor = GL_ONE_MINUS_DST_ALPHA, dstAlphaFactor = GL_ONE
         use srcRGBFactor = GL_ONE, dstRGBFactor = GL_ONE_MINUS_DST_ALPHA
   - [ ] make environment macros for stencil setups
