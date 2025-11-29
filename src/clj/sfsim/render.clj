@@ -84,12 +84,26 @@
 
 
 (defmacro with-overlay-blending
-  "Enable alpha blending for the specified body of code"
+  "Render using transparency over existing colour buffer"
   [& body]
   `(do
      (GL11/glEnable GL11/GL_BLEND)
      (GL14/glBlendEquation GL14/GL_FUNC_ADD)
+     ; void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
      (GL14/glBlendFuncSeparate GL14/GL_SRC_ALPHA GL14/GL_ONE_MINUS_SRC_ALPHA GL14/GL_ONE_MINUS_DST_ALPHA GL14/GL_ONE)
+     (let [result# (do ~@body)]
+       (GL11/glDisable GL11/GL_BLEND)
+       result#)))
+
+
+(defmacro with-underlay-blending
+  "Render behind existing transparent colour buffer"
+  [& body]
+  `(do
+     (GL11/glEnable GL11/GL_BLEND)
+     (GL14/glBlendEquation GL14/GL_FUNC_ADD)
+     ; void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+     (GL14/glBlendFuncSeparate GL14/GL_ONE_MINUS_DST_ALPHA GL14/GL_ONE GL14/GL_ONE_MINUS_DST_ALPHA GL14/GL_ONE)
      (let [result# (do ~@body)]
        (GL11/glDisable GL11/GL_BLEND)
        result#)))
