@@ -1156,4 +1156,39 @@ void main()
           (count (first orientations)) => 64)))
 
 
+(def fragment-uniform-color
+"#version 450 core
+uniform vec4 color;
+out vec4 fragColor;
+void main()
+{
+  fragColor = color;
+}")
+
+
+(tabular "Source alpha blending test"
+         (fact
+           (with-invisible-window
+             (let [indices  [0 1 3 2]
+                   vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                   program  (make-program :sfsim.render/vertex [vertex-passthrough]
+                                          :sfsim.render/fragment [fragment-uniform-color])
+                   vao      (make-vertex-array-object program indices vertices ["point" 3])
+                   output   (texture-render-color 1 1 true
+                                                  (clear (vec3 0.0 0.0 0.0))
+                                                  (with-src-alpha-blending
+                                                    (use-program program)
+                                                    (uniform-vector4 program "color" ?color-one)
+                                                    (render-quads vao)
+                                                    (uniform-vector4 program "color" ?color-two)
+                                                    (render-quads vao)))
+                   result   (get-vector4 (rgba-texture->vectors4 output) 0 0)]
+               (destroy-vertex-array-object vao)
+               (destroy-program program)
+               result)) => (roughly-vector ?result 1e-3))
+         ?color-one               ?color-two             ?result
+         (vec4 0.25 0.5 0.75 1.0) (vec4 1.0 1.0 1.0 0.0)   (vec4 0.25 0.5 0.75 1.0)
+         (vec4 1.0 1.0 1.0 1.0)   (vec4 0.25 0.5 0.75 1.0) (vec4 0.25 0.5 0.75 1.0)
+         (vec4 1.0 0.0 0.0 1.0)   (vec4 0.0 1.0 0.0 0.25)  (vec4 0.75 0.25 0.0 0.8125))
+
 (GLFW/glfwTerminate)

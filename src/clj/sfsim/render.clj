@@ -12,7 +12,8 @@
     [fastmath.vector :refer (vec3 vec4 mag)]
     [malli.core :as m]
     [sfsim.image :refer (get-pixel)]
-    [sfsim.matrix :refer (fvec2 fvec3 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix vec4->vec3)]
+    [sfsim.matrix :refer (fvec2 fvec3 fvec4 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix
+                          vec4->vec3)]
     [sfsim.quaternion :refer (quaternion)]
     [sfsim.shaders :refer (vertex-passthrough)]
     [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
@@ -399,6 +400,13 @@
   {:malli/schema [:=> [:cat :int :string fvec3] :nil]}
   [program k value]
   (GL20/glUniform3f (uniform-location program k) (value 0) (value 1) (value 2)))
+
+
+(defn uniform-vector4
+  "Set uniform 3D vector in current shader program (don't forget to set the program using use-program first)"
+  {:malli/schema [:=> [:cat :int :string fvec4] :nil]}
+  [program k value]
+  (GL20/glUniform4f (uniform-location program k) (value 0) (value 1) (value 2) (value 3)))
 
 
 (defn uniform-matrix3
