@@ -44,7 +44,7 @@
   - [X] can we use OpenGL blending to render cloud layers front to back or do we need input and output color texture?
   - [-] test blending and add blending with adding color and multiplying alpha values:
         use srcAlphaFactor = GL_ONE_MINUS_DST_ALPHA, dstAlphaFactor = GL_ONE
-        use srcRGBFactor = GL_ONE, dstRGBFactor = GL_ONE_MINUS_SRC_ALPHA
+        use srcRGBFactor = GL_ONE, dstRGBFactor = GL_ONE_MINUS_DST_ALPHA
   - [ ] make environment macros for stencil setups
   - [ ] plume and cloud functions should store transparency in alpha value (not opacity)
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)

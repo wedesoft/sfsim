@@ -8,7 +8,7 @@
   (:require
     [fastmath.matrix :as fm]
     [sfsim.image :refer (white-image-with-alpha)]
-    [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-src-alpha-blending
+    [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                                        with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                                        destroy-vertex-array-object)]
     [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)]
@@ -232,7 +232,7 @@
         (Nuklear/nk_buffer_init_fixed vbuf vertices)
         (Nuklear/nk_buffer_init_fixed ebuf elements)
         (Nuklear/nk_convert context cmds vbuf ebuf config)))
-    (with-src-alpha-blending
+    (with-overlay-blending
       (with-scissor
         (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
           (when cmd

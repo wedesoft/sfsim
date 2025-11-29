@@ -83,13 +83,13 @@
   (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE))
 
 
-(defmacro with-src-alpha-blending
+(defmacro with-overlay-blending
   "Enable alpha blending for the specified body of code"
   [& body]
   `(do
      (GL11/glEnable GL11/GL_BLEND)
      (GL14/glBlendEquation GL14/GL_FUNC_ADD)
-     (GL14/glBlendFunc GL14/GL_SRC_ALPHA GL14/GL_ONE_MINUS_SRC_ALPHA)
+     (GL14/glBlendFuncSeparate GL14/GL_SRC_ALPHA GL14/GL_ONE_MINUS_SRC_ALPHA GL14/GL_ONE_MINUS_DST_ALPHA GL14/GL_ONE)
      (let [result# (do ~@body)]
        (GL11/glDisable GL11/GL_BLEND)
        result#)))
