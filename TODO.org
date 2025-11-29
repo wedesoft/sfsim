@@ -46,7 +46,7 @@
   - [X] test blending and add blending with adding color and multiplying alpha values:
         use srcAlphaFactor = GL_ONE_MINUS_DST_ALPHA, dstAlphaFactor = GL_ONE
         use srcRGBFactor = GL_ONE, dstRGBFactor = GL_ONE_MINUS_DST_ALPHA
-  - [ ] make environment macros for stencil setups
+  - [X] make environment macros for stencil setups
   - [ ] plume and cloud functions should store transparency in alpha value (not opacity)
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] use correct cutoff for all rendered layers when rendering front to back

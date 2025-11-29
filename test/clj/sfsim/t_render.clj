@@ -1092,12 +1092,12 @@ void main()
                    vao2      (make-vertex-array-object program indices2 vertices2 ["point" 3 "uv" 2])]
                (with-stencils
                  (clear (vec3 0.0 0.0 0.0) 1.0 0x1)
-                 (set-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4)
                  (use-program program)
-                 (render-quads vao1)  ; render red quad
+                 (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+                   (render-quads vao1))  ; render red quad
                  (clear)
-                 (set-stencil-op-ref-and-mask ?operation ?reference ?mask)
-                 (render-quads vao2)  ; render blue quad
+                 (with-stencil-op-ref-and-mask ?operation ?reference ?mask
+                   (render-quads vao2))  ; render blue quad
                  (destroy-vertex-array-object vao2)
                  (destroy-vertex-array-object vao1)
                  (destroy-program program)))) => (is-image (str "test/clj/sfsim/fixtures/render/" ?image) 0.0))

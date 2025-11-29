@@ -76,11 +76,16 @@
        result#)))
 
 
-(defn set-stencil-op-ref-and-mask
+(defmacro with-stencil-op-ref-and-mask
   "Write bits to stencil buffer if they are not all set"
-  [op reference mask]
-  (GL11/glStencilFunc op reference mask)
-  (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE))
+  [op reference mask & body]
+  `(do
+     (GL11/glStencilFunc ~op ~reference ~mask)
+     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
+     (let [result# (do ~@body)]
+       (GL11/glStencilFunc GL11/GL_ALWAYS 0 0xff)
+       (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_KEEP)
+       result#)))
 
 
 (defmacro with-overlay-blending
