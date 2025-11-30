@@ -51,7 +51,7 @@ void main()
 ; parse first command line argument
 (def shadertoy-source (slurp (-> *command-line-args* first)))
 
-(def shader-functions [rotation-x rotation-y rotation-z ray-box ray-circle subtract-interval (plume-segment false) (plume-segment true)])
+(def shader-functions [])
 
 (def vertices
   (float-array [ 1.0  1.0 0.0
@@ -120,17 +120,8 @@ void main()
 (GL20/glUniform2f (GL20/glGetUniformLocation program "iResolution") width height)
 (GL20/glUniform2f (GL20/glGetUniformLocation program "iMouse") 0.0 0.0)
 
-(GL20/glUniform1f (GL20/glGetUniformLocation program "nozzle") 2.7549)
-(GL20/glUniform1f (GL20/glGetUniformLocation program "min_limit") 1.2)
-(GL20/glUniform1f (GL20/glGetUniformLocation program "max_slope") 1.0)
-(GL20/glUniform1f (GL20/glGetUniformLocation program "omega_factor") 0.2)
-(GL20/glUniform1f (GL20/glGetUniformLocation program "diamond_strength") 0.2)
-(GL20/glUniform1f (GL20/glGetUniformLocation program "pressure") 1.0)
-(GL20/glUniform1f (GL20/glGetUniformLocation program "throttle") 1.0)
-(GL20/glUniform1f (GL20/glGetUniformLocation program "engine_step") 0.2)
-
 (while (not (GLFW/glfwWindowShouldClose window))
-  (GL20/glUniform1f (GL20/glGetUniformLocation program "time") (GLFW/glfwGetTime))
+  (GL20/glUniform1f (GL20/glGetUniformLocation program "iTime") (GLFW/glfwGetTime))
   (when @mouse-button
     (GL20/glUniform2f (GL20/glGetUniformLocation program "iMouse") (@mouse-pos 0) (@mouse-pos 1))
     (GL20/glUniform1f (GL20/glGetUniformLocation program "pressure") (pow 0.001 (/ (@mouse-pos 1) height))))
