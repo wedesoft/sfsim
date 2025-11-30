@@ -15,6 +15,9 @@
 // fbm and domain warping: https://www.shadertoy.com/view/WsjGRz
 // 3D perlin noise: https://www.shadertoy.com/view/4djXzz
 
+// Standalone prototype shader:
+// https://www.shadertoy.com/view/t3XyzB
+
 vec2 cylinder1_base = vec2(-10.9544,  4.3511);
 vec2 cylinder2_base = vec2(-10.9544, -4.3511);
 
