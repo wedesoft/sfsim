@@ -47,7 +47,6 @@
         use srcAlphaFactor = GL_ONE_MINUS_DST_ALPHA, dstAlphaFactor = GL_ONE
         use srcRGBFactor = GL_ONE, dstRGBFactor = GL_ONE_MINUS_DST_ALPHA
   - [X] make environment macros for stencil setups
-  - [ ] plume and cloud functions should store transparency in alpha value (not opacity)
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] use correct cutoff for all rendered layers when rendering front to back
   - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
@@ -56,8 +55,9 @@
     - [ ] render cloud and plume low res overlay
       - [ ] geometry rendering
         - [ ] set stencil buffer to atmosphere
-        - [ ] render model outputting camera points, camera distance. object stencil, and depth buffer
-        - [ ] render planet using depth buffer outputting camera points overwritting object stencil
+        - [ ] render model outputting camera points, set stencil buffer to object, set depth buffer
+        - [ ] render planet using depth buffer outputting camera points overwritting object stencil,
+              skip using object stencil if out of atmosphere
       - [ ] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
         - [ ] render cloud front layer up to object depth on atmospheric background
         - [ ] render cloud front layer up to minimum planet or object depth on planet stencil

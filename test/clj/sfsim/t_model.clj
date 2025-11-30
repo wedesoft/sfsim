@@ -1018,4 +1018,40 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
          (:sfsim.model/throttle model-vars) => 0.8))
 
 
+(def vertex-geometry-scene
+"#version 450 core
+uniform mat4 projection;
+uniform mat4 object_to_camera;
+in vec3 vertex;
+in vec3 normal;
+out VS_OUT
+{
+  vec4 camera_point;
+} vs_out;
+void main()
+{
+  vec4 camera_point = object_to_camera * vec4(vertex, 1);
+  vs_out.camera_point = camera_point;
+  gl_Position = projection * camera_point;
+}")
+
+(def fragment-geometry-scene
+"#version 450 core
+in VS_OUT
+{
+  vec4 camera_point;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+void main()
+{
+  camera_point = fs_in.camera_point;
+}")
+
+; (fact "Render camera points to frame buffer"
+;       (with-invisible-window
+;
+;         )
+;       )
+
+
 (GLFW/glfwTerminate)
