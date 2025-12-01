@@ -9,14 +9,14 @@
     [clojure.math :refer (to-radians sqrt PI)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye mulm inverse mat4x4)]
-    [fastmath.vector :refer (vec3 normalize)]
+    [fastmath.vector :refer (vec3 vec4 normalize)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.clouds :as clouds]
     [sfsim.conftest :refer (roughly-matrix roughly-vector roughly-quaternion is-image)]
-    [sfsim.image :refer (floats->image)]
+    [sfsim.image :refer (floats->image get-vector4)]
     [sfsim.matrix :refer :all]
     [sfsim.model :refer :all :as model]
     [sfsim.planet :as planet]
@@ -26,7 +26,9 @@
     [sfsim.texture :refer :all])
   (:import
     (org.lwjgl.glfw
-      GLFW)))
+      GLFW)
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -1047,11 +1049,27 @@ void main()
   camera_point = fs_in.camera_point;
 }")
 
-; (fact "Render camera points to frame buffer"
-;       (with-invisible-window
-;
-;         )
-;       )
+(fact "Render camera points to frame buffer"
+      (with-invisible-window
+        (let [program         (make-program :sfsim.render/vertex [vertex-geometry-scene]
+                                            :sfsim.render/fragment [fragment-geometry-scene])
+              opengl-scene    (load-scene-into-opengl (constantly program) cube)
+              moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))
+              camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))
+              callback        (fn [_material {:sfsim.model/keys [program transform]}]
+                                  (use-program program)
+                                  (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                                  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
+              tex             (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)]
+          (framebuffer-render 160 120 :sfsim.render/cullback nil [tex]
+                              (clear (vec3 0 0 0) 0.0)
+                              (render-scene (constantly program) 0
+                                            {:sfsim.render/camera-to-world camera-to-world} []
+                                            moved-scene callback))
+          (get-vector4 (rgba-texture->vectors4 tex) 60 80) => (roughly-vector (vec4 0.014 0.014 -4.0 1.0) 1e-3)
+          (destroy-texture tex)
+          (destroy-scene opengl-scene)
+          (destroy-program program))))
 
 
 (GLFW/glfwTerminate)

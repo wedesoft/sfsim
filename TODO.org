@@ -55,7 +55,7 @@
     - [ ] render cloud and plume low res overlay
       - [ ] geometry rendering
         - [ ] set stencil buffer to atmosphere
-        - [ ] render model outputting camera points, set stencil buffer to object, set depth buffer
+        - [-] render model outputting camera points, set stencil buffer to object, set depth buffer, disable color buffer
         - [ ] render planet using depth buffer outputting camera points overwritting object stencil,
               skip using object stencil if out of atmosphere
       - [ ] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
