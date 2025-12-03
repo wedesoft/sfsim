@@ -27,7 +27,7 @@
                           uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
                           setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
-    [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap)]
+    [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d)]
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.util :refer (N0 N third)])
   (:import
@@ -53,7 +53,9 @@
     (fastmath.vector
       Vec4)
     (org.lwjgl.stb
-      STBImage)))
+      STBImage)
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -965,6 +967,14 @@ void main()
   (let [variations (for [textured [false true] bump [false true]] [textured bump])
         programs   (mapv #(make-scene-geometry-program (first %) (second %)) variations)]
     {::programs (zipmap variations programs)}))
+
+
+(defn render-geometry
+  [geometry-renderer render-vars _scene]
+  (let [overlay-width (:sfsim.render/overlay-width render-vars)
+        overlay-height (:sfsim.render/overlay-height render-vars)
+        point-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F overlay-width overlay-height)]
+    point-texture))
 
 
 (defn destroy-scene-geometry-renderer

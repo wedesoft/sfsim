@@ -26,9 +26,7 @@
     [sfsim.texture :refer :all])
   (:import
     (org.lwjgl.glfw
-      GLFW)
-    (org.lwjgl.opengl
-      GL30)))
+      GLFW)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -1031,7 +1029,10 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
                                   (use-program program)
                                   (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                   (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
-              tex             (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)]
+              render-vars     {:sfsim.render/camera-to-world camera-to-world
+                               :sfsim.render/overlay-width 160
+                               :sfsim.render/overlay-height 120}
+              tex             (render-geometry renderer render-vars moved-scene)]
           (framebuffer-render 160 120 :sfsim.render/cullback nil [tex]
                               (clear (vec3 0 0 0) 0.0)
                               (render-scene (comp (:sfsim.model/programs renderer) material-type) 0
