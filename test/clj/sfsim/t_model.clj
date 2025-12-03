@@ -1020,40 +1020,11 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
          (:sfsim.model/throttle model-vars) => 0.8))
 
 
-(def vertex-geometry-scene
-"#version 450 core
-uniform mat4 projection;
-uniform mat4 object_to_camera;
-in vec3 vertex;
-in vec3 normal;
-out VS_OUT
-{
-  vec4 camera_point;
-} vs_out;
-void main()
-{
-  vec4 camera_point = object_to_camera * vec4(vertex, 1);
-  vs_out.camera_point = camera_point;
-  gl_Position = projection * camera_point;
-}")
-
-(def fragment-geometry-scene
-"#version 450 core
-in VS_OUT
-{
-  vec4 camera_point;
-} fs_in;
-layout (location = 0) out vec4 camera_point;
-void main()
-{
-  camera_point = fs_in.camera_point;
-}")
 
 (fact "Render camera points to frame buffer"
       (with-invisible-window
-        (let [program         (make-program :sfsim.render/vertex [vertex-geometry-scene]
-                                            :sfsim.render/fragment [fragment-geometry-scene])
-              opengl-scene    (load-scene-into-opengl (constantly program) cube)
+        (let [renderer        (make-scene-geometry-renderer)
+              opengl-scene    (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-type) cube)
               moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))
               camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))
               callback        (fn [_material {:sfsim.model/keys [program transform]}]
@@ -1063,13 +1034,13 @@ void main()
               tex             (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)]
           (framebuffer-render 160 120 :sfsim.render/cullback nil [tex]
                               (clear (vec3 0 0 0) 0.0)
-                              (render-scene (constantly program) 0
+                              (render-scene (comp (:sfsim.model/programs renderer) material-type) 0
                                             {:sfsim.render/camera-to-world camera-to-world} []
                                             moved-scene callback))
           (get-vector4 (rgba-texture->vectors4 tex) 60 80) => (roughly-vector (vec4 0.014 0.014 -4.0 1.0) 1e-3)
           (destroy-texture tex)
           (destroy-scene opengl-scene)
-          (destroy-program program))))
+          (destroy-scene-geometry-renderer renderer))))
 
 
 (GLFW/glfwTerminate)

@@ -915,5 +915,62 @@
   (doseq [program (vals programs)] (destroy-program program)))
 
 
+(def vertex-geometry-scene
+  (template/fn [textured bump]
+"#version 450 core
+uniform mat4 projection;
+uniform mat4 object_to_camera;
+in vec3 vertex;
+<% (if bump %>
+in vec3 tangent;
+in vec3 bitangent;
+<% ) %>
+in vec3 normal;
+<% (if (or textured bump) %>
+in vec2 texcoord;
+<% ) %>
+out VS_OUT
+{
+  vec4 camera_point;
+} vs_out;
+void main()
+{
+  vec4 camera_point = object_to_camera * vec4(vertex, 1);
+  vs_out.camera_point = camera_point;
+  gl_Position = projection * camera_point;
+}"))
+
+
+(def fragment-geometry-scene
+"#version 450 core
+in VS_OUT
+{
+  vec4 camera_point;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+void main()
+{
+  camera_point = fs_in.camera_point;
+}")
+
+
+(defn make-scene-geometry-program
+  [textured bump]
+  (make-program :sfsim.render/vertex [(vertex-geometry-scene textured bump)]
+                :sfsim.render/fragment [fragment-geometry-scene]))
+
+
+(defn make-scene-geometry-renderer
+  []
+  (let [variations (for [textured [false true] bump [false true]] [textured bump])
+        programs   (mapv #(make-scene-geometry-program (first %) (second %)) variations)]
+    {::programs (zipmap variations programs)}))
+
+
+(defn destroy-scene-geometry-renderer
+  [{::keys [programs]}]
+  (doseq [program (vals programs)] (destroy-program program)))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
