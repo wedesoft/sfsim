@@ -24,7 +24,7 @@
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
-                          uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
+                          uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps framebuffer-render
                           setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d)]
@@ -968,12 +968,26 @@ void main()
         programs   (mapv #(make-scene-geometry-program (first %) (second %)) variations)]
     {::programs (zipmap variations programs)}))
 
+(defn render-geometry-mesh
+  [_material {:sfsim.model/keys [program transform] :as render-vars}]
+  (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+    (use-program program)
+    (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))))
 
-(defn render-geometry
-  [geometry-renderer render-vars _scene]
-  (let [overlay-width (:sfsim.render/overlay-width render-vars)
-        overlay-height (:sfsim.render/overlay-height render-vars)
+
+(defn render-geometry-scene
+  [geometry-renderer render-vars scene]
+  (let [overlay-width   (:sfsim.render/overlay-width render-vars)
+        overlay-height  (:sfsim.render/overlay-height render-vars)
+        projection      (:sfsim.render/overlay-projection render-vars)
         point-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F overlay-width overlay-height)]
+    (doseq [program (vals (::programs geometry-renderer))]
+           (use-program program)
+           (uniform-matrix4 program "projection" projection))
+    (framebuffer-render overlay-width overlay-height :sfsim.render/cullback nil [point-texture]
+                        (clear (vec3 0 0 0) 0.0)
+                        (render-scene (comp (:sfsim.model/programs geometry-renderer) material-type) 0
+                                      render-vars [] scene render-geometry-mesh))
     point-texture))
 
 

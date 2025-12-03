@@ -1025,19 +1025,11 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
               opengl-scene    (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-type) cube)
               moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))
               camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))
-              callback        (fn [_material {:sfsim.model/keys [program transform]}]
-                                  (use-program program)
-                                  (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                                  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform)))
               render-vars     {:sfsim.render/camera-to-world camera-to-world
                                :sfsim.render/overlay-width 160
-                               :sfsim.render/overlay-height 120}
-              tex             (render-geometry renderer render-vars moved-scene)]
-          (framebuffer-render 160 120 :sfsim.render/cullback nil [tex]
-                              (clear (vec3 0 0 0) 0.0)
-                              (render-scene (comp (:sfsim.model/programs renderer) material-type) 0
-                                            {:sfsim.render/camera-to-world camera-to-world} []
-                                            moved-scene callback))
+                               :sfsim.render/overlay-height 120
+                               :sfsim.render/overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
+              tex             (render-geometry-scene renderer render-vars moved-scene)]
           (get-vector4 (rgba-texture->vectors4 tex) 60 80) => (roughly-vector (vec4 0.014 0.014 -4.0 1.0) 1e-3)
           (destroy-texture tex)
           (destroy-scene opengl-scene)
