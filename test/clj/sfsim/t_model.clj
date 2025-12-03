@@ -1029,9 +1029,10 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
                                :sfsim.render/overlay-width 160
                                :sfsim.render/overlay-height 120
                                :sfsim.render/overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
-              tex             (render-geometry-scene renderer render-vars moved-scene)]
-          (get-vector4 (rgba-texture->vectors4 tex) 60 80) => (roughly-vector (vec4 0.014 0.014 -4.0 1.0) 1e-3)
-          (destroy-texture tex)
+              geometry        (render-scene-geometry renderer render-vars moved-scene)]
+          (get-vector4 (rgba-texture->vectors4 (:sfsim.model/points geometry)) 60 80)
+          => (roughly-vector (vec4 0.014 0.014 -4.0 1.0) 1e-3)
+          (destroy-scene-geometry geometry)
           (destroy-scene opengl-scene)
           (destroy-scene-geometry-renderer renderer))))
 

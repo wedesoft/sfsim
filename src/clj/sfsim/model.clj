@@ -975,7 +975,7 @@ void main()
     (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))))
 
 
-(defn render-geometry-scene
+(defn render-scene-geometry
   [geometry-renderer render-vars scene]
   (let [overlay-width   (:sfsim.render/overlay-width render-vars)
         overlay-height  (:sfsim.render/overlay-height render-vars)
@@ -988,7 +988,12 @@ void main()
                         (clear (vec3 0 0 0) 0.0)
                         (render-scene (comp (:sfsim.model/programs geometry-renderer) material-type) 0
                                       render-vars [] scene render-geometry-mesh))
-    point-texture))
+    {::points point-texture}))
+
+
+(defn destroy-scene-geometry
+  [{::keys [points]}]
+  (destroy-texture points))
 
 
 (defn destroy-scene-geometry-renderer
