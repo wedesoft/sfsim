@@ -16,7 +16,7 @@
     [sfsim.atmosphere :as atmosphere]
     [sfsim.clouds :as clouds]
     [sfsim.conftest :refer (roughly-matrix roughly-vector roughly-quaternion is-image)]
-    [sfsim.image :refer (floats->image get-vector4)]
+    [sfsim.image :refer (floats->image get-vector4 get-float)]
     [sfsim.matrix :refer :all]
     [sfsim.model :refer :all :as model]
     [sfsim.planet :as planet]
@@ -1032,6 +1032,8 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
               geometry        (render-scene-geometry renderer render-vars moved-scene)]
           (get-vector4 (rgba-texture->vectors4 (:sfsim.model/points geometry)) 60 80)
           => (roughly-vector (vec4 0.014 0.014 -4.0 1.0) 1e-3)
+          (get-float (float-texture-2d->floats (:sfsim.model/distance geometry)) 60 80)
+          => (roughly 4.0 1e-3)
           (destroy-scene-geometry geometry)
           (destroy-scene opengl-scene)
           (destroy-scene-geometry-renderer renderer))))

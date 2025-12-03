@@ -27,7 +27,8 @@
                           uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps framebuffer-render
                           setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
-    [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d)]
+    [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d
+                           make-empty-float-texture-2d)]
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.util :refer (N0 N third)])
   (:import
@@ -950,9 +951,11 @@ in VS_OUT
   vec4 camera_point;
 } fs_in;
 layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float distance;
 void main()
 {
   camera_point = fs_in.camera_point;
+  distance = length(fs_in.camera_point.xyz);
 }")
 
 
@@ -977,22 +980,26 @@ void main()
 
 (defn render-scene-geometry
   [geometry-renderer render-vars scene]
-  (let [overlay-width   (:sfsim.render/overlay-width render-vars)
-        overlay-height  (:sfsim.render/overlay-height render-vars)
-        projection      (:sfsim.render/overlay-projection render-vars)
-        point-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F overlay-width overlay-height)]
+  (let [overlay-width    (:sfsim.render/overlay-width render-vars)
+        overlay-height   (:sfsim.render/overlay-height render-vars)
+        projection       (:sfsim.render/overlay-projection render-vars)
+        point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
+                                                overlay-width overlay-height)
+        distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp overlay-width overlay-height)]
     (doseq [program (vals (::programs geometry-renderer))]
            (use-program program)
            (uniform-matrix4 program "projection" projection))
-    (framebuffer-render overlay-width overlay-height :sfsim.render/cullback nil [point-texture]
+    (framebuffer-render overlay-width overlay-height :sfsim.render/cullback nil [point-texture distance-texture]
                         (clear (vec3 0 0 0) 0.0)
                         (render-scene (comp (:sfsim.model/programs geometry-renderer) material-type) 0
                                       render-vars [] scene render-geometry-mesh))
-    {::points point-texture}))
+    {::points point-texture
+     ::distance distance-texture}))
 
 
 (defn destroy-scene-geometry
-  [{::keys [points]}]
+  [{::keys [points distance]}]
+  (destroy-texture distance)
   (destroy-texture points))
 
 
