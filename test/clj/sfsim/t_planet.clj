@@ -745,6 +745,10 @@ void main()
                                         :sfsim.render/tess-evaluation [tess-evaluation-planet-shadow]
                                         :sfsim.render/geometry [(geometry-planet 0)]
                                         :sfsim.render/fragment [fragment-planet-geometry])]
+           (use-program program)
+           (uniform-sampler program "surface" 0)
+           (uniform-int program "high_detail" 2)
+           (uniform-int program "low_detail" 1)
            (destroy-program program))))
 
 
