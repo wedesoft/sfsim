@@ -9,13 +9,13 @@
     [clojure.math :refer (PI exp pow to-radians)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye diagonal inverse)]
-    [fastmath.vector :refer (vec3 dot mag)]
+    [fastmath.vector :refer (vec3 vec4 dot mag)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.clouds :as clouds]
-    [sfsim.conftest :refer (is-image)]
+    [sfsim.conftest :refer (is-image roughly-vector)]
     [sfsim.cubemap :as cubemap]
     [sfsim.image :refer :all]
     [sfsim.interpolate :refer :all]
@@ -27,10 +27,12 @@
     [sfsim.texture :refer :all]
     [sfsim.util :refer :all])
   (:import
-    [clojure.lang
-     Keyword]
-    [org.lwjgl.glfw
-     GLFW]))
+    (clojure.lang
+      Keyword)
+    (org.lwjgl.glfw
+      GLFW)
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -731,24 +733,54 @@ in GEO_OUT
   vec3 object_point;
   vec4 camera_point;
 } fs_in;
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float distance;
 void main()
 {
+  camera_point = fs_in.camera_point;
+  distance = length(fs_in.camera_point.xyz);
 }")
+
 
 (facts "Render planet geometry"
        (with-invisible-window
-         (let [overlay-width 160
-               overlay-height 120
-               projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
-               program    (make-program :sfsim.render/vertex [vertex-planet]
-                                        :sfsim.render/tess-control [tess-control-planet]
-                                        :sfsim.render/tess-evaluation [tess-evaluation-planet-shadow]
-                                        :sfsim.render/geometry [(geometry-planet 0)]
-                                        :sfsim.render/fragment [fragment-planet-geometry])]
-           (use-program program)
-           (uniform-sampler program "surface" 0)
-           (uniform-int program "high_detail" 2)
-           (uniform-int program "low_detail" 1)
+         (let [overlay-width    160
+               overlay-height   120
+               projection       (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+               world-to-camera  (transformation-matrix (eye 3) (vec3 0 0 -5))
+               program          (make-program :sfsim.render/vertex [vertex-planet]
+                                              :sfsim.render/tess-control [tess-control-planet]
+                                              :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                              :sfsim.render/geometry [(geometry-planet 0)]
+                                              :sfsim.render/fragment [fragment-planet-geometry])
+               indices          [0 2 3 1]
+               vertices         (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
+               vao              (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+               data             [-1  1 0, 0  1 0, 1  1 0,
+                                 -1  0 0, 0  0 0, 1  0 0,
+                                 -1 -1 0, 0 -1 0, 1 -1 0]
+               surface          (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                        #:sfsim.image{:width 3 :height 3 :data (float-array data)})
+               node             {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 2)}
+               point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
+                                                       overlay-width overlay-height)
+               distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp overlay-width overlay-height)]
+           (framebuffer-render overlay-width overlay-height :sfsim.render/cullback nil [point-texture distance-texture]
+                               (clear (vec3 0 0 0) 0.0)
+                               (use-program program)
+                               (uniform-matrix4 program "projection" projection)
+                               (uniform-sampler program "surface" 0)
+                               (uniform-int program "high_detail" 2)
+                               (uniform-int program "low_detail" 2)
+                               (render-tile program node world-to-camera [] [:sfsim.planet/surf-tex]))
+           (get-vector4 (rgba-texture->vectors4 point-texture) 60 80)
+           => (roughly-vector (vec4 0.011 0.011 -3.0 1.0) 1e-3)
+           (get-float (float-texture-2d->floats distance-texture) 60 80)
+           => (roughly 3.0 1e-3)
+           (destroy-texture distance-texture)
+           (destroy-texture point-texture)
+           (destroy-texture surface)
+           (destroy-vertex-array-object vao)
            (destroy-program program))))
 
 

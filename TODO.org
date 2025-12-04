@@ -56,6 +56,7 @@
       - [-] geometry rendering
         - [ ] set stencil buffer to atmosphere
         - [X] render model outputting camera points, set stencil buffer to object, set depth buffer
+        - [ ] specify depth buffer when rendering model geometry
         - [ ] render planet using depth buffer outputting camera points overwritting object stencil,
               skip using object stencil if out of atmosphere
       - [ ] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate

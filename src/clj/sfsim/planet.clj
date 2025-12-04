@@ -454,9 +454,9 @@
         shadow-data     (:sfsim.opacity/data data)
         variations      (:sfsim.opacity/scene-shadow-counts shadow-data)
         programs        (mapv #(make-planet-program data %) variations)
-        worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
-        worley-data          #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
-        worley               (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)]
+        worley-floats   (slurp-floats "data/clouds/worley-cover.raw")
+        worley-data     #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
+        worley          (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)]
     (generate-mipmap worley)
     {::programs (zipmap variations programs)
      ::worley worley
