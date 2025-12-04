@@ -6,7 +6,7 @@
 
 (ns sfsim.t-planet
   (:require
-    [clojure.math :refer (PI exp pow)]
+    [clojure.math :refer (PI exp pow to-radians)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye diagonal inverse)]
     [fastmath.vector :refer (vec3 dot mag)]
@@ -149,6 +149,7 @@ in GEO_OUT
   vec2 colorcoord;
   vec3 point;
   vec3 object_point;
+  vec4 camera_point;
 } frag_in;
 out vec3 fragColor;
 void main()
@@ -379,6 +380,7 @@ out GEO_OUT
   vec2 colorcoord;
   vec3 point;
   vec3 object_point;
+  vec4 camera_point;
 } vs_out;
 void main()
 {
@@ -605,6 +607,7 @@ in GEO_OUT
   vec2 colorcoord;
   vec3 point;
   vec3 object_point;
+  vec4 camera_point;
 } fs_in;
 out vec3 fragColor;
 void main()
@@ -717,6 +720,32 @@ void main()
            (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (eye 4)
            (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (diagonal 1 2 3 4)
            (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => light)))
+
+
+(def fragment-planet-geometry
+"#version 450 core
+in GEO_OUT
+{
+  vec2 colorcoord;
+  vec3 point;
+  vec3 object_point;
+  vec4 camera_point;
+} fs_in;
+void main()
+{
+}")
+
+(facts "Render planet geometry"
+       (with-invisible-window
+         (let [overlay-width 160
+               overlay-height 120
+               projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+               program    (make-program :sfsim.render/vertex [vertex-planet]
+                                        :sfsim.render/tess-control [tess-control-planet]
+                                        :sfsim.render/tess-evaluation [tess-evaluation-planet-shadow]
+                                        :sfsim.render/geometry [(geometry-planet 0)]
+                                        :sfsim.render/fragment [fragment-planet-geometry])]
+           (destroy-program program))))
 
 
 (GLFW/glfwTerminate)

@@ -53,9 +53,9 @@
         also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
     - [X] as before render opacity and shadow cascade and object shadows
     - [ ] render cloud and plume low res overlay
-      - [ ] geometry rendering
+      - [-] geometry rendering
         - [ ] set stencil buffer to atmosphere
-        - [-] render model outputting camera points, set stencil buffer to object, set depth buffer, disable color buffer
+        - [X] render model outputting camera points, set stencil buffer to object, set depth buffer
         - [ ] render planet using depth buffer outputting camera points overwritting object stencil,
               skip using object stencil if out of atmosphere
       - [ ] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
@@ -68,6 +68,8 @@
         - [ ] copy alpha values to input texture for next step
         - [ ] render cloud back layer up to planet on planet stencil
         - [ ] render cloud back layer on atmospheric background
+    - [ ] disable color buffer when rendering frame buffer and it is not required
+    - [ ] make camera_point optional in planet shaders
     - [ ] render opaque objects (scenes, planet, atmosphere) with atmosphere in front,
           render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
       - [ ] render model

@@ -1018,7 +1018,6 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
          (:sfsim.model/throttle model-vars) => 0.8))
 
 
-
 (fact "Render camera points to frame buffer"
       (with-invisible-window
         (let [renderer        (make-scene-geometry-renderer)
