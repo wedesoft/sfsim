@@ -650,5 +650,10 @@ void main()
     {::program program}))
 
 
+(defn destroy-planet-geometry-renderer
+  [{::keys [program]}]
+  (destroy-program program))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

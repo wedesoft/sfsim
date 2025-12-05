@@ -761,7 +761,7 @@ void main()
            (destroy-texture point-texture)
            (destroy-texture surface)
            (destroy-vertex-array-object vao)
-           (destroy-program (:sfsim.planet/program renderer)))))
+           (destroy-planet-geometry-renderer renderer))))
 
 
 (GLFW/glfwTerminate)
