@@ -13,7 +13,7 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.conftest :refer (is-image roughly-vector)]
+    [sfsim.conftest :refer (is-image roughly-vector roughly-matrix)]
     [sfsim.image :refer :all]
     [sfsim.matrix :refer :all :as matrix]
     [sfsim.quaternion :as q]
@@ -1128,7 +1128,7 @@ void main()
 
 
 (facts "Join z-ranges and projection matrices of two render variable hashmaps"
-       (let [render-config {:sfsim.render/fov (to-radians 60.0)}
+       (let [render-config #:sfsim.render{:fov (to-radians 60.0) :cloud-subsampling 2}
              origin        (vec3 1 2 3)
              object-origin (vec3 4 0 0)
              orientation   (q/->Quaternion 1 0 0 0)
@@ -1142,6 +1142,10 @@ void main()
          (:sfsim.render/object-origin planet-vars) => (vec3 -3 2 3)
          (:sfsim.render/window-width joined-vars) => 320
          (:sfsim.render/window-height joined-vars) => 240
+         (:sfsim.render/overlay-width joined-vars) => 160
+         (:sfsim.render/overlay-height joined-vars) => 120
+         (:sfsim.render/projection joined-vars) => (roughly-matrix (projection-matrix 320 240 10.0 10001.0 (to-radians 60)) 1e-6)
+         (:sfsim.render/overlay-projection joined-vars) => (roughly-matrix (projection-matrix 160 120 10.0 10001.0 (to-radians 60)) 1e-6)
          (:sfsim.render/origin joined-vars) => origin
          (:sfsim.render/z-near joined-vars) => 10.0
          (:sfsim.render/z-far joined-vars) => 10000.0

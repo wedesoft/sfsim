@@ -715,7 +715,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 
 
 (facts "Create hashmap with render variables for rendering a scene outside the atmosphere"
-       (let [render          {:sfsim.render/fov 0.5 :sfsim.render/min-z-near 1.0}
+       (let [render-config   #:sfsim.render{:fov 0.5 :min-z-near 1.0 :cloud-subsampling 2 }
              pos1            (vec3 0 0 0)
              pos2            (vec3 0 0 -20)
              pos3            (vec3 0 0 -100)
@@ -733,11 +733,11 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                            :diamond-strength 0.4
                                            :engine-step 0.2}
              model-vars      {:sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
-             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient
+             render-vars1    (make-scene-render-vars render-config 640 480 pos1 orientation1 light-direction obj-pos obj-orient
                                                      model-data model-vars)
-             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient
+             render-vars2    (make-scene-render-vars render-config 640 480 pos2 orientation2 light-direction obj-pos obj-orient
                                                      model-data model-vars)
-             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient
+             render-vars3    (make-scene-render-vars render-config 640 480 pos3 orientation3 light-direction obj-pos obj-orient
                                                      model-data model-vars)]
          (:sfsim.render/origin render-vars1) => pos1
          (:sfsim.render/camera-to-world render-vars1) => (eye 4)

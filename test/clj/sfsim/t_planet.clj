@@ -704,7 +704,7 @@ void main()
 (facts "Create hashmap with render variables for rendering current frame of planet"
        (let [planet {:sfsim.planet/radius 1000.0}
              cloud  {:sfsim.clouds/cloud-top 100.0}
-             render {:sfsim.render/fov 0.5 :sfsim.render/min-z-near 1.0}
+             render #:sfsim.render{:fov 0.5 :min-z-near 1.0 :cloud-subsampling 2}
              pos1   (vec3 (+ 1000 150) 0 0)
              pos2   (vec3 (+ 1000 75) 0 0)
              opos   (vec3 0 0 0)
@@ -714,7 +714,9 @@ void main()
          (with-redefs [planet/render-depth render-depth-mock
                        matrix/quaternion->matrix (fn [orientation] (fact [orientation] orientation => o) :rotation-matrix)
                        matrix/transformation-matrix (fn [rot _pos] (fact rot => :rotation-matrix) (eye 4))
-                       matrix/projection-matrix (fn [w h _near _far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
+                       matrix/projection-matrix (fn [w h _near _far fov]
+                                                    (fact [w h fov] => #(contains? #{[320 240 0.5] [640 480 0.5]} %))
+                                                    (diagonal 1 2 3 4))]
            (:sfsim.render/origin (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => pos1
            (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (roughly 47.549 1e-3)
            (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos2 o light opos o m-vars)) => 1.0
