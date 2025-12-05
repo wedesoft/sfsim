@@ -743,21 +743,12 @@ void main()
                surface          (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                         #:sfsim.image{:width 3 :height 3 :data (float-array data)})
                tree             {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 2)}
-               point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
-                                                       (:sfsim.render/overlay-width render-vars)
-                                                       (:sfsim.render/overlay-height render-vars))
-               distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp
-                                                             (:sfsim.render/overlay-width render-vars)
-                                                             (:sfsim.render/overlay-height render-vars))]
-           (framebuffer-render (:sfsim.render/overlay-width render-vars) (:sfsim.render/overlay-height render-vars)
-                               :sfsim.render/cullback nil [point-texture distance-texture]
-                               (render-planet-geometry renderer render-vars tree))
-           (get-vector4 (rgba-texture->vectors4 point-texture) 60 80)
+               geometry         (render-planet-geometry renderer render-vars tree)]
+           (get-vector4 (rgba-texture->vectors4 (:sfsim.planet/points geometry)) 60 80)
            => (roughly-vector (vec4 0.011 0.011 -3.0 1.0) 1e-3)
-           (get-float (float-texture-2d->floats distance-texture) 60 80)
+           (get-float (float-texture-2d->floats (:sfsim.planet/distance geometry)) 60 80)
            => (roughly 3.0 1e-3)
-           (destroy-texture distance-texture)
-           (destroy-texture point-texture)
+           (destroy-planet-geometry geometry)
            (destroy-texture surface)
            (destroy-vertex-array-object vao)
            (destroy-planet-geometry-renderer renderer))))

@@ -25,13 +25,17 @@
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                           destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
                           setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-quads render-config
-                          render-vars diagonal-field-of-view make-render-vars clear)
+                          render-vars diagonal-field-of-view make-render-vars clear framebuffer-render)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
-                           texture-2d texture-3d make-float-texture-3d generate-mipmap)]
+                           texture-2d texture-3d make-float-texture-3d generate-mipmap make-empty-texture-2d
+                           make-empty-float-texture-2d)]
     [sfsim.worley :refer (worley-size)]
-    [sfsim.util :refer (N N0 sqr slurp-floats)]))
+    [sfsim.util :refer (N N0 sqr slurp-floats)])
+  (:import
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -662,10 +666,20 @@ void main()
 
 (defn render-planet-geometry
   [{::keys [program]} render-vars tree]
-  (clear (vec3 0 0 0) 0.0)
-  (use-program program)
-  (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))
-  (render-tree program tree (inverse (:sfsim.render/camera-to-world render-vars)) [] [:sfsim.planet/surf-tex]))
+  (let [overlay-width    (:sfsim.render/overlay-width render-vars)
+        overlay-height   (:sfsim.render/overlay-height render-vars)
+        point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
+                                                overlay-width overlay-height)
+        distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp
+                                                      overlay-width overlay-height)]
+
+    (framebuffer-render overlay-width overlay-height :sfsim.render/cullback nil [point-texture distance-texture]
+                        (clear (vec3 0 0 0) 0.0)
+                        (use-program program)
+                        (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))
+                        (render-tree program tree (inverse (:sfsim.render/camera-to-world render-vars)) [] [:sfsim.planet/surf-tex]))
+    {::points point-texture
+     ::distance distance-texture}))
 
 
 (defn destroy-planet-geometry
