@@ -641,12 +641,17 @@ void main()
 
 (defn make-planet-geometry-renderer
   "Create renderer for rendering planet points in camera coordinate system"
-  []
-  (let [program (make-program :sfsim.render/vertex [vertex-planet]
-                              :sfsim.render/tess-control [tess-control-planet]
-                              :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                              :sfsim.render/geometry [(geometry-planet 0)]
-                              :sfsim.render/fragment [fragment-planet-geometry])]
+  [data]
+  (let [program  (make-program :sfsim.render/vertex [vertex-planet]
+                               :sfsim.render/tess-control [tess-control-planet]
+                               :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                               :sfsim.render/geometry [(geometry-planet 0)]
+                               :sfsim.render/fragment [fragment-planet-geometry])
+        tilesize (::tilesize (::config data))]
+    (use-program program)
+    (uniform-sampler program "surface" 0)
+    (uniform-int program "high_detail" (dec ^long tilesize))
+    (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     {::program program}))
 
 
@@ -658,7 +663,8 @@ void main()
 (defn render-planet-geometry
   [{::keys [program]} render-vars]
   (clear (vec3 0 0 0) 0.0)
-  (use-program program))
+  (use-program program)
+  (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars)))
 
 
 (set! *warn-on-reflection* false)

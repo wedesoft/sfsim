@@ -728,11 +728,12 @@ void main()
 
 (facts "Render planet geometry"
        (with-invisible-window
-         (let [render-vars      #:sfsim.render{:overlay-width 160
+         (let [data             {:sfsim.planet/config #:sfsim.planet{:tilesize 3}}
+               render-vars      #:sfsim.render{:overlay-width 160
                                                :overlay-height 120
                                                :overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
-               renderer         (make-planet-geometry-renderer)
+               renderer         (make-planet-geometry-renderer data)
                indices          [0 2 3 1]
                vertices         (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
                vao              (make-vertex-array-object (:sfsim.planet/program renderer) indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
@@ -749,15 +750,10 @@ void main()
                                                              (:sfsim.render/overlay-width render-vars)
                                                              (:sfsim.render/overlay-height render-vars))]
            (framebuffer-render(:sfsim.render/overlay-width render-vars) (:sfsim.render/overlay-height render-vars)
-                               :sfsim.render/cullback nil [point-texture distance-texture]
-                               (render-planet-geometry renderer render-vars)
-                               (uniform-matrix4 (:sfsim.planet/program renderer) "projection"
-                                                (:sfsim.render/overlay-projection render-vars))
-                               (uniform-sampler (:sfsim.planet/program renderer) "surface" 0)
-                               (uniform-int (:sfsim.planet/program renderer) "high_detail" 2)
-                               (uniform-int (:sfsim.planet/program renderer) "low_detail" 2)
-                               (render-tree (:sfsim.planet/program renderer) node (inverse (:sfsim.render/camera-to-world render-vars))
-                                            [] [:sfsim.planet/surf-tex]))
+                                                           :sfsim.render/cullback nil [point-texture distance-texture]
+                                                           (render-planet-geometry renderer render-vars)
+                                                           (render-tree (:sfsim.planet/program renderer) node (inverse (:sfsim.render/camera-to-world render-vars))
+                                                                        [] [:sfsim.planet/surf-tex]))
            (get-vector4 (rgba-texture->vectors4 point-texture) 60 80)
            => (roughly-vector (vec4 0.011 0.011 -3.0 1.0) 1e-3)
            (get-float (float-texture-2d->floats distance-texture) 60 80)
