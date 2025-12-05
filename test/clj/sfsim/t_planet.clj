@@ -750,14 +750,13 @@ void main()
                                                              (:sfsim.render/overlay-height render-vars))]
            (framebuffer-render(:sfsim.render/overlay-width render-vars) (:sfsim.render/overlay-height render-vars)
                                :sfsim.render/cullback nil [point-texture distance-texture]
-                               (clear (vec3 0 0 0) 0.0)
-                               (use-program (:sfsim.planet/program renderer))
+                               (render-planet-geometry renderer render-vars)
                                (uniform-matrix4 (:sfsim.planet/program renderer) "projection"
                                                 (:sfsim.render/overlay-projection render-vars))
                                (uniform-sampler (:sfsim.planet/program renderer) "surface" 0)
                                (uniform-int (:sfsim.planet/program renderer) "high_detail" 2)
                                (uniform-int (:sfsim.planet/program renderer) "low_detail" 2)
-                               (render-tile (:sfsim.planet/program renderer) node (inverse (:sfsim.render/camera-to-world render-vars))
+                               (render-tree (:sfsim.planet/program renderer) node (inverse (:sfsim.render/camera-to-world render-vars))
                                             [] [:sfsim.planet/surf-tex]))
            (get-vector4 (rgba-texture->vectors4 point-texture) 60 80)
            => (roughly-vector (vec4 0.011 0.011 -3.0 1.0) 1e-3)

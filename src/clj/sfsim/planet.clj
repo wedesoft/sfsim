@@ -10,7 +10,7 @@
     [clojure.math :refer (sqrt cos)]
     [comb.template :as template]
     [fastmath.matrix :refer (mulm eye inverse)]
-    [fastmath.vector :refer (mag)]
+    [fastmath.vector :refer (vec3 mag)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere atmosphere-luts)]
     [sfsim.clouds :refer (cloud-point lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
@@ -25,7 +25,7 @@
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                           destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
                           setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-quads render-config
-                          render-vars diagonal-field-of-view make-render-vars)
+                          render-vars diagonal-field-of-view make-render-vars clear)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
@@ -653,6 +653,12 @@ void main()
 (defn destroy-planet-geometry-renderer
   [{::keys [program]}]
   (destroy-program program))
+
+
+(defn render-planet-geometry
+  [{::keys [program]} render-vars]
+  (clear (vec3 0 0 0) 0.0)
+  (use-program program))
 
 
 (set! *warn-on-reflection* false)
