@@ -621,5 +621,34 @@
                      object-position object-orientation z-near z-far time_ pressure)))
 
 
+(def fragment-planet-geometry
+"#version 450 core
+in GEO_OUT
+{
+  vec2 colorcoord;
+  vec3 point;
+  vec3 object_point;
+  vec4 camera_point;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float distance;
+void main()
+{
+  camera_point = fs_in.camera_point;
+  distance = length(fs_in.camera_point.xyz);
+}")
+
+
+(defn make-planet-geometry-renderer
+  "Create renderer for rendering planet points in camera coordinate system"
+  []
+  (let [program (make-program :sfsim.render/vertex [vertex-planet]
+                              :sfsim.render/tess-control [tess-control-planet]
+                              :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                              :sfsim.render/geometry [(geometry-planet 0)]
+                              :sfsim.render/fragment [fragment-planet-geometry])]
+    {::program program}))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
