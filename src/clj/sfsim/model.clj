@@ -919,44 +919,11 @@
 
 
 (def vertex-geometry-scene
-  (template/fn [textured bump]
-"#version 450 core
-uniform mat4 projection;
-uniform mat4 object_to_camera;
-in vec3 vertex;
-<% (if bump %>
-in vec3 tangent;
-in vec3 bitangent;
-<% ) %>
-in vec3 normal;
-<% (if (or textured bump) %>
-in vec2 texcoord;
-<% ) %>
-out VS_OUT
-{
-  vec4 camera_point;
-} vs_out;
-void main()
-{
-  vec4 camera_point = object_to_camera * vec4(vertex, 1);
-  vs_out.camera_point = camera_point;
-  gl_Position = projection * camera_point;
-}"))
+  (template/fn [textured bump] (slurp "resources/shaders/model/vertex-geometry.glsl")))
 
 
 (def fragment-geometry-scene
-"#version 450 core
-in VS_OUT
-{
-  vec4 camera_point;
-} fs_in;
-layout (location = 0) out vec4 camera_point;
-layout (location = 1) out float distance;
-void main()
-{
-  camera_point = fs_in.camera_point;
-  distance = length(fs_in.camera_point.xyz);
-}")
+  (slurp "resources/shaders/model/fragment-geometry.glsl"))
 
 
 (defn make-scene-geometry-program

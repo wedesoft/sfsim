@@ -47,18 +47,16 @@
         use srcAlphaFactor = GL_ONE_MINUS_DST_ALPHA, dstAlphaFactor = GL_ONE
         use srcRGBFactor = GL_ONE, dstRGBFactor = GL_ONE_MINUS_DST_ALPHA
   - [X] make environment macros for stencil setups
-  - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
-  - [ ] use correct cutoff for all rendered layers when rendering front to back
   - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
         also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
     - [X] as before render opacity and shadow cascade and object shadows
-    - [ ] render cloud and plume low res overlay
+    - [-] render cloud and plume low res overlay
       - [-] geometry rendering
-        - [ ] set stencil buffer to atmosphere
         - [X] render model outputting camera points, set stencil buffer to object, set depth buffer
-        - [ ] specify depth buffer when rendering model geometry
-        - [ ] render planet using depth buffer outputting camera points overwritting object stencil,
+        - [-] render planet using depth buffer or model stencil outputting camera points overwritting object stencil,
               skip using object stencil if out of atmosphere
+        - [ ] set stencil buffer to atmosphere initially, render camera direction vectors to remaining geometry
+        - [ ] specify depth buffer when rendering model or planet geometry
       - [ ] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
         - [ ] render cloud front layer up to object depth on atmospheric background
         - [ ] render cloud front layer up to minimum planet or object depth on planet stencil
@@ -76,6 +74,8 @@
       - [ ] render model
       - [ ] render planet
       - [ ] render atmosphere
+  - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
+  - [ ] use correct cutoff for all rendered layers when rendering front to back
   - [ ] implement RCS thrusters
   - [X] use #version 450 (OpenGL 4.5)?
   - [ ] Thrust vectoring:
