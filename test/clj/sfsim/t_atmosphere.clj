@@ -9,7 +9,7 @@
     [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye inverse)]
-    [fastmath.vector :refer (vec3 mult emult add dot)]
+    [fastmath.vector :refer (vec3 vec4 mult emult add dot)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -25,7 +25,7 @@
                               attenuation-point temperature-at-height pressure-at-height density-at-height speed-of-sound)
      :as atmosphere]
     [sfsim.conftest :refer (roughly-vector is-image shader-test)]
-    [sfsim.image :refer (convert-4d-to-2d get-vector3)]
+    [sfsim.image :refer (convert-4d-to-2d get-vector3 get-vector4 get-float)]
     [sfsim.interpolate :refer (make-lookup-table)]
     [sfsim.matrix :refer (pack-matrices projection-matrix rotation-x transformation-matrix)]
     [sfsim.units :refer :all]
@@ -38,7 +38,9 @@
     (fastmath.vector
       Vec3)
     (org.lwjgl.glfw
-      GLFW)))
+      GLFW)
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -1035,6 +1037,65 @@ void main()
        (speed-of-sound 273.15) => (roughly 331.3 1e-1)
        (speed-of-sound 293.15) => (roughly 343.2 1e-1)
        (speed-of-sound 223.15) => (roughly 299.4 1e-1))
+
+
+(def vertex-atmosphere-geometry
+"#version 450 core
+uniform mat4 inverse_projection;
+in vec2 ndc;
+out VS_OUT
+{
+  vec3 direction;
+} vs_out;
+void main()
+{
+  vs_out.direction = (inverse_projection * vec4(ndc, 0.0, 1.0)).xyz;
+  gl_Position = vec4(ndc, 0.0, 1.0);
+}")
+
+
+(def fragment-atmosphere-geometry
+"#version 450 core
+in VS_OUT
+{
+  vec3 direction;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float distance;
+void main ()
+{
+  camera_point = vec4(normalize(fs_in.direction), 0.0);
+  distance = 0.0;
+}")
+
+
+(facts "Render direction vectors for atmospheric background"
+       (with-invisible-window
+         (let [program (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
+                                     :sfsim.render/fragment [fragment-atmosphere-geometry])
+               overlay-width 160
+               overlay-height 120
+               indices    [0 1 3 2]
+               vertices   [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+               vao        (make-vertex-array-object program indices vertices ["ndc" 2])
+               projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+               point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
+                                                       overlay-width overlay-height)
+               distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp
+                                                             overlay-width overlay-height)]
+           (framebuffer-render overlay-width overlay-height :sfsim.render/cullback nil [point-texture distance-texture]
+                               (clear (vec3 0 0 0) 0.0)
+                               (use-program program)
+                               (uniform-matrix4 program "inverse_projection" (inverse projection))
+                               (render-quads vao))
+           (get-vector4 (rgba-texture->vectors4 point-texture) 60 80)
+           => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
+           (get-float (float-texture-2d->floats distance-texture) 60 80)
+           => 0.0
+           (destroy-texture distance-texture)
+           (destroy-texture point-texture)
+           (destroy-vertex-array-object vao)
+           (destroy-program program))))
 
 
 (GLFW/glfwTerminate)

@@ -78,6 +78,7 @@
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] use correct cutoff for all rendered layers when rendering front to back
   - [ ] schemas for model, planet, and atmosphere geometry renderer
+  - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
   - [ ] implement RCS thrusters
   - [X] use #version 450 (OpenGL 4.5)?
   - [ ] Thrust vectoring:
