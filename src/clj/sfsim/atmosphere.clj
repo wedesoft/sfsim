@@ -740,26 +740,11 @@
 
 (defn render-atmosphere-geometry
   [{::keys [program vao]} render-vars]
-  (let [overlay-width    (:sfsim.render/overlay-width render-vars)
-        overlay-height   (:sfsim.render/overlay-height render-vars)
-        projection       (:sfsim.render/overlay-projection render-vars)
-        point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
-                                                overlay-width overlay-height)
-        distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp
-                                                      overlay-width overlay-height)]
-    (framebuffer-render overlay-width overlay-height :sfsim.render/cullback nil [point-texture distance-texture]
-                        (clear (vec3 0 0 0) 0.0)
-                        (use-program program)
-                        (uniform-matrix4 program "inverse_projection" (inverse projection))
-                        (render-quads vao))
-    {::points point-texture
-     ::distance distance-texture}))
-
-
-(defn destroy-atmosphere-geometry
-  [{::keys [points distance]}]
-  (destroy-texture points)
-  (destroy-texture distance))
+  (let [projection (:sfsim.render/overlay-projection render-vars)]
+    (clear (vec3 0 0 0) 0.0)
+    (use-program program)
+    (uniform-matrix4 program "inverse_projection" (inverse projection))
+    (render-quads vao)))
 
 
 (set! *warn-on-reflection* false)

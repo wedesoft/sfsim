@@ -13,8 +13,9 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.atmosphere :refer :all :as atmosphere :exclude (scatter)]
     [sfsim.conftest :refer (roughly-vector is-image shader-test)]
+    [sfsim.atmosphere :refer :all :as atmosphere :exclude (scatter)]
+    [sfsim.clouds :as clouds]
     [sfsim.image :refer (convert-4d-to-2d get-vector3 get-vector4 get-float)]
     [sfsim.interpolate :refer (make-lookup-table)]
     [sfsim.matrix :refer (pack-matrices projection-matrix rotation-x transformation-matrix)]
@@ -1032,15 +1033,13 @@ void main()
 (facts "Render direction vectors for atmospheric background"
        (with-invisible-window
          (let [renderer         (make-atmosphere-geometry-renderer)
-               render-vars      #:sfsim.render{:overlay-width 160
-                                               :overlay-height 120
-                                               :overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
-               geometry         (render-atmosphere-geometry renderer render-vars)]
-           (get-vector4 (rgba-texture->vectors4 (:sfsim.atmosphere/points geometry)) 60 80)
+               render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
+               geometry         (clouds/render-cloud-geometry 160 120 (render-atmosphere-geometry renderer render-vars))]
+           (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
            => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
-           (get-float (float-texture-2d->floats (:sfsim.atmosphere/distance geometry)) 60 80)
+           (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
            => 0.0
-           (destroy-atmosphere-geometry geometry)
+           (clouds/destroy-cloud-geometry geometry)
            (destroy-atmosphere-geometry-renderer renderer))))
 
 

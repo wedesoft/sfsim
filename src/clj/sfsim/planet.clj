@@ -672,11 +672,5 @@ void main()
   (render-tree program tree (inverse (:sfsim.render/camera-to-world render-vars)) [] [:sfsim.planet/surf-tex]))
 
 
-(defn destroy-planet-geometry
-  [{::keys [points distance]}]
-  (destroy-texture points)
-  (destroy-texture distance))
-
-
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

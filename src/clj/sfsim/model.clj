@@ -956,12 +956,6 @@
                   render-vars [] scene render-geometry-mesh)))
 
 
-(defn destroy-scene-geometry
-  [{::keys [points distance]}]
-  (destroy-texture distance)
-  (destroy-texture points))
-
-
 (defn destroy-scene-geometry-renderer
   [{::keys [programs]}]
   (doseq [program (vals programs)] (destroy-program program)))
