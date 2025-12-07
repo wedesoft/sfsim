@@ -709,5 +709,13 @@
   (destroy-program program))
 
 
+(def vertex-atmosphere-geometry
+  (slurp "resources/shaders/atmosphere/vertex-geometry.glsl"))
+
+
+(def fragment-atmosphere-geometry
+  (slurp "resources/shaders/atmosphere/fragment-geometry.glsl"))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -13,17 +13,7 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.atmosphere :refer (atmosphere-intersection attenuation-outer elevation-to-index
-                              extinction fragment-atmosphere height-to-index index-to-elevation horizon-distance
-                              index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
-                              phase phase-function point-scatter point-scatter-base point-scatter-component
-                              ray-extremity ray-scatter ray-scatter-space
-                              ray-scatter-track scattering strength-component sun-angle-to-index cloud-overlay
-                              sun-elevation-to-index surface-intersection surface-point? surface-radiance
-                              surface-radiance-base surface-radiance-space transmittance transmittance-outer
-                              transmittance-space transmittance-track transmittance-point vertex-atmosphere extinction
-                              attenuation-point temperature-at-height pressure-at-height density-at-height speed-of-sound)
-     :as atmosphere]
+    [sfsim.atmosphere :refer :all :as atmosphere :exclude (scatter)]
     [sfsim.conftest :refer (roughly-vector is-image shader-test)]
     [sfsim.image :refer (convert-4d-to-2d get-vector3 get-vector4 get-float)]
     [sfsim.interpolate :refer (make-lookup-table)]
@@ -1037,36 +1027,6 @@ void main()
        (speed-of-sound 273.15) => (roughly 331.3 1e-1)
        (speed-of-sound 293.15) => (roughly 343.2 1e-1)
        (speed-of-sound 223.15) => (roughly 299.4 1e-1))
-
-
-(def vertex-atmosphere-geometry
-"#version 450 core
-uniform mat4 inverse_projection;
-in vec2 ndc;
-out VS_OUT
-{
-  vec3 direction;
-} vs_out;
-void main()
-{
-  vs_out.direction = (inverse_projection * vec4(ndc, 0.0, 1.0)).xyz;
-  gl_Position = vec4(ndc, 0.0, 1.0);
-}")
-
-
-(def fragment-atmosphere-geometry
-"#version 450 core
-in VS_OUT
-{
-  vec3 direction;
-} fs_in;
-layout (location = 0) out vec4 camera_point;
-layout (location = 1) out float distance;
-void main ()
-{
-  camera_point = vec4(normalize(fs_in.direction), 0.0);
-  distance = 0.0;
-}")
 
 
 (facts "Render direction vectors for atmospheric background"
