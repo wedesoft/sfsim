@@ -666,20 +666,10 @@ void main()
 
 (defn render-planet-geometry
   [{::keys [program]} render-vars tree]
-  (let [overlay-width    (:sfsim.render/overlay-width render-vars)
-        overlay-height   (:sfsim.render/overlay-height render-vars)
-        point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
-                                                overlay-width overlay-height)
-        distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp
-                                                      overlay-width overlay-height)]
-
-    (framebuffer-render overlay-width overlay-height :sfsim.render/cullback nil [point-texture distance-texture]
-                        (clear (vec3 0 0 0) 0.0)
-                        (use-program program)
-                        (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))
-                        (render-tree program tree (inverse (:sfsim.render/camera-to-world render-vars)) [] [:sfsim.planet/surf-tex]))
-    {::points point-texture
-     ::distance distance-texture}))
+  (clear (vec3 0 0 0) 0.0)
+  (use-program program)
+  (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))
+  (render-tree program tree (inverse (:sfsim.render/camera-to-world render-vars)) [] [:sfsim.planet/surf-tex]))
 
 
 (defn destroy-planet-geometry
