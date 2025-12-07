@@ -16,16 +16,18 @@
     [sfsim.units :refer (rankin foot pound-force slugs)]
     [sfsim.ray :refer (integral-ray ray)]
     [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
-                                       uniform-vector3 destroy-program make-vertex-array-object use-textures
-                                       destroy-vertex-array-object render-quads render-config render-vars)]
+                          uniform-vector3 destroy-program make-vertex-array-object use-textures framebuffer-render
+                          destroy-vertex-array-object render-quads render-config render-vars clear)]
     [sfsim.shaders :as shaders]
     [sfsim.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection sphere)]
     [sfsim.texture :refer (destroy-texture make-vector-texture-2d make-vector-texture-4d
-                                           texture-2d texture-4d)]
+                           texture-2d texture-4d make-empty-texture-2d make-empty-float-texture-2d)]
     [sfsim.util :refer (third fourth limit-quot sqr N slurp-floats cube)])
   (:import
     (fastmath.vector
-      Vec3)))
+      Vec3)
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -715,6 +717,49 @@
 
 (def fragment-atmosphere-geometry
   (slurp "resources/shaders/atmosphere/fragment-geometry.glsl"))
+
+
+(defn make-atmosphere-geometry-renderer
+  "Create renderer for rendering atmospheric direction vectors for output to a geometry buffer"
+  []
+  (let [program  (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
+                               :sfsim.render/fragment [fragment-atmosphere-geometry])
+        indices  [0 1 3 2]
+        vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
+        vao      (make-vertex-array-object program indices vertices ["ndc" 2])]
+    {::program program
+     ::vao vao}))
+
+
+(defn destroy-atmosphere-geometry-renderer
+  "Destroy atmosphere geometry renderer"
+  [{::keys [program vao]}]
+  (destroy-vertex-array-object vao)
+  (destroy-program program))
+
+
+(defn render-atmosphere-geometry
+  [{::keys [program vao]} render-vars]
+  (let [overlay-width    (:sfsim.render/overlay-width render-vars)
+        overlay-height   (:sfsim.render/overlay-height render-vars)
+        projection       (:sfsim.render/overlay-projection render-vars)
+        point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
+                                                overlay-width overlay-height)
+        distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp
+                                                      overlay-width overlay-height)]
+    (framebuffer-render overlay-width overlay-height :sfsim.render/cullback nil [point-texture distance-texture]
+                        (clear (vec3 0 0 0) 0.0)
+                        (use-program program)
+                        (uniform-matrix4 program "inverse_projection" (inverse projection))
+                        (render-quads vao))
+    {::points point-texture
+     ::distance distance-texture}))
+
+
+(defn destroy-atmosphere-geometry
+  [{::keys [points distance]}]
+  (destroy-texture points)
+  (destroy-texture distance))
 
 
 (set! *warn-on-reflection* false)

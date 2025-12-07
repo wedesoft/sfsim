@@ -1031,31 +1031,17 @@ void main()
 
 (facts "Render direction vectors for atmospheric background"
        (with-invisible-window
-         (let [program (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
-                                     :sfsim.render/fragment [fragment-atmosphere-geometry])
-               overlay-width 160
-               overlay-height 120
-               indices    [0 1 3 2]
-               vertices   [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
-               vao        (make-vertex-array-object program indices vertices ["ndc" 2])
-               projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
-               point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
-                                                       overlay-width overlay-height)
-               distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp
-                                                             overlay-width overlay-height)]
-           (framebuffer-render overlay-width overlay-height :sfsim.render/cullback nil [point-texture distance-texture]
-                               (clear (vec3 0 0 0) 0.0)
-                               (use-program program)
-                               (uniform-matrix4 program "inverse_projection" (inverse projection))
-                               (render-quads vao))
-           (get-vector4 (rgba-texture->vectors4 point-texture) 60 80)
+         (let [renderer         (make-atmosphere-geometry-renderer)
+               render-vars      #:sfsim.render{:overlay-width 160
+                                               :overlay-height 120
+                                               :overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
+               geometry         (render-atmosphere-geometry renderer render-vars)]
+           (get-vector4 (rgba-texture->vectors4 (:sfsim.atmosphere/points geometry)) 60 80)
            => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
-           (get-float (float-texture-2d->floats distance-texture) 60 80)
+           (get-float (float-texture-2d->floats (:sfsim.atmosphere/distance geometry)) 60 80)
            => 0.0
-           (destroy-texture distance-texture)
-           (destroy-texture point-texture)
-           (destroy-vertex-array-object vao)
-           (destroy-program program))))
+           (destroy-atmosphere-geometry geometry)
+           (destroy-atmosphere-geometry-renderer renderer))))
 
 
 (GLFW/glfwTerminate)
