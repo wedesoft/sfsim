@@ -20,7 +20,7 @@
     [sfsim.plume :refer (cloud-plume-segment)]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
-                           texture-2d)]
+                           texture-2d make-empty-texture-2d make-empty-float-texture-2d)]
     [sfsim.util :refer (slurp-floats N N0)]
     [sfsim.worley :refer (worley-size)]))
 
@@ -467,6 +467,23 @@
   [num-steps parameters]
   [(environmental-shading num-steps)
    (template/eval (slurp "resources/shaders/clouds/overall-shading.glsl") {:parameters parameters})])
+
+
+(defmacro render-cloud-geometry
+  [overlay-width overlay-height & body]
+  `(let [point-texture#    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
+                                                  ~overlay-width ~overlay-height)
+         distance-texture# (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp ~overlay-width ~overlay-height)]
+     (framebuffer-render ~overlay-width ~overlay-height :sfsim.render/cullback nil [point-texture# distance-texture#]
+                         ~@body)
+     {::points point-texture#
+      ::distance distance-texture#}))
+
+
+(defn destroy-cloud-geometry
+  [{::keys [points distance]}]
+  (destroy-texture distance)
+  (destroy-texture points))
 
 
 (set! *warn-on-reflection* false)
