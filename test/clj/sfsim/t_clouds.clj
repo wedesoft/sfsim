@@ -13,16 +13,15 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.atmosphere :refer (vertex-atmosphere make-atmosphere-geometry-renderer render-atmosphere-geometry
-                              destroy-atmosphere-geometry-renderer)]
+    [sfsim.atmosphere :refer (vertex-atmosphere)]
     [sfsim.clouds :refer :all]
     [sfsim.conftest :refer (roughly-vector shader-test is-image)]
     [sfsim.image :refer (get-vector3 get-vector4 get-float-3d get-float)]
     [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
-    [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet make-planet-geometry-renderer
-                          destroy-planet-geometry-renderer make-cube-map-tile-vertices render-planet-geometry)]
-    [sfsim.model :refer (make-scene-geometry-renderer destroy-scene-geometry-renderer render-scene-geometry read-gltf
-                         load-scene-into-opengl destroy-scene material-type)]
+    [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet make-cube-map-tile-vertices)]
+    [sfsim.model :refer (read-gltf
+                         load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry
+                         destroy-joined-geometry-renderer)]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer :all]
@@ -1621,52 +1620,48 @@ void main()
          (facts
            (with-invisible-window
              (let [data                {:sfsim.planet/config #:sfsim.planet{:tilesize 3}}
-                   model-renderer      (make-scene-geometry-renderer)
-                   opengl-scene        (load-scene-into-opengl (comp (:sfsim.model/programs model-renderer) material-type) cube)
+                   renderer            (make-joined-geometry-renderer data)
+                   scene-program       (:sfsim.model/programs (:sfsim.model/scene-renderer renderer))
+                   planet-program      (:sfsim.planet/program (:sfsim.model/planet-renderer renderer))
+                   opengl-scene        (load-scene-into-opengl (comp scene-program material-type) cube)
                    moved-scene         (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform]
                                                  (transformation-matrix (eye 3) (vec3 0 0 (or ?model 0))))
-                   planet-renderer     (make-planet-geometry-renderer data)
                    indices             [0 2 3 1]
                    vertices            (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
-                   vao                 (make-vertex-array-object (:sfsim.planet/program planet-renderer) indices vertices
+                   vao                 (make-vertex-array-object planet-program indices vertices
                                                                  ["point" 3 "surfacecoord" 2 "colorcoord" 2])
-                   z                   (or ?planet 0)
-                   data                [-1  1 z, 0  1 z, 1  1 z,
-                                        -1  0 z, 0  0 z, 1  0 z,
-                                        -1 -1 z, 0 -1 z, 1 -1 z]
+                   data                [-1  1 0, 0  1 0, 1  1 0,
+                                        -1  0 0, 0  0 0, 1  0 0,
+                                        -1 -1 0, 0 -1 0, 1 -1 0]
                    surface             (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                                #:sfsim.image{:width 3 :height 3 :data (float-array data)})
-                   tree                {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 0)}
-                   atmosphere-renderer (make-atmosphere-geometry-renderer)
+                   tree                {:sfsim.planet/vao vao
+                                        :sfsim.planet/surf-tex surface
+                                        :sfsim.quadtree/center (vec3 0 0 (or ?planet 0))}
                    camera-to-world     (transformation-matrix (eye 3) (vec3 0 0 0))
-                   render-vars         #:sfsim.render{:sfsim.render/camera-to-world camera-to-world
-                                                      :overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
-                   geometry            (render-cloud-geometry 160 120
-                                                              (when ?model
-                                                                (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
-                                                                  (render-scene-geometry model-renderer render-vars moved-scene)))
-                                                              (when ?planet
-                                                                (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x2 0x2
-                                                                  (render-planet-geometry planet-renderer render-vars tree)))
-                                                              (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x1 0x7
-                                                                (render-atmosphere-geometry atmosphere-renderer render-vars)))]
+                   model-render-vars   #:sfsim.render{:sfsim.render/camera-to-world camera-to-world
+                                                      :sfsim.render/z-near 0.1
+                                                      :sfsim.render/overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                                      :sfsim.render/overlay-width 160
+                                                      :sfsim.render/overlay-height 120}
+                   planet-render-vars  (assoc model-render-vars :sfsim.render/z-near ?planet-z-near)
+                   geometry            (render-joined-geometry renderer model-render-vars planet-render-vars moved-scene tree)]
                (nth (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80) 2)
                => (roughly ?coordinate 1e-3)
                (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
                => (roughly ?distance 1e-3)
                (destroy-cloud-geometry geometry)
-               (destroy-atmosphere-geometry-renderer atmosphere-renderer)
                (destroy-texture surface)
                (destroy-vertex-array-object vao)
-               (destroy-planet-geometry-renderer planet-renderer)
                (destroy-scene opengl-scene)
-               (destroy-scene-geometry-renderer model-renderer))))
-         ?model ?planet ?coordinate ?distance
-         nil    nil     -1.0        0.0
-        -4.0    nil     -3.0        3.0
-         nil   -5.0     -5.0        5.0
-        -4.0   -5.0     -3.0        3.0
-        -7.0   -5.0     -5.0        5.0)
+               (destroy-joined-geometry-renderer renderer))))
+         ?model ?planet ?planet-z-near ?coordinate ?distance
+         nil    nil     0.1            -1.0        0.0
+        -4.0    nil     0.1            -3.0        3.0
+         nil   -5.0     0.1            -5.0        5.0
+        -4.0   -5.0     0.1            -3.0        3.0
+        -7.0   -5.0     0.1            -5.0        5.0
+        -7.0   -5.0     0.5            -6.0        6.0)
 
 
 (GLFW/glfwTerminate)

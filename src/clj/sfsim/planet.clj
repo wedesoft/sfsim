@@ -660,11 +660,13 @@ void main()
 
 
 (defn destroy-planet-geometry-renderer
+  "Destroy planet geometry renderer"
   [{::keys [program]}]
   (destroy-program program))
 
 
 (defn render-planet-geometry
+  "Render geometry (planet points and distances)"
   [{::keys [program]} render-vars tree]
   (use-program program)
   (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))

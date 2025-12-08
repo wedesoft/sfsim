@@ -16,7 +16,7 @@
     [sfsim.bluenoise :refer (noise-size) :as bluenoise]
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
-                          uniform-matrix4 use-program clear with-stencil-op-ref-and-mask) :as render]
+                          uniform-matrix4 use-program clear) :as render]
     [sfsim.shaders :as shaders]
     [sfsim.plume :refer (cloud-plume-segment)]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d

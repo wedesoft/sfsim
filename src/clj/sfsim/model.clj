@@ -12,20 +12,21 @@
     [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
     [fastmath.vector :refer (vec3 vec4 mult add)]
     [malli.core :as m]
-    [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
+    [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
+                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry)]
     [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
-                          overall-shading overall-shading-parameters)]
+                          overall-shading overall-shading-parameters render-cloud-geometry)]
     [sfsim.plume :refer (cloud-plume-segment sample-plume-point)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
                           fmat4 rotation-matrix)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars setup-static-plume-uniforms setup-dynamic-plume-uniforms
-                          model-data model-vars)]
+                          model-data model-vars make-planet-geometry-renderer destroy-planet-geometry-renderer render-planet-geometry)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
-                          uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
-                          setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
+                          uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps with-stencil-op-ref-and-mask
+                          setup-shadow-matrices render-vars make-render-vars texture-render-depth clear with-stencils) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap)]
     [sfsim.aerodynamics :as aerodynamics]
@@ -55,7 +56,7 @@
     (org.lwjgl.stb
       STBImage)
     (org.lwjgl.opengl
-      GL30)))
+      GL11 GL30)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -913,6 +914,7 @@
 
 
 (defn destroy-scene-shadow-renderer
+  "Destroy shadow renderer"
   [{::keys [programs]}]
   (doseq [program (vals programs)] (destroy-program program)))
 
@@ -926,12 +928,14 @@
 
 
 (defn make-scene-geometry-program
+  "Create program to render scene points and distances"
   [textured bump]
   (make-program :sfsim.render/vertex [(vertex-geometry-scene textured bump)]
                 :sfsim.render/fragment [fragment-geometry-scene]))
 
 
 (defn make-scene-geometry-renderer
+  "Create renderer to render scene points and distances"
   []
   (let [variations (for [textured [false true] bump [false true]] [textured bump])
         programs   (mapv #(make-scene-geometry-program (first %) (second %)) variations)]
@@ -939,6 +943,7 @@
 
 
 (defn render-geometry-mesh
+  "Render function to render points and distances for a mesh (part of scene)"
   [_material {:sfsim.model/keys [program transform] :as render-vars}]
   (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
     (use-program program)
@@ -946,6 +951,7 @@
 
 
 (defn render-scene-geometry
+  "Render geometry (points and distances) for a scene"
   [geometry-renderer render-vars scene]
   (let [projection       (:sfsim.render/overlay-projection render-vars)]
     (doseq [program (vals (::programs geometry-renderer))]
@@ -956,8 +962,44 @@
 
 
 (defn destroy-scene-geometry-renderer
+  "Destroy scene geometry renderer"
   [{::keys [programs]}]
   (doseq [program (vals programs)] (destroy-program program)))
+
+
+(defn make-joined-geometry-renderer
+  "Joined geometry renderer for rendering scene, planet, and atmosphere geometry information"
+  [data]
+  (let [scene-renderer (make-scene-geometry-renderer)
+        planet-renderer (make-planet-geometry-renderer data)
+        atmosphere-renderer (make-atmosphere-geometry-renderer)]
+    {::scene-renderer scene-renderer
+     ::planet-renderer planet-renderer
+     ::atmosphere-renderer atmosphere-renderer}))
+
+
+(defn destroy-joined-geometry-renderer
+  "Destroy joined geometry renderer"
+  [{::keys [scene-renderer planet-renderer atmosphere-renderer]}]
+  (destroy-scene-geometry-renderer scene-renderer)
+  (destroy-planet-geometry-renderer planet-renderer)
+  (destroy-atmosphere-geometry-renderer atmosphere-renderer))
+
+
+(defn render-joined-geometry
+  "Render joined geometry of scene, planet, and atmosphere"
+  [{::keys [scene-renderer planet-renderer atmosphere-renderer]} scene-render-vars planet-render-vars model tree]
+  (let [model-covers-planet? (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
+    (render-cloud-geometry (:sfsim.render/overlay-width planet-render-vars) (:sfsim.render/overlay-height planet-render-vars)
+                           (with-stencils
+                             (when model
+                               (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+                                 (render-scene-geometry scene-renderer scene-render-vars model)))
+                             (when tree
+                               (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x2 (if model-covers-planet? 0x6 0x2)
+                                 (render-planet-geometry planet-renderer planet-render-vars tree)))
+                             (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x1 0x7
+                               (render-atmosphere-geometry atmosphere-renderer planet-render-vars))))))
 
 
 (set! *warn-on-reflection* false)

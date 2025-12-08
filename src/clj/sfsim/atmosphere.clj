@@ -739,6 +739,7 @@
 
 
 (defn render-atmosphere-geometry
+  "Render atmospheric direction vectors for output to a geometry buffer"
   [{::keys [program vao]} render-vars]
   (let [projection (:sfsim.render/overlay-projection render-vars)]
     (use-program program)
