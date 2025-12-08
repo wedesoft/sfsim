@@ -1634,16 +1634,16 @@ void main()
                                                               (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x1 0x7
                                                                 (render-atmosphere-geometry atmosphere-renderer render-vars)))]
                (nth (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80) 2)
-               => (roughly (if ?model (+ ?model 1) -1.0) 1e-3)
+               => (roughly ?coordinate 1e-3)
                (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
-               => (roughly (if ?model (- -1 ?model) 0.0) 1e-3)
+               => (roughly ?distance 1e-3)
                (destroy-cloud-geometry geometry)
                (destroy-atmosphere-geometry-renderer atmosphere-renderer)
                (destroy-scene opengl-scene)
                (destroy-scene-geometry-renderer model-renderer))))
-         ?model
-         nil
-        -4.0)
+         ?model ?coordinate ?distance
+         nil    -1.0        0.0
+        -4.0    -3.0        3.0)
 
 
 (GLFW/glfwTerminate)
