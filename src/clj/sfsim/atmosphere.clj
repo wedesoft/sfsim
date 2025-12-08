@@ -741,7 +741,6 @@
 (defn render-atmosphere-geometry
   [{::keys [program vao]} render-vars]
   (let [projection (:sfsim.render/overlay-projection render-vars)]
-    (clear (vec3 0 0 0) 0.0)
     (use-program program)
     (uniform-matrix4 program "inverse_projection" (inverse projection))
     (render-quads vao)))

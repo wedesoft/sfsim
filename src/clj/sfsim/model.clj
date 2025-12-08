@@ -951,7 +951,6 @@
     (doseq [program (vals (::programs geometry-renderer))]
            (use-program program)
            (uniform-matrix4 program "projection" projection))
-    (clear (vec3 0 0 0) 0.0)
     (render-scene (comp (:sfsim.model/programs geometry-renderer) material-type) 0
                   render-vars [] scene render-geometry-mesh)))
 

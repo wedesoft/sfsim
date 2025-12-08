@@ -13,12 +13,15 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.atmosphere :refer (vertex-atmosphere)]
+    [sfsim.atmosphere :refer (vertex-atmosphere make-atmosphere-geometry-renderer render-atmosphere-geometry
+                              destroy-atmosphere-geometry-renderer)]
     [sfsim.clouds :refer :all]
     [sfsim.conftest :refer (roughly-vector shader-test is-image)]
-    [sfsim.image :refer (get-vector3 get-float-3d)]
+    [sfsim.image :refer (get-vector3 get-vector4 get-float-3d get-float)]
     [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
     [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
+    [sfsim.model :refer (make-scene-geometry-renderer destroy-scene-geometry-renderer render-scene-geometry read-gltf
+                         load-scene-into-opengl destroy-scene material-type)]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer :all]
@@ -26,7 +29,9 @@
     [sfsim.worley :refer (worley-size)])
   (:import
     (org.lwjgl.glfw
-      GLFW)))
+      GLFW)
+   (org.lwjgl.opengl
+      GL11 GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -1606,6 +1611,39 @@ void main()
          1.0           1.0 (- 1 (/ 1 E))
          1.0           2.0 (- 1 (/ 1 E E))
          2.0           1.0 (- 1 (/ 1 E E)))
+
+
+(def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.gltf"))
+
+
+(tabular "Render joined geometry of model, planet, and atmosphere"
+         (facts
+           (with-invisible-window
+             (let [model-renderer      (make-scene-geometry-renderer)
+                   opengl-scene        (load-scene-into-opengl (comp (:sfsim.model/programs model-renderer) material-type) cube)
+                   moved-scene         (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform]
+                                                 (transformation-matrix (eye 3) (vec3 0 0 (or ?model 0))))
+                   camera-to-world     (transformation-matrix (eye 3) (vec3 0 0 0))
+                   atmosphere-renderer (make-atmosphere-geometry-renderer)
+                   render-vars         #:sfsim.render{:sfsim.render/camera-to-world camera-to-world
+                                                      :overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
+                   geometry            (render-cloud-geometry 160 120
+                                                              (when ?model
+                                                                (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+                                                                  (render-scene-geometry model-renderer render-vars moved-scene)))
+                                                              (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x1 0x7
+                                                                (render-atmosphere-geometry atmosphere-renderer render-vars)))]
+               (nth (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80) 2)
+               => (roughly (if ?model (+ ?model 1) -1.0) 1e-3)
+               (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
+               => (roughly (if ?model (- -1 ?model) 0.0) 1e-3)
+               (destroy-cloud-geometry geometry)
+               (destroy-atmosphere-geometry-renderer atmosphere-renderer)
+               (destroy-scene opengl-scene)
+               (destroy-scene-geometry-renderer model-renderer))))
+         ?model
+         nil
+        -4.0)
 
 
 (GLFW/glfwTerminate)

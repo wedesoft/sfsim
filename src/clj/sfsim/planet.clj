@@ -666,7 +666,6 @@ void main()
 
 (defn render-planet-geometry
   [{::keys [program]} render-vars tree]
-  (clear (vec3 0 0 0) 0.0)
   (use-program program)
   (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))
   (render-tree program tree (inverse (:sfsim.render/camera-to-world render-vars)) [] [:sfsim.planet/surf-tex]))
