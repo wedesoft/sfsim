@@ -50,15 +50,15 @@
   - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
         also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
     - [X] as before render opacity and shadow cascade and object shadows
-    - [ ] render cloud and plume low res overlay
-      - [-] geometry rendering
+    - [-] render cloud and plume low res overlay
+      - [X] geometry rendering
         - [X] render model outputting camera points, set stencil buffer to object, set depth buffer
         - [X] separate identical code for frame buffer initialisation and clearing from model and planet geometry renderer
-        - [ ] add cloud geometry tests rendering planet, model, and atmosphere with depth buffer and stencil
-        - [ ] set stencil buffer to atmosphere initially, render camera direction vectors to remaining geometry
-        - [ ] render planet using depth buffer or model stencil outputting camera points overwritting object stencil,
+        - [X] add cloud geometry tests rendering planet, model, and atmosphere with depth buffer and stencil
+        - [X] set stencil buffer to atmosphere initially, render camera direction vectors to remaining geometry
+        - [X] render planet using depth buffer or model stencil outputting camera points overwritting object stencil,
               skip using object stencil if out of atmosphere
-        - [ ] specify depth buffer when rendering model or planet geometry
+        - [X] specify depth buffer when rendering model or planet geometry
       - [ ] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
         - [ ] render cloud front layer up to object depth on atmospheric background
         - [ ] render cloud front layer up to minimum planet or object depth on planet stencil
