@@ -9,7 +9,7 @@
     [clojure.math :refer (exp log sin cos asin atan to-radians PI E)]
     [comb.template :as template]
     [fastmath.matrix :refer (mat3x3 eye inverse)]
-    [fastmath.vector :refer (vec3)]
+    [fastmath.vector :refer (vec3 vec4)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -1619,7 +1619,7 @@ void main()
 (tabular "Render joined geometry of model, planet, and atmosphere"
          (facts
            (with-invisible-window
-             (let [data                {:sfsim.planet/config #:sfsim.planet{:tilesize 3}}
+             (let [data                {:sfsim.planet/config {:sfsim.planet/tilesize 3}}
                    renderer            (make-joined-geometry-renderer data)
                    scene-program       (:sfsim.model/programs (:sfsim.model/scene-renderer renderer))
                    planet-program      (:sfsim.planet/program (:sfsim.model/planet-renderer renderer))
@@ -1662,6 +1662,40 @@ void main()
         -4.0   -5.0     0.1            -3.0        3.0
         -7.0   -5.0     0.1            -5.0        5.0
         -7.0   -5.0     0.5            -6.0        6.0)
+
+
+(def fragment-mock-geometry
+"#version 450 core
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float distance;
+uniform vec3 point;
+void main()
+{
+  camera_point = vec4(point, 1.0);
+  distance = length(point);
+}")
+
+
+(tabular "Use geometry buffer to render clouds"
+         (facts
+           (with-invisible-window
+             (let [program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                          :sfsim.render/fragment [fragment-mock-geometry])
+                   indices  [0 1 3 2]
+                   vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                   vao      (make-vertex-array-object program indices vertices ["point" 3])
+                   geometry (render-cloud-geometry 1 1
+                                                   (clear (vec3 0.0 0.0 0.0) 0.0 0)
+                                                   (use-program program)
+                                                   (uniform-vector3 program "point" (vec3 ?x ?y ?z))
+                                                   (render-quads vao))]
+               (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 0 0)
+               => (roughly-vector (vec4 2 3 5 1) 1e-3)
+               (destroy-cloud-geometry geometry)
+               (destroy-vertex-array-object vao)
+               (destroy-program program))))
+         ?stencil ?x ?y ?z
+         0x1      2  3  5)
 
 
 (GLFW/glfwTerminate)

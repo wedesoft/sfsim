@@ -481,13 +481,14 @@
      (framebuffer-render ~overlay-width ~overlay-height :sfsim.render/cullback depth# [point-texture# distance-texture#]
                          (clear (vec3 0.0 0.0 0.0) 0.0 0)
                          ~@body)
-     (destroy-texture depth#)
-     {::points point-texture#
+     {::depth-stencil depth#
+      ::points point-texture#
       ::distance distance-texture#}))
 
 
 (defn destroy-cloud-geometry
-  [{::keys [points distance]}]
+  [{::keys [depth-stencil points distance]}]
+  (destroy-texture depth-stencil)
   (destroy-texture distance)
   (destroy-texture points))
 
