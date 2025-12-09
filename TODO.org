@@ -59,8 +59,8 @@
         - [X] render planet using depth buffer or model stencil outputting camera points overwritting object stencil,
               skip using object stencil if out of atmosphere
         - [X] specify depth buffer when rendering model or planet geometry
-      - [ ] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
-        - [ ] rename distance to something else
+      - [-] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
+        - [X] rename distance to something else
         - [ ] render cloud front layer up to object depth on atmospheric background
         - [ ] render cloud front layer up to minimum planet or object depth on planet stencil
         - [ ] render cloud front layer up to object point on model stencil

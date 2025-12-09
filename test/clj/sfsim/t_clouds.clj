@@ -1667,12 +1667,12 @@ void main()
 (def fragment-mock-geometry
 "#version 450 core
 layout (location = 0) out vec4 camera_point;
-layout (location = 1) out float distance;
+layout (location = 1) out float dist;
 uniform vec3 point;
 void main()
 {
   camera_point = vec4(point, 1.0);
-  distance = length(point);
+  dist = length(point);
 }")
 
 
