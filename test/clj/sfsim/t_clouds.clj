@@ -1613,7 +1613,7 @@ void main()
          2.0           1.0 (- 1 (/ 1 E E)))
 
 
-(def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.gltf"))
+(def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.glb"))
 
 
 (tabular "Render joined geometry of model, planet, and atmosphere"
