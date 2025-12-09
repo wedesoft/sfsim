@@ -728,7 +728,7 @@ void main()
 
 (facts "Render planet geometry"
        (with-invisible-window
-         (let [data             {:sfsim.planet/config #:sfsim.planet{:tilesize 3}}
+         (let [data             {:sfsim.planet/config {:sfsim.planet/tilesize 3}}
                render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
                renderer         (make-planet-geometry-renderer data)
