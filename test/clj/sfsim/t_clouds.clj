@@ -1676,24 +1676,66 @@ void main()
 }")
 
 
+(def fragment-clouds
+"#version 450 core
+uniform sampler2D camera_point;
+uniform sampler2D dist;
+uniform int overlay_width;
+uniform int overlay_height;
+vec4 geometry_point()
+{
+  vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
+  return texture(camera_point, uv);
+}
+float geometry_distance()
+{
+  vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
+  return texture(dist, uv).r;
+}
+out vec4 fragColor;
+void main()
+{
+  fragColor = geometry_point();
+}")
+
+
 (tabular "Use geometry buffer to render clouds"
          (facts
            (with-invisible-window
-             (let [program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                          :sfsim.render/fragment [fragment-mock-geometry])
-                   indices  [0 1 3 2]
-                   vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                   vao      (make-vertex-array-object program indices vertices ["point" 3])
-                   geometry (render-cloud-geometry 1 1
-                                                   (clear (vec3 0.0 0.0 0.0) 0.0 0)
-                                                   (use-program program)
-                                                   (uniform-vector3 program "point" (vec3 ?x ?y ?z))
-                                                   (render-quads vao))]
-               (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 0 0)
+             (let [geometry-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                  :sfsim.render/fragment [fragment-mock-geometry])
+                   indices          [0 1 3 2]
+                   vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                   vao              (make-vertex-array-object geometry-program indices vertices ["point" 3])
+                   geometry         (render-cloud-geometry 1 1
+                                                           (use-program geometry-program)
+                                                           (uniform-vector3 geometry-program "point" (vec3 ?x ?y ?z))
+                                                           (clear (vec3 0.0 0.0 0.0) 0.0 0)
+                                                           (with-stencils
+                                                             (with-stencil-op-ref-and-mask GL11/GL_ALWAYS ?stencil ?stencil
+                                                               (render-quads vao))))
+                   cloud-program    (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                  :sfsim.render/fragment [fragment-clouds])
+                   overlay          (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
+               (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
+                                   (clear (vec3 0.0 0.0 0.0) 0.0)
+                                   (use-program cloud-program)
+                                   (uniform-int cloud-program "overlay_width" 1)
+                                   (uniform-int cloud-program "overlay_height" 1)
+                                   (uniform-sampler cloud-program "camera_point" 0)
+                                   (uniform-sampler cloud-program "dist" 1)
+                                   (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)})
+                                   (clear (vec3 0.0 0.0 0.0) 0.0)
+                                   (with-stencils
+                                     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                       (render-quads vao))))
+               (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                => (roughly-vector (vec4 2 3 5 1) 1e-3)
+               (destroy-texture overlay)
                (destroy-cloud-geometry geometry)
                (destroy-vertex-array-object vao)
-               (destroy-program program))))
+               (destroy-program cloud-program)
+               (destroy-program geometry-program))))
          ?stencil ?x ?y ?z
          0x1      2  3  5)
 

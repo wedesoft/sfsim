@@ -991,7 +991,7 @@
   [{::keys [scene-renderer planet-renderer atmosphere-renderer]} scene-render-vars planet-render-vars model tree]
   (let [model-covers-planet? (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
     (render-cloud-geometry (:sfsim.render/overlay-width planet-render-vars) (:sfsim.render/overlay-height planet-render-vars)
-                           (with-stencils
+                           (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
                              (when model
                                (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
                                  (render-scene-geometry scene-renderer scene-render-vars model)))
