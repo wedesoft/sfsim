@@ -1751,6 +1751,23 @@ void main()
 }")
 
 
+(def fragment-cloud-planet-back
+"#version 450 core
+uniform vec3 origin;
+uniform mat4 camera_to_world;
+uniform float object_distance;
+vec4 geometry_point();
+float geometry_distance();
+vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
+out vec4 fragColor;
+void main()
+{
+  float dist = geometry_distance();
+  vec3 direction = (camera_to_world * geometry_point()).xyz;
+  fragColor = cloud_point(origin, direction, vec2(object_distance, dist - object_distance));
+}")
+
+
 (tabular "Use geometry buffer to render clouds"
          (facts
            (with-invisible-window
@@ -1769,7 +1786,7 @@ void main()
                    cloud-programs   (map #(make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                                         :sfsim.render/fragment [cloud-shader-mock %])
                                          [fragment-cloud-atmosphere-front fragment-cloud-atmosphere-back
-                                          fragment-cloud-planet-front])
+                                          fragment-cloud-planet-front fragment-cloud-planet-back])
                    overlay          (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
                (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                                    (clear (vec3 0.0 0.0 0.0) 0.0)
@@ -1796,6 +1813,10 @@ void main()
                                        (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                          (with-underlay-blending
                                            (use-program (nth cloud-programs 1))
+                                           (render-quads vao)))
+                                       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                         (with-underlay-blending
+                                           (use-program (nth cloud-programs 3))
                                            (render-quads vao))))))
                (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
@@ -1811,6 +1832,8 @@ void main()
          0x1      1.0 0.0 0.0 true   true  2.0       0.875 0.0  0.0 0.875
          0x2      4.0 0.0 0.0 true   false 2.0       0.75  0.0  0.0 0.75
          0x2      2.0 0.0 0.0 true   false 3.0       0.75  0.0  0.0 0.75
+         0x2      3.0 0.0 0.0 false  true  2.0       0.5   0.0  0.0 0.5
+         0x2      2.0 0.0 0.0 false  true  3.0       0.0   0.0  0.0 0.0
          )
 
 
