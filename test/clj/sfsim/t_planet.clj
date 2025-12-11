@@ -743,7 +743,7 @@ void main()
                tree             {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 2)}
                geometry         (clouds/render-cloud-geometry 160 120 (render-planet-geometry renderer render-vars tree))]
            (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
-           => (roughly-vector (vec4 0.011 0.011 -3.0 1.0) 1e-3)
+           => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
            (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
            => (roughly 3.0 1e-3)
            (clouds/destroy-cloud-geometry geometry)
