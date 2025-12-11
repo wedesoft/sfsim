@@ -1682,6 +1682,8 @@ uniform sampler2D camera_point;
 uniform sampler2D dist;
 uniform int overlay_width;
 uniform int overlay_height;
+uniform vec3 origin;
+uniform mat4 camera_to_world;
 uniform float object_distance;
 vec4 geometry_point()
 {
@@ -1693,12 +1695,16 @@ float geometry_distance()
   vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
   return texture(dist, uv).r;
 }
+vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment)
+{
+  float opacity = 1.0 - pow(0.5, segment.t);
+  return vec4(opacity, 0, 0, opacity);
+}
 out vec4 fragColor;
 void main()
 {
-  vec3 direction = geometry_point().xyz;
-  float opacity = 1.0 - pow(0.5, object_distance);
-  fragColor = vec4(opacity, 0, 0, opacity);
+  vec3 direction = (camera_to_world * geometry_point()).xyz;
+  fragColor = cloud_point(origin, direction, vec2(0, object_distance));
 }")
 
 
@@ -1727,6 +1733,8 @@ void main()
                                    (uniform-int cloud-program "overlay_height" 1)
                                    (uniform-sampler cloud-program "camera_point" 0)
                                    (uniform-sampler cloud-program "dist" 1)
+                                   (uniform-vector3 cloud-program "origin" (vec3 0 0 0))
+                                   (uniform-matrix4 cloud-program "camera_to_world" (eye 4))
                                    (uniform-float cloud-program "object_distance" ?obj-dist)
                                    (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)})
                                    (clear (vec3 0.0 0.0 0.0) 0.0)
