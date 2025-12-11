@@ -1763,8 +1763,12 @@ out vec4 fragColor;
 void main()
 {
   float dist = geometry_distance();
-  vec3 direction = (camera_to_world * geometry_point()).xyz;
-  fragColor = cloud_point(origin, direction, vec2(object_distance, dist - object_distance));
+  if (dist < object_distance)
+    fragColor = vec4(0, 0, 0, 0);
+  else {
+    vec3 direction = (camera_to_world * geometry_point()).xyz;
+    fragColor = cloud_point(origin, direction, vec2(object_distance, dist - object_distance));
+  };
 }")
 
 
@@ -1810,12 +1814,11 @@ void main()
                                          (use-program (nth cloud-programs 2))
                                          (render-quads vao)))
                                      (when ?back
-                                       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                         (with-underlay-blending
+                                       (with-underlay-blending
+                                         (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                            (use-program (nth cloud-programs 1))
-                                           (render-quads vao)))
-                                       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                         (with-underlay-blending
+                                           (render-quads vao))
+                                         (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
                                            (use-program (nth cloud-programs 3))
                                            (render-quads vao))))))
                (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
@@ -1834,6 +1837,7 @@ void main()
          0x2      2.0 0.0 0.0 true   false 3.0       0.75  0.0  0.0 0.75
          0x2      3.0 0.0 0.0 false  true  2.0       0.5   0.0  0.0 0.5
          0x2      2.0 0.0 0.0 false  true  3.0       0.0   0.0  0.0 0.0
+         0x2      3.0 0.0 0.0 true   true  2.0       0.875 0.0  0.0 0.875
          )
 
 
