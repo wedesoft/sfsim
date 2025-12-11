@@ -37,6 +37,7 @@
 (GLFW/glfwInit)
 
 (def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.glb"))
+(def cube-moved (read-gltf "test/clj/sfsim/fixtures/model/cube-moved.glb"))
 
 
 (fact "Root of cube scene"
@@ -44,10 +45,10 @@
 
 
 (fact "Transformation of root node"
-      (let [blender-x 0
-            blender-y 0
-            blender-z 0]
-        (:sfsim.model/transform (:sfsim.model/root cube))
+      (let [blender-x 1
+            blender-y 2
+            blender-z 3]
+        (:sfsim.model/transform (:sfsim.model/root cube-moved))
         => (roughly-matrix (transformation-matrix (eye 3) (vec3 blender-x blender-z (- blender-y))) 1e-6)))
 
 
