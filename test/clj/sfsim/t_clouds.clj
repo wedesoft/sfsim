@@ -1676,15 +1676,12 @@ void main()
 }")
 
 
-(def fragment-clouds
+(def cloud-shader-mock
 "#version 450 core
 uniform sampler2D camera_point;
 uniform sampler2D dist;
 uniform int overlay_width;
 uniform int overlay_height;
-uniform vec3 origin;
-uniform mat4 camera_to_world;
-uniform float object_distance;
 vec4 geometry_point()
 {
   vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
@@ -1700,6 +1697,19 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment)
   float opacity = 1.0 - pow(0.5, segment.t);
   return vec4(opacity, 0, 0, opacity);
 }
+vec4 cloud_outer(vec3 origin, vec3 direction, float skip)
+{
+  float opacity = 1.0 - pow(0.5, 3.0 - skip);
+  return vec4(opacity, 0, 0, opacity);
+}")
+
+(def fragment-cloud-atmosphere-front
+"#version 450 core
+uniform vec3 origin;
+uniform mat4 camera_to_world;
+uniform float object_distance;
+vec4 geometry_point();
+vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
 out vec4 fragColor;
 void main()
 {
@@ -1707,6 +1717,19 @@ void main()
   fragColor = cloud_point(origin, direction, vec2(0, object_distance));
 }")
 
+(def fragment-cloud-atmosphere-back
+"#version 450 core
+uniform vec3 origin;
+uniform mat4 camera_to_world;
+uniform float object_distance;
+vec4 geometry_point();
+vec4 cloud_outer(vec3 origin, vec3 direction, float skip);
+out vec4 fragColor;
+void main()
+{
+  vec3 direction = (camera_to_world * geometry_point()).xyz;
+  fragColor = cloud_outer(origin, direction, object_distance);
+}")
 
 (tabular "Use geometry buffer to render clouds"
          (facts
@@ -1723,35 +1746,45 @@ void main()
                                                            (with-stencils
                                                              (with-stencil-op-ref-and-mask GL11/GL_ALWAYS ?stencil ?stencil
                                                                (render-quads vao))))
-                   cloud-program    (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                  :sfsim.render/fragment [fragment-clouds])
+                   cloud-programs   (map #(make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                        :sfsim.render/fragment [cloud-shader-mock %])
+                                         [fragment-cloud-atmosphere-front fragment-cloud-atmosphere-back])
                    overlay          (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
                (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                                    (clear (vec3 0.0 0.0 0.0) 0.0)
-                                   (use-program cloud-program)
-                                   (uniform-int cloud-program "overlay_width" 1)
-                                   (uniform-int cloud-program "overlay_height" 1)
-                                   (uniform-sampler cloud-program "camera_point" 0)
-                                   (uniform-sampler cloud-program "dist" 1)
-                                   (uniform-vector3 cloud-program "origin" (vec3 0 0 0))
-                                   (uniform-matrix4 cloud-program "camera_to_world" (eye 4))
-                                   (uniform-float cloud-program "object_distance" ?obj-dist)
-                                   (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)})
+                                   (doseq [cloud-program cloud-programs]
+                                          (use-program cloud-program)
+                                          (uniform-int cloud-program "overlay_width" 1)
+                                          (uniform-int cloud-program "overlay_height" 1)
+                                          (uniform-sampler cloud-program "camera_point" 0)
+                                          (uniform-sampler cloud-program "dist" 1)
+                                          (uniform-vector3 cloud-program "origin" (vec3 0 0 0))
+                                          (uniform-matrix4 cloud-program "camera_to_world" (eye 4))
+                                          (uniform-float cloud-program "object_distance" ?obj-dist)
+                                          (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
                                    (clear (vec3 0.0 0.0 0.0) 0.0)
                                    (with-stencils
                                      (when ?front
                                        (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                         (render-quads vao)))))
+                                         (use-program (nth cloud-programs 0))
+                                         (render-quads vao)))
+                                     (when ?back
+                                       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                         (with-underlay-blending
+                                           (use-program (nth cloud-programs 1))
+                                           (render-quads vao))))))
                (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                (destroy-texture overlay)
                (destroy-cloud-geometry geometry)
                (destroy-vertex-array-object vao)
-               (destroy-program cloud-program)
+               (doseq [cloud-program cloud-programs] (destroy-program cloud-program))
                (destroy-program geometry-program))))
-         ?stencil ?x  ?y  ?z  ?front ?obj-dist ?r   ?g  ?b  ?a
-         0x1      1.0 0.0 0.0 false  2.0       0.0  0.0 0.0 0.0
-         0x1      1.0 0.0 0.0 true   2.0       0.75 0.0 0.0 0.75
+         ?stencil ?x  ?y  ?z  ?front ?back ?obj-dist ?r    ?g  ?b  ?a
+         0x1      1.0 0.0 0.0 false  false 2.0       0.0   0.0 0.0 0.0
+         0x1      1.0 0.0 0.0 true   false 2.0       0.75  0.0 0.0 0.75
+         0x1      1.0 0.0 0.0 false  true  2.0       0.5   0.0 0.0 0.5
+         0x1      1.0 0.0 0.0 true   true  2.0       0.875 0.0 0.0 0.875
          )
 
 
