@@ -1671,7 +1671,7 @@ layout (location = 1) out float dist;
 uniform vec3 point;
 void main()
 {
-  camera_point = vec4(point, 1.0);
+  camera_point = vec4(normalize(point), 0.0);
   dist = length(point);
 }")
 
@@ -1703,6 +1703,7 @@ vec4 cloud_outer(vec3 origin, vec3 direction, float skip)
   return vec4(opacity, 0, 0, opacity);
 }")
 
+
 (def fragment-cloud-atmosphere-front
 "#version 450 core
 uniform vec3 origin;
@@ -1716,6 +1717,7 @@ void main()
   vec3 direction = (camera_to_world * geometry_point()).xyz;
   fragColor = cloud_point(origin, direction, vec2(0, object_distance));
 }")
+
 
 (def fragment-cloud-atmosphere-back
 "#version 450 core
@@ -1731,6 +1733,24 @@ void main()
   fragColor = cloud_outer(origin, direction, object_distance);
 }")
 
+
+(def fragment-cloud-planet-front
+"#version 450 core
+uniform vec3 origin;
+uniform mat4 camera_to_world;
+uniform float object_distance;
+vec4 geometry_point();
+float geometry_distance();
+vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
+out vec4 fragColor;
+void main()
+{
+  float dist = geometry_distance();
+  vec3 direction = (camera_to_world * geometry_point()).xyz;
+  fragColor = cloud_point(origin, direction, vec2(0, min(dist, object_distance)));
+}")
+
+
 (tabular "Use geometry buffer to render clouds"
          (facts
            (with-invisible-window
@@ -1743,12 +1763,13 @@ void main()
                                                            (use-program geometry-program)
                                                            (uniform-vector3 geometry-program "point" (vec3 ?x ?y ?z))
                                                            (clear (vec3 0.0 0.0 0.0) 0.0 0)
-                                                           (with-stencils
+                                                           (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
                                                              (with-stencil-op-ref-and-mask GL11/GL_ALWAYS ?stencil ?stencil
                                                                (render-quads vao))))
                    cloud-programs   (map #(make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                                         :sfsim.render/fragment [cloud-shader-mock %])
-                                         [fragment-cloud-atmosphere-front fragment-cloud-atmosphere-back])
+                                         [fragment-cloud-atmosphere-front fragment-cloud-atmosphere-back
+                                          fragment-cloud-planet-front])
                    overlay          (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
                (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                                    (clear (vec3 0.0 0.0 0.0) 0.0)
@@ -1767,6 +1788,9 @@ void main()
                                      (when ?front
                                        (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                          (use-program (nth cloud-programs 0))
+                                         (render-quads vao))
+                                       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                         (use-program (nth cloud-programs 2))
                                          (render-quads vao)))
                                      (when ?back
                                        (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
@@ -1780,11 +1804,13 @@ void main()
                (destroy-vertex-array-object vao)
                (doseq [cloud-program cloud-programs] (destroy-program cloud-program))
                (destroy-program geometry-program))))
-         ?stencil ?x  ?y  ?z  ?front ?back ?obj-dist ?r    ?g  ?b  ?a
-         0x1      1.0 0.0 0.0 false  false 2.0       0.0   0.0 0.0 0.0
-         0x1      1.0 0.0 0.0 true   false 2.0       0.75  0.0 0.0 0.75
-         0x1      1.0 0.0 0.0 false  true  2.0       0.5   0.0 0.0 0.5
-         0x1      1.0 0.0 0.0 true   true  2.0       0.875 0.0 0.0 0.875
+         ?stencil ?x  ?y  ?z  ?front ?back ?obj-dist ?r    ?g   ?b  ?a
+         0x1      1.0 0.0 0.0 false  false 2.0       0.0   0.0  0.0 0.0
+         0x1      1.0 0.0 0.0 true   false 2.0       0.75  0.0  0.0 0.75
+         0x1      1.0 0.0 0.0 false  true  2.0       0.5   0.0  0.0 0.5
+         0x1      1.0 0.0 0.0 true   true  2.0       0.875 0.0  0.0 0.875
+         0x2      4.0 0.0 0.0 true   false 2.0       0.75  0.0  0.0 0.75
+         0x2      2.0 0.0 0.0 true   false 3.0       0.75  0.0  0.0 0.75
          )
 
 
