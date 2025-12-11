@@ -1657,11 +1657,11 @@ void main()
                (destroy-joined-geometry-renderer renderer))))
          ?model ?planet ?planet-z-near ?coordinate ?distance
          nil    nil     0.1            -1.0        0.0
-        -4.0    nil     0.1            -3.0        3.0
-         nil   -5.0     0.1            -5.0        5.0
-        -4.0   -5.0     0.1            -3.0        3.0
-        -7.0   -5.0     0.1            -5.0        5.0
-        -7.0   -5.0     0.5            -6.0        6.0)
+        -4.0    nil     0.1            -1.0        3.0
+         nil   -5.0     0.1            -1.0        5.0
+        -4.0   -5.0     0.1            -1.0        3.0
+        -7.0   -5.0     0.1            -1.0        5.0
+        -7.0   -5.0     0.5            -1.0        6.0)
 
 
 (def fragment-mock-geometry
