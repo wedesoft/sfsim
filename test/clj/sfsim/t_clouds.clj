@@ -9,16 +9,19 @@
     [clojure.math :refer (exp log sin cos asin atan to-radians PI E)]
     [comb.template :as template]
     [fastmath.matrix :refer (mat3x3 eye inverse)]
-    [fastmath.vector :refer (vec3)]
+    [fastmath.vector :refer (vec3 vec4)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.atmosphere :refer (vertex-atmosphere)]
     [sfsim.clouds :refer :all]
     [sfsim.conftest :refer (roughly-vector shader-test is-image)]
-    [sfsim.image :refer (get-vector3 get-float-3d)]
+    [sfsim.image :refer (get-vector3 get-vector4 get-float-3d get-float)]
     [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
-    [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
+    [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet make-cube-map-tile-vertices)]
+    [sfsim.model :refer (read-gltf
+                         load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry
+                         destroy-joined-geometry-renderer)]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer :all]
@@ -26,7 +29,9 @@
     [sfsim.worley :refer (worley-size)])
   (:import
     (org.lwjgl.glfw
-      GLFW)))
+      GLFW)
+   (org.lwjgl.opengl
+      GL11 GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -1233,6 +1238,7 @@ in GEO_OUT
   vec2 colorcoord;
   vec3 point;
   vec3 object_point;
+  vec4 camera_point;
 } fs_in;
 out vec4 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
@@ -1605,6 +1611,133 @@ void main()
          1.0           1.0 (- 1 (/ 1 E))
          1.0           2.0 (- 1 (/ 1 E E))
          2.0           1.0 (- 1 (/ 1 E E)))
+
+
+(def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.glb"))
+
+
+(tabular "Render joined geometry of model, planet, and atmosphere"
+         (facts
+           (with-invisible-window
+             (let [data                {:sfsim.planet/config {:sfsim.planet/tilesize 3}}
+                   renderer            (make-joined-geometry-renderer data)
+                   scene-program       (:sfsim.model/programs (:sfsim.model/scene-renderer renderer))
+                   planet-program      (:sfsim.planet/program (:sfsim.model/planet-renderer renderer))
+                   opengl-scene        (load-scene-into-opengl (comp scene-program material-type) cube)
+                   moved-scene         (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform]
+                                                 (transformation-matrix (eye 3) (vec3 0 0 (or ?model 0))))
+                   indices             [0 2 3 1]
+                   vertices            (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
+                   vao                 (make-vertex-array-object planet-program indices vertices
+                                                                 ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+                   data                [-1  1 0, 0  1 0, 1  1 0,
+                                        -1  0 0, 0  0 0, 1  0 0,
+                                        -1 -1 0, 0 -1 0, 1 -1 0]
+                   surface             (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                               #:sfsim.image{:width 3 :height 3 :data (float-array data)})
+                   tree                {:sfsim.planet/vao vao
+                                        :sfsim.planet/surf-tex surface
+                                        :sfsim.quadtree/center (vec3 0 0 (or ?planet 0))}
+                   camera-to-world     (transformation-matrix (eye 3) (vec3 0 0 0))
+                   model-render-vars   #:sfsim.render{:sfsim.render/camera-to-world camera-to-world
+                                                      :sfsim.render/z-near 0.1
+                                                      :sfsim.render/overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                                      :sfsim.render/overlay-width 160
+                                                      :sfsim.render/overlay-height 120}
+                   planet-render-vars  (assoc model-render-vars :sfsim.render/z-near ?planet-z-near)
+                   geometry            (render-joined-geometry renderer model-render-vars planet-render-vars moved-scene tree)]
+               (nth (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80) 2)
+               => (roughly ?coordinate 1e-3)
+               (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
+               => (roughly ?distance 1e-3)
+               (destroy-cloud-geometry geometry)
+               (destroy-texture surface)
+               (destroy-vertex-array-object vao)
+               (destroy-scene opengl-scene)
+               (destroy-joined-geometry-renderer renderer))))
+         ?model ?planet ?planet-z-near ?coordinate ?distance
+         nil    nil     0.1            -1.0        0.0
+        -4.0    nil     0.1            -3.0        3.0
+         nil   -5.0     0.1            -5.0        5.0
+        -4.0   -5.0     0.1            -3.0        3.0
+        -7.0   -5.0     0.1            -5.0        5.0
+        -7.0   -5.0     0.5            -6.0        6.0)
+
+
+(def fragment-mock-geometry
+"#version 450 core
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float dist;
+uniform vec3 point;
+void main()
+{
+  camera_point = vec4(point, 1.0);
+  dist = length(point);
+}")
+
+
+(def fragment-clouds
+"#version 450 core
+uniform sampler2D camera_point;
+uniform sampler2D dist;
+uniform int overlay_width;
+uniform int overlay_height;
+vec4 geometry_point()
+{
+  vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
+  return texture(camera_point, uv);
+}
+float geometry_distance()
+{
+  vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
+  return texture(dist, uv).r;
+}
+out vec4 fragColor;
+void main()
+{
+  fragColor = geometry_point();
+}")
+
+
+(tabular "Use geometry buffer to render clouds"
+         (facts
+           (with-invisible-window
+             (let [geometry-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                  :sfsim.render/fragment [fragment-mock-geometry])
+                   indices          [0 1 3 2]
+                   vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                   vao              (make-vertex-array-object geometry-program indices vertices ["point" 3])
+                   geometry         (render-cloud-geometry 1 1
+                                                           (use-program geometry-program)
+                                                           (uniform-vector3 geometry-program "point" (vec3 ?x ?y ?z))
+                                                           (clear (vec3 0.0 0.0 0.0) 0.0 0)
+                                                           (with-stencils
+                                                             (with-stencil-op-ref-and-mask GL11/GL_ALWAYS ?stencil ?stencil
+                                                               (render-quads vao))))
+                   cloud-program    (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                  :sfsim.render/fragment [fragment-clouds])
+                   overlay          (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
+               (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
+                                   (clear (vec3 0.0 0.0 0.0) 0.0)
+                                   (use-program cloud-program)
+                                   (uniform-int cloud-program "overlay_width" 1)
+                                   (uniform-int cloud-program "overlay_height" 1)
+                                   (uniform-sampler cloud-program "camera_point" 0)
+                                   (uniform-sampler cloud-program "dist" 1)
+                                   (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)})
+                                   (clear (vec3 0.0 0.0 0.0) 0.0)
+                                   (with-stencils
+                                     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                       (render-quads vao))))
+               (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
+               => (roughly-vector (vec4 2 3 5 1) 1e-3)
+               (destroy-texture overlay)
+               (destroy-cloud-geometry geometry)
+               (destroy-vertex-array-object vao)
+               (destroy-program cloud-program)
+               (destroy-program geometry-program))))
+         ?stencil ?x ?y ?z
+         0x1      2  3  5)
 
 
 (GLFW/glfwTerminate)

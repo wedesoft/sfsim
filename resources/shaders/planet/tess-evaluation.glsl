@@ -22,6 +22,7 @@ out TES_OUT
   vec2 colorcoord;
   vec3 point;
   vec3 object_point;
+  vec4 camera_point;
 <% (doseq [i (range num-scene-shadows)] %>
   vec4 object_shadow_pos_<%= (inc ^long i) %>;
 <% ) %>
@@ -38,10 +39,11 @@ void main()
   vec2 surfacecoord = mix(surfacecoord_a, surfacecoord_b, gl_TessCoord.y);
   vec3 vector = texture(surface, surfacecoord).xyz;
   tes_out.point = tile_center + vector;
-  vec4 transformed_point = tile_to_camera * vec4(vector, 1);
-  tes_out.object_point = (camera_to_object * transformed_point).xyz;
+  vec4 camera_point = tile_to_camera * vec4(vector, 1);
+  tes_out.object_point = (camera_to_object * camera_point).xyz;
+  tes_out.camera_point = camera_point;
 <% (doseq [i (range num-scene-shadows)] %>
   tes_out.object_shadow_pos_<%= (inc ^long i) %> = tile_to_shadow_map_<%= (inc ^long i) %> * vec4(vector, 1);
 <% ) %>
-  gl_Position = projection * transformed_point;
+  gl_Position = projection * camera_point;
 }

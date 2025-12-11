@@ -10,7 +10,7 @@
     [clojure.math :refer (sqrt cos)]
     [comb.template :as template]
     [fastmath.matrix :refer (mulm eye inverse)]
-    [fastmath.vector :refer (mag)]
+    [fastmath.vector :refer (vec3 mag)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere atmosphere-luts)]
     [sfsim.clouds :refer (cloud-point lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
@@ -25,13 +25,17 @@
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                           destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
                           setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-quads render-config
-                          render-vars diagonal-field-of-view make-render-vars)
+                          render-vars diagonal-field-of-view make-render-vars clear framebuffer-render)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
-                           texture-2d texture-3d make-float-texture-3d generate-mipmap)]
+                           texture-2d texture-3d make-float-texture-3d generate-mipmap make-empty-texture-2d
+                           make-empty-float-texture-2d)]
     [sfsim.worley :refer (worley-size)]
-    [sfsim.util :refer (N N0 sqr slurp-floats)]))
+    [sfsim.util :refer (N N0 sqr slurp-floats)])
+  (:import
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -454,9 +458,9 @@
         shadow-data     (:sfsim.opacity/data data)
         variations      (:sfsim.opacity/scene-shadow-counts shadow-data)
         programs        (mapv #(make-planet-program data %) variations)
-        worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
-        worley-data          #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
-        worley               (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)]
+        worley-floats   (slurp-floats "data/clouds/worley-cover.raw")
+        worley-data     #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
+        worley          (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)]
     (generate-mipmap worley)
     {::programs (zipmap variations programs)
      ::worley worley
@@ -619,6 +623,54 @@
         z-far           (render-depth radius height cloud-top)]
     (make-render-vars render-config window-width window-height camera-position camera-orientation light-direction
                      object-position object-orientation z-near z-far time_ pressure)))
+
+
+(def fragment-planet-geometry
+"#version 450 core
+in GEO_OUT
+{
+  vec2 colorcoord;
+  vec3 point;
+  vec3 object_point;
+  vec4 camera_point;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float dist;
+void main()
+{
+  camera_point = fs_in.camera_point;
+  dist = length(fs_in.camera_point.xyz);
+}")
+
+
+(defn make-planet-geometry-renderer
+  "Create renderer for rendering planet points in camera coordinate system"
+  [data]
+  (let [program  (make-program :sfsim.render/vertex [vertex-planet]
+                               :sfsim.render/tess-control [tess-control-planet]
+                               :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                               :sfsim.render/geometry [(geometry-planet 0)]
+                               :sfsim.render/fragment [fragment-planet-geometry])
+        tilesize (::tilesize (::config data))]
+    (use-program program)
+    (uniform-sampler program "surface" 0)
+    (uniform-int program "high_detail" (dec ^long tilesize))
+    (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
+    {::program program}))
+
+
+(defn destroy-planet-geometry-renderer
+  "Destroy planet geometry renderer"
+  [{::keys [program]}]
+  (destroy-program program))
+
+
+(defn render-planet-geometry
+  "Render geometry (planet points and distances)"
+  [{::keys [program]} render-vars tree]
+  (use-program program)
+  (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))
+  (render-tree program tree (inverse (:sfsim.render/camera-to-world render-vars)) [] [:sfsim.planet/surf-tex]))
 
 
 (set! *warn-on-reflection* false)

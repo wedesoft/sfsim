@@ -8,7 +8,7 @@
   (:require
     [fastmath.matrix :as fm]
     [sfsim.image :refer (white-image-with-alpha)]
-    [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-blending
+    [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                                        with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                                        destroy-vertex-array-object)]
     [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)]
@@ -232,7 +232,7 @@
         (Nuklear/nk_buffer_init_fixed vbuf vertices)
         (Nuklear/nk_buffer_init_fixed ebuf elements)
         (Nuklear/nk_convert context cmds vbuf ebuf config)))
-    (with-blending
+    (with-overlay-blending
       (with-scissor
         (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
           (when cmd
@@ -455,7 +455,7 @@
   (let [buffer (float-array 1)]
     (aset-float buffer 0 value)
     (Nuklear/nk_slider_float ^NkContext (::context gui) ^float minimum buffer ^float maximum ^float step)
-    (aget buffer 0)))
+    (double (aget buffer 0))))
 
 
 (defn button-label

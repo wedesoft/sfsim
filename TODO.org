@@ -42,18 +42,25 @@
   - [X] can we use OpenGL blending to render plume front to back or do we need input and output color texture?
     - [X] check out glBlendFuncSeparate
   - [X] can we use OpenGL blending to render cloud layers front to back or do we need input and output color texture?
-  - [ ] plume and cloud functions should store transparency in alpha value (not opacity)
-  - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
-  - [ ] use correct cutoff for all rendered layers when rendering front to back
+  - [X] crash when setting up joystick if joystick is not plugged in
+  - [X] test blending and add blending with adding color and multiplying alpha values:
+        use srcAlphaFactor = GL_ONE_MINUS_DST_ALPHA, dstAlphaFactor = GL_ONE
+        use srcRGBFactor = GL_ONE, dstRGBFactor = GL_ONE_MINUS_DST_ALPHA
+  - [X] make environment macros for stencil setups
   - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
         also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
     - [X] as before render opacity and shadow cascade and object shadows
-    - [ ] render cloud and plume low res overlay
-      - [ ] geometry rendering
-        - [ ] set stencil buffer to atmosphere
-        - [ ] render model outputting camera points, camera distance. object stencil, and depth buffer
-        - [ ] render planet using depth buffer outputting camera points overwritting object stencil
-      - [ ] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
+    - [-] render cloud and plume low res overlay
+      - [X] geometry rendering
+        - [X] render model outputting camera points, set stencil buffer to object, set depth buffer
+        - [X] separate identical code for frame buffer initialisation and clearing from model and planet geometry renderer
+        - [X] add cloud geometry tests rendering planet, model, and atmosphere with depth buffer and stencil
+        - [X] set stencil buffer to atmosphere initially, render camera direction vectors to remaining geometry
+        - [X] render planet using depth buffer or model stencil outputting camera points overwritting object stencil,
+              skip using object stencil if out of atmosphere
+        - [X] specify depth buffer when rendering model or planet geometry
+      - [-] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
+        - [X] rename distance to something else
         - [ ] render cloud front layer up to object depth on atmospheric background
         - [ ] render cloud front layer up to minimum planet or object depth on planet stencil
         - [ ] render cloud front layer up to object point on model stencil
@@ -63,11 +70,17 @@
         - [ ] copy alpha values to input texture for next step
         - [ ] render cloud back layer up to planet on planet stencil
         - [ ] render cloud back layer on atmospheric background
+    - [ ] disable color buffer when rendering frame buffer and it is not required
+    - [ ] make camera_point optional in planet shaders
     - [ ] render opaque objects (scenes, planet, atmosphere) with atmosphere in front,
           render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
       - [ ] render model
       - [ ] render planet
       - [ ] render atmosphere
+  - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
+  - [ ] use correct cutoff for all rendered layers when rendering front to back
+  - [ ] schemas for model, planet, and atmosphere geometry renderer
+  - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
   - [ ] implement RCS thrusters
   - [X] use #version 450 (OpenGL 4.5)?
   - [ ] Thrust vectoring:

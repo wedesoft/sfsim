@@ -12,7 +12,8 @@
     [fastmath.vector :refer (vec3 vec4 mag)]
     [malli.core :as m]
     [sfsim.image :refer (get-pixel)]
-    [sfsim.matrix :refer (fvec2 fvec3 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix vec4->vec3)]
+    [sfsim.matrix :refer (fvec2 fvec3 fvec4 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix
+                          vec4->vec3)]
     [sfsim.quaternion :refer (quaternion)]
     [sfsim.shaders :refer (vertex-passthrough)]
     [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
@@ -24,7 +25,6 @@
     (org.lwjgl.opengl
       GL
       GL11
-      GL12
       GL13
       GL14
       GL15
@@ -67,45 +67,47 @@
   [& body]
   `(do
      (GL11/glEnable GL11/GL_STENCIL_TEST)
+     (GL11/glStencilMask 0xff)
+     (GL11/glStencilFunc GL11/GL_ALWAYS 0 0xff)
+     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_KEEP)
      (let [result# (do ~@body)]
        (GL11/glDisable GL11/GL_STENCIL_TEST)
        result#)))
 
 
-(definline write-to-stencil-buffer
-  "Write to stencil buffer when rendering"
-  []
+(defmacro with-stencil-op-ref-and-mask
+  "Write bits to stencil buffer if they are not all set"
+  [op reference mask & body]
   `(do
-     (GL11/glStencilFunc GL11/GL_ALWAYS 1 0xff)
+     (GL11/glStencilFunc ~op ~reference ~mask)
      (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_REPLACE)
-     (GL11/glStencilMask 0xff)))
+     (let [result# (do ~@body)]
+       (GL11/glStencilFunc GL11/GL_ALWAYS 0 0xff)
+       (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_KEEP)
+       result#)))
 
 
-(definline mask-with-stencil-buffer
-  "Only render where stencil buffer is not set"
-  []
-  `(do
-     (GL11/glStencilFunc GL12/GL_NOTEQUAL 1 0xff)
-     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_KEEP)
-     (GL11/glStencilMask 0)))
-
-
-(definline mask-with-negated-stencil-buffer
-  "Only render where stencil buffer is set"
-  []
-  `(do
-     (GL11/glStencilFunc GL12/GL_EQUAL 1 0xff)
-     (GL11/glStencilOp GL11/GL_KEEP GL11/GL_KEEP GL11/GL_KEEP)
-     (GL11/glStencilMask 0)))
-
-
-(defmacro with-blending
-  "Enable alpha blending for the specified body of code"
+(defmacro with-overlay-blending
+  "Render using transparency over existing colour buffer"
   [& body]
   `(do
      (GL11/glEnable GL11/GL_BLEND)
      (GL14/glBlendEquation GL14/GL_FUNC_ADD)
-     (GL14/glBlendFunc GL14/GL_SRC_ALPHA GL14/GL_ONE_MINUS_SRC_ALPHA)
+     ; void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+     (GL14/glBlendFuncSeparate GL14/GL_SRC_ALPHA GL14/GL_ONE_MINUS_SRC_ALPHA GL14/GL_ONE_MINUS_DST_ALPHA GL14/GL_ONE)
+     (let [result# (do ~@body)]
+       (GL11/glDisable GL11/GL_BLEND)
+       result#)))
+
+
+(defmacro with-underlay-blending
+  "Render behind existing transparent colour buffer"
+  [& body]
+  `(do
+     (GL11/glEnable GL11/GL_BLEND)
+     (GL14/glBlendEquation GL14/GL_FUNC_ADD)
+     ; void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+     (GL14/glBlendFuncSeparate GL14/GL_ONE_MINUS_DST_ALPHA GL14/GL_ONE GL14/GL_ONE_MINUS_DST_ALPHA GL14/GL_ONE)
      (let [result# (do ~@body)]
        (GL11/glDisable GL11/GL_BLEND)
        result#)))
@@ -418,6 +420,13 @@
   (GL20/glUniform3f (uniform-location program k) (value 0) (value 1) (value 2)))
 
 
+(defn uniform-vector4
+  "Set uniform 3D vector in current shader program (don't forget to set the program using use-program first)"
+  {:malli/schema [:=> [:cat :int :string fvec4] :nil]}
+  [program k value]
+  (GL20/glUniform4f (uniform-location program k) (value 0) (value 1) (value 2) (value 3)))
+
+
 (defn uniform-matrix3
   "Set uniform 3x3 matrix in current shader program (don't forget to set the program using use-program first)"
   {:malli/schema [:=> [:cat :int :string fmat3] :nil]}
@@ -618,41 +627,50 @@
     (* 2.0 (asin dxy))))
 
 
-(def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double] [::min-z-near :double]]))
+(def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double] [::min-z-near :double]
+                                   [::cloud-subsampling :int]]))
 
 
 (def render-vars
   (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
              [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]
              [::object-origin fvec3] [::camera-to-object fmat4] [::object-distance :double]
-             [::time :double] [::pressure :double]]))
+             [::time :double] [::pressure :double] [::overlay-width N] [::overlay-height N] [::overlay-projection fmat4]]))
 
 
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame with specified depth range"
-  {:malli/schema [:=> [:cat [:map [::fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion :double :double :double :double]
+  {:malli/schema [:=> [:cat [:map [::fov :double] [::cloud-subsampling :int]] N N fvec3 quaternion fvec3 fvec3 quaternion
+                            :double :double :double :double]
                       render-vars]}
   [render-config window-width window-height camera-position camera-orientation light-direction object-position object-orientation
    z-near z-far time_ pressure]
-  (let [fov              (::fov render-config)
-        camera-to-world  (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
-        world-to-object  (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
-        camera-to-object (mulm world-to-object camera-to-world)
-        object-origin    (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
-        z-offset         1.0
-        projection       (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)]
+  (let [fov                (::fov render-config)
+        cloud-subsampling  (::cloud-subsampling render-config)
+        overlay-width      (quot ^long window-width ^long cloud-subsampling)
+        overlay-height     (quot ^long window-height ^long cloud-subsampling)
+        camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
+        world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
+        camera-to-object   (mulm world-to-object camera-to-world)
+        object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
+        z-offset           1.0
+        projection         (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)
+        overlay-projection (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) fov)]
     {::origin camera-position
      ::z-near z-near
      ::z-far z-far
      ::fov fov
      ::window-width window-width
      ::window-height window-height
+     ::overlay-width overlay-width
+     ::overlay-height overlay-height
      ::light-direction light-direction
      ::object-origin object-origin
      ::camera-to-object camera-to-object
      ::object-distance (mag object-origin)
      ::camera-to-world camera-to-world
      ::projection projection
+     ::overlay-projection overlay-projection
      ::time time_
      ::pressure pressure}))
 
@@ -661,33 +679,39 @@
   "Create hash map with render variables using joined z-range of input render variables"
   {:malli/schema [:=> [:cat render-vars render-vars] render-vars]}
   [vars-first vars-second]
-  (let [fov              (::fov vars-first)
-        window-width     (::window-width vars-first)
-        window-height    (::window-height vars-first)
-        object-origin    (::object-origin vars-first)
-        object-distance  (::object-distance vars-first)
-        camera-to-object (::camera-to-object vars-first)
-        position         (::origin vars-first)
-        z-near           (min ^double (::z-near vars-first) ^double (::z-near vars-second))
-        z-far            (max ^double (::z-far vars-first) ^double (::z-far vars-second))
-        light-direction  (::light-direction vars-first)
-        camera-to-world  (::camera-to-world vars-first)
-        z-offset         1.0
-        projection       (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)
-        time_            (::time vars-first)
-        pressure         (::pressure vars-first)]
+  (let [fov                (::fov vars-first)
+        window-width       (::window-width vars-first)
+        window-height      (::window-height vars-first)
+        overlay-width      (::overlay-width vars-first)
+        overlay-height     (::overlay-height vars-first)
+        object-origin      (::object-origin vars-first)
+        object-distance    (::object-distance vars-first)
+        camera-to-object   (::camera-to-object vars-first)
+        position           (::origin vars-first)
+        z-near             (min ^double (::z-near vars-first) ^double (::z-near vars-second))
+        z-far              (max ^double (::z-far vars-first) ^double (::z-far vars-second))
+        light-direction    (::light-direction vars-first)
+        camera-to-world    (::camera-to-world vars-first)
+        z-offset           1.0
+        projection         (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)
+        overlay-projection (projection-matrix overlay-width overlay-height z-near (+ z-far z-offset) fov)
+        time_              (::time vars-first)
+        pressure           (::pressure vars-first)]
     {::origin position
      ::z-near z-near
      ::z-far z-far
      ::fov fov
      ::window-width window-width
      ::window-height window-height
+     ::overlay-width overlay-width
+     ::overlay-height overlay-height
      ::object-origin object-origin
      ::object-distance object-distance
      ::camera-to-object camera-to-object
      ::light-direction light-direction
      ::camera-to-world camera-to-world
      ::projection projection
+     ::overlay-projection overlay-projection
      ::time time_
      ::pressure pressure}))
 

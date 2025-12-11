@@ -3,7 +3,7 @@
            ;; Add cross-project aliases here
            :rebel {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.5"}}
                    :main-opts  ["-m" "rebel-readline.main"]}
-           :nrepl {:extra-deps {nrepl/nrepl {:mvn/version "1.4.0"}}}
+           :nrepl {:extra-deps {nrepl/nrepl {:mvn/version "1.5.0"}}}
            :reply {:extra-deps {reply/reply {:mvn/version "0.5.1"}}
                    :main-opts ["-m" "reply.main" "--attach" "7888"]}
            :outdated {:deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}

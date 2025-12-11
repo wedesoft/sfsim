@@ -9,18 +9,19 @@
   (:require
     [clojure.math :refer (tan pow log)]
     [comb.template :as template]
+    [fastmath.vector :refer (vec3)]
     [fastmath.matrix :refer (inverse)]
     [malli.core :as m]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.bluenoise :refer (noise-size) :as bluenoise]
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
-                          uniform-matrix4 use-program) :as render]
+                          uniform-matrix4 use-program clear) :as render]
     [sfsim.shaders :as shaders]
     [sfsim.plume :refer (cloud-plume-segment)]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
-                           texture-2d)]
+                           texture-2d make-empty-texture-2d make-empty-float-texture-2d make-empty-depth-stencil-texture-2d)]
     [sfsim.util :refer (slurp-floats N N0)]
     [sfsim.worley :refer (worley-size)]))
 
@@ -467,6 +468,29 @@
   [num-steps parameters]
   [(environmental-shading num-steps)
    (template/eval (slurp "resources/shaders/clouds/overall-shading.glsl") {:parameters parameters})])
+
+
+(defmacro render-cloud-geometry
+  [overlay-width overlay-height & body]
+  `(let [depth#            (make-empty-depth-stencil-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp
+                                                                ~overlay-width ~overlay-height)
+         point-texture#    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
+                                                  ~overlay-width ~overlay-height)
+         distance-texture# (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp
+                                                        ~overlay-width ~overlay-height)]
+     (framebuffer-render ~overlay-width ~overlay-height :sfsim.render/cullback depth# [point-texture# distance-texture#]
+                         (clear (vec3 0.0 0.0 0.0) 0.0 0)
+                         ~@body)
+     {::depth-stencil depth#
+      ::points point-texture#
+      ::distance distance-texture#}))
+
+
+(defn destroy-cloud-geometry
+  [{::keys [depth-stencil points distance]}]
+  (destroy-texture depth-stencil)
+  (destroy-texture distance)
+  (destroy-texture points))
 
 
 (set! *warn-on-reflection* false)

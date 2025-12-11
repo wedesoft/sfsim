@@ -11,6 +11,7 @@
                                      ; :window-width 720
                                      ; :window-height 1280
                                      ; :fov 0.5
+                                     :cloud-subsampling 2
                                      :min-z-near 1.0}
 
  :sfsim.planet-config #:sfsim.planet{:radius 6378000.0

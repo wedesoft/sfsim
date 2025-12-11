@@ -9,14 +9,14 @@
     [clojure.math :refer (to-radians sqrt PI)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye mulm inverse mat4x4)]
-    [fastmath.vector :refer (vec3 normalize)]
+    [fastmath.vector :refer (vec3 vec4 normalize)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.clouds :as clouds]
     [sfsim.conftest :refer (roughly-matrix roughly-vector roughly-quaternion is-image)]
-    [sfsim.image :refer (floats->image)]
+    [sfsim.image :refer (floats->image get-vector4 get-float)]
     [sfsim.matrix :refer :all]
     [sfsim.model :refer :all :as model]
     [sfsim.planet :as planet]
@@ -26,7 +26,9 @@
     [sfsim.texture :refer :all])
   (:import
     (org.lwjgl.glfw
-      GLFW)))
+      GLFW)
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -34,7 +36,8 @@
 
 (GLFW/glfwInit)
 
-(def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.gltf"))
+(def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.glb"))
+(def cube-moved (read-gltf "test/clj/sfsim/fixtures/model/cube-moved.glb"))
 
 
 (fact "Root of cube scene"
@@ -42,7 +45,11 @@
 
 
 (fact "Transformation of root node"
-      (:sfsim.model/transform (:sfsim.model/root cube)) => (roughly-matrix (transformation-matrix (eye 3) (vec3 1 3 -2)) 1e-6))
+      (let [blender-x 1
+            blender-y 2
+            blender-z 3]
+        (:sfsim.model/transform (:sfsim.model/root cube-moved))
+        => (roughly-matrix (transformation-matrix (eye 3) (vec3 blender-x blender-z (- blender-y))) 1e-6)))
 
 
 (fact "Mesh indices of root node"
@@ -151,13 +158,12 @@ void main()
       (offscreen-render 160 120
                         (let [program         (make-program :sfsim.render/vertex [vertex-cube] :sfsim.render/fragment [fragment-cube])
                               opengl-scene    (load-scene-into-opengl (constantly program) cube)
-                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5)))
-                              moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
+                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5)))]
                           (clear (vec3 0 0 0) 0.0)
                           (use-program program)
                           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
                                         (fn [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
                                           (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
@@ -185,13 +191,12 @@ void main()
       (offscreen-render 160 120
                         (let [program         (make-program :sfsim.render/vertex [vertex-cube] :sfsim.render/fragment [fragment-cube])
                               opengl-scene    (load-scene-into-opengl (constantly program) cubes)
-                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7)))
-                              moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
+                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7)))]
                           (clear (vec3 0 0 0) 0.0)
                           (use-program program)
                           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
                                         (fn [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
                                           (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
@@ -281,14 +286,13 @@ void main()
       (offscreen-render 160 120
                         (let [program         (make-program :sfsim.render/vertex [vertex-dice] :sfsim.render/fragment [fragment-dice])
                               opengl-scene    (load-scene-into-opengl (constantly program) dice)
-                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5)))
-                              moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
+                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5)))]
                           (clear (vec3 0 0 0) 0.0)
                           (use-program program)
                           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
                           (uniform-sampler program "colors" 0)
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
                                         (fn [{:sfsim.model/keys [colors]} {:sfsim.model/keys [program transform] :as render-vars}]
                                           (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
@@ -354,15 +358,14 @@ void main()
       (offscreen-render 160 120
                         (let [program         (make-program :sfsim.render/vertex [vertex-bricks] :sfsim.render/fragment [fragment-bricks])
                               opengl-scene    (load-scene-into-opengl (constantly program) bricks)
-                              camera-to-world (inverse (transformation-matrix (rotation-x 1.8) (vec3 0 0 -3)))
-                              moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
+                              camera-to-world (inverse (transformation-matrix (rotation-x 1.8) (vec3 0 0 -3)))]
                           (clear (vec3 0 0 0) 0.0)
                           (use-program program)
                           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                           (uniform-vector3 program "light" (normalize (vec3 0 -3 1)))
                           (uniform-sampler program "colors" 0)
                           (uniform-sampler program "normals" 1)
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
                                         (fn [{:sfsim.model/keys [colors normals]} {:sfsim.model/keys [program transform] :as render-vars}]
                                           (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
@@ -402,15 +405,14 @@ void main()
                               program-dice      (make-program :sfsim.render/vertex [vertex-dice] :sfsim.render/fragment [fragment-dice])
                               program-selection (comp {:colored program-cube :textured program-dice} cube-material-type)
                               opengl-scene      (load-scene-into-opengl program-selection cube-and-dice)
-                              camera-to-world   (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7)))
-                              moved-scene       (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
+                              camera-to-world   (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7)))]
                           (clear (vec3 0 0 0) 0.0)
                           (doseq [program [program-cube program-dice]]
                             (use-program program)
                             (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                             (uniform-vector3 program "light" (normalize (vec3 1 2 3))))
                           (uniform-sampler program-dice "colors" 0)
-                          (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene render-cube)
+                          (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene render-cube)
                           (destroy-scene opengl-scene)
                           (destroy-program program-dice)
                           (destroy-program program-cube))) => (is-image "test/clj/sfsim/fixtures/model/cube-and-dice.png" 0.04))
@@ -715,7 +717,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 
 
 (facts "Create hashmap with render variables for rendering a scene outside the atmosphere"
-       (let [render          {:sfsim.render/fov 0.5 :sfsim.render/min-z-near 1.0}
+       (let [render-config   #:sfsim.render{:fov 0.5 :min-z-near 1.0 :cloud-subsampling 2 }
              pos1            (vec3 0 0 0)
              pos2            (vec3 0 0 -20)
              pos3            (vec3 0 0 -100)
@@ -733,11 +735,11 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                            :diamond-strength 0.4
                                            :engine-step 0.2}
              model-vars      {:sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
-             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient
+             render-vars1    (make-scene-render-vars render-config 640 480 pos1 orientation1 light-direction obj-pos obj-orient
                                                      model-data model-vars)
-             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient
+             render-vars2    (make-scene-render-vars render-config 640 480 pos2 orientation2 light-direction obj-pos obj-orient
                                                      model-data model-vars)
-             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient
+             render-vars3    (make-scene-render-vars render-config 640 480 pos3 orientation3 light-direction obj-pos obj-orient
                                                      model-data model-vars)]
          (:sfsim.render/origin render-vars1) => pos1
          (:sfsim.render/camera-to-world render-vars1) => (eye 4)
@@ -1016,6 +1018,23 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_orig
          (:sfsim.model/time model-vars) => 1234.0
          (:sfsim.model/pressure model-vars) => 0.5
          (:sfsim.model/throttle model-vars) => 0.8))
+
+
+(fact "Render camera points to frame buffer"
+      (with-invisible-window
+        (let [renderer        (make-scene-geometry-renderer)
+              opengl-scene    (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-type) cube)
+              camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))
+              render-vars     {:sfsim.render/camera-to-world camera-to-world
+                               :sfsim.render/overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
+              geometry        (clouds/render-cloud-geometry 160 120 (render-scene-geometry renderer render-vars opengl-scene))]
+          (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
+          => (roughly-vector (vec4 0.014 0.014 -4.0 1.0) 1e-3)
+          (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
+          => (roughly 4.0 1e-3)
+          (clouds/destroy-cloud-geometry geometry)
+          (destroy-scene opengl-scene)
+          (destroy-scene-geometry-renderer renderer))))
 
 
 (GLFW/glfwTerminate)

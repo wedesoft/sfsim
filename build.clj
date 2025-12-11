@@ -138,9 +138,9 @@
 
 
 (defn download-lunar-elevation
-  "Download CGI Moon Kit elevation image unsigned 16-bit TIFFs in half-meters, relative to a radius of 1727400 meters"
+  "Download CGI Moon Kit elevation floating-point TIFFs in kilometer, relative to a radius of 1737400 meters"
   [& _]
-  (let [filename "ldem_64_uint.tif"
+  (let [filename "ldem_64.tif"
         url (str "https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/" filename)]
     (.println *err* (str "Downloading " url " ..."))
     (io/copy

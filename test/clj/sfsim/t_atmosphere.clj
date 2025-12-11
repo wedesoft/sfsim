@@ -9,23 +9,14 @@
     [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye inverse)]
-    [fastmath.vector :refer (vec3 mult emult add dot)]
+    [fastmath.vector :refer (vec3 vec4 mult emult add dot)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.atmosphere :refer (atmosphere-intersection attenuation-outer elevation-to-index
-                              extinction fragment-atmosphere height-to-index index-to-elevation horizon-distance
-                              index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
-                              phase phase-function point-scatter point-scatter-base point-scatter-component
-                              ray-extremity ray-scatter ray-scatter-space
-                              ray-scatter-track scattering strength-component sun-angle-to-index cloud-overlay
-                              sun-elevation-to-index surface-intersection surface-point? surface-radiance
-                              surface-radiance-base surface-radiance-space transmittance transmittance-outer
-                              transmittance-space transmittance-track transmittance-point vertex-atmosphere extinction
-                              attenuation-point temperature-at-height pressure-at-height density-at-height speed-of-sound)
-     :as atmosphere]
     [sfsim.conftest :refer (roughly-vector is-image shader-test)]
-    [sfsim.image :refer (convert-4d-to-2d get-vector3)]
+    [sfsim.atmosphere :refer :all :as atmosphere :exclude (scatter)]
+    [sfsim.clouds :as clouds]
+    [sfsim.image :refer (convert-4d-to-2d get-vector3 get-vector4 get-float)]
     [sfsim.interpolate :refer (make-lookup-table)]
     [sfsim.matrix :refer (pack-matrices projection-matrix rotation-x transformation-matrix)]
     [sfsim.units :refer :all]
@@ -38,7 +29,9 @@
     (fastmath.vector
       Vec3)
     (org.lwjgl.glfw
-      GLFW)))
+      GLFW)
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -1035,6 +1028,19 @@ void main()
        (speed-of-sound 273.15) => (roughly 331.3 1e-1)
        (speed-of-sound 293.15) => (roughly 343.2 1e-1)
        (speed-of-sound 223.15) => (roughly 299.4 1e-1))
+
+
+(facts "Render direction vectors for atmospheric background"
+       (with-invisible-window
+         (let [renderer         (make-atmosphere-geometry-renderer)
+               render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
+               geometry         (clouds/render-cloud-geometry 160 120 (render-atmosphere-geometry renderer render-vars))]
+           (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
+           => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
+           (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
+           => 0.0
+           (clouds/destroy-cloud-geometry geometry)
+           (destroy-atmosphere-geometry-renderer renderer))))
 
 
 (GLFW/glfwTerminate)
