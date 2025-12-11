@@ -1682,6 +1682,7 @@ uniform sampler2D camera_point;
 uniform sampler2D dist;
 uniform int overlay_width;
 uniform int overlay_height;
+uniform float object_distance;
 vec4 geometry_point()
 {
   vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
@@ -1695,7 +1696,9 @@ float geometry_distance()
 out vec4 fragColor;
 void main()
 {
-  fragColor = geometry_point();
+  vec3 direction = geometry_point().xyz;
+  float opacity = 1.0 - pow(0.5, object_distance);
+  fragColor = vec4(opacity, 0, 0, opacity);
 }")
 
 
@@ -1724,20 +1727,24 @@ void main()
                                    (uniform-int cloud-program "overlay_height" 1)
                                    (uniform-sampler cloud-program "camera_point" 0)
                                    (uniform-sampler cloud-program "dist" 1)
+                                   (uniform-float cloud-program "object_distance" ?obj-dist)
                                    (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)})
                                    (clear (vec3 0.0 0.0 0.0) 0.0)
                                    (with-stencils
-                                     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                       (render-quads vao))))
+                                     (when ?front
+                                       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                         (render-quads vao)))))
                (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
-               => (roughly-vector (vec4 2 3 5 1) 1e-3)
+               => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                (destroy-texture overlay)
                (destroy-cloud-geometry geometry)
                (destroy-vertex-array-object vao)
                (destroy-program cloud-program)
                (destroy-program geometry-program))))
-         ?stencil ?x ?y ?z
-         0x1      2  3  5)
+         ?stencil ?x  ?y  ?z  ?front ?obj-dist ?r   ?g  ?b  ?a
+         0x1      1.0 0.0 0.0 false  2.0       0.0  0.0 0.0 0.0
+         0x1      1.0 0.0 0.0 true   2.0       0.75 0.0 0.0 0.75
+         )
 
 
 (GLFW/glfwTerminate)
