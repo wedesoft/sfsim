@@ -1701,6 +1701,14 @@ vec4 cloud_outer(vec3 origin, vec3 direction, float skip)
 {
   float opacity = 1.0 - pow(0.5, 3.0 - skip);
   return vec4(opacity, 0, 0, opacity);
+}
+vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
+{
+  return vec4(0.0, 0.5, 0.0, 0.5);
+}
+vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
+{
+  return vec4(0, 0.25, 0, 0.25);
 }")
 
 
@@ -1788,6 +1796,75 @@ void main()
 }")
 
 
+(def fragment-cloud-atmosphere-plume
+"#version 450 core
+uniform vec3 origin;
+uniform vec3 object_origin;
+uniform mat4 camera_to_world;
+uniform mat4 camera_to_scene;
+vec4 geometry_point();
+vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
+out vec4 fragColor;
+void main()
+{
+  vec4 camera_direction = geometry_point();
+  vec3 direction = (camera_to_world * camera_direction).xyz;
+  vec3 object_direction = (camera_to_scene * camera_direction).xyz;
+  fragColor = plume_outer(origin, direction, object_origin, object_direction);
+}")
+
+
+(def fragment-cloud-planet-plume
+"#version 450 core
+uniform vec3 origin;
+uniform vec3 object_origin;
+uniform mat4 camera_to_world;
+uniform mat4 camera_to_scene;
+vec4 geometry_point();
+float geometry_distance();
+vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
+out vec4 fragColor;
+void main()
+{
+  vec4 camera_direction = geometry_point();
+  float dist = geometry_distance();
+  vec3 direction = (camera_to_world * camera_direction).xyz;
+  vec3 object_direction = (camera_to_scene * camera_direction).xyz;
+  fragColor = plume_point(origin, direction, object_origin, object_direction, dist);
+}")
+
+
+(def fragment-cloud-scene-plume
+"#version 450 core
+uniform vec3 origin;
+uniform vec3 object_origin;
+uniform mat4 camera_to_world;
+uniform mat4 camera_to_scene;
+vec4 geometry_point();
+float geometry_distance();
+vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
+out vec4 fragColor;
+void main()
+{
+  vec4 camera_direction = geometry_point();
+  float dist = geometry_distance();
+  vec3 direction = (camera_to_world * camera_direction).xyz;
+  vec3 object_direction = (camera_to_scene * camera_direction).xyz;
+  fragColor = plume_point(origin, direction, object_origin, object_direction, dist);
+}")
+
+
+(def cloud-fragment-shaders
+  #:sfsim.clouds{:atmosphere-front fragment-cloud-atmosphere-front
+                 :atmosphere-plume fragment-cloud-atmosphere-plume
+                 :atmosphere-back fragment-cloud-atmosphere-back
+                 :planet-front fragment-cloud-planet-front
+                 :planet-plume fragment-cloud-planet-plume
+                 :planet-back fragment-cloud-planet-back
+                 :scene-front fragment-cloud-scene-front
+                 :scene-plume fragment-cloud-scene-plume})
+
+
 (defn mock-geometry
   [x y z stencil]
   (let [geometry-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
@@ -1814,9 +1891,51 @@ void main()
   (uniform-sampler program "camera_point" 0)
   (uniform-sampler program "dist" 1)
   (uniform-vector3 program "origin" (vec3 0 0 0))
+  (uniform-vector3 program "object_origin" (vec3 (- obj-dist) 0 0))
   (uniform-matrix4 program "camera_to_world" (eye 4))
+  (uniform-matrix4 program "camera_to_scene" (eye 4))
   (uniform-float program "object_distance" obj-dist)
   (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+
+
+(defn render-cloud-overlay
+  [cloud-programs vao geometry obj-dist front plume back]
+  (let [overlay (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
+    (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
+                        (clear (vec3 0.0 0.0 0.0) 0.0)
+                        (doseq [cloud-program (vals cloud-programs)]
+                               (setup-geometry-uniforms cloud-program geometry obj-dist))
+                        (clear (vec3 0.0 0.0 0.0) 0.0)
+                        (with-stencils
+                          (when front
+                            (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                              (use-program (:sfsim.clouds/atmosphere-front cloud-programs))
+                              (render-quads vao))
+                            (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                              (use-program (:sfsim.clouds/planet-front cloud-programs))
+                              (render-quads vao))
+                            (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+                              (use-program (:sfsim.clouds/scene-front cloud-programs))
+                              (render-quads vao)))
+                          (with-underlay-blending
+                            (when plume
+                              (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                (use-program (:sfsim.clouds/atmosphere-plume cloud-programs))
+                                (render-quads vao))
+                              (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                (use-program (:sfsim.clouds/planet-plume cloud-programs))
+                                (render-quads vao))
+                              (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+                                (use-program (:sfsim.clouds/scene-plume cloud-programs))
+                                (render-quads vao)))
+                            (when back
+                              (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                (use-program (:sfsim.clouds/atmosphere-back cloud-programs))
+                                (render-quads vao))
+                              (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                (use-program (:sfsim.clouds/planet-back cloud-programs))
+                                (render-quads vao))))))
+    overlay))
 
 
 (tabular "Use geometry buffer to render clouds"
@@ -1824,59 +1943,33 @@ void main()
            (with-invisible-window
              (let [geometry         (mock-geometry ?x ?y ?z ?stencil)
                    vao              (:vao geometry)
-                   shaders          #:sfsim.clouds{:atmosphere-front fragment-cloud-atmosphere-front
-                                                   :atmosphere-back fragment-cloud-atmosphere-back
-                                                   :planet-front fragment-cloud-planet-front
-                                                   :planet-back fragment-cloud-planet-back
-                                                   :scene-front fragment-cloud-scene-front}
                    cloud-programs   (into {} (map (fn [[k v]]
                                                       [k (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                                                        :sfsim.render/fragment [cloud-shader-mock v])])
-                                                  shaders))
-                   overlay          (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
-               (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
-                                   (clear (vec3 0.0 0.0 0.0) 0.0)
-                                   (doseq [cloud-program (vals cloud-programs)]
-                                          (setup-geometry-uniforms cloud-program geometry ?obj-dist))
-                                   (clear (vec3 0.0 0.0 0.0) 0.0)
-                                   (with-stencils
-                                     (when ?front
-                                       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                         (use-program (:sfsim.clouds/atmosphere-front cloud-programs))
-                                         (render-quads vao))
-                                       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                         (use-program (:sfsim.clouds/planet-front cloud-programs))
-                                         (render-quads vao))
-                                       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-                                         (use-program (:sfsim.clouds/scene-front cloud-programs))
-                                         (render-quads vao)))
-                                     (when ?back
-                                       (with-underlay-blending
-                                         (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                           (use-program (:sfsim.clouds/atmosphere-back cloud-programs))
-                                           (render-quads vao))
-                                         (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                           (use-program (:sfsim.clouds/planet-back cloud-programs))
-                                           (render-quads vao))))))
+                                                  cloud-fragment-shaders))
+                   overlay          (render-cloud-overlay cloud-programs vao geometry ?obj-dist ?front ?plume ?back)]
                (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                (destroy-texture overlay)
                (destroy-cloud-geometry geometry)
                (destroy-vertex-array-object vao)
                (doseq [cloud-program (vals cloud-programs)] (destroy-program cloud-program)))))
-         ?stencil ?x  ?y  ?z  ?front ?back ?obj-dist ?r    ?g   ?b  ?a
-         0x1      1.0 0.0 0.0 false  false 2.0       0.0   0.0  0.0 0.0
-         0x1      1.0 0.0 0.0 true   false 2.0       0.75  0.0  0.0 0.75
-         0x1      1.0 0.0 0.0 false  true  2.0       0.5   0.0  0.0 0.5
-         0x1      1.0 0.0 0.0 true   true  2.0       0.875 0.0  0.0 0.875
-         0x2      4.0 0.0 0.0 true   false 2.0       0.75  0.0  0.0 0.75
-         0x2      2.0 0.0 0.0 true   false 3.0       0.75  0.0  0.0 0.75
-         0x2      3.0 0.0 0.0 false  true  2.0       0.5   0.0  0.0 0.5
-         0x2      2.0 0.0 0.0 false  true  3.0       0.0   0.0  0.0 0.0
-         0x2      3.0 0.0 0.0 true   true  2.0       0.875 0.0  0.0 0.875
-         0x4      2.0 0.0 0.0 true   false 3.0       0.75  0.0  0.0 0.75
-         0x4      2.0 0.0 0.0 false  true  3.0       0.0   0.0  0.0 0.0
-         )
+         ?stencil ?x  ?y  ?z  ?front ?plume ?back ?obj-dist ?r    ?g    ?b  ?a
+         0x1      1.0 0.0 0.0 false  false  false 2.0       0.0   0.0   0.0 0.0
+         0x1      1.0 0.0 0.0 true   false  false 2.0       0.75  0.0   0.0 0.75
+         0x1      1.0 0.0 0.0 false  false  true  2.0       0.5   0.0   0.0 0.5
+         0x1      1.0 0.0 0.0 true   false  true  2.0       0.875 0.0   0.0 0.875
+         0x2      4.0 0.0 0.0 true   false  false 2.0       0.75  0.0   0.0 0.75
+         0x2      2.0 0.0 0.0 true   false  false 3.0       0.75  0.0   0.0 0.75
+         0x2      3.0 0.0 0.0 false  false  true  2.0       0.5   0.0   0.0 0.5
+         0x2      2.0 0.0 0.0 false  false  true  3.0       0.0   0.0   0.0 0.0
+         0x2      3.0 0.0 0.0 true   false  true  2.0       0.875 0.0   0.0 0.875
+         0x4      2.0 0.0 0.0 true   false  false 3.0       0.75  0.0   0.0 0.75
+         0x4      2.0 0.0 0.0 false  false  true  3.0       0.0   0.0   0.0 0.0
+         0x1      1.0 0.0 0.0 false  true   false 2.0       0.0   0.5   0.0 0.5
+         0x1      1.0 0.0 0.0 true   true   false 2.0       0.75  0.125 0.0 0.875
+         0x2      3.0 0.0 0.0 false  true   false 2.0       0.0   0.25  0.0 0.25
+         0x4      2.0 0.0 0.0 false  true   false 2.0       0.0   0.25  0.0 0.25)
 
 
 (GLFW/glfwTerminate)
