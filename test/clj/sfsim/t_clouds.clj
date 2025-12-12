@@ -1806,55 +1806,64 @@ void main()
     (assoc result :vao vao)))
 
 
+(defn setup-geometry-uniforms
+  [program geometry obj-dist]
+  (use-program program)
+  (uniform-int program "overlay_width" 1)
+  (uniform-int program "overlay_height" 1)
+  (uniform-sampler program "camera_point" 0)
+  (uniform-sampler program "dist" 1)
+  (uniform-vector3 program "origin" (vec3 0 0 0))
+  (uniform-matrix4 program "camera_to_world" (eye 4))
+  (uniform-float program "object_distance" obj-dist)
+  (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+
+
 (tabular "Use geometry buffer to render clouds"
          (facts
            (with-invisible-window
              (let [geometry         (mock-geometry ?x ?y ?z ?stencil)
                    vao              (:vao geometry)
-                   cloud-programs   (map #(make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                        :sfsim.render/fragment [cloud-shader-mock %])
-                                         [fragment-cloud-atmosphere-front fragment-cloud-atmosphere-back
-                                          fragment-cloud-planet-front fragment-cloud-planet-back
-                                          fragment-cloud-scene-front])
+                   shaders          #:sfsim.clouds{:atmosphere-front fragment-cloud-atmosphere-front
+                                                   :atmosphere-back fragment-cloud-atmosphere-back
+                                                   :planet-front fragment-cloud-planet-front
+                                                   :planet-back fragment-cloud-planet-back
+                                                   :scene-front fragment-cloud-scene-front}
+                   cloud-programs   (into {} (map (fn [[k v]]
+                                                      [k (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                                       :sfsim.render/fragment [cloud-shader-mock v])])
+                                                  shaders))
                    overlay          (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
                (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                                    (clear (vec3 0.0 0.0 0.0) 0.0)
-                                   (doseq [cloud-program cloud-programs]
-                                          (use-program cloud-program)
-                                          (uniform-int cloud-program "overlay_width" 1)
-                                          (uniform-int cloud-program "overlay_height" 1)
-                                          (uniform-sampler cloud-program "camera_point" 0)
-                                          (uniform-sampler cloud-program "dist" 1)
-                                          (uniform-vector3 cloud-program "origin" (vec3 0 0 0))
-                                          (uniform-matrix4 cloud-program "camera_to_world" (eye 4))
-                                          (uniform-float cloud-program "object_distance" ?obj-dist)
-                                          (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+                                   (doseq [cloud-program (vals cloud-programs)]
+                                          (setup-geometry-uniforms cloud-program geometry ?obj-dist))
                                    (clear (vec3 0.0 0.0 0.0) 0.0)
                                    (with-stencils
                                      (when ?front
                                        (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                         (use-program (nth cloud-programs 0))
+                                         (use-program (:sfsim.clouds/atmosphere-front cloud-programs))
                                          (render-quads vao))
                                        (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                         (use-program (nth cloud-programs 2))
+                                         (use-program (:sfsim.clouds/planet-front cloud-programs))
                                          (render-quads vao))
                                        (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-                                         (use-program (nth cloud-programs 4))
+                                         (use-program (:sfsim.clouds/scene-front cloud-programs))
                                          (render-quads vao)))
                                      (when ?back
                                        (with-underlay-blending
                                          (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                           (use-program (nth cloud-programs 1))
+                                           (use-program (:sfsim.clouds/atmosphere-back cloud-programs))
                                            (render-quads vao))
                                          (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                           (use-program (nth cloud-programs 3))
+                                           (use-program (:sfsim.clouds/planet-back cloud-programs))
                                            (render-quads vao))))))
                (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                (destroy-texture overlay)
                (destroy-cloud-geometry geometry)
                (destroy-vertex-array-object vao)
-               (doseq [cloud-program cloud-programs] (destroy-program cloud-program)))))
+               (doseq [cloud-program (vals cloud-programs)] (destroy-program cloud-program)))))
          ?stencil ?x  ?y  ?z  ?front ?back ?obj-dist ?r    ?g   ?b  ?a
          0x1      1.0 0.0 0.0 false  false 2.0       0.0   0.0  0.0 0.0
          0x1      1.0 0.0 0.0 true   false 2.0       0.75  0.0  0.0 0.75
@@ -1866,6 +1875,7 @@ void main()
          0x2      2.0 0.0 0.0 false  true  3.0       0.0   0.0  0.0 0.0
          0x2      3.0 0.0 0.0 true   true  2.0       0.875 0.0  0.0 0.875
          0x4      2.0 0.0 0.0 true   false 3.0       0.75  0.0  0.0 0.75
+         0x4      2.0 0.0 0.0 false  true  3.0       0.0   0.0  0.0 0.0
          )
 
 
