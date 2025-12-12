@@ -580,7 +580,7 @@ void main()
   "#version 450 core
 uniform vec3 origin;
 uniform float object_distance;
-vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
 {
   float transparency = exp(-object_distance / 10.0);
   return vec4(0.5, 0.5, 0.5, 1 - transparency);
@@ -885,7 +885,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 {
   return vec3(0.2, 0.2, 0.2);
 }
-vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
 {
   return vec4(0, 0, 0, 0);
 }")

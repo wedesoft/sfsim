@@ -161,8 +161,8 @@ uniform vec3 origin;
 uniform float radius;
 out vec3 fragColor;
 vec4 cloud_plume_cloud(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
-vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point);
-vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point);
+vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
+vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
 {
   float start = max(0.0, -3.0 - origin.x);
@@ -203,7 +203,7 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment)
   } else
     return vec4(0, 0, 0, 0);
 }
-vec4 plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
 {
   float plume = object_origin.y;
   return vec4(0.0, plume, 0.0, plume);
@@ -218,14 +218,15 @@ void main()
   vec3 point = vec3(<%= x %>, 0.0, 0.0);
   vec3 direction = vec3(1.0, 0.0, 0.0);
   vec3 object_origin = vec3(0.0, <%= plume %>, 0.0);
+  float dist = distance(point, origin);
 <% (if (and (not planet-point) (not model-point)) %>
   vec4 result = cloud_plume_cloud(origin, direction, object_origin, direction);
 <% ) %>
 <% (if (and planet-point (not model-point)) %>
-  vec4 result = cloud_plume_cloud_point(origin, direction, point, object_origin, direction, point);
+  vec4 result = cloud_plume_cloud_point(origin, direction, object_origin, direction, dist);
 <% ) %>
 <% (if model-point %>
-  vec4 result = cloud_plume_point(origin, direction, point, object_origin, direction, point);
+  vec4 result = cloud_plume_point(origin, direction, object_origin, direction, dist);
 <% ) %>
   fragColor = result.rga;
 }"))
@@ -280,7 +281,7 @@ void main()
 "#version 450 core
 out vec3 fragColor;
 vec4 sample_plume_outer(vec3 object_origin, vec3 object_direction);
-vec4 sample_plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point);
+vec4 sample_plume_point(vec3 object_origin, vec3 object_direction, float dist);
 vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
 {
   float x = plume_step * <%= strength %>;
@@ -302,7 +303,7 @@ void main()
 <% (if outer %>
   vec4 plume = sample_plume_outer(origin, direction);
 <% %>
-  vec4 plume = sample_plume_point(origin, direction, object_point);
+  vec4 plume = sample_plume_point(origin, direction, distance(object_point, origin));
 <% ) %>
   fragColor = plume.rga;
 }"))
@@ -374,7 +375,7 @@ vec4 sample_plume_outer(vec3 object_origin, vec3 object_direction)
 {
   return vec4(object_origin.x, 0.0, 0.0, 0.5);
 }
-vec4 sample_plume_point(vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 sample_plume_point(vec3 object_origin, vec3 object_direction, float dist)
 {
   return vec4(object_origin.x, 0.0, 0.0, 0.5);
 }
@@ -388,7 +389,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 {
   return incoming * pow(0.5, max(segment.y, 0.0));
 }
-vec4 plume_point(vec3 origin, vec3 direction, vec3 point, vec3 object_origin, vec3 object_direction, vec3 object_point);
+vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
 vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
 void main()
 {
@@ -401,7 +402,7 @@ void main()
 <% (if outer %>
   fragColor = plume_outer(origin, direction, object_origin, object_direction).rga;
 <% %>
-  fragColor = plume_point(origin, direction, point, object_origin, object_direction, object_point).rga;
+  fragColor = plume_point(origin, direction, object_origin, object_direction, object_distance).rga;
 <% ) %>
 }"))
 
