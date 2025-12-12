@@ -1,9 +1,9 @@
-{:deps {org.clojure/clojure {:mvn/version "1.12.3"}
+{:deps {org.clojure/clojure {:mvn/version "1.12.4"}
         metosin/malli {:mvn/version "0.20.0"}
         levand/immuconf {:mvn/version "0.1.0"}
         org.clojure/core.memoize {:mvn/version "1.1.266"}
         comb/comb {:mvn/version "1.0.0"}
-        ch.qos.logback/logback-classic {:mvn/version "1.5.21"}
+        ch.qos.logback/logback-classic {:mvn/version "1.5.22"}
         progrock/progrock {:mvn/version "1.0.0"}
         org.clj-commons/claypoole {:mvn/version "1.2.2"}
         generateme/fastmath {:mvn/version "2.4.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}

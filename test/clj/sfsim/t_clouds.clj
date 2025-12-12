@@ -1772,25 +1772,50 @@ void main()
 }")
 
 
+(def fragment-cloud-scene-front
+"#version 450 core
+uniform vec3 origin;
+uniform mat4 camera_to_world;
+vec4 geometry_point();
+float geometry_distance();
+vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
+out vec4 fragColor;
+void main()
+{
+  float dist = geometry_distance();
+  vec3 direction = (camera_to_world * geometry_point()).xyz;
+  fragColor = cloud_point(origin, direction, vec2(0, dist));
+}")
+
+
+(defn mock-geometry
+  [x y z stencil]
+  (let [geometry-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                       :sfsim.render/fragment [fragment-mock-geometry])
+        indices          [0 1 3 2]
+        vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+        vao              (make-vertex-array-object geometry-program indices vertices ["point" 3])
+        result (render-cloud-geometry 1 1
+                                      (use-program geometry-program)
+                                      (uniform-vector3 geometry-program "point" (vec3 x y z))
+                                      (clear (vec3 0.0 0.0 0.0) 0.0 0)
+                                      (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
+                                        (with-stencil-op-ref-and-mask GL11/GL_ALWAYS stencil stencil
+                                          (render-quads vao))))]
+    (destroy-program geometry-program)
+    (assoc result :vao vao)))
+
+
 (tabular "Use geometry buffer to render clouds"
          (facts
            (with-invisible-window
-             (let [geometry-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                  :sfsim.render/fragment [fragment-mock-geometry])
-                   indices          [0 1 3 2]
-                   vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                   vao              (make-vertex-array-object geometry-program indices vertices ["point" 3])
-                   geometry         (render-cloud-geometry 1 1
-                                                           (use-program geometry-program)
-                                                           (uniform-vector3 geometry-program "point" (vec3 ?x ?y ?z))
-                                                           (clear (vec3 0.0 0.0 0.0) 0.0 0)
-                                                           (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
-                                                             (with-stencil-op-ref-and-mask GL11/GL_ALWAYS ?stencil ?stencil
-                                                               (render-quads vao))))
+             (let [geometry         (mock-geometry ?x ?y ?z ?stencil)
+                   vao              (:vao geometry)
                    cloud-programs   (map #(make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                                         :sfsim.render/fragment [cloud-shader-mock %])
                                          [fragment-cloud-atmosphere-front fragment-cloud-atmosphere-back
-                                          fragment-cloud-planet-front fragment-cloud-planet-back])
+                                          fragment-cloud-planet-front fragment-cloud-planet-back
+                                          fragment-cloud-scene-front])
                    overlay          (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
                (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                                    (clear (vec3 0.0 0.0 0.0) 0.0)
@@ -1812,6 +1837,9 @@ void main()
                                          (render-quads vao))
                                        (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
                                          (use-program (nth cloud-programs 2))
+                                         (render-quads vao))
+                                       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+                                         (use-program (nth cloud-programs 4))
                                          (render-quads vao)))
                                      (when ?back
                                        (with-underlay-blending
@@ -1826,8 +1854,7 @@ void main()
                (destroy-texture overlay)
                (destroy-cloud-geometry geometry)
                (destroy-vertex-array-object vao)
-               (doseq [cloud-program cloud-programs] (destroy-program cloud-program))
-               (destroy-program geometry-program))))
+               (doseq [cloud-program cloud-programs] (destroy-program cloud-program)))))
          ?stencil ?x  ?y  ?z  ?front ?back ?obj-dist ?r    ?g   ?b  ?a
          0x1      1.0 0.0 0.0 false  false 2.0       0.0   0.0  0.0 0.0
          0x1      1.0 0.0 0.0 true   false 2.0       0.75  0.0  0.0 0.75
@@ -1838,6 +1865,7 @@ void main()
          0x2      3.0 0.0 0.0 false  true  2.0       0.5   0.0  0.0 0.5
          0x2      2.0 0.0 0.0 false  true  3.0       0.0   0.0  0.0 0.0
          0x2      3.0 0.0 0.0 true   true  2.0       0.875 0.0  0.0 0.875
+         0x4      2.0 0.0 0.0 true   false 3.0       0.75  0.0  0.0 0.75
          )
 
 
