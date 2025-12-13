@@ -1712,157 +1712,30 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
 }")
 
 
-(def fragment-cloud-atmosphere-front
-"#version 450 core
-uniform vec3 origin;
-uniform mat4 camera_to_world;
-uniform float object_distance;
-vec4 geometry_point();
-vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
-out vec4 fragColor;
-void main()
-{
-  vec3 direction = (camera_to_world * geometry_point()).xyz;
-  fragColor = cloud_point(origin, direction, vec2(0, object_distance));
-}")
+(def fragment-cloud-atmosphere
+  (template/fn [front] (slurp "resources/shaders/clouds/fragment-cloud-atmosphere.glsl")))
 
 
-(def fragment-cloud-atmosphere-back
-"#version 450 core
-uniform vec3 origin;
-uniform mat4 camera_to_world;
-uniform float object_distance;
-vec4 geometry_point();
-vec4 cloud_outer(vec3 origin, vec3 direction, float skip);
-out vec4 fragColor;
-void main()
-{
-  vec3 direction = (camera_to_world * geometry_point()).xyz;
-  fragColor = cloud_outer(origin, direction, object_distance);
-}")
+(def fragment-cloud-planet
+  (template/fn [front] (slurp "resources/shaders/clouds/fragment-cloud-planet.glsl")))
 
 
-(def fragment-cloud-planet-front
-"#version 450 core
-uniform vec3 origin;
-uniform mat4 camera_to_world;
-uniform float object_distance;
-vec4 geometry_point();
-float geometry_distance();
-vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
-out vec4 fragColor;
-void main()
-{
-  float dist = geometry_distance();
-  vec3 direction = (camera_to_world * geometry_point()).xyz;
-  fragColor = cloud_point(origin, direction, vec2(0, min(dist, object_distance)));
-}")
+(def fragment-cloud-scene
+  (slurp "resources/shaders/clouds/fragment-cloud-scene.glsl"))
 
 
-(def fragment-cloud-planet-back
-"#version 450 core
-uniform vec3 origin;
-uniform mat4 camera_to_world;
-uniform float object_distance;
-vec4 geometry_point();
-float geometry_distance();
-vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
-out vec4 fragColor;
-void main()
-{
-  float dist = geometry_distance();
-  if (dist < object_distance)
-    fragColor = vec4(0, 0, 0, 0);
-  else {
-    vec3 direction = (camera_to_world * geometry_point()).xyz;
-    fragColor = cloud_point(origin, direction, vec2(object_distance, dist - object_distance));
-  };
-}")
-
-
-(def fragment-cloud-scene-front
-"#version 450 core
-uniform vec3 origin;
-uniform mat4 camera_to_world;
-vec4 geometry_point();
-float geometry_distance();
-vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
-out vec4 fragColor;
-void main()
-{
-  float dist = geometry_distance();
-  vec3 direction = (camera_to_world * geometry_point()).xyz;
-  fragColor = cloud_point(origin, direction, vec2(0, dist));
-}")
-
-
-(def fragment-cloud-atmosphere-plume
-"#version 450 core
-uniform vec3 origin;
-uniform vec3 object_origin;
-uniform mat4 camera_to_world;
-uniform mat4 camera_to_object;
-vec4 geometry_point();
-vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
-out vec4 fragColor;
-void main()
-{
-  vec4 camera_direction = geometry_point();
-  vec3 direction = (camera_to_world * camera_direction).xyz;
-  vec3 object_direction = (camera_to_object * camera_direction).xyz;
-  fragColor = plume_outer(origin, direction, object_origin, object_direction);
-}")
-
-
-(def fragment-cloud-planet-plume
-"#version 450 core
-uniform vec3 origin;
-uniform vec3 object_origin;
-uniform mat4 camera_to_world;
-uniform mat4 camera_to_object;
-vec4 geometry_point();
-float geometry_distance();
-vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
-out vec4 fragColor;
-void main()
-{
-  vec4 camera_direction = geometry_point();
-  float dist = geometry_distance();
-  vec3 direction = (camera_to_world * camera_direction).xyz;
-  vec3 object_direction = (camera_to_object * camera_direction).xyz;
-  fragColor = plume_point(origin, direction, object_origin, object_direction, dist);
-}")
-
-
-(def fragment-cloud-scene-plume
-"#version 450 core
-uniform vec3 origin;
-uniform vec3 object_origin;
-uniform mat4 camera_to_world;
-uniform mat4 camera_to_object;
-vec4 geometry_point();
-float geometry_distance();
-vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
-out vec4 fragColor;
-void main()
-{
-  vec4 camera_direction = geometry_point();
-  float dist = geometry_distance();
-  vec3 direction = (camera_to_world * camera_direction).xyz;
-  vec3 object_direction = (camera_to_object * camera_direction).xyz;
-  fragColor = plume_point(origin, direction, object_origin, object_direction, dist);
-}")
+(def fragment-plume
+  (template/fn [outer] (slurp "resources/shaders/plume/fragment.glsl")))
 
 
 (def cloud-fragment-shaders
-  #:sfsim.clouds{:atmosphere-front fragment-cloud-atmosphere-front
-                 :atmosphere-plume fragment-cloud-atmosphere-plume
-                 :atmosphere-back fragment-cloud-atmosphere-back
-                 :planet-front fragment-cloud-planet-front
-                 :planet-plume fragment-cloud-planet-plume
-                 :planet-back fragment-cloud-planet-back
-                 :scene-front fragment-cloud-scene-front
-                 :scene-plume fragment-cloud-scene-plume})
+  #:sfsim.clouds{:atmosphere-front (fragment-cloud-atmosphere true)
+                 :atmosphere-back (fragment-cloud-atmosphere false)
+                 :planet-front (fragment-cloud-planet true)
+                 :planet-back (fragment-cloud-planet false)
+                 :scene-front fragment-cloud-scene
+                 :plume-outer (fragment-plume true)
+                 :plume-point (fragment-plume false)})
 
 
 (defn mock-geometry
@@ -1920,13 +1793,13 @@ void main()
                           (with-underlay-blending
                             (when plume
                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                (use-program (:sfsim.clouds/atmosphere-plume cloud-programs))
+                                (use-program (:sfsim.clouds/plume-outer cloud-programs))
                                 (render-quads vao))
                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                (use-program (:sfsim.clouds/planet-plume cloud-programs))
+                                (use-program (:sfsim.clouds/plume-point cloud-programs))
                                 (render-quads vao))
                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-                                (use-program (:sfsim.clouds/scene-plume cloud-programs))
+                                (use-program (:sfsim.clouds/plume-point cloud-programs))
                                 (render-quads vao)))
                             (when back
                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
