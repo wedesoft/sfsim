@@ -167,6 +167,8 @@
 ;; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer (atmosphere/make-atmosphere-renderer data))
 
+
+;; Program to render 3D model
 (def scene-renderer (model/make-scene-renderer data))
 
 

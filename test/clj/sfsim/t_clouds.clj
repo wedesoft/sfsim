@@ -1745,13 +1745,13 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
         indices          [0 1 3 2]
         vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
         vao              (make-vertex-array-object geometry-program indices vertices ["point" 3])
-        result (render-cloud-geometry 1 1
-                                      (use-program geometry-program)
-                                      (uniform-vector3 geometry-program "point" (vec3 x y z))
-                                      (clear (vec3 0.0 0.0 0.0) 0.0 0)
-                                      (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
-                                        (with-stencil-op-ref-and-mask GL11/GL_ALWAYS stencil stencil
-                                          (render-quads vao))))]
+        result           (render-cloud-geometry 1 1
+                                                (use-program geometry-program)
+                                                (uniform-vector3 geometry-program "point" (vec3 x y z))
+                                                (clear (vec3 0.0 0.0 0.0) 0.0 0)
+                                                (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
+                                                  (with-stencil-op-ref-and-mask GL11/GL_ALWAYS stencil stencil
+                                                    (render-quads vao))))]
     (destroy-program geometry-program)
     (assoc result :vao vao)))
 
