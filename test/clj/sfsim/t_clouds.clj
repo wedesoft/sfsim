@@ -1712,32 +1712,6 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
 }")
 
 
-(def fragment-cloud-atmosphere
-  (template/fn [front] (slurp "resources/shaders/clouds/fragment-cloud-atmosphere.glsl")))
-
-
-(def fragment-cloud-planet
-  (template/fn [front] (slurp "resources/shaders/clouds/fragment-cloud-planet.glsl")))
-
-
-(def fragment-cloud-scene
-  (slurp "resources/shaders/clouds/fragment-cloud-scene.glsl"))
-
-
-(def fragment-plume
-  (template/fn [outer] (slurp "resources/shaders/plume/fragment.glsl")))
-
-
-(def cloud-fragment-shaders
-  #:sfsim.clouds{:atmosphere-front (fragment-cloud-atmosphere true)
-                 :atmosphere-back (fragment-cloud-atmosphere false)
-                 :planet-front (fragment-cloud-planet true)
-                 :planet-back (fragment-cloud-planet false)
-                 :scene-front fragment-cloud-scene
-                 :plume-outer (fragment-plume true)
-                 :plume-point (fragment-plume false)})
-
-
 (defn mock-geometry
   [x y z stencil]
   (let [geometry-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
@@ -1757,18 +1731,10 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
 
 
 (defn setup-geometry-uniforms
-  [program geometry obj-dist]
+  [program geometry]
   (use-program program)
-  (uniform-int program "overlay_width" 1)
-  (uniform-int program "overlay_height" 1)
   (uniform-sampler program "camera_point" 0)
-  (uniform-sampler program "dist" 1)
-  (uniform-vector3 program "origin" (vec3 0 0 0))
-  (uniform-vector3 program "object_origin" (vec3 (- obj-dist) 0 0))
-  (uniform-matrix4 program "camera_to_world" (eye 4))
-  (uniform-matrix4 program "camera_to_object" (eye 4))
-  (uniform-float program "object_distance" obj-dist)
-  (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+  (uniform-sampler program "dist" 1))
 
 
 (defn render-cloud-overlay
@@ -1777,7 +1743,15 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
     (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                         (clear (vec3 0.0 0.0 0.0) 0.0)
                         (doseq [cloud-program (vals cloud-programs)]
-                               (setup-geometry-uniforms cloud-program geometry obj-dist))
+                               (setup-geometry-uniforms cloud-program geometry)
+                               (uniform-int cloud-program "overlay_width" 1)
+                               (uniform-int cloud-program "overlay_height" 1)
+                               (uniform-vector3 cloud-program "origin" (vec3 0 0 0))
+                               (uniform-vector3 cloud-program "object_origin" (vec3 (- obj-dist) 0 0))
+                               (uniform-matrix4 cloud-program "camera_to_world" (eye 4))
+                               (uniform-matrix4 cloud-program "camera_to_object" (eye 4))
+                               (uniform-float cloud-program "object_distance" obj-dist)
+                               (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
                         (clear (vec3 0.0 0.0 0.0) 0.0)
                         (with-stencils
                           (when front
