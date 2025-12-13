@@ -160,6 +160,10 @@
 (def cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data))
 
 
+;; Program to render low-resolution scene geometry to facilitate volumetric cloud and plume rendering
+(def joined-geometry-renderer (model/make-joined-geometry-renderer data))
+
+
 ;; Program to render planet with cloud overlay (before rendering atmosphere)
 (def planet-renderer (planet/make-planet-renderer data))
 
@@ -853,6 +857,8 @@
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
+              ;geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
+              ;                                                 (planet/get-current-tree tile-tree))  ; TODO: enable this
               clouds             (texture-render-color-depth
                                    (quot ^long (:sfsim.render/window-width planet-render-vars) 2)
                                    (quot ^long (:sfsim.render/window-height planet-render-vars) 2)
@@ -905,6 +911,7 @@
                                            (if (@state :sfsim.input/pause) ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
+          ; (clouds/destroy-cloud-geometry geometry)  ; TODO: enable this
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (when playback
@@ -933,6 +940,7 @@
   (model/destroy-scene-renderer scene-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (planet/destroy-planet-renderer planet-renderer)
+  (model/destroy-joined-geometry-renderer joined-geometry-renderer)
   (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (atmosphere/destroy-atmosphere-luts atmosphere-luts)
   (clouds/destroy-cloud-data cloud-data)
