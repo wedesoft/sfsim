@@ -1801,7 +1801,7 @@ void main()
 uniform vec3 origin;
 uniform vec3 object_origin;
 uniform mat4 camera_to_world;
-uniform mat4 camera_to_scene;
+uniform mat4 camera_to_object;
 vec4 geometry_point();
 vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
 out vec4 fragColor;
@@ -1809,7 +1809,7 @@ void main()
 {
   vec4 camera_direction = geometry_point();
   vec3 direction = (camera_to_world * camera_direction).xyz;
-  vec3 object_direction = (camera_to_scene * camera_direction).xyz;
+  vec3 object_direction = (camera_to_object * camera_direction).xyz;
   fragColor = plume_outer(origin, direction, object_origin, object_direction);
 }")
 
@@ -1819,7 +1819,7 @@ void main()
 uniform vec3 origin;
 uniform vec3 object_origin;
 uniform mat4 camera_to_world;
-uniform mat4 camera_to_scene;
+uniform mat4 camera_to_object;
 vec4 geometry_point();
 float geometry_distance();
 vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
@@ -1829,7 +1829,7 @@ void main()
   vec4 camera_direction = geometry_point();
   float dist = geometry_distance();
   vec3 direction = (camera_to_world * camera_direction).xyz;
-  vec3 object_direction = (camera_to_scene * camera_direction).xyz;
+  vec3 object_direction = (camera_to_object * camera_direction).xyz;
   fragColor = plume_point(origin, direction, object_origin, object_direction, dist);
 }")
 
@@ -1839,7 +1839,7 @@ void main()
 uniform vec3 origin;
 uniform vec3 object_origin;
 uniform mat4 camera_to_world;
-uniform mat4 camera_to_scene;
+uniform mat4 camera_to_object;
 vec4 geometry_point();
 float geometry_distance();
 vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
@@ -1849,7 +1849,7 @@ void main()
   vec4 camera_direction = geometry_point();
   float dist = geometry_distance();
   vec3 direction = (camera_to_world * camera_direction).xyz;
-  vec3 object_direction = (camera_to_scene * camera_direction).xyz;
+  vec3 object_direction = (camera_to_object * camera_direction).xyz;
   fragColor = plume_point(origin, direction, object_origin, object_direction, dist);
 }")
 
@@ -1893,7 +1893,7 @@ void main()
   (uniform-vector3 program "origin" (vec3 0 0 0))
   (uniform-vector3 program "object_origin" (vec3 (- obj-dist) 0 0))
   (uniform-matrix4 program "camera_to_world" (eye 4))
-  (uniform-matrix4 program "camera_to_scene" (eye 4))
+  (uniform-matrix4 program "camera_to_object" (eye 4))
   (uniform-float program "object_distance" obj-dist)
   (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
 
