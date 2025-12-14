@@ -1731,56 +1731,70 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
 
 
 (defn setup-geometry-uniforms
-  [program geometry]
+  [program]
   (use-program program)
   (uniform-sampler program "camera_point" 0)
   (uniform-sampler program "dist" 1))
 
 
+(defn make-cloud-renderer
+  []
+  (let [programs (into {} (map (fn [[k v]]
+                                   [k (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                    :sfsim.render/fragment [cloud-shader-mock v])])
+                               cloud-fragment-shaders))]
+    (doseq [program (vals programs)] (setup-geometry-uniforms program))
+    {:sfsim.clouds/programs programs}))
+
+
+(defn destroy-cloud-renderer
+  [{:sfsim.clouds/keys [programs]}]
+  (doseq [program (vals programs)] (destroy-program program)))
+
+
 (defn render-cloud-overlay
-  [cloud-programs vao geometry obj-dist front plume back]
+  [{:sfsim.clouds/keys [programs]} vao geometry obj-dist front plume back]
   (let [overlay (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
+    (doseq [program (vals programs)]
+           (use-program program)
+           (uniform-int program "overlay_width" 1)
+           (uniform-int program "overlay_height" 1)
+           (uniform-vector3 program "origin" (vec3 0 0 0))
+           (uniform-vector3 program "object_origin" (vec3 (- obj-dist) 0 0))
+           (uniform-matrix4 program "camera_to_world" (eye 4))
+           (uniform-matrix4 program "camera_to_object" (eye 4))
+           (uniform-float program "object_distance" obj-dist)
+           (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
     (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
-                        (clear (vec3 0.0 0.0 0.0) 0.0)
-                        (doseq [cloud-program (vals cloud-programs)]
-                               (setup-geometry-uniforms cloud-program geometry)
-                               (uniform-int cloud-program "overlay_width" 1)
-                               (uniform-int cloud-program "overlay_height" 1)
-                               (uniform-vector3 cloud-program "origin" (vec3 0 0 0))
-                               (uniform-vector3 cloud-program "object_origin" (vec3 (- obj-dist) 0 0))
-                               (uniform-matrix4 cloud-program "camera_to_world" (eye 4))
-                               (uniform-matrix4 cloud-program "camera_to_object" (eye 4))
-                               (uniform-float cloud-program "object_distance" obj-dist)
-                               (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
                         (clear (vec3 0.0 0.0 0.0) 0.0)
                         (with-stencils
                           (when front
                             (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                              (use-program (:sfsim.clouds/atmosphere-front cloud-programs))
+                              (use-program (:sfsim.clouds/atmosphere-front programs))
                               (render-quads vao))
                             (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                              (use-program (:sfsim.clouds/planet-front cloud-programs))
+                              (use-program (:sfsim.clouds/planet-front programs))
                               (render-quads vao))
                             (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-                              (use-program (:sfsim.clouds/scene-front cloud-programs))
+                              (use-program (:sfsim.clouds/scene-front programs))
                               (render-quads vao)))
                           (with-underlay-blending
                             (when plume
                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                (use-program (:sfsim.clouds/plume-outer cloud-programs))
+                                (use-program (:sfsim.clouds/plume-outer programs))
                                 (render-quads vao))
                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                (use-program (:sfsim.clouds/plume-point cloud-programs))
+                                (use-program (:sfsim.clouds/plume-point programs))
                                 (render-quads vao))
                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-                                (use-program (:sfsim.clouds/plume-point cloud-programs))
+                                (use-program (:sfsim.clouds/plume-point programs))
                                 (render-quads vao)))
                             (when back
                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                (use-program (:sfsim.clouds/atmosphere-back cloud-programs))
+                                (use-program (:sfsim.clouds/atmosphere-back programs))
                                 (render-quads vao))
                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                (use-program (:sfsim.clouds/planet-back cloud-programs))
+                                (use-program (:sfsim.clouds/planet-back programs))
                                 (render-quads vao))))))
     overlay))
 
@@ -1790,17 +1804,14 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
            (with-invisible-window
              (let [geometry         (mock-geometry ?x ?y ?z ?stencil)
                    vao              (:vao geometry)
-                   cloud-programs   (into {} (map (fn [[k v]]
-                                                      [k (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                                       :sfsim.render/fragment [cloud-shader-mock v])])
-                                                  cloud-fragment-shaders))
-                   overlay          (render-cloud-overlay cloud-programs vao geometry ?obj-dist ?front ?plume ?back)]
+                   cloud-renderer   (make-cloud-renderer)
+                   overlay          (render-cloud-overlay cloud-renderer vao geometry ?obj-dist ?front ?plume ?back)]
                (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                (destroy-texture overlay)
                (destroy-cloud-geometry geometry)
                (destroy-vertex-array-object vao)
-               (doseq [cloud-program (vals cloud-programs)] (destroy-program cloud-program)))))
+               (destroy-cloud-renderer cloud-renderer))))
          ?stencil ?x  ?y  ?z  ?front ?plume ?back ?obj-dist ?r    ?g    ?b  ?a
          0x1      1.0 0.0 0.0 false  false  false 2.0       0.0   0.0   0.0 0.0
          0x1      1.0 0.0 0.0 true   false  false 2.0       0.75  0.0   0.0 0.75
