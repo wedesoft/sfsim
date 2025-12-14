@@ -493,5 +493,31 @@
   (destroy-texture points))
 
 
+(def fragment-cloud-atmosphere
+  (template/fn [front] (slurp "resources/shaders/clouds/fragment-cloud-atmosphere.glsl")))
+
+
+(def fragment-cloud-planet
+  (template/fn [front] (slurp "resources/shaders/clouds/fragment-cloud-planet.glsl")))
+
+
+(def fragment-cloud-scene
+  (slurp "resources/shaders/clouds/fragment-cloud-scene.glsl"))
+
+
+(def fragment-plume
+  (template/fn [outer] (slurp "resources/shaders/plume/fragment.glsl")))
+
+
+(def cloud-fragment-shaders
+  {::atmosphere-front (fragment-cloud-atmosphere true)
+   ::atmosphere-back (fragment-cloud-atmosphere false)
+   ::planet-front (fragment-cloud-planet true)
+   ::planet-back (fragment-cloud-planet false)
+   ::scene-front fragment-cloud-scene
+   ::plume-outer (fragment-plume true)
+   ::plume-point (fragment-plume false)})
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
