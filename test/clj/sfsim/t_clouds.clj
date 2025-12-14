@@ -1742,7 +1742,7 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
   []
   (let [programs (into {} (map (fn [[k v]]
                                    [k (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                    :sfsim.render/fragment [cloud-shader-mock v])])
+                                                    :sfsim.render/fragment [cloud-shader-mock (last v)])])
                                cloud-fragment-shaders))
         indices          [0 1 3 2]
         vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
