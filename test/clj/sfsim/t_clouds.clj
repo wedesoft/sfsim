@@ -1762,18 +1762,20 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
   ([cloud-renderer cloud-render-vars geometry]
    (render-cloud-overlay cloud-renderer cloud-render-vars geometry true true true))
   ([{:sfsim.clouds/keys [programs vao]} cloud-render-vars geometry front plume back]
-   (let [overlay (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
+   (let [overlay-width  (:sfsim.render/overlay-width cloud-render-vars)
+         overlay-height (:sfsim.render/overlay-height cloud-render-vars)
+         overlay        (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F overlay-width overlay-height)]
      (doseq [program (vals programs)]
             (use-program program)
-            (uniform-int program "overlay_width" (:sfsim.render/overlay-width cloud-render-vars))
-            (uniform-int program "overlay_height" (:sfsim.render/overlay-height cloud-render-vars))
+            (uniform-int program "overlay_width" overlay-width)
+            (uniform-int program "overlay_height" overlay-height)
             (uniform-vector3 program "origin" (:sfsim.render/origin cloud-render-vars))
             (uniform-vector3 program "object_origin" (:sfsim.render/object-origin cloud-render-vars))
             (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world cloud-render-vars))
             (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
             (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
             (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
-     (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
+     (framebuffer-render overlay-width overlay-height :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                          (clear (vec3 0.0 0.0 0.0) 0.0)
                          (with-stencils
                            (when front
