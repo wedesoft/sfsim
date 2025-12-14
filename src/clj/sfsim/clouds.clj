@@ -9,9 +9,10 @@
   (:require
     [clojure.math :refer (tan pow log)]
     [comb.template :as template]
-    [fastmath.vector :refer (vec3)]
-    [fastmath.matrix :refer (inverse)]
+    [fastmath.vector :refer (vec4 vec3 mag)]
+    [fastmath.matrix :refer (mulm mulv inverse)]
     [malli.core :as m]
+    [sfsim.matrix :refer (transformation-matrix vec4->vec3 quaternion->matrix)]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.bluenoise :refer (noise-size) :as bluenoise]
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
@@ -517,6 +518,21 @@
    ::scene-front fragment-cloud-scene
    ::plume-outer (fragment-plume true)
    ::plume-point (fragment-plume false)})
+
+
+(defn make-cloud-render-vars
+  [overlay-width overlay-height camera-position camera-orientation object-position object-orientation]
+  (let [camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
+        world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
+        camera-to-object   (mulm world-to-object camera-to-world)
+        object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))]
+    {:sfsim.render/overlay-width overlay-width
+     :sfsim.render/overlay-height overlay-height
+     :sfsim.render/origin camera-position
+     :sfsim.render/object-origin object-origin
+     :sfsim.render/camera-to-world camera-to-world
+     :sfsim.render/camera-to-object camera-to-object
+     :sfsim.render/object-distance (mag object-origin)}))
 
 
 (set! *warn-on-reflection* false)
