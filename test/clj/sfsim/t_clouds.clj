@@ -8,8 +8,8 @@
   (:require
     [clojure.math :refer (exp log sin cos asin atan to-radians PI E)]
     [comb.template :as template]
-    [fastmath.matrix :refer (mat3x3 eye inverse)]
-    [fastmath.vector :refer (vec3 vec4)]
+    [fastmath.matrix :refer (mat3x3 eye mulm mulv inverse)]
+    [fastmath.vector :refer (vec3 vec4 mag)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -17,7 +17,8 @@
     [sfsim.clouds :refer :all]
     [sfsim.conftest :refer (roughly-vector shader-test is-image)]
     [sfsim.image :refer (get-vector3 get-vector4 get-float-3d get-float)]
-    [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
+    [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade quaternion->matrix vec4->vec3)]
+    [sfsim.quaternion :as q]
     [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet make-cube-map-tile-vertices)]
     [sfsim.model :refer (read-gltf
                          load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry
@@ -1758,19 +1759,19 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
 
 
 (defn render-cloud-overlay
-  ([{:sfsim.clouds/keys [programs vao]} geometry obj-dist]
-   (render-cloud-overlay programs geometry obj-dist true true true))
-  ([{:sfsim.clouds/keys [programs vao]} geometry obj-dist front plume back]
+  ([cloud-renderer cloud-render-vars geometry]
+   (render-cloud-overlay cloud-renderer cloud-render-vars geometry true true true))
+  ([{:sfsim.clouds/keys [programs vao]} cloud-render-vars geometry front plume back]
    (let [overlay (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 1 1)]
      (doseq [program (vals programs)]
             (use-program program)
-            (uniform-int program "overlay_width" 1)
-            (uniform-int program "overlay_height" 1)
-            (uniform-vector3 program "origin" (vec3 0 0 0))
-            (uniform-vector3 program "object_origin" (vec3 (- obj-dist) 0 0))
-            (uniform-matrix4 program "camera_to_world" (eye 4))
-            (uniform-matrix4 program "camera_to_object" (eye 4))
-            (uniform-float program "object_distance" obj-dist)
+            (uniform-int program "overlay_width" (:sfsim.render/overlay-width cloud-render-vars))
+            (uniform-int program "overlay_height" (:sfsim.render/overlay-height cloud-render-vars))
+            (uniform-vector3 program "origin" (:sfsim.render/origin cloud-render-vars))
+            (uniform-vector3 program "object_origin" (:sfsim.render/object-origin cloud-render-vars))
+            (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world cloud-render-vars))
+            (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
+            (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
             (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
      (framebuffer-render 1 1 :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                          (clear (vec3 0.0 0.0 0.0) 0.0)
@@ -1806,12 +1807,28 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
      overlay)))
 
 
+(defn make-cloud-render-vars
+  [overlay-width overlay-height camera-position camera-orientation object-position object-orientation]
+  (let [camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
+        world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
+        camera-to-object   (mulm world-to-object camera-to-world)
+        object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))]
+    {:sfsim.render/overlay-width overlay-width
+     :sfsim.render/overlay-height overlay-height
+     :sfsim.render/origin camera-position
+     :sfsim.render/object-origin object-origin
+     :sfsim.render/camera-to-world camera-to-world
+     :sfsim.render/camera-to-object camera-to-object
+     :sfsim.render/object-distance (mag object-origin)}))
+
+
 (tabular "Use geometry buffer to render clouds"
          (facts
            (with-invisible-window
-             (let [geometry         (mock-geometry ?x ?y ?z ?stencil)
-                   cloud-renderer   (make-cloud-renderer)
-                   overlay          (render-cloud-overlay cloud-renderer geometry ?obj-dist ?front ?plume ?back)]
+             (let [geometry          (mock-geometry ?x ?y ?z ?stencil)
+                   cloud-renderer    (make-cloud-renderer)
+                   cloud-render-vars (make-cloud-render-vars 1 1 (vec3 0 0 0) (q/->Quaternion 1 0 0 0) (vec3 ?obj-dist 0 0) (q/->Quaternion 1 0 0 0))
+                   overlay           (render-cloud-overlay cloud-renderer cloud-render-vars geometry ?front ?plume ?back)]
                (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                (destroy-texture overlay)
