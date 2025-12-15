@@ -34,19 +34,6 @@
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
-  - [X] replace attenuate_segment with attenuation_track using vec2 segment variable
-  - [X] cloud-outer (cloud-point) should accept near (and far) limit and combine full attenuation given atmosphere segment
-  - [X] combined attenuation and plume function (object coordinates, near and far limit?), put under test
-  - [X] clip shell intersections using segment or far limit (use existing interval clipping for first case)
-  - [X] atmosphere segment clipping or far limit clipping
-  - [X] can we use OpenGL blending to render plume front to back or do we need input and output color texture?
-    - [X] check out glBlendFuncSeparate
-  - [X] can we use OpenGL blending to render cloud layers front to back or do we need input and output color texture?
-  - [X] crash when setting up joystick if joystick is not plugged in
-  - [X] test blending and add blending with adding color and multiplying alpha values:
-        use srcAlphaFactor = GL_ONE_MINUS_DST_ALPHA, dstAlphaFactor = GL_ONE
-        use srcRGBFactor = GL_ONE, dstRGBFactor = GL_ONE_MINUS_DST_ALPHA
-  - [X] make environment macros for stencil setups
   - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
         also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
     - [X] as before render opacity and shadow cascade and object shadows
@@ -63,16 +50,19 @@
         - [X] rename distance to something else
         - [X] always store camera direction and camera distance instead of point
         - [X] cloud plume point should take distance value instead of point
+        - [ ] integration into main program
+          - [ ] use fragment shader to program conversion function and mock it in tests
+          - [ ] fragment shaders should be lists with dependencies
         - [ ] maybe compute camera vectors instead of storing them (i.e. just store distance)
-        - [ ] render cloud front layer up to object depth on atmospheric background
-        - [ ] render cloud front layer up to minimum planet or object depth on planet stencil
-        - [ ] render cloud front layer up to object point on model stencil
-        - [ ] copy alpha values to input texture for next step
-        - [ ] ordered alpha blend render plume and RCS boxes outside object stencil, use up-to-date cutoff
-        - [ ] ordered alpha blend render plume and RCS boxes inside object stencil, use up-to-date cutoff
-        - [ ] copy alpha values to input texture for next step
-        - [ ] render cloud back layer up to planet on planet stencil
-        - [ ] render cloud back layer on atmospheric background
+        - [X] render cloud front layer up to object depth on atmospheric background
+        - [X] render cloud front layer up to minimum planet or object depth on planet stencil
+        - [X] render cloud front layer up to object point on model stencil
+        - [X] render cloud back layer up to planet on planet stencil
+        - [X] render cloud back layer on atmospheric background
+        - [ ] render plume box instead of fullscreen (provide different vertex and index buffer for plume rendering, use different vertex shader)
+        - [ ] render RCS thrusters
+          - [ ] use binary space partitioning tree
+        - [ ] copy alpha values to input texture for up-to-date cut off
     - [ ] disable color buffer when rendering frame buffer and it is not required
     - [ ] make camera_point optional in planet shaders
     - [ ] render opaque objects (scenes, planet, atmosphere) with atmosphere in front,

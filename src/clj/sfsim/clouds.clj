@@ -9,21 +9,26 @@
   (:require
     [clojure.math :refer (tan pow log)]
     [comb.template :as template]
-    [fastmath.vector :refer (vec3)]
-    [fastmath.matrix :refer (inverse)]
+    [fastmath.vector :refer (vec4 vec3 mag)]
+    [fastmath.matrix :refer (mulm mulv inverse)]
     [malli.core :as m]
+    [sfsim.matrix :refer (transformation-matrix vec4->vec3 quaternion->matrix)]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.bluenoise :refer (noise-size) :as bluenoise]
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
-                          uniform-matrix4 use-program clear) :as render]
+                          uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
+                          with-underlay-blending) :as render]
     [sfsim.shaders :as shaders]
-    [sfsim.plume :refer (cloud-plume-segment)]
+    [sfsim.plume :refer (cloud-plume-segment plume-outer plume-point)]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
                            texture-2d make-empty-texture-2d make-empty-float-texture-2d make-empty-depth-stencil-texture-2d)]
     [sfsim.util :refer (slurp-floats N N0)]
-    [sfsim.worley :refer (worley-size)]))
+    [sfsim.worley :refer (worley-size)])
+  (:import
+    (org.lwjgl.opengl
+      GL11 GL30)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -493,30 +498,149 @@
   (destroy-texture points))
 
 
-(def fragment-cloud-atmosphere
-  (template/fn [front] (slurp "resources/shaders/clouds/fragment-cloud-atmosphere.glsl")))
+(def geometry-point
+  (slurp "resources/shaders/clouds/geometry-point.glsl"))
 
 
-(def fragment-cloud-planet
-  (template/fn [front] (slurp "resources/shaders/clouds/fragment-cloud-planet.glsl")))
+(def geometry-distance
+  (slurp "resources/shaders/clouds/geometry-distance.glsl"))
 
 
-(def fragment-cloud-scene
-  (slurp "resources/shaders/clouds/fragment-cloud-scene.glsl"))
+(defn fragment-cloud-atmosphere
+  [num-steps perlin-octaves cloud-octaves front]
+  [geometry-point (cloud-point num-steps perlin-octaves cloud-octaves) (cloud-outer num-steps perlin-octaves cloud-octaves)
+   (template/eval (slurp "resources/shaders/clouds/fragment-cloud-atmosphere.glsl") {:front front})])
 
 
-(def fragment-plume
-  (template/fn [outer] (slurp "resources/shaders/plume/fragment.glsl")))
+(defn fragment-cloud-planet
+  [num-steps perlin-octaves cloud-octaves front]
+  [geometry-distance geometry-point (cloud-point num-steps perlin-octaves cloud-octaves)
+   (template/eval (slurp "resources/shaders/clouds/fragment-cloud-planet.glsl") {:front front})])
 
 
-(def cloud-fragment-shaders
-  {::atmosphere-front (fragment-cloud-atmosphere true)
-   ::atmosphere-back (fragment-cloud-atmosphere false)
-   ::planet-front (fragment-cloud-planet true)
-   ::planet-back (fragment-cloud-planet false)
-   ::scene-front fragment-cloud-scene
+(defn fragment-cloud-scene
+  [num-steps perlin-octaves cloud-octaves]
+  [geometry-distance geometry-point (cloud-point num-steps perlin-octaves cloud-octaves)
+   (slurp "resources/shaders/clouds/fragment-cloud-scene.glsl")])
+
+
+(defn fragment-plume
+  [outer]
+  [geometry-distance geometry-point plume-outer plume-point
+   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:outer outer})])
+
+
+(defn cloud-fragment-shaders
+  [num-steps perlin-octaves cloud-octaves]
+  {::atmosphere-front (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true)
+   ::atmosphere-back (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false)
+   ::planet-front (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true)
+   ::planet-back (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false)
+   ::scene-front (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)
    ::plume-outer (fragment-plume true)
    ::plume-point (fragment-plume false)})
+
+
+(defn make-cloud-render-vars
+  [overlay-width overlay-height camera-position camera-orientation object-position object-orientation]
+  (let [camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
+        world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
+        camera-to-object   (mulm world-to-object camera-to-world)
+        object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))]
+    {:sfsim.render/overlay-width overlay-width
+     :sfsim.render/overlay-height overlay-height
+     :sfsim.render/origin camera-position
+     :sfsim.render/object-origin object-origin
+     :sfsim.render/camera-to-world camera-to-world
+     :sfsim.render/camera-to-object camera-to-object
+     :sfsim.render/object-distance (mag object-origin)}))
+
+
+(defn make-cloud-program
+  [fragment-shader]
+  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                :sfsim.render/fragment [fragment-shader]))
+
+
+(defn setup-geometry-uniforms
+  [program]
+  (use-program program)
+  (uniform-sampler program "camera_point" 0)
+  (uniform-sampler program "dist" 1))
+
+
+(defn make-cloud-renderer
+  [data]
+  (let [shadow-config    (:sfsim.opacity/data data)
+        cloud-config     (:sfsim.clouds/data data)
+        num-steps        (:sfsim.opacity/num-steps shadow-config)
+        cloud-octaves    (:sfsim.clouds/cloud-octaves cloud-config)
+        perlin-octaves   (:sfsim.clouds/perlin-octaves cloud-config)
+        programs         (into {} (map (fn [[k v]] [k (make-cloud-program v)])
+                                       (cloud-fragment-shaders num-steps perlin-octaves cloud-octaves)))
+        indices          [0 1 3 2]
+        vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
+        vao              (make-vertex-array-object (first (vals programs)) indices vertices ["point" 3])]
+    (doseq [program (vals programs)] (setup-geometry-uniforms program))
+    {:sfsim.clouds/programs programs
+     :sfsim.clouds/vao vao}))
+
+
+(defn destroy-cloud-renderer
+  [{:sfsim.clouds/keys [programs vao]}]
+  (destroy-vertex-array-object vao)
+  (doseq [program (vals programs)] (destroy-program program)))
+
+
+(defn render-cloud-overlay
+  ([cloud-renderer cloud-render-vars geometry]
+   (render-cloud-overlay cloud-renderer cloud-render-vars geometry true true true))
+  ([{:sfsim.clouds/keys [programs vao]} cloud-render-vars geometry front plume back]
+   (let [overlay-width  (:sfsim.render/overlay-width cloud-render-vars)
+         overlay-height (:sfsim.render/overlay-height cloud-render-vars)
+         overlay        (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F overlay-width overlay-height)]
+     (doseq [program (vals programs)]
+            (use-program program)
+            (uniform-int program "overlay_width" overlay-width)
+            (uniform-int program "overlay_height" overlay-height)
+            (uniform-vector3 program "origin" (:sfsim.render/origin cloud-render-vars))
+            (uniform-vector3 program "object_origin" (:sfsim.render/object-origin cloud-render-vars))
+            (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world cloud-render-vars))
+            (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
+            (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
+            (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+     (framebuffer-render overlay-width overlay-height :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
+                         (clear (vec3 0.0 0.0 0.0) 0.0)
+                         (with-stencils
+                           (when front
+                             (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                               (use-program (:sfsim.clouds/atmosphere-front programs))
+                               (render-quads vao))
+                             (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                               (use-program (:sfsim.clouds/planet-front programs))
+                               (render-quads vao))
+                             (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+                               (use-program (:sfsim.clouds/scene-front programs))
+                               (render-quads vao)))
+                           (with-underlay-blending
+                             (when plume
+                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                 (use-program (:sfsim.clouds/plume-outer programs))
+                                 (render-quads vao))
+                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                 (use-program (:sfsim.clouds/plume-point programs))
+                                 (render-quads vao))
+                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+                                 (use-program (:sfsim.clouds/plume-point programs))
+                                 (render-quads vao)))
+                             (when back
+                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                 (use-program (:sfsim.clouds/atmosphere-back programs))
+                                 (render-quads vao))
+                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                 (use-program (:sfsim.clouds/planet-back programs))
+                                 (render-quads vao))))))
+     overlay)))
 
 
 (set! *warn-on-reflection* false)

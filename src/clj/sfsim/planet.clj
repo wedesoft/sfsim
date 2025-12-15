@@ -622,7 +622,7 @@
         z-near          (max (* (- height ^double cloud-top) (cos (* 0.5 diagonal-fov))) ^double min-z-near)
         z-far           (render-depth radius height cloud-top)]
     (make-render-vars render-config window-width window-height camera-position camera-orientation light-direction
-                     object-position object-orientation z-near z-far time_ pressure)))
+                      object-position object-orientation z-near z-far time_ pressure)))
 
 
 (def fragment-planet-geometry
