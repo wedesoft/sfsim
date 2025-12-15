@@ -1750,7 +1750,10 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
                          clouds/setup-geometry-uniforms mock-setup-geometry-uniforms]
              (with-invisible-window
                (let [geometry          (mock-geometry ?x ?y ?z ?stencil)
-                     cloud-renderer    (make-cloud-renderer)
+                     data              {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
+                                        :sfsim.clouds/data   {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
+                                                              :sfsim.clouds/perlin-octaves [0.57 0.28 0.15]}}
+                     cloud-renderer    (make-cloud-renderer data)
                      cloud-render-vars (make-cloud-render-vars 1 1 (vec3 0 0 0) (q/->Quaternion 1 0 0 0) (vec3 ?obj-dist 0 0) (q/->Quaternion 1 0 0 0))
                      overlay           (render-cloud-overlay cloud-renderer cloud-render-vars geometry ?front ?plume ?back)]
                  (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
@@ -1774,6 +1777,16 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
          0x1      1.0 0.0 0.0 true   true   false 2.0       0.75  0.125 0.0 0.875
          0x2      3.0 0.0 0.0 false  true   false 2.0       0.0   0.25  0.0 0.25
          0x4      2.0 0.0 0.0 false  true   false 2.0       0.0   0.25  0.0 0.25)
+
+
+(fact "Test completeness of cloud render programs"
+      (with-invisible-window
+        (let [data           {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
+                              :sfsim.clouds/data   {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
+                                                    :sfsim.clouds/perlin-octaves [0.57 0.28 0.15]}}
+              cloud-renderer (make-cloud-renderer data)]
+          cloud-renderer => some?
+          (destroy-cloud-renderer cloud-renderer))))
 
 
 (GLFW/glfwTerminate)

@@ -1,5 +1,7 @@
 #version 450 core
 
+// fragment cloud planet
+
 uniform vec3 origin;
 uniform mat4 camera_to_world;
 uniform float object_distance;

@@ -20,7 +20,7 @@
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
                           with-underlay-blending) :as render]
     [sfsim.shaders :as shaders]
-    [sfsim.plume :refer (cloud-plume-segment)]
+    [sfsim.plume :refer (cloud-plume-segment plume-outer plume-point)]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
                            texture-2d make-empty-texture-2d make-empty-float-texture-2d make-empty-depth-stencil-texture-2d)]
@@ -498,31 +498,45 @@
   (destroy-texture points))
 
 
+(def geometry-point
+  (slurp "resources/shaders/clouds/geometry-point.glsl"))
+
+
+(def geometry-distance
+  (slurp "resources/shaders/clouds/geometry-distance.glsl"))
+
+
 (defn fragment-cloud-atmosphere
-  [front]
-  [(template/eval (slurp "resources/shaders/clouds/fragment-cloud-atmosphere.glsl") {:front front})])
+  [num-steps perlin-octaves cloud-octaves front]
+  [geometry-point (cloud-point num-steps perlin-octaves cloud-octaves) (cloud-outer num-steps perlin-octaves cloud-octaves)
+   (template/eval (slurp "resources/shaders/clouds/fragment-cloud-atmosphere.glsl") {:front front})])
 
 
 (defn fragment-cloud-planet
-  [front]
-  [(template/eval (slurp "resources/shaders/clouds/fragment-cloud-planet.glsl") {:front front})])
+  [num-steps perlin-octaves cloud-octaves front]
+  [geometry-distance geometry-point (cloud-point num-steps perlin-octaves cloud-octaves)
+   (template/eval (slurp "resources/shaders/clouds/fragment-cloud-planet.glsl") {:front front})])
 
 
-(def fragment-cloud-scene
-  [(slurp "resources/shaders/clouds/fragment-cloud-scene.glsl")])
+(defn fragment-cloud-scene
+  [num-steps perlin-octaves cloud-octaves]
+  [geometry-distance geometry-point (cloud-point num-steps perlin-octaves cloud-octaves)
+   (slurp "resources/shaders/clouds/fragment-cloud-scene.glsl")])
 
 
 (defn fragment-plume
   [outer]
-  [(template/eval (slurp "resources/shaders/plume/fragment.glsl") {:outer outer})])
+  [geometry-distance geometry-point plume-outer plume-point
+   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:outer outer})])
 
 
-(def cloud-fragment-shaders
-  {::atmosphere-front (fragment-cloud-atmosphere true)
-   ::atmosphere-back (fragment-cloud-atmosphere false)
-   ::planet-front (fragment-cloud-planet true)
-   ::planet-back (fragment-cloud-planet false)
-   ::scene-front fragment-cloud-scene
+(defn cloud-fragment-shaders
+  [num-steps perlin-octaves cloud-octaves]
+  {::atmosphere-front (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true)
+   ::atmosphere-back (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false)
+   ::planet-front (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true)
+   ::planet-back (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false)
+   ::scene-front (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)
    ::plume-outer (fragment-plume true)
    ::plume-point (fragment-plume false)})
 
@@ -556,8 +570,14 @@
 
 
 (defn make-cloud-renderer
-  []
-  (let [programs (into {} (map (fn [[k v]] [k (make-cloud-program v)]) cloud-fragment-shaders))
+  [data]
+  (let [shadow-config    (:sfsim.opacity/data data)
+        cloud-config     (:sfsim.clouds/data data)
+        num-steps        (:sfsim.opacity/num-steps shadow-config)
+        cloud-octaves    (:sfsim.clouds/cloud-octaves cloud-config)
+        perlin-octaves   (:sfsim.clouds/perlin-octaves cloud-config)
+        programs         (into {} (map (fn [[k v]] [k (make-cloud-program v)])
+                                       (cloud-fragment-shaders num-steps perlin-octaves cloud-octaves)))
         indices          [0 1 3 2]
         vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
         vao              (make-vertex-array-object (first (vals programs)) indices vertices ["point" 3])]
