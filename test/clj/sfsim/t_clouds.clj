@@ -1750,11 +1750,12 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
                          clouds/setup-geometry-uniforms mock-setup-geometry-uniforms]
              (with-invisible-window
                (let [geometry          (mock-geometry ?x ?y ?z ?stencil)
+                     render-config     {:sfsim.render/cloud-subsampling 1}
                      data              {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
                                         :sfsim.clouds/data   {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
                                                               :sfsim.clouds/perlin-octaves [0.57 0.28 0.15]}}
                      cloud-renderer    (make-cloud-renderer data)
-                     cloud-render-vars (make-cloud-render-vars 1 1 (vec3 0 0 0) (q/->Quaternion 1 0 0 0) (vec3 ?obj-dist 0 0) (q/->Quaternion 1 0 0 0))
+                     cloud-render-vars (make-cloud-render-vars render-config 1 1 (vec3 0 0 0) (q/->Quaternion 1 0 0 0) (vec3 ?obj-dist 0 0) (q/->Quaternion 1 0 0 0))
                      overlay           (render-cloud-overlay cloud-renderer cloud-render-vars geometry ?front ?plume ?back)]
                  (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)

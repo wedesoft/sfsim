@@ -542,13 +542,14 @@
 
 
 (defn make-cloud-render-vars
-  [overlay-width overlay-height camera-position camera-orientation object-position object-orientation]
-  (let [camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
+  [render-config width height camera-position camera-orientation object-position object-orientation]
+  (let [cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
+        camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
         camera-to-object   (mulm world-to-object camera-to-world)
         object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))]
-    {:sfsim.render/overlay-width overlay-width
-     :sfsim.render/overlay-height overlay-height
+    {:sfsim.render/overlay-width (quot ^long width ^long cloud-subsampling)
+     :sfsim.render/overlay-height (quot ^long height ^long cloud-subsampling)
      :sfsim.render/origin camera-position
      :sfsim.render/object-origin object-origin
      :sfsim.render/camera-to-world camera-to-world
