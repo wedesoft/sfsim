@@ -1732,7 +1732,7 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
 
 
 (defn mock-setup-geometry-uniforms
-  [program]
+  [program _other]
   (use-program program)
   (uniform-sampler program "camera_point" 0)
   (uniform-sampler program "dist" 1))
@@ -1782,12 +1782,13 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
 
 (fact "Test completeness of cloud render programs"
       (with-invisible-window
-        (let [data           {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
-                              :sfsim.clouds/data   {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
-                                                    :sfsim.clouds/perlin-octaves [0.57 0.28 0.15]}}
-              cloud-renderer (make-cloud-renderer data)]
-          cloud-renderer => some?
-          (destroy-cloud-renderer cloud-renderer))))
+        (with-redefs [clouds/setup-geometry-uniforms (fn [_program _other])]
+          (let [data           {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
+                                :sfsim.clouds/data  {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
+                                                     :sfsim.clouds/perlin-octaves [0.57 0.28 0.15]}}
+                cloud-renderer (make-cloud-renderer data)]
+            cloud-renderer => some?
+            (destroy-cloud-renderer cloud-renderer)))))
 
 
 (GLFW/glfwTerminate)

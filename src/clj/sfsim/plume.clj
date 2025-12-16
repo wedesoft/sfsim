@@ -7,10 +7,12 @@
 (ns sfsim.plume
     "Module with shader functions for plume rendering"
     (:require
+      [malli.core :as m]
       [comb.template :as template]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
-      [sfsim.bluenoise :refer (sampling-offset)]))
+      [sfsim.bluenoise :refer (sampling-offset)]
+      [sfsim.render :refer (uniform-float)]))
 
 
 (def plume-phase
@@ -94,3 +96,24 @@
   [model-point planet-point]
   [atmosphere/attenuation-track plume-outer plume-point
    (template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])
+
+
+(def model-data
+  (m/schema [:map [:sfsim.model/object-radius :double]
+                  [:sfsim.model/nozzle :double]
+                  [:sfsim.model/min-limit :double]
+                  [:sfsim.model/max-slope :double]
+                  [:sfsim.model/omega-factor :double]
+                  [:sfsim.model/diamond-strength :double]
+                  [:sfsim.model/engine-step :double]]))
+
+
+(defn setup-static-plume-uniforms
+  {:malli/schema [:=> [:cat :int model-data] :nil]}
+  [program model-data]
+  (uniform-float program "nozzle" (:sfsim.model/nozzle model-data))
+  (uniform-float program "min_limit" (:sfsim.model/min-limit model-data))
+  (uniform-float program "max_slope" (:sfsim.model/max-slope model-data))
+  (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-data))
+  (uniform-float program "diamond_strength" (:sfsim.model/diamond-strength model-data))
+  (uniform-float program "engine_step" (:sfsim.model/engine-step model-data)))

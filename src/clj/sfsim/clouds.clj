@@ -20,7 +20,7 @@
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
                           with-underlay-blending) :as render]
     [sfsim.shaders :as shaders]
-    [sfsim.plume :refer (cloud-plume-segment plume-outer plume-point)]
+    [sfsim.plume :refer (cloud-plume-segment plume-outer plume-point) :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
                            texture-2d make-empty-texture-2d make-empty-float-texture-2d make-empty-depth-stencil-texture-2d)]
@@ -564,10 +564,23 @@
 
 
 (defn setup-geometry-uniforms
-  [program]
-  (use-program program)
-  (uniform-sampler program "camera_point" 0)
-  (uniform-sampler program "dist" 1))
+  [program other]
+  (let [render-config   (:sfsim.render/config other)
+        atmosphere-luts (:sfsim.atmosphere/luts other)
+        model-data      (:sfsim.model/data other)
+        planet-config   (:sfsim.planet/config other)
+        shadow-data     (:sfsim.opacity/data other)
+        data            (:sfsim.clouds/data other)]
+    (use-program program)
+    (uniform-sampler program "camera_point" 0)
+    (uniform-sampler program "dist" 1)
+    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 2 false)
+    (setup-cloud-render-uniforms program data 5)
+    (setup-cloud-sampling-uniforms program data 8)
+    (render/setup-shadow-and-opacity-maps program shadow-data 9)
+    (plume/setup-static-plume-uniforms program model-data)
+    (uniform-float program "radius" (:sfsim.planet/radius planet-config))
+    (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
 
 
 (defn make-cloud-renderer
@@ -582,7 +595,7 @@
         indices          [0 1 3 2]
         vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
         vao              (make-vertex-array-object (first (vals programs)) indices vertices ["point" 3])]
-    (doseq [program (vals programs)] (setup-geometry-uniforms program))
+    (doseq [program (vals programs)] (setup-geometry-uniforms program data))
     {:sfsim.clouds/programs programs
      :sfsim.clouds/vao vao}))
 

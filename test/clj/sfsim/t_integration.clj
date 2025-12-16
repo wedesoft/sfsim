@@ -81,7 +81,10 @@
                                                                                object-position (q/->Quaternion 1 0 0 0) model-vars)
                      shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                                    cloud-data render-vars tree opacity-base)
+                     cloud-render-vars         (clouds/make-cloud-render-vars config/render-config width height ?position ?orientation
+                                                                              object-position (q/->Quaternion 1 0 0 0))
                      geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars model tree)
+                     ; clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars geometry)
                      clouds                    (texture-render-color-depth width height true
                                                                            (clear (vec3 0 0 0) 0.0)
                                                                            (planet/render-cloud-planet cloud-planet-renderer
