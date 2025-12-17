@@ -16,12 +16,13 @@
                               destroy-atmosphere-geometry-renderer render-atmosphere-geometry)]
     [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
                           overall-shading overall-shading-parameters render-cloud-geometry)]
-    [sfsim.plume :refer (cloud-plume-segment sample-plume-point)]
+    [sfsim.plume :refer (cloud-plume-segment sample-plume-point setup-static-plume-uniforms model-data setup-dynamic-plume-uniforms
+                         model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
                           fmat4 rotation-matrix)]
-    [sfsim.planet :refer (surface-radiance-function shadow-vars setup-static-plume-uniforms setup-dynamic-plume-uniforms
-                          model-data model-vars make-planet-geometry-renderer destroy-planet-geometry-renderer render-planet-geometry)]
+    [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
+                          render-planet-geometry)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4

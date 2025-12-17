@@ -15,7 +15,7 @@
     [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere atmosphere-luts)]
     [sfsim.clouds :refer (cloud-point lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
                           fragment-atmosphere-clouds cloud-data overall-shading overall-shading-parameters)]
-    [sfsim.plume :refer (cloud-plume-segment)]
+    [sfsim.plume :refer (cloud-plume-segment setup-static-plume-uniforms setup-dynamic-plume-uniforms model-vars)]
     [sfsim.cubemap :refer (cube-map-corners)]
     [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box shadow-patch)]
     [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
@@ -212,43 +212,6 @@
              [:sfsim.clouds/data cloud-data] [:sfsim.render/config render-config]]))
 
 
-(def model-data
-  (m/schema [:map [:sfsim.model/object-radius :double]
-                  [:sfsim.model/nozzle :double]
-                  [:sfsim.model/min-limit :double]
-                  [:sfsim.model/max-slope :double]
-                  [:sfsim.model/omega-factor :double]
-                  [:sfsim.model/diamond-strength :double]
-                  [:sfsim.model/engine-step :double]]))
-
-
-(def model-vars (m/schema [:map [:sfsim.model/time :double]
-                                [:sfsim.model/pressure :double]
-                                [:sfsim.model/throttle :double]]))
-
-
-(defn setup-static-plume-uniforms
-  {:malli/schema [:=> [:cat :int model-data] :nil]}
-  [program model-data]
-  (uniform-float program "nozzle" (:sfsim.model/nozzle model-data))
-  (uniform-float program "min_limit" (:sfsim.model/min-limit model-data))
-  (uniform-float program "max_slope" (:sfsim.model/max-slope model-data))
-  (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-data))
-  (uniform-float program "diamond_strength" (:sfsim.model/diamond-strength model-data))
-  (uniform-float program "engine_step" (:sfsim.model/engine-step model-data)))
-
-
-(defn setup-dynamic-plume-uniforms
-  {:malli/schema [:=> [:cat :int render-vars model-vars] :nil]}
-  [program render-vars model-vars]
-  (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
-  (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
-  (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
-  (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
-  (uniform-float program "time" (:sfsim.model/time model-vars))
-  (uniform-float program "throttle" (:sfsim.model/throttle model-vars)))
-
-
 (defn make-cloud-planet-renderer
   "Make a renderer to render clouds below horizon"
   {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [::config planet-config]
@@ -343,20 +306,17 @@
         planet-config   (::config other)
         shadow-data     (:sfsim.opacity/data other)
         data            (:sfsim.clouds/data other)
-        tilesize        (::tilesize planet-config)
         program         (make-program :sfsim.render/vertex [vertex-atmosphere]
                                       :sfsim.render/fragment [(fragment-atmosphere-clouds (:sfsim.opacity/num-steps shadow-data)
                                                                                           (:sfsim.clouds/perlin-octaves data)
                                                                                           (:sfsim.clouds/cloud-octaves data))])]
     (use-program program)
-    (setup-shadow-and-opacity-maps program shadow-data 7)
+    (setup-atmosphere-uniforms program atmosphere-luts 0 false)
     (setup-cloud-render-uniforms program data 3)
     (setup-cloud-sampling-uniforms program data 6)
-    (setup-atmosphere-uniforms program atmosphere-luts 0 false)
+    (setup-shadow-and-opacity-maps program shadow-data 7)
     (setup-static-plume-uniforms program model-data)
     (uniform-float program "radius" (::radius planet-config))
-    (uniform-int program "high_detail" (dec ^long tilesize))
-    (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
     {:sfsim.clouds/program program
      :sfsim.atmosphere/luts atmosphere-luts

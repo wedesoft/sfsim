@@ -50,9 +50,10 @@
         - [X] rename distance to something else
         - [X] always store camera direction and camera distance instead of point
         - [X] cloud plume point should take distance value instead of point
-        - [ ] integration into main program
-          - [ ] use fragment shader to program conversion function and mock it in tests
-          - [ ] fragment shaders should be lists with dependencies
+        - [X] integration into main program
+          - [X] use fragment shader to program conversion function and mock it in tests
+          - [X] fragment shaders should be lists with dependencies
+        - [ ] port planet and cloud integration test to use new shaders
         - [ ] maybe compute camera vectors instead of storing them (i.e. just store distance)
         - [X] render cloud front layer up to object depth on atmospheric background
         - [X] render cloud front layer up to minimum planet or object depth on planet stencil

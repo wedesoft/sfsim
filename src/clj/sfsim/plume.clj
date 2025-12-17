@@ -7,10 +7,13 @@
 (ns sfsim.plume
     "Module with shader functions for plume rendering"
     (:require
+      [malli.core :as m]
       [comb.template :as template]
+      [sfsim.matrix :refer (fvec3 fmat4)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
-      [sfsim.bluenoise :refer (sampling-offset)]))
+      [sfsim.bluenoise :refer (sampling-offset)]
+      [sfsim.render :refer (uniform-float render-vars uniform-float uniform-matrix4 uniform-vector3)]))
 
 
 (def plume-phase
@@ -94,3 +97,43 @@
   [model-point planet-point]
   [atmosphere/attenuation-track plume-outer plume-point
    (template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])
+
+
+(def model-data
+  (m/schema [:map [:sfsim.model/object-radius :double]
+                  [:sfsim.model/nozzle :double]
+                  [:sfsim.model/min-limit :double]
+                  [:sfsim.model/max-slope :double]
+                  [:sfsim.model/omega-factor :double]
+                  [:sfsim.model/diamond-strength :double]
+                  [:sfsim.model/engine-step :double]]))
+
+
+(defn setup-static-plume-uniforms
+  {:malli/schema [:=> [:cat :int model-data] :nil]}
+  [program model-data]
+  (uniform-float program "nozzle" (:sfsim.model/nozzle model-data))
+  (uniform-float program "min_limit" (:sfsim.model/min-limit model-data))
+  (uniform-float program "max_slope" (:sfsim.model/max-slope model-data))
+  (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-data))
+  (uniform-float program "diamond_strength" (:sfsim.model/diamond-strength model-data))
+  (uniform-float program "engine_step" (:sfsim.model/engine-step model-data)))
+
+
+(def plume-vars (m/schema [:map [:sfsim.render/object-origin fvec3]
+                                [:sfsim.render/object-distance :double]
+                                [:sfsim.render/camera-to-object fmat4]]))
+(def model-vars (m/schema [:map [:sfsim.model/time :double]
+                                [:sfsim.model/pressure :double]
+                                [:sfsim.model/throttle :double]]))
+
+
+(defn setup-dynamic-plume-uniforms
+  {:malli/schema [:=> [:cat :int plume-vars model-vars] :nil]}
+  [program render-vars model-vars]
+  (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
+  (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
+  (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
+  (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
+  (uniform-float program "time" (:sfsim.model/time model-vars))
+  (uniform-float program "throttle" (:sfsim.model/throttle model-vars)))

@@ -19,7 +19,7 @@
     [sfsim.image :refer (floats->image get-vector4 get-float)]
     [sfsim.matrix :refer :all]
     [sfsim.model :refer :all :as model]
-    [sfsim.planet :as planet]
+    [sfsim.plume :as plume]
     [sfsim.quaternion :refer (->Quaternion) :as q]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
@@ -652,7 +652,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                               (conj model-shader-mocks
                                                     (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                    {:textured textured :bump bump :num-scene-shadows 0})))
-                       planet/setup-static-plume-uniforms (fn [_program _model-data])
+                       plume/setup-static-plume-uniforms (fn [_program _model-data])
                        model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                            (use-program program)
                                                            (setup-scene-samplers program 0 0 textured bump)
@@ -909,7 +909,7 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
                                                                        {:textured textured
                                                                         :bump bump
                                                                         :num-scene-shadows num-scene-shadows})))
-                           planet/setup-static-plume-uniforms (fn [_program _model-data])
+                           plume/setup-static-plume-uniforms (fn [_program _model-data])
                            model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                                (use-program program)
                                                                (setup-scene-samplers program 0 0 textured bump)
