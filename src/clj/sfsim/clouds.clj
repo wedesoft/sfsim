@@ -18,7 +18,7 @@
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
-                          with-underlay-blending) :as render]
+                          with-underlay-blending setup-shadow-matrices) :as render]
     [sfsim.shaders :as shaders]
     [sfsim.plume :refer (cloud-plume-segment plume-outer plume-point) :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
@@ -542,15 +542,18 @@
 
 
 (defn make-cloud-render-vars
-  [render-config width height camera-position camera-orientation object-position object-orientation]
+  [render-config width height camera-position camera-orientation light-direction object-position object-orientation]
   (let [cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
         camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
         camera-to-object   (mulm world-to-object camera-to-world)
         object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))]
-    {:sfsim.render/overlay-width (quot ^long width ^long cloud-subsampling)
+    {:sfsim.render/window-width width
+     :sfsim.render/window-height height
+     :sfsim.render/overlay-width (quot ^long width ^long cloud-subsampling)
      :sfsim.render/overlay-height (quot ^long height ^long cloud-subsampling)
      :sfsim.render/origin camera-position
+     :sfsim.render/light-direction light-direction
      :sfsim.render/object-origin object-origin
      :sfsim.render/camera-to-world camera-to-world
      :sfsim.render/camera-to-object camera-to-object
@@ -587,9 +590,11 @@
   [data]
   (let [shadow-config    (:sfsim.opacity/data data)
         cloud-config     (:sfsim.clouds/data data)
+        render-config    (:sfsim.render/config data)
         num-steps        (:sfsim.opacity/num-steps shadow-config)
         cloud-octaves    (:sfsim.clouds/cloud-octaves cloud-config)
         perlin-octaves   (:sfsim.clouds/perlin-octaves cloud-config)
+        atmosphere-luts  (:sfsim.atmosphere/luts data)
         programs         (into {} (map (fn [[k v]] [k (make-cloud-program v)])
                                        (cloud-fragment-shaders num-steps perlin-octaves cloud-octaves)))
         indices          [0 1 3 2]
@@ -597,6 +602,9 @@
         vao              (make-vertex-array-object (first (vals programs)) indices vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-geometry-uniforms program data))
     {:sfsim.clouds/programs programs
+     :sfsim.atmosphere/luts atmosphere-luts
+     :sfsim.render/config render-config
+     :sfsim.clouds/data cloud-config
      :sfsim.clouds/vao vao}))
 
 
@@ -606,13 +614,31 @@
   (doseq [program (vals programs)] (destroy-program program)))
 
 
+(defn setup-dynamic-cloud-uniforms
+  [program other cloud-render-vars model-vars shadow-vars]
+  (let [render-config   (:sfsim.render/config other)
+        cloud-data      (:sfsim.clouds/data other)
+        atmosphere-luts (:sfsim.atmosphere/luts other)]
+    (uniform-float program "lod_offset" (lod-offset render-config cloud-data cloud-render-vars))
+    (plume/setup-dynamic-plume-uniforms program cloud-render-vars model-vars)
+    (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
+    (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
+    (setup-shadow-matrices program shadow-vars)
+    (use-textures {2 (:sfsim.atmosphere/transmittance atmosphere-luts) 3 (:sfsim.atmosphere/scatter atmosphere-luts)
+                   4 (:sfsim.atmosphere/mie atmosphere-luts) 5 (:sfsim.clouds/worley cloud-data) 6 (:sfsim.clouds/perlin-worley cloud-data)
+                   7 (:sfsim.clouds/cloud-cover cloud-data) 8 (:sfsim.clouds/bluenoise cloud-data)})
+    (use-textures (zipmap (drop 9 (range))
+                          (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))))
+
+
 (defn render-cloud-overlay
-  ([cloud-renderer cloud-render-vars geometry]
-   (render-cloud-overlay cloud-renderer cloud-render-vars geometry true true true))
-  ([{:sfsim.clouds/keys [programs vao]} cloud-render-vars geometry front plume back]
-   (let [overlay-width  (:sfsim.render/overlay-width cloud-render-vars)
-         overlay-height (:sfsim.render/overlay-height cloud-render-vars)
-         overlay        (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F overlay-width overlay-height)]
+  ([cloud-renderer cloud-render-vars model-vars shadow-vars geometry]
+   (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars geometry true true true))
+  ([{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars model-vars shadow-vars geometry front plume back]
+   (let [overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
+         overlay-height  (:sfsim.render/overlay-height cloud-render-vars)
+         overlay         (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
+                                                overlay-width overlay-height)]
      (doseq [program (vals programs)]
             (use-program program)
             (uniform-int program "overlay_width" overlay-width)
@@ -620,9 +646,12 @@
             (uniform-vector3 program "origin" (:sfsim.render/origin cloud-render-vars))
             (uniform-vector3 program "object_origin" (:sfsim.render/object-origin cloud-render-vars))
             (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world cloud-render-vars))
+            (uniform-matrix4 program "world_to_camera" (inverse (:sfsim.render/camera-to-world cloud-render-vars)))
             (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
             (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
-            (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+            (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))
+            (setup-dynamic-cloud-uniforms program other cloud-render-vars model-vars shadow-vars)
+            (use-textures {0  (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
      (framebuffer-render overlay-width overlay-height :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                          (clear (vec3 0.0 0.0 0.0) 0.0)
                          (with-stencils

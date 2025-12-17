@@ -74,25 +74,19 @@
                      cloud-renderer            (clouds/make-cloud-renderer data)
                      tree                      (load-tile-tree planet-renderer {} width ?position level)
                      model                     (model/read-gltf "test/clj/sfsim/fixtures/model/empty.glb")
+                     light-direction           (vec3 1 0 0)
                      object-position           (add ?position (q/rotate-vector ?orientation (vec3 0 0 -1)))
                      model-vars                (model/make-model-vars 0.0 1.0 0.0)
                      render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
-                                                                               width height ?position ?orientation (vec3 1 0 0)
+                                                                               width height ?position ?orientation light-direction
                                                                                object-position (q/->Quaternion 1 0 0 0) model-vars)
                      shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                                    cloud-data render-vars tree opacity-base)
                      cloud-render-vars         (clouds/make-cloud-render-vars config/render-config width height ?position ?orientation
-                                                                              object-position (q/->Quaternion 1 0 0 0))
+                                                                              light-direction object-position (q/->Quaternion 1 0 0 0))
                      geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars model tree)
-                     ; clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars geometry)
-                     clouds                    (texture-render-color-depth width height true
-                                                                           (clear (vec3 0 0 0) 0.0)
-                                                                           (planet/render-cloud-planet cloud-planet-renderer
-                                                                                                       render-vars model-vars
-                                                                                                       shadow-vars tree)
-                                                                           (planet/render-cloud-atmosphere cloud-atmosphere-renderer
-                                                                                                           render-vars model-vars
-                                                                                                           shadow-vars))
+                     clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
+                                                                            geometry)
                      tex                       (texture-render-color-depth width height true
                                                                            (clear (vec3 0 1 0) 0.0)
                                                                            (planet/render-planet planet-renderer render-vars shadow-vars [] clouds tree)
