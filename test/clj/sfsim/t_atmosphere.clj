@@ -825,7 +825,7 @@ void main()
 (def cloud-overlay-mock
   (template/fn [alpha]
     "#version 450 core
-vec4 cloud_overlay()
+vec4 cloud_overlay(float dist)
 {
   float brightness = <%= alpha %>;
   return vec4(brightness, brightness, brightness, <%= alpha %>);
@@ -923,10 +923,10 @@ void main()
 (def fragment-overlay-lookup
   "#version 450 core
 out vec3 fragColor;
-vec4 cloud_overlay();
+vec4 cloud_overlay(float dist);
 void main()
 {
-  vec4 clouds = cloud_overlay();
+  vec4 clouds = cloud_overlay(0.0);
   fragColor = 0.5 * (1 - clouds.a) + clouds.rgb;
 }")
 

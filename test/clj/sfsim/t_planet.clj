@@ -444,7 +444,7 @@ float sampling_offset()
 (def cloud-overlay-mock
   "#version 450 core
 uniform float clouds;
-vec4 cloud_overlay()
+vec4 cloud_overlay(float dist)
 {
   return vec4(clouds, clouds, clouds, clouds);
 }")

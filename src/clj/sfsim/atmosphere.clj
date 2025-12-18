@@ -699,6 +699,7 @@
   (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
   (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
   (uniform-int program "window_height" (:sfsim.render/window-height render-vars))
+  (uniform-float program "z_far" (:sfsim.render/z-far render-vars))
   (use-textures {0 (::transmittance luts) 1 (::scatter luts) 2 (::mie luts) 3 clouds})
   (render-quads vao))
 
