@@ -32,7 +32,7 @@ vec4 attenuation_point(vec3 point, vec4 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 float land_noise(vec3 point);
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
-vec4 cloud_overlay(float dist);
+vec4 cloud_overlay(float depth);
 
 // Render planet surface as seen through the atmosphere.
 void main()

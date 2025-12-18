@@ -17,7 +17,7 @@ out vec4 fragColor;
 
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
-vec4 cloud_overlay(float dist);
+vec4 cloud_overlay(float depth);
 
 vec3 sun_color(vec3 direction)
 {
