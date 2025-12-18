@@ -952,8 +952,9 @@ void main()
                                  (use-program program)
                                  (uniform-sampler program "clouds" 0)
                                  (uniform-sampler program "dist" 1)
-                                 (uniform-int program "window_width" 4)
-                                 (uniform-int program "window_height" 4)
+                                 (uniform-int program "cloud_subsampling" 2)
+                                 (uniform-int program "overlay_width" 2)
+                                 (uniform-int program "overlay_height" 2)
                                  (use-textures {0 clouds 1 dist})
                                  (clear (vec3 0 0 0))
                                  (render-quads vao)
@@ -965,7 +966,10 @@ void main()
          ?cloud00 ?cloud01 ?cloud10 ?cloud11 ?dist00 ?dist01 ?dist10 ?dist11 ?x ?y ?result
            0        0        0        0        1       1       1       1     1  1   0
          255      255      255      255        1       1       1       1     1  1 255
-           0      128        0      255        1       1       1       1     1  1  32
+           0      128        0      128        1       1       1       1     1  1  32
+           0      128        0      128        1       1       1       1     2  1  96
+           0        0      128      128        1       1       1       1     1  1  32
+           0        0      128      128        1       1       1       1     1  2  96
          )
 
 
