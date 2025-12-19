@@ -577,8 +577,8 @@
   "Macro to render to a 2D color texture using ad depth buffer"
   [width height floating-point & body]
   `(let [internalformat# (if ~floating-point GL30/GL_RGBA32F GL11/GL_RGBA8)
-         texture#        (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp internalformat# ~width ~height)
-         depth#          (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)]
+         texture#        (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp internalformat# ~width ~height)
+         depth#          (make-empty-depth-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp ~width ~height)]
      (framebuffer-render ~width ~height ::cullback depth# [texture#] ~@body)
      (destroy-texture depth#)
      texture#))
@@ -609,8 +609,8 @@
   "Macro to render to a texture using depth and stencil buffer and convert it to an image"
   [width height & body]
   `(with-invisible-window
-     (let [depth# (make-empty-depth-stencil-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)
-           tex#   (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGB8 ~width ~height)]
+     (let [depth# (make-empty-depth-stencil-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp ~width ~height)
+           tex#   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL11/GL_RGB8 ~width ~height)]
        (framebuffer-render ~width ~height ::cullback depth# [tex#] ~@body)
        (let [img# (texture->image tex#)]
          (destroy-texture tex#)

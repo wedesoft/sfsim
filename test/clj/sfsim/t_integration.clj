@@ -203,10 +203,10 @@
                 object-to-world           (transformation-matrix (mulm (rotation-y (/ PI 6)) (rotation-x (/ PI 6))) object-position)
                 opacity-renderer          (opacity/make-opacity-renderer data)
                 planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
-                cloud-planet-renderer     (planet/make-cloud-planet-renderer data)
-                cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data)
                 planet-renderer           (planet/make-planet-renderer data)
                 atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
+                geometry-renderer         (model/make-joined-geometry-renderer data)
+                cloud-renderer            (clouds/make-cloud-renderer data)
                 scene-renderer            (model/make-scene-renderer data)
                 scene-shadow-renderer     (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
                                                                             object-radius)
@@ -220,14 +220,12 @@
                                                                           object-position (q/->Quaternion 1 0 0 0) model-vars)
                 shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                               cloud-data render-vars tree opacity-base)
+                cloud-render-vars         (clouds/make-cloud-render-vars config/render-config width height position orientation
+                                                                         light-direction object-position (q/->Quaternion 1 0 0 0))
                 object-shadow             (model/scene-shadow-map scene-shadow-renderer light-direction object)
-                clouds                    (texture-render-color-depth width height true
-                                                                      (clear (vec3 0 0 0) 0.0)
-                                                                      (planet/render-cloud-planet cloud-planet-renderer render-vars
-                                                                                                  model-vars shadow-vars tree)
-                                                                      (planet/render-cloud-atmosphere cloud-atmosphere-renderer
-                                                                                                      render-vars model-vars
-                                                                                                      shadow-vars))
+                geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars object tree)
+                clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
+                                                                       geometry)
                 tex                       (texture-render-color-depth width height true
                                                                       (clear (vec3 0 1 0) 0.0)
                                                                       (model/render-scenes scene-renderer render-vars model-vars
@@ -236,17 +234,18 @@
                                                                       (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
             (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.02)
             (destroy-texture tex)
+            (clouds/destroy-cloud-geometry geometry)
             (destroy-texture clouds)
             (model/destroy-scene-shadow-map object-shadow)
             (opacity/destroy-opacity-and-shadow shadow-vars)
             (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
+            (clouds/destroy-cloud-renderer cloud-renderer)
+            (model/destroy-joined-geometry-renderer geometry-renderer)
             (model/destroy-scene object)
             (model/destroy-scene-shadow-renderer scene-shadow-renderer)
             (model/destroy-scene-renderer scene-renderer)
             (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
             (planet/destroy-planet-renderer planet-renderer)
-            (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
-            (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
             (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
             (opacity/destroy-opacity-renderer opacity-renderer)
             (atmosphere/destroy-atmosphere-luts atmosphere-luts)

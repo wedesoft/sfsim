@@ -152,16 +152,12 @@
 (def planet-shadow-renderer (planet/make-planet-shadow-renderer data))
 
 
-;; Program to render clouds in front of planet (before rendering clouds above horizon)
-(def cloud-planet-renderer (planet/make-cloud-planet-renderer data))
-
-
-;; Program to render clouds above the horizon (after rendering clouds in front of planet)
-(def cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data))
-
-
 ;; Program to render low-resolution scene geometry to facilitate volumetric cloud and plume rendering
 (def joined-geometry-renderer (model/make-joined-geometry-renderer data))
+
+
+;; Program to render low-resolution overlay of clouds
+(def cloud-renderer (clouds/make-cloud-renderer data))
 
 
 ;; Program to render planet with cloud overlay (before rendering atmosphere)
@@ -825,6 +821,9 @@
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) opacity-base)
+              cloud-render-vars  (clouds/make-cloud-render-vars config/render-config @window-width @window-height origin
+                                                                camera-orientation light-direction object-position
+                                                                object-orientation)
               wheels-scene       (if (= ^double @gear 1.0)
                                    (model/apply-transforms
                                      scene
@@ -857,19 +856,10 @@
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
-              ;geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
-              ;                                                 (planet/get-current-tree tile-tree))  ; TODO: enable this
-              clouds             (texture-render-color-depth
-                                   (quot ^long (:sfsim.render/window-width planet-render-vars) 2)
-                                   (quot ^long (:sfsim.render/window-height planet-render-vars) 2)
-                                   true
-                                   (clear (vec3 0 0 0) 1.0)
-                                   ;; Render clouds in front of planet
-                                   (planet/render-cloud-planet cloud-planet-renderer planet-render-vars model-vars shadow-vars
+              geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
                                                                (planet/get-current-tree tile-tree))
-                                   ;; Render clouds above the horizon
-                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars model-vars
-                                                                   shadow-vars))]
+              clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
+                                                              geometry)]
           (onscreen-render window
                            (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
@@ -911,7 +901,7 @@
                                            (if (@state :sfsim.input/pause) ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
-          ; (clouds/destroy-cloud-geometry geometry)  ; TODO: enable this
+          (clouds/destroy-cloud-geometry geometry)
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (when playback
@@ -940,11 +930,10 @@
   (model/destroy-scene-renderer scene-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (planet/destroy-planet-renderer planet-renderer)
+  (clouds/destroy-cloud-renderer cloud-renderer)
   (model/destroy-joined-geometry-renderer joined-geometry-renderer)
-  (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (atmosphere/destroy-atmosphere-luts atmosphere-luts)
   (clouds/destroy-cloud-data cloud-data)
-  (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
   (opacity/destroy-opacity-renderer opacity-renderer)
   (gui/destroy-nuklear-gui gui)
