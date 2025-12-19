@@ -152,10 +152,6 @@
 (def planet-shadow-renderer (planet/make-planet-shadow-renderer data))
 
 
-;; Program to render clouds in front of planet (before rendering clouds above horizon)
-(def cloud-planet-renderer (planet/make-cloud-planet-renderer data))
-
-
 ;; Program to render clouds above the horizon (after rendering clouds in front of planet)
 (def cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data))
 
@@ -943,7 +939,6 @@
   (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (atmosphere/destroy-atmosphere-luts atmosphere-luts)
   (clouds/destroy-cloud-data cloud-data)
-  (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
   (opacity/destroy-opacity-renderer opacity-renderer)
   (gui/destroy-nuklear-gui gui)
