@@ -66,8 +66,6 @@
                                                 :sfsim.atmosphere/luts atmosphere-luts}
                      opacity-renderer          (opacity/make-opacity-renderer data)
                      planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
-                     cloud-planet-renderer     (planet/make-cloud-planet-renderer data)
-                     cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data)
                      planet-renderer           (planet/make-planet-renderer data)
                      atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
                      geometry-renderer         (model/make-joined-geometry-renderer data)
@@ -101,8 +99,6 @@
                  (model/destroy-joined-geometry-renderer geometry-renderer)
                  (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
                  (planet/destroy-planet-renderer planet-renderer)
-                 (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
-                 (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
                  (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
                  (opacity/destroy-opacity-renderer opacity-renderer)
                  (atmosphere/destroy-atmosphere-luts atmosphere-luts)
