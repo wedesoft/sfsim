@@ -36,30 +36,11 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
         also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-    - [X] as before render opacity and shadow cascade and object shadows
     - [-] render cloud and plume low res overlay
-      - [X] geometry rendering
-        - [X] render model outputting camera points, set stencil buffer to object, set depth buffer
-        - [X] separate identical code for frame buffer initialisation and clearing from model and planet geometry renderer
-        - [X] add cloud geometry tests rendering planet, model, and atmosphere with depth buffer and stencil
-        - [X] set stencil buffer to atmosphere initially, render camera direction vectors to remaining geometry
-        - [X] render planet using depth buffer or model stencil outputting camera points overwritting object stencil,
-              skip using object stencil if out of atmosphere
-        - [X] specify depth buffer when rendering model or planet geometry
       - [-] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
-        - [X] rename distance to something else
-        - [X] always store camera direction and camera distance instead of point
-        - [X] cloud plume point should take distance value instead of point
-        - [X] integration into main program
-          - [X] use fragment shader to program conversion function and mock it in tests
-          - [X] fragment shaders should be lists with dependencies
-        - [ ] port planet and cloud integration test to use new shaders
+        - [ ] implement depth-aware upsampling for model, planet, and atmosphere (use z-far for atmosphere?)
+        - [ ] change all integration tests to use new cloud shaders
         - [ ] maybe compute camera vectors instead of storing them (i.e. just store distance)
-        - [X] render cloud front layer up to object depth on atmospheric background
-        - [X] render cloud front layer up to minimum planet or object depth on planet stencil
-        - [X] render cloud front layer up to object point on model stencil
-        - [X] render cloud back layer up to planet on planet stencil
-        - [X] render cloud back layer on atmospheric background
         - [ ] render plume box instead of fullscreen (provide different vertex and index buffer for plume rendering, use different vertex shader)
         - [ ] render RCS thrusters
           - [ ] use binary space partitioning tree
@@ -76,7 +57,6 @@
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
   - [ ] implement RCS thrusters
-  - [X] use #version 450 (OpenGL 4.5)?
   - [ ] Thrust vectoring:
         If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
         A combination of pitch and roll can produce whatever attitude control you need. source
