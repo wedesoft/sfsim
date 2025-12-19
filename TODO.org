@@ -38,7 +38,7 @@
         also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
     - [-] render cloud and plume low res overlay
       - [-] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
-        - [ ] change all integration tests to use new cloud shaders, delete atmosphere cloud and planet cloud shader
+        - [-] change all integration tests to use new cloud shaders, delete atmosphere cloud and planet cloud shader
         - [ ] switch model clouds to overlay, try out plume graphics
         - [ ] implement depth-aware upsampling for model, planet, and atmosphere (use z-far for atmosphere?)
         - [ ] maybe compute camera vectors instead of storing them (i.e. just store distance)
