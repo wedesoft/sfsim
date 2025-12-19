@@ -152,10 +152,6 @@
 (def planet-shadow-renderer (planet/make-planet-shadow-renderer data))
 
 
-;; Program to render clouds above the horizon (after rendering clouds in front of planet)
-(def cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data))
-
-
 ;; Program to render low-resolution scene geometry to facilitate volumetric cloud and plume rendering
 (def joined-geometry-renderer (model/make-joined-geometry-renderer data))
 
@@ -936,7 +932,6 @@
   (planet/destroy-planet-renderer planet-renderer)
   (clouds/destroy-cloud-renderer cloud-renderer)
   (model/destroy-joined-geometry-renderer joined-geometry-renderer)
-  (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
   (atmosphere/destroy-atmosphere-luts atmosphere-luts)
   (clouds/destroy-cloud-data cloud-data)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)

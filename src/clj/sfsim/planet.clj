@@ -207,87 +207,10 @@
   (destroy-program program))
 
 
-(def cloud-planet-renderer
-  (m/schema [:map [::program :int] [:sfsim.atmosphere/luts atmosphere-luts]
-             [:sfsim.clouds/data cloud-data] [:sfsim.render/config render-config]]))
-
-
 (def shadow-vars
   (m/schema [:map [:sfsim.opacity/opacity-step :double] [:sfsim.opacity/splits [:vector :double]]
              [:sfsim.opacity/biases [:vector :double]] [:sfsim.opacity/matrix-cascade [:vector shadow-box]]
              [:sfsim.opacity/shadows [:vector texture-2d]] [:sfsim.opacity/opacities [:vector texture-3d]]]))
-
-
-(def cloud-atmosphere-renderer
-  (m/schema [:map [:sfsim.clouds/program :int] [:sfsim.atmosphere/luts atmosphere-luts]
-             [:sfsim.render/config render-config] [:sfsim.clouds/data cloud-data]]))
-
-
-(defn make-cloud-atmosphere-renderer
-  "Make renderer to render clouds above horizon (not tested)"
-  {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [:sfsim.atmosphere/luts atmosphere-luts]
-                             [::config planet-config] [:sfsim.opacity/data shadow-data]
-                             [:sfsim.clouds/data cloud-data]]] cloud-atmosphere-renderer]}
-  [other]
-  (let [render-config   (:sfsim.render/config other)
-        atmosphere-luts (:sfsim.atmosphere/luts other)
-        model-data      (:sfsim.model/data other)
-        planet-config   (::config other)
-        shadow-data     (:sfsim.opacity/data other)
-        data            (:sfsim.clouds/data other)
-        program         (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                      :sfsim.render/fragment [(fragment-atmosphere-clouds (:sfsim.opacity/num-steps shadow-data)
-                                                                                          (:sfsim.clouds/perlin-octaves data)
-                                                                                          (:sfsim.clouds/cloud-octaves data))])]
-    (use-program program)
-    (setup-atmosphere-uniforms program atmosphere-luts 0 false)
-    (setup-cloud-render-uniforms program data 3)
-    (setup-cloud-sampling-uniforms program data 6)
-    (setup-shadow-and-opacity-maps program shadow-data 7)
-    (setup-static-plume-uniforms program model-data)
-    (uniform-float program "radius" (::radius planet-config))
-    (uniform-float program "amplification" (:sfsim.render/amplification render-config))
-    {:sfsim.clouds/program program
-     :sfsim.atmosphere/luts atmosphere-luts
-     :sfsim.render/config render-config
-     :sfsim.model/data model-data
-     :sfsim.clouds/data data}))
-
-
-(defn render-cloud-atmosphere
-  "Render clouds above horizon (not tested)"
-  {:malli/schema [:=> [:cat cloud-atmosphere-renderer render-vars model-vars shadow-vars] :nil]}
-  [{:sfsim.clouds/keys [program data] :as other} render-vars model-vars shadow-vars]
-  (let [render-config   (:sfsim.render/config other)
-        atmosphere-luts (:sfsim.atmosphere/luts other)
-        indices         [0 1 3 2]
-        vertices        [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
-        vao             (make-vertex-array-object program indices vertices ["ndc" 2])
-        world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
-    (use-program program)
-    (uniform-float program "lod_offset" (lod-offset render-config data render-vars))
-    (uniform-matrix4 program "inverse_projection" (inverse (:sfsim.render/projection render-vars)))
-    (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-    (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
-    (uniform-matrix4 program "world_to_camera" world-to-camera)
-    (setup-dynamic-plume-uniforms program render-vars model-vars)
-    (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
-    (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
-    (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
-    (setup-shadow-matrices program shadow-vars)
-    (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
-                   2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.clouds/worley data) 4 (:sfsim.clouds/perlin-worley data)
-                   5 (:sfsim.clouds/cloud-cover data) 6 (:sfsim.clouds/bluenoise data)})
-    (use-textures (zipmap (drop 7 (range)) (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
-    (render-quads vao)
-    (destroy-vertex-array-object vao)))
-
-
-(defn destroy-cloud-atmosphere-renderer
-  "Destroy cloud rendering OpenGL program (not tested)"
-  {:malli/schema [:=> [:cat cloud-atmosphere-renderer] :nil]}
-  [{:sfsim.clouds/keys [program]}]
-  (destroy-program program))
 
 
 (defn make-planet-program

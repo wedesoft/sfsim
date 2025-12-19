@@ -40,7 +40,7 @@
       - [-] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
         - [X] change all integration tests to use new cloud shaders
         - [X] change main program to use new cloud shader
-        - [ ] delete atmosphere cloud and planet cloud shader
+        - [X] delete atmosphere cloud and planet cloud shader
         - [ ] switch model clouds to overlay, try out plume graphics
         - [ ] implement depth-aware upsampling for model, planet, and atmosphere (use z-far for atmosphere?)
         - [ ] maybe compute camera vectors instead of storing them (i.e. just store distance)
