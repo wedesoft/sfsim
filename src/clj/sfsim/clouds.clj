@@ -20,7 +20,7 @@
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
                           with-underlay-blending setup-shadow-matrices) :as render]
     [sfsim.shaders :as shaders]
-    [sfsim.plume :refer (cloud-plume-segment plume-outer plume-point) :as plume]
+    [sfsim.plume :refer (plume-outer plume-point) :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
                            texture-2d make-empty-texture-2d make-empty-float-texture-2d make-empty-depth-stencil-texture-2d)]
@@ -361,14 +361,6 @@
    (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" "shadow_size"
                                         [["sampler3D" "layers"] ["float" "depth"]])
    shaders/convert-2d-index shaders/convert-3d-index])
-
-
-(defn fragment-atmosphere-clouds
-  "Shader for rendering clouds above horizon"
-  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
-  [num-steps perlin-octaves cloud-octaves]
-  [(cloud-outer num-steps perlin-octaves cloud-octaves) (cloud-point num-steps perlin-octaves cloud-octaves)
-   (cloud-plume-segment false false) (slurp "resources/shaders/clouds/fragment-atmosphere.glsl")])
 
 
 (defn lod-offset

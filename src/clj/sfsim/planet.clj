@@ -14,8 +14,8 @@
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere atmosphere-luts)]
     [sfsim.clouds :refer (cloud-point lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
-                          fragment-atmosphere-clouds cloud-data overall-shading overall-shading-parameters)]
-    [sfsim.plume :refer (cloud-plume-segment setup-static-plume-uniforms setup-dynamic-plume-uniforms model-vars)]
+                          cloud-data overall-shading overall-shading-parameters)]
+    [sfsim.plume :refer (model-vars)]
     [sfsim.cubemap :refer (cube-map-corners)]
     [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box shadow-patch)]
     [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
@@ -106,14 +106,6 @@
 (def fragment-planet-shadow
   "Fragment shader to render planetary shadow map"
   (slurp "resources/shaders/planet/fragment-shadow.glsl"))
-
-
-(defn fragment-planet-clouds
-  "Fragment shader to render clouds below horizon"
-  {:malli/schema [:=> [:cat N [:vector :double] [:vector :double]] render/shaders]}
-  [num-steps perlin-octaves cloud-octaves]
-  [(cloud-point num-steps perlin-octaves cloud-octaves) (cloud-plume-segment false true)
-   (slurp "resources/shaders/planet/fragment-clouds.glsl")])
 
 
 (def scene-shadow (m/schema [:map [:sfsim.model/matrices shadow-patch] [:sfsim.model/shadows texture-2d]]))

@@ -41,7 +41,8 @@
         - [X] change all integration tests to use new cloud shaders
         - [X] change main program to use new cloud shader
         - [X] delete atmosphere cloud and planet cloud shader
-        - [ ] switch model clouds to overlay, try out plume graphics
+        - [X] switch model clouds to overlay, try out plume graphics
+        - [X] remove cloud-plume-cloud-outer
         - [ ] implement depth-aware upsampling for model, planet, and atmosphere (use z-far for atmosphere?)
         - [ ] maybe compute camera vectors instead of storing them (i.e. just store distance)
         - [ ] render plume box instead of fullscreen (provide different vertex and index buffer for plume rendering, use different vertex shader)

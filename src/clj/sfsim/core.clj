@@ -866,7 +866,7 @@
                                (clear (vec3 0 1 0) 1.0 0)
                                ;; Render model
                                (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x1 0x1
-                                 (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
+                                 (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow] clouds
                                                       [moved-scene]))
                                (clear)  ; Only clear depth buffer
                                ;; Render planet with cloud overlay
@@ -878,7 +878,7 @@
                              (do
                                (clear (vec3 0 1 0) 1.0)
                                ;; Render model
-                               (model/render-scenes scene-renderer planet-render-vars model-vars shadow-vars [object-shadow]
+                               (model/render-scenes scene-renderer planet-render-vars model-vars shadow-vars [object-shadow] clouds
                                                     [moved-scene])
                                ;; Render planet with cloud overlay
                                (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
