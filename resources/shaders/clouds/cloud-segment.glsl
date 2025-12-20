@@ -22,12 +22,12 @@ vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment)
 <% ) %>
 {
   vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+  vec3 start = origin + atmosphere_intersection.x * direction;
 <% (if outer %>
   atmosphere_intersection = clip_interval(atmosphere_intersection, vec2(skip, atmosphere_intersection.y));
 <% %>
   atmosphere_intersection = clip_interval(atmosphere_intersection, limit_interval(segment, atmosphere_intersection.x + depth));
 <% ) %>
-  vec3 start = origin + atmosphere_intersection.x * direction;
   vec4 cloud_scatter = vec4(0, 0, 0, 1);
   if (atmosphere_intersection.y > 0) {
     vec4 intersection = ray_shell(vec3(0, 0, 0), radius + cloud_bottom, radius + cloud_top, origin, direction);

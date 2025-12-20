@@ -154,127 +154,6 @@ void main()
           1.0       1.0       0.5  0.15  0.0
           0.25      1.0       0.0  0.0   0.0)
 
-(def cloud-plume-segment-probe
-  (template/fn [x plume model-point planet-point attenuation]
-"#version 450 core
-uniform vec3 origin;
-uniform float radius;
-out vec3 fragColor;
-vec4 cloud_plume_cloud(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
-vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
-vec4 cloud_plume_cloud_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
-{
-  float start = max(0.0, -3.0 - origin.x);
-  float end = 3.0 - origin.x;
-  return vec2(start, end - start);
-}
-vec4 cloud_outer(vec3 origin, vec3 direction, float skip)
-{
-  vec3 point = origin + direction * skip;
-  vec2 segment = ray_sphere(vec3(0, 0, 0), radius, point, direction);
-  if (segment.t > 0) {
-    float transmittance = pow(0.5, segment.t);
-    return vec4(1.0 - transmittance, 0.0, 0.0, 1.0 - transmittance);
-  } else
-    return vec4(0, 0, 0, 0);
-}
-vec3 transmittance_track(vec3 p, vec3 q)
-{
-  float dist = distance(p, q);
-  return vec3(pow(0.5, <%= attenuation %> * dist));
-}
-vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment)
-{
-  vec2 atmosphere = ray_sphere(vec3(0, 0, 0), radius, origin, direction);
-  if (atmosphere.s > segment.s) {
-    segment.t += segment.s - atmosphere.s;
-    segment.s = atmosphere.s;
-  };
-  if (atmosphere.s + atmosphere.t < segment.s + segment.t) {
-    segment.t = atmosphere.s + atmosphere.t - segment.s;
-  };
-  if (segment.t > 0) {
-    vec3 multiplier = vec3(1, 1, 1);
-    if (atmosphere.s < segment.s)
-      multiplier = transmittance_track(origin + direction * atmosphere.s, origin + direction * segment.s);
-    float transmittance = pow(0.5, segment.t);
-    return vec4(vec3(1.0 - transmittance, 0.0, 0.0) * multiplier, 1.0 - transmittance);
-  } else
-    return vec4(0, 0, 0, 0);
-}
-vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
-{
-  float plume = object_origin.y;
-  return vec4(0.0, plume, 0.0, plume);
-}
-vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
-{
-  float plume = object_origin.y;
-  return vec4(0.0, plume, 0.0, plume);
-}
-void main()
-{
-  vec3 point = vec3(<%= x %>, 0.0, 0.0);
-  vec3 direction = vec3(1.0, 0.0, 0.0);
-  vec3 object_origin = vec3(0.0, <%= plume %>, 0.0);
-  float dist = distance(point, origin);
-<% (if (and (not planet-point) (not model-point)) %>
-  vec4 result = cloud_plume_cloud(origin, direction, object_origin, direction);
-<% ) %>
-<% (if (and planet-point (not model-point)) %>
-  vec4 result = cloud_plume_cloud_point(origin, direction, object_origin, direction, dist);
-<% ) %>
-<% (if model-point %>
-  vec4 result = cloud_plume_point(origin, direction, object_origin, direction, dist);
-<% ) %>
-  fragColor = result.rga;
-}"))
-
-(defn cloud-plume-segment-test
-  [model-point planet-point]
-  (shader-test (fn [program origin-x object-distance]
-                   (uniform-float program "radius" 2.0)
-                   (uniform-float program "max_height" 1.0)
-                   (uniform-float program "opacity_cutoff" 0.0)
-                   (uniform-float program "object_distance" object-distance)
-                   (uniform-vector3 program "light_direction" (vec3 0 1 0))
-                   (uniform-vector3 program "origin" (vec3 origin-x 0.0 0.0)))
-               cloud-plume-segment-probe (last (cloud-plume-segment model-point planet-point))))
-
-(tabular "Shader function to determine cloud and rocket plume contribution"
-         (fact ((cloud-plume-segment-test ?model ?planet) [?ox ?d] [?x ?plume ?model ?planet ?attenuation])
-               => (roughly-vector (vec3 ?r ?g ?a) 1e-3))
-         ?ox  ?x  ?d  ?plume ?model ?planet ?attenuation ?r    ?g    ?a
-         4.0  0.0 0.0 0.0    false  false   0.0          0.0   0.0   0.0
-         1.0  0.0 2.0 0.0    false  false   0.0          0.75  0.0   0.75
-         4.0  0.0 0.0 1.0    false  false   0.0          0.0   1.0   1.0
-         2.0  0.0 1.0 1.0    false  false   0.0          0.5   0.5   1.0
-         1.0  0.0 1.0 0.5    false  false   0.0          0.625 0.25  0.875
-         2.0  0.0 2.0 0.0    false  false   0.0          0.5   0.0   0.5
-         4.0  0.0 2.0 0.0    false  false   0.0          0.0   0.0   0.0
-         2.0  0.0 2.0 0.0    false  false   0.0          0.5   0.0   0.5
-         2.0  0.0 0.0 0.0    false  false   0.0          0.5   0.0   0.5
-         2.0  0.0 1.0 0.0    false  false   0.0          0.5   0.0   0.5
-         0.0  0.0 0.0 0.0    true   false   0.0          0.0   0.0   0.0
-        -1.0  1.0 2.0 0.0    true   false   0.0          0.75  0.0   0.75
-        -6.0 -5.0 1.0 1.0    true   false   0.0          0.0   1.0   1.0
-        -1.0  0.0 1.0 1.0    true   false   0.0          0.5   0.5   1.0
-        -1.0  1.0 1.0 0.5    false  true    0.0          0.625 0.25  0.875
-        -4.0 -2.0 2.0 0.0    true   false   0.0          0.5   0.0   0.5
-        -6.0 -4.0 2.0 0.0    true   false   0.0          0.0   0.0   0.0
-         2.0  4.0 2.0 0.0    true   false   0.0          0.5   0.0   0.5
-        -4.0 -2.0 0.0 0.0    false  true    0.0          0.5   0.0   0.5
-         2.0  4.0 0.0 0.0    false  true    0.0          0.5   0.0   0.5
-        -1.0  1.0 1.0 0.0    true   false   0.0          0.5   0.0   0.5
-        -6.0 -5.0 1.0 1.0    false  true    0.0          0.0   1.0   1.0
-        -6.0 -5.0 1.0 1.0    true   false   0.0          0.0   1.0   1.0
-        -1.0  1.0 1.0 1.0    false  false   1.0          0.5   0.5   1.0
-        -6.0 -5.0 1.0 1.0    false  false   1.0          0.0   1.0   1.0
-        -4.0 -2.0 2.0 1.0    true   false   1.0          0.5   0.5   1.0
-         2.0  4.0 2.0 1.0    true   false   1.0          0.5   0.5   1.0
-        -1.0  1.0 3.0 0.5    false  true    1.0          0.75  0.125 0.875
-         5.0  7.0 2.0 0.5    false  false   1.0          0.0   0.5   0.5)
 
 (def plume-segment-probe
   (template/fn [outer origin-x x size strength]
@@ -307,6 +186,7 @@ void main()
 <% ) %>
   fragColor = plume.rga;
 }"))
+
 
 (defn plume-segment-test
   [outer]

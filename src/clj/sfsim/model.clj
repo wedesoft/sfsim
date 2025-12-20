@@ -13,10 +13,10 @@
     [fastmath.vector :refer (vec3 vec4 mult add)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
-                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry)]
+                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay)]
     [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
                           overall-shading overall-shading-parameters render-cloud-geometry)]
-    [sfsim.plume :refer (cloud-plume-segment sample-plume-point setup-static-plume-uniforms model-data setup-dynamic-plume-uniforms
+    [sfsim.plume :refer (setup-static-plume-uniforms model-data setup-dynamic-plume-uniforms
                          model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
@@ -567,8 +567,7 @@
   [textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves]
   [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
    (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
-   (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function
-   (cloud-point num-steps perlin-octaves cloud-octaves) (cloud-plume-segment true false) sample-plume-point
+   (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function cloud-overlay
    (template/eval (slurp "resources/shaders/model/fragment.glsl")
                   {:textured textured :bump bump :num-scene-shadows num-scene-shadows})])
 
@@ -608,15 +607,15 @@
         shadow-data     (:sfsim.opacity/data data)]
     (use-program program)
     (setup-atmosphere-uniforms program atmosphere-luts 0 true)
-    (setup-cloud-render-uniforms program cloud-data 4)
-    (setup-cloud-sampling-uniforms program cloud-data 7)
+    (uniform-sampler program "clouds" 4)
     (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
     (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
     (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
     (doseq [i (range num-scene-shadows)]
-      (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ ^long i 8)))
-    (setup-shadow-and-opacity-maps program shadow-data (+ 8 ^long num-scene-shadows))
+      (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ ^long i 5)))
+    (setup-shadow-and-opacity-maps program shadow-data (+ 5 ^long num-scene-shadows))
     (setup-scene-samplers program texture-offset num-scene-shadows textured bump)
+    (uniform-int program "cloud_subsampling" (:sfsim.render/cloud-subsampling render-config))
     (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
@@ -635,7 +634,6 @@
         program               (make-program :sfsim.render/vertex [(vertex-scene textured bump num-scene-shadows)]
                                             :sfsim.render/fragment fragment-shader)]
     (setup-scene-static-uniforms program texture-offset num-scene-shadows textured bump data)
-    (setup-static-plume-uniforms program model-data)
     program))
 
 
@@ -770,9 +768,9 @@
 
 (defn render-scenes
   "Render a list of scenes"
-  {:malli/schema [:=> [:cat scene-renderer render-vars model-vars shadow-vars [:vector scene-shadow] [:vector [:map [::root node]]]]
+  {:malli/schema [:=> [:cat scene-renderer render-vars model-vars shadow-vars [:vector scene-shadow] texture-2d [:vector [:map [::root node]]]]
                       :nil]}
-  [scene-renderer render-vars model-vars shadow-vars scene-shadows scenes]
+  [scene-renderer render-vars model-vars shadow-vars scene-shadows clouds scenes]
   (let [render-config      (:sfsim.render/config scene-renderer)
         cloud-data         (:sfsim.clouds/data scene-renderer)
         atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)
@@ -790,14 +788,15 @@
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
       (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
+      (uniform-int program "overlay_width" (:sfsim.render/overlay-width render-vars))
+      (uniform-int program "overlay_height" (:sfsim.render/overlay-height render-vars))
       (setup-shadow-matrices program shadow-vars))
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                   4 (:sfsim.clouds/worley cloud-data) 5 (:sfsim.clouds/perlin-worley cloud-data)
-                   6 (:sfsim.clouds/cloud-cover cloud-data) 7 (:sfsim.clouds/bluenoise cloud-data)})
+                   4 clouds})
     (doseq [i (range num-scene-shadows)]
-      (use-textures {(+ ^long i 8) (::shadows (nth scene-shadows i))}))
-    (use-textures (zipmap (drop (+ 8 num-scene-shadows) (range))
+      (use-textures {(+ ^long i 5) (::shadows (nth scene-shadows i))}))
+    (use-textures (zipmap (drop (+ 5 num-scene-shadows) (range))
                           (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
     (doseq [scene scenes]
       (render-scene (comp (::programs scene-renderer) material-and-shadow-type)

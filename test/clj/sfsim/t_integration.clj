@@ -153,7 +153,7 @@
                      tex                       (texture-render-color-depth width height true
                                                                            (clear (vec3 0 1 0) 0.0)
                                                                            (model/render-scenes scene-renderer render-vars model-vars
-                                                                                                shadow-vars [] [object])
+                                                                                                shadow-vars [] clouds [object])
                                                                            (planet/render-planet planet-renderer render-vars shadow-vars [] clouds tree)
                                                                            (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
                  (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.77)
@@ -229,10 +229,10 @@
                 tex                       (texture-render-color-depth width height true
                                                                       (clear (vec3 0 1 0) 0.0)
                                                                       (model/render-scenes scene-renderer render-vars model-vars
-                                                                                           shadow-vars [object-shadow] [object])
+                                                                                           shadow-vars [object-shadow] clouds [object])
                                                                       (planet/render-planet planet-renderer render-vars shadow-vars [object-shadow] clouds tree)
                                                                       (atmosphere/render-atmosphere atmosphere-renderer render-vars clouds))]
-            (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.02)
+            (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.08)
             (destroy-texture tex)
             (clouds/destroy-cloud-geometry geometry)
             (destroy-texture clouds)
