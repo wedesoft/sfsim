@@ -1228,7 +1228,7 @@ void main()
          15   -1  0     "r"       13.0
          11    1  3     "g"        0.0
          11    1  3     "a"        0.0
-         15   -1  3     "r"       12.0)
+         15   -1  3     "r"       13.0)
 
 
 (def opacity-cascade-mocks
