@@ -1,9 +1,12 @@
 #version 450 core
 
+#define MAX_EXPONENT 20.0
+
 uniform sampler2D clouds;
 uniform sampler2D dist;
 uniform int cloud_subsampling;
-uniform float cloud_step;
+uniform float depth_sigma;
+uniform float min_depth_exponent;
 uniform int overlay_width;
 uniform int overlay_height;
 
@@ -26,16 +29,15 @@ vec4 cloud_overlay(float depth)
   float dist01 = texture(dist, texcoord01).r;
   float dist10 = texture(dist, texcoord10).r;
   float dist11 = texture(dist, texcoord11).r;
-  float exponent00 = - (depth - dist00) * (depth - dist00) / (2 * cloud_step * cloud_step);
-  float exponent01 = - (depth - dist01) * (depth - dist01) / (2 * cloud_step * cloud_step);
-  float exponent10 = - (depth - dist10) * (depth - dist10) / (2 * cloud_step * cloud_step);
-  float exponent11 = - (depth - dist11) * (depth - dist11) / (2 * cloud_step * cloud_step);
-  // Need to subtract the minimum exponent to prevent numerical underflow.
-  float min_exponent = min(exponent00, min(exponent01, min(exponent10, exponent11)));
-  float weight00 = (1.0 - frac.x) * (1.0 - frac.y) * exp(exponent00 - min_exponent);
-  float weight01 =         frac.x * (1.0 - frac.y) * exp(exponent01 - min_exponent);
-  float weight10 = (1.0 - frac.x) *         frac.y * exp(exponent10 - min_exponent);
-  float weight11 =         frac.x *         frac.y * exp(exponent11 - min_exponent);
+  float exponent00 = - (depth - dist00) * (depth - dist00) / (2 * depth_sigma * depth_sigma);
+  float exponent01 = - (depth - dist01) * (depth - dist01) / (2 * depth_sigma * depth_sigma);
+  float exponent10 = - (depth - dist10) * (depth - dist10) / (2 * depth_sigma * depth_sigma);
+  float exponent11 = - (depth - dist11) * (depth - dist11) / (2 * depth_sigma * depth_sigma);
+  // Need to guard against numerical underflows.
+  float weight00 = (1.0 - frac.x) * (1.0 - frac.y) * exp(clamp(exponent00, min_depth_exponent, MAX_EXPONENT));
+  float weight01 =         frac.x * (1.0 - frac.y) * exp(clamp(exponent01, min_depth_exponent, MAX_EXPONENT));
+  float weight10 = (1.0 - frac.x) *         frac.y * exp(clamp(exponent10, min_depth_exponent, MAX_EXPONENT));
+  float weight11 =         frac.x *         frac.y * exp(clamp(exponent11, min_depth_exponent, MAX_EXPONENT));
   return (value00 * weight00 + value01 * weight01 + value10 * weight10 + value11 * weight11) /
     (weight00 + weight01 + weight10 + weight11);
 }

@@ -43,6 +43,8 @@
                                     :powder-decay 12.0
                                     :anisotropic 0.25
                                     :cloud-step 250.0
+                                    :depth-sigma 1.0
+                                    :min-depth-exponent -3.0
                                     :opacity-cutoff 0.01}
 
  :sfsim.shadow-config #:sfsim.opacity{:num-opacity-layers 7
