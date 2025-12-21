@@ -955,6 +955,8 @@ void main()
                                  (uniform-int program "cloud_subsampling" 2)
                                  (uniform-int program "overlay_width" 2)
                                  (uniform-int program "overlay_height" 2)
+                                 (uniform-float program "cloud_step" ?step)
+                                 (uniform-float program "depth" ?depth)
                                  (use-textures {0 clouds 1 dist})
                                  (clear (vec3 0 0 0))
                                  (render-quads vao)
@@ -963,14 +965,21 @@ void main()
                                  (destroy-texture dist)
                                  (destroy-texture clouds)))
              ?y ?x) => (vec3 ?result ?result ?result))
-         ?cloud00 ?cloud01 ?cloud10 ?cloud11 ?dist00 ?dist01 ?dist10 ?dist11 ?x ?y ?result
-           0        0        0        0        1       1       1       1     1  1   0
-         255      255      255      255        1       1       1       1     1  1 255
-           0      128        0      128        1       1       1       1     1  1  32
-           0      128        0      128        1       1       1       1     2  1  96
-           0        0      128      128        1       1       1       1     1  1  32
-           0        0      128      128        1       1       1       1     1  2  96
-         )
+         ?cloud00 ?cloud01 ?cloud10 ?cloud11 ?dist00 ?dist01 ?dist10 ?dist11 ?step ?depth ?x ?y ?result
+           0        0        0        0        1       1       1       1      1.0    1.0  1  1    0
+         255      255      255      255        1       1       1       1      1.0    1.0  1  1  255
+           0      128        0      128        1       1       1       1      1.0    1.0  1  1   32
+           0      128        0      128        1       1       1       1      1.0    1.0  2  1   96
+           0        0      128      128        1       1       1       1      1.0    1.0  1  1   32
+           0        0      128      128        1       1       1       1      1.0    1.0  1  2   96
+           0      128        0      128      100     200     100     200     10.0  100.0  1  1    0
+           0      128        0      128      100     200     100     200     10.0  150.0  1  1   32
+           0      128        0      128      100     200     100     200     10.0  200.0  1  1  128
+           0        0      128      128      100     100     200     200     10.0  100.0  1  1    0
+           0        0      128      128      100     100     200     200     10.0  150.0  1  1   32
+           0        0      128      128      100     100     200     200     10.0  200.0  1  1  128
+           0      128        0      128      100     200     100     200      1.0  150.0  1  1   32
+           0        0      128      128      100     100     200     200      1.0  150.0  1  1   32)
 
 
 (def attenuation-point-probe
