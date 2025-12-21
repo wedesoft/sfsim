@@ -608,14 +608,17 @@
     (use-program program)
     (setup-atmosphere-uniforms program atmosphere-luts 0 true)
     (uniform-sampler program "clouds" 4)
+    (uniform-sampler program "dist" 5)
     (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
     (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
     (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
     (doseq [i (range num-scene-shadows)]
-      (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ ^long i 5)))
-    (setup-shadow-and-opacity-maps program shadow-data (+ 5 ^long num-scene-shadows))
+      (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ ^long i 6)))
+    (setup-shadow-and-opacity-maps program shadow-data (+ 6 ^long num-scene-shadows))
     (setup-scene-samplers program texture-offset num-scene-shadows textured bump)
     (uniform-int program "cloud_subsampling" (:sfsim.render/cloud-subsampling render-config))
+    (uniform-float program "depth_sigma" (:sfsim.clouds/depth-sigma cloud-data))
+    (uniform-float program "min_depth_exponent" (:sfsim.clouds/min-depth-exponent cloud-data))
     (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
@@ -647,7 +650,7 @@
         cloud-data           (:sfsim.clouds/data data)
         render-config        (:sfsim.render/config data)
         atmosphere-luts      (:sfsim.atmosphere/luts data)
-        texture-offset       (+ 8 (* 2 ^long num-steps))
+        texture-offset       (+ 6 (* 2 ^long num-steps))
         variations           (for [textured [false true] bump [false true] num-scene-shadows scene-shadow-counts]
                                [textured bump num-scene-shadows])
         programs             (mapv #(make-scene-program (first %) (second %) texture-offset (third %) data) variations)]
@@ -768,14 +771,16 @@
 
 (defn render-scenes
   "Render a list of scenes"
-  {:malli/schema [:=> [:cat scene-renderer render-vars model-vars shadow-vars [:vector scene-shadow] texture-2d [:vector [:map [::root node]]]]
+  {:malli/schema [:=> [:cat scene-renderer render-vars model-vars shadow-vars [:vector scene-shadow]
+                            [:map [:sfsim.clouds/distance texture-2d]] texture-2d [:vector [:map [::root node]]]]
                       :nil]}
-  [scene-renderer render-vars model-vars shadow-vars scene-shadows clouds scenes]
+  [scene-renderer render-vars model-vars shadow-vars scene-shadows geometry clouds scenes]
   (let [render-config      (:sfsim.render/config scene-renderer)
         cloud-data         (:sfsim.clouds/data scene-renderer)
         atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)
         camera-to-world    (:sfsim.render/camera-to-world render-vars)
         texture-offset     (::texture-offset scene-renderer)
+        dist               (:sfsim.clouds/distance geometry)
         num-scene-shadows  (count scene-shadows)
         world-to-camera    (inverse camera-to-world)]
     (doseq [program (vals (::programs scene-renderer))]
@@ -793,10 +798,10 @@
       (setup-shadow-matrices program shadow-vars))
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                   4 clouds})
+                   4 clouds 5 dist})
     (doseq [i (range num-scene-shadows)]
-      (use-textures {(+ ^long i 5) (::shadows (nth scene-shadows i))}))
-    (use-textures (zipmap (drop (+ 5 num-scene-shadows) (range))
+      (use-textures {(+ ^long i 6) (::shadows (nth scene-shadows i))}))
+    (use-textures (zipmap (drop (+ 6 num-scene-shadows) (range))
                           (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
     (doseq [scene scenes]
       (render-scene (comp (::programs scene-renderer) material-and-shadow-type)

@@ -226,16 +226,19 @@
     (uniform-sampler program "normals"   2)
     (uniform-sampler program "water"     3)
     (uniform-sampler program "clouds"    8)
-    (uniform-sampler program "worley"    9)
+    (uniform-sampler program "dist"      9)
+    (uniform-sampler program "worley"   10)
     (setup-atmosphere-uniforms program atmosphere-luts 4 true)
-    (setup-shadow-and-opacity-maps program shadow-data 10)
+    (setup-shadow-and-opacity-maps program shadow-data 11)
     (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
     (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
     (doseq [^long i (range num-scene-shadows)]
-      (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 10 (* 2 ^long num-steps))))
+      (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 11 (* 2 ^long num-steps))))
     (uniform-int program "high_detail" (dec ^long tilesize))
     (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     (uniform-int program "cloud_subsampling" (:sfsim.render/cloud-subsampling render-config))
+    (uniform-float program "depth_sigma" (:sfsim.clouds/depth-sigma (:sfsim.clouds/data data)))
+    (uniform-float program "min_depth_exponent" (:sfsim.clouds/min-depth-exponent (:sfsim.clouds/data data)))
     (uniform-float program "dawn_start" (::dawn-start config))
     (uniform-float program "dawn_end" (::dawn-end config))
     (uniform-float program "specular" (:sfsim.render/specular render-config))
@@ -275,12 +278,15 @@
 
 (defn render-planet
   "Render planet"
-  {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars [:vector scene-shadow] texture-2d [:maybe :map]] :nil]}
-  [{::keys [programs worley] :as other} render-vars shadow-vars scene-shadows clouds tree]
+  {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars [:vector scene-shadow] [:map [:sfsim.clouds/distance texture-2d]]
+                            texture-2d [:maybe :map]]
+                      :nil]}
+  [{::keys [programs worley] :as other} render-vars shadow-vars scene-shadows geometry clouds tree]
   (let [atmosphere-luts   (:sfsim.atmosphere/luts other)
         world-to-camera   (inverse (:sfsim.render/camera-to-world render-vars))
         num-steps         (count (:sfsim.opacity/shadows shadow-vars))
         num-scene-shadows (count scene-shadows)
+        dist              (:sfsim.clouds/distance geometry)
         program           (programs num-scene-shadows)]
     (use-program program)
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
@@ -295,11 +301,11 @@
     (setup-shadow-matrices program shadow-vars)
     (use-textures {4 (:sfsim.atmosphere/transmittance atmosphere-luts) 5 (:sfsim.atmosphere/scatter atmosphere-luts)
                    6 (:sfsim.atmosphere/mie atmosphere-luts) 7 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                   8 clouds 9 worley})
-    (use-textures (zipmap (drop 10 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
+                   8 clouds 9 dist 10 worley})
+    (use-textures (zipmap (drop 11 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
                                                    (:sfsim.opacity/opacities shadow-vars))))
     (doseq [^long i (range num-scene-shadows)]
-      (use-textures {(+ i 10 (* 2 num-steps)) (:sfsim.model/shadows (nth scene-shadows i))}))
+      (use-textures {(+ i 11 (* 2 num-steps)) (:sfsim.model/shadows (nth scene-shadows i))}))
     (render-tree program tree world-to-camera scene-shadows [::surf-tex ::day-night-tex ::normal-tex ::water-tex])))
 
 

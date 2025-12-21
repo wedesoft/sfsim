@@ -955,6 +955,9 @@ void main()
                                  (uniform-int program "cloud_subsampling" 2)
                                  (uniform-int program "overlay_width" 2)
                                  (uniform-int program "overlay_height" 2)
+                                 (uniform-float program "depth_sigma" ?sigma)
+                                 (uniform-float program "min_depth_exponent" -8.0)
+                                 (uniform-float program "depth" ?depth)
                                  (use-textures {0 clouds 1 dist})
                                  (clear (vec3 0 0 0))
                                  (render-quads vao)
@@ -963,14 +966,21 @@ void main()
                                  (destroy-texture dist)
                                  (destroy-texture clouds)))
              ?y ?x) => (vec3 ?result ?result ?result))
-         ?cloud00 ?cloud01 ?cloud10 ?cloud11 ?dist00 ?dist01 ?dist10 ?dist11 ?x ?y ?result
-           0        0        0        0        1       1       1       1     1  1   0
-         255      255      255      255        1       1       1       1     1  1 255
-           0      128        0      128        1       1       1       1     1  1  32
-           0      128        0      128        1       1       1       1     2  1  96
-           0        0      128      128        1       1       1       1     1  1  32
-           0        0      128      128        1       1       1       1     1  2  96
-         )
+         ?cloud00 ?cloud01 ?cloud10 ?cloud11 ?dist00 ?dist01 ?dist10 ?dist11 ?sigma ?depth ?x ?y ?result
+           0        0        0        0        1       1       1       1      1.0     1.0  1  1    0
+         255      255      255      255        1       1       1       1      1.0     1.0  1  1  255
+           0      128        0      128        1       1       1       1      1.0     1.0  1  1   32
+           0      128        0      128        1       1       1       1      1.0     1.0  2  1   96
+           0        0      128      128        1       1       1       1      1.0     1.0  1  1   32
+           0        0      128      128        1       1       1       1      1.0     1.0  1  2   96
+           0      128        0      128      100     200     100     200     10.0   100.0  1  1    0
+           0      128        0      128      100     200     100     200     10.0   150.0  1  1   32
+           0      128        0      128      100     200     100     200     10.0   200.0  1  1  128
+           0        0      128      128      100     100     200     200     10.0   100.0  1  1    0
+           0        0      128      128      100     100     200     200     10.0   150.0  1  1   32
+           0        0      128      128      100     100     200     200     10.0   200.0  1  1  128
+           0      128        0      128      100     200     100     200      1.0   150.0  1  1   32
+           0        0      128      128      100     100     200     200      1.0   150.0  1  1   32)
 
 
 (def attenuation-point-probe
@@ -1053,12 +1063,13 @@ void main()
 (facts "Render direction vectors for atmospheric background"
        (with-invisible-window
          (let [renderer         (make-atmosphere-geometry-renderer)
-               render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
+               render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                               :z-far 10.0}
                geometry         (clouds/render-cloud-geometry 160 120 (render-atmosphere-geometry renderer render-vars))]
            (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
            => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
            (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
-           => 0.0
+           => 10.0
            (clouds/destroy-cloud-geometry geometry)
            (destroy-atmosphere-geometry-renderer renderer))))
 

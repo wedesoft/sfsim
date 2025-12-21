@@ -44,20 +44,13 @@
         - [X] switch model clouds to overlay, try out plume graphics
         - [X] remove cloud-plume-cloud-outer
         - [ ] implement depth-aware upsampling for model, planet, and atmosphere (use z-far for atmosphere?)
-        - [ ] maybe compute camera vectors instead of storing them (i.e. just store distance)
         - [ ] render plume box instead of fullscreen (provide different vertex and index buffer for plume rendering, use different vertex shader)
       - [ ] render RCS thrusters
+        - [ ] store RCS coordinate systems in Blender
         - [ ] use binary space partitioning tree
-      - [ ] copy alpha values to input texture for up-to-date cut off
-    - [ ] disable color buffer when rendering frame buffer and it is not required
-    - [ ] make camera_point optional in planet shaders
-    - [ ] render opaque objects (scenes, planet, atmosphere) with atmosphere in front,
-          render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
-      - [ ] render model
-      - [ ] render planet
-      - [ ] render atmosphere
+    - [ ] disable color buffer when rendering frame buffer and it is not required?
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
-  - [ ] use correct cutoff for all rendered layers when rendering front to back
+  - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
   - [ ] implement RCS thrusters
@@ -78,6 +71,7 @@
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
   - [ ] moon landing physics (hover thrusters), hover thruster locations
   - [ ] docking physics
+  - [ ] reentry flame
 * TODO [#B] add launchpad and runway                                   :scenery:
   - Note taken on [2025-08-14 Do 12:58] \\
     [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,

@@ -1,8 +1,12 @@
 #version 450 core
 
+#define MAX_EXPONENT 20.0
+
 uniform sampler2D clouds;
 uniform sampler2D dist;
 uniform int cloud_subsampling;
+uniform float depth_sigma;
+uniform float min_depth_exponent;
 uniform int overlay_width;
 uniform int overlay_height;
 
@@ -12,10 +16,28 @@ vec4 cloud_overlay(float depth)
 {
   vec2 point = gl_FragCoord.xy / cloud_subsampling;
   vec2 texcoord = floor(point - 0.5) + 0.5;
-  vec2 fractional = fract(point - 0.5);
-  vec4 value00 = texture(clouds, (texcoord + vector01.xx) / vec2(overlay_width, overlay_height));
-  vec4 value01 = texture(clouds, (texcoord + vector01.yx) / vec2(overlay_width, overlay_height));
-  vec4 value10 = texture(clouds, (texcoord + vector01.xy) / vec2(overlay_width, overlay_height));
-  vec4 value11 = texture(clouds, (texcoord + vector01.yy) / vec2(overlay_width, overlay_height));
-  return mix(mix(value00, value01, fractional.x), mix(value10, value11, fractional.x), fractional.y);
+  vec2 frac = fract(point - 0.5);
+  vec2 texcoord00 = (texcoord + vector01.xx) / vec2(overlay_width, overlay_height);
+  vec2 texcoord01 = (texcoord + vector01.yx) / vec2(overlay_width, overlay_height);
+  vec2 texcoord10 = (texcoord + vector01.xy) / vec2(overlay_width, overlay_height);
+  vec2 texcoord11 = (texcoord + vector01.yy) / vec2(overlay_width, overlay_height);
+  vec4 value00 = texture(clouds, texcoord00);
+  vec4 value01 = texture(clouds, texcoord01);
+  vec4 value10 = texture(clouds, texcoord10);
+  vec4 value11 = texture(clouds, texcoord11);
+  float dist00 = texture(dist, texcoord00).r;
+  float dist01 = texture(dist, texcoord01).r;
+  float dist10 = texture(dist, texcoord10).r;
+  float dist11 = texture(dist, texcoord11).r;
+  float exponent00 = - (depth - dist00) * (depth - dist00) / (2 * depth_sigma * depth_sigma);
+  float exponent01 = - (depth - dist01) * (depth - dist01) / (2 * depth_sigma * depth_sigma);
+  float exponent10 = - (depth - dist10) * (depth - dist10) / (2 * depth_sigma * depth_sigma);
+  float exponent11 = - (depth - dist11) * (depth - dist11) / (2 * depth_sigma * depth_sigma);
+  // Need to guard against numerical underflows.
+  float weight00 = (1.0 - frac.x) * (1.0 - frac.y) * exp(clamp(exponent00, min_depth_exponent, MAX_EXPONENT));
+  float weight01 =         frac.x * (1.0 - frac.y) * exp(clamp(exponent01, min_depth_exponent, MAX_EXPONENT));
+  float weight10 = (1.0 - frac.x) *         frac.y * exp(clamp(exponent10, min_depth_exponent, MAX_EXPONENT));
+  float weight11 =         frac.x *         frac.y * exp(clamp(exponent11, min_depth_exponent, MAX_EXPONENT));
+  return (value00 * weight00 + value01 * weight01 + value10 * weight10 + value11 * weight11) /
+    (weight00 + weight01 + weight10 + weight11);
 }

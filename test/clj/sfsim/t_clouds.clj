@@ -1508,6 +1508,7 @@ void main()
                    camera-to-world     (transformation-matrix (eye 3) (vec3 0 0 0))
                    model-render-vars   #:sfsim.render{:sfsim.render/camera-to-world camera-to-world
                                                       :sfsim.render/z-near 0.1
+                                                      :sfsim.render/z-far 10.0
                                                       :sfsim.render/overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                       :sfsim.render/overlay-width 160
                                                       :sfsim.render/overlay-height 120}
@@ -1523,12 +1524,12 @@ void main()
                (destroy-scene opengl-scene)
                (destroy-joined-geometry-renderer renderer))))
          ?model ?planet ?planet-z-near ?coordinate ?distance
-         nil    nil     0.1            -1.0        0.0
-        -4.0    nil     0.1            -1.0        3.0
-         nil   -5.0     0.1            -1.0        5.0
-        -4.0   -5.0     0.1            -1.0        3.0
-        -7.0   -5.0     0.1            -1.0        5.0
-        -7.0   -5.0     0.5            -1.0        6.0)
+         nil    nil     0.1            -1.0        10.0
+        -4.0    nil     0.1            -1.0         3.0
+         nil   -5.0     0.1            -1.0         5.0
+        -4.0   -5.0     0.1            -1.0         3.0
+        -7.0   -5.0     0.1            -1.0         5.0
+        -7.0   -5.0     0.5            -1.0         6.0)
 
 
 (def fragment-mock-geometry
