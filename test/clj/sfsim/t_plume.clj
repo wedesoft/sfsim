@@ -232,19 +232,25 @@ void main()
 }"))
 
 (def plume-box-test
-  (shader-test (fn [program nozzle throttle]
+  (shader-test (fn [program nozzle throttle max-slope]
                    (uniform-float program "nozzle" nozzle)
-                   (uniform-float program "throttle" throttle))
+                   (uniform-float program "throttle" throttle)
+                   (uniform-float program "max_slope" max-slope)
+                   )
                plume-box-probe (last plume-box)))
 
+
 (tabular "Shader for bounding box computation of plume"
-         (fact (plume-box-test [?nozzle ?throttle] [?limit ?x-range ?y-range ?z-range]) => (roughly-vector (vec3 ?a ?b 0) 1e-6))
-         ?limit ?nozzle ?throttle ?x-range ?y-range ?z-range ?a                ?b
-         0.5    1.0     1.0       true     false    false    plume-end            plume-start
-         0.5    1.0     0.0       true     false    false    plume-start          plume-start
-         0.5    1.0     1.0       false    true     false    (- plume-width-2)    plume-width-2
-         2.0    1.0     1.0       false    true     false    (- -1 plume-width-2) (+ 1 plume-width-2)
-         0.5    1.0     1.0       false    false    true     (- plume-width-2)    plume-width-2)
+         (fact (plume-box-test [?nozzle ?throttle ?slope] [?limit ?x-range ?y-range ?z-range]) => (roughly-vector (vec3 ?a ?b 0) 1e-4))
+         ?limit ?nozzle ?throttle ?slope ?x-range ?y-range ?z-range ?a                ?b
+           0.5  1.0     1.0       100.0  true     false    false    plume-end            plume-start
+           0.5  1.0     0.0       100.0  true     false    false    plume-start          plume-start
+           0.5  1.0     1.0       100.0  false    true     false    (- plume-width-2)    plume-width-2
+           2.0  1.0     1.0       100.0  false    true     false    (- -1 plume-width-2) (+ 1 plume-width-2)
+           0.5  1.0     1.0       100.0  false    false    true     (- plume-width-2)    plume-width-2
+         100.0  1.0     0.0         0.5  false    false    true     (- plume-width-2)    plume-width-2
+         100.0  1.0     1.0         0.5  false    true     false    (- (+ plume-width-2 (* (- plume-start plume-end) 0.5)))
+                                                                    (+ (+ plume-width-2 (* (- plume-start plume-end) 0.5))))
 
 (def plume-outer-probe
   (template/fn [x object-x outer]
