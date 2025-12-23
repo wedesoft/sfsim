@@ -20,7 +20,7 @@
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
                           with-underlay-blending setup-shadow-matrices) :as render]
     [sfsim.shaders :as shaders]
-    [sfsim.plume :refer (plume-outer plume-point) :as plume]
+    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices) :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
                            texture-2d make-empty-texture-2d make-empty-float-texture-2d make-empty-depth-stencil-texture-2d)]
@@ -524,13 +524,13 @@
 
 (defn cloud-fragment-shaders
   [num-steps perlin-octaves cloud-octaves]
-  {::atmosphere-front (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true)
-   ::atmosphere-back (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false)
-   ::planet-front (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true)
-   ::planet-back (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false)
-   ::scene-front (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)
-   ::plume-outer (fragment-plume true)
-   ::plume-point (fragment-plume false)})
+  {::atmosphere-front [shaders/vertex-passthrough (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true)]
+   ::atmosphere-back [shaders/vertex-passthrough (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false)]
+   ::planet-front [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true)]
+   ::planet-back [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false)]
+   ::scene-front [shaders/vertex-passthrough (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)]
+   ::plume-outer [shaders/vertex-passthrough (fragment-plume true)]
+   ::plume-point [shaders/vertex-passthrough (fragment-plume false)]})
 
 
 (defn make-cloud-render-vars
@@ -553,8 +553,8 @@
 
 
 (defn make-cloud-program
-  [fragment-shader]
-  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+  [vertex-shader fragment-shader]
+  (make-program :sfsim.render/vertex [vertex-shader]
                 :sfsim.render/fragment [fragment-shader]))
 
 
@@ -587,22 +587,25 @@
         cloud-octaves    (:sfsim.clouds/cloud-octaves cloud-config)
         perlin-octaves   (:sfsim.clouds/perlin-octaves cloud-config)
         atmosphere-luts  (:sfsim.atmosphere/luts data)
-        programs         (into {} (map (fn [[k v]] [k (make-cloud-program v)])
+        programs         (into {} (map (fn [[k shaders]] [k (apply make-cloud-program shaders)])
                                        (cloud-fragment-shaders num-steps perlin-octaves cloud-octaves)))
         indices          [0 1 3 2]
         vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
-        vao              (make-vertex-array-object (first (vals programs)) indices vertices ["point" 3])]
+        vao              (make-vertex-array-object (first (vals programs)) indices vertices ["point" 3])
+        plume-vao        (make-vertex-array-object (first (vals programs)) plume-indices plume-vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-geometry-uniforms program data))
     {:sfsim.clouds/programs programs
      :sfsim.atmosphere/luts atmosphere-luts
      :sfsim.render/config render-config
      :sfsim.clouds/data cloud-config
-     :sfsim.clouds/vao vao}))
+     :sfsim.clouds/vao vao
+     :sfsim.clouds/plume-vao plume-vao}))
 
 
 (defn destroy-cloud-renderer
-  [{:sfsim.clouds/keys [programs vao]}]
+  [{:sfsim.clouds/keys [programs vao plume-vao]}]
   (destroy-vertex-array-object vao)
+  (destroy-vertex-array-object plume-vao)
   (doseq [program (vals programs)] (destroy-program program)))
 
 
@@ -626,7 +629,7 @@
 (defn render-cloud-overlay
   ([cloud-renderer cloud-render-vars model-vars shadow-vars geometry]
    (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars geometry true true true))
-  ([{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars model-vars shadow-vars geometry front plume back]
+  ([{:sfsim.clouds/keys [programs vao plume-vao] :as other} cloud-render-vars model-vars shadow-vars geometry front plume back]
    (let [overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
          overlay-height  (:sfsim.render/overlay-height cloud-render-vars)
          overlay         (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
@@ -661,13 +664,13 @@
                              (when plume
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                  (use-program (:sfsim.clouds/plume-outer programs))
-                                 (render-quads vao))
+                                 (render-quads plume-vao))
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
                                  (use-program (:sfsim.clouds/plume-point programs))
-                                 (render-quads vao))
+                                 (render-quads plume-vao))
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
                                  (use-program (:sfsim.clouds/plume-point programs))
-                                 (render-quads vao)))
+                                 (render-quads plume-vao)))
                              (when back
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                  (use-program (:sfsim.clouds/atmosphere-back programs))

@@ -55,10 +55,14 @@
                   {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
 
 
-(def plume-box
-  [shaders/ray-box plume-limit
-   (template/eval (slurp "resources/shaders/plume/plume-box.glsl")
+(def plume-box-size
+  [plume-limit
+   (template/eval (slurp "resources/shaders/plume/plume-box-size.glsl")
                   {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
+
+
+(def plume-box
+  [plume-box-size shaders/ray-box (slurp "resources/shaders/plume/plume-box.glsl")])
 
 
 (def plume-fringe 0.05)

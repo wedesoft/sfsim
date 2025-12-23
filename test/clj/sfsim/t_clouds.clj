@@ -1606,7 +1606,7 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
 
 
 (defn make-mock-cloud-program
-  [fragment-shader]
+  [_vertex-shader fragment-shader]
   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                 :sfsim.render/fragment [cloud-shader-mock (last fragment-shader)]))
 

@@ -236,9 +236,8 @@ void main()
   (shader-test (fn [program nozzle throttle max-slope]
                    (uniform-float program "nozzle" nozzle)
                    (uniform-float program "throttle" throttle)
-                   (uniform-float program "max_slope" max-slope)
-                   )
-               plume-box-probe (last plume-box)))
+                   (uniform-float program "max_slope" max-slope))
+               plume-box-probe [(last plume-box-size) (last plume-box)]))
 
 
 (tabular "Shader for bounding box computation of plume"
