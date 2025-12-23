@@ -6,16 +6,17 @@
 
 (ns sfsim.t-plume
     (:require
-      [clojure.math :refer (PI)]
+      [clojure.math :refer (PI to-radians)]
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [fastmath.vector :refer (vec3)]
-      [fastmath.matrix :refer (diagonal)]
+      [fastmath.matrix :refer (mulm)]
       [comb.template :as template]
-      [sfsim.conftest :refer (roughly-vector shader-test)]
+      [sfsim.conftest :refer (roughly-vector shader-test is-image)]
       [midje.sweet :refer :all]
       [sfsim.render :refer :all]
       [sfsim.plume :refer :all]
+      [sfsim.matrix :refer (projection-matrix rotation-x rotation-y)]
       [sfsim.shaders :as shaders])
     (:import
       (org.lwjgl.glfw
@@ -310,6 +311,50 @@ void main()
          5.0     1.0  2.0              false  1.0 0.0 0.5
          2.0     1.0  2.0              false  0.5 0.0 0.5
         -4.0     1.0  2.0              false  0.5 0.0 0.5)
+
+
+(def vertex-rotate
+"#version 450 core
+uniform mat3 rotation;
+uniform mat4 projection;
+in vec3 point;
+void main(void)
+{
+  gl_Position = projection * vec4(rotation * point + vec3(0, 0, -5), 1.0);
+}")
+
+
+(def fragment-white
+  "#version 450 core
+out vec3 fragColor;
+void main()
+{
+  fragColor = vec3(1.0, 1.0, 1.0);
+}")
+
+
+(tabular "Vertex array object for rendering plume"
+         (fact
+           (offscreen-render 64 64
+                             (let [program    (make-program :sfsim.render/vertex [vertex-rotate]
+                                                            :sfsim.render/fragment [fragment-white])
+                                   projection (projection-matrix 64 64 0.1 10.0 (to-radians 90))
+                                   vao        (make-vertex-array-object program plume-indices plume-vertices ["point" 3])]
+                               (use-program program)
+                               (uniform-matrix4 program "projection" projection)
+                               (uniform-matrix3 program "rotation" (mulm (rotation-x (to-radians ?alpha))
+                                                                         (rotation-y (to-radians ?beta))))
+                               (render-quads vao)
+                               (destroy-vertex-array-object vao)
+                               (destroy-program program)))
+                             => (is-image "test/clj/sfsim/fixtures/plume/box.png" 0.0))
+         ?alpha ?beta
+           0      0
+         180      0
+           0     90
+           0    -90
+          90      0
+         -90      0)
 
 
 (GLFW/glfwTerminate)
