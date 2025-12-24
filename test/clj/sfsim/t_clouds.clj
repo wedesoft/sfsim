@@ -23,6 +23,7 @@
     [sfsim.model :refer (read-gltf
                          load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry
                          destroy-joined-geometry-renderer)]
+    [sfsim.plume :as plume]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer :all]
@@ -1615,7 +1616,9 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
          (facts
            (with-redefs [clouds/make-cloud-program make-mock-cloud-program
                          clouds/setup-geometry-uniforms mock-setup-geometry-uniforms
-                         clouds/setup-dynamic-cloud-uniforms (fn [_program _other _cloud-render-vars _model-vars _shadow-vars])]
+                         clouds/setup-dynamic-cloud-uniforms (fn [_program _other _cloud-render-vars _model-vars _shadow-vars])
+                         plume/plume-indices [2 3 1 0]
+                         plume/plume-vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]]
              (with-invisible-window
                (let [geometry          (mock-geometry ?x ?y ?z ?stencil)
                      render-config     {:sfsim.render/cloud-subsampling 1 :sfsim.render/fov 1.04}

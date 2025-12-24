@@ -62,6 +62,16 @@
   (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
 
 
+(defmacro with-cullfront
+  "Enable culling front face temporarily"
+  [& body]
+  `(do
+     (GL11/glCullFace GL11/GL_FRONT)
+     (let [result# (do ~@body)]
+       (GL11/glCullFace GL11/GL_BACK)
+       result#)))
+
+
 (defmacro without-depth-test
   "Disable depth test temporarily"
   [& body]

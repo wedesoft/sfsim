@@ -56,7 +56,7 @@
                                       :mix 0.6
                                       :shadow-bias 1e-6}
 
- :sfsim.model-config #:sfsim.model{:object-radius 30.0
+ :sfsim.model-config #:sfsim.model{:object-radius 100.0  ; includes plume length
                                    :nozzle 2.7549
                                    :min-limit 1.2
                                    :max-slope 1.0

@@ -18,7 +18,7 @@
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
-                          with-underlay-blending setup-shadow-matrices without-depth-test) :as render]
+                          with-underlay-blending setup-shadow-matrices without-depth-test with-cullfront) :as render]
     [sfsim.shaders :as shaders]
     [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size) :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
@@ -516,14 +516,14 @@
    (slurp "resources/shaders/clouds/fragment-cloud-scene.glsl")])
 
 
+(def vertex-plume
+  [plume-box-size (slurp "resources/shaders/plume/vertex.glsl")])
+
+
 (defn fragment-plume
   [outer]
   [geometry-distance geometry-point plume-outer plume-point
    (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:outer outer})])
-
-
-(def vertex-plume
-  [plume-box-size (slurp "resources/shaders/plume/vertex.glsl")])
 
 
 (defn cloud-fragment-shaders
@@ -533,8 +533,8 @@
    ::planet-front [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true)]
    ::planet-back [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false)]
    ::scene-front [shaders/vertex-passthrough (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)]
-   ::plume-outer [shaders/vertex-passthrough (fragment-plume true)]
-   ::plume-point [shaders/vertex-passthrough (fragment-plume false)]})
+   ::plume-outer [vertex-plume (fragment-plume true)]
+   ::plume-point [vertex-plume (fragment-plume false)]})
 
 
 (defn make-cloud-render-vars
@@ -603,8 +603,8 @@
                                        (cloud-fragment-shaders num-steps perlin-octaves cloud-octaves)))
         indices          [0 1 3 2]
         vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
-        vao              (make-vertex-array-object (first (vals programs)) indices vertices ["point" 3])
-        plume-vao        (make-vertex-array-object (first (vals programs)) plume-indices plume-vertices ["point" 3])]
+        vao              (make-vertex-array-object (::atmosphere-front programs) indices vertices ["point" 3])
+        plume-vao        (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-geometry-uniforms program data))
     {:sfsim.clouds/programs programs
      :sfsim.atmosphere/luts atmosphere-luts
@@ -662,7 +662,7 @@
             (setup-dynamic-cloud-uniforms program other cloud-render-vars model-vars shadow-vars)
             (use-textures {0  (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
      (framebuffer-render overlay-width overlay-height :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
-                         (clear (vec3 0.0 0.0 0.0) 0.0)  ; TODO: disable depth test
+                         (clear (vec3 0.0 0.0 0.0) 0.0)
                          (without-depth-test
                            (with-stencils
                              (when front
@@ -677,15 +677,16 @@
                                  (render-quads vao)))
                              (with-underlay-blending
                                (when plume
-                                 (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                   (use-program (:sfsim.clouds/plume-outer programs))
-                                   (render-quads plume-vao))
-                                 (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                   (use-program (:sfsim.clouds/plume-point programs))
-                                   (render-quads plume-vao))
-                                 (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-                                   (use-program (:sfsim.clouds/plume-point programs))
-                                   (render-quads plume-vao)))
+                                 (with-cullfront
+                                   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                     (use-program (:sfsim.clouds/plume-outer programs))
+                                     (render-quads plume-vao))
+                                   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                     (use-program (:sfsim.clouds/plume-point programs))
+                                     (render-quads plume-vao))
+                                   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+                                     (use-program (:sfsim.clouds/plume-point programs))
+                                     (render-quads plume-vao))))
                                (when back
                                  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                    (use-program (:sfsim.clouds/atmosphere-back programs))

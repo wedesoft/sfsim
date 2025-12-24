@@ -5,7 +5,7 @@ uniform mat4 object_to_camera;
 
 in vec3 point;
 
-vec3 plume_box_size()
+vec3 plume_box_size();
 
 void main()
 {

@@ -46,9 +46,10 @@
         - [X] implement depth-aware upsampling for model, planet, and atmosphere (use z-far for atmosphere?)
         - [-] render plume box instead of fullscreen
           - [X] limit plume box using max-slope and length
-          - [ ] use cube as vertex array object with backface pointing outside, test rendering from inside cube
+          - [X] use cube as vertex array object with backface pointing outside, test rendering from inside cube
           - [ ] test dynamic sizing
           - [ ] use different vertex shader using transform and air pressure to move and scale box
+          - [ ] use macros when doing front face culling or disabling depth test
       - [ ] render RCS thrusters
         - [ ] integration test for model and plume
         - [ ] store RCS coordinate systems in Blender
