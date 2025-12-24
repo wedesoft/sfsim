@@ -8,7 +8,7 @@
   (:require
     [clojure.java.io :as io]
     [clojure.math :refer (PI to-radians)]
-    [fastmath.matrix :refer (mat3x3 mulm mulv)]
+    [fastmath.matrix :refer (mat3x3 mulm mulv eye)]
     [fastmath.vector :refer (vec2 vec3 add div sub)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -85,7 +85,7 @@
                                                                               (q/->Quaternion 1 0 0 0))
                      geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars model tree)
                      clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                                            geometry)
+                                                                            (eye 4) geometry)
                      tex                       (texture-render-color-depth width height true
                                                                            (clear (vec3 0 1 0) 0.0)
                                                                            (planet/render-planet planet-renderer render-vars
@@ -153,7 +153,7 @@
                                                                               (q/->Quaternion 1 0 0 0))
                      geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars object tree)
                      clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                                            geometry)
+                                                                            (eye 4) geometry)
                      tex                       (texture-render-color-depth width height true
                                                                            (clear (vec3 0 1 0) 0.0)
                                                                            (model/render-scenes scene-renderer render-vars model-vars
@@ -233,7 +233,7 @@
                 object-shadow             (model/scene-shadow-map scene-shadow-renderer light-direction object)
                 geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars object tree)
                 clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                                       geometry)
+                                                                       (eye 4) geometry)
                 tex                       (texture-render-color-depth width height true
                                                                       (clear (vec3 0 1 0) 0.0)
                                                                       (model/render-scenes scene-renderer render-vars model-vars
@@ -278,7 +278,8 @@ vec4 sample_plume_outer(vec3 object_origin, vec3 object_direction);
 void main()
 {
   vec2 uv = gl_FragCoord.xy / resolution;
-  fragColor = vec4(sample_plume_outer(vec3(-uv.x * 80, uv.y * 50 - 25, -20), vec3(0, 0, 1)).xyz, 1.0);
+  float offset = 7.5047;
+  fragColor = vec4(sample_plume_outer(vec3(-uv.x * 80 + offset, uv.y * 50 - 25, -20), vec3(0, 0, 1)).xyz, 1.0);
 }")
 
 

@@ -42,8 +42,8 @@
   [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
 
 
-(def plume-start -7.5047)
-(def plume-end -70.0)
+(def plume-start 0.0)
+(def plume-end -60.0)
 (def plume-width-2 7.4266)
 
 

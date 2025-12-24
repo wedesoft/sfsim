@@ -639,9 +639,10 @@
 
 
 (defn render-cloud-overlay
-  ([cloud-renderer cloud-render-vars model-vars shadow-vars geometry]
-   (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars geometry true true true))
-  ([{:sfsim.clouds/keys [programs vao plume-vao] :as other} cloud-render-vars model-vars shadow-vars geometry front plume back]
+  ([cloud-renderer cloud-render-vars model-vars shadow-vars plume-transform geometry]
+   (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transform geometry true true true))
+  ([{:sfsim.clouds/keys [programs vao plume-vao] :as other} cloud-render-vars model-vars shadow-vars plume-transform geometry
+    front plume back]
    (let [overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
          overlay-height  (:sfsim.render/overlay-height cloud-render-vars)
          overlay         (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
@@ -656,6 +657,8 @@
             (uniform-matrix4 program "world_to_camera" (inverse (:sfsim.render/camera-to-world cloud-render-vars)))
             (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
             (uniform-matrix4 program "object_to_camera" (inverse (:sfsim.render/camera-to-object cloud-render-vars)))
+            (uniform-matrix4 program "plume_to_object" plume-transform)
+            (uniform-matrix4 program "object_to_plume" (inverse plume-transform))
             (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
             (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
             (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))

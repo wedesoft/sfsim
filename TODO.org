@@ -50,7 +50,7 @@
           - [X] problem when object radius is larger than distance to object
           - [X] problem with shadow map size being adapted to object radius
           - [X] use different vertex shader using transform and air pressure to move and scale box
-      - [ ] immplement RCS thrusters
+      - [ ] implement RCS thrusters
         - [ ] integration test for model and plume
         - [ ] store RCS coordinate systems in Blender
         - [ ] use binary space partitioning tree

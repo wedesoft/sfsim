@@ -1,5 +1,5 @@
 #define START <%= plume-start %>
-#define SPIKE -11.18
+#define SPIKE -3.6753
 #define ENGINE_SIZE (START - SPIKE)
 #define END <%= plume-end %>
 #define WIDTH2 <%= plume-width-2 %>
@@ -18,8 +18,8 @@
 // Standalone prototype shader:
 // https://www.shadertoy.com/view/t3XyzB
 
-vec2 cylinder1_base = vec2(-10.9544,  4.3511);
-vec2 cylinder2_base = vec2(-10.9544, -4.3511);
+vec2 cylinder1_base = vec2(-3.4497,  4.3511);
+vec2 cylinder2_base = vec2(-3.4497, -4.3511);
 
 uniform float pressure;
 uniform float nozzle;
