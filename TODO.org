@@ -36,32 +36,30 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
   - [ ] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
         also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-    - [ ] render cloud and plume low res overlay
-      - [-] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
+    - [-] render cloud and plume low res overlay
+      - [X] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
         - [X] change all integration tests to use new cloud shaders
         - [X] change main program to use new cloud shader
         - [X] delete atmosphere cloud and planet cloud shader
         - [X] switch model clouds to overlay, try out plume graphics
         - [X] remove cloud-plume-cloud-outer
         - [X] implement depth-aware upsampling for model, planet, and atmosphere (use z-far for atmosphere?)
-        - [-] render plume box instead of fullscreen
+        - [X] render plume box instead of fullscreen
           - [X] limit plume box using max-slope and length
           - [X] use cube as vertex array object with backface pointing outside, test rendering from inside cube
           - [X] problem when object radius is larger than distance to object
           - [X] problem with shadow map size being adapted to object radius
-          - [ ] test dynamic sizing
-          - [ ] use different vertex shader using transform and air pressure to move and scale box
-          - [ ] use macros when doing front face culling or disabling depth test
-      - [ ] render RCS thrusters
+          - [X] use different vertex shader using transform and air pressure to move and scale box
+      - [ ] immplement RCS thrusters
         - [ ] integration test for model and plume
         - [ ] store RCS coordinate systems in Blender
         - [ ] use binary space partitioning tree
     - [ ] disable color buffer when rendering frame buffer and it is not required?
+  - [ ] use macros when doing front face culling or disabling depth test
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
-  - [ ] implement RCS thrusters
   - [ ] Thrust vectoring:
         If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
         A combination of pitch and roll can produce whatever attitude control you need. source
