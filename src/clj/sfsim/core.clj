@@ -821,8 +821,8 @@
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) opacity-base)
-              cloud-render-vars  (clouds/make-cloud-render-vars config/render-config @window-width @window-height origin
-                                                                camera-orientation light-direction object-position
+              cloud-render-vars  (clouds/make-cloud-render-vars config/render-config scene-render-vars @window-width @window-height
+                                                                origin camera-orientation light-direction object-position
                                                                 object-orientation)
               wheels-scene       (if (= ^double @gear 1.0)
                                    (model/apply-transforms

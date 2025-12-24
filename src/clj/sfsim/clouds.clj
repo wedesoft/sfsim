@@ -12,7 +12,7 @@
     [fastmath.vector :refer (vec4 vec3 mag)]
     [fastmath.matrix :refer (mulm mulv inverse)]
     [malli.core :as m]
-    [sfsim.matrix :refer (transformation-matrix vec4->vec3 quaternion->matrix)]
+    [sfsim.matrix :refer (transformation-matrix vec4->vec3 quaternion->matrix projection-matrix)]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.bluenoise :refer (noise-size) :as bluenoise]
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
@@ -20,7 +20,7 @@
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
                           with-underlay-blending setup-shadow-matrices) :as render]
     [sfsim.shaders :as shaders]
-    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices) :as plume]
+    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size) :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
                            texture-2d make-empty-texture-2d make-empty-float-texture-2d make-empty-depth-stencil-texture-2d)]
@@ -522,6 +522,10 @@
    (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:outer outer})])
 
 
+(def vertex-plume
+  [plume-box-size (slurp "resources/shaders/plume/vertex.glsl")])
+
+
 (defn cloud-fragment-shaders
   [num-steps perlin-octaves cloud-octaves]
   {::atmosphere-front [shaders/vertex-passthrough (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true)]
@@ -534,16 +538,24 @@
 
 
 (defn make-cloud-render-vars
-  [render-config width height camera-position camera-orientation light-direction object-position object-orientation]
-  (let [cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
+  [render-config scene-render-vars width height camera-position camera-orientation light-direction object-position object-orientation]
+  (let [fov                (:sfsim.render/fov render-config)
+        cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
+        overlay-width      (quot ^long width ^long cloud-subsampling)
+        overlay-height     (quot ^long height ^long cloud-subsampling)
         camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
         camera-to-object   (mulm world-to-object camera-to-world)
-        object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))]
+        object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
+        z-near             (:sfsim.render/z-near scene-render-vars)
+        z-far              (:sfsim.render/z-far scene-render-vars)
+        z-offset           1.0
+        overlay-projection (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) fov)]
     {:sfsim.render/window-width width
      :sfsim.render/window-height height
-     :sfsim.render/overlay-width (quot ^long width ^long cloud-subsampling)
-     :sfsim.render/overlay-height (quot ^long height ^long cloud-subsampling)
+     :sfsim.render/overlay-width overlay-width
+     :sfsim.render/overlay-height overlay-height
+     :sfsim.render/overlay-projection overlay-projection
      :sfsim.render/origin camera-position
      :sfsim.render/light-direction light-direction
      :sfsim.render/object-origin object-origin
@@ -643,6 +655,8 @@
             (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world cloud-render-vars))
             (uniform-matrix4 program "world_to_camera" (inverse (:sfsim.render/camera-to-world cloud-render-vars)))
             (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
+            (uniform-matrix4 program "object_to_camera" (inverse (:sfsim.render/camera-to-object cloud-render-vars)))
+            (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
             (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
             (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))
             (setup-dynamic-cloud-uniforms program other cloud-render-vars model-vars shadow-vars)
@@ -664,13 +678,13 @@
                              (when plume
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                  (use-program (:sfsim.clouds/plume-outer programs))
-                                 (render-quads plume-vao))
+                                 (render-quads vao))
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
                                  (use-program (:sfsim.clouds/plume-point programs))
-                                 (render-quads plume-vao))
+                                 (render-quads vao))
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
                                  (use-program (:sfsim.clouds/plume-point programs))
-                                 (render-quads plume-vao)))
+                                 (render-quads vao)))
                              (when back
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                  (use-program (:sfsim.clouds/atmosphere-back programs))
