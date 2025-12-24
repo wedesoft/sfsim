@@ -47,6 +47,8 @@
         - [-] render plume box instead of fullscreen
           - [X] limit plume box using max-slope and length
           - [X] use cube as vertex array object with backface pointing outside, test rendering from inside cube
+          - [ ] problem when object radius is larger than distance to object
+          - [ ] problem with shadow map size being adapted to object radius
           - [ ] test dynamic sizing
           - [ ] use different vertex shader using transform and air pressure to move and scale box
           - [ ] use macros when doing front face culling or disabling depth test
