@@ -43,9 +43,17 @@
         - [X] delete atmosphere cloud and planet cloud shader
         - [X] switch model clouds to overlay, try out plume graphics
         - [X] remove cloud-plume-cloud-outer
-        - [ ] implement depth-aware upsampling for model, planet, and atmosphere (use z-far for atmosphere?)
-        - [ ] render plume box instead of fullscreen (provide different vertex and index buffer for plume rendering, use different vertex shader)
+        - [X] implement depth-aware upsampling for model, planet, and atmosphere (use z-far for atmosphere?)
+        - [-] render plume box instead of fullscreen
+          - [X] limit plume box using max-slope and length
+          - [X] use cube as vertex array object with backface pointing outside, test rendering from inside cube
+          - [X] problem when object radius is larger than distance to object
+          - [X] problem with shadow map size being adapted to object radius
+          - [ ] test dynamic sizing
+          - [ ] use different vertex shader using transform and air pressure to move and scale box
+          - [ ] use macros when doing front face culling or disabling depth test
       - [ ] render RCS thrusters
+        - [ ] integration test for model and plume
         - [ ] store RCS coordinate systems in Blender
         - [ ] use binary space partitioning tree
     - [ ] disable color buffer when rendering frame buffer and it is not required?

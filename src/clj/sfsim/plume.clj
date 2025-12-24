@@ -13,7 +13,7 @@
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]
-      [sfsim.render :refer (uniform-float render-vars uniform-float uniform-matrix4 uniform-vector3)]))
+      [sfsim.render :refer (uniform-float uniform-float uniform-matrix4 uniform-vector3)]))
 
 
 (def plume-phase
@@ -55,10 +55,14 @@
                   {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
 
 
-(def plume-box
-  [shaders/ray-box plume-limit
-   (template/eval (slurp "resources/shaders/plume/plume-box.glsl")
+(def plume-box-size
+  [plume-limit
+   (template/eval (slurp "resources/shaders/plume/plume-box-size.glsl")
                   {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
+
+
+(def plume-box
+  [plume-box-size shaders/ray-box (slurp "resources/shaders/plume/plume-box.glsl")])
 
 
 (def plume-fringe 0.05)
@@ -66,7 +70,7 @@
 
 (defn sample-plume-segment
   [outer]
-  [sampling-offset plume-box (plume-transfer plume-fringe) shaders/limit-interval 
+  [sampling-offset plume-box (plume-transfer plume-fringe) shaders/limit-interval
    (template/eval (slurp "resources/shaders/plume/sample-plume-segment.glsl") {:outer outer})])
 
 
@@ -130,3 +134,23 @@
   (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
   (uniform-float program "time" (:sfsim.model/time model-vars))
   (uniform-float program "throttle" (:sfsim.model/throttle model-vars)))
+
+
+(def plume-indices
+  [4 5 7 6    ; front (+z)
+   1 0 2 3    ; back  (-z)
+   0 4 6 2    ; left  (-x)
+   5 1 3 7    ; right (+x)
+   2 6 7 3    ; top   (+y)
+   0 1 5 4])  ; bottom (-y)
+
+
+(def plume-vertices
+  [-1.0 -1.0 -1.0
+    1.0 -1.0 -1.0
+   -1.0  1.0 -1.0
+    1.0  1.0 -1.0
+   -1.0 -1.0  1.0
+    1.0 -1.0  1.0
+   -1.0  1.0  1.0
+    1.0  1.0  1.0])
