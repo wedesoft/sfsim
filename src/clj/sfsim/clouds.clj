@@ -18,7 +18,7 @@
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
-                          with-underlay-blending setup-shadow-matrices) :as render]
+                          with-underlay-blending setup-shadow-matrices without-depth-test) :as render]
     [sfsim.shaders :as shaders]
     [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size) :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
@@ -662,36 +662,37 @@
             (setup-dynamic-cloud-uniforms program other cloud-render-vars model-vars shadow-vars)
             (use-textures {0  (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
      (framebuffer-render overlay-width overlay-height :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
-                         (clear (vec3 0.0 0.0 0.0) 0.0)
-                         (with-stencils
-                           (when front
-                             (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                               (use-program (:sfsim.clouds/atmosphere-front programs))
-                               (render-quads vao))
-                             (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                               (use-program (:sfsim.clouds/planet-front programs))
-                               (render-quads vao))
-                             (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-                               (use-program (:sfsim.clouds/scene-front programs))
-                               (render-quads vao)))
-                           (with-underlay-blending
-                             (when plume
+                         (clear (vec3 0.0 0.0 0.0) 0.0)  ; TODO: disable depth test
+                         (without-depth-test
+                           (with-stencils
+                             (when front
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                 (use-program (:sfsim.clouds/plume-outer programs))
+                                 (use-program (:sfsim.clouds/atmosphere-front programs))
                                  (render-quads vao))
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                 (use-program (:sfsim.clouds/plume-point programs))
+                                 (use-program (:sfsim.clouds/planet-front programs))
                                  (render-quads vao))
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-                                 (use-program (:sfsim.clouds/plume-point programs))
+                                 (use-program (:sfsim.clouds/scene-front programs))
                                  (render-quads vao)))
-                             (when back
-                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                 (use-program (:sfsim.clouds/atmosphere-back programs))
-                                 (render-quads vao))
-                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                 (use-program (:sfsim.clouds/planet-back programs))
-                                 (render-quads vao))))))
+                             (with-underlay-blending
+                               (when plume
+                                 (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                   (use-program (:sfsim.clouds/plume-outer programs))
+                                   (render-quads plume-vao))
+                                 (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                   (use-program (:sfsim.clouds/plume-point programs))
+                                   (render-quads plume-vao))
+                                 (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+                                   (use-program (:sfsim.clouds/plume-point programs))
+                                   (render-quads plume-vao)))
+                               (when back
+                                 (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                   (use-program (:sfsim.clouds/atmosphere-back programs))
+                                   (render-quads vao))
+                                 (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                   (use-program (:sfsim.clouds/planet-back programs))
+                                   (render-quads vao)))))))
      overlay)))
 
 
