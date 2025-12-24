@@ -999,7 +999,8 @@
                            (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
                              (when model
                                (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
-                                 (render-scene-geometry scene-renderer scene-render-vars model)))
+                                 (render-scene-geometry scene-renderer
+                                                        (if model-covers-planet? scene-render-vars planet-render-vars) model)))
                              (when tree
                                (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x2 (if model-covers-planet? 0x6 0x2)
                                  (render-planet-geometry planet-renderer planet-render-vars tree)))
