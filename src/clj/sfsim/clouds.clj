@@ -538,8 +538,9 @@
 
 
 (defn make-cloud-render-vars
-  [render-config scene-render-vars width height camera-position camera-orientation light-direction object-position object-orientation]
+  [render-config planet-render-vars width height camera-position camera-orientation light-direction object-position object-orientation]
   (let [fov                (:sfsim.render/fov render-config)
+        min-z-near         (:sfsim.render/min-z-near render-config)
         cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
         overlay-width      (quot ^long width ^long cloud-subsampling)
         overlay-height     (quot ^long height ^long cloud-subsampling)
@@ -547,10 +548,9 @@
         world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
         camera-to-object   (mulm world-to-object camera-to-world)
         object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
-        z-near             (:sfsim.render/z-near scene-render-vars)
-        z-far              (:sfsim.render/z-far scene-render-vars)
+        z-far              (:sfsim.render/z-far planet-render-vars)
         z-offset           1.0
-        overlay-projection (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) fov)]
+        overlay-projection (projection-matrix overlay-width overlay-height min-z-near (+ ^double z-far ^double z-offset) fov)]
     {:sfsim.render/window-width width
      :sfsim.render/window-height height
      :sfsim.render/overlay-width overlay-width
