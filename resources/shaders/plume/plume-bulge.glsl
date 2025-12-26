@@ -7,7 +7,7 @@ uniform float max_slope;
 float plume_limit(float pressure);
 float plume_phase(float x, float limit);
 
-float bulge(float pressure, float x)
+float plume_bulge(float pressure, float x)
 {
   float limit = plume_limit(pressure);
   float range = nozzle - limit;

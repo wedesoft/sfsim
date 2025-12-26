@@ -29,15 +29,15 @@ uniform float time;
 uniform float throttle;
 
 float plume_limit(float pressure);
-float bulge(float pressure, float x);
+float plume_bulge(float pressure, float x);
 float sdf_circle(vec2 point, vec2 center, float radius);
 float sdf_rectangle(vec2 point, vec2 rectangle_min, vec2 rectangle_max);
 float noise3d(vec3 coordinates);
 float diamond(float pressure, vec2 uv);
 
 vec2 envelope(float pressure, float x, float x_constrained) {
-  float bulge_constrained = bulge(pressure, max(0.0, x_constrained));
-  float bulge = bulge(pressure, x);
+  float bulge_constrained = plume_bulge(pressure, max(0.0, x_constrained));
+  float bulge = plume_bulge(pressure, x);
   return vec2(bulge_constrained + WIDTH2 - nozzle, bulge);
 }
 

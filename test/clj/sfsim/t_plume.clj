@@ -42,6 +42,7 @@ void main()
 (def limit-test (shader-test (fn [program min-limit] (uniform-float program "min_limit" min-limit)) limit-probe
                              (plume-limit "plume_limit" "min_limit")))
 
+
 (tabular "Shader function to get extent of plume"
          (fact ((limit-test [?min-limit] [?pressure]) 0) => (roughly ?result 1e-3))
          ?min-limit ?pressure ?result
@@ -49,26 +50,27 @@ void main()
          0.25       0.25      0.5
          1.0        0.0       1000.0)
 
-(def bulge-probe
+
+(def plume-bulge-probe
   (template/fn [pressure x]
 "#version 450 core
 out vec3 fragColor;
-float bulge(float pressure, float x);
+float plume_bulge(float pressure, float x);
 void main()
 {
-  float result = bulge(<%= pressure %>, <%= x %>);
+  float result = plume_bulge(<%= pressure %>, <%= x %>);
   fragColor = vec3(result, 0, 0);
 }"))
 
-(def bulge-test (apply shader-test (fn [program nozzle min-limit max-slope]
-                                       (uniform-float program "nozzle" nozzle)
-                                       (uniform-float program "min_limit" min-limit)
-                                       (uniform-float program "max_slope" max-slope)
-                                       (uniform-float program "omega_factor" PI))
-                       bulge-probe bulge))
+(def plume-bulge-test (apply shader-test (fn [program nozzle min-limit max-slope]
+                                             (uniform-float program "nozzle" nozzle)
+                                             (uniform-float program "min_limit" min-limit)
+                                             (uniform-float program "max_slope" max-slope)
+                                             (uniform-float program "omega_factor" PI))
+                             plume-bulge-probe plume-bulge))
 
 (tabular "Shader function to determine shape of rocket exhaust plume"
-         (fact ((bulge-test [?nozzle ?min-limit ?max-slope] [?pressure ?x]) 0) => (roughly ?result 1e-3))
+         (fact ((plume-bulge-test [?nozzle ?min-limit ?max-slope] [?pressure ?x]) 0) => (roughly ?result 1e-3))
           ?nozzle   ?min-limit ?max-slope ?pressure  ?x    ?result
           0.5       2.0        1.0         1.0          0.0  0.5
           0.5       3.0        1.0         1.0        100.0  3.0
