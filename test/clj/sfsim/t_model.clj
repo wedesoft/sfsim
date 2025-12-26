@@ -729,8 +729,8 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
              obj-orient      (q/rotation 0.0 (vec3 0 0 1))
              model-data      #:sfsim.model{:object-radius 10.0
                                            :nozzle 2.7549
-                                           :min-limit 1.2
-                                           :max-slope 1.0
+                                           :plume-min-limit 1.2
+                                           :plume-max-slope 1.0
                                            :omega-factor 0.2
                                            :diamond-strength 0.4
                                            :engine-step 0.2}

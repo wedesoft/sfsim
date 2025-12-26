@@ -34,13 +34,13 @@
 
 (def plume-bulge
   "Shader function to determine shape of rocket exhaust plume"
-  [(plume-limit "plume_limit" "min_limit") plume-phase (slurp "resources/shaders/plume/plume-bulge.glsl")])
+  [(plume-limit "plume_limit" "plume_min_limit") plume-phase (slurp "resources/shaders/plume/plume-bulge.glsl")])
 
 
 (defn diamond
   "Shader function for volumetric Mach diamonds"
   [fringe]
-  [(plume-limit "plume_limit" "min_limit") diamond-phase plume-phase
+  [(plume-limit "plume_limit" "plume_min_limit") diamond-phase plume-phase
    (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
 
 
@@ -52,13 +52,13 @@
 (defn plume-transfer
   "Shader for computing engine plume light transfer at a point"
   [fringe]
-  [(plume-limit "plume_limit" "min_limit") plume-bulge (diamond fringe) shaders/noise3d shaders/sdf-circle shaders/sdf-rectangle
+  [(plume-limit "plume_limit" "plume_min_limit") plume-bulge (diamond fringe) shaders/noise3d shaders/sdf-circle shaders/sdf-rectangle
    (template/eval (slurp "resources/shaders/plume/plume-transfer.glsl")
                   {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
 
 
 (def plume-box-size
-  [(plume-limit "plume_limit" "min_limit")
+  [(plume-limit "plume_limit" "plume_min_limit")
    (template/eval (slurp "resources/shaders/plume/plume-box-size.glsl")
                   {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
 
@@ -101,8 +101,8 @@
 (def model-data
   (m/schema [:map [:sfsim.model/object-radius :double]
                   [:sfsim.model/nozzle :double]
-                  [:sfsim.model/min-limit :double]
-                  [:sfsim.model/max-slope :double]
+                  [:sfsim.model/plume-min-limit :double]
+                  [:sfsim.model/plume-max-slope :double]
                   [:sfsim.model/omega-factor :double]
                   [:sfsim.model/diamond-strength :double]
                   [:sfsim.model/engine-step :double]]))
@@ -112,8 +112,8 @@
   {:malli/schema [:=> [:cat :int model-data] :nil]}
   [program model-data]
   (uniform-float program "nozzle" (:sfsim.model/nozzle model-data))
-  (uniform-float program "min_limit" (:sfsim.model/min-limit model-data))
-  (uniform-float program "max_slope" (:sfsim.model/max-slope model-data))
+  (uniform-float program "plume_min_limit" (:sfsim.model/plume-min-limit model-data))
+  (uniform-float program "plume_max_slope" (:sfsim.model/plume-max-slope model-data))
   (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-data))
   (uniform-float program "diamond_strength" (:sfsim.model/diamond-strength model-data))
   (uniform-float program "engine_step" (:sfsim.model/engine-step model-data)))

@@ -82,10 +82,10 @@ void main()
 }"))
 
 
-(def plume-bulge-test (apply shader-test (fn [program nozzle min-limit max-slope]
+(def plume-bulge-test (apply shader-test (fn [program nozzle plume-min-limit plume-max-slope]
                                              (uniform-float program "nozzle" nozzle)
-                                             (uniform-float program "min_limit" min-limit)
-                                             (uniform-float program "max_slope" max-slope)
+                                             (uniform-float program "plume_min_limit" plume-min-limit)
+                                             (uniform-float program "plume_max_slope" plume-max-slope)
                                              (uniform-float program "omega_factor" PI))
                              plume-bulge-probe plume-bulge))
 

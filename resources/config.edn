@@ -58,8 +58,8 @@
 
  :sfsim.model-config #:sfsim.model{:object-radius 30.0  ; includes size of expanding plume
                                    :nozzle 2.7549
-                                   :min-limit 1.2
-                                   :max-slope 1.0
+                                   :plume-min-limit 1.2
+                                   :plume-max-slope 1.0
                                    :omega-factor 0.2
                                    :diamond-strength 0.4
                                    :engine-step 0.5}
