@@ -51,6 +51,25 @@ void main()
          1.0        0.0       1000.0)
 
 
+(def rcs-bulge-probe
+(template/fn [pressure x]
+"#version 450 core
+out vec3 fragColor;
+float rcs_bulge(float pressure, float x);
+void main()
+{
+  float result = rcs_bulge(<%= pressure %>, <%= x %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+
+;(def rcs-bulge-test (apply shader-test (fn [program pressure min-limit max-slope]
+;                                           (uniform-float program "pressure" pressure)
+;                                           (uniform-float program "min_limit" min-limit)
+;                                           (uniform-float program "max_slope" max-slope))
+;                           rcs-bulge-probe rcs-bulge))
+
+
 (def plume-bulge-probe
   (template/fn [pressure x]
 "#version 450 core
@@ -62,12 +81,14 @@ void main()
   fragColor = vec3(result, 0, 0);
 }"))
 
+
 (def plume-bulge-test (apply shader-test (fn [program nozzle min-limit max-slope]
                                              (uniform-float program "nozzle" nozzle)
                                              (uniform-float program "min_limit" min-limit)
                                              (uniform-float program "max_slope" max-slope)
                                              (uniform-float program "omega_factor" PI))
                              plume-bulge-probe plume-bulge))
+
 
 (tabular "Shader function to determine shape of rocket exhaust plume"
          (fact ((plume-bulge-test [?nozzle ?min-limit ?max-slope] [?pressure ?x]) 0) => (roughly ?result 1e-3))
