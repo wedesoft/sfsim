@@ -32,6 +32,11 @@
   (template/eval (slurp "resources/shaders/plume/limit.glsl") {:method-name method-name :min-limit min-limit}))
 
 
+(def rcs-bulge
+  "Shader function to determine shape of RCS thruster exhaust plume"
+  [(plume-limit "rcs_limit" "rcs_min_limit") (slurp "resources/shaders/plume/rcs-bulge.glsl")])
+
+
 (def plume-bulge
   "Shader function to determine shape of rocket exhaust plume"
   [(plume-limit "plume_limit" "plume_min_limit") plume-phase (slurp "resources/shaders/plume/plume-bulge.glsl")])

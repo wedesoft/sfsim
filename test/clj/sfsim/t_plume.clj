@@ -63,11 +63,20 @@ void main()
 }"))
 
 
-;(def rcs-bulge-test (apply shader-test (fn [program pressure min-limit max-slope]
-;                                           (uniform-float program "pressure" pressure)
-;                                           (uniform-float program "min_limit" min-limit)
-;                                           (uniform-float program "max_slope" max-slope))
-;                           rcs-bulge-probe rcs-bulge))
+(def rcs-bulge-test (apply shader-test (fn [program nozzle min-limit max-slope]
+                                           (uniform-float program "nozzle" nozzle)
+                                           (uniform-float program "rcs_min_limit" min-limit)
+                                           (uniform-float program "rcs_max_slope" max-slope))
+                           rcs-bulge-probe rcs-bulge))
+
+
+(tabular "Shader function to determine shape of rocket exhaust plume"
+         (fact ((rcs-bulge-test [?nozzle ?min-limit ?max-slope] [?pressure ?x]) 0) => (roughly ?result 1e-3))
+         ?nozzle ?min-limit ?max-slope ?pressure  ?x    ?result
+         0.25    0.5        1.0        1.0          0.0   0.25
+         0.25    0.5        1.0        1.0        100.0   0.5
+         0.25    1.0        1.0        0.0          1.0   1.25
+         0.25    1.0        1.0        0.25         1.0   0.930)
 
 
 (def plume-bulge-probe
