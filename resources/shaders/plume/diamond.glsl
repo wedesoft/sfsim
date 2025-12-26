@@ -6,13 +6,13 @@ uniform float nozzle;
 uniform float diamond_strength;
 uniform float min_limit;
 
-float limit(float pressure);
+float plume_limit(float pressure);
 float plume_omega(float limit);
 float diamond_phase(float x, float limit);
 
 float diamond(float pressure, vec2 uv)
 {
-  float limit = limit(pressure);
+  float limit = plume_limit(pressure);
   if (nozzle > limit) {
     float bulge = nozzle - limit;
     float omega = plume_omega(limit);

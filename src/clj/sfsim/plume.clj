@@ -26,20 +26,22 @@
   [plume-phase (slurp "resources/shaders/plume/diamond-phase.glsl")])
 
 
-(def plume-limit
+(defn plume-limit
   "Shader function to get extent of rocket plume"
-  (slurp "resources/shaders/plume/limit.glsl"))
+  [method-name min-limit]
+  (template/eval (slurp "resources/shaders/plume/limit.glsl") {:method-name method-name :min-limit min-limit}))
 
 
 (def bulge
   "Shader function to determine shape of rocket exhaust plume"
-  [plume-limit plume-phase (slurp "resources/shaders/plume/bulge.glsl")])
+  [(plume-limit "plume_limit" "min_limit") plume-phase (slurp "resources/shaders/plume/bulge.glsl")])
 
 
 (defn diamond
   "Shader function for volumetric Mach diamonds"
   [fringe]
-  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
+  [(plume-limit "plume_limit" "min_limit") diamond-phase plume-phase
+   (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
 
 
 (def plume-start 0.0)
@@ -50,13 +52,13 @@
 (defn plume-transfer
   "Shader for computing engine plume light transfer at a point"
   [fringe]
-  [plume-limit bulge (diamond fringe) shaders/noise3d shaders/sdf-circle shaders/sdf-rectangle
+  [(plume-limit "plume_limit" "min_limit") bulge (diamond fringe) shaders/noise3d shaders/sdf-circle shaders/sdf-rectangle
    (template/eval (slurp "resources/shaders/plume/plume-transfer.glsl")
                   {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
 
 
 (def plume-box-size
-  [plume-limit
+  [(plume-limit "plume_limit" "min_limit")
    (template/eval (slurp "resources/shaders/plume/plume-box-size.glsl")
                   {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
 

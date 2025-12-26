@@ -28,6 +28,27 @@
 
 (GLFW/glfwInit)
 
+(def limit-probe
+(template/fn [pressure]
+"#version 450 core
+out vec3 fragColor;
+float plume_limit(float pressure);
+void main()
+{
+  float result = plume_limit(<%= pressure %>);
+  fragColor = vec3(result, 0, 0);
+}"))
+
+(def limit-test (shader-test (fn [program min-limit] (uniform-float program "min_limit" min-limit)) limit-probe
+                             (plume-limit "plume_limit" "min_limit")))
+
+(tabular "Shader function to get extent of plume"
+         (fact ((limit-test [?min-limit] [?pressure]) 0) => (roughly ?result 1e-3))
+         ?min-limit ?pressure ?result
+         0.25       1.0       0.25
+         0.25       0.25      0.5
+         1.0        0.0       1000.0)
+
 (def bulge-probe
   (template/fn [pressure x]
 "#version 450 core
@@ -117,7 +138,7 @@ void main()
   (template/fn [pressure x y]
 "#version 450 core
 out vec3 fragColor;
-float limit(float pressure)
+float plume_limit(float pressure)
 {
   return 0.5 / pressure;
 }
@@ -208,7 +229,7 @@ void main()
   (template/fn [limit x-range y-range z-range]
 "#version 450 core
 out vec3 fragColor;
-float limit(float pressure)
+float plume_limit(float pressure)
 {
   return <%= limit %>;
 }

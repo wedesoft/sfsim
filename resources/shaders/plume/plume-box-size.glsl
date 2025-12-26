@@ -9,10 +9,10 @@ uniform float pressure;
 uniform float throttle;
 uniform float max_slope;
 
-float limit(float pressure);
+float plume_limit(float pressure);
 
 vec3 plume_box_size()
 {
-  float box_size = min(max(limit(pressure), nozzle) - nozzle, throttle * (START - END) * max_slope) + WIDTH2;
+  float box_size = min(max(plume_limit(pressure), nozzle) - nozzle, throttle * (START - END) * max_slope) + WIDTH2;
   return vec3(box_size, mix(START, END, throttle), START);
 }

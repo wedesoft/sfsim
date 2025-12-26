@@ -28,7 +28,7 @@ uniform float diamond_strength;
 uniform float time;
 uniform float throttle;
 
-float limit(float pressure);
+float plume_limit(float pressure);
 float bulge(float pressure, float x);
 float sdf_circle(vec2 point, vec2 center, float radius);
 float sdf_rectangle(vec2 point, vec2 rectangle_min, vec2 rectangle_max);
@@ -56,7 +56,7 @@ float sdf_engine(vec2 cylinder1_base, vec2 cylinder2_base, vec3 p) {
 vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
 {
   if (throttle > 0.0) {
-    float transition = clamp((limit(pressure) - min_limit) / (nozzle - min_limit), 0.0, 1.0);
+    float transition = clamp((plume_limit(pressure) - min_limit) / (nozzle - min_limit), 0.0, 1.0);
     vec2 envelope = envelope(pressure, START - point.x - mix(ENGINE_SIZE, 0.0, transition), START - point.x - ENGINE_SIZE);
     float engine_pos = clamp((START - point.x) / ENGINE_SIZE, 0.0, 1.0);
     float radius = 0.5 * (envelope.x + envelope.y);
