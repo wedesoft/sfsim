@@ -62,6 +62,15 @@
                   {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
 
 
+(def rcs-end -1.0)
+
+
+(defn rcs-transfer
+  "Shader for computing RCS thruster plume light transfer at a point"
+  [base-density]
+  [(template/eval (slurp "resources/shaders/plume/rcs-transfer.glsl") {:base-density base-density :rcs-end rcs-end})])
+
+
 (def plume-box-size
   [(plume-limit "plume_limit" "plume_min_limit")
    (template/eval (slurp "resources/shaders/plume/plume-box-size.glsl")

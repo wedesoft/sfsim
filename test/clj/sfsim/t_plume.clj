@@ -209,6 +209,49 @@ void main()
           0.25      1.0       0.0  0.0   0.0)
 
 
+(def rcs-transfer-probe
+  (template/fn [x y step value alpha radius noise]
+"#version 450 core
+out vec3 fragColor;
+float bulge(float pressure, float x)
+{
+  if (x < 0.0)
+    return 0.0;
+  else
+    return <%= radius %>;
+}
+float noise3d(vec3 coordinates)
+{
+  return <%= noise %>;
+}
+vec4 rcs_transfer(vec3 point, float rcs_step, vec4 rcs_scatter);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, 0);
+  float rcs_step = <%= step %>;
+  vec4 scatter = vec4(<%= value %>, <%= value %>, <%= value %>, <%= alpha %>);
+  vec4 result = rcs_transfer(point, rcs_step, scatter);
+  fragColor = result.rga;
+}"))
+
+
+(def rcs-transfer-test (shader-test (fn [program] (uniform-float program "pressure" 1.0)) rcs-transfer-probe
+                                    (last (rcs-transfer 1.0))))
+
+
+(tabular "Shader function for light transfer in RCS thruster plume"
+         (fact (rcs-transfer-test [] [?x ?y ?step ?value ?alpha ?radius ?noise]) => (roughly-vector (vec3 ?rg ?rg ?a) 1e-3))
+          ?x            ?y         ?step ?value ?alpha ?radius ?noise ?rg  ?a
+          0.0           2.0        1.0   0.0    1.0    1.0     1.0    0.0  1.0
+          0.0           2.0        1.0   0.5    0.75   1.0     1.0    0.5  0.75
+          0.0           0.0        1.0   0.0    1.0    1.0     1.0    1.0  0.368
+          0.0           0.0        0.1   0.0    1.0    1.0     1.0    0.1  0.905
+          0.0           0.0        0.1   0.5    0.5    1.0     1.0    0.6  0.452
+          rcs-end       0.0        1.0   0.0    1.0    1.0     1.0    0.0  1.0
+          (/ rcs-end 2) 0.0        1.0   0.0    1.0    1.0     1.0    0.5  0.607
+          0.0           0.0        1.0   0.0    1.0    2.0     1.0    0.25 0.779
+          0.0           0.0        1.0   0.0    1.0    1.0     0.0    0.7  0.368)
+
 (def plume-segment-probe
   (template/fn [outer origin-x x size strength]
 "#version 450 core
