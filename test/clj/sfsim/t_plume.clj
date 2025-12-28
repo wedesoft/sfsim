@@ -365,6 +365,7 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
 <% (if x-range %>
   return vec2(box_min.x, box_max.x);
 <% ) %>
+:wa
 <% (if y-range %>
   return vec2(box_min.y, box_max.y);
 <% ) %>
@@ -379,6 +380,7 @@ void main()
   vec3 direction = vec3(1, 0, 0);
   fragColor = vec3(plume_box(origin, direction), 0.0);
 }"))
+
 
 (def plume-box-test
   (shader-test (fn [program nozzle throttle max-slope]
@@ -399,6 +401,55 @@ void main()
          100.0  1.0     0.0         0.5  false    false    true     (- plume-width-2)    plume-width-2
          100.0  1.0     1.0         0.5  false    true     false    (- (+ plume-width-2 (* (- plume-end) 0.5)))
                                                                     (+ (+ plume-width-2 (* (- plume-end) 0.5))))
+
+
+(def rcs-box-probe
+  (template/fn [limit x-range y-range z-range]
+"#version 450 core
+out vec3 fragColor;
+float rcs_limit(float pressure)
+{
+  return <%= limit %>;
+}
+vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
+{
+<% (if x-range %>
+  return vec2(box_min.x, box_max.x);
+<% ) %>
+<% (if y-range %>
+  return vec2(box_min.y, box_max.y);
+<% ) %>
+<% (if z-range %>
+  return vec2(box_min.z, box_max.z);
+<% ) %>
+}
+vec2 rcs_box(vec3 origin, vec3 direction);
+void main()
+{
+  vec3 origin = vec3(-5, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  fragColor = vec3(rcs_box(origin, direction), 0.0);
+}"))
+
+
+(def rcs-box-test
+  (shader-test (fn [program nozzle throttle max-slope]
+                   (uniform-float program "nozzle" nozzle)
+                   (uniform-float program "throttle" throttle)
+                   (uniform-float program "max_slope" max-slope))
+               rcs-box-probe [(last rcs-box-size) (last rcs-box)]))
+
+
+(tabular "Shader for bounding box computation of RCS plume"
+         (fact (rcs-box-test [?nozzle ?throttle ?slope] [?limit ?x-range ?y-range ?z-range]) => (roughly-vector (vec3 ?a ?b 0) 1e-4))
+         ?limit ?nozzle ?throttle ?slope ?x-range ?y-range ?z-range  ?a                   ?b
+           2.0  1.0     1.0       100.0  true     false    false     rcs-end              0.0
+           2.0  1.0     0.0       100.0  true     false    false     0.0                  0.0
+           2.0  1.0     1.0       100.0  false    true     false    -2.0                  2.0
+         100.0  1.0     0.0         0.5  false    false    true     -1.0                  1.0
+         100.0  1.0     1.0         0.5  false    true     false    (- (+ 1.0 (* (- rcs-end) 0.5)))
+                                                                    (+ (+ 1.0 (* (- rcs-end) 0.5))))
+
 
 (def plume-outer-probe
   (template/fn [x object-x outer]

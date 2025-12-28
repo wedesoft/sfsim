@@ -78,6 +78,15 @@
   [plume-box-size shaders/ray-box (slurp "resources/shaders/plume/plume-box.glsl")])
 
 
+(def rcs-box-size
+  [(plume-limit "rcs_limit" "rcs_min_limit")
+   (template/eval (slurp "resources/shaders/plume/rcs-box-size.glsl") {:rcs-end rcs-end})])
+
+
+(def rcs-box
+  [rcs-box-size shaders/ray-box (slurp "resources/shaders/plume/rcs-box.glsl")])
+
+
 (def plume-fringe 0.05)
 
 
