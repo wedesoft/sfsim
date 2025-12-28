@@ -66,7 +66,8 @@
 (defn rcs-transfer
   "Shader for computing RCS thruster plume light transfer at a point"
   [base-density]
-  [(template/eval (slurp "resources/shaders/plume/rcs-transfer.glsl") {:base-density base-density :rcs-end rcs-end})])
+  [(plume-limit "rcs_limit" "rcs_min_limit") rcs-bulge shaders/noise3d
+   (template/eval (slurp "resources/shaders/plume/rcs-transfer.glsl") {:base-density base-density :rcs-end rcs-end})])
 
 
 (def plume-box-size
@@ -109,8 +110,7 @@
 
 (defn sample-rcs-segment
   [outer]
-  [sampling-offset ; TODO: add rcs-box
-   (rcs-transfer rcs-base-density) shaders/limit-interval
+  [sampling-offset rcs-box (rcs-transfer rcs-base-density) shaders/limit-interval
    (template/eval (slurp "resources/shaders/plume/sample-rcs-segment.glsl") {:outer outer})])
 
 

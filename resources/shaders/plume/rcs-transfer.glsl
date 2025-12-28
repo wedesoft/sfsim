@@ -8,12 +8,12 @@
 uniform float pressure;
 uniform float time;
 
-float bulge(float pressure, float x);
+float rcs_bulge(float pressure, float x);
 float noise3d(vec3 coordinates);
 
 vec4 rcs_transfer(vec3 point, float rcs_step, vec4 rcs_scatter)
 {
-  float radius = bulge(pressure, -point.x);
+  float radius = rcs_bulge(pressure, -point.x);
   if (length(point.yz) <= radius) {
     float fade = mix(1.0, 0.0, point.x / RCS_END);
     float density = BASE_DENSITY / (radius * radius) * fade;

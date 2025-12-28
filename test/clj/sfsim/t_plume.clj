@@ -213,7 +213,7 @@ void main()
   (template/fn [x y step value alpha radius noise]
 "#version 450 core
 out vec3 fragColor;
-float bulge(float pressure, float x)
+float rcs_bulge(float pressure, float x)
 {
   if (x < 0.0)
     return 0.0;
@@ -365,7 +365,6 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction)
 <% (if x-range %>
   return vec2(box_min.x, box_max.x);
 <% ) %>
-:wa
 <% (if y-range %>
   return vec2(box_min.y, box_max.y);
 <% ) %>
