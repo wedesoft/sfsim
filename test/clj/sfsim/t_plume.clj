@@ -291,6 +291,7 @@ void main()
                    (uniform-float program "engine_step" engine-step))
                plume-segment-probe (last (sample-plume-segment outer)) shaders/limit-interval))
 
+
 (tabular "Shader function to determine rocket plume contribution"
          (fact ((plume-segment-test ?outer) [?engine-step] [?outer ?o-x ?x ?size ?strength])
                => (roughly-vector (vec3 ?result ?result ?alpha) 1e-3))
@@ -299,6 +300,57 @@ void main()
          0.1          true   -10.0  0.0  2.0   0.1       0.2    0.2
          0.1          false  -10.0 10.0  2.0   0.1       0.2    0.2
          0.1          false  -10.0 -5.0  2.0   0.1       0.0    0.0)
+
+
+(def rcs-segment-probe
+  (template/fn [outer origin-x x size strength]
+"#version 450 core
+out vec3 fragColor;
+vec4 sample_rcs_outer(vec3 object_origin, vec3 object_direction);
+vec4 sample_rcs_point(vec3 object_origin, vec3 object_direction, float dist);
+vec4 rcs_transfer(vec3 point, float rcs_step, vec4 rcs_scatter)
+{
+  float x = rcs_step * <%= strength %>;
+  return rcs_scatter + vec4(x, x, x, -x);
+}
+vec2 rcs_box(vec3 origin, vec3 direction)
+{
+  return vec2(-0.5 * <%= size %> - origin.x, <%= size %>);
+}
+float sampling_offset()
+{
+  return 0.5;
+}
+void main()
+{
+  vec3 origin = vec3(<%= origin-x %>, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  vec3 object_point = vec3(<%= x %>, 0, 0);
+<% (if outer %>
+  vec4 rcs = sample_rcs_outer(origin, direction);
+<% %>
+  vec4 rcs = sample_rcs_point(origin, direction, distance(object_point, origin));
+<% ) %>
+  fragColor = rcs.rga;
+}"))
+
+
+(defn rcs-segment-test
+  [outer]
+  (shader-test (fn [program rcs-step]
+                   (uniform-float program "rcs_step" rcs-step))
+               rcs-segment-probe (last (sample-rcs-segment outer)) shaders/limit-interval))
+
+
+(tabular "Shader function to determine RCS plume contribution"
+         (fact ((rcs-segment-test ?outer) [?rcs-step] [?outer ?o-x ?x ?size ?strength])
+               => (roughly-vector (vec3 ?result ?result ?alpha) 1e-3))
+         ?rcs-step ?outer ?o-x  ?x   ?size ?strength ?result ?alpha
+         0.1       true   -10.0  0.0  0.0   0.1       0.0    0.0
+         0.1       true   -10.0  0.0  2.0   0.1       0.2    0.2
+         0.1       false  -10.0 10.0  2.0   0.1       0.2    0.2
+         0.1       false  -10.0 -5.0  2.0   0.1       0.0    0.0)
+
 
 (def plume-box-probe
   (template/fn [limit x-range y-range z-range]

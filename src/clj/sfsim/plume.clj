@@ -98,6 +98,16 @@
   (sample-plume-segment true))
 
 
+(def rcs-base-density 0.03)
+
+
+(defn sample-rcs-segment
+  [outer]
+  [sampling-offset ; TODO: add rcs-box
+   (rcs-transfer rcs-base-density) shaders/limit-interval
+   (template/eval (slurp "resources/shaders/plume/sample-rcs-segment.glsl") {:outer outer})])
+
+
 (defn plume-segment
   [outer]
   [(sample-plume-segment outer) shaders/ray-sphere atmosphere/attenuation-track shaders/limit-interval
