@@ -1,4 +1,4 @@
-#define START <%= plume-start %>
+#define START 0.0
 #define SPIKE -3.6753
 #define ENGINE_SIZE (START - SPIKE)
 #define END <%= plume-end %>

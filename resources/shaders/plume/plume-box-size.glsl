@@ -1,6 +1,6 @@
 #version 450 core
 
-#define START <%= plume-start %>
+#define START 0.0
 #define END <%= plume-end %>
 #define WIDTH2 <%= plume-width-2 %>
 

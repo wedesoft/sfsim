@@ -49,7 +49,6 @@
    (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
 
 
-(def plume-start 0.0)
 (def plume-end -60.0)
 (def plume-width-2 7.4266)
 
@@ -58,8 +57,7 @@
   "Shader for computing engine plume light transfer at a point"
   [fringe]
   [(plume-limit "plume_limit" "plume_min_limit") plume-bulge (diamond fringe) shaders/noise3d shaders/sdf-circle shaders/sdf-rectangle
-   (template/eval (slurp "resources/shaders/plume/plume-transfer.glsl")
-                  {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
+   (template/eval (slurp "resources/shaders/plume/plume-transfer.glsl") {:plume-end plume-end :plume-width-2 plume-width-2})])
 
 
 (def rcs-end -1.0)
@@ -73,8 +71,7 @@
 
 (def plume-box-size
   [(plume-limit "plume_limit" "plume_min_limit")
-   (template/eval (slurp "resources/shaders/plume/plume-box-size.glsl")
-                  {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
+   (template/eval (slurp "resources/shaders/plume/plume-box-size.glsl") {:plume-end plume-end :plume-width-2 plume-width-2})])
 
 
 (def plume-box
