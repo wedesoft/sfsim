@@ -117,7 +117,7 @@
 (defn plume-segment
   [outer]
   [(sample-plume-segment outer) shaders/ray-sphere atmosphere/attenuation-track shaders/limit-interval
-   (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer})])
+   (template/eval (slurp "resources/shaders/plume/segment.glsl") {:type "plume" :outer outer})])
 
 
 (def plume-outer
@@ -131,7 +131,7 @@
 (defn rcs-segment
   [outer]
   [(sample-rcs-segment outer) shaders/ray-sphere atmosphere/attenuation-track shaders/limit-interval
-   (template/eval (slurp "resources/shaders/plume/rcs-segment.glsl") {:outer outer})])
+   (template/eval (slurp "resources/shaders/plume/segment.glsl") {:type "rcs" :outer outer})])
 
 
 (def rcs-outer

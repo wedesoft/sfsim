@@ -51,7 +51,7 @@
           - [X] problem with shadow map size being adapted to object radius
           - [X] use different vertex shader using transform and air pressure to move and scale box
       - [-] implement RCS thrusters
-        - [-] implement rcs-segment.glsl
+        - [X] implement rcs-segment.glsl
         - [ ] use different values for rcs: nozzle, throttle, max-slope
         - [ ] integration test for model and plume
         - [ ] store RCS coordinate systems in Blender
