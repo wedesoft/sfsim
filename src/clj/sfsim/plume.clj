@@ -179,7 +179,7 @@
   (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
   (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
   (uniform-float program "time" (:sfsim.model/time model-vars))
-  (uniform-float program "throttle" (:sfsim.model/throttle model-vars)))
+  (uniform-float program "plume_throttle" (:sfsim.model/throttle model-vars)))
 
 
 (def plume-indices

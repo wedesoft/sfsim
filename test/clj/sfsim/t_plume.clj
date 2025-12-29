@@ -235,22 +235,25 @@ void main()
 }"))
 
 
-(def rcs-transfer-test (shader-test (fn [program] (uniform-float program "pressure" 1.0)) rcs-transfer-probe
-                                    (last (rcs-transfer 1.0))))
+(def rcs-transfer-test (shader-test (fn [program throttle]
+                                        (uniform-float program "pressure" 1.0)
+                                        (uniform-float program "rcs_throttle" throttle))
+                                    rcs-transfer-probe (last (rcs-transfer 1.0))))
 
 
 (tabular "Shader function for light transfer in RCS thruster plume"
-         (fact (rcs-transfer-test [] [?x ?y ?step ?value ?alpha ?radius ?noise]) => (roughly-vector (vec3 ?rg ?rg ?a) 1e-3))
-          ?x            ?y         ?step ?value ?alpha ?radius ?noise ?rg  ?a
-          0.0           2.0        1.0   0.0    1.0    1.0     1.0    0.0  1.0
-          0.0           2.0        1.0   0.5    0.75   1.0     1.0    0.5  0.75
-          0.0           0.0        1.0   0.0    1.0    1.0     1.0    1.0  0.368
-          0.0           0.0        0.1   0.0    1.0    1.0     1.0    0.1  0.905
-          0.0           0.0        0.1   0.5    0.5    1.0     1.0    0.6  0.452
-          rcs-end       0.0        1.0   0.0    1.0    1.0     1.0    0.0  1.0
-          (/ rcs-end 2) 0.0        1.0   0.0    1.0    1.0     1.0    0.5  0.607
-          0.0           0.0        1.0   0.0    1.0    2.0     1.0    0.25 0.779
-          0.0           0.0        1.0   0.0    1.0    1.0     0.0    0.7  0.368)
+         (fact (rcs-transfer-test [?throttle] [?x ?y ?step ?value ?alpha ?radius ?noise]) => (roughly-vector (vec3 ?rg ?rg ?a) 1e-3))
+          ?x            ?y         ?step ?throttle ?value ?alpha ?radius ?noise ?rg  ?a
+          0.0           2.0        1.0   1.0       0.0    1.0    1.0     1.0    0.0  1.0
+          0.0           2.0        1.0   1.0       0.5    0.75   1.0     1.0    0.5  0.75
+          0.0           0.0        1.0   1.0       0.0    1.0    1.0     1.0    1.0  0.368
+          0.0           0.0        0.1   1.0       0.0    1.0    1.0     1.0    0.1  0.905
+          0.0           0.0        0.1   1.0       0.5    0.5    1.0     1.0    0.6  0.452
+          rcs-end       0.0        1.0   1.0       0.0    1.0    1.0     1.0    0.0  1.0
+          (/ rcs-end 2) 0.0        1.0   1.0       0.0    1.0    1.0     1.0    0.5  0.607
+          0.0           0.0        1.0   1.0       0.0    1.0    2.0     1.0    0.25 0.779
+          0.0           0.0        1.0   1.0       0.0    1.0    1.0     0.0    0.7  0.368
+          (/ rcs-end 2) 0.0        1.0   0.5       0.0    1.0    1.0     1.0    0.0  1.0)
 
 (def plume-segment-probe
   (template/fn [outer origin-x x size strength]
@@ -384,7 +387,7 @@ void main()
 (def plume-box-test
   (shader-test (fn [program nozzle throttle max-slope]
                    (uniform-float program "plume_nozzle" nozzle)
-                   (uniform-float program "throttle" throttle)
+                   (uniform-float program "plume_throttle" throttle)
                    (uniform-float program "max_slope" max-slope))
                plume-box-probe [(last plume-box-size) (last plume-box)]))
 
@@ -434,7 +437,7 @@ void main()
 (def rcs-box-test
   (shader-test (fn [program nozzle throttle max-slope]
                    (uniform-float program "rcs_nozzle" nozzle)
-                   (uniform-float program "throttle" throttle)
+                   (uniform-float program "rcs_throttle" throttle)
                    (uniform-float program "max_slope" max-slope))
                rcs-box-probe [(last rcs-box-size) (last rcs-box)]))
 

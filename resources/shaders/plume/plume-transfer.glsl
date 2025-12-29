@@ -26,7 +26,7 @@ uniform float plume_nozzle;
 uniform float min_limit;
 uniform float diamond_strength;
 uniform float time;
-uniform float throttle;
+uniform float plume_throttle;
 
 float plume_limit(float pressure);
 float plume_bulge(float pressure, float x);
@@ -55,7 +55,7 @@ float sdf_engine(vec2 cylinder1_base, vec2 cylinder2_base, vec3 p) {
 
 vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
 {
-  if (throttle > 0.0) {
+  if (plume_throttle > 0.0) {
     float transition = clamp((plume_limit(pressure) - min_limit) / (plume_nozzle - min_limit), 0.0, 1.0);
     vec2 envelope = envelope(pressure, START - point.x - mix(ENGINE_SIZE, 0.0, transition), START - point.x - ENGINE_SIZE);
     float engine_pos = clamp((START - point.x) / ENGINE_SIZE, 0.0, 1.0);
@@ -67,7 +67,7 @@ vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
     if (sdf < 0.0) {
       float dz = mix(WIDTH2, envelope.x, engine_pos);
       float dy = mix(LAYER, envelope.y, engine_pos);
-      float end = mix(START, END, throttle);
+      float end = mix(START, END, plume_throttle);
       float fade = clamp((point.x - end) / (START - end), 0.0, 1.0);
       float density = BASE_DENSITY / (dz * dy) * fade;
       float fringe = max(1.0 + sdf / 1.0, 0.0);
