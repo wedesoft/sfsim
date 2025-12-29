@@ -295,7 +295,7 @@ void main()
                 vao     (make-vertex-array-object program indices vertices ["point" 3])]
             (use-program program)
             (uniform-vector2 program "resolution" (vec2 width height))
-            (uniform-float program "nozzle" 2.7549)
+            (uniform-float program "plume_nozzle" 2.7549)
             (uniform-float program "plume_min_limit" 1.2)
             (uniform-float program "plume_max_slope" 1.0)
             (uniform-float program "omega_factor" 0.2)

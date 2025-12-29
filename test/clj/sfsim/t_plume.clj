@@ -64,7 +64,7 @@ void main()
 
 
 (def rcs-bulge-test (apply shader-test (fn [program nozzle min-limit max-slope]
-                                           (uniform-float program "nozzle" nozzle)
+                                           (uniform-float program "rcs_nozzle" nozzle)
                                            (uniform-float program "rcs_min_limit" min-limit)
                                            (uniform-float program "rcs_max_slope" max-slope))
                            rcs-bulge-probe rcs-bulge))
@@ -92,7 +92,7 @@ void main()
 
 
 (def plume-bulge-test (apply shader-test (fn [program nozzle plume-min-limit plume-max-slope]
-                                             (uniform-float program "nozzle" nozzle)
+                                             (uniform-float program "plume_nozzle" nozzle)
                                              (uniform-float program "plume_min_limit" plume-min-limit)
                                              (uniform-float program "plume_max_slope" plume-max-slope)
                                              (uniform-float program "omega_factor" PI))
@@ -126,7 +126,7 @@ void main()
 }"))
 
 (def plume-phase-test (shader-test (fn [program nozzle]
-                                       (uniform-float program "nozzle" nozzle)
+                                       (uniform-float program "plume_nozzle" nozzle)
                                        (uniform-float program "omega_factor" 10.0))
                                    plume-phase-probe plume-phase))
 
@@ -191,7 +191,7 @@ void main()
 
 (def diamond-test (shader-test (fn [program strength]
                                    (uniform-float program "diamond_strength" strength)
-                                   (uniform-float program "nozzle" 1.0))
+                                   (uniform-float program "plume_nozzle" 1.0))
                                diamond-probe (last (diamond 0.05))))
 
 (tabular "Shader function for volumetric Mach diamonds"
@@ -383,7 +383,7 @@ void main()
 
 (def plume-box-test
   (shader-test (fn [program nozzle throttle max-slope]
-                   (uniform-float program "nozzle" nozzle)
+                   (uniform-float program "plume_nozzle" nozzle)
                    (uniform-float program "throttle" throttle)
                    (uniform-float program "max_slope" max-slope))
                plume-box-probe [(last plume-box-size) (last plume-box)]))
@@ -433,7 +433,7 @@ void main()
 
 (def rcs-box-test
   (shader-test (fn [program nozzle throttle max-slope]
-                   (uniform-float program "nozzle" nozzle)
+                   (uniform-float program "rcs_nozzle" nozzle)
                    (uniform-float program "throttle" throttle)
                    (uniform-float program "max_slope" max-slope))
                rcs-box-probe [(last rcs-box-size) (last rcs-box)]))

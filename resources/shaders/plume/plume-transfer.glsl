@@ -22,7 +22,7 @@ vec2 cylinder1_base = vec2(-3.4497,  4.3511);
 vec2 cylinder2_base = vec2(-3.4497, -4.3511);
 
 uniform float pressure;
-uniform float nozzle;
+uniform float plume_nozzle;
 uniform float min_limit;
 uniform float diamond_strength;
 uniform float time;
@@ -38,25 +38,25 @@ float diamond(float pressure, vec2 uv);
 vec2 envelope(float pressure, float x, float x_constrained) {
   float bulge_constrained = plume_bulge(pressure, max(0.0, x_constrained));
   float bulge = plume_bulge(pressure, x);
-  return vec2(bulge_constrained + WIDTH2 - nozzle, bulge);
+  return vec2(bulge_constrained + WIDTH2 - plume_nozzle, bulge);
 }
 
 float sdf_engine(vec2 cylinder1_base, vec2 cylinder2_base, vec3 p) {
   if (abs(p.y) > WIDTH2) {
     return abs(p.y) - WIDTH2;
   }
-  if (abs(p.z) <= nozzle) {
+  if (abs(p.z) <= plume_nozzle) {
     vec2 base = p.z > 0.0 ? cylinder1_base : cylinder2_base;
     return RADIUS - LAYER - length(p.xz - base);
   }
-  vec2 o = vec2(min(p.x - (cylinder1_base.x - RADIUS + LAYER), p.x), nozzle);
+  vec2 o = vec2(min(p.x - (cylinder1_base.x - RADIUS + LAYER), p.x), plume_nozzle);
   return length(o - vec2(p.x, abs(p.z)));
 }
 
 vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
 {
   if (throttle > 0.0) {
-    float transition = clamp((plume_limit(pressure) - min_limit) / (nozzle - min_limit), 0.0, 1.0);
+    float transition = clamp((plume_limit(pressure) - min_limit) / (plume_nozzle - min_limit), 0.0, 1.0);
     vec2 envelope = envelope(pressure, START - point.x - mix(ENGINE_SIZE, 0.0, transition), START - point.x - ENGINE_SIZE);
     float engine_pos = clamp((START - point.x) / ENGINE_SIZE, 0.0, 1.0);
     float radius = 0.5 * (envelope.x + envelope.y);
@@ -71,7 +71,7 @@ vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
       float fade = clamp((point.x - end) / (START - end), 0.0, 1.0);
       float density = BASE_DENSITY / (dz * dy) * fade;
       float fringe = max(1.0 + sdf / 1.0, 0.0);
-      vec3 scale = 2.0 * vec3(0.1, nozzle / envelope.x, nozzle / envelope.y);
+      vec3 scale = 2.0 * vec3(0.1, plume_nozzle / envelope.x, plume_nozzle / envelope.y);
       float attenuation = 0.7 + 0.3 * noise3d(point * scale + time * vec3(SPEED, 0.0, 0.0));
       vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
       float diamond = mix(diamond_strength, diamond(pressure, vec2(START - point.x - mix(ENGINE_SIZE, 0.0, transition), max(0.0, sdf + dy))), mix(engine_pos, 1.0, transition));

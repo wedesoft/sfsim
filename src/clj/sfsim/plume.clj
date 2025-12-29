@@ -144,7 +144,7 @@
 
 (def model-data
   (m/schema [:map [:sfsim.model/object-radius :double]
-                  [:sfsim.model/nozzle :double]
+                  [:sfsim.model/plume-nozzle :double]
                   [:sfsim.model/plume-min-limit :double]
                   [:sfsim.model/plume-max-slope :double]
                   [:sfsim.model/omega-factor :double]
@@ -155,7 +155,7 @@
 (defn setup-static-plume-uniforms
   {:malli/schema [:=> [:cat :int model-data] :nil]}
   [program model-data]
-  (uniform-float program "nozzle" (:sfsim.model/nozzle model-data))
+  (uniform-float program "plume_nozzle" (:sfsim.model/plume-nozzle model-data))
   (uniform-float program "plume_min_limit" (:sfsim.model/plume-min-limit model-data))
   (uniform-float program "plume_max_slope" (:sfsim.model/plume-max-slope model-data))
   (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-data))
