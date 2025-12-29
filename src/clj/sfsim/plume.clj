@@ -128,6 +128,20 @@
   (plume-segment false))
 
 
+(defn rcs-segment
+  [outer]
+  [(sample-rcs-segment outer) shaders/ray-sphere atmosphere/attenuation-track shaders/limit-interval
+   (template/eval (slurp "resources/shaders/plume/rcs-segment.glsl") {:outer outer})])
+
+
+(def rcs-outer
+  (rcs-segment true))
+
+
+(def rcs-point
+  (rcs-segment false))
+
+
 (def model-data
   (m/schema [:map [:sfsim.model/object-radius :double]
                   [:sfsim.model/nozzle :double]
