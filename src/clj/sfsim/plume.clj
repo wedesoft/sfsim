@@ -76,7 +76,7 @@
 
 
 (def plume-box
-  [plume-box-size shaders/ray-box (slurp "resources/shaders/plume/plume-box.glsl")])
+  [plume-box-size shaders/ray-box (template/eval (slurp "resources/shaders/plume/box.glsl") {:type "plume"})])
 
 
 (def rcs-box-size
@@ -85,7 +85,7 @@
 
 
 (def rcs-box
-  [rcs-box-size shaders/ray-box (slurp "resources/shaders/plume/rcs-box.glsl")])
+  [rcs-box-size shaders/ray-box (template/eval (slurp "resources/shaders/plume/box.glsl") {:type "rcs"})])
 
 
 (def plume-fringe 0.05)
@@ -94,7 +94,7 @@
 (defn sample-plume-segment
   [outer]
   [sampling-offset plume-box (plume-transfer plume-fringe) shaders/limit-interval
-   (template/eval (slurp "resources/shaders/plume/sample-plume-segment.glsl") {:outer outer})])
+   (template/eval (slurp "resources/shaders/plume/sample-segment.glsl") {:type "plume" :outer outer})])
 
 
 (def sample-plume-point
@@ -111,7 +111,7 @@
 (defn sample-rcs-segment
   [outer]
   [sampling-offset rcs-box (rcs-transfer rcs-base-density) shaders/limit-interval
-   (template/eval (slurp "resources/shaders/plume/sample-rcs-segment.glsl") {:outer outer})])
+   (template/eval (slurp "resources/shaders/plume/sample-segment.glsl") {:type "rcs" :outer outer})])
 
 
 (defn plume-segment
@@ -149,7 +149,7 @@
                   [:sfsim.model/plume-max-slope :double]
                   [:sfsim.model/omega-factor :double]
                   [:sfsim.model/diamond-strength :double]
-                  [:sfsim.model/engine-step :double]]))
+                  [:sfsim.model/plume-step :double]]))
 
 
 (defn setup-static-plume-uniforms
@@ -160,7 +160,7 @@
   (uniform-float program "plume_max_slope" (:sfsim.model/plume-max-slope model-data))
   (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-data))
   (uniform-float program "diamond_strength" (:sfsim.model/diamond-strength model-data))
-  (uniform-float program "engine_step" (:sfsim.model/engine-step model-data)))
+  (uniform-float program "plume_step" (:sfsim.model/plume-step model-data)))
 
 
 (def plume-vars (m/schema [:map [:sfsim.render/object-origin fvec3]

@@ -733,7 +733,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                            :plume-max-slope 1.0
                                            :omega-factor 0.2
                                            :diamond-strength 0.4
-                                           :engine-step 0.2}
+                                           :plume-step 0.2}
              model-vars      {:sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
              render-vars1    (make-scene-render-vars render-config 640 480 pos1 orientation1 light-direction obj-pos obj-orient
                                                      model-data model-vars)

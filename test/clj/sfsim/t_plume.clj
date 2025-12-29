@@ -287,15 +287,15 @@ void main()
 
 (defn plume-segment-test
   [outer]
-  (shader-test (fn [program engine-step]
-                   (uniform-float program "engine_step" engine-step))
+  (shader-test (fn [program plume-step]
+                   (uniform-float program "plume_step" plume-step))
                plume-segment-probe (last (sample-plume-segment outer)) shaders/limit-interval))
 
 
 (tabular "Shader function to determine rocket plume contribution"
-         (fact ((plume-segment-test ?outer) [?engine-step] [?outer ?o-x ?x ?size ?strength])
+         (fact ((plume-segment-test ?outer) [?plume-step] [?outer ?o-x ?x ?size ?strength])
                => (roughly-vector (vec3 ?result ?result ?alpha) 1e-3))
-         ?engine-step ?outer ?o-x  ?x   ?size ?strength ?result ?alpha
+         ?plume-step ?outer ?o-x  ?x   ?size ?strength ?result ?alpha
          0.1          true   -10.0  0.0  0.0   0.1       0.0    0.0
          0.1          true   -10.0  0.0  2.0   0.1       0.2    0.2
          0.1          false  -10.0 10.0  2.0   0.1       0.2    0.2
