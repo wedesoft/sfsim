@@ -705,21 +705,21 @@
                                      (use-program (:sfsim.clouds/plume-point programs))
                                      (render-quads plume-vao))
                                    (doseq [rcs-transform rcs-transforms]
-                                     (uniform-matrix4 (:sfsim.clouds/rcs-outer programs) "rcs_to_object" rcs-transform)
-                                     (uniform-matrix4 (:sfsim.clouds/rcs-point programs) "rcs_to_object" rcs-transform)
-                                     (uniform-matrix4 (:sfsim.clouds/rcs-outer programs) "object_to_rcs" (inverse rcs-transform))
-                                     (uniform-matrix4 (:sfsim.clouds/rcs-point programs) "object_to_rcs" (inverse rcs-transform))
-                                     (uniform-float (:sfsim.clouds/rcs-outer programs) "rcs_throttle" 1.0)
-                                     (uniform-float (:sfsim.clouds/rcs-point programs) "rcs_throttle" 1.0)
-                                     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-                                       (use-program (:sfsim.clouds/rcs-outer programs))
-                                       (render-quads vao))
-                                     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-                                       (use-program (:sfsim.clouds/rcs-point programs))
-                                       (render-quads vao))
-                                     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-                                       (use-program (:sfsim.clouds/rcs-point programs))
-                                       (render-quads vao)))))
+                                          (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                            (use-program (:sfsim.clouds/rcs-outer programs))
+                                            (uniform-matrix4 (:sfsim.clouds/rcs-outer programs) "rcs_to_object" rcs-transform)
+                                            (uniform-matrix4 (:sfsim.clouds/rcs-outer programs) "object_to_rcs" (inverse rcs-transform))
+                                            (uniform-float (:sfsim.clouds/rcs-outer programs) "rcs_throttle" 1.0)
+                                            (render-quads plume-vao))
+                                          (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                            (use-program (:sfsim.clouds/rcs-point programs))
+                                            (uniform-matrix4 (:sfsim.clouds/rcs-point programs) "rcs_to_object" rcs-transform)
+                                            (uniform-matrix4 (:sfsim.clouds/rcs-point programs) "object_to_rcs" (inverse rcs-transform))
+                                            (uniform-float (:sfsim.clouds/rcs-point programs) "rcs_throttle" 1.0)
+                                            (render-quads plume-vao))
+                                          (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+                                            (use-program (:sfsim.clouds/rcs-point programs))
+                                            (render-quads plume-vao)))))
                                (when back
                                  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                    (use-program (:sfsim.clouds/atmosphere-back programs))
