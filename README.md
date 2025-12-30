@@ -106,6 +106,18 @@ cd ..
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run main program: `clj -M:run`
 
+# Converting Blender file to GLB
+
+If you want to modify the [spacecraft model](https://github.com/wedesoft/blender/tree/master/venturestar), you need to edit the Blender model and convert it to GLB again.
+The Blender model can be converted to GLB as follows:
+
+* apply all modifiers in Blender (first to last)
+* delete lights and camera
+* delete reference images
+* delete invisible objects used for object differences
+* export to GLB with baking animations enabled (animation mode "NLA track"!)
+* exit Blender without overwriting model
+
 # External Links
 
 * Simulators
