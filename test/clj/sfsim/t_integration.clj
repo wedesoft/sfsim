@@ -302,7 +302,7 @@ void main()
             (uniform-float program "diamond_strength" 0.2)
             (uniform-float program "plume_step" 0.2)
             (uniform-float program "pressure" 1.0)
-            (uniform-float program "throttle" 1.0)
+            (uniform-float program "plume_throttle" 1.0)
             (uniform-float program "time" 0.0)
             (let [tex (texture-render-color width height true
                                             (clear (vec3 0 0 0))
