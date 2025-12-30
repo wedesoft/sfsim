@@ -388,7 +388,7 @@ void main()
   (shader-test (fn [program nozzle throttle max-slope]
                    (uniform-float program "plume_nozzle" nozzle)
                    (uniform-float program "plume_throttle" throttle)
-                   (uniform-float program "max_slope" max-slope))
+                   (uniform-float program "plume_max_slope" max-slope))
                plume-box-probe [(last plume-box-size) (last plume-box)]))
 
 
@@ -438,7 +438,7 @@ void main()
   (shader-test (fn [program nozzle throttle max-slope]
                    (uniform-float program "rcs_nozzle" nozzle)
                    (uniform-float program "rcs_throttle" throttle)
-                   (uniform-float program "max_slope" max-slope))
+                   (uniform-float program "rcs_max_slope" max-slope))
                rcs-box-probe [(last rcs-box-size) (last rcs-box)]))
 
 

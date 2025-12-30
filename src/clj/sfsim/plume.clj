@@ -60,7 +60,7 @@
    (template/eval (slurp "resources/shaders/plume/plume-transfer.glsl") {:plume-end plume-end :plume-width-2 plume-width-2})])
 
 
-(def rcs-end -1.0)
+(def rcs-end -3.0)
 
 
 (defn rcs-transfer
@@ -105,7 +105,7 @@
   (sample-plume-segment true))
 
 
-(def rcs-base-density 0.03)
+(def rcs-base-density 0.1)
 
 
 (defn sample-rcs-segment
@@ -158,9 +158,13 @@
   (uniform-float program "plume_nozzle" (:sfsim.model/plume-nozzle model-data))
   (uniform-float program "plume_min_limit" (:sfsim.model/plume-min-limit model-data))
   (uniform-float program "plume_max_slope" (:sfsim.model/plume-max-slope model-data))
+  (uniform-float program "plume_step" (:sfsim.model/plume-step model-data))
   (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-data))
   (uniform-float program "diamond_strength" (:sfsim.model/diamond-strength model-data))
-  (uniform-float program "plume_step" (:sfsim.model/plume-step model-data)))
+  (uniform-float program "rcs_nozzle" (:sfsim.model/rcs-nozzle model-data))
+  (uniform-float program "rcs_min_limit" (:sfsim.model/rcs-min-limit model-data))
+  (uniform-float program "rcs_max_slope" (:sfsim.model/rcs-max-slope model-data))
+  (uniform-float program "rcs_step" (:sfsim.model/rcs-step model-data)))
 
 
 (def plume-vars (m/schema [:map [:sfsim.render/object-origin fvec3]
