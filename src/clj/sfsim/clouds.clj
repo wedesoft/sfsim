@@ -517,13 +517,13 @@
 
 
 (def vertex-plume
-  [plume-box-size (slurp "resources/shaders/plume/vertex.glsl")])
+  [plume-box-size (template/eval (slurp "resources/shaders/plume/vertex.glsl") {:type "plume"})])
 
 
 (defn fragment-plume
   [outer]
   [geometry-distance geometry-point plume-outer plume-point
-   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:outer outer})])
+   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "plume" :outer outer})])
 
 
 (defn cloud-fragment-shaders
