@@ -60,9 +60,9 @@ vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
     vec2 envelope = envelope(pressure, START - point.x - mix(ENGINE_SIZE, 0.0, transition), START - point.x - ENGINE_SIZE);
     float engine_pos = clamp((START - point.x) / ENGINE_SIZE, 0.0, 1.0);
     float radius = 0.5 * (envelope.x + envelope.y);
-    float base_sdf = sdf_engine(cylinder1_base, cylinder2_base, point);
+    float base_sdf = sdf_engine(cylinder1_base, cylinder2_base, point.xzy);
     float shape_transition = clamp((point.x - END) / (START - END), 0.0, 1.0);
-    float shape_mix = mix(sdf_circle(point.yz, vec2(0, 0), radius), sdf_rectangle(point.yz, -envelope, +envelope), shape_transition);
+    float shape_mix = mix(sdf_circle(point.zy, vec2(0, 0), radius), sdf_rectangle(point.zy, -envelope, +envelope), shape_transition);
     float sdf = mix(base_sdf, shape_mix, mix(engine_pos, 1.0, transition));
     if (sdf < 0.0) {
       float dz = mix(WIDTH2, envelope.x, engine_pos);
@@ -72,7 +72,7 @@ vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
       float density = BASE_DENSITY / (dz * dy) * fade;
       float fringe = max(1.0 + sdf / 1.0, 0.0);
       vec3 scale = 2.0 * vec3(0.1, plume_nozzle / envelope.x, plume_nozzle / envelope.y);
-      float attenuation = 0.7 + 0.3 * noise3d(point * scale + time * vec3(SPEED, 0.0, 0.0));
+      float attenuation = 0.7 + 0.3 * noise3d(point.xzy * scale + time * vec3(SPEED, 0.0, 0.0));
       vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
       float diamond = mix(diamond_strength, diamond(pressure, vec2(START - point.x - mix(ENGINE_SIZE, 0.0, transition), max(0.0, sdf + dy))), mix(engine_pos, 1.0, transition));
       float plume_transmittance = exp(-density * plume_step);

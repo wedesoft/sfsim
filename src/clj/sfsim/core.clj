@@ -187,7 +187,7 @@
 (def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Left"))))
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
 (def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
-(def plume-transform (model/get-node-transform model "Plume"))  ; TODO: multiply with gltf-to-aerodynamic
+(def plume-transform (mulm gltf-to-aerodynamic (model/get-node-transform model "Plume")))
 ; (def rcs-transforms (map #(mulm gltf-to-aerodynamic (model/get-node-transform model (str "RCS LA" %))) [1 2 3]))
 (def rcs-transforms [])
 
