@@ -42,15 +42,15 @@ vec2 envelope(float pressure, float x, float x_constrained) {
 }
 
 float sdf_engine(vec2 cylinder1_base, vec2 cylinder2_base, vec3 p) {
-  if (abs(p.y) > WIDTH2) {
-    return abs(p.y) - WIDTH2;
+  if (abs(p.z) > WIDTH2) {
+    return abs(p.z) - WIDTH2;
   }
-  if (abs(p.z) <= plume_nozzle) {
-    vec2 base = p.z > 0.0 ? cylinder1_base : cylinder2_base;
-    return RADIUS - LAYER - length(p.xz - base);
+  if (abs(p.y) <= plume_nozzle) {
+    vec2 base = p.y > 0.0 ? cylinder1_base : cylinder2_base;
+    return RADIUS - LAYER - length(p.xy - base);
   }
   vec2 o = vec2(min(p.x - (cylinder1_base.x - RADIUS + LAYER), p.x), plume_nozzle);
-  return length(o - vec2(p.x, abs(p.z)));
+  return length(o - vec2(p.x, abs(p.y)));
 }
 
 vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
@@ -60,7 +60,7 @@ vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
     vec2 envelope = envelope(pressure, START - point.x - mix(ENGINE_SIZE, 0.0, transition), START - point.x - ENGINE_SIZE);
     float engine_pos = clamp((START - point.x) / ENGINE_SIZE, 0.0, 1.0);
     float radius = 0.5 * (envelope.x + envelope.y);
-    float base_sdf = sdf_engine(cylinder1_base, cylinder2_base, point.xzy);
+    float base_sdf = sdf_engine(cylinder1_base, cylinder2_base, point);
     float shape_transition = clamp((point.x - END) / (START - END), 0.0, 1.0);
     float shape_mix = mix(sdf_circle(point.zy, vec2(0, 0), radius), sdf_rectangle(point.zy, -envelope, +envelope), shape_transition);
     float sdf = mix(base_sdf, shape_mix, mix(engine_pos, 1.0, transition));
