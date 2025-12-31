@@ -71,8 +71,8 @@ vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
       float fade = clamp((point.x - end) / (START - end), 0.0, 1.0);
       float density = BASE_DENSITY / (dy * dz) * fade;
       float fringe = max(1.0 + sdf / 1.0, 0.0);
-      vec3 scale = 2.0 * vec3(0.1, plume_nozzle / envelope.y, plume_nozzle / envelope.x);
-      float attenuation = 0.7 + 0.3 * noise3d(point.xzy * scale + time * vec3(SPEED, 0.0, 0.0));
+      vec3 scale = 2.0 * vec3(0.1, plume_nozzle / envelope.x, plume_nozzle / envelope.y);
+      float attenuation = 0.7 + 0.3 * noise3d(point * scale + time * vec3(SPEED, 0.0, 0.0));
       vec3 flame_color = mix(vec3(0.6, 0.6, 1.0), mix(vec3(0.90, 0.59, 0.80), vec3(0.50, 0.50, 1.00), fringe), pressure);
       float diamond = mix(diamond_strength, diamond(pressure, vec2(START - point.x - mix(ENGINE_SIZE, 0.0, transition), max(0.0, sdf + dz))), mix(engine_pos, 1.0, transition));
       float plume_transmittance = exp(-density * plume_step);
