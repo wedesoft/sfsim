@@ -33,7 +33,7 @@ git checkout windows
 
 ## Install JoltPhysics
 
-Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.4.0 and build it as follows.
+Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.5.0 and build it as follows.
 Note you might have to install glslc if you already have Vulkan installed.
 
 ### GCC/Linux
