@@ -279,7 +279,7 @@ void main()
 {
   vec2 uv = gl_FragCoord.xy / resolution;
   float offset = 7.5047;
-  fragColor = vec4(sample_plume_outer(vec3(-uv.x * 80 + offset, uv.y * 50 - 25, -20), vec3(0, 0, 1)).xyz, 1.0);
+  fragColor = vec4(sample_plume_outer(vec3(-uv.x * 80 + offset, -20, uv.y * 50 - 25), vec3(0, 1, 0)).xyz, 1.0);
 }")
 
 
