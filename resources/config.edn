@@ -57,10 +57,14 @@
                                       :shadow-bias 1e-6}
 
  :sfsim.model-config #:sfsim.model{:object-radius 30.0  ; includes size of expanding plume
-                                   :nozzle 2.7549
-                                   :min-limit 1.2
-                                   :max-slope 1.0
+                                   :plume-nozzle 2.7549
+                                   :plume-min-limit 1.2
+                                   :plume-max-slope 1.0
+                                   :plume-step 0.5
                                    :omega-factor 0.2
                                    :diamond-strength 0.4
-                                   :engine-step 0.5}
+                                   :rcs-nozzle 0.2
+                                   :rcs-min-limit 0.25
+                                   :rcs-max-slope 1.0
+                                   :rcs-step 0.05}
 }

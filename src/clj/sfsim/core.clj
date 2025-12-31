@@ -187,6 +187,9 @@
 (def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Left"))))
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
 (def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
+(def plume-transform (model/get-node-transform model "Plume"))  ; TODO: multiply with gltf-to-aerodynamic
+; (def rcs-transforms (map #(mulm gltf-to-aerodynamic (model/get-node-transform model (str "RCS LA" %))) [1 2 3]))
+(def rcs-transforms [])
 
 ; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
 ; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
@@ -859,7 +862,7 @@
               geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
                                                                (planet/get-current-tree tile-tree))
               clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                              geometry)]
+                                                              plume-transform rcs-transforms geometry)]
           (onscreen-render window
                            (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
                              (with-stencils

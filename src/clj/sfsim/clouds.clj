@@ -20,7 +20,8 @@
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
                           with-underlay-blending setup-shadow-matrices without-depth-test with-cullfront) :as render]
     [sfsim.shaders :as shaders]
-    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size) :as plume]
+    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size rcs-outer rcs-point rcs-box-size)
+                 :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
                            texture-2d make-empty-texture-2d make-empty-float-texture-2d make-empty-depth-stencil-texture-2d)]
@@ -517,13 +518,23 @@
 
 
 (def vertex-plume
-  [plume-box-size (slurp "resources/shaders/plume/vertex.glsl")])
+  [plume-box-size (template/eval (slurp "resources/shaders/plume/vertex.glsl") {:type "plume"})])
 
 
 (defn fragment-plume
   [outer]
   [geometry-distance geometry-point plume-outer plume-point
-   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:outer outer})])
+   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "plume" :outer outer})])
+
+
+(def vertex-rcs
+  [rcs-box-size (template/eval (slurp "resources/shaders/plume/vertex.glsl") {:type "rcs"})])
+
+
+(defn fragment-rcs
+  [outer]
+  [geometry-distance geometry-point rcs-outer rcs-point
+   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "rcs" :outer outer})])
 
 
 (defn cloud-fragment-shaders
@@ -534,7 +545,9 @@
    ::planet-back [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false)]
    ::scene-front [shaders/vertex-passthrough (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)]
    ::plume-outer [vertex-plume (fragment-plume true)]
-   ::plume-point [vertex-plume (fragment-plume false)]})
+   ::plume-point [vertex-plume (fragment-plume false)]
+   ::rcs-outer [vertex-rcs (fragment-rcs true)]
+   ::rcs-point [vertex-rcs (fragment-rcs false)]})
 
 
 (defn make-cloud-render-vars
@@ -639,9 +652,11 @@
 
 
 (defn render-cloud-overlay
-  ([cloud-renderer cloud-render-vars model-vars shadow-vars geometry]
-   (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars geometry true true true))
-  ([{:sfsim.clouds/keys [programs vao plume-vao] :as other} cloud-render-vars model-vars shadow-vars geometry front plume back]
+  ([cloud-renderer cloud-render-vars model-vars shadow-vars plume-transform rcs-transforms geometry]
+   (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transform rcs-transforms geometry
+                         true true true))
+  ([{:sfsim.clouds/keys [programs vao plume-vao] :as other} cloud-render-vars model-vars shadow-vars plume-transform rcs-transforms
+    geometry front plume back]
    (let [overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
          overlay-height  (:sfsim.render/overlay-height cloud-render-vars)
          overlay         (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
@@ -656,6 +671,8 @@
             (uniform-matrix4 program "world_to_camera" (inverse (:sfsim.render/camera-to-world cloud-render-vars)))
             (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
             (uniform-matrix4 program "object_to_camera" (inverse (:sfsim.render/camera-to-object cloud-render-vars)))
+            (uniform-matrix4 program "plume_to_object" plume-transform)
+            (uniform-matrix4 program "object_to_plume" (inverse plume-transform))
             (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
             (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
             (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))
@@ -686,7 +703,23 @@
                                      (render-quads plume-vao))
                                    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
                                      (use-program (:sfsim.clouds/plume-point programs))
-                                     (render-quads plume-vao))))
+                                     (render-quads plume-vao))
+                                   (doseq [rcs-transform rcs-transforms]
+                                          (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+                                            (use-program (:sfsim.clouds/rcs-outer programs))
+                                            (uniform-matrix4 (:sfsim.clouds/rcs-outer programs) "rcs_to_object" rcs-transform)
+                                            (uniform-matrix4 (:sfsim.clouds/rcs-outer programs) "object_to_rcs" (inverse rcs-transform))
+                                            (uniform-float (:sfsim.clouds/rcs-outer programs) "rcs_throttle" 1.0)
+                                            (render-quads plume-vao))
+                                          (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+                                            (use-program (:sfsim.clouds/rcs-point programs))
+                                            (uniform-matrix4 (:sfsim.clouds/rcs-point programs) "rcs_to_object" rcs-transform)
+                                            (uniform-matrix4 (:sfsim.clouds/rcs-point programs) "object_to_rcs" (inverse rcs-transform))
+                                            (uniform-float (:sfsim.clouds/rcs-point programs) "rcs_throttle" 1.0)
+                                            (render-quads plume-vao))
+                                          (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+                                            (use-program (:sfsim.clouds/rcs-point programs))
+                                            (render-quads plume-vao)))))
                                (when back
                                  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                    (use-program (:sfsim.clouds/atmosphere-back programs))

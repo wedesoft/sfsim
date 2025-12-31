@@ -1578,6 +1578,14 @@ vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
 vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
 {
   return vec4(0, 0.25, 0, 0.25);
+}
+vec4 rcs_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
+{
+  return vec4(0.0, 0.5, 0.0, 0.5);
+}
+vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
+{
+  return vec4(0, 0.25, 0, 0.25);
 }")
 
 
@@ -1632,8 +1640,8 @@ vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
                      cloud-render-vars  (make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 0)
                                                                 (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
                                                                 (q/->Quaternion 1 0 0 0))
-                     overlay            (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars geometry
-                                                              ?front ?plume ?back)]
+                     overlay            (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars (eye 4) []
+                                                              geometry ?front ?plume ?back)]
                  (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)

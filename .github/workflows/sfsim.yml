@@ -16,7 +16,7 @@ jobs:
       uses: actions/cache@v5.0.1
       with:
         path: libjolt.so
-        key: ${{ runner.os }}-libjolt-5.4.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
+        key: ${{ runner.os }}-libjolt-5.5.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
     - name: Cache Maven packages
       uses: actions/cache@v5.0.1
       with:
@@ -32,13 +32,13 @@ jobs:
       name: Download JoltPhysics
       run: |
         cd ~
-        wget -q -O JoltPhysics-5.4.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.4.0.tar.gz
-        tar xzf JoltPhysics-5.4.0.tar.gz
+        wget -q -O JoltPhysics-5.5.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.5.0.tar.gz
+        tar xzf JoltPhysics-5.5.0.tar.gz
     - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
       name: Build JoltPhysics
       run: |
         cd ~
-        cd JoltPhysics-5.4.0/Build
+        cd JoltPhysics-5.5.0/Build
         ./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
         cd Linux_Release
         make
@@ -46,7 +46,7 @@ jobs:
     - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
       name: Install JoltPhysics
       run: |
-        cd ~/JoltPhysics-5.4.0/Build/Linux_Release
+        cd ~/JoltPhysics-5.5.0/Build/Linux_Release
         sudo make install
         cd ../../..
     - name: Install Java

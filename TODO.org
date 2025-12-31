@@ -50,10 +50,13 @@
           - [X] problem when object radius is larger than distance to object
           - [X] problem with shadow map size being adapted to object radius
           - [X] use different vertex shader using transform and air pressure to move and scale box
-      - [ ] immplement RCS thrusters
-        - [ ] integration test for model and plume
+      - [-] implement RCS thrusters
+        - [X] implement rcs-segment.glsl
+        - [-] use different values for rcs: nozzle, throttle, max-slope
+        - [ ] vertex and fragment shader for RCS thruster
         - [ ] store RCS coordinate systems in Blender
         - [ ] use binary space partitioning tree
+        - [ ] integration test for model and plume
     - [ ] disable color buffer when rendering frame buffer and it is not required?
   - [ ] use macros when doing front face culling or disabling depth test
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
