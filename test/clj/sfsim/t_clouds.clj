@@ -1578,6 +1578,14 @@ vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_di
 vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
 {
   return vec4(0, 0.25, 0, 0.25);
+}
+vec4 rcs_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
+{
+  return vec4(0.0, 0.5, 0.0, 0.5);
+}
+vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
+{
+  return vec4(0, 0.25, 0, 0.25);
 }")
 
 
