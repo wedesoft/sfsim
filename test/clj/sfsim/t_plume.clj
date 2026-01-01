@@ -247,6 +247,7 @@ void main()
           0.0           2.0        1.0   1.0       0.0    1.0    1.0     1.0    0.0  1.0
           0.0           2.0        1.0   1.0       0.5    0.75   1.0     1.0    0.5  0.75
           0.0           0.0        1.0   1.0       0.0    1.0    1.0     1.0    1.0  0.368
+          1.0           0.0        1.0   1.0       0.0    1.0    1.0     1.0    1.0  0.368
           0.0           0.0        0.1   1.0       0.0    1.0    1.0     1.0    0.1  0.905
           0.0           0.0        0.1   1.0       0.5    0.5    1.0     1.0    0.6  0.452
           rcs-end       0.0        1.0   1.0       0.0    1.0    1.0     1.0    0.0  1.0
@@ -445,8 +446,8 @@ void main()
 (tabular "Shader for bounding box computation of RCS plume"
          (fact (rcs-box-test [?nozzle ?throttle ?slope] [?limit ?x-range ?y-range ?z-range]) => (roughly-vector (vec3 ?a ?b 0) 1e-4))
          ?limit ?nozzle ?throttle ?slope ?x-range ?y-range ?z-range  ?a                   ?b
-           2.0  1.0     1.0       100.0  true     false    false     rcs-end              0.0
-           2.0  1.0     0.0       100.0  true     false    false     0.0                  0.0
+           2.0  1.0     1.0       100.0  true     false    false     rcs-end              0.3
+           2.0  1.0     0.0       100.0  true     false    false     0.3                  0.3
            2.0  1.0     1.0       100.0  false    true     false    -2.0                  2.0
          100.0  1.0     0.0         0.5  false    false    true     -1.0                  1.0
          100.0  1.0     1.0         0.5  false    true     false    (- (+ 1.0 (* (- rcs-end) 0.5)))
