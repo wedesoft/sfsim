@@ -15,7 +15,7 @@ float noise3d(vec3 coordinates);
 
 vec4 rcs_transfer(vec3 point, float rcs_step, vec4 rcs_scatter)
 {
-  float radius = rcs_bulge(pressure, -point.x);
+  float radius = rcs_bulge(pressure, max(-point.x, 0));
   if (length(point.yz) <= radius) {
     float end = mix(START, RCS_END, rcs_throttle);
     float fade = clamp((point.x - end) / (START - end), 0.0, 1.0);
