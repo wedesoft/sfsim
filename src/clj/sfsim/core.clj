@@ -190,8 +190,8 @@
 (def plume-transform (mulm gltf-to-aerodynamic (model/get-node-transform model "Plume")))
 (def rcs-names (mapcat (fn [prefix] [(str "RCS " prefix "1") (str "RCS " prefix "2") (str "RCS " prefix "3")])
                        ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]))
-; (def rcs-transforms (remove nil? (map #(some->> (model/get-node-transform model %) (mulm gltf-to-aerodynamic)) rcs-names)))
-(def rcs-transforms [])
+(def rcs-transforms (remove nil? (map #(some->> (model/get-node-transform model %) (mulm gltf-to-aerodynamic)) rcs-names)))
+; (def rcs-transforms [])
 
 ; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
 ; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)

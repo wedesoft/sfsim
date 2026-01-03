@@ -1041,14 +1041,20 @@ vec4 cloud_overlay(float depth)
        (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-leaves.glb")
              bsp-tree (get-bsp-tree scene "BSP")]
          (:sfsim.model/name bsp-tree) => "BSP"
+         (:sfsim.model/transform bsp-tree) => (roughly-matrix (eye 4) 1e-6)
          (map :sfsim.model/name (:sfsim.model/front-children bsp-tree)) => ["Front"]
-         (map :sfsim.model/name (:sfsim.model/back-children bsp-tree)) => ["Back"]))
+         (map :sfsim.model/name (:sfsim.model/back-children bsp-tree)) => ["Back"]
+         (:sfsim.model/transform (first (:sfsim.model/front-children bsp-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 3 0)) 1e-6)
+         (:sfsim.model/transform (first (:sfsim.model/back-children bsp-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 -3 0)) 1e-6)))
 
 
 (facts "Read binary space partitioning tree with root node only"
        (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/empty-tree.glb")
              bsp-tree (get-bsp-tree scene "BSP")]
          (:sfsim.model/name bsp-tree) => "BSP"
+         (:sfsim.model/transform bsp-tree) => (roughly-matrix (eye 4) 1e-6)
          (contains? bsp-tree :sfsim.model/back-children) => false
          (contains? bsp-tree :sfsim.model/front-children) => false))
 
@@ -1058,8 +1064,14 @@ vec4 cloud_overlay(float depth)
              bsp-tree (get-bsp-tree scene "BSP")
              sub-tree (get-in bsp-tree [:sfsim.model/front-children 0])]
          (:sfsim.model/name sub-tree) => "Front"
+         (:sfsim.model/transform sub-tree)
+         => (roughly-matrix (transformation-matrix (rotation-z (to-radians -135.0)) (vec3 0 3 0)) 1e-6)
          (map :sfsim.model/name (:sfsim.model/front-children sub-tree)) => ["Front Front"]
-         (map :sfsim.model/name (:sfsim.model/back-children sub-tree)) => ["Front Back"]))
+         (map :sfsim.model/name (:sfsim.model/back-children sub-tree)) => ["Front Back"]
+         (:sfsim.model/transform (first (:sfsim.model/front-children sub-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 2 0)) 1e-6)
+         (:sfsim.model/transform (first (:sfsim.model/back-children sub-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 -2 0)) 1e-6)))
 
 
 (GLFW/glfwTerminate)
