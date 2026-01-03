@@ -1009,13 +1009,17 @@
 (defn- build-bsp-tree
   "Recursively build binary space partitioning (BSP) tree"
   [bsp-node]
-  (let [children (::children bsp-node)]
+  (let [node-name (::name bsp-node)
+        transform (::transform bsp-node)
+        children  (::children bsp-node)]
     (if (seq children)
-      (let [grouped-children (group-by #(pos? ^double (nth (get-translation (::transform %)) 1)) children) ]  ; Blender Z is glTF Y
-        (-> bsp-node
-            (assoc ::back-children (mapv build-bsp-tree (get grouped-children false)))
-            (assoc ::front-children (mapv build-bsp-tree (get grouped-children true)))))
-      bsp-node)))
+      (let [child-groups (group-by #(pos? ^double (nth (get-translation (::transform %)) 1)) children) ]  ; Blender Z is glTF Y
+        {::name node-name
+         ::transform transform
+         ::back-children (mapv build-bsp-tree (get child-groups false))
+         ::front-children (mapv build-bsp-tree (get child-groups true))})
+      {::name node-name
+       ::transform transform})))
 
 
 (defn get-bsp-tree
