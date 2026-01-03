@@ -17,7 +17,7 @@
     [sfsim.clouds :refer (lod-offset overall-shading overall-shading-parameters render-cloud-geometry)]
     [sfsim.plume :refer (model-data setup-dynamic-plume-uniforms model-vars)]
     [sfsim.image :refer (image)]
-    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
+    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3 fvec3
                           fmat4 rotation-matrix get-translation)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
                           render-planet-geometry)]
@@ -55,7 +55,7 @@
     (org.lwjgl.stb
       STBImage)
     (org.lwjgl.opengl
-      GL11 GL30)))
+      GL11)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -1028,6 +1028,19 @@
   (let [bsp-root-path    (get-node-path scene bsp-root-name)
         bsp-root         (get-in scene bsp-root-path)]
     (build-bsp-tree bsp-root)))
+
+
+(defn bsp-render-order
+  "Get BSP render order given camera origin"
+  [bsp-node origin]
+  (if (and (contains? bsp-node ::back-children) (contains? bsp-node ::front-children))
+    (let [transformed-origin     (vec4->vec3 (mulv (inverse (::transform bsp-node)) (vec3->vec4 origin 1.0)))
+          ordered-front-children (mapcat #(bsp-render-order % transformed-origin) (::front-children bsp-node))
+          ordered-back-children  (mapcat #(bsp-render-order % transformed-origin) (::back-children bsp-node))]
+      (if (pos? ^double (nth transformed-origin 1))  ; Blender Z is glTF Y
+        (concat ordered-front-children ordered-back-children)
+        (concat ordered-back-children ordered-front-children)))
+    [(::name bsp-node)]))
 
 
 (set! *warn-on-reflection* false)

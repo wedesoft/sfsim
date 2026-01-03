@@ -1074,4 +1074,16 @@ vec4 cloud_overlay(float depth)
          => (roughly-matrix (translation-matrix (vec3 0 -2 0)) 1e-6)))
 
 
+(facts "Use binary space partitioning to get rendering order front to back"
+       (let [empty-tree (get-bsp-tree (read-gltf "test/clj/sfsim/fixtures/plume/empty-tree.glb") "BSP")
+             two-leaves (get-bsp-tree (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-leaves.glb") "BSP")
+             two-levels (get-bsp-tree (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-levels.glb") "BSP")]
+         (bsp-render-order empty-tree (vec3 0 1 0)) => ["BSP"]
+         (bsp-render-order two-leaves (vec3 0 1 0)) => ["Front" "Back"]
+         (bsp-render-order two-leaves (vec3 0 -1 0)) => ["Back" "Front"]
+         (bsp-render-order two-levels (vec3 1.5 1.5 0)) => ["Front Front" "Front Back" "Back"]
+         (bsp-render-order two-levels (vec3 -1.5 4.5 0)) => ["Front Back" "Front Front" "Back"]
+         (bsp-render-order two-levels (vec3 0 -1 0)) => ["Back" "Front Front" "Front Back"]))
+
+
 (GLFW/glfwTerminate)
