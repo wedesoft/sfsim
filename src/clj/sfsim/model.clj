@@ -14,13 +14,11 @@
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
                               destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay)]
-    [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
-                          overall-shading overall-shading-parameters render-cloud-geometry)]
-    [sfsim.plume :refer (setup-static-plume-uniforms model-data setup-dynamic-plume-uniforms
-                         model-vars)]
+    [sfsim.clouds :refer (lod-offset overall-shading overall-shading-parameters render-cloud-geometry)]
+    [sfsim.plume :refer (model-data setup-dynamic-plume-uniforms model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
-                          fmat4 rotation-matrix)]
+                          fmat4 rotation-matrix get-translation)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
                           render-planet-geometry)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
@@ -1006,6 +1004,26 @@
                                  (render-planet-geometry planet-renderer planet-render-vars tree)))
                              (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x1 0x7
                                (render-atmosphere-geometry atmosphere-renderer planet-render-vars))))))
+
+
+(defn- build-bsp-tree
+  "Recursively build binary space partitioning (BSP) tree"
+  [bsp-node]
+  (let [children (::children bsp-node)]
+    (if (seq children)
+      (let [grouped-children (group-by #(pos? ^double (nth (get-translation (::transform %)) 1)) children) ]  ; Blender Z is glTF Y
+        (-> bsp-node
+            (assoc ::back-children (mapv build-bsp-tree (get grouped-children false)))
+            (assoc ::front-children (mapv build-bsp-tree (get grouped-children true)))))
+      bsp-node)))
+
+
+(defn get-bsp-tree
+  "Get binary space partitioning (BSP) tree from model"
+  [scene bsp-root-name]
+  (let [bsp-root-path    (get-node-path scene bsp-root-name)
+        bsp-root         (get-in scene bsp-root-path)]
+    (build-bsp-tree bsp-root)))
 
 
 (set! *warn-on-reflection* false)

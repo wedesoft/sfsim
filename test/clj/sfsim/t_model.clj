@@ -1037,4 +1037,29 @@ vec4 cloud_overlay(float depth)
           (destroy-scene-geometry-renderer renderer))))
 
 
+(facts "Read binary space partitioning tree with two leaves"
+       (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-leaves.glb")
+             bsp-tree (get-bsp-tree scene "BSP")]
+         (:sfsim.model/name bsp-tree) => "BSP"
+         (map :sfsim.model/name (:sfsim.model/front-children bsp-tree)) => ["Front"]
+         (map :sfsim.model/name (:sfsim.model/back-children bsp-tree)) => ["Back"]))
+
+
+(facts "Read binary space partitioning tree with root node only"
+       (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/empty-tree.glb")
+             bsp-tree (get-bsp-tree scene "BSP")]
+         (:sfsim.model/name bsp-tree) => "BSP"
+         (contains? bsp-tree :sfsim.model/back-children) => false
+         (contains? bsp-tree :sfsim.model/front-children) => false))
+
+
+(facts "Read binary space partitioning tree with two levels"
+       (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-levels.glb")
+             bsp-tree (get-bsp-tree scene "BSP")
+             sub-tree (get-in bsp-tree [:sfsim.model/front-children 0])]
+         (:sfsim.model/name sub-tree) => "Front"
+         (map :sfsim.model/name (:sfsim.model/front-children sub-tree)) => ["Front Front"]
+         (map :sfsim.model/name (:sfsim.model/back-children sub-tree)) => ["Front Back"]))
+
+
 (GLFW/glfwTerminate)
