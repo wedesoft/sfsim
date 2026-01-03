@@ -14,13 +14,11 @@
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
                               destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay)]
-    [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
-                          overall-shading overall-shading-parameters render-cloud-geometry)]
-    [sfsim.plume :refer (setup-static-plume-uniforms model-data setup-dynamic-plume-uniforms
-                         model-vars)]
+    [sfsim.clouds :refer (lod-offset overall-shading overall-shading-parameters render-cloud-geometry)]
+    [sfsim.plume :refer (model-data setup-dynamic-plume-uniforms model-vars)]
     [sfsim.image :refer (image)]
-    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
-                          fmat4 rotation-matrix)]
+    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3 fvec3
+                          fmat4 rotation-matrix get-translation)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
                           render-planet-geometry)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
@@ -57,7 +55,7 @@
     (org.lwjgl.stb
       STBImage)
     (org.lwjgl.opengl
-      GL11 GL30)))
+      GL11)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -1006,6 +1004,43 @@
                                  (render-planet-geometry planet-renderer planet-render-vars tree)))
                              (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x1 0x7
                                (render-atmosphere-geometry atmosphere-renderer planet-render-vars))))))
+
+
+(defn- build-bsp-tree
+  "Recursively build binary space partitioning (BSP) tree"
+  [bsp-node]
+  (let [node-name (::name bsp-node)
+        transform (::transform bsp-node)
+        children  (::children bsp-node)]
+    (if (seq children)
+      (let [child-groups (group-by #(pos? ^double (nth (get-translation (::transform %)) 1)) children) ]  ; Blender Z is glTF Y
+        {::name node-name
+         ::transform transform
+         ::back-children (mapv build-bsp-tree (get child-groups false))
+         ::front-children (mapv build-bsp-tree (get child-groups true))})
+      {::name node-name
+       ::transform transform})))
+
+
+(defn get-bsp-tree
+  "Get binary space partitioning (BSP) tree from model"
+  [scene bsp-root-name]
+  (let [bsp-root-path    (get-node-path scene bsp-root-name)
+        bsp-root         (get-in scene bsp-root-path)]
+    (build-bsp-tree bsp-root)))
+
+
+(defn bsp-render-order
+  "Get BSP render order given camera origin"
+  [bsp-node origin]
+  (if (and (contains? bsp-node ::back-children) (contains? bsp-node ::front-children))
+    (let [transformed-origin     (vec4->vec3 (mulv (inverse (::transform bsp-node)) (vec3->vec4 origin 1.0)))
+          ordered-front-children (mapcat #(bsp-render-order % transformed-origin) (::front-children bsp-node))
+          ordered-back-children  (mapcat #(bsp-render-order % transformed-origin) (::back-children bsp-node))]
+      (if (pos? ^double (nth transformed-origin 1))  ; Blender Z is glTF Y
+        (concat ordered-front-children ordered-back-children)
+        (concat ordered-back-children ordered-front-children)))
+    [(::name bsp-node)]))
 
 
 (set! *warn-on-reflection* false)

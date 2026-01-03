@@ -55,7 +55,7 @@
         - [X] use different values for rcs: nozzle, throttle, max-slope
         - [X] vertex and fragment shader for RCS thruster
         - [X] store RCS coordinate systems in Blender
-        - [ ] use binary space partitioning tree
+        - [-] use binary space partitioning tree
         - [ ] integration test for model and plume
     - [ ] disable color buffer when rendering frame buffer and it is not required?
   - [ ] use macros when doing front face culling or disabling depth test

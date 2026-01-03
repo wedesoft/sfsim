@@ -1037,4 +1037,53 @@ vec4 cloud_overlay(float depth)
           (destroy-scene-geometry-renderer renderer))))
 
 
+(facts "Read binary space partitioning tree with two leaves"
+       (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-leaves.glb")
+             bsp-tree (get-bsp-tree scene "BSP")]
+         (:sfsim.model/name bsp-tree) => "BSP"
+         (:sfsim.model/transform bsp-tree) => (roughly-matrix (eye 4) 1e-6)
+         (map :sfsim.model/name (:sfsim.model/front-children bsp-tree)) => ["Front"]
+         (map :sfsim.model/name (:sfsim.model/back-children bsp-tree)) => ["Back"]
+         (:sfsim.model/transform (first (:sfsim.model/front-children bsp-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 3 0)) 1e-6)
+         (:sfsim.model/transform (first (:sfsim.model/back-children bsp-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 -3 0)) 1e-6)))
+
+
+(facts "Read binary space partitioning tree with root node only"
+       (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/empty-tree.glb")
+             bsp-tree (get-bsp-tree scene "BSP")]
+         (:sfsim.model/name bsp-tree) => "BSP"
+         (:sfsim.model/transform bsp-tree) => (roughly-matrix (eye 4) 1e-6)
+         (contains? bsp-tree :sfsim.model/back-children) => false
+         (contains? bsp-tree :sfsim.model/front-children) => false))
+
+
+(facts "Read binary space partitioning tree with two levels"
+       (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-levels.glb")
+             bsp-tree (get-bsp-tree scene "BSP")
+             sub-tree (get-in bsp-tree [:sfsim.model/front-children 0])]
+         (:sfsim.model/name sub-tree) => "Front"
+         (:sfsim.model/transform sub-tree)
+         => (roughly-matrix (transformation-matrix (rotation-z (to-radians -135.0)) (vec3 0 3 0)) 1e-6)
+         (map :sfsim.model/name (:sfsim.model/front-children sub-tree)) => ["Front Front"]
+         (map :sfsim.model/name (:sfsim.model/back-children sub-tree)) => ["Front Back"]
+         (:sfsim.model/transform (first (:sfsim.model/front-children sub-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 2 0)) 1e-6)
+         (:sfsim.model/transform (first (:sfsim.model/back-children sub-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 -2 0)) 1e-6)))
+
+
+(facts "Use binary space partitioning to get rendering order front to back"
+       (let [empty-tree (get-bsp-tree (read-gltf "test/clj/sfsim/fixtures/plume/empty-tree.glb") "BSP")
+             two-leaves (get-bsp-tree (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-leaves.glb") "BSP")
+             two-levels (get-bsp-tree (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-levels.glb") "BSP")]
+         (bsp-render-order empty-tree (vec3 0 1 0)) => ["BSP"]
+         (bsp-render-order two-leaves (vec3 0 1 0)) => ["Front" "Back"]
+         (bsp-render-order two-leaves (vec3 0 -1 0)) => ["Back" "Front"]
+         (bsp-render-order two-levels (vec3 1.5 1.5 0)) => ["Front Front" "Front Back" "Back"]
+         (bsp-render-order two-levels (vec3 -1.5 4.5 0)) => ["Front Back" "Front Front" "Back"]
+         (bsp-render-order two-levels (vec3 0 -1 0)) => ["Back" "Front Front" "Front Back"]))
+
+
 (GLFW/glfwTerminate)
