@@ -258,6 +258,10 @@
          ::rudder                 0.0
          ::throttle               0.0
          ::air-brake              false
+         ::rcs                    false
+         ::rcs-roll               0.0
+         ::rcs-pitch              0.0
+         ::rcs-yaw                0.0
          ::camera-rotate-x        0.0
          ::camera-rotate-y        0.0
          ::camera-rotate-z        0.0
@@ -269,33 +273,34 @@
 
 (def default-mappings
   {::keyboard
-   {GLFW/GLFW_KEY_ESCAPE ::menu
-    GLFW/GLFW_KEY_ENTER  ::fullscreen
-    GLFW/GLFW_KEY_P      ::pause
-    GLFW/GLFW_KEY_G      ::gear
-    GLFW/GLFW_KEY_B      ::brake
-    GLFW/GLFW_KEY_F      ::throttle-decrease
-    GLFW/GLFW_KEY_R      ::throttle-increase
-    GLFW/GLFW_KEY_SLASH  ::air-brake
-    GLFW/GLFW_KEY_A      ::aileron-left
-    GLFW/GLFW_KEY_KP_5   ::aileron-center
-    GLFW/GLFW_KEY_D      ::aileron-right
-    GLFW/GLFW_KEY_W      ::elevator-down
-    GLFW/GLFW_KEY_S      ::elevator-up
-    GLFW/GLFW_KEY_Q      ::rudder-left
-    GLFW/GLFW_KEY_E      ::rudder-right
-    GLFW/GLFW_KEY_KP_2   ::camera-rotate-x-positive
-    GLFW/GLFW_KEY_KP_8   ::camera-rotate-x-negative
-    GLFW/GLFW_KEY_KP_6   ::camera-rotate-y-positive
-    GLFW/GLFW_KEY_KP_4   ::camera-rotate-y-negative
-    GLFW/GLFW_KEY_KP_1   ::camera-rotate-z-positive
-    GLFW/GLFW_KEY_KP_3   ::camera-rotate-z-negative
-    GLFW/GLFW_KEY_L      ::camera-shift-x-positive
-    GLFW/GLFW_KEY_H      ::camera-shift-x-negative
-    GLFW/GLFW_KEY_K      ::camera-shift-y-positive
-    GLFW/GLFW_KEY_J      ::camera-shift-y-negative
-    GLFW/GLFW_KEY_COMMA  ::camera-distance-change-positive
-    GLFW/GLFW_KEY_PERIOD ::camera-distance-change-negative
+   {GLFW/GLFW_KEY_ESCAPE    ::menu
+    GLFW/GLFW_KEY_ENTER     ::fullscreen
+    GLFW/GLFW_KEY_P         ::pause
+    GLFW/GLFW_KEY_G         ::gear
+    GLFW/GLFW_KEY_B         ::brake
+    GLFW/GLFW_KEY_F         ::throttle-decrease
+    GLFW/GLFW_KEY_R         ::throttle-increase
+    GLFW/GLFW_KEY_SLASH     ::air-brake
+    GLFW/GLFW_KEY_BACKSLASH ::rcs
+    GLFW/GLFW_KEY_A         ::aileron-left
+    GLFW/GLFW_KEY_KP_5      ::aileron-center
+    GLFW/GLFW_KEY_D         ::aileron-right
+    GLFW/GLFW_KEY_W         ::elevator-down
+    GLFW/GLFW_KEY_S         ::elevator-up
+    GLFW/GLFW_KEY_Q         ::rudder-left
+    GLFW/GLFW_KEY_E         ::rudder-right
+    GLFW/GLFW_KEY_KP_2      ::camera-rotate-x-positive
+    GLFW/GLFW_KEY_KP_8      ::camera-rotate-x-negative
+    GLFW/GLFW_KEY_KP_6      ::camera-rotate-y-positive
+    GLFW/GLFW_KEY_KP_4      ::camera-rotate-y-negative
+    GLFW/GLFW_KEY_KP_1      ::camera-rotate-z-positive
+    GLFW/GLFW_KEY_KP_3      ::camera-rotate-z-negative
+    GLFW/GLFW_KEY_L         ::camera-shift-x-positive
+    GLFW/GLFW_KEY_H         ::camera-shift-x-negative
+    GLFW/GLFW_KEY_K         ::camera-shift-y-positive
+    GLFW/GLFW_KEY_J         ::camera-shift-y-negative
+    GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
+    GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
     }
    ::joysticks
    (read-user-config "joysticks.edn"
@@ -393,16 +398,28 @@
     (swap! state update ::air-brake not)))
 
 
+(defmethod simulator-key ::rcs
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::rcs not)))
+
+
 (defmethod simulator-key ::aileron-left
   [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::aileron 0.0625)))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-roll 1.0)
+      (increment-clamp state ::aileron 0.0625))
+    (swap! state assoc ::rcs-roll 0.0)))
 
 
 (defmethod simulator-key ::aileron-right
   [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::aileron -0.0625)))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-roll -1.0)
+      (increment-clamp state ::aileron -0.0625))
+    (swap! state assoc ::rcs-roll 0.0)))
 
 
 (defmethod simulator-key ::aileron-center
@@ -413,28 +430,40 @@
 
 (defmethod simulator-key ::rudder-left
   [_id state action mods]
-  (when (keypress? action)
-    (if (= mods GLFW/GLFW_MOD_CONTROL)
-      (swap! state assoc ::rudder 0.0)
-      (increment-clamp state ::rudder 0.0625))))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-yaw 1.0)
+      (if (= mods GLFW/GLFW_MOD_CONTROL)
+        (swap! state assoc ::rudder 0.0)
+        (increment-clamp state ::rudder 0.0625)))
+    (swap! state assoc ::rcs-yaw 0.0)))
 
 
 (defmethod simulator-key ::rudder-right
   [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::rudder -0.0625)))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-yaw -1.0)
+      (increment-clamp state ::rudder -0.0625))
+    (swap! state assoc ::rcs-yaw 0.0)))
 
 
 (defmethod simulator-key ::elevator-down
   [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::elevator 0.0625)))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-pitch 1.0)
+      (increment-clamp state ::elevator 0.0625))
+    (swap! state assoc ::rcs-pitch 0.0)))
 
 
 (defmethod simulator-key ::elevator-up
   [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::elevator -0.0625)))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-pitch -1.0)
+      (increment-clamp state ::elevator -0.0625))
+    (swap! state assoc ::rcs-pitch 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-x-positive

@@ -320,7 +320,60 @@
          (:sfsim.input/air-brake @state) => true
          (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_PRESS 0))
          (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_RELEASE 0))
-         (:sfsim.input/air-brake @state) => false))
+         (:sfsim.input/air-brake @state) => false
+         ; Toggle aerofoil surfaces/RCS thrusters
+         (:sfsim.input/rcs @state) => false
+         (-> GLFW/GLFW_KEY_BACKSLASH mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_BACKSLASH mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs @state) => true
+         (-> GLFW/GLFW_KEY_BACKSLASH mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_BACKSLASH mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs @state) => false
+         ; RCS roll
+         (swap! state assoc :sfsim.input/rcs true)
+         (:sfsim.input/rcs-roll @state) => 0.0
+         (-> GLFW/GLFW_KEY_A mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-roll @state) => 1.0
+         (-> GLFW/GLFW_KEY_A mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-roll @state) => 1.0
+         (-> GLFW/GLFW_KEY_A mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs-roll @state) => 0.0
+         (-> GLFW/GLFW_KEY_D mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-roll @state) => -1.0
+         (-> GLFW/GLFW_KEY_D mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-roll @state) => -1.0
+         (-> GLFW/GLFW_KEY_D mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs-roll @state) => 0.0
+         ; RCS pitch
+         (swap! state assoc :sfsim.input/rcs true)
+         (:sfsim.input/rcs-pitch @state) => 0.0
+         (-> GLFW/GLFW_KEY_W mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-pitch @state) => 1.0
+         (-> GLFW/GLFW_KEY_W mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-pitch @state) => 1.0
+         (-> GLFW/GLFW_KEY_W mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs-pitch @state) => 0.0
+         (-> GLFW/GLFW_KEY_S mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-pitch @state) => -1.0
+         (-> GLFW/GLFW_KEY_S mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-pitch @state) => -1.0
+         (-> GLFW/GLFW_KEY_S mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs-pitch @state) => 0.0
+         ; RCS yaw
+         (swap! state assoc :sfsim.input/rcs true)
+         (:sfsim.input/rcs-yaw @state) => 0.0
+         (-> GLFW/GLFW_KEY_Q mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-yaw @state) => 1.0
+         (-> GLFW/GLFW_KEY_Q mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-yaw @state) => 1.0
+         (-> GLFW/GLFW_KEY_Q mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs-yaw @state) => 0.0
+         (-> GLFW/GLFW_KEY_E mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-yaw @state) => -1.0
+         (-> GLFW/GLFW_KEY_E mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-yaw @state) => -1.0
+         (-> GLFW/GLFW_KEY_E mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         ))
 
 
 (facts "Process mouse events"
