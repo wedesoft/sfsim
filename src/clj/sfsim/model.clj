@@ -12,20 +12,20 @@
     [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
     [fastmath.vector :refer (vec3 vec4 mult add)]
     [malli.core :as m]
-    [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms)]
-    [sfsim.clouds :refer (cloud-point setup-cloud-render-uniforms setup-cloud-sampling-uniforms lod-offset
-                          overall-shading overall-shading-parameters)]
-    [sfsim.plume :refer (cloud-plume-segment plume-point)]
+    [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
+                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay)]
+    [sfsim.clouds :refer (lod-offset overall-shading overall-shading-parameters render-cloud-geometry)]
+    [sfsim.plume :refer (model-data setup-dynamic-plume-uniforms model-vars)]
     [sfsim.image :refer (image)]
-    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 fvec3
-                          fmat4 rotation-matrix)]
-    [sfsim.planet :refer (surface-radiance-function shadow-vars setup-static-plume-uniforms setup-dynamic-plume-uniforms
-                          model-data model-vars)]
+    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3 fvec3
+                          fmat4 rotation-matrix get-translation)]
+    [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
+                          render-planet-geometry)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
-                          uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps
-                          setup-shadow-matrices render-vars make-render-vars texture-render-depth clear) :as render]
+                          uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps with-stencil-op-ref-and-mask
+                          setup-shadow-matrices render-vars make-render-vars texture-render-depth clear with-stencils) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap)]
     [sfsim.aerodynamics :as aerodynamics]
@@ -53,7 +53,9 @@
     (fastmath.vector
       Vec4)
     (org.lwjgl.stb
-      STBImage)))
+      STBImage)
+    (org.lwjgl.opengl
+      GL11)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -563,8 +565,7 @@
   [textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves]
   [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
    (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
-   (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function
-   (cloud-point num-steps perlin-octaves cloud-octaves) (cloud-plume-segment true false) plume-point
+   (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function cloud-overlay
    (template/eval (slurp "resources/shaders/model/fragment.glsl")
                   {:textured textured :bump bump :num-scene-shadows num-scene-shadows})])
 
@@ -604,15 +605,18 @@
         shadow-data     (:sfsim.opacity/data data)]
     (use-program program)
     (setup-atmosphere-uniforms program atmosphere-luts 0 true)
-    (setup-cloud-render-uniforms program cloud-data 4)
-    (setup-cloud-sampling-uniforms program cloud-data 7)
+    (uniform-sampler program "clouds" 4)
+    (uniform-sampler program "dist" 5)
     (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
     (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
     (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
     (doseq [i (range num-scene-shadows)]
-      (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ ^long i 8)))
-    (setup-shadow-and-opacity-maps program shadow-data (+ 8 ^long num-scene-shadows))
+      (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ ^long i 6)))
+    (setup-shadow-and-opacity-maps program shadow-data (+ 6 ^long num-scene-shadows))
     (setup-scene-samplers program texture-offset num-scene-shadows textured bump)
+    (uniform-int program "cloud_subsampling" (:sfsim.render/cloud-subsampling render-config))
+    (uniform-float program "depth_sigma" (:sfsim.clouds/depth-sigma cloud-data))
+    (uniform-float program "min_depth_exponent" (:sfsim.clouds/min-depth-exponent cloud-data))
     (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
@@ -631,7 +635,6 @@
         program               (make-program :sfsim.render/vertex [(vertex-scene textured bump num-scene-shadows)]
                                             :sfsim.render/fragment fragment-shader)]
     (setup-scene-static-uniforms program texture-offset num-scene-shadows textured bump data)
-    (setup-static-plume-uniforms program model-data)
     program))
 
 
@@ -645,7 +648,7 @@
         cloud-data           (:sfsim.clouds/data data)
         render-config        (:sfsim.render/config data)
         atmosphere-luts      (:sfsim.atmosphere/luts data)
-        texture-offset       (+ 8 (* 2 ^long num-steps))
+        texture-offset       (+ 6 (* 2 ^long num-steps))
         variations           (for [textured [false true] bump [false true] num-scene-shadows scene-shadow-counts]
                                [textured bump num-scene-shadows])
         programs             (mapv #(make-scene-program (first %) (second %) texture-offset (third %) data) variations)]
@@ -766,14 +769,16 @@
 
 (defn render-scenes
   "Render a list of scenes"
-  {:malli/schema [:=> [:cat scene-renderer render-vars model-vars shadow-vars [:vector scene-shadow] [:vector [:map [::root node]]]]
+  {:malli/schema [:=> [:cat scene-renderer render-vars model-vars shadow-vars [:vector scene-shadow]
+                            [:map [:sfsim.clouds/distance texture-2d]] texture-2d [:vector [:map [::root node]]]]
                       :nil]}
-  [scene-renderer render-vars model-vars shadow-vars scene-shadows scenes]
+  [scene-renderer render-vars model-vars shadow-vars scene-shadows geometry clouds scenes]
   (let [render-config      (:sfsim.render/config scene-renderer)
         cloud-data         (:sfsim.clouds/data scene-renderer)
         atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)
         camera-to-world    (:sfsim.render/camera-to-world render-vars)
         texture-offset     (::texture-offset scene-renderer)
+        dist               (:sfsim.clouds/distance geometry)
         num-scene-shadows  (count scene-shadows)
         world-to-camera    (inverse camera-to-world)]
     (doseq [program (vals (::programs scene-renderer))]
@@ -786,14 +791,15 @@
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
       (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
+      (uniform-int program "overlay_width" (:sfsim.render/overlay-width render-vars))
+      (uniform-int program "overlay_height" (:sfsim.render/overlay-height render-vars))
       (setup-shadow-matrices program shadow-vars))
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                   4 (:sfsim.clouds/worley cloud-data) 5 (:sfsim.clouds/perlin-worley cloud-data)
-                   6 (:sfsim.clouds/cloud-cover cloud-data) 7 (:sfsim.clouds/bluenoise cloud-data)})
+                   4 clouds 5 dist})
     (doseq [i (range num-scene-shadows)]
-      (use-textures {(+ ^long i 8) (::shadows (nth scene-shadows i))}))
-    (use-textures (zipmap (drop (+ 8 num-scene-shadows) (range))
+      (use-textures {(+ ^long i 6) (::shadows (nth scene-shadows i))}))
+    (use-textures (zipmap (drop (+ 6 num-scene-shadows) (range))
                           (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
     (doseq [scene scenes]
       (render-scene (comp (::programs scene-renderer) material-and-shadow-type)
@@ -911,8 +917,130 @@
 
 
 (defn destroy-scene-shadow-renderer
+  "Destroy shadow renderer"
   [{::keys [programs]}]
   (doseq [program (vals programs)] (destroy-program program)))
+
+
+(def vertex-geometry-scene
+  (template/fn [textured bump] (slurp "resources/shaders/model/vertex-geometry.glsl")))
+
+
+(def fragment-geometry-scene
+  (slurp "resources/shaders/model/fragment-geometry.glsl"))
+
+
+(defn make-scene-geometry-program
+  "Create program to render scene points and distances"
+  [textured bump]
+  (make-program :sfsim.render/vertex [(vertex-geometry-scene textured bump)]
+                :sfsim.render/fragment [fragment-geometry-scene]))
+
+
+(defn make-scene-geometry-renderer
+  "Create renderer to render scene points and distances"
+  []
+  (let [variations (for [textured [false true] bump [false true]] [textured bump])
+        programs   (mapv #(make-scene-geometry-program (first %) (second %)) variations)]
+    {::programs (zipmap variations programs)}))
+
+
+(defn render-geometry-mesh
+  "Render function to render points and distances for a mesh (part of scene)"
+  [_material {:sfsim.model/keys [program transform] :as render-vars}]
+  (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+    (use-program program)
+    (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))))
+
+
+(defn render-scene-geometry
+  "Render geometry (points and distances) for a scene"
+  [geometry-renderer render-vars scene]
+  (let [projection       (:sfsim.render/overlay-projection render-vars)]
+    (doseq [program (vals (::programs geometry-renderer))]
+           (use-program program)
+           (uniform-matrix4 program "projection" projection))
+    (render-scene (comp (:sfsim.model/programs geometry-renderer) material-type) 0
+                  render-vars [] scene render-geometry-mesh)))
+
+
+(defn destroy-scene-geometry-renderer
+  "Destroy scene geometry renderer"
+  [{::keys [programs]}]
+  (doseq [program (vals programs)] (destroy-program program)))
+
+
+(defn make-joined-geometry-renderer
+  "Joined geometry renderer for rendering scene, planet, and atmosphere geometry information"
+  [data]
+  (let [scene-renderer (make-scene-geometry-renderer)
+        planet-renderer (make-planet-geometry-renderer data)
+        atmosphere-renderer (make-atmosphere-geometry-renderer)]
+    {::scene-renderer scene-renderer
+     ::planet-renderer planet-renderer
+     ::atmosphere-renderer atmosphere-renderer}))
+
+
+(defn destroy-joined-geometry-renderer
+  "Destroy joined geometry renderer"
+  [{::keys [scene-renderer planet-renderer atmosphere-renderer]}]
+  (destroy-scene-geometry-renderer scene-renderer)
+  (destroy-planet-geometry-renderer planet-renderer)
+  (destroy-atmosphere-geometry-renderer atmosphere-renderer))
+
+
+(defn render-joined-geometry
+  "Render joined geometry of scene, planet, and atmosphere"
+  [{::keys [scene-renderer planet-renderer atmosphere-renderer]} scene-render-vars planet-render-vars model tree]
+  (let [model-covers-planet? (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
+    (render-cloud-geometry (:sfsim.render/overlay-width planet-render-vars) (:sfsim.render/overlay-height planet-render-vars)
+                           (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
+                             (when model
+                               (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+                                 (render-scene-geometry scene-renderer
+                                                        (if model-covers-planet? scene-render-vars planet-render-vars) model)))
+                             (when tree
+                               (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x2 (if model-covers-planet? 0x6 0x2)
+                                 (render-planet-geometry planet-renderer planet-render-vars tree)))
+                             (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x1 0x7
+                               (render-atmosphere-geometry atmosphere-renderer planet-render-vars))))))
+
+
+(defn- build-bsp-tree
+  "Recursively build binary space partitioning (BSP) tree"
+  [bsp-node]
+  (let [node-name (::name bsp-node)
+        transform (::transform bsp-node)
+        children  (::children bsp-node)]
+    (if (seq children)
+      (let [child-groups (group-by #(pos? ^double (nth (get-translation (::transform %)) 1)) children) ]  ; Blender Z is glTF Y
+        {::name node-name
+         ::transform transform
+         ::back-children (mapv build-bsp-tree (get child-groups false))
+         ::front-children (mapv build-bsp-tree (get child-groups true))})
+      {::name node-name
+       ::transform transform})))
+
+
+(defn get-bsp-tree
+  "Get binary space partitioning (BSP) tree from model"
+  [scene bsp-root-name]
+  (let [bsp-root-path    (get-node-path scene bsp-root-name)
+        bsp-root         (get-in scene bsp-root-path)]
+    (build-bsp-tree bsp-root)))
+
+
+(defn bsp-render-order
+  "Get BSP render order given camera origin"
+  [bsp-node origin]
+  (if (and (contains? bsp-node ::back-children) (contains? bsp-node ::front-children))
+    (let [transformed-origin     (vec4->vec3 (mulv (inverse (::transform bsp-node)) (vec3->vec4 origin 1.0)))
+          ordered-front-children (mapcat #(bsp-render-order % transformed-origin) (::front-children bsp-node))
+          ordered-back-children  (mapcat #(bsp-render-order % transformed-origin) (::back-children bsp-node))]
+      (if (pos? ^double (nth transformed-origin 1))  ; Blender Z is glTF Y
+        (concat ordered-front-children ordered-back-children)
+        (concat ordered-back-children ordered-front-children)))
+    [(::name bsp-node)]))
 
 
 (set! *warn-on-reflection* false)

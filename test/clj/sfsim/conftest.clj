@@ -14,6 +14,7 @@
                                        with-invisible-window destroy-program destroy-vertex-array-object)]
     [sfsim.shaders :as shaders]
     [sfsim.quaternion :as q]
+    [sfsim.util :refer (byte->ubyte)]
     [sfsim.texture :refer (rgb-texture->vectors3 destroy-texture)]))
 
 
@@ -48,9 +49,12 @@
     (<= (sqrt (apply + (mapv (comp #(* % %) #(- (% actual) (% expected))) [:real :imag :jmag :kmag]))) error)))
 
 
+(defn tap [x] (println x) x)
+
+
 (defn rgba-dist
   [c1 c2]
-  (apply max (mapv #(abs (- %1 %2)) c1 c2)))
+  (apply max (mapv #(abs (- (byte->ubyte %1) (byte->ubyte %2))) c1 c2)))
 
 
 (defn average-rgba-dist

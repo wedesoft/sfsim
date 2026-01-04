@@ -1,8 +1,10 @@
 #version 450 core
 
-uniform float min_limit;
+#define MIN_DIVISOR 1.0e-3
 
-float limit(float pressure)
+uniform float <%= min-limit %>;
+
+float <%= method-name %>(float pressure)
 {
-  return min_limit / sqrt(pressure);
+  return <%= min-limit %> / max(sqrt(pressure), MIN_DIVISOR);
 }

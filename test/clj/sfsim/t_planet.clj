@@ -6,16 +6,16 @@
 
 (ns sfsim.t-planet
   (:require
-    [clojure.math :refer (PI exp pow)]
+    [clojure.math :refer (PI exp pow to-radians)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye diagonal inverse)]
-    [fastmath.vector :refer (vec3 dot mag)]
+    [fastmath.vector :refer (vec3 vec4 dot mag)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.clouds :as clouds]
-    [sfsim.conftest :refer (is-image)]
+    [sfsim.conftest :refer (is-image roughly-vector)]
     [sfsim.cubemap :as cubemap]
     [sfsim.image :refer :all]
     [sfsim.interpolate :refer :all]
@@ -27,10 +27,12 @@
     [sfsim.texture :refer :all]
     [sfsim.util :refer :all])
   (:import
-    [clojure.lang
-     Keyword]
-    [org.lwjgl.glfw
-     GLFW]))
+    (clojure.lang
+      Keyword)
+    (org.lwjgl.glfw
+      GLFW)
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -149,6 +151,7 @@ in GEO_OUT
   vec2 colorcoord;
   vec3 point;
   vec3 object_point;
+  vec4 camera_point;
 } frag_in;
 out vec3 fragColor;
 void main()
@@ -379,6 +382,7 @@ out GEO_OUT
   vec2 colorcoord;
   vec3 point;
   vec3 object_point;
+  vec4 camera_point;
 } vs_out;
 void main()
 {
@@ -440,7 +444,7 @@ float sampling_offset()
 (def cloud-overlay-mock
   "#version 450 core
 uniform float clouds;
-vec4 cloud_overlay()
+vec4 cloud_overlay(float depth)
 {
   return vec4(clouds, clouds, clouds, clouds);
 }")
@@ -469,10 +473,10 @@ float land_noise(vec3 point)
   (make-program :sfsim.render/vertex [vertex-planet-probe]
                 :sfsim.render/fragment [(last (fragment-planet 3 0)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
                                         planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter fake-attenuation
-                                        shaders/ray-shell shaders/is-above-horizon atmosphere/transmittance-point
-                                        surface-radiance-function land-noise-mock shaders/remap (last (clouds/environmental-shading 3))
-                                        (last (clouds/overall-shading 3 [])) (last atmosphere/attenuation-track) shaders/phong
-                                        (last atmosphere/attenuation-point)]))
+                                        shaders/ray-shell shaders/is-above-horizon atmosphere/transmittance-point shaders/phong
+                                        shaders/limit-interval surface-radiance-function land-noise-mock shaders/remap
+                                        (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
+                                        (last atmosphere/attenuation-track) (last atmosphere/attenuation-point)]))
 
 
 (defn setup-static-uniforms
@@ -605,6 +609,7 @@ in GEO_OUT
   vec2 colorcoord;
   vec3 point;
   vec3 object_point;
+  vec4 camera_point;
 } fs_in;
 out vec3 fragColor;
 void main()
@@ -699,7 +704,7 @@ void main()
 (facts "Create hashmap with render variables for rendering current frame of planet"
        (let [planet {:sfsim.planet/radius 1000.0}
              cloud  {:sfsim.clouds/cloud-top 100.0}
-             render {:sfsim.render/fov 0.5 :sfsim.render/min-z-near 1.0}
+             render #:sfsim.render{:fov 0.5 :min-z-near 1.0 :cloud-subsampling 2}
              pos1   (vec3 (+ 1000 150) 0 0)
              pos2   (vec3 (+ 1000 75) 0 0)
              opos   (vec3 0 0 0)
@@ -709,7 +714,9 @@ void main()
          (with-redefs [planet/render-depth render-depth-mock
                        matrix/quaternion->matrix (fn [orientation] (fact [orientation] orientation => o) :rotation-matrix)
                        matrix/transformation-matrix (fn [rot _pos] (fact rot => :rotation-matrix) (eye 4))
-                       matrix/projection-matrix (fn [w h _near _far fov] (fact [w h fov] => [640 480 0.5]) (diagonal 1 2 3 4))]
+                       matrix/projection-matrix (fn [w h _near _far fov]
+                                                    (fact [w h fov] => #(contains? #{[320 240 0.5] [640 480 0.5]} %))
+                                                    (diagonal 1 2 3 4))]
            (:sfsim.render/origin (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => pos1
            (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (roughly 47.549 1e-3)
            (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos2 o light opos o m-vars)) => 1.0
@@ -717,6 +724,32 @@ void main()
            (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (eye 4)
            (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (diagonal 1 2 3 4)
            (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => light)))
+
+
+(facts "Render planet geometry"
+       (with-invisible-window
+         (let [data             {:sfsim.planet/config {:sfsim.planet/tilesize 3}}
+               render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                               :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
+               renderer         (make-planet-geometry-renderer data)
+               indices          [0 2 3 1]
+               vertices         (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
+               vao              (make-vertex-array-object (:sfsim.planet/program renderer) indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+               data             [-1  1 0, 0  1 0, 1  1 0,
+                                 -1  0 0, 0  0 0, 1  0 0,
+                                 -1 -1 0, 0 -1 0, 1 -1 0]
+               surface          (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                        #:sfsim.image{:width 3 :height 3 :data (float-array data)})
+               tree             {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 2)}
+               geometry         (clouds/render-cloud-geometry 160 120 (render-planet-geometry renderer render-vars tree))]
+           (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
+           => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
+           (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
+           => (roughly 3.0 1e-3)
+           (clouds/destroy-cloud-geometry geometry)
+           (destroy-texture surface)
+           (destroy-vertex-array-object vao)
+           (destroy-planet-geometry-renderer renderer))))
 
 
 (GLFW/glfwTerminate)

@@ -1,11 +1,11 @@
 #version 450 core
 
-uniform float nozzle;
+uniform float plume_nozzle;
 uniform float omega_factor;
 
 float plume_omega(float limit)
 {
-  float range = nozzle - limit;
+  float range = plume_nozzle - limit;
   return omega_factor * range;
 }
 

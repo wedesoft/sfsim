@@ -13,7 +13,7 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.conftest :refer (is-image roughly-vector)]
+    [sfsim.conftest :refer (is-image roughly-vector roughly-matrix)]
     [sfsim.image :refer :all]
     [sfsim.matrix :refer :all :as matrix]
     [sfsim.quaternion :as q]
@@ -1091,19 +1091,19 @@ void main()
                    vao1      (make-vertex-array-object program indices1 vertices1 ["point" 3 "uv" 2])
                    vao2      (make-vertex-array-object program indices2 vertices2 ["point" 3 "uv" 2])]
                (with-stencils
-                 (clear (vec3 0.0 0.0 0.0) 1.0 0)
-                 (write-to-stencil-buffer)
+                 (clear (vec3 0.0 0.0 0.0) 1.0 0x1)
                  (use-program program)
-                 (render-quads vao1)
+                 (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+                   (render-quads vao1))  ; render red quad
                  (clear)
-                 (?method)
-                 (render-quads vao2)
+                 (with-stencil-op-ref-and-mask ?operation ?reference ?mask
+                   (render-quads vao2))  ; render blue quad
                  (destroy-vertex-array-object vao2)
                  (destroy-vertex-array-object vao1)
                  (destroy-program program)))) => (is-image (str "test/clj/sfsim/fixtures/render/" ?image) 0.0))
-         ?method                          ?image
-         mask-with-stencil-buffer         "stencil.png"
-         mask-with-negated-stencil-buffer "not-stencil.png")
+         ?reference ?operation       ?mask ?image
+         0x4        GL11/GL_EQUAL    0x4   "render-inside-red-quad.png"
+         0x2        GL11/GL_GREATER  0x6   "render-outside-red-quad.png")
 
 
 (fact "Render a quad with scissor test"
@@ -1128,7 +1128,7 @@ void main()
 
 
 (facts "Join z-ranges and projection matrices of two render variable hashmaps"
-       (let [render-config {:sfsim.render/fov (to-radians 60.0)}
+       (let [render-config #:sfsim.render{:fov (to-radians 60.0) :cloud-subsampling 2}
              origin        (vec3 1 2 3)
              object-origin (vec3 4 0 0)
              orientation   (q/->Quaternion 1 0 0 0)
@@ -1142,6 +1142,10 @@ void main()
          (:sfsim.render/object-origin planet-vars) => (vec3 -3 2 3)
          (:sfsim.render/window-width joined-vars) => 320
          (:sfsim.render/window-height joined-vars) => 240
+         (:sfsim.render/overlay-width joined-vars) => 160
+         (:sfsim.render/overlay-height joined-vars) => 120
+         (:sfsim.render/projection joined-vars) => (roughly-matrix (projection-matrix 320 240 10.0 10001.0 (to-radians 60)) 1e-6)
+         (:sfsim.render/overlay-projection joined-vars) => (roughly-matrix (projection-matrix 160 120 10.0 10001.0 (to-radians 60)) 1e-6)
          (:sfsim.render/origin joined-vars) => origin
          (:sfsim.render/z-near joined-vars) => 10.0
          (:sfsim.render/z-far joined-vars) => 10000.0
@@ -1154,6 +1158,72 @@ void main()
         (let [orientations (quad-splits-orientations 65 8)]
           (count orientations) => 64
           (count (first orientations)) => 64)))
+
+
+(def fragment-uniform-color
+"#version 450 core
+uniform vec4 color;
+out vec4 fragColor;
+void main()
+{
+  fragColor = color;
+}")
+
+
+(tabular "Overlay blending test"
+         (fact
+           (with-invisible-window
+             (let [indices  [0 1 3 2]
+                   vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                   program  (make-program :sfsim.render/vertex [vertex-passthrough]
+                                          :sfsim.render/fragment [fragment-uniform-color])
+                   vao      (make-vertex-array-object program indices vertices ["point" 3])
+                   output   (texture-render-color 1 1 true
+                                                  (clear (vec3 0.0 0.0 0.0))
+                                                  (use-program program)
+                                                  (uniform-vector4 program "color" ?background)
+                                                  (render-quads vao)
+                                                  (with-overlay-blending
+                                                    (uniform-vector4 program "color" ?overlay)
+                                                    (render-quads vao)))
+                   result   (get-vector4 (rgba-texture->vectors4 output) 0 0)]
+               (destroy-vertex-array-object vao)
+               (destroy-program program)
+               result)) => (roughly-vector ?result 1e-3))
+         ?background              ?overlay                  ?result
+         (vec4 0.25 0.5 0.75 0.5) (vec4 1.0  1.0 1.0  0.0 ) (vec4 0.25 0.5  0.75 0.5 )
+         (vec4 1.0  1.0 1.0  0.5) (vec4 0.25 0.5 0.75 1.0 ) (vec4 0.25 0.5  0.75 1.0 )
+         (vec4 1.0  0.0 0.0  1.0) (vec4 0.0  1.0 0.0  0.25) (vec4 0.75 0.25 0.0  1.0 )
+         (vec4 1.0  0.0 0.0  1.0) (vec4 0.0  1.0 0.0  0.25) (vec4 0.75 0.25 0.0  1.0 )
+         (vec4 1.0  0.0 0.0  0.2) (vec4 0.0  1.0 0.0  0.4 ) (vec4 0.6  0.4  0.0  0.52))
+
+
+(tabular "Underlay blending test"
+         (fact
+           (with-invisible-window
+             (let [indices  [0 1 3 2]
+                   vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                   program  (make-program :sfsim.render/vertex [vertex-passthrough]
+                                          :sfsim.render/fragment [fragment-uniform-color])
+                   vao      (make-vertex-array-object program indices vertices ["point" 3])
+                   output   (texture-render-color 1 1 true
+                                                  (clear (vec3 0.0 0.0 0.0))
+                                                  (use-program program)
+                                                  (uniform-vector4 program "color" ?foreground)
+                                                  (render-quads vao)
+                                                  (with-underlay-blending
+                                                    (uniform-vector4 program "color" ?underlay)
+                                                    (render-quads vao)))
+                   result   (get-vector4 (rgba-texture->vectors4 output) 0 0)]
+               (destroy-vertex-array-object vao)
+               (destroy-program program)
+               result)) => (roughly-vector ?result 1e-3))
+         ?foreground               ?underlay                ?result
+         (vec4 0.25 0.5 0.75 1.0 ) (vec4 1.0  1.0 1.0  1.0) (vec4 0.25 0.5  0.75 1.0 )
+         (vec4 0.0  0.0 0.0  0.0 ) (vec4 0.25 0.5 0.75 1.0) (vec4 0.25 0.5  0.75 1.0 )
+         (vec4 1.0  0.0 0.0  0.75) (vec4 0.0  1.0 0.0  1.0) (vec4 1.0  0.25 0.0  1.0 )
+         (vec4 1.0  0.0 0.0  0.25) (vec4 0.0  1.0 0.0  1.0) (vec4 1.0  0.75 0.0  1.0 )
+         (vec4 1.0  0.0 0.0  0.4 ) (vec4 0.0  1.0 0.0  0.2) (vec4 1.0  0.6  0.0  0.52))
 
 
 (GLFW/glfwTerminate)

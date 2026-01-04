@@ -33,7 +33,7 @@ git checkout windows
 
 ## Install JoltPhysics
 
-Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.4.0 and build it as follows.
+Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.5.0 and build it as follows.
 Note you might have to install glslc if you already have Vulkan installed.
 
 ### GCC/Linux
@@ -105,6 +105,18 @@ cd ..
 * Run test for specific module (rendering for example): `xvfb-run clj -M:test sfsim.t-render`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run main program: `clj -M:run`
+
+# Converting Blender file to GLB
+
+If you want to modify the [spacecraft model](https://github.com/wedesoft/blender/tree/master/venturestar), you need to edit the Blender model and convert it to GLB again.
+The Blender model can be converted to GLB as follows:
+
+* apply all modifiers in Blender (first to last)
+* delete lights and camera
+* delete reference images
+* delete invisible objects used for object differences
+* export to GLB with baking animations enabled (animation mode "NLA track"!)
+* exit Blender without overwriting model
 
 # External Links
 

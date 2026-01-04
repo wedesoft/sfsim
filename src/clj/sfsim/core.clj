@@ -36,8 +36,7 @@
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                          write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering
-                          quad-splits-orientations)]
+                          with-stencil-op-ref-and-mask joined-render-vars setup-rendering quad-splits-orientations)]
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture)]
     [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events add-mouse-move-event
@@ -157,12 +156,12 @@
 (def planet-shadow-renderer (planet/make-planet-shadow-renderer data))
 
 
-;; Program to render clouds in front of planet (before rendering clouds above horizon)
-(def cloud-planet-renderer (planet/make-cloud-planet-renderer data))
+;; Program to render low-resolution scene geometry to facilitate volumetric cloud and plume rendering
+(def joined-geometry-renderer (model/make-joined-geometry-renderer data))
 
 
-;; Program to render clouds above the horizon (after rendering clouds in front of planet)
-(def cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data))
+;; Program to render low-resolution overlay of clouds
+(def cloud-renderer (clouds/make-cloud-renderer data))
 
 
 ;; Program to render planet with cloud overlay (before rendering atmosphere)
@@ -172,6 +171,8 @@
 ;; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer (atmosphere/make-atmosphere-renderer data))
 
+
+;; Program to render 3D model
 (def scene-renderer (model/make-scene-renderer data))
 
 
@@ -190,6 +191,11 @@
 (def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Left"))))
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
 (def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
+(def plume-transform (mulm gltf-to-aerodynamic (model/get-node-transform model "Plume")))
+(def bsp-tree (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
+(def rcs-names (mapcat (fn [prefix] [(str "RCS " prefix "1") (str "RCS " prefix "2") (str "RCS " prefix "3")])
+                       ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]))
+(def rcs-transforms (into {} (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name) (mulm gltf-to-aerodynamic) (vector rcs-name))) rcs-names))))
 
 ; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
 ; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
@@ -824,6 +830,9 @@
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) opacity-base)
+              cloud-render-vars  (clouds/make-cloud-render-vars config/render-config planet-render-vars @window-width @window-height
+                                                                origin camera-orientation light-direction object-position
+                                                                object-orientation)
               wheels-scene       (if (= ^double @gear 1.0)
                                    (model/apply-transforms
                                      scene
@@ -856,42 +865,40 @@
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
-              clouds             (texture-render-color-depth
-                                   (quot ^long (:sfsim.render/window-width planet-render-vars) 2)
-                                   (quot ^long (:sfsim.render/window-height planet-render-vars) 2)
-                                   true
-                                   (clear (vec3 0 0 0) 1.0)
-                                   ;; Render clouds in front of planet
-                                   (planet/render-cloud-planet cloud-planet-renderer planet-render-vars model-vars shadow-vars
+              geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
                                                                (planet/get-current-tree tile-tree))
-                                   ;; Render clouds above the horizon
-                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars model-vars
-                                                                   shadow-vars))]
+              object-origin      (:sfsim.render/object-origin scene-render-vars)
+              render-order       (model/bsp-render-order bsp-tree object-origin)
+              rcs-split          (split-with #(not= % "Plume") render-order)
+              rcs-transf-front   (map rcs-transforms (first rcs-split))
+              rcs-transf-back    (map rcs-transforms (rest (last rcs-split)))
+              clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
+                                                              rcs-transf-front plume-transform rcs-transf-back geometry)]
           (onscreen-render window
                            (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
                                (clear (vec3 0 1 0) 1.0 0)
                                ;; Render model
-                               (write-to-stencil-buffer)
-                               (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
-                                                    [moved-scene])
+                               (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x1 0x1
+                                 (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
+                                                      geometry clouds [moved-scene]))
                                (clear)  ; Only clear depth buffer
                                ;; Render planet with cloud overlay
-                               (mask-with-stencil-buffer)
-                               (planet/render-planet planet-renderer planet-render-vars shadow-vars [] clouds
-                                                     (planet/get-current-tree tile-tree))
-                               ;; Render atmosphere with cloud overlay
-                               (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))
+                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x0 0x1
+                                 (planet/render-planet planet-renderer planet-render-vars shadow-vars [] geometry clouds
+                                                       (planet/get-current-tree tile-tree))
+                                 ;; Render atmosphere with cloud overlay
+                                 (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds)))
                              (do
                                (clear (vec3 0 1 0) 1.0)
                                ;; Render model
                                (model/render-scenes scene-renderer planet-render-vars model-vars shadow-vars [object-shadow]
-                                                    [moved-scene])
+                                                    geometry clouds [moved-scene])
                                ;; Render planet with cloud overlay
-                               (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
+                               (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] geometry clouds
                                                      (planet/get-current-tree tile-tree))
                                ;; Render atmosphere with cloud overlay
-                               (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
+                               (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds)))
                            (setup-rendering @window-width @window-height :sfsim.render/noculling false)
                            (when @menu
                              (@menu gui @window-width @window-height))
@@ -908,6 +915,7 @@
                                            (if (@state :sfsim.input/pause) ", pause" ""))))
                            (gui/render-nuklear-gui gui @window-width @window-height))
           (destroy-texture clouds)
+          (clouds/destroy-cloud-geometry geometry)
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (when playback
@@ -936,10 +944,10 @@
   (model/destroy-scene-renderer scene-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (planet/destroy-planet-renderer planet-renderer)
-  (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
+  (clouds/destroy-cloud-renderer cloud-renderer)
+  (model/destroy-joined-geometry-renderer joined-geometry-renderer)
   (atmosphere/destroy-atmosphere-luts atmosphere-luts)
   (clouds/destroy-cloud-data cloud-data)
-  (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
   (opacity/destroy-opacity-renderer opacity-renderer)
   (gui/destroy-nuklear-gui gui)
