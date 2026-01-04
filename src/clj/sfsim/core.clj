@@ -188,10 +188,10 @@
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
 (def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
 (def plume-transform (mulm gltf-to-aerodynamic (model/get-node-transform model "Plume")))
+(def bsp-tree (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 (def rcs-names (mapcat (fn [prefix] [(str "RCS " prefix "1") (str "RCS " prefix "2") (str "RCS " prefix "3")])
                        ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]))
-(def rcs-transforms (remove nil? (map #(some->> (model/get-node-transform model %) (mulm gltf-to-aerodynamic)) rcs-names)))
-; (def rcs-transforms [])
+(def rcs-transforms (into {} (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name) (mulm gltf-to-aerodynamic) (vector rcs-name))) rcs-names))))
 
 ; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
 ; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
@@ -863,8 +863,13 @@
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
               geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
                                                                (planet/get-current-tree tile-tree))
+              object-origin      (:sfsim.render/object-origin scene-render-vars)
+              render-order       (model/bsp-render-order bsp-tree object-origin)
+              rcs-split          (split-with #(not= % "Plume") render-order)
+              rcs-transf-front   (map rcs-transforms (first rcs-split))
+              rcs-transf-back    (map rcs-transforms (rest (last rcs-split)))
               clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                              [] plume-transform rcs-transforms geometry)]
+                                                              rcs-transf-front plume-transform rcs-transf-back geometry)]
           (onscreen-render window
                            (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
