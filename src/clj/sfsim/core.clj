@@ -9,6 +9,7 @@
   (:gen-class)
   (:require
     [clojure.java.io :as io]
+    [clojure.set :refer (union)]
     [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp pow)]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
@@ -188,10 +189,19 @@
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
 (def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
 (def plume-transform (mulm gltf-to-aerodynamic (model/get-node-transform model "Plume")))
-(def rcs-names (mapcat (fn [prefix] [(str "RCS " prefix "1") (str "RCS " prefix "2") (str "RCS " prefix "3")])
-                       ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]))
-(def rcs-transforms (remove nil? (map #(some->> (model/get-node-transform model %) (mulm gltf-to-aerodynamic)) rcs-names)))
-; (def rcs-transforms [])
+(def bsp-tree (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
+(defn rcs-set [rcs-name] [(str "RCS " rcs-name "1") (str "RCS " rcs-name "2") (str "RCS " rcs-name "3")])
+(def rcs-names (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]))
+(def rcs-transforms (into {} (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name) (mulm gltf-to-aerodynamic) (vector rcs-name))) rcs-names))))
+
+(defn active-rcs [state]
+  (-> #{"Plume"}
+      (union (if (= (state :sfsim.input/rcs-roll) 1.0) (set (mapcat rcs-set ["RD" "LU"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-roll) -1.0) (set (mapcat rcs-set ["LD" "RU"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-pitch) 1.0) (set (mapcat rcs-set ["LD" "RD" "FU"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-pitch) -1.0) (set (mapcat rcs-set ["LU" "RU" "LFD" "RFD"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-yaw) 1.0) (set (mapcat rcs-set ["L" "RF"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-yaw) -1.0) (set (mapcat rcs-set ["R" "LF"])) #{}))))
 
 ; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
 ; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
@@ -687,15 +697,19 @@
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
-      (let [t1       (GLFW/glfwGetTime)
-            dt       (if fix-fps
-                       (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0)))))) (/ 1.0 ^double fix-fps))
-                       (- t1 ^double @t0))
-            jd-ut    (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
-            aileron  (@state :sfsim.input/aileron)
-            elevator (@state :sfsim.input/elevator)
-            rudder   (@state :sfsim.input/rudder)
-            brake    (if (@state :sfsim.input/brake) 1.0 (if (@state :sfsim.input/parking-brake) 0.1 0.0))]
+      (let [t1        (GLFW/glfwGetTime)
+            dt        (if fix-fps
+                        (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0))))))
+                          (/ 1.0 ^double fix-fps))
+                        (- t1 ^double @t0))
+            jd-ut     (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
+            aileron   (@state :sfsim.input/aileron)
+            elevator  (@state :sfsim.input/elevator)
+            rudder    (@state :sfsim.input/rudder)
+            rcs-roll  (@state :sfsim.input/rcs-roll)
+            rcs-pitch (@state :sfsim.input/rcs-pitch)
+            rcs-yaw   (@state :sfsim.input/rcs-yaw)
+            brake     (if (@state :sfsim.input/brake) 1.0 (if (@state :sfsim.input/parking-brake) 0.1 0.0))]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface jd-ut physics-state))
         (if (@state :sfsim.input/menu)
@@ -756,7 +770,11 @@
                                         :sfsim.physics/surface)
                                       jd-ut physics-state)
                   (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut physics-state))
-                  (let [loads (aerodynamics/aerodynamic-loads height
+                  (let [orientation (physics/get-orientation :sfsim.physics/orbit jd-ut physics-state)
+                        rcs-thrust  (vec3 (* (@state :sfsim.input/rcs-roll) -1000000.0)
+                                          (* (@state :sfsim.input/rcs-pitch) -1000000.0)
+                                          (* (@state :sfsim.input/rcs-yaw) -1000000.0))
+                        loads (aerodynamics/aerodynamic-loads height
                                                               (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                                               (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
                                                               (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
@@ -768,6 +786,7 @@
                                                         (vec3 (* ^double @throttle ^double thrust) 0 0)))
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/forces loads))
                     (physics/add-torque :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/moments loads))
+                    (physics/add-torque :sfsim.physics/orbit jd-ut physics-state (q/rotate-vector orientation rcs-thrust))
                     (physics/update-state physics-state dt (physics/gravitation (vec3 0 0 0) earth-mass))))
                 (reset! wheel-angles (if @vehicle
                                        [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
@@ -863,8 +882,13 @@
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
               geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
                                                                (planet/get-current-tree tile-tree))
+              object-origin      (:sfsim.render/object-origin scene-render-vars)
+              render-order       (filterv (active-rcs @state) (model/bsp-render-order bsp-tree object-origin))
+              rcs-split          (split-with #(not= % "Plume") render-order)
+              rcs-transf-front   (map rcs-transforms (first rcs-split))
+              rcs-transf-back    (map rcs-transforms (rest (last rcs-split)))
               clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                              plume-transform rcs-transforms geometry)]
+                                                              rcs-transf-front plume-transform rcs-transf-back geometry)]
           (onscreen-render window
                            (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
                              (with-stencils
@@ -897,9 +921,10 @@
                            (when (not playback)
                              (stick gui aileron elevator rudder @throttle)
                              (info gui @window-height
-                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s%s%s"
+                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                            (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
                                            (mag (:sfsim.physics/display-speed @physics-state))
+                                           (if (@state :sfsim.input/rcs) "RCS" "aerofoil")
                                            (/ 1.0 ^double @frametime)
                                            (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
                                            (if (@state :sfsim.input/air-brake) ", air brake" "")
