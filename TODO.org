@@ -269,3 +269,4 @@
     - [ ] apply all modifiers
     - [ ] bake animation when exporting (use NLP track names)
       - [ ] is "depth" initialised when rendering space ship or planet?
+  - [ ] keyboard shortcut customisation
