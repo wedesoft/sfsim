@@ -14,9 +14,11 @@ For the time being I will try to keep this page up to date:
 * B: wheel brakes
 * Shift-B: parking brake
 * /: air brake
-* A, S, D, W: flight stick
-* Q, E: rudder
+* A, D: ailerons or RCS roll
+* S, W: elevator or RCS pitch
+* Q, E: rudder or RCS yaw
 * R, F: thrust
+* \\: toggle between aerofoil and RCS thrusters
 * numerical keypad: change camera position
 * "," and ".": increase/decrease camera distance
 
