@@ -73,12 +73,21 @@
            (swap! event-buffer #(add-key-event % k action mods)))))
 
 
-(defn dead-zone
-  "Dead zone function for joystick axis"
+(defn dead-zone-continuous
+  "Dead zone function for joystick axis controlling aerofoil"
   ^double [^double epsilon ^double value]
   (let [|value| (abs value)]
     (if (>= |value| epsilon)
       (* (signum value) (/ (- |value| epsilon) (- 1.0 epsilon)))
+      0.0)))
+
+
+(defn dead-zone-three-state
+  "Dead zone function for joystick axis controlling RCS thruster"
+  ^double [^double epsilon ^double value]
+  (let [|value| (abs value)]
+    (if (> |value| epsilon)
+      (signum value)
       0.0)))
 
 
@@ -542,8 +551,10 @@
 
 (defn simulator-joystick-with-dead-zone
   "Apply filtered joystick axis value to state"
-  [k epsilon state value]
-  (swap! state assoc k (dead-zone epsilon value)))
+  [aerofoil rcs-thruster epsilon state value]
+  (if (@state ::rcs)
+    (swap! state assoc rcs-thruster (dead-zone-three-state epsilon value))
+    (swap! state assoc aerofoil (dead-zone-continuous epsilon value))))
 
 
 (defmulti simulator-joystick-axis
@@ -557,32 +568,32 @@
 
 (defmethod simulator-joystick-axis ::aileron-inverted
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::aileron epsilon state value))
+  (simulator-joystick-with-dead-zone ::aileron ::rcs-roll epsilon state value))
 
 
 (defmethod simulator-joystick-axis ::aileron
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::aileron epsilon state (- ^double value)))
+  (simulator-joystick-with-dead-zone ::aileron ::rcs-roll epsilon state (- ^double value)))
 
 
 (defmethod simulator-joystick-axis ::elevator-inverted
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::elevator epsilon state value))
+  (simulator-joystick-with-dead-zone ::elevator ::rcs-pitch epsilon state value))
 
 
 (defmethod simulator-joystick-axis ::elevator
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::elevator epsilon state (- ^double value)))
+  (simulator-joystick-with-dead-zone ::elevator ::rcs-pitch epsilon state (- ^double value)))
 
 
 (defmethod simulator-joystick-axis ::rudder-inverted
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::rudder epsilon state value))
+  (simulator-joystick-with-dead-zone ::rudder ::rcs-yaw epsilon state value))
 
 
 (defmethod simulator-joystick-axis ::rudder
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::rudder epsilon state (- ^double value)))
+  (simulator-joystick-with-dead-zone ::rudder ::rcs-yaw epsilon state (- ^double value)))
 
 
 (defmethod simulator-joystick-axis ::throttle
@@ -592,7 +603,7 @@
 
 (defmethod simulator-joystick-axis ::throttle-increment
   [_id epsilon state value]
-  (increment-clamp state ::throttle (* ^double (dead-zone epsilon value) -0.0625) 0.0 1.0))
+  (increment-clamp state ::throttle (* ^double (dead-zone-continuous epsilon value) -0.0625) 0.0 1.0))
 
 
 (defmulti simulator-joystick-button
