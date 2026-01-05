@@ -397,11 +397,13 @@
        (dead-zone-continuous 0.5 0.5) => 0.0
        (dead-zone-continuous 0.5 0.75) => 0.5
        (dead-zone-continuous 0.5 -0.75) => -0.5
+       (dead-zone-continuous 1.0 1.0) => 0.0
        (dead-zone-three-state 0.0 1.0) => 1.0
        (dead-zone-three-state 0.0 -1.0) => -1.0
        (dead-zone-three-state 0.5 0.5) => 0.0
        (dead-zone-three-state 0.5 0.75) => 1.0
-       (dead-zone-three-state 0.5 -0.75) => -1.0)
+       (dead-zone-three-state 0.5 -0.75) => -1.0
+       (dead-zone-three-state 1.0 1.0) => 0.0)
 
 
 (facts "Dead margins for throttle stick"
