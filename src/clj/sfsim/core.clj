@@ -775,9 +775,9 @@
                                       jd-ut physics-state)
                   (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut physics-state))
                   (let [orientation (physics/get-orientation :sfsim.physics/orbit jd-ut physics-state)
-                        rcs-thrust  (vec3 (* (@state :sfsim.input/rcs-roll) -1000000.0)
-                                          (* (@state :sfsim.input/rcs-pitch) -1000000.0)
-                                          (* (@state :sfsim.input/rcs-yaw) -1000000.0))
+                        rcs-thrust  (vec3 (* ^double (@state :sfsim.input/rcs-roll) -1000000.0)
+                                          (* ^double (@state :sfsim.input/rcs-pitch) -1000000.0)
+                                          (* ^double (@state :sfsim.input/rcs-yaw) -1000000.0))
                         loads (aerodynamics/aerodynamic-loads height
                                                               (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                                               (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
