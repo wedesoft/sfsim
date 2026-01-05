@@ -103,7 +103,7 @@
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timeseconds position orientation camera-position camera-orientation dist gear wheel-angles suspension
-                             camera-dx camera-dy throttle time_]}]
+                             camera-dx camera-dy throttle rcs time_]}]
                     {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
@@ -114,6 +114,7 @@
                      :gear gear
                      :time_ time_
                      :throttle throttle
+                     :rcs rcs
                      :wheel-angles wheel-angles
                      :suspension suspension
                      :camera-dx camera-dx
@@ -669,6 +670,7 @@
 (def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
 (def throttle (atom 0.0))
+(def rcs (atom #{}))
 (def time_ (atom 0.0))
 
 
@@ -727,6 +729,7 @@
             (reset! gear (:gear frame))
             (reset! time_ (:time_ frame))
             (reset! throttle (:throttle frame))
+            (reset! rcs (:rcs frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
           (do
@@ -746,6 +749,7 @@
               (do
                 (swap! time_ + dt)
                 (reset! throttle (@state :sfsim.input/throttle))
+                (reset! rcs (active-rcs @state))
                 (if (@state :sfsim.input/air-brake)
                   (swap! air-brake + (* ^double dt 2.0))
                   (swap! air-brake - (* ^double dt 2.0)))
@@ -811,6 +815,7 @@
                                :gear @gear
                                :time_ @time_
                                :throttle @throttle
+                               :rcs @rcs
                                :wheel-angles (if @vehicle
                                                [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
                                                 (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
@@ -883,7 +888,7 @@
               geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
                                                                (planet/get-current-tree tile-tree))
               object-origin      (:sfsim.render/object-origin scene-render-vars)
-              render-order       (filterv (active-rcs @state) (model/bsp-render-order bsp-tree object-origin))
+              render-order       (filterv @rcs (model/bsp-render-order bsp-tree object-origin))
               rcs-split          (split-with #(not= % "Plume") render-order)
               rcs-transf-front   (map rcs-transforms (first rcs-split))
               rcs-transf-back    (map rcs-transforms (rest (last rcs-split)))
