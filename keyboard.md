@@ -15,11 +15,13 @@ For the time being I will try to keep this page up to date:
 * Shift-B: parking brake
 * /: air brake
 * A, D: ailerons or RCS roll
+* numerical keypad 5: center ailerons
 * S, W: elevator or RCS pitch
 * Q, E: rudder or RCS yaw
+* Ctrl+Q: center rudder
 * R, F: thrust
 * \\: toggle between aerofoil and RCS thrusters
-* numerical keypad: change camera position
+* numerical keypad 4, 6, 8, 2, 1, 3: change camera position
 * "," and ".": increase/decrease camera distance
 
 If you have a joystick and/or thrust lever, you can set those up in the menu.
