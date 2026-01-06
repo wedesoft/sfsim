@@ -56,6 +56,7 @@
         - [X] vertex and fragment shader for RCS thruster
         - [X] store RCS coordinate systems in Blender
         - [X] use binary space partitioning tree
+        - [X] integration test for model
         - [ ] integration test for model and plume
         - [ ] use multimethod to dispatch rendering of plume, RCS, and maybe clouds
     - [ ] disable color buffer when rendering frame buffer and it is not required?

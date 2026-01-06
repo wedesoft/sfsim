@@ -18,7 +18,7 @@
     [sfsim.clouds :as clouds]
     [sfsim.config :as config]
     [sfsim.conftest :refer (roughly-vector roughly-matrix is-image)]
-    [sfsim.matrix :refer (transformation-matrix rotation-x rotation-y)]
+    [sfsim.matrix :refer (transformation-matrix rotation-x rotation-y rotation-z)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
@@ -259,6 +259,83 @@
             (planet/destroy-planet-renderer planet-renderer)
             (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
             (opacity/destroy-opacity-renderer opacity-renderer)
+            (atmosphere/destroy-atmosphere-luts atmosphere-luts)
+            (clouds/destroy-cloud-data cloud-data)))))
+
+
+(when (.exists (io/file ".integration"))
+  (fact "Test rendering of model"
+        (with-invisible-window
+          (let [width 320
+                height 240
+                level                     5
+                opacity-base              250.0
+                position                  (vec3 (+ 100.0 6378000.0) 0 0)
+                orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
+                object-position           (add position (q/rotate-vector orientation (vec3 0 0 -50)))
+                object-to-world           (transformation-matrix (mulm (rotation-x (/ PI -6)) (rotation-z (/ PI -2)))
+                                                                 object-position)
+                object-radius             (:sfsim.model/object-radius config/model-config)
+                light-direction           (vec3 1 0 0)
+                cloud-data                (clouds/make-cloud-data config/cloud-config)
+                atmosphere-luts           (atmosphere/make-atmosphere-luts config/max-height)
+                shadow-data               (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
+                data                      {:sfsim.render/config config/render-config
+                                           :sfsim.planet/config config/planet-config
+                                           :sfsim.opacity/data shadow-data
+                                           :sfsim.clouds/data cloud-data
+                                           :sfsim.model/data config/model-config
+                                           :sfsim.atmosphere/luts atmosphere-luts}
+                scene-renderer            (model/make-scene-renderer data)
+                model                     (model/read-gltf "venturestar.glb")
+                object                    (assoc-in (model/load-scene scene-renderer model)
+                                                    [:sfsim.model/root :sfsim.model/transform] object-to-world)
+                scene-shadow-renderer     (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
+                                                                            object-radius)
+                opacity-renderer          (opacity/make-opacity-renderer data)
+                planet-renderer           (planet/make-planet-renderer data)
+                atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
+                geometry-renderer         (model/make-joined-geometry-renderer data)
+                cloud-renderer            (clouds/make-cloud-renderer data)
+                tree                      (load-tile-tree planet-renderer {} width position level)
+                planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
+                model-vars                (model/make-model-vars 0.0 1.0 0.0)
+                render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
+                                                                          width height position orientation light-direction
+                                                                          object-position (q/->Quaternion 1 0 0 0) model-vars)
+                shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
+                                                                              cloud-data render-vars tree opacity-base)
+                cloud-render-vars         (clouds/make-cloud-render-vars config/render-config render-vars width height position
+                                                                         orientation light-direction object-position
+                                                                         (q/->Quaternion 1 0 0 0))
+                object-shadow             (model/scene-shadow-map scene-shadow-renderer light-direction object)
+                geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars object tree)
+                clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
+                                                                       [] (eye 4) [] geometry)
+                tex    (texture-render-color-depth width height true
+                                                   (clear (vec3 0 0 0) 0.0)
+                                                   (model/render-scenes scene-renderer render-vars model-vars
+                                                                        shadow-vars [object-shadow] geometry clouds
+                                                                        [object])
+                                                   (planet/render-planet planet-renderer render-vars shadow-vars
+                                                                         [object-shadow] geometry clouds tree)
+                                                   (atmosphere/render-atmosphere atmosphere-renderer render-vars
+                                                                                 geometry clouds))]
+            (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/model.png" 0.3)
+            (destroy-texture tex)
+            (clouds/destroy-cloud-geometry geometry)
+            (destroy-texture clouds)
+            (clouds/destroy-cloud-renderer cloud-renderer)
+            (model/destroy-joined-geometry-renderer geometry-renderer)
+            (model/destroy-scene-shadow-map object-shadow)
+            (opacity/destroy-opacity-and-shadow shadow-vars)
+            (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
+            (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
+            (planet/destroy-planet-renderer planet-renderer)
+            (model/destroy-scene-shadow-renderer scene-shadow-renderer)
+            (opacity/destroy-opacity-renderer opacity-renderer)
+            (model/destroy-scene object)
+            (model/destroy-scene-renderer scene-renderer)
             (atmosphere/destroy-atmosphere-luts atmosphere-luts)
             (clouds/destroy-cloud-data cloud-data)))))
 
