@@ -55,8 +55,9 @@
         - [X] use different values for rcs: nozzle, throttle, max-slope
         - [X] vertex and fragment shader for RCS thruster
         - [X] store RCS coordinate systems in Blender
-        - [-] use binary space partitioning tree
+        - [X] use binary space partitioning tree
         - [ ] integration test for model and plume
+        - [ ] use multimethod to dispatch rendering of plume, RCS, and maybe clouds
     - [ ] disable color buffer when rendering frame buffer and it is not required?
   - [ ] use macros when doing front face culling or disabling depth test
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
@@ -270,3 +271,8 @@
     - [ ] bake animation when exporting (use NLP track names)
       - [ ] is "depth" initialised when rendering space ship or planet?
   - [ ] keyboard shortcut customisation
+  - [ ] crashes
+    - [ ] crashes on ground
+    - [ ] crashes in water
+    - [ ] burning up
+    - [ ] wing stress
