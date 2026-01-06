@@ -77,7 +77,7 @@
   "Dead zone function for joystick axis controlling aerofoil"
   ^double [^double epsilon ^double value]
   (let [|value| (abs value)]
-    (if (>= |value| epsilon)
+    (if (> |value| epsilon)
       (* (signum value) (/ (- |value| epsilon) (- 1.0 epsilon)))
       0.0)))
 
