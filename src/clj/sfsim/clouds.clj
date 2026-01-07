@@ -18,7 +18,7 @@
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
-                          with-underlay-blending setup-shadow-matrices without-depth-test with-cullfront) :as render]
+                          with-underlay-blending setup-shadow-matrices without-depth-test with-culling) :as render]
     [sfsim.shaders :as shaders]
     [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size rcs-outer rcs-point rcs-box-size)
                  :as plume]
@@ -694,7 +694,7 @@
                                  (render-quads vao)))
                              (with-underlay-blending
                                (when plume
-                                 (with-cullfront
+                                 (with-culling :sfsim.render/cullfront
                                    (doseq [rcs-transform rcs-transforms-front]
                                           (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                             (use-program (:sfsim.clouds/rcs-outer programs))

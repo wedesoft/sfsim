@@ -36,9 +36,8 @@
     [sfsim.physics :as physics]
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
-    [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                          with-stencil-op-ref-and-mask joined-render-vars setup-rendering quad-splits-orientations
-                          with-depth-test)]
+    [sfsim.render :refer (make-window destroy-window clear onscreen-render with-stencils with-stencil-op-ref-and-mask
+                          joined-render-vars quad-splits-orientations with-depth-test with-culling)]
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture)]
     [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events add-mouse-move-event
@@ -921,22 +920,22 @@
                                                        (planet/get-current-tree tile-tree))
                                  ;; Render atmosphere with cloud overlay
                                  (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds))))
-                           (setup-rendering @window-width @window-height :sfsim.render/noculling)
-                           (when @menu
-                             (@menu gui @window-width @window-height))
-                           (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
-                           (when (not playback)
-                             (stick gui aileron elevator rudder @throttle)
-                             (info gui @window-height
-                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
-                                           (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
-                                           (mag (:sfsim.physics/display-speed @physics-state))
-                                           (if (@state :sfsim.input/rcs) "RCS" "aerofoil")
-                                           (/ 1.0 ^double @frametime)
-                                           (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
-                                           (if (@state :sfsim.input/air-brake) ", air brake" "")
-                                           (if (@state :sfsim.input/pause) ", pause" ""))))
-                           (gui/render-nuklear-gui gui @window-width @window-height))
+                           (with-culling :sfsim.render/noculling
+                             (when @menu
+                               (@menu gui @window-width @window-height))
+                             (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
+                             (when (not playback)
+                               (stick gui aileron elevator rudder @throttle)
+                               (info gui @window-height
+                                     (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
+                                             (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
+                                             (mag (:sfsim.physics/display-speed @physics-state))
+                                             (if (@state :sfsim.input/rcs) "RCS" "aerofoil")
+                                             (/ 1.0 ^double @frametime)
+                                             (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
+                                             (if (@state :sfsim.input/air-brake) ", air brake" "")
+                                             (if (@state :sfsim.input/pause) ", pause" ""))))
+                             (gui/render-nuklear-gui gui @window-width @window-height)))
           (destroy-texture clouds)
           (clouds/destroy-cloud-geometry geometry)
           (model/destroy-scene-shadow-map object-shadow)
