@@ -12,4 +12,6 @@ permalink: /presskit/
 
 ![alps](pics/alps.jpg)
 
-![thrusters](pics/thrusters.jpg)
+![main thrusters](pics/thrusters.jpg)
+
+![RCS thrusters](pics/rcs.jpg)
