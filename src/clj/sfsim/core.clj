@@ -895,31 +895,32 @@
               clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
                                                               rcs-transf-front plume-transform rcs-transf-back geometry)]
           (onscreen-render window
-                           (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
-                             (with-stencils
-                               (clear (vec3 0 1 0) 1.0 0)
-                               ;; Render model
-                               (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x1 0x1
-                                 (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
-                                                      geometry clouds [moved-scene]))
-                               (clear)  ; Only clear depth buffer
-                               ;; Render planet with cloud overlay
-                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x0 0x1
-                                 (planet/render-planet planet-renderer planet-render-vars shadow-vars [] geometry clouds
+                           (with-depth-test true
+                             (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
+                               (with-stencils
+                                 (clear (vec3 0 1 0) 1.0 0)
+                                 ;; Render model
+                                 (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x1 0x1
+                                   (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
+                                                        geometry clouds [moved-scene]))
+                                 (clear)  ; Only clear depth buffer
+                                 ;; Render planet with cloud overlay
+                                 (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x0 0x1
+                                   (planet/render-planet planet-renderer planet-render-vars shadow-vars [] geometry clouds
+                                                         (planet/get-current-tree tile-tree))
+                                   ;; Render atmosphere with cloud overlay
+                                   (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds)))
+                               (do
+                                 (clear (vec3 0 1 0) 1.0)
+                                 ;; Render model
+                                 (model/render-scenes scene-renderer planet-render-vars model-vars shadow-vars [object-shadow]
+                                                      geometry clouds [moved-scene])
+                                 ;; Render planet with cloud overlay
+                                 (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] geometry clouds
                                                        (planet/get-current-tree tile-tree))
                                  ;; Render atmosphere with cloud overlay
                                  (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds)))
-                             (do
-                               (clear (vec3 0 1 0) 1.0)
-                               ;; Render model
-                               (model/render-scenes scene-renderer planet-render-vars model-vars shadow-vars [object-shadow]
-                                                    geometry clouds [moved-scene])
-                               ;; Render planet with cloud overlay
-                               (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] geometry clouds
-                                                     (planet/get-current-tree tile-tree))
-                               ;; Render atmosphere with cloud overlay
-                               (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds)))
-                           (setup-rendering @window-width @window-height :sfsim.render/noculling false)
+                           (setup-rendering @window-width @window-height :sfsim.render/noculling)
                            (when @menu
                              (@menu gui @window-width @window-height))
                            (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
