@@ -36,11 +36,12 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [ ] integration test for model and plume
   - [ ] use multimethod to dispatch rendering of plume, RCS, and maybe clouds
+  - [ ] integration test for model and plume
+  - [ ] refactor large cloud rendering method
+  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
-  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
   - [ ] Thrust vectoring:
         If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
@@ -226,6 +227,7 @@
   - [ ] winter daytime is too dark, adjust range?
   - [ ] limit timestep on startup to prevent numerical problems
   - [ ] add keyboard mapping help page!
+  - [ ] borderless fullscreen support
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] configurable key controls
   - [ ] joystick hat to control camera
