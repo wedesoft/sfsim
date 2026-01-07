@@ -37,7 +37,8 @@
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                          with-stencil-op-ref-and-mask joined-render-vars setup-rendering quad-splits-orientations)]
+                          with-stencil-op-ref-and-mask joined-render-vars setup-rendering quad-splits-orientations
+                          with-depth-test)]
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture)]
     [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events add-mouse-move-event
@@ -919,7 +920,7 @@
                                  (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] geometry clouds
                                                        (planet/get-current-tree tile-tree))
                                  ;; Render atmosphere with cloud overlay
-                                 (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds)))
+                                 (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds))))
                            (setup-rendering @window-width @window-height :sfsim.render/noculling)
                            (when @menu
                              (@menu gui @window-width @window-height))
