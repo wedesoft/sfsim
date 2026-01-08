@@ -189,11 +189,10 @@
 (def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Left"))))
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
 (def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
-(def plume-transform (mulm gltf-to-aerodynamic (model/get-node-transform model "Plume")))
 (def bsp-tree (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 (defn rcs-set [rcs-name] [(str "RCS " rcs-name "1") (str "RCS " rcs-name "2") (str "RCS " rcs-name "3")])
-(def rcs-names (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]))
-(def rcs-transforms (into {} (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name) (mulm gltf-to-aerodynamic) (vector rcs-name))) rcs-names))))
+(def thruster-names (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
+(def thruster-transforms (into {} (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name) (mulm gltf-to-aerodynamic) (vector rcs-name))) thruster-names))))
 
 (defn active-rcs [state]
   (-> #{"Plume"}
@@ -889,11 +888,9 @@
                                                                (planet/get-current-tree tile-tree))
               object-origin      (:sfsim.render/object-origin scene-render-vars)
               render-order       (filterv @rcs (model/bsp-render-order bsp-tree object-origin))
-              rcs-split          (split-with #(not= % "Plume") render-order)
-              rcs-transf-front   (map rcs-transforms (first rcs-split))
-              rcs-transf-back    (map rcs-transforms (rest (last rcs-split)))
-              clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                              rcs-transf-front plume-transform rcs-transf-back geometry)]
+              plume-transforms   (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
+              clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms
+                                                              geometry)]
           (onscreen-render window
                            (with-depth-test true
                              (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))

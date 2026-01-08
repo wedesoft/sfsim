@@ -85,7 +85,7 @@
                                                                               (q/->Quaternion 1 0 0 0))
                      geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars model tree)
                      clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                                            [] (eye 4) [] geometry)
+                                                                            [] geometry)
                      tex                       (texture-render-color-depth width height true
                                                                            (clear (vec3 0 1 0) 0.0)
                                                                            (planet/render-planet planet-renderer render-vars
@@ -153,7 +153,7 @@
                                                                               (q/->Quaternion 1 0 0 0))
                      geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars object tree)
                      clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                                            [] (eye 4) [] geometry)
+                                                                            [] geometry)
                      tex                       (texture-render-color-depth width height true
                                                                            (clear (vec3 0 1 0) 0.0)
                                                                            (model/render-scenes scene-renderer render-vars model-vars
@@ -233,7 +233,7 @@
                 object-shadow             (model/scene-shadow-map scene-shadow-renderer light-direction object)
                 geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars object tree)
                 clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                                       [] (eye 4) [] geometry)
+                                                                       [] geometry)
                 tex                       (texture-render-color-depth width height true
                                                                       (clear (vec3 0 1 0) 0.0)
                                                                       (model/render-scenes scene-renderer render-vars model-vars
@@ -311,7 +311,7 @@
                 object-shadow             (model/scene-shadow-map scene-shadow-renderer light-direction object)
                 geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars object tree)
                 clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                                       [] (eye 4) [] geometry)
+                                                                       [] geometry)
                 tex    (texture-render-color-depth width height true
                                                    (clear (vec3 0 0 0) 0.0)
                                                    (model/render-scenes scene-renderer render-vars model-vars
