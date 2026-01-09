@@ -640,7 +640,6 @@
         cloud-data      (:sfsim.clouds/data other)
         atmosphere-luts (:sfsim.atmosphere/luts other)]
     (uniform-float program "lod_offset" (lod-offset render-config cloud-data cloud-render-vars))
-    (plume/setup-dynamic-plume-uniforms program cloud-render-vars model-vars)
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
     (setup-shadow-matrices program shadow-vars)
@@ -673,7 +672,8 @@
             (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
             (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
             (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))
-            (setup-dynamic-cloud-uniforms program other cloud-render-vars model-vars shadow-vars)
+            (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
+            (uniform-float program "time" (:sfsim.model/time model-vars))
             (use-textures {0  (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
      (framebuffer-render overlay-width overlay-height :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                          (clear (vec3 0.0 0.0 0.0) 0.0)
@@ -682,12 +682,18 @@
                              (when front
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                  (use-program (:sfsim.clouds/atmosphere-front programs))
+                                 (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-front programs) other cloud-render-vars
+                                                               model-vars shadow-vars)
                                  (render-quads vao))
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
                                  (use-program (:sfsim.clouds/planet-front programs))
+                                 (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-front programs) other cloud-render-vars
+                                                               model-vars shadow-vars)
                                  (render-quads vao))
                                (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
                                  (use-program (:sfsim.clouds/scene-front programs))
+                                 (setup-dynamic-cloud-uniforms (:sfsim.clouds/scene-front programs) other cloud-render-vars
+                                                               model-vars shadow-vars)
                                  (render-quads vao)))
                              (with-underlay-blending
                                (when plume
@@ -697,11 +703,13 @@
                                             (do
                                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                                 (use-program (:sfsim.clouds/plume-outer programs))
+                                                (uniform-float (:sfsim.clouds/plume-outer programs) "plume_throttle" (:sfsim.model/throttle model-vars))
                                                 (uniform-matrix4 (:sfsim.clouds/plume-outer programs) "plume_to_object" transform)
                                                 (uniform-matrix4 (:sfsim.clouds/plume-outer programs) "object_to_plume" (inverse transform))
                                                 (render-quads plume-vao))
                                               (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
                                                 (use-program (:sfsim.clouds/plume-point programs))
+                                                (uniform-float (:sfsim.clouds/plume-point programs) "plume_throttle" (:sfsim.model/throttle model-vars))
                                                 (uniform-matrix4 (:sfsim.clouds/plume-point programs) "plume_to_object" transform)
                                                 (uniform-matrix4 (:sfsim.clouds/plume-point programs) "object_to_plume" (inverse transform))
                                                 (render-quads plume-vao))
@@ -727,9 +735,13 @@
                                (when back
                                  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
                                    (use-program (:sfsim.clouds/atmosphere-back programs))
+                                   (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-back programs) other cloud-render-vars
+                                                                 model-vars shadow-vars)
                                    (render-quads vao))
                                  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
                                    (use-program (:sfsim.clouds/planet-back programs))
+                                   (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-back programs) other cloud-render-vars
+                                                                 model-vars shadow-vars)
                                    (render-quads vao)))))))
      overlay)))
 
