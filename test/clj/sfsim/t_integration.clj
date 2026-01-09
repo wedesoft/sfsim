@@ -8,17 +8,19 @@
   (:require
     [clojure.java.io :as io]
     [clojure.math :refer (PI to-radians)]
-    [fastmath.matrix :refer (mat3x3 mulm mulv eye)]
+    [fastmath.matrix :refer (mat3x3 mulm mulv)]
     [fastmath.vector :refer (vec2 vec3 add div sub)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.astro :refer :all]
     [sfsim.atmosphere :as atmosphere]
+    [sfsim.aerodynamics :as aerodynamics]
     [sfsim.clouds :as clouds]
     [sfsim.config :as config]
     [sfsim.conftest :refer (roughly-vector roughly-matrix is-image)]
-    [sfsim.matrix :refer (transformation-matrix rotation-x rotation-y rotation-z)]
+    [sfsim.matrix :refer (transformation-matrix rotation-x rotation-y rotation-z rotation-matrix quaternion->matrix
+                          matrix->quaternion)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
@@ -388,6 +390,92 @@ void main()
               (destroy-texture tex))
             (destroy-vertex-array-object vao)
             (destroy-program program)))))
+
+
+(when (.exists (io/file ".integration"))
+  (fact "Test rendering of model with main engine plume and RCS thrusters"
+        (with-invisible-window
+          (let [width 320
+                height 240
+                level                     5
+                opacity-base              250.0
+                position                  (vec3 (+ 100.0 6378000.0) 0 0)
+                orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
+                object-position           (add position (q/rotate-vector orientation (vec3 0 0 -50)))
+                object-orientation        (matrix->quaternion (mulm (rotation-x (* 0.8 PI)) (rotation-y (* -0.4 PI))))
+                object-to-world           (transformation-matrix (quaternion->matrix object-orientation) object-position)
+                object-radius             (:sfsim.model/object-radius config/model-config)
+                light-direction           (vec3 1 0 0)
+                cloud-data                (clouds/make-cloud-data config/cloud-config)
+                atmosphere-luts           (atmosphere/make-atmosphere-luts config/max-height)
+                shadow-data               (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
+                data                      {:sfsim.render/config config/render-config
+                                           :sfsim.planet/config config/planet-config
+                                           :sfsim.opacity/data shadow-data
+                                           :sfsim.clouds/data cloud-data
+                                           :sfsim.model/data config/model-config
+                                           :sfsim.atmosphere/luts atmosphere-luts}
+                scene-renderer            (model/make-scene-renderer data)
+                model                     (model/read-gltf "venturestar.glb")
+                gltf-to-aerodynamic       (rotation-matrix aerodynamics/gltf-to-aerodynamic)
+                bsp-tree                  (update (model/get-bsp-tree model "BSP")
+                                                  :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
+                rcs-set                   (fn [rcs-name] [(str "RCS " rcs-name "1") (str "RCS " rcs-name "2") (str "RCS " rcs-name "3")])
+                thruster-names            (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume")
+                thruster-transforms       (into {} (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name) (mulm gltf-to-aerodynamic) (vector rcs-name))) thruster-names)))
+                object                    (assoc-in (model/load-scene scene-renderer model)
+                                                    [:sfsim.model/root :sfsim.model/transform] (mulm object-to-world gltf-to-aerodynamic))
+                scene-shadow-renderer     (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
+                                                                            object-radius)
+                opacity-renderer          (opacity/make-opacity-renderer data)
+                planet-renderer           (planet/make-planet-renderer data)
+                atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
+                geometry-renderer         (model/make-joined-geometry-renderer data)
+                cloud-renderer            (clouds/make-cloud-renderer data)
+                tree                      (load-tile-tree planet-renderer {} width position level)
+                planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
+                model-vars                (model/make-model-vars 0.0 1.0 0.5)
+                render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
+                                                                          width height position orientation light-direction
+                                                                          object-position object-orientation model-vars)
+                shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
+                                                                              cloud-data render-vars tree opacity-base)
+                cloud-render-vars         (clouds/make-cloud-render-vars config/render-config render-vars width height position
+                                                                         orientation light-direction object-position
+                                                                         object-orientation)
+                object-origin             (:sfsim.render/object-origin render-vars)
+                render-order              (model/bsp-render-order bsp-tree object-origin)
+                plume-transforms          (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
+                object-shadow             (model/scene-shadow-map scene-shadow-renderer light-direction object)
+                geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars object tree)
+                clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
+                                                                       plume-transforms geometry)
+                tex    (texture-render-color-depth width height true
+                                                   (clear (vec3 0 0 0) 0.0)
+                                                   (model/render-scenes scene-renderer render-vars model-vars
+                                                                        shadow-vars [object-shadow] geometry clouds
+                                                                        [object])
+                                                   (planet/render-planet planet-renderer render-vars shadow-vars
+                                                                         [object-shadow] geometry clouds tree)
+                                                   (atmosphere/render-atmosphere atmosphere-renderer render-vars
+                                                                                 geometry clouds))]
+            (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/model-with-plume.png" 0.3)
+            (destroy-texture tex)
+            (clouds/destroy-cloud-geometry geometry)
+            (destroy-texture clouds)
+            (clouds/destroy-cloud-renderer cloud-renderer)
+            (model/destroy-joined-geometry-renderer geometry-renderer)
+            (model/destroy-scene-shadow-map object-shadow)
+            (opacity/destroy-opacity-and-shadow shadow-vars)
+            (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
+            (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
+            (planet/destroy-planet-renderer planet-renderer)
+            (model/destroy-scene-shadow-renderer scene-shadow-renderer)
+            (opacity/destroy-opacity-renderer opacity-renderer)
+            (model/destroy-scene object)
+            (model/destroy-scene-renderer scene-renderer)
+            (atmosphere/destroy-atmosphere-luts atmosphere-luts)
+            (clouds/destroy-cloud-data cloud-data)))))
 
 
 (when (.exists (io/file ".integration"))

@@ -167,23 +167,9 @@
   (uniform-float program "rcs_step" (:sfsim.model/rcs-step model-data)))
 
 
-(def plume-vars (m/schema [:map [:sfsim.render/object-origin fvec3]
-                                [:sfsim.render/object-distance :double]
-                                [:sfsim.render/camera-to-object fmat4]]))
 (def model-vars (m/schema [:map [:sfsim.model/time :double]
                                 [:sfsim.model/pressure :double]
                                 [:sfsim.model/throttle :double]]))
-
-
-(defn setup-dynamic-plume-uniforms
-  {:malli/schema [:=> [:cat :int plume-vars model-vars] :nil]}
-  [program render-vars model-vars]
-  (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
-  (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
-  (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
-  (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
-  (uniform-float program "time" (:sfsim.model/time model-vars))
-  (uniform-float program "plume_throttle" (:sfsim.model/throttle model-vars)))
 
 
 (def plume-indices
