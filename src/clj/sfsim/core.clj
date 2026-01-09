@@ -180,7 +180,6 @@
 
 
 (def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
-(def aerodynamic-to-gltf (rotation-matrix (inverse aerodynamics/gltf-to-aerodynamic)))
 
 (def model (model/read-gltf "venturestar.glb"))
 (def scene (model/load-scene scene-renderer model))
