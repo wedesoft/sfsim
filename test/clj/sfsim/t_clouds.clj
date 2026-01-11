@@ -20,7 +20,7 @@
     [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
     [sfsim.quaternion :as q]
     [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet make-cube-map-tile-vertices)]
-    [sfsim.model :refer (read-gltf
+    [sfsim.model :refer (read-gltf make-model-vars
                          load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry
                          destroy-joined-geometry-renderer)]
     [sfsim.plume :as plume]
@@ -1634,14 +1634,14 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                      data               {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
                                          :sfsim.clouds/data   {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
                                                                :sfsim.clouds/perlin-octaves [0.57 0.28 0.15]}}
-                     model-vars         {}
+                     model-vars         (make-model-vars 0.0 1.0 0.0)
                      shadow-vars        {}
                      cloud-renderer     (make-cloud-renderer data)
                      cloud-render-vars  (make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 0)
                                                                 (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
                                                                 (q/->Quaternion 1 0 0 0))
-                     overlay            (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] (eye 4) []
-                                                              geometry ?front ?plume ?back)]
+                     overlay            (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
+                                                              (if ?plume [["Plume" (eye 4)]] []) geometry ?front ?back)]
                  (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)

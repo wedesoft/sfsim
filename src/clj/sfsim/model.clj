@@ -15,7 +15,7 @@
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
                               destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay)]
     [sfsim.clouds :refer (lod-offset overall-shading overall-shading-parameters render-cloud-geometry)]
-    [sfsim.plume :refer (model-data setup-dynamic-plume-uniforms model-vars)]
+    [sfsim.plume :refer (model-data model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3 fvec3
                           fmat4 rotation-matrix get-translation)]
@@ -787,7 +787,6 @@
       (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
       (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
       (uniform-matrix4 program "world_to_camera" world-to-camera)
-      (setup-dynamic-plume-uniforms program render-vars model-vars)
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
       (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))

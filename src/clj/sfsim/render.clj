@@ -45,30 +45,31 @@
              [:ref ::node]]))
 
 
-(defn setup-rendering
-  "Common code for setting up rendering"
-  {:malli/schema [:=> [:cat N N [:enum ::cullfront ::cullback ::noculling] :boolean] :nil]}
-  [width height culling depth-test]
-  (GL11/glViewport 0 0 width height)
-  (if (= culling ::noculling)
-    (GL11/glDisable GL11/GL_CULL_FACE)
-    (do
-      (GL11/glEnable GL11/GL_CULL_FACE)
-      (GL11/glCullFace ({::cullfront GL11/GL_FRONT ::cullback GL11/GL_BACK} culling))))
-  (if depth-test
-    (GL11/glEnable GL11/GL_DEPTH_TEST)
-    (GL11/glDisable GL11/GL_DEPTH_TEST))
-  (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
-  (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
-
-
-(defmacro with-cullfront
-  "Enable culling front face temporarily"
-  [& body]
-  `(do
-     (GL11/glCullFace GL11/GL_FRONT)
+(defmacro with-culling
+  "Use specified culling mode"
+  [culling & body]
+  `(let [mode# ~culling]
+     (if (= mode# ::noculling)
+       (GL11/glDisable GL11/GL_CULL_FACE)
+       (do
+         (GL11/glEnable GL11/GL_CULL_FACE)
+         (GL11/glCullFace ({::cullfront GL11/GL_FRONT ::cullback GL11/GL_BACK} mode#))))
      (let [result# (do ~@body)]
-       (GL11/glCullFace GL11/GL_BACK)
+       (GL11/glDisable GL11/GL_CULL_FACE)
+       result#)))
+
+
+(defmacro with-depth-test
+  "Enable depth test if boolean is true"
+  [enable & body]
+  `(let [on# ~enable]
+     (when on#
+       (GL11/glEnable GL11/GL_DEPTH_TEST)
+       (GL11/glDepthFunc GL11/GL_GEQUAL); Reversed-z rendering requires greater (or greater-equal) comparison function
+       (GL45/glClipControl GL20/GL_LOWER_LEFT GL45/GL_ZERO_TO_ONE))
+     (let [result# (do ~@body)]
+       (when on#
+         (GL11/glDisable GL11/GL_DEPTH_TEST))
        result#)))
 
 
@@ -199,8 +200,9 @@
   `(let [width#  (int-array 1)
          height# (int-array 1)]
      (GLFW/glfwGetWindowSize ~(vary-meta window assoc :tag 'long) width# height#)
-     (setup-rendering (aget width# 0) (aget height# 0) ::cullback true)
-     ~@body
+     (GL11/glViewport 0 0 (aget width# 0) (aget height# 0))
+     (with-culling ::cullback
+       ~@body)
      (GLFW/glfwSwapBuffers ~window)))
 
 
@@ -577,8 +579,10 @@
          (let [attachment-type# (if (:stencil ~depth-texture) GL30/GL_DEPTH_STENCIL_ATTACHMENT GL30/GL_DEPTH_ATTACHMENT)]
            (GL32/glFramebufferTexture GL30/GL_FRAMEBUFFER attachment-type# (:sfsim.texture/texture ~depth-texture) 0)))
        (setup-color-attachments ~color-textures)
-       (setup-rendering ~width ~height ~culling (boolean ~depth-texture))
-       ~@body
+       (GL11/glViewport 0 0 ~width ~height)
+       (with-culling ~culling
+         (with-depth-test ~depth-texture
+           ~@body))
        (finally
          (GL30/glBindFramebuffer GL30/GL_FRAMEBUFFER 0)
          (GL30/glDeleteFramebuffers fbo#)))))

@@ -237,7 +237,7 @@ void main()
 
 (def rcs-transfer-test (shader-test (fn [program throttle]
                                         (uniform-float program "pressure" 1.0)
-                                        (uniform-float program "rcs_throttle" throttle))
+                                        (uniform-float program "plume_throttle" throttle))
                                     rcs-transfer-probe (last (rcs-transfer 1.0))))
 
 
@@ -438,7 +438,7 @@ void main()
 (def rcs-box-test
   (shader-test (fn [program nozzle throttle max-slope]
                    (uniform-float program "rcs_nozzle" nozzle)
-                   (uniform-float program "rcs_throttle" throttle)
+                   (uniform-float program "plume_throttle" throttle)
                    (uniform-float program "rcs_max_slope" max-slope))
                rcs-box-probe [(last rcs-box-size) (last rcs-box)]))
 
