@@ -7,7 +7,7 @@
 
 uniform float pressure;
 uniform float rcs_nozzle;
-uniform float rcs_throttle;
+uniform float plume_throttle;
 uniform float time;
 
 float rcs_bulge(float pressure, float x);
@@ -17,7 +17,7 @@ vec4 rcs_transfer(vec3 point, float rcs_step, vec4 rcs_scatter)
 {
   float radius = rcs_bulge(pressure, max(-point.x, 0));
   if (length(point.yz) <= radius) {
-    float end = mix(START, RCS_END, rcs_throttle);
+    float end = mix(START, RCS_END, plume_throttle);
     float fade = clamp((point.x - end) / (START - end), 0.0, 1.0);
     float density = BASE_DENSITY / (radius * radius) * fade;
     vec3 scale = 25.0 * vec3(0.01, rcs_nozzle / radius, rcs_nozzle / radius);
