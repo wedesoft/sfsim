@@ -650,6 +650,23 @@
                           (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))))
 
 
+(defn setup-dynamic-overlay-uniforms
+  [program cloud-render-vars]
+  (let [overlay-width  (:sfsim.render/overlay-width cloud-render-vars)
+        overlay-height (:sfsim.render/overlay-height cloud-render-vars)]
+    (uniform-int program "overlay_width" overlay-width)
+    (uniform-int program "overlay_height" overlay-height)
+    (uniform-vector3 program "origin" (:sfsim.render/origin cloud-render-vars))
+    (uniform-vector3 program "object_origin" (:sfsim.render/object-origin cloud-render-vars))
+    (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world cloud-render-vars))
+    (uniform-matrix4 program "world_to_camera" (inverse (:sfsim.render/camera-to-world cloud-render-vars)))
+    (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
+    (uniform-matrix4 program "object_to_camera" (inverse (:sfsim.render/camera-to-object cloud-render-vars)))
+    (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
+    (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
+    (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))))
+
+
 (defn render-cloud-overlay
   ([cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms geometry]
    (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms geometry true true true))
@@ -661,17 +678,7 @@
                                                 overlay-width overlay-height)]
      (doseq [program (vals programs)]
             (use-program program)
-            (uniform-int program "overlay_width" overlay-width)
-            (uniform-int program "overlay_height" overlay-height)
-            (uniform-vector3 program "origin" (:sfsim.render/origin cloud-render-vars))
-            (uniform-vector3 program "object_origin" (:sfsim.render/object-origin cloud-render-vars))
-            (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world cloud-render-vars))
-            (uniform-matrix4 program "world_to_camera" (inverse (:sfsim.render/camera-to-world cloud-render-vars)))
-            (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
-            (uniform-matrix4 program "object_to_camera" (inverse (:sfsim.render/camera-to-object cloud-render-vars)))
-            (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
-            (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
-            (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))
+            (setup-dynamic-overlay-uniforms program cloud-render-vars)
             (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
             (uniform-float program "time" (:sfsim.model/time model-vars))
             (use-textures {0  (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
