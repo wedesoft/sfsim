@@ -1641,7 +1641,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                                                                 (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
                                                                 (q/->Quaternion 1 0 0 0))
                      overlay            (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                              [["Plume" (eye 4)]] geometry ?front ?plume ?back)]
+                                                              (if plume? [["Plume" (eye 4)]] []) geometry ?front ?back)]
                  (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)
