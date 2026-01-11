@@ -37,8 +37,8 @@
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
   - [X] integration test for model and plume
-  - [ ] use multimethod to dispatch rendering of plume, RCS, and maybe clouds
-  - [ ] refactor large cloud rendering method
+  - [X] use multimethod to dispatch rendering of plume, RCS, and maybe clouds
+  - [X] refactor large cloud rendering method
   - [ ] use state variable to consolidate atoms and simplify recording and playback code
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] create high level rendering methods to simplify main program and integration tests
