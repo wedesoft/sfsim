@@ -73,12 +73,21 @@
            (swap! event-buffer #(add-key-event % k action mods)))))
 
 
-(defn dead-zone
-  "Dead zone function for joystick axis"
+(defn dead-zone-continuous
+  "Dead zone function for joystick axis controlling aerofoil"
   ^double [^double epsilon ^double value]
   (let [|value| (abs value)]
-    (if (>= |value| epsilon)
+    (if (> |value| epsilon)
       (* (signum value) (/ (- |value| epsilon) (- 1.0 epsilon)))
+      0.0)))
+
+
+(defn dead-zone-three-state
+  "Dead zone function for joystick axis controlling RCS thruster"
+  ^double [^double epsilon ^double value]
+  (let [|value| (abs value)]
+    (if (> |value| epsilon)
+      (signum value)
       0.0)))
 
 
@@ -258,6 +267,10 @@
          ::rudder                 0.0
          ::throttle               0.0
          ::air-brake              false
+         ::rcs                    false
+         ::rcs-roll               0.0
+         ::rcs-pitch              0.0
+         ::rcs-yaw                0.0
          ::camera-rotate-x        0.0
          ::camera-rotate-y        0.0
          ::camera-rotate-z        0.0
@@ -269,33 +282,34 @@
 
 (def default-mappings
   {::keyboard
-   {GLFW/GLFW_KEY_ESCAPE ::menu
-    GLFW/GLFW_KEY_ENTER  ::fullscreen
-    GLFW/GLFW_KEY_P      ::pause
-    GLFW/GLFW_KEY_G      ::gear
-    GLFW/GLFW_KEY_B      ::brake
-    GLFW/GLFW_KEY_F      ::throttle-decrease
-    GLFW/GLFW_KEY_R      ::throttle-increase
-    GLFW/GLFW_KEY_SLASH  ::air-brake
-    GLFW/GLFW_KEY_A      ::aileron-left
-    GLFW/GLFW_KEY_KP_5   ::aileron-center
-    GLFW/GLFW_KEY_D      ::aileron-right
-    GLFW/GLFW_KEY_W      ::elevator-down
-    GLFW/GLFW_KEY_S      ::elevator-up
-    GLFW/GLFW_KEY_Q      ::rudder-left
-    GLFW/GLFW_KEY_E      ::rudder-right
-    GLFW/GLFW_KEY_KP_2   ::camera-rotate-x-positive
-    GLFW/GLFW_KEY_KP_8   ::camera-rotate-x-negative
-    GLFW/GLFW_KEY_KP_6   ::camera-rotate-y-positive
-    GLFW/GLFW_KEY_KP_4   ::camera-rotate-y-negative
-    GLFW/GLFW_KEY_KP_1   ::camera-rotate-z-positive
-    GLFW/GLFW_KEY_KP_3   ::camera-rotate-z-negative
-    GLFW/GLFW_KEY_L      ::camera-shift-x-positive
-    GLFW/GLFW_KEY_H      ::camera-shift-x-negative
-    GLFW/GLFW_KEY_K      ::camera-shift-y-positive
-    GLFW/GLFW_KEY_J      ::camera-shift-y-negative
-    GLFW/GLFW_KEY_COMMA  ::camera-distance-change-positive
-    GLFW/GLFW_KEY_PERIOD ::camera-distance-change-negative
+   {GLFW/GLFW_KEY_ESCAPE    ::menu
+    GLFW/GLFW_KEY_ENTER     ::fullscreen
+    GLFW/GLFW_KEY_P         ::pause
+    GLFW/GLFW_KEY_G         ::gear
+    GLFW/GLFW_KEY_B         ::brake
+    GLFW/GLFW_KEY_F         ::throttle-decrease
+    GLFW/GLFW_KEY_R         ::throttle-increase
+    GLFW/GLFW_KEY_SLASH     ::air-brake
+    GLFW/GLFW_KEY_BACKSLASH ::rcs
+    GLFW/GLFW_KEY_A         ::aileron-left
+    GLFW/GLFW_KEY_KP_5      ::aileron-center
+    GLFW/GLFW_KEY_D         ::aileron-right
+    GLFW/GLFW_KEY_W         ::elevator-down
+    GLFW/GLFW_KEY_S         ::elevator-up
+    GLFW/GLFW_KEY_Q         ::rudder-left
+    GLFW/GLFW_KEY_E         ::rudder-right
+    GLFW/GLFW_KEY_KP_2      ::camera-rotate-x-positive
+    GLFW/GLFW_KEY_KP_8      ::camera-rotate-x-negative
+    GLFW/GLFW_KEY_KP_6      ::camera-rotate-y-positive
+    GLFW/GLFW_KEY_KP_4      ::camera-rotate-y-negative
+    GLFW/GLFW_KEY_KP_1      ::camera-rotate-z-positive
+    GLFW/GLFW_KEY_KP_3      ::camera-rotate-z-negative
+    GLFW/GLFW_KEY_L         ::camera-shift-x-positive
+    GLFW/GLFW_KEY_H         ::camera-shift-x-negative
+    GLFW/GLFW_KEY_K         ::camera-shift-y-positive
+    GLFW/GLFW_KEY_J         ::camera-shift-y-negative
+    GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
+    GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
     }
    ::joysticks
    (read-user-config "joysticks.edn"
@@ -393,16 +407,28 @@
     (swap! state update ::air-brake not)))
 
 
+(defmethod simulator-key ::rcs
+  [_id state action _mods]
+  (when (= action GLFW/GLFW_PRESS)
+    (swap! state update ::rcs not)))
+
+
 (defmethod simulator-key ::aileron-left
   [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::aileron 0.0625)))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-roll 1.0)
+      (increment-clamp state ::aileron 0.0625))
+    (swap! state assoc ::rcs-roll 0.0)))
 
 
 (defmethod simulator-key ::aileron-right
   [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::aileron -0.0625)))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-roll -1.0)
+      (increment-clamp state ::aileron -0.0625))
+    (swap! state assoc ::rcs-roll 0.0)))
 
 
 (defmethod simulator-key ::aileron-center
@@ -413,28 +439,40 @@
 
 (defmethod simulator-key ::rudder-left
   [_id state action mods]
-  (when (keypress? action)
-    (if (= mods GLFW/GLFW_MOD_CONTROL)
-      (swap! state assoc ::rudder 0.0)
-      (increment-clamp state ::rudder 0.0625))))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-yaw 1.0)
+      (if (= mods GLFW/GLFW_MOD_CONTROL)
+        (swap! state assoc ::rudder 0.0)
+        (increment-clamp state ::rudder 0.0625)))
+    (swap! state assoc ::rcs-yaw 0.0)))
 
 
 (defmethod simulator-key ::rudder-right
   [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::rudder -0.0625)))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-yaw -1.0)
+      (increment-clamp state ::rudder -0.0625))
+    (swap! state assoc ::rcs-yaw 0.0)))
 
 
 (defmethod simulator-key ::elevator-down
   [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::elevator 0.0625)))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-pitch 1.0)
+      (increment-clamp state ::elevator 0.0625))
+    (swap! state assoc ::rcs-pitch 0.0)))
 
 
 (defmethod simulator-key ::elevator-up
   [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::elevator -0.0625)))
+  (if (keypress? action)
+    (if (@state ::rcs)
+      (swap! state assoc ::rcs-pitch -1.0)
+      (increment-clamp state ::elevator -0.0625))
+    (swap! state assoc ::rcs-pitch 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-x-positive
@@ -513,8 +551,10 @@
 
 (defn simulator-joystick-with-dead-zone
   "Apply filtered joystick axis value to state"
-  [k epsilon state value]
-  (swap! state assoc k (dead-zone epsilon value)))
+  [aerofoil rcs-thruster epsilon state value]
+  (if (@state ::rcs)
+    (swap! state assoc rcs-thruster (dead-zone-three-state epsilon value))
+    (swap! state assoc aerofoil (dead-zone-continuous epsilon value))))
 
 
 (defmulti simulator-joystick-axis
@@ -528,32 +568,32 @@
 
 (defmethod simulator-joystick-axis ::aileron-inverted
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::aileron epsilon state value))
+  (simulator-joystick-with-dead-zone ::aileron ::rcs-roll epsilon state value))
 
 
 (defmethod simulator-joystick-axis ::aileron
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::aileron epsilon state (- ^double value)))
+  (simulator-joystick-with-dead-zone ::aileron ::rcs-roll epsilon state (- ^double value)))
 
 
 (defmethod simulator-joystick-axis ::elevator-inverted
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::elevator epsilon state value))
+  (simulator-joystick-with-dead-zone ::elevator ::rcs-pitch epsilon state value))
 
 
 (defmethod simulator-joystick-axis ::elevator
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::elevator epsilon state (- ^double value)))
+  (simulator-joystick-with-dead-zone ::elevator ::rcs-pitch epsilon state (- ^double value)))
 
 
 (defmethod simulator-joystick-axis ::rudder-inverted
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::rudder epsilon state value))
+  (simulator-joystick-with-dead-zone ::rudder ::rcs-yaw epsilon state value))
 
 
 (defmethod simulator-joystick-axis ::rudder
   [_id epsilon state value]
-  (simulator-joystick-with-dead-zone ::rudder epsilon state (- ^double value)))
+  (simulator-joystick-with-dead-zone ::rudder ::rcs-yaw epsilon state (- ^double value)))
 
 
 (defmethod simulator-joystick-axis ::throttle
@@ -563,7 +603,7 @@
 
 (defmethod simulator-joystick-axis ::throttle-increment
   [_id epsilon state value]
-  (increment-clamp state ::throttle (* ^double (dead-zone epsilon value) -0.0625) 0.0 1.0))
+  (increment-clamp state ::throttle (* ^double (dead-zone-continuous epsilon value) -0.0625) 0.0 1.0))
 
 
 (defmulti simulator-joystick-button

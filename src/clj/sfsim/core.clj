@@ -9,6 +9,7 @@
   (:gen-class)
   (:require
     [clojure.java.io :as io]
+    [clojure.set :refer (union)]
     [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp pow)]
     [clj-async-profiler.core :as prof]
     [clojure.edn]
@@ -36,9 +37,8 @@
     [sfsim.physics :as physics]
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
-    [sfsim.render :refer (make-window destroy-window clear onscreen-render texture-render-color-depth with-stencils
-                          write-to-stencil-buffer mask-with-stencil-buffer joined-render-vars setup-rendering
-                          quad-splits-orientations)]
+    [sfsim.render :refer (make-window destroy-window clear onscreen-render with-stencils with-stencil-op-ref-and-mask
+                          joined-render-vars quad-splits-orientations with-depth-test with-culling)]
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture)]
     [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events add-mouse-move-event
@@ -104,7 +104,7 @@
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timeseconds position orientation camera-position camera-orientation dist gear wheel-angles suspension
-                             camera-dx camera-dy throttle time_]}]
+                             camera-dx camera-dy throttle rcs time_]}]
                     {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
@@ -115,6 +115,7 @@
                      :gear gear
                      :time_ time_
                      :throttle throttle
+                     :rcs rcs
                      :wheel-angles wheel-angles
                      :suspension suspension
                      :camera-dx camera-dx
@@ -154,12 +155,12 @@
 (def planet-shadow-renderer (planet/make-planet-shadow-renderer data))
 
 
-;; Program to render clouds in front of planet (before rendering clouds above horizon)
-(def cloud-planet-renderer (planet/make-cloud-planet-renderer data))
+;; Program to render low-resolution scene geometry to facilitate volumetric cloud and plume rendering
+(def joined-geometry-renderer (model/make-joined-geometry-renderer data))
 
 
-;; Program to render clouds above the horizon (after rendering clouds in front of planet)
-(def cloud-atmosphere-renderer (planet/make-cloud-atmosphere-renderer data))
+;; Program to render low-resolution overlay of clouds
+(def cloud-renderer (clouds/make-cloud-renderer data))
 
 
 ;; Program to render planet with cloud overlay (before rendering atmosphere)
@@ -169,6 +170,8 @@
 ;; Program to render atmosphere with cloud overlay (last rendering step)
 (def atmosphere-renderer (atmosphere/make-atmosphere-renderer data))
 
+
+;; Program to render 3D model
 (def scene-renderer (model/make-scene-renderer data))
 
 
@@ -178,7 +181,6 @@
 
 
 (def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
-(def aerodynamic-to-gltf (rotation-matrix (inverse aerodynamics/gltf-to-aerodynamic)))
 
 (def model (model/read-gltf "venturestar.glb"))
 (def scene (model/load-scene scene-renderer model))
@@ -187,6 +189,19 @@
 (def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Left"))))
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
 (def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
+(def bsp-tree (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
+(defn rcs-set [rcs-name] [(str "RCS " rcs-name "1") (str "RCS " rcs-name "2") (str "RCS " rcs-name "3")])
+(def thruster-names (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
+(def thruster-transforms (into {} (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name) (mulm gltf-to-aerodynamic) (vector rcs-name))) thruster-names))))
+
+(defn active-rcs [state]
+  (-> #{"Plume"}
+      (union (if (= (state :sfsim.input/rcs-roll) 1.0) (set (mapcat rcs-set ["RD" "LU"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-roll) -1.0) (set (mapcat rcs-set ["LD" "RU"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-pitch) 1.0) (set (mapcat rcs-set ["LD" "RD" "FU"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-pitch) -1.0) (set (mapcat rcs-set ["LU" "RU" "LFD" "RFD"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-yaw) 1.0) (set (mapcat rcs-set ["L" "RF"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-yaw) -1.0) (set (mapcat rcs-set ["R" "LF"])) #{}))))
 
 ; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
 ; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
@@ -654,6 +669,7 @@
 (def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
 (def throttle (atom 0.0))
+(def rcs (atom #{}))
 (def time_ (atom 0.0))
 
 
@@ -683,15 +699,19 @@
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
       (reset! window-width (aget w 0))
       (reset! window-height (aget h 0))
-      (let [t1       (GLFW/glfwGetTime)
-            dt       (if fix-fps
-                       (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0)))))) (/ 1.0 ^double fix-fps))
-                       (- t1 ^double @t0))
-            jd-ut    (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
-            aileron  (@state :sfsim.input/aileron)
-            elevator (@state :sfsim.input/elevator)
-            rudder   (@state :sfsim.input/rudder)
-            brake    (if (@state :sfsim.input/brake) 1.0 (if (@state :sfsim.input/parking-brake) 0.1 0.0))]
+      (let [t1        (GLFW/glfwGetTime)
+            dt        (if fix-fps
+                        (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0))))))
+                          (/ 1.0 ^double fix-fps))
+                        (- t1 ^double @t0))
+            jd-ut     (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
+            aileron   (@state :sfsim.input/aileron)
+            elevator  (@state :sfsim.input/elevator)
+            rudder    (@state :sfsim.input/rudder)
+            rcs-roll  (@state :sfsim.input/rcs-roll)
+            rcs-pitch (@state :sfsim.input/rcs-pitch)
+            rcs-yaw   (@state :sfsim.input/rcs-yaw)
+            brake     (if (@state :sfsim.input/brake) 1.0 (if (@state :sfsim.input/parking-brake) 0.1 0.0))]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface jd-ut physics-state))
         (if (@state :sfsim.input/menu)
@@ -709,6 +729,7 @@
             (reset! gear (:gear frame))
             (reset! time_ (:time_ frame))
             (reset! throttle (:throttle frame))
+            (reset! rcs (:rcs frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
           (do
@@ -728,6 +749,7 @@
               (do
                 (swap! time_ + dt)
                 (reset! throttle (@state :sfsim.input/throttle))
+                (reset! rcs (active-rcs @state))
                 (if (@state :sfsim.input/air-brake)
                   (swap! air-brake + (* ^double dt 2.0))
                   (swap! air-brake - (* ^double dt 2.0)))
@@ -752,7 +774,11 @@
                                         :sfsim.physics/surface)
                                       jd-ut physics-state)
                   (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut physics-state))
-                  (let [loads (aerodynamics/aerodynamic-loads height
+                  (let [orientation (physics/get-orientation :sfsim.physics/orbit jd-ut physics-state)
+                        rcs-thrust  (vec3 (* ^double (@state :sfsim.input/rcs-roll) -1000000.0)
+                                          (* ^double (@state :sfsim.input/rcs-pitch) -1000000.0)
+                                          (* ^double (@state :sfsim.input/rcs-yaw) -1000000.0))
+                        loads (aerodynamics/aerodynamic-loads height
                                                               (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                                               (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
                                                               (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
@@ -764,6 +790,7 @@
                                                         (vec3 (* ^double @throttle ^double thrust) 0 0)))
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/forces loads))
                     (physics/add-torque :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/moments loads))
+                    (physics/add-torque :sfsim.physics/orbit jd-ut physics-state (q/rotate-vector orientation rcs-thrust))
                     (physics/update-state physics-state dt (physics/gravitation (vec3 0 0 0) earth-mass))))
                 (reset! wheel-angles (if @vehicle
                                        [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
@@ -788,6 +815,7 @@
                                :gear @gear
                                :time_ @time_
                                :throttle @throttle
+                               :rcs @rcs
                                :wheel-angles (if @vehicle
                                                [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
                                                 (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
@@ -822,6 +850,9 @@
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) opacity-base)
+              cloud-render-vars  (clouds/make-cloud-render-vars config/render-config planet-render-vars @window-width @window-height
+                                                                origin camera-orientation light-direction object-position
+                                                                object-orientation)
               wheels-scene       (if (= ^double @gear 1.0)
                                    (model/apply-transforms
                                      scene
@@ -854,58 +885,57 @@
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
-              clouds             (texture-render-color-depth
-                                   (quot ^long (:sfsim.render/window-width planet-render-vars) 2)
-                                   (quot ^long (:sfsim.render/window-height planet-render-vars) 2)
-                                   true
-                                   (clear (vec3 0 0 0) 1.0)
-                                   ;; Render clouds in front of planet
-                                   (planet/render-cloud-planet cloud-planet-renderer planet-render-vars model-vars shadow-vars
+              geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
                                                                (planet/get-current-tree tile-tree))
-                                   ;; Render clouds above the horizon
-                                   (planet/render-cloud-atmosphere cloud-atmosphere-renderer planet-render-vars model-vars
-                                                                   shadow-vars))]
+              object-origin      (:sfsim.render/object-origin scene-render-vars)
+              render-order       (filterv @rcs (model/bsp-render-order bsp-tree object-origin))
+              plume-transforms   (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
+              clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms
+                                                              geometry)]
           (onscreen-render window
-                           (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
-                             (with-stencils
-                               (clear (vec3 0 1 0) 1.0 0)
-                               ;; Render model
-                               (write-to-stencil-buffer)
-                               (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
-                                                    [moved-scene])
-                               (clear)  ; Only clear depth buffer
-                               ;; Render planet with cloud overlay
-                               (mask-with-stencil-buffer)
-                               (planet/render-planet planet-renderer planet-render-vars shadow-vars [] clouds
-                                                     (planet/get-current-tree tile-tree))
-                               ;; Render atmosphere with cloud overlay
-                               (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds))
-                             (do
-                               (clear (vec3 0 1 0) 1.0)
-                               ;; Render model
-                               (model/render-scenes scene-renderer planet-render-vars model-vars shadow-vars [object-shadow]
-                                                    [moved-scene])
-                               ;; Render planet with cloud overlay
-                               (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] clouds
-                                                     (planet/get-current-tree tile-tree))
-                               ;; Render atmosphere with cloud overlay
-                               (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars clouds)))
-                           (setup-rendering @window-width @window-height :sfsim.render/noculling false)
-                           (when @menu
-                             (@menu gui @window-width @window-height))
-                           (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
-                           (when (not playback)
-                             (stick gui aileron elevator rudder @throttle)
-                             (info gui @window-height
-                                   (format "\rheight = %10.1f m, speed = %7.1f m/s, fps = %6.1f%s%s%s"
-                                           (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
-                                           (mag (:sfsim.physics/display-speed @physics-state))
-                                           (/ 1.0 ^double @frametime)
-                                           (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
-                                           (if (@state :sfsim.input/air-brake) ", air brake" "")
-                                           (if (@state :sfsim.input/pause) ", pause" ""))))
-                           (gui/render-nuklear-gui gui @window-width @window-height))
+                           (with-depth-test true
+                             (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
+                               (with-stencils
+                                 (clear (vec3 0 1 0) 1.0 0)
+                                 ;; Render model
+                                 (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x1 0x1
+                                   (model/render-scenes scene-renderer scene-render-vars model-vars shadow-vars [object-shadow]
+                                                        geometry clouds [moved-scene]))
+                                 (clear)  ; Only clear depth buffer
+                                 ;; Render planet with cloud overlay
+                                 (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x0 0x1
+                                   (planet/render-planet planet-renderer planet-render-vars shadow-vars [] geometry clouds
+                                                         (planet/get-current-tree tile-tree))
+                                   ;; Render atmosphere with cloud overlay
+                                   (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds)))
+                               (do
+                                 (clear (vec3 0 1 0) 1.0)
+                                 ;; Render model
+                                 (model/render-scenes scene-renderer planet-render-vars model-vars shadow-vars [object-shadow]
+                                                      geometry clouds [moved-scene])
+                                 ;; Render planet with cloud overlay
+                                 (planet/render-planet planet-renderer planet-render-vars shadow-vars [object-shadow] geometry clouds
+                                                       (planet/get-current-tree tile-tree))
+                                 ;; Render atmosphere with cloud overlay
+                                 (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds))))
+                           (with-culling :sfsim.render/noculling
+                             (when @menu
+                               (@menu gui @window-width @window-height))
+                             (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
+                             (when (not playback)
+                               (stick gui aileron elevator rudder @throttle)
+                               (info gui @window-height
+                                     (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
+                                             (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
+                                             (mag (:sfsim.physics/display-speed @physics-state))
+                                             (if (@state :sfsim.input/rcs) "RCS" "aerofoil")
+                                             (/ 1.0 ^double @frametime)
+                                             (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
+                                             (if (@state :sfsim.input/air-brake) ", air brake" "")
+                                             (if (@state :sfsim.input/pause) ", pause" ""))))
+                             (gui/render-nuklear-gui gui @window-width @window-height)))
           (destroy-texture clouds)
+          (clouds/destroy-cloud-geometry geometry)
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (when playback
@@ -934,10 +964,10 @@
   (model/destroy-scene-renderer scene-renderer)
   (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
   (planet/destroy-planet-renderer planet-renderer)
-  (planet/destroy-cloud-atmosphere-renderer cloud-atmosphere-renderer)
+  (clouds/destroy-cloud-renderer cloud-renderer)
+  (model/destroy-joined-geometry-renderer joined-geometry-renderer)
   (atmosphere/destroy-atmosphere-luts atmosphere-luts)
   (clouds/destroy-cloud-data cloud-data)
-  (planet/destroy-cloud-planet-renderer cloud-planet-renderer)
   (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
   (opacity/destroy-opacity-renderer opacity-renderer)
   (gui/destroy-nuklear-gui gui)

@@ -1,9 +1,9 @@
-{:deps {org.clojure/clojure {:mvn/version "1.12.3"}
+{:deps {org.clojure/clojure {:mvn/version "1.12.4"}
         metosin/malli {:mvn/version "0.20.0"}
         levand/immuconf {:mvn/version "0.1.0"}
-        org.clojure/core.memoize {:mvn/version "1.1.266"}
+        org.clojure/core.memoize {:mvn/version "1.2.273"}
         comb/comb {:mvn/version "1.0.0"}
-        ch.qos.logback/logback-classic {:mvn/version "1.5.21"}
+        ch.qos.logback/logback-classic {:mvn/version "1.5.24"}
         progrock/progrock {:mvn/version "1.0.0"}
         org.clj-commons/claypoole {:mvn/version "1.2.2"}
         generateme/fastmath {:mvn/version "2.4.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
@@ -27,7 +27,7 @@
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED" "-XX:+UseZGC"
                             "-XX:+UseDynamicNumberOfGCThreads" "--sun-misc-unsafe-memory-access=allow"]
                  :main-opts ["-m" "sfsim.core"]}
-           :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.11"}
+           :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.12"}
                           sfsim/sfsim {:local/root "."}}
                    :ns-default build
                    :exec-fn all
@@ -38,7 +38,7 @@
                   :extra-paths ["test/clj"]
                   :main-opts ["-m" "midje-runner.runner"]
                   :jvm-opts ["--enable-native-access=ALL-UNNAMED" "--sun-misc-unsafe-memory-access=allow"]}
-           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.6.2"}}
+           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.7.0"}}
                      :jvm-opts ["-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"
                                 "-XX:+UseZGC" "--sun-misc-unsafe-memory-access=allow"]
                      :main-opts ["-m" "sfsim.core"]}}}

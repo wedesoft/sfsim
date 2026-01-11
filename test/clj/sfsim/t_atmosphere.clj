@@ -9,23 +9,14 @@
     [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye inverse)]
-    [fastmath.vector :refer (vec3 mult emult add dot)]
+    [fastmath.vector :refer (vec3 vec4 mult emult add dot)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.atmosphere :refer (atmosphere-intersection attenuation-outer elevation-to-index
-                              extinction fragment-atmosphere height-to-index index-to-elevation horizon-distance
-                              index-to-height index-to-sin-sun-elevation index-to-sun-direction is-above-horizon?
-                              phase phase-function point-scatter point-scatter-base point-scatter-component
-                              ray-extremity ray-scatter ray-scatter-space
-                              ray-scatter-track scattering strength-component sun-angle-to-index cloud-overlay
-                              sun-elevation-to-index surface-intersection surface-point? surface-radiance
-                              surface-radiance-base surface-radiance-space transmittance transmittance-outer
-                              transmittance-space transmittance-track transmittance-point vertex-atmosphere extinction
-                              attenuation-point temperature-at-height pressure-at-height density-at-height speed-of-sound)
-     :as atmosphere]
     [sfsim.conftest :refer (roughly-vector is-image shader-test)]
-    [sfsim.image :refer (convert-4d-to-2d get-vector3)]
+    [sfsim.atmosphere :refer :all :as atmosphere :exclude (scatter)]
+    [sfsim.clouds :as clouds]
+    [sfsim.image :refer (convert-4d-to-2d get-vector3 get-vector4 get-float get-pixel)]
     [sfsim.interpolate :refer (make-lookup-table)]
     [sfsim.matrix :refer (pack-matrices projection-matrix rotation-x transformation-matrix)]
     [sfsim.units :refer :all]
@@ -38,7 +29,9 @@
     (fastmath.vector
       Vec3)
     (org.lwjgl.glfw
-      GLFW)))
+      GLFW)
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -832,7 +825,7 @@ void main()
 (def cloud-overlay-mock
   (template/fn [alpha]
     "#version 450 core
-vec4 cloud_overlay()
+vec4 cloud_overlay(float depth)
 {
   float brightness = <%= alpha %>;
   return vec4(brightness, brightness, brightness, <%= alpha %>);
@@ -928,36 +921,66 @@ void main()
 
 
 (def fragment-overlay-lookup
-  "#version 450 core
+"#version 450 core
+uniform float depth;
 out vec3 fragColor;
-vec4 cloud_overlay();
+vec4 cloud_overlay(float depth);
 void main()
 {
-  vec4 clouds = cloud_overlay();
-  fragColor = 0.5 * (1 - clouds.a) + clouds.rgb;
+  fragColor = cloud_overlay(depth).rgb;
 }")
 
 
-(fact "Test pixel lookup in cloud overlay"
-      (offscreen-render 60 40
-                        (let [indices  [0 1 3 2]
-                              vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-                              data     [255 0 0 192, 0 255 0 192, 0 0 255 192, 0 0 0 192]
-                              img      #:sfsim.image{:width 2 :height 2 :data (byte-array data) :channels 3}
-                              clouds   (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp img)
-                              program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                     :sfsim.render/fragment [fragment-overlay-lookup cloud-overlay])
-                              vao      (make-vertex-array-object program indices vertices ["point" 3])]
-                          (use-program program)
-                          (uniform-sampler program "clouds" 0)
-                          (uniform-int program "window_width" 64)
-                          (uniform-int program "window_height" 40)
-                          (use-textures {0 clouds})
-                          (clear (vec3 0 0 0))
-                          (render-quads vao)
-                          (destroy-vertex-array-object vao)
-                          (destroy-program program)
-                          (destroy-texture clouds))) => (is-image "test/clj/sfsim/fixtures/clouds/lookup.png" 5.8))
+(tabular "Test depth-sensitive upsampling of cloud overlay"
+         (fact
+           (get-pixel
+             (offscreen-render 4 4
+                               (let [indices    [0 1 3 2]
+                                     vertices   [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                                     cloud-data [?cloud00 ?cloud00 ?cloud00 255,
+                                                 ?cloud01 ?cloud01 ?cloud01 255,
+                                                 ?cloud10 ?cloud10 ?cloud10 255,
+                                                 ?cloud11 ?cloud11 ?cloud11 255]
+                                     cloud-img  #:sfsim.image{:width 2 :height 2 :data (byte-array cloud-data) :channels 4}
+                                     clouds     (make-rgba-texture :sfsim.texture/nearest :sfsim.texture/clamp cloud-img)
+                                     dist-data  [?dist00 ?dist01 ?dist10 ?dist11]
+                                     dist-img   #:sfsim.image{:width 2 :height 2 :data (float-array dist-data)}
+                                     dist       (make-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp dist-img)
+                                     program    (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                              :sfsim.render/fragment [fragment-overlay-lookup cloud-overlay])
+                                     vao        (make-vertex-array-object program indices vertices ["point" 3])]
+                                 (use-program program)
+                                 (uniform-sampler program "clouds" 0)
+                                 (uniform-sampler program "dist" 1)
+                                 (uniform-int program "cloud_subsampling" 2)
+                                 (uniform-int program "overlay_width" 2)
+                                 (uniform-int program "overlay_height" 2)
+                                 (uniform-float program "depth_sigma" ?sigma)
+                                 (uniform-float program "min_depth_exponent" -8.0)
+                                 (uniform-float program "depth" ?depth)
+                                 (use-textures {0 clouds 1 dist})
+                                 (clear (vec3 0 0 0))
+                                 (render-quads vao)
+                                 (destroy-vertex-array-object vao)
+                                 (destroy-program program)
+                                 (destroy-texture dist)
+                                 (destroy-texture clouds)))
+             ?y ?x) => (vec3 ?result ?result ?result))
+         ?cloud00 ?cloud01 ?cloud10 ?cloud11 ?dist00 ?dist01 ?dist10 ?dist11 ?sigma ?depth ?x ?y ?result
+           0        0        0        0        1       1       1       1      1.0     1.0  1  1    0
+         255      255      255      255        1       1       1       1      1.0     1.0  1  1  255
+           0      128        0      128        1       1       1       1      1.0     1.0  1  1   32
+           0      128        0      128        1       1       1       1      1.0     1.0  2  1   96
+           0        0      128      128        1       1       1       1      1.0     1.0  1  1   32
+           0        0      128      128        1       1       1       1      1.0     1.0  1  2   96
+           0      128        0      128      100     200     100     200     10.0   100.0  1  1    0
+           0      128        0      128      100     200     100     200     10.0   150.0  1  1   32
+           0      128        0      128      100     200     100     200     10.0   200.0  1  1  128
+           0        0      128      128      100     100     200     200     10.0   100.0  1  1    0
+           0        0      128      128      100     100     200     200     10.0   150.0  1  1   32
+           0        0      128      128      100     100     200     200     10.0   200.0  1  1  128
+           0      128        0      128      100     200     100     200      1.0   150.0  1  1   32
+           0        0      128      128      100     100     200     200      1.0   150.0  1  1   32)
 
 
 (def attenuation-point-probe
@@ -989,7 +1012,7 @@ void main()
       (uniform-vector3 program "light_direction" (vec3 0.0 0.0 1.0))
       (uniform-float program "radius" radius)
       (uniform-float program "max_height" max-height))
-    attenuation-point-probe (last attenuation-point)))
+    attenuation-point-probe (last attenuation-point) shaders/limit-interval))
 
 
 (tabular "Shader determining atmospheric attenuation between a point and the camera origin"
@@ -1035,6 +1058,20 @@ void main()
        (speed-of-sound 273.15) => (roughly 331.3 1e-1)
        (speed-of-sound 293.15) => (roughly 343.2 1e-1)
        (speed-of-sound 223.15) => (roughly 299.4 1e-1))
+
+
+(facts "Render direction vectors for atmospheric background"
+       (with-invisible-window
+         (let [renderer         (make-atmosphere-geometry-renderer)
+               render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                               :z-far 10.0}
+               geometry         (clouds/render-cloud-geometry 160 120 (render-atmosphere-geometry renderer render-vars))]
+           (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
+           => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
+           (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
+           => 10.0
+           (clouds/destroy-cloud-geometry geometry)
+           (destroy-atmosphere-geometry-renderer renderer))))
 
 
 (GLFW/glfwTerminate)

@@ -34,23 +34,17 @@
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
-  - [X] replace attenuate_segment with attenuation_track using vec2 segment variable
-  - [ ] cloud-outer (cloud-point) should accept near (and far) limit and combine full attenuation given atmosphere segment
-  - [ ] attenuation_track for segment.y <= 0 needs to be tested
-  - [ ] combined attenuation (atmosphere segment and world coordinates) and plume function (object coordinates, near and far limit?)
+    - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
+      also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
+  - [X] integration test for model and plume
+  - [X] use multimethod to dispatch rendering of plume, RCS, and maybe clouds
+  - [X] refactor large cloud rendering method
+  - [ ] use state variable to consolidate atoms and simplify recording and playback code
+  - [ ] schemas for model, planet, and atmosphere geometry renderer
+  - [ ] create high level rendering methods to simplify main program and integration tests
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
-  - [-] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
-        also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-    - [X] as before render opacity and shadow cascade and object shadows
-    - [ ] render opaque objects (scenes, planet, atmosphere) creating distance and color texture with atmosphere in front
-    - [ ] render low-res cloud and plume volume (with atmospheric contribution) create distance, and rgba with atmosphere
-      - [ ] pass 1: render low-res distance and point texture (relative to camera): planet, scene, atmosphere
-      - [ ] pass 2: render foreground cloud segment in front of object clipping using low-res depth information
-      - [ ] pass 3: render engine plume and RCS plumes in correct order using downsampled depth buffer (nearest) using backfaces of bounding shapes
-      - [ ] pass 4: render far clouds (with atmospheric contribution)
-    - [ ] final: render color buffer combining with volumetric contribution using depth-aware upsampling of cloud texture
-  - [ ] implement RCS thrusters
-  - [X] use #version 450 (OpenGL 4.5)?
+  - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
+  - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
   - [ ] Thrust vectoring:
         If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
         A combination of pitch and roll can produce whatever attitude control you need. source
@@ -68,6 +62,7 @@
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
   - [ ] moon landing physics (hover thrusters), hover thruster locations
   - [ ] docking physics
+  - [ ] reentry flame
 * TODO [#B] add launchpad and runway                                   :scenery:
   - Note taken on [2025-08-14 Do 12:58] \\
     [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,
@@ -234,6 +229,7 @@
   - [ ] winter daytime is too dark, adjust range?
   - [ ] limit timestep on startup to prevent numerical problems
   - [ ] add keyboard mapping help page!
+  - [ ] borderless fullscreen support
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] configurable key controls
   - [ ] joystick hat to control camera
@@ -256,3 +252,9 @@
     - [ ] apply all modifiers
     - [ ] bake animation when exporting (use NLP track names)
       - [ ] is "depth" initialised when rendering space ship or planet?
+  - [ ] keyboard shortcut customisation
+  - [ ] crashes
+    - [ ] crashes on ground
+    - [ ] crashes in water
+    - [ ] burning up
+    - [ ] wing stress

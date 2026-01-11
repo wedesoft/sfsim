@@ -7,10 +7,13 @@
 (ns sfsim.plume
     "Module with shader functions for plume rendering"
     (:require
+      [malli.core :as m]
       [comb.template :as template]
+      [sfsim.matrix :refer (fvec3 fmat4)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
-      [sfsim.bluenoise :refer (sampling-offset)]))
+      [sfsim.bluenoise :refer (sampling-offset)]
+      [sfsim.render :refer (uniform-float uniform-float uniform-matrix4 uniform-vector3)]))
 
 
 (def plume-phase
@@ -23,60 +26,167 @@
   [plume-phase (slurp "resources/shaders/plume/diamond-phase.glsl")])
 
 
-(def plume-limit
+(defn plume-limit
   "Shader function to get extent of rocket plume"
-  (slurp "resources/shaders/plume/limit.glsl"))
+  [method-name min-limit]
+  (template/eval (slurp "resources/shaders/plume/limit.glsl") {:method-name method-name :min-limit min-limit}))
 
 
-(def bulge
+(def rcs-bulge
+  "Shader function to determine shape of RCS thruster exhaust plume"
+  [(plume-limit "rcs_limit" "rcs_min_limit") (slurp "resources/shaders/plume/rcs-bulge.glsl")])
+
+
+(def plume-bulge
   "Shader function to determine shape of rocket exhaust plume"
-  [plume-limit plume-phase (slurp "resources/shaders/plume/bulge.glsl")])
+  [(plume-limit "plume_limit" "plume_min_limit") plume-phase (slurp "resources/shaders/plume/plume-bulge.glsl")])
 
 
 (defn diamond
   "Shader function for volumetric Mach diamonds"
   [fringe]
-  [plume-limit diamond-phase plume-phase (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
+  [(plume-limit "plume_limit" "plume_min_limit") diamond-phase plume-phase
+   (template/eval (slurp "resources/shaders/plume/diamond.glsl") {:fringe fringe})])
 
 
-(def plume-start -7.5047)
-(def plume-end -70.0)
+(def plume-end -60.0)
 (def plume-width-2 7.4266)
 
 
 (defn plume-transfer
   "Shader for computing engine plume light transfer at a point"
   [fringe]
-  [plume-limit bulge (diamond fringe) shaders/noise3d shaders/sdf-circle shaders/sdf-rectangle
-   (template/eval (slurp "resources/shaders/plume/plume-transfer.glsl")
-                  {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
+  [(plume-limit "plume_limit" "plume_min_limit") plume-bulge (diamond fringe) shaders/noise3d shaders/sdf-circle shaders/sdf-rectangle
+   (template/eval (slurp "resources/shaders/plume/plume-transfer.glsl") {:plume-end plume-end :plume-width-2 plume-width-2})])
+
+
+(def rcs-end -3.0)
+
+
+(defn rcs-transfer
+  "Shader for computing RCS thruster plume light transfer at a point"
+  [base-density]
+  [(plume-limit "rcs_limit" "rcs_min_limit") rcs-bulge shaders/noise3d
+   (template/eval (slurp "resources/shaders/plume/rcs-transfer.glsl") {:base-density base-density :rcs-end rcs-end})])
+
+
+(def plume-box-size
+  [(plume-limit "plume_limit" "plume_min_limit")
+   (template/eval (slurp "resources/shaders/plume/plume-box-size.glsl") {:plume-end plume-end :plume-width-2 plume-width-2})])
 
 
 (def plume-box
-  [shaders/ray-box plume-limit
-   (template/eval (slurp "resources/shaders/plume/plume-box.glsl")
-                  {:plume-start plume-start :plume-end plume-end :plume-width-2 plume-width-2})])
+  [plume-box-size shaders/ray-box (template/eval (slurp "resources/shaders/plume/box.glsl") {:type "plume"})])
+
+
+(def rcs-box-size
+  [(plume-limit "rcs_limit" "rcs_min_limit")
+   (template/eval (slurp "resources/shaders/plume/rcs-box-size.glsl") {:rcs-end rcs-end})])
+
+
+(def rcs-box
+  [rcs-box-size shaders/ray-box (template/eval (slurp "resources/shaders/plume/box.glsl") {:type "rcs"})])
 
 
 (def plume-fringe 0.05)
 
 
+(defn sample-plume-segment
+  [outer]
+  [sampling-offset plume-box (plume-transfer plume-fringe) shaders/limit-interval
+   (template/eval (slurp "resources/shaders/plume/sample-segment.glsl") {:type "plume" :outer outer})])
+
+
+(def sample-plume-point
+  (sample-plume-segment false))
+
+
+(def sample-plume-outer
+  (sample-plume-segment true))
+
+
+(def rcs-base-density 0.1)
+
+
+(defn sample-rcs-segment
+  [outer]
+  [sampling-offset rcs-box (rcs-transfer rcs-base-density) shaders/limit-interval
+   (template/eval (slurp "resources/shaders/plume/sample-segment.glsl") {:type "rcs" :outer outer})])
+
+
 (defn plume-segment
   [outer]
-  [sampling-offset plume-box (plume-transfer plume-fringe)
-   (template/eval (slurp "resources/shaders/plume/plume-segment.glsl") {:outer outer})])
-
-
-(def plume-point
-  (plume-segment false))
+  [(sample-plume-segment outer) shaders/ray-sphere atmosphere/attenuation-track shaders/limit-interval
+   (template/eval (slurp "resources/shaders/plume/segment.glsl") {:type "plume" :outer outer})])
 
 
 (def plume-outer
   (plume-segment true))
 
 
-(defn cloud-plume-segment
-  "Shader function to compute cloud and plume RGBA values for segment around plume in space"
-  [model-point planet-point]
-  [plume-point plume-outer atmosphere/attenuation-track
-   (template/eval (slurp "resources/shaders/plume/cloud-plume-segment.glsl") {:model-point model-point :planet-point planet-point})])
+(def plume-point
+  (plume-segment false))
+
+
+(defn rcs-segment
+  [outer]
+  [(sample-rcs-segment outer) shaders/ray-sphere atmosphere/attenuation-track shaders/limit-interval
+   (template/eval (slurp "resources/shaders/plume/segment.glsl") {:type "rcs" :outer outer})])
+
+
+(def rcs-outer
+  (rcs-segment true))
+
+
+(def rcs-point
+  (rcs-segment false))
+
+
+(def model-data
+  (m/schema [:map [:sfsim.model/object-radius :double]
+                  [:sfsim.model/plume-nozzle :double]
+                  [:sfsim.model/plume-min-limit :double]
+                  [:sfsim.model/plume-max-slope :double]
+                  [:sfsim.model/omega-factor :double]
+                  [:sfsim.model/diamond-strength :double]
+                  [:sfsim.model/plume-step :double]]))
+
+
+(defn setup-static-plume-uniforms
+  {:malli/schema [:=> [:cat :int model-data] :nil]}
+  [program model-data]
+  (uniform-float program "plume_nozzle" (:sfsim.model/plume-nozzle model-data))
+  (uniform-float program "plume_min_limit" (:sfsim.model/plume-min-limit model-data))
+  (uniform-float program "plume_max_slope" (:sfsim.model/plume-max-slope model-data))
+  (uniform-float program "plume_step" (:sfsim.model/plume-step model-data))
+  (uniform-float program "omega_factor" (:sfsim.model/omega-factor model-data))
+  (uniform-float program "diamond_strength" (:sfsim.model/diamond-strength model-data))
+  (uniform-float program "rcs_nozzle" (:sfsim.model/rcs-nozzle model-data))
+  (uniform-float program "rcs_min_limit" (:sfsim.model/rcs-min-limit model-data))
+  (uniform-float program "rcs_max_slope" (:sfsim.model/rcs-max-slope model-data))
+  (uniform-float program "rcs_step" (:sfsim.model/rcs-step model-data)))
+
+
+(def model-vars (m/schema [:map [:sfsim.model/time :double]
+                                [:sfsim.model/pressure :double]
+                                [:sfsim.model/throttle :double]]))
+
+
+(def plume-indices
+  [4 5 7 6    ; front (+z)
+   1 0 2 3    ; back  (-z)
+   0 4 6 2    ; left  (-x)
+   5 1 3 7    ; right (+x)
+   2 6 7 3    ; top   (+y)
+   0 1 5 4])  ; bottom (-y)
+
+
+(def plume-vertices
+  [-1.0 -1.0 -1.0
+    1.0 -1.0 -1.0
+   -1.0  1.0 -1.0
+    1.0  1.0 -1.0
+   -1.0 -1.0  1.0
+    1.0 -1.0  1.0
+   -1.0  1.0  1.0
+    1.0  1.0  1.0])

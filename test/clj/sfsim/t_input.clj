@@ -320,7 +320,60 @@
          (:sfsim.input/air-brake @state) => true
          (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_PRESS 0))
          (-> GLFW/GLFW_KEY_SLASH mappings (simulator-key state GLFW/GLFW_RELEASE 0))
-         (:sfsim.input/air-brake @state) => false))
+         (:sfsim.input/air-brake @state) => false
+         ; Toggle aerofoil surfaces/RCS thrusters
+         (:sfsim.input/rcs @state) => false
+         (-> GLFW/GLFW_KEY_BACKSLASH mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_BACKSLASH mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs @state) => true
+         (-> GLFW/GLFW_KEY_BACKSLASH mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (-> GLFW/GLFW_KEY_BACKSLASH mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs @state) => false
+         ; RCS roll
+         (swap! state assoc :sfsim.input/rcs true)
+         (:sfsim.input/rcs-roll @state) => 0.0
+         (-> GLFW/GLFW_KEY_A mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-roll @state) => 1.0
+         (-> GLFW/GLFW_KEY_A mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-roll @state) => 1.0
+         (-> GLFW/GLFW_KEY_A mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs-roll @state) => 0.0
+         (-> GLFW/GLFW_KEY_D mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-roll @state) => -1.0
+         (-> GLFW/GLFW_KEY_D mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-roll @state) => -1.0
+         (-> GLFW/GLFW_KEY_D mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs-roll @state) => 0.0
+         ; RCS pitch
+         (swap! state assoc :sfsim.input/rcs true)
+         (:sfsim.input/rcs-pitch @state) => 0.0
+         (-> GLFW/GLFW_KEY_W mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-pitch @state) => 1.0
+         (-> GLFW/GLFW_KEY_W mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-pitch @state) => 1.0
+         (-> GLFW/GLFW_KEY_W mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs-pitch @state) => 0.0
+         (-> GLFW/GLFW_KEY_S mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-pitch @state) => -1.0
+         (-> GLFW/GLFW_KEY_S mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-pitch @state) => -1.0
+         (-> GLFW/GLFW_KEY_S mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs-pitch @state) => 0.0
+         ; RCS yaw
+         (swap! state assoc :sfsim.input/rcs true)
+         (:sfsim.input/rcs-yaw @state) => 0.0
+         (-> GLFW/GLFW_KEY_Q mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-yaw @state) => 1.0
+         (-> GLFW/GLFW_KEY_Q mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-yaw @state) => 1.0
+         (-> GLFW/GLFW_KEY_Q mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         (:sfsim.input/rcs-yaw @state) => 0.0
+         (-> GLFW/GLFW_KEY_E mappings (simulator-key state GLFW/GLFW_PRESS 0))
+         (:sfsim.input/rcs-yaw @state) => -1.0
+         (-> GLFW/GLFW_KEY_E mappings (simulator-key state GLFW/GLFW_REPEAT 0))
+         (:sfsim.input/rcs-yaw @state) => -1.0
+         (-> GLFW/GLFW_KEY_E mappings (simulator-key state GLFW/GLFW_RELEASE 0))
+         ))
 
 
 (facts "Process mouse events"
@@ -339,11 +392,18 @@
 
 
 (facts "Dead center zone for joystick axis"
-       (dead-zone 0.0 1.0) => 1.0
-       (dead-zone 0.0 -1.0) => -1.0
-       (dead-zone 0.5 0.5) => 0.0
-       (dead-zone 0.5 0.75) => 0.5
-       (dead-zone 0.5 -0.75) => -0.5)
+       (dead-zone-continuous 0.0 1.0) => 1.0
+       (dead-zone-continuous 0.0 -1.0) => -1.0
+       (dead-zone-continuous 0.5 0.5) => 0.0
+       (dead-zone-continuous 0.5 0.75) => 0.5
+       (dead-zone-continuous 0.5 -0.75) => -0.5
+       (dead-zone-continuous 1.0 1.0) => 0.0
+       (dead-zone-three-state 0.0 1.0) => 1.0
+       (dead-zone-three-state 0.0 -1.0) => -1.0
+       (dead-zone-three-state 0.5 0.5) => 0.0
+       (dead-zone-three-state 0.5 0.75) => 1.0
+       (dead-zone-three-state 0.5 -0.75) => -1.0
+       (dead-zone-three-state 1.0 1.0) => 0.0)
 
 
 (facts "Dead margins for throttle stick"
@@ -415,6 +475,7 @@
              handler-throttle-incr-zn (->InputHandler state gui (atom map-throttle-incr-zn))]
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75]) mock-handler)
          @playback => [{:device "Gamepad" :axis 0 :value -0.5} {:device "Gamepad" :axis 1 :value -0.75}]
+         ; Aerofoil surfaces
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
          (:sfsim.input/aileron @state) => 0.5
          (:sfsim.input/elevator @state) => 0.75
@@ -423,13 +484,27 @@
          (:sfsim.input/aileron @state) => -0.5
          (:sfsim.input/elevator @state) => -0.75
          (:sfsim.input/rudder @state) => 0.5
+         ; RCS thrusters
+         (swap! state assoc :sfsim.input/rcs true)
+         (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
+         (:sfsim.input/rcs-roll @state) => 1.0
+         (:sfsim.input/rcs-pitch @state) => 1.0
+         (:sfsim.input/rcs-yaw @state) => -1.0
+         (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler-inv)
+         (:sfsim.input/rcs-roll @state) => -1.0
+         (:sfsim.input/rcs-pitch @state) => -1.0
+         (:sfsim.input/rcs-yaw @state) => 1.0
+         (swap! state assoc :sfsim.input/rcs false)
+         ; Dead zone testing
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.75]) handler-zn)
          (:sfsim.input/aileron @state) => 0.5
+         ; Throttle
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [0.75]) handler-throttle)
          (:sfsim.input/throttle @state) => 0.125
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [0.25]) handler-throttle-zn)
          (:sfsim.input/throttle @state) => 0.25
          (swap! state assoc :sfsim.input/throttle 0.0)
+         ; Incremental throttle
          (process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-1.0]) handler-throttle-incr)
          (:sfsim.input/throttle @state) => 0.0625
          (swap! state assoc :sfsim.input/throttle 0.0)

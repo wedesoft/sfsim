@@ -126,7 +126,7 @@
                                    vao      (make-vertex-array-object program indices vertices ["position" 2 "texcoord" 2 "color" 4])
                                    pixel    #:sfsim.image{:width 1 :height 1 :data (byte-array [-1 -1 -1 -1]) :channels 4}
                                    tex      (make-rgb-texture :sfsim.texture/linear :sfsim.texture/clamp pixel)]
-                               (with-blending
+                               (with-overlay-blending
                                  (clear (vec3 0 0 0))
                                  (use-program program)
                                  (uniform-matrix4 program "projection" (gui-matrix 160 120))

@@ -17,6 +17,7 @@ in GEO_OUT
   vec2 colorcoord;
   vec3 point;
   vec3 object_point;
+  vec4 camera_point;
 <% (doseq [i (range num-scene-shadows)] %>
   vec4 object_shadow_pos_<%= (inc ^long i) %>;
 <% ) %>
@@ -31,7 +32,7 @@ vec4 attenuation_point(vec3 point, vec4 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 float land_noise(vec3 point);
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
-vec4 cloud_overlay();
+vec4 cloud_overlay(float depth);
 
 // Render planet surface as seen through the atmosphere.
 void main()
@@ -49,6 +50,6 @@ void main()
   vec3 emissive = clamp(remap(dot(light_direction, water_normal), dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
   vec3 phong = phong(ambient_light, light, fs_in.point, normal, color, wet * reflectivity);
   vec4 incoming = attenuation_point(fs_in.point, vec4(phong + emissive, 1.0));
-  vec4 cloud_scatter = cloud_overlay();
+  vec4 cloud_scatter = cloud_overlay(length(fs_in.camera_point.xyz));
   fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
 }

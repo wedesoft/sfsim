@@ -9,24 +9,26 @@
     [clojure.math :refer (to-radians sqrt PI)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye mulm inverse mat4x4)]
-    [fastmath.vector :refer (vec3 normalize)]
+    [fastmath.vector :refer (vec3 vec4 normalize)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.clouds :as clouds]
     [sfsim.conftest :refer (roughly-matrix roughly-vector roughly-quaternion is-image)]
-    [sfsim.image :refer (floats->image)]
+    [sfsim.image :refer (floats->image get-vector4 get-float)]
     [sfsim.matrix :refer :all]
     [sfsim.model :refer :all :as model]
-    [sfsim.planet :as planet]
+    [sfsim.plume :as plume]
     [sfsim.quaternion :refer (->Quaternion) :as q]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer :all])
   (:import
     (org.lwjgl.glfw
-      GLFW)))
+      GLFW)
+    (org.lwjgl.opengl
+      GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -34,7 +36,8 @@
 
 (GLFW/glfwInit)
 
-(def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.gltf"))
+(def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.glb"))
+(def cube-moved (read-gltf "test/clj/sfsim/fixtures/model/cube-moved.glb"))
 
 
 (fact "Root of cube scene"
@@ -42,7 +45,11 @@
 
 
 (fact "Transformation of root node"
-      (:sfsim.model/transform (:sfsim.model/root cube)) => (roughly-matrix (transformation-matrix (eye 3) (vec3 1 3 -2)) 1e-6))
+      (let [blender-x 1
+            blender-y 2
+            blender-z 3]
+        (:sfsim.model/transform (:sfsim.model/root cube-moved))
+        => (roughly-matrix (transformation-matrix (eye 3) (vec3 blender-x blender-z (- blender-y))) 1e-6)))
 
 
 (fact "Mesh indices of root node"
@@ -151,13 +158,12 @@ void main()
       (offscreen-render 160 120
                         (let [program         (make-program :sfsim.render/vertex [vertex-cube] :sfsim.render/fragment [fragment-cube])
                               opengl-scene    (load-scene-into-opengl (constantly program) cube)
-                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5)))
-                              moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
+                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5)))]
                           (clear (vec3 0 0 0) 0.0)
                           (use-program program)
                           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
                                         (fn [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
                                           (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
@@ -185,13 +191,12 @@ void main()
       (offscreen-render 160 120
                         (let [program         (make-program :sfsim.render/vertex [vertex-cube] :sfsim.render/fragment [fragment-cube])
                               opengl-scene    (load-scene-into-opengl (constantly program) cubes)
-                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7)))
-                              moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
+                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7)))]
                           (clear (vec3 0 0 0) 0.0)
                           (use-program program)
                           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
                                         (fn [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
                                           (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
@@ -281,14 +286,13 @@ void main()
       (offscreen-render 160 120
                         (let [program         (make-program :sfsim.render/vertex [vertex-dice] :sfsim.render/fragment [fragment-dice])
                               opengl-scene    (load-scene-into-opengl (constantly program) dice)
-                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5)))
-                              moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
+                              camera-to-world (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -5)))]
                           (clear (vec3 0 0 0) 0.0)
                           (use-program program)
                           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                           (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
                           (uniform-sampler program "colors" 0)
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
                                         (fn [{:sfsim.model/keys [colors]} {:sfsim.model/keys [program transform] :as render-vars}]
                                           (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
@@ -354,15 +358,14 @@ void main()
       (offscreen-render 160 120
                         (let [program         (make-program :sfsim.render/vertex [vertex-bricks] :sfsim.render/fragment [fragment-bricks])
                               opengl-scene    (load-scene-into-opengl (constantly program) bricks)
-                              camera-to-world (inverse (transformation-matrix (rotation-x 1.8) (vec3 0 0 -3)))
-                              moved-scene     (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
+                              camera-to-world (inverse (transformation-matrix (rotation-x 1.8) (vec3 0 0 -3)))]
                           (clear (vec3 0 0 0) 0.0)
                           (use-program program)
                           (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                           (uniform-vector3 program "light" (normalize (vec3 0 -3 1)))
                           (uniform-sampler program "colors" 0)
                           (uniform-sampler program "normals" 1)
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
                                         (fn [{:sfsim.model/keys [colors normals]} {:sfsim.model/keys [program transform] :as render-vars}]
                                           (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
@@ -402,15 +405,14 @@ void main()
                               program-dice      (make-program :sfsim.render/vertex [vertex-dice] :sfsim.render/fragment [fragment-dice])
                               program-selection (comp {:colored program-cube :textured program-dice} cube-material-type)
                               opengl-scene      (load-scene-into-opengl program-selection cube-and-dice)
-                              camera-to-world   (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7)))
-                              moved-scene       (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] (eye 4))]
+                              camera-to-world   (inverse (transformation-matrix (mulm (rotation-x 0.5) (rotation-y -0.4)) (vec3 0 0 -7)))]
                           (clear (vec3 0 0 0) 0.0)
                           (doseq [program [program-cube program-dice]]
                             (use-program program)
                             (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                             (uniform-vector3 program "light" (normalize (vec3 1 2 3))))
                           (uniform-sampler program-dice "colors" 0)
-                          (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene render-cube)
+                          (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene render-cube)
                           (destroy-scene opengl-scene)
                           (destroy-program program-dice)
                           (destroy-program program-cube))) => (is-image "test/clj/sfsim/fixtures/model/cube-and-dice.png" 0.04))
@@ -574,11 +576,11 @@ void main()
 (def bump (read-gltf "test/clj/sfsim/fixtures/model/bump.gltf"))
 
 
-(def cloud-plume-point-mock
+(def cloud-overlay-mock
   "#version 450 core
 uniform vec3 origin;
 uniform float object_distance;
-vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 cloud_overlay(float depth)
 {
   float transparency = exp(-object_distance / 10.0);
   return vec4(0.5, 0.5, 0.5, 1 - transparency);
@@ -639,8 +641,8 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 
 
 (def model-shader-mocks
-  [cloud-plume-point-mock transmittance-point-mock above-horizon-mock surface-radiance-mock
-   planet-and-cloud-shadows-mock ray-sphere-mock attenuation-mock shaders/phong
+  [cloud-overlay-mock transmittance-point-mock above-horizon-mock surface-radiance-mock
+   planet-and-cloud-shadows-mock ray-sphere-mock attenuation-mock shaders/phong shaders/limit-interval
    (last atmosphere/attenuation-point) (last (clouds/environmental-shading 3))
    (last (clouds/overall-shading 3 []))])
 
@@ -650,7 +652,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                               (conj model-shader-mocks
                                                     (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                    {:textured textured :bump bump :num-scene-shadows 0})))
-                       planet/setup-static-plume-uniforms (fn [_program _model-data])
+                       plume/setup-static-plume-uniforms (fn [_program _model-data])
                        model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                            (use-program program)
                                                            (setup-scene-samplers program 0 0 textured bump)
@@ -686,7 +688,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                                moved-scene
                                                render-mesh)
                                  (destroy-scene opengl-scene)
-                                 (destroy-scene-renderer renderer))) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.07)))
+                                 (destroy-scene-renderer renderer))) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.22)))
          ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
          cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
          cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
@@ -715,7 +717,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 
 
 (facts "Create hashmap with render variables for rendering a scene outside the atmosphere"
-       (let [render          {:sfsim.render/fov 0.5 :sfsim.render/min-z-near 1.0}
+       (let [render-config   #:sfsim.render{:fov 0.5 :min-z-near 1.0 :cloud-subsampling 2 }
              pos1            (vec3 0 0 0)
              pos2            (vec3 0 0 -20)
              pos3            (vec3 0 0 -100)
@@ -726,18 +728,18 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
              obj-pos         (vec3 0 0 -100)
              obj-orient      (q/rotation 0.0 (vec3 0 0 1))
              model-data      #:sfsim.model{:object-radius 10.0
-                                           :nozzle 2.7549
-                                           :min-limit 1.2
-                                           :max-slope 1.0
+                                           :plume-nozzle 2.7549
+                                           :plume-min-limit 1.2
+                                           :plume-max-slope 1.0
                                            :omega-factor 0.2
                                            :diamond-strength 0.4
-                                           :engine-step 0.2}
+                                           :plume-step 0.2}
              model-vars      {:sfsim.model/time 0.0 :sfsim.model/pressure 1.0 :sfsim.model/throttle 0.0}
-             render-vars1    (make-scene-render-vars render 640 480 pos1 orientation1 light-direction obj-pos obj-orient
+             render-vars1    (make-scene-render-vars render-config 640 480 pos1 orientation1 light-direction obj-pos obj-orient
                                                      model-data model-vars)
-             render-vars2    (make-scene-render-vars render 640 480 pos2 orientation2 light-direction obj-pos obj-orient
+             render-vars2    (make-scene-render-vars render-config 640 480 pos2 orientation2 light-direction obj-pos obj-orient
                                                      model-data model-vars)
-             render-vars3    (make-scene-render-vars render 640 480 pos3 orientation3 light-direction obj-pos obj-orient
+             render-vars3    (make-scene-render-vars render-config 640 480 pos3 orientation3 light-direction obj-pos obj-orient
                                                      model-data model-vars)]
          (:sfsim.render/origin render-vars1) => pos1
          (:sfsim.render/camera-to-world render-vars1) => (eye 4)
@@ -883,7 +885,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 {
   return vec3(0.2, 0.2, 0.2);
 }
-vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, vec3 object_point)
+vec4 cloud_overlay(float depth)
 {
   return vec4(0, 0, 0, 0);
 }")
@@ -907,7 +909,7 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
                                                                        {:textured textured
                                                                         :bump bump
                                                                         :num-scene-shadows num-scene-shadows})))
-                           planet/setup-static-plume-uniforms (fn [_program _model-data])
+                           plume/setup-static-plume-uniforms (fn [_program _model-data])
                            model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                                (use-program program)
                                                                (setup-scene-samplers program 0 0 textured bump)
@@ -1016,6 +1018,72 @@ vec4 cloud_plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 obj
          (:sfsim.model/time model-vars) => 1234.0
          (:sfsim.model/pressure model-vars) => 0.5
          (:sfsim.model/throttle model-vars) => 0.8))
+
+
+(fact "Render camera points to frame buffer"
+      (with-invisible-window
+        (let [renderer        (make-scene-geometry-renderer)
+              opengl-scene    (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-type) cube)
+              camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))
+              render-vars     {:sfsim.render/camera-to-world camera-to-world
+                               :sfsim.render/overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))}
+              geometry        (clouds/render-cloud-geometry 160 120 (render-scene-geometry renderer render-vars opengl-scene))]
+          (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
+          => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
+          (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
+          => (roughly 4.0 1e-3)
+          (clouds/destroy-cloud-geometry geometry)
+          (destroy-scene opengl-scene)
+          (destroy-scene-geometry-renderer renderer))))
+
+
+(facts "Read binary space partitioning tree with two leaves"
+       (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-leaves.glb")
+             bsp-tree (get-bsp-tree scene "BSP")]
+         (:sfsim.model/name bsp-tree) => "BSP"
+         (:sfsim.model/transform bsp-tree) => (roughly-matrix (eye 4) 1e-6)
+         (map :sfsim.model/name (:sfsim.model/front-children bsp-tree)) => ["Front"]
+         (map :sfsim.model/name (:sfsim.model/back-children bsp-tree)) => ["Back"]
+         (:sfsim.model/transform (first (:sfsim.model/front-children bsp-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 3 0)) 1e-6)
+         (:sfsim.model/transform (first (:sfsim.model/back-children bsp-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 -3 0)) 1e-6)))
+
+
+(facts "Read binary space partitioning tree with root node only"
+       (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/empty-tree.glb")
+             bsp-tree (get-bsp-tree scene "BSP")]
+         (:sfsim.model/name bsp-tree) => "BSP"
+         (:sfsim.model/transform bsp-tree) => (roughly-matrix (eye 4) 1e-6)
+         (contains? bsp-tree :sfsim.model/back-children) => false
+         (contains? bsp-tree :sfsim.model/front-children) => false))
+
+
+(facts "Read binary space partitioning tree with two levels"
+       (let [scene    (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-levels.glb")
+             bsp-tree (get-bsp-tree scene "BSP")
+             sub-tree (get-in bsp-tree [:sfsim.model/front-children 0])]
+         (:sfsim.model/name sub-tree) => "Front"
+         (:sfsim.model/transform sub-tree)
+         => (roughly-matrix (transformation-matrix (rotation-z (to-radians -135.0)) (vec3 0 3 0)) 1e-6)
+         (map :sfsim.model/name (:sfsim.model/front-children sub-tree)) => ["Front Front"]
+         (map :sfsim.model/name (:sfsim.model/back-children sub-tree)) => ["Front Back"]
+         (:sfsim.model/transform (first (:sfsim.model/front-children sub-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 2 0)) 1e-6)
+         (:sfsim.model/transform (first (:sfsim.model/back-children sub-tree)))
+         => (roughly-matrix (translation-matrix (vec3 0 -2 0)) 1e-6)))
+
+
+(facts "Use binary space partitioning to get rendering order front to back"
+       (let [empty-tree (get-bsp-tree (read-gltf "test/clj/sfsim/fixtures/plume/empty-tree.glb") "BSP")
+             two-leaves (get-bsp-tree (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-leaves.glb") "BSP")
+             two-levels (get-bsp-tree (read-gltf "test/clj/sfsim/fixtures/plume/tree-two-levels.glb") "BSP")]
+         (bsp-render-order empty-tree (vec3 0 1 0)) => ["BSP"]
+         (bsp-render-order two-leaves (vec3 0 1 0)) => ["Front" "Back"]
+         (bsp-render-order two-leaves (vec3 0 -1 0)) => ["Back" "Front"]
+         (bsp-render-order two-levels (vec3 1.5 1.5 0)) => ["Front Front" "Front Back" "Back"]
+         (bsp-render-order two-levels (vec3 -1.5 4.5 0)) => ["Front Back" "Front Front" "Back"]
+         (bsp-render-order two-levels (vec3 0 -1 0)) => ["Back" "Front Front" "Front Back"]))
 
 
 (GLFW/glfwTerminate)

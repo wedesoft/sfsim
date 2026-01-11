@@ -9,16 +9,21 @@
     [clojure.math :refer (exp log sin cos asin atan to-radians PI E)]
     [comb.template :as template]
     [fastmath.matrix :refer (mat3x3 eye inverse)]
-    [fastmath.vector :refer (vec3)]
+    [fastmath.vector :refer (vec3 vec4)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.atmosphere :refer (vertex-atmosphere)]
-    [sfsim.clouds :refer :all]
+    [sfsim.clouds :refer :all :as clouds]
     [sfsim.conftest :refer (roughly-vector shader-test is-image)]
-    [sfsim.image :refer (get-vector3 get-float-3d)]
+    [sfsim.image :refer (get-vector3 get-vector4 get-float-3d get-float)]
     [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
-    [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet)]
+    [sfsim.quaternion :as q]
+    [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet make-cube-map-tile-vertices)]
+    [sfsim.model :refer (read-gltf make-model-vars
+                         load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry
+                         destroy-joined-geometry-renderer)]
+    [sfsim.plume :as plume]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer :all]
@@ -26,7 +31,9 @@
     [sfsim.worley :refer (worley-size)])
   (:import
     (org.lwjgl.glfw
-      GLFW)))
+      GLFW)
+   (org.lwjgl.opengl
+      GL11 GL30)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -1089,7 +1096,7 @@ void main()
 
 
 (def cloud-point-probe
-  (template/fn [z selector]
+  (template/fn [z skip selector]
     "#version 450 core
 uniform vec3 origin;
 uniform float radius;
@@ -1110,11 +1117,13 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(start.z, cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_point(vec3 origin, vec3 direction, vec3 point);
+vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment);
 void main()
 {
   vec3 point = vec3(0, 0, <%= z %>);
-  vec4 result = cloud_point(origin, normalize(point - origin), point);
+  vec3 direction = normalize(point - origin);
+  vec2 segment = vec2(<%= skip %>, distance(point, origin));
+  vec4 result = cloud_point(origin, direction, segment);
   fragColor.r = result.<%= selector %>;
 }"))
 
@@ -1128,27 +1137,28 @@ void main()
       (uniform-float program "cloud_top" 2.0)
       (uniform-float program "depth" depth)
       (uniform-vector3 program "origin" (vec3 0 0 origin)))
-    cloud-point-probe
-    shaders/clip-interval
+    cloud-point-probe shaders/clip-interval shaders/limit-interval
     (last shaders/clip-shell-intersections)
     (last (cloud-point 3 [] []))))
 
 
 (tabular "Shader to compute pixel of cloud foreground overlay for planet"
-         (fact ((cloud-point-test [?origin ?depth] [?z ?selector]) 0) => (roughly ?result 1e-6))
-         ?origin ?z ?depth ?selector ?result
-         11      10 100.0  "g"        0.0
-         11      10 100.0  "a"        0.0
-         12      10 100.0  "g"        1.0
-         12      10 100.0  "a"        1.0
-         12      10 100.0  "r"       12.0
-         14      10 100.0  "r"       13.0
-         13      10 100.0  "a"        1.0
-         13      10   1.5  "a"        0.5)
+         (fact ((cloud-point-test [?origin ?depth] [?z ?skip ?selector]) 0) => (roughly ?result 1e-6))
+         ?origin ?z ?skip ?depth ?selector ?result
+         11      10 0     100.0  "g"        0.0
+         11      10 0     100.0  "a"        0.0
+         12      10 0     100.0  "g"        1.0
+         12      10 0     100.0  "a"        1.0
+         12      10 0     100.0  "r"       12.0
+         14      10 0     100.0  "r"       13.0
+         13      10 0     100.0  "a"        1.0
+         13      10 0       1.5  "a"        0.5
+         12      10 1     100.0  "g"        0.0
+         12      10 1     100.0  "a"        0.0)
 
 
 (def cloud-outer-probe
-  (template/fn [dz selector]
+  (template/fn [dz skip selector]
     "#version 450 core
 uniform vec3 origin;
 out vec3 fragColor;
@@ -1182,11 +1192,11 @@ vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec
 {
   return vec4(start.z, cloud_scatter.g + cloud_shell.t, 0, (1 - cloud_shell.t) * cloud_scatter.a);
 }
-vec4 cloud_outer(vec3 origin, vec3 direction);
+vec4 cloud_outer(vec3 origin, vec3 direction, float skip);
 void main()
 {
   vec3 direction = vec3(0, 0, <%= dz %>);
-  vec4 result = cloud_outer(origin, direction);
+  vec4 result = cloud_outer(origin, direction, <%= skip %>);
   fragColor.r = result.<%= selector %>;
 }"))
 
@@ -1206,148 +1216,20 @@ void main()
 
 
 (tabular "Shader to compute pixel of cloud foreground overlay for atmosphere"
-         (fact ((cloud-outer-test [?z] [?dz ?selector]) 0) => (roughly ?result 1e-6))
-         ?z   ?dz ?selector ?result
-         14    1  "g"        0.0
-         14    1  "a"        0.0
-         11    1  "g"        1.0
-         11    1  "a"        1.0
-         11.5  1  "g"        0.5
-         11.5  1  "a"        0.5
-         13   -1  "g"        2.0
-         12   -1  "r"       12.0
-         15   -1  "r"       13.0)
-
-
-(def fragment-planet-clouds
-  "#version 450 core
-uniform vec3 origin;
-in GEO_OUT
-{
-  vec2 colorcoord;
-  vec3 point;
-  vec3 object_point;
-} fs_in;
-out vec4 fragColor;
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
-{
-  return vec2(origin.z - radius, 2 * radius);
-}
-vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
-{
-  return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
-}
-vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
-{
-  return vec4(cloud_shell.y, 0, 0, 0.25);
-}
-vec4 cloud_point(vec3 origin, vec3 direction, vec3 point);
-void main()
-{
-  fragColor = cloud_point(origin, normalize(fs_in.point - origin), fs_in.point);
-}")
-
-
-(def fragment-atmosphere-clouds-mock
-  "#version 450 core
-uniform vec3 origin;
-in VS_OUT
-{
-  vec3 direction;
-  vec3 object_direction;
-} fs_in;
-out vec4 fragColor;
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction)
-{
-  if (length(direction.xy) <= 0.5)
-    return vec2(origin.z - radius, 2 * radius);
-  else
-    return vec2(0, 0);
-}
-vec4 sample_cloud(vec3 origin, vec3 start, vec3 direction, vec2 cloud_shell, vec4 cloud_scatter)
-{
-  return vec4(0, cloud_shell.y, 0, 1 - cloud_shell.y / 2);
-}
-vec4 ray_shell(vec3 centre, float inner_radius, float outer_radius, vec3 origin, vec3 direction)
-{
-  return vec4(origin.z - outer_radius, outer_radius - inner_radius, 0.0, 0.0);
-}
-vec4 cloud_outer(vec3 origin, vec3 direction);
-void main()
-{
-  fragColor = cloud_outer(origin, normalize(fs_in.direction));
-}")
-
-
-(fact "Test rendering of cloud overlay image"
-      (with-invisible-window
-        (let [width           160
-              height          120
-              fov             (to-radians 60.0)
-              z-near          1.0
-              z-far           100.0
-              tilesize        33
-              data            (flatten (for [y (range -1.0 1.0625 0.0625) x (range -1.0 1.0625 0.0625)] [x y 5.0]))
-              surface         (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                      #:sfsim.image{:width tilesize :height tilesize :data (float-array data)})
-              projection      (projection-matrix width height z-near (+ z-far 1) fov)
-              origin          (vec3 0 0 10)
-              camera-to-world (transformation-matrix (eye 3) origin)
-              planet          (make-program :sfsim.render/vertex [vertex-planet]
-                                            :sfsim.render/tess-control [tess-control-planet]
-                                            :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                                            :sfsim.render/geometry [(geometry-planet 0)]
-                                            :sfsim.render/fragment [fragment-planet-clouds
-                                                                    shaders/clip-interval
-                                                                    (last shaders/clip-shell-intersections)
-                                                                    (last (cloud-point 3 [] []))])
-              indices         [0 1 3 2]
-              vertices        [-1 -1 5 0 0 0 0, 1 -1 5 1 0 1 0, -1 1 5 0 1 0 1, 1 1 5 1 1 1 1]
-              tile            (make-vertex-array-object planet indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
-              atmosphere      (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                            :sfsim.render/fragment [fragment-atmosphere-clouds-mock
-                                                                    shaders/clip-interval
-                                                                    (last shaders/clip-shell-intersections)
-                                                                    (last (cloud-outer 3 [] []))])
-              indices         [0 1 3 2]
-              vertices        [-1 -1, 1 -1, -1 1, 1 1]
-              vao             (make-vertex-array-object atmosphere indices vertices ["ndc" 2])
-              tex             (texture-render-color-depth width height true
-                                                          (clear (vec3 0 0 0) 0.0)
-                                                          (use-program planet)
-                                                          (uniform-sampler planet "surface" 0)
-                                                          (uniform-matrix4 planet "projection" projection)
-                                                          (uniform-vector3 planet "tile_center" (vec3 0 0 0))
-                                                          (uniform-matrix4 planet "tile_to_camera" (inverse camera-to-world))
-                                                          (uniform-vector3 planet "origin" origin)
-                                                          (uniform-vector3 planet "light_direction" (vec3 1 0 0))
-                                                          (uniform-float planet "radius" 5.0)
-                                                          (uniform-float planet "max_height" 4.0)
-                                                          (uniform-float planet "cloud_bottom" 1.0)
-                                                          (uniform-float planet "cloud_top" 2.0)
-                                                          (uniform-float planet "depth" 3.0)
-                                                          (uniform-int planet "neighbours" 15)
-                                                          (uniform-int planet "high_detail" (dec tilesize))
-                                                          (uniform-int planet "low_detail" (quot (dec tilesize) 2))
-                                                          (use-textures {0 surface})
-                                                          (render-patches tile)
-                                                          (use-program atmosphere)
-                                                          (uniform-matrix4 atmosphere "inverse_projection" (inverse projection))
-                                                          (uniform-matrix4 atmosphere "camera_to_world" camera-to-world)
-                                                          (uniform-vector3 atmosphere "origin" origin)
-                                                          (uniform-float atmosphere "radius" 5.0)
-                                                          (uniform-float atmosphere "max_height" 4.0)
-                                                          (uniform-float atmosphere "cloud_bottom" 1.0)
-                                                          (uniform-float atmosphere "cloud_top" 2.0)
-                                                          (render-quads vao))
-              img        (texture->image tex)]
-          (destroy-texture tex)
-          (destroy-vertex-array-object vao)
-          (destroy-program atmosphere)
-          (destroy-vertex-array-object tile)
-          (destroy-program planet)
-          (destroy-texture surface)
-          img)) => (is-image "test/clj/sfsim/fixtures/clouds/overlay.png" 0.0))
+         (fact ((cloud-outer-test [?z] [?dz ?skip ?selector]) 0) => (roughly ?result 1e-6))
+         ?z   ?dz ?skip ?selector ?result
+         14    1  0     "g"        0.0
+         14    1  0     "a"        0.0
+         11    1  0     "g"        1.0
+         11    1  0     "a"        1.0
+         11.5  1  0     "g"        0.5
+         11.5  1  0     "a"        0.5
+         13   -1  0     "g"        2.0
+         12   -1  0     "r"       12.0
+         15   -1  0     "r"       13.0
+         11    1  3     "g"        0.0
+         11    1  3     "a"        0.0
+         15   -1  3     "r"       13.0)
 
 
 (def opacity-cascade-mocks
@@ -1597,6 +1479,201 @@ void main()
          1.0           1.0 (- 1 (/ 1 E))
          1.0           2.0 (- 1 (/ 1 E E))
          2.0           1.0 (- 1 (/ 1 E E)))
+
+
+(def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.glb"))
+
+
+(tabular "Render joined geometry of model, planet, and atmosphere"
+         (facts
+           (with-invisible-window
+             (let [data                {:sfsim.planet/config {:sfsim.planet/tilesize 3}}
+                   renderer            (make-joined-geometry-renderer data)
+                   scene-program       (:sfsim.model/programs (:sfsim.model/scene-renderer renderer))
+                   planet-program      (:sfsim.planet/program (:sfsim.model/planet-renderer renderer))
+                   opengl-scene        (load-scene-into-opengl (comp scene-program material-type) cube)
+                   moved-scene         (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform]
+                                                 (transformation-matrix (eye 3) (vec3 0 0 (or ?model 0))))
+                   indices             [0 2 3 1]
+                   vertices            (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
+                   vao                 (make-vertex-array-object planet-program indices vertices
+                                                                 ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+                   data                [-1  1 0, 0  1 0, 1  1 0,
+                                        -1  0 0, 0  0 0, 1  0 0,
+                                        -1 -1 0, 0 -1 0, 1 -1 0]
+                   surface             (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                               #:sfsim.image{:width 3 :height 3 :data (float-array data)})
+                   tree                {:sfsim.planet/vao vao
+                                        :sfsim.planet/surf-tex surface
+                                        :sfsim.quadtree/center (vec3 0 0 (or ?planet 0))}
+                   camera-to-world     (transformation-matrix (eye 3) (vec3 0 0 0))
+                   model-render-vars   #:sfsim.render{:sfsim.render/camera-to-world camera-to-world
+                                                      :sfsim.render/z-near 0.1
+                                                      :sfsim.render/z-far 10.0
+                                                      :sfsim.render/overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                                      :sfsim.render/overlay-width 160
+                                                      :sfsim.render/overlay-height 120}
+                   planet-render-vars  (assoc model-render-vars :sfsim.render/z-near ?planet-z-near)
+                   geometry            (render-joined-geometry renderer model-render-vars planet-render-vars moved-scene tree)]
+               (nth (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80) 2)
+               => (roughly ?coordinate 1e-3)
+               (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
+               => (roughly ?distance 1e-3)
+               (destroy-cloud-geometry geometry)
+               (destroy-texture surface)
+               (destroy-vertex-array-object vao)
+               (destroy-scene opengl-scene)
+               (destroy-joined-geometry-renderer renderer))))
+         ?model ?planet ?planet-z-near ?coordinate ?distance
+         nil    nil     0.1            -1.0        10.0
+        -4.0    nil     0.1            -1.0         3.0
+         nil   -5.0     0.1            -1.0         5.0
+        -4.0   -5.0     0.1            -1.0         3.0
+        -7.0   -5.0     0.1            -1.0         5.0
+        -7.0   -5.0     0.5            -1.0         6.0)
+
+
+(def fragment-mock-geometry
+"#version 450 core
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float dist;
+uniform vec3 point;
+void main()
+{
+  camera_point = vec4(normalize(point), 0.0);
+  dist = length(point);
+}")
+
+
+(def cloud-shader-mock
+"#version 450 core
+uniform sampler2D camera_point;
+uniform sampler2D dist;
+uniform int overlay_width;
+uniform int overlay_height;
+vec4 geometry_point()
+{
+  vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
+  return texture(camera_point, uv);
+}
+float geometry_distance()
+{
+  vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
+  return texture(dist, uv).r;
+}
+vec4 cloud_point(vec3 origin, vec3 direction, vec2 segment)
+{
+  float opacity = 1.0 - pow(0.5, segment.t);
+  return vec4(opacity, 0, 0, opacity);
+}
+vec4 cloud_outer(vec3 origin, vec3 direction, float skip)
+{
+  float opacity = 1.0 - pow(0.5, 3.0 - skip);
+  return vec4(opacity, 0, 0, opacity);
+}
+vec4 plume_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
+{
+  return vec4(0.0, 0.5, 0.0, 0.5);
+}
+vec4 plume_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
+{
+  return vec4(0, 0.25, 0, 0.25);
+}
+vec4 rcs_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
+{
+  return vec4(0.0, 0.5, 0.0, 0.5);
+}
+vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
+{
+  return vec4(0, 0.25, 0, 0.25);
+}")
+
+
+(defn mock-geometry
+  [x y z stencil]
+  (let [geometry-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                       :sfsim.render/fragment [fragment-mock-geometry])
+        indices          [0 1 3 2]
+        vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+        vao              (make-vertex-array-object geometry-program indices vertices ["point" 3])
+        result           (render-cloud-geometry 1 1
+                                                (use-program geometry-program)
+                                                (uniform-vector3 geometry-program "point" (vec3 x y z))
+                                                (clear (vec3 0.0 0.0 0.0) 0.0 0)
+                                                (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
+                                                  (with-stencil-op-ref-and-mask GL11/GL_ALWAYS stencil stencil
+                                                    (render-quads vao))))]
+    (destroy-program geometry-program)
+    (assoc result :vao vao)))
+
+
+(defn mock-setup-geometry-uniforms
+  [program _other]
+  (use-program program)
+  (uniform-sampler program "camera_point" 0)
+  (uniform-sampler program "dist" 1))
+
+
+(defn make-mock-cloud-program
+  [_vertex-shader fragment-shader]
+  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                :sfsim.render/fragment [cloud-shader-mock (last fragment-shader)]))
+
+
+(tabular "Use geometry buffer to render clouds"
+         (facts
+           (with-redefs [clouds/make-cloud-program make-mock-cloud-program
+                         clouds/setup-geometry-uniforms mock-setup-geometry-uniforms
+                         clouds/setup-dynamic-cloud-uniforms (fn [_program _other _cloud-render-vars _model-vars _shadow-vars])
+                         plume/plume-indices [2 3 1 0]
+                         plume/plume-vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]]
+             (with-invisible-window
+               (let [geometry           (mock-geometry ?x ?y ?z ?stencil)
+                     render-config      {:sfsim.render/cloud-subsampling 1 :sfsim.render/fov 1.04 :sfsim.render/min-z-near 0.1}
+                     planet-render-vars {:sfsim.render/z-near 0.1 :sfsim.render/z-far 10.0}
+                     data               {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
+                                         :sfsim.clouds/data   {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
+                                                               :sfsim.clouds/perlin-octaves [0.57 0.28 0.15]}}
+                     model-vars         (make-model-vars 0.0 1.0 0.0)
+                     shadow-vars        {}
+                     cloud-renderer     (make-cloud-renderer data)
+                     cloud-render-vars  (make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 0)
+                                                                (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
+                                                                (q/->Quaternion 1 0 0 0))
+                     overlay            (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
+                                                              (if ?plume [["Plume" (eye 4)]] []) geometry ?front ?back)]
+                 (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
+                 => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
+                 (destroy-texture overlay)
+                 (destroy-cloud-geometry geometry)
+                 (destroy-cloud-renderer cloud-renderer)))))
+         ?stencil ?x  ?y  ?z  ?front ?plume ?back ?obj-dist ?r    ?g    ?b  ?a
+         0x1      1.0 0.0 0.0 false  false  false 2.0       0.0   0.0   0.0 0.0
+         0x1      1.0 0.0 0.0 true   false  false 2.0       0.75  0.0   0.0 0.75
+         0x1      1.0 0.0 0.0 false  false  true  2.0       0.5   0.0   0.0 0.5
+         0x1      1.0 0.0 0.0 true   false  true  2.0       0.875 0.0   0.0 0.875
+         0x2      4.0 0.0 0.0 true   false  false 2.0       0.75  0.0   0.0 0.75
+         0x2      2.0 0.0 0.0 true   false  false 3.0       0.75  0.0   0.0 0.75
+         0x2      3.0 0.0 0.0 false  false  true  2.0       0.5   0.0   0.0 0.5
+         0x2      2.0 0.0 0.0 false  false  true  3.0       0.0   0.0   0.0 0.0
+         0x2      3.0 0.0 0.0 true   false  true  2.0       0.875 0.0   0.0 0.875
+         0x4      2.0 0.0 0.0 true   false  false 3.0       0.75  0.0   0.0 0.75
+         0x4      2.0 0.0 0.0 false  false  true  3.0       0.0   0.0   0.0 0.0
+         0x1      1.0 0.0 0.0 false  true   false 2.0       0.0   0.5   0.0 0.5
+         0x1      1.0 0.0 0.0 true   true   false 2.0       0.75  0.125 0.0 0.875
+         0x2      3.0 0.0 0.0 false  true   false 2.0       0.0   0.25  0.0 0.25
+         0x4      2.0 0.0 0.0 false  true   false 2.0       0.0   0.25  0.0 0.25)
+
+
+(fact "Test completeness of cloud render programs"
+      (with-invisible-window
+        (with-redefs [clouds/setup-geometry-uniforms (fn [_program _other])]
+          (let [data           {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
+                                :sfsim.clouds/data  {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
+                                                     :sfsim.clouds/perlin-octaves [0.57 0.28 0.15]}}
+                cloud-renderer (make-cloud-renderer data)]
+            cloud-renderer => some?
+            (destroy-cloud-renderer cloud-renderer)))))
 
 
 (GLFW/glfwTerminate)

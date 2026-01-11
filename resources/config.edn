@@ -11,6 +11,7 @@
                                      ; :window-width 720
                                      ; :window-height 1280
                                      ; :fov 0.5
+                                     :cloud-subsampling 2
                                      :min-z-near 1.0}
 
  :sfsim.planet-config #:sfsim.planet{:radius 6378000.0
@@ -42,6 +43,8 @@
                                     :powder-decay 12.0
                                     :anisotropic 0.25
                                     :cloud-step 250.0
+                                    :depth-sigma 1.0
+                                    :min-depth-exponent -3.0
                                     :opacity-cutoff 0.01}
 
  :sfsim.shadow-config #:sfsim.opacity{:num-opacity-layers 7
@@ -53,11 +56,15 @@
                                       :mix 0.6
                                       :shadow-bias 1e-6}
 
- :sfsim.model-config #:sfsim.model{:object-radius 30.0
-                                   :nozzle 2.7549
-                                   :min-limit 1.2
-                                   :max-slope 1.0
+ :sfsim.model-config #:sfsim.model{:object-radius 30.0  ; includes size of expanding plume
+                                   :plume-nozzle 2.7549
+                                   :plume-min-limit 1.2
+                                   :plume-max-slope 0.7
+                                   :plume-step 0.5
                                    :omega-factor 0.2
                                    :diamond-strength 0.4
-                                   :engine-step 0.5}
+                                   :rcs-nozzle 0.2
+                                   :rcs-min-limit 0.25
+                                   :rcs-max-slope 0.7
+                                   :rcs-step 0.05}
 }
