@@ -696,14 +696,14 @@
   (with-culling :sfsim.render/cullfront
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
       (use-program (:sfsim.clouds/rcs-outer programs))
-      (uniform-matrix4 (:sfsim.clouds/rcs-outer programs) "rcs_to_object" transform)
-      (uniform-matrix4 (:sfsim.clouds/rcs-outer programs) "object_to_rcs" (inverse transform))
+      (uniform-matrix4 (:sfsim.clouds/rcs-outer programs) "plume_to_object" transform)
+      (uniform-matrix4 (:sfsim.clouds/rcs-outer programs) "object_to_plume" (inverse transform))
       (uniform-float (:sfsim.clouds/rcs-outer programs) "rcs_throttle" 1.0)
       (render-quads plume-vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
       (use-program (:sfsim.clouds/rcs-point programs))
-      (uniform-matrix4 (:sfsim.clouds/rcs-point programs) "rcs_to_object" transform)
-      (uniform-matrix4 (:sfsim.clouds/rcs-point programs) "object_to_rcs" (inverse transform))
+      (uniform-matrix4 (:sfsim.clouds/rcs-point programs) "plume_to_object" transform)
+      (uniform-matrix4 (:sfsim.clouds/rcs-point programs) "object_to_plume" (inverse transform))
       (uniform-float (:sfsim.clouds/rcs-point programs) "rcs_throttle" 1.0)
       (render-quads plume-vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
