@@ -125,7 +125,11 @@
 (def sphere (jolt/create-and-add-dynamic-body (jolt/sphere-settings 1.0 1000.0) (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
 
 
-(def state (atom {:sfsim.physics/position (vec3 2 3 5) :sfsim.physics/speed (vec3 1 0 0) :sfsim.physics/body sphere}))
+(def state (make-physics-state sphere))
+
+
+(facts "Initial physics state"
+       (:sfsim.physics/display-speed @state) => 0.0)
 
 
 (facts "Set position of space craft near surface (rotating coordinate system centered on Earth)"

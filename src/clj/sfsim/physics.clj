@@ -97,6 +97,12 @@
   (sub (mult (cross omega speed) 2.0)))
 
 
+(defn make-physics-state
+  [body]
+  (atom {::body body
+         ::display-speed 0.0}))
+
+
 (defmulti set-pose (fn [domain _state _position _orientation] domain))
 
 

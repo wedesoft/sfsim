@@ -342,7 +342,7 @@
 ; Start with fixed summer date for better illumination.
 (def current-time (- (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}) ^double astro/T0))
 
-(def physics-state (atom {:sfsim.physics/domain :sfsim.physics/surface :sfsim.physics/body body :sfsim.physics/display-speed 0.0}))
+(def physics-state (physics/make-physics-state body))
 (physics/set-pose :sfsim.physics/surface physics-state (:position pose) (:orientation pose))
 (physics/set-speed :sfsim.physics/surface physics-state (mult (q/rotate-vector (:orientation pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
 ; (physics/set-pose :sfsim.physics/orbit physics-state (:position pose) (:orientation pose))
