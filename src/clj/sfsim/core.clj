@@ -667,7 +667,6 @@
 (def frame-index (atom 0))
 (def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
-(def throttle (atom 0.0))
 (def rcs (atom #{}))
 (def time_ (atom 0.0))
 
@@ -726,7 +725,7 @@
             (reset! dist (:dist frame))
             (reset! gear (:gear frame))
             (reset! time_ (:time_ frame))
-            (reset! throttle (:throttle frame))
+            (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
             (reset! rcs (:rcs frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
@@ -746,7 +745,7 @@
                                      (vec3 0 0 0))))
               (do
                 (swap! time_ + dt)
-                (reset! throttle (@state :sfsim.input/throttle))
+                (physics/set-control-inputs physics-state state)
                 (reset! rcs (active-rcs @state))
                 (if (@state :sfsim.input/air-brake)
                   (swap! air-brake + (* ^double dt 2.0))
@@ -785,7 +784,9 @@
                                                               @air-brake)]
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state
                                        (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-                                                        (vec3 (* ^double @throttle ^double thrust) 0 0)))
+                                                        (vec3 (* ^double (:sfsim.physics/throttle @physics-state) ^double thrust)
+                                                              0
+                                                              0)))
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/forces loads))
                     (physics/add-torque :sfsim.physics/surface jd-ut physics-state (:sfsim.aerodynamics/moments loads))
                     (physics/add-torque :sfsim.physics/orbit jd-ut physics-state (q/rotate-vector orientation rcs-thrust))
@@ -812,7 +813,7 @@
                                :dist @dist
                                :gear @gear
                                :time_ @time_
-                               :throttle @throttle
+                               :throttle (:sfsim.physics/throttle @physics-state)
                                :rcs @rcs
                                :wheel-angles (if @vehicle
                                                [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
@@ -837,7 +838,7 @@
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
-              model-vars         (model/make-model-vars @time_ pressure @throttle)
+              model-vars         (model/make-model-vars @time_ pressure (:sfsim.physics/throttle @physics-state))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
                                                                  light-direction object-position object-orientation model-vars)
@@ -921,7 +922,7 @@
                                (@menu gui @window-width @window-height))
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
-                               (stick gui aileron elevator rudder @throttle)
+                               (stick gui aileron elevator rudder (:sfsim.physics/throttle @physics-state))
                                (info gui @window-height
                                      (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                              (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))

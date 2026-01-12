@@ -100,7 +100,17 @@
 (defn make-physics-state
   [body]
   (atom {::body body
-         ::display-speed 0.0}))
+         ::display-speed 0.0
+         ::throttle 0.0}))
+
+
+(defn set-control-inputs
+  [state inputs]
+  (let [inputs @inputs]
+    (swap! state
+           (fn [state]
+         (-> state
+             (assoc ::throttle (:sfsim.input/throttle inputs)))))))
 
 
 (defmulti set-pose (fn [domain _state _position _orientation] domain))

@@ -129,7 +129,14 @@
 
 
 (facts "Initial physics state"
-       (:sfsim.physics/display-speed @state) => 0.0)
+       (:sfsim.physics/display-speed @state) => 0.0
+       (:sfsim.physics/throttle @state) => 0.0)
+
+
+(facts "Handle control inputs"
+       (let [input-state (atom {:sfsim.input/throttle 0.5})]
+         (set-control-inputs state input-state)
+         (:sfsim.physics/throttle @state) => 0.5))
 
 
 (facts "Set position of space craft near surface (rotating coordinate system centered on Earth)"
