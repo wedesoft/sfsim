@@ -672,7 +672,6 @@
 
 
 (def gear (atom 1.0))
-(def air-brake (atom 0.0))
 
 
 (def frametime (atom 0.25))
@@ -745,13 +744,8 @@
                                      (vec3 0 0 0))))
               (do
                 (swap! time_ + dt)
-                (physics/set-control-inputs physics-state state)
+                (physics/set-control-inputs physics-state state dt)
                 (reset! rcs (active-rcs @state))
-                (if (@state :sfsim.input/air-brake)
-                  (swap! air-brake + (* ^double dt 2.0))
-                  (swap! air-brake - (* ^double dt 2.0)))
-                (swap! air-brake min 1.0)
-                (swap! air-brake max 0.0)
                 (if (@state :sfsim.input/gear-down)
                   (swap! gear + (* ^double dt 0.5))
                   (swap! gear - (* ^double dt 0.5)))
@@ -781,7 +775,7 @@
                                                               (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
                                                               (mult (vec3 aileron elevator rudder) (to-radians 20))
                                                               @gear
-                                                              @air-brake)]
+                                                              (:sfsim.physics/air-brake @physics-state))]
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state
                                        (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                                         (vec3 (* ^double (:sfsim.physics/throttle @physics-state) ^double thrust)
