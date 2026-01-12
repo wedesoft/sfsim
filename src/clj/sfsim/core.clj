@@ -671,9 +671,6 @@
 (def time_ (atom 0.0))
 
 
-(def gear (atom 1.0))
-
-
 (def frametime (atom 0.25))
 
 
@@ -722,9 +719,9 @@
             (reset! camera-dx (:camera-dx frame))
             (reset! camera-dy (:camera-dy frame))
             (reset! dist (:dist frame))
-            (reset! gear (:gear frame))
             (reset! time_ (:time_ frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
+            (swap! physics-state assoc :sfsim.physics/gear (:gear frame))
             (reset! rcs (:rcs frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
@@ -746,12 +743,7 @@
                 (swap! time_ + dt)
                 (physics/set-control-inputs physics-state state dt)
                 (reset! rcs (active-rcs @state))
-                (if (@state :sfsim.input/gear-down)
-                  (swap! gear + (* ^double dt 0.5))
-                  (swap! gear - (* ^double dt 0.5)))
-                (swap! gear min 1.0)
-                (swap! gear max 0.0)
-                (if (= ^double @gear 1.0)
+                (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
                   (when (not @vehicle)
                     (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
                   (when @vehicle
@@ -774,7 +766,7 @@
                                                               (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
                                                               (physics/get-angular-speed :sfsim.physics/surface jd-ut physics-state)
                                                               (mult (vec3 aileron elevator rudder) (to-radians 20))
-                                                              @gear
+                                                              (:sfsim.physics/gear @physics-state)
                                                               (:sfsim.physics/air-brake @physics-state))]
                     (physics/add-force :sfsim.physics/surface jd-ut physics-state
                                        (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
@@ -805,7 +797,7 @@
                                :camera-dx @camera-dx
                                :camera-dy @camera-dy
                                :dist @dist
-                               :gear @gear
+                               :gear (:sfsim.physics/gear @physics-state)
                                :time_ @time_
                                :throttle (:sfsim.physics/throttle @physics-state)
                                :rcs @rcs
@@ -846,7 +838,7 @@
               cloud-render-vars  (clouds/make-cloud-render-vars config/render-config planet-render-vars @window-width @window-height
                                                                 origin camera-orientation light-direction object-position
                                                                 object-orientation)
-              wheels-scene       (if (= ^double @gear 1.0)
+              wheels-scene       (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
                                    (model/apply-transforms
                                      scene
                                      (model/animations-frame
@@ -862,9 +854,9 @@
                                        scene
                                        (model/animations-frame
                                          model
-                                         {"GearLeft" (- 2.0 ^double @gear)
-                                          "GearRight" (- 2.0 ^double @gear)
-                                          "GearFront" (- 3.0 ^double @gear)
+                                         {"GearLeft" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
+                                          "GearRight" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
+                                          "GearFront" (- 3.0 ^double (:sfsim.physics/gear @physics-state))
                                           "WheelLeft" (nth @wheel-angles 0)
                                           "WheelRight" (nth @wheel-angles 1)
                                           "WheelFront" (nth @wheel-angles 2)}))
@@ -872,9 +864,9 @@
                                        scene
                                        (model/animations-frame
                                          model
-                                         {"GearLeft" (- 2.0 ^double @gear)
-                                          "GearRight" (- 2.0 ^double @gear)
-                                          "GearFront" (- 3.0 ^double @gear)}))))
+                                         {"GearLeft" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
+                                          "GearRight" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
+                                          "GearFront" (- 3.0 ^double (:sfsim.physics/gear @physics-state))}))))
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)

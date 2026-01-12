@@ -102,7 +102,8 @@
   (atom {::body body
          ::display-speed 0.0
          ::throttle 0.0
-         ::air-brake 0.0}))
+         ::air-brake 0.0
+         ::gear 1.0}))
 
 
 (defn set-control-inputs
@@ -112,7 +113,8 @@
            (fn [state]
          (-> state
              (assoc ::throttle (:sfsim.input/throttle inputs))
-             (update ::air-brake (fn [^double x] (clamp (+ x (* (if (:sfsim.input/air-brake inputs) 2.0 -2.0) dt)) 0.0 1.0))))))))
+             (update ::air-brake (fn [^double x] (clamp (+ x (* (if (:sfsim.input/air-brake inputs) 2.0 -2.0) dt)) 0.0 1.0)))
+             (update ::gear (fn [^double x] (clamp (+ x (* (if (:sfsim.input/gear-down inputs) 0.5 -0.5) dt)) 0.0 1.0))))))))
 
 
 (defmulti set-pose (fn [domain _state _position _orientation] domain))
