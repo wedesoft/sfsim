@@ -60,6 +60,17 @@
     (org.lwjgl.system
       MemoryStack)))
 
+
+(defmacro tabbing
+  [gui edit idx cnt]
+  `(do
+     (when (and (@state :sfsim.input/focus-new) (= (mod (@state :sfsim.input/focus-new) ~cnt) ~idx))
+       (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE)
+       (swap! state dissoc :sfsim.input/focus-new))
+     (when (= Nuklear/NK_EDIT_ACTIVE ~edit)
+       (swap! state assoc :sfsim.input/focus ~idx))))
+
+
 (try
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -300,16 +311,6 @@
 (def menu (atom nil))
 
 (declare main-dialog)
-
-
-(defmacro tabbing
-  [gui edit idx cnt]
-  `(do
-     (when (and (@state :sfsim.input/focus-new) (= (mod (@state :sfsim.input/focus-new) ~cnt) ~idx))
-       (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE)
-       (swap! state dissoc :sfsim.input/focus-new))
-     (when (= Nuklear/NK_EDIT_ACTIVE ~edit)
-       (swap! state assoc :sfsim.input/focus ~idx))))
 
 
 (defn position-from-lon-lat
