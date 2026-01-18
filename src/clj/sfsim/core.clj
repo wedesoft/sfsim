@@ -65,6 +65,8 @@
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
+(log/info "starting sfsim" version)
+
 ; clj -M:nrepl -m sfsim.core
 ;; (require '[nrepl.server :refer [start-server stop-server]])
 ;; (defonce server (start-server :port 7888))
@@ -89,8 +91,6 @@
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
 (def height 25.0)
-
-; (log/error "THIS MUST APPEAR")
 
 (def opacity-base 100.0)
 
@@ -679,7 +679,7 @@
 (def frametime (atom 0.25))
 
 (catch Exception e
-       (log/error e "Exception at startup" (ex-data e))
+       (log/error e "Exception at startup")
        (System/exit 1)))
 
 (defn -main
@@ -972,6 +972,7 @@
   (when (and (not playback) @recording)
     (spit "recording.edn" (with-out-str (pprint @recording))))
   (catch Exception e
-         (log/error e "Exception in main function" (ex-data e))
+         (log/error e "Exception in main function")
          (System/exit 1)))
+  (log/info "terminating sfsim" version)
   (System/exit 0))
