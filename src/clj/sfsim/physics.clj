@@ -14,7 +14,7 @@
     [sfsim.astro :as astro]
     [sfsim.quaternion :as q]
     [sfsim.matrix :refer (matrix->quaternion)]
-    [sfsim.util :refer (sqr)])
+    [sfsim.util :refer (sqr clamp)])
   (:import [fastmath.vector Vec3]))
 
 
@@ -95,6 +95,26 @@
   "Determine coriolis acceleration for a moving particle in a rotating coordinate system"
   [omega speed]
   (sub (mult (cross omega speed) 2.0)))
+
+
+(defn make-physics-state
+  [body]
+  (atom {::body body
+         ::display-speed 0.0
+         ::throttle 0.0
+         ::air-brake 0.0
+         ::gear 1.0}))
+
+
+(defn set-control-inputs
+  [state inputs ^double dt]
+  (let [inputs @inputs]
+    (swap! state
+           (fn [state]
+         (-> state
+             (assoc ::throttle (:sfsim.input/throttle inputs))
+             (update ::air-brake (fn [^double x] (clamp (+ x (* (if (:sfsim.input/air-brake inputs) 2.0 -2.0) dt)) 0.0 1.0)))
+             (update ::gear (fn [^double x] (clamp (+ x (* (if (:sfsim.input/gear-down inputs) 0.5 -0.5) dt)) 0.0 1.0))))))))
 
 
 (defmulti set-pose (fn [domain _state _position _orientation] domain))
