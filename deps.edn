@@ -12,18 +12,18 @@
         org.clj-commons/gloss {:mvn/version "0.3.6"}
         org.apache.commons/commons-compress {:mvn/version "1.28.0"}
         org.suskalo/coffi {:mvn/version "1.0.615"}
-        org.lwjgl/lwjgl {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl$natives-windows {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-opengl {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-opengl$natives-windows {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-glfw {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-glfw$natives-windows {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-nuklear {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-nuklear$natives-windows {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-stb {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-stb$natives-windows {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-assimp {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-assimp$natives-windows {:mvn/version "3.3.6"}}
+        org.lwjgl/lwjgl {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl$natives-windows {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-opengl {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-opengl$natives-windows {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-glfw {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-glfw$natives-windows {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-nuklear {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-nuklear$natives-windows {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-stb {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-stb$natives-windows {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-assimp {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-assimp$natives-windows {:mvn/version "3.4.0"}}
  :paths ["src/clj" "resources"]
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED" "-XX:+UseZGC"
                             "-XX:+UseDynamicNumberOfGCThreads" "--sun-misc-unsafe-memory-access=allow"]
