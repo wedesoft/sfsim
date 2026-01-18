@@ -11,6 +11,8 @@
     [clojure.java.io :as io]
     [clojure.set :refer (union)]
     [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees exp pow)]
+    [clojure.stacktrace :as stacktrace]
+    [clojure.tools.logging :as log]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
     [clojure.string :refer (trim)]
@@ -58,9 +60,12 @@
     (org.lwjgl.system
       MemoryStack)))
 
+(try
 
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
+
+(log/info "starting sfsim" version)
 
 ; clj -M:nrepl -m sfsim.core
 ;; (require '[nrepl.server :refer [start-server stop-server]])
@@ -673,10 +678,14 @@
 
 (def frametime (atom 0.25))
 
+(catch Exception e
+       (log/error e "Exception at startup")
+       (System/exit 1)))
 
 (defn -main
   "Space flight simulator main function"
   [& _args]
+  (try
   (let [n  (atom 0)
         w  (int-array 1)
         h  (int-array 1)]
@@ -962,4 +971,8 @@
   (GLFW/glfwTerminate)
   (when (and (not playback) @recording)
     (spit "recording.edn" (with-out-str (pprint @recording))))
+  (catch Exception e
+         (log/error e "Exception in main function")
+         (System/exit 1)))
+  (log/info "terminating sfsim" version)
   (System/exit 0))

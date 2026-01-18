@@ -464,7 +464,7 @@
 
 
 (defn octaves
-  "Creat eoctaves summing to one"
+  "Create octaves summing to one"
   [^long n ^double decay]
   (let [series (take n (iterate #(* ^double % decay) 1.0))
         sum    (apply + series)]
