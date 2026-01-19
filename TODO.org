@@ -39,7 +39,7 @@
   - [X] integration test for model and plume
   - [X] use multimethod to dispatch rendering of plume, RCS, and maybe clouds
   - [X] refactor large cloud rendering method
-  - [ ] update LWJGL to 3.4.0
+  - [X] update LWJGL to 3.4.0
   - [ ] use state variable to consolidate atoms and simplify recording and playback code
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] create high level rendering methods to simplify main program and integration tests
