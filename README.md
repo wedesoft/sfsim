@@ -71,7 +71,7 @@ cd ..
     * Planetary motions: `clj -T:build download-ephemeris`
     * Lunar reference frame: `clj -T:build download-reference-frames`
     * Lunar motion: `clj -T:build download-lunar-pck-file`
-  * Earth cube map tiles
+  * Earth cube map tiles (this takes days to build)
     * Download NASA Bluemarble data: `clj -T:build download-bluemarble`
     * Download NASA Blackmarble data: `clj -T:build download-Blackmarble`
     * Download NOAA elevation data: `clj -T:build download-elevation`
@@ -84,7 +84,7 @@ cd ..
   * Lunar data (not used yet)
     * Download Moon color images: `clj -T:build download-lunar-color`
     * Download Moon elevation: `clj -T:build download-lunar-elevation`
-  * Atmospheric lookup tables
+  * Atmospheric lookup tables (this takes hours to compute)
     * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
     * Perform all build steps above: `clj -T:build all`
 * Enable integration tests (requiring results of above build steps): `touch .integration`
