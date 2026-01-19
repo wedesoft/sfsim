@@ -60,24 +60,33 @@ cd ..
 # Build
 
 * Build Jolt wrapper library: `make jolt`
-* Build Worley noise: `clj -T:build worley`
-* Build Perlin noise: `clj -T:build perlin`
-* Build blue noise: `clj -T:build bluenoise`
-* Build cloud cover: `clj -T:build cloud-cover`
 * Download space ship model: `clj -T:build download-spaceship`
-* Download NASA Bluemarble data: `clj -T:build download-bluemarble`
-* Download NASA Blackmarble data: `clj -T:build download-Blackmarble`
-* Download NOAA elevation data: `clj -T:build download-elevation`
-* Download NASA JPL ephemeris data: `clj -T:build download-ephemeris`
-* Extract elevation data: `clj -T:build extract-elevation`
-* Convert day map sectors into pyramid of tiles: `clj -T:build map-sectors-day`
-* Convert night map sectors into pyramid of tiles: `clj -T:build map-sectors-night`
-* Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
-* Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
-* Download Moon color images: `clj -T:build download-lunar-color`
-* Download Moon elevation: `clj -T:build download-lunar-elevation`
-* Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
-* Perform all build steps above: `clj -T:build all`
+* Create content of data folder (Note that building everything takes days! You can take the data folder of a Steam playtest build instead unless latest software requires a future data release on Steam):
+  * Volumetric clouds
+    * Build Worley noise: `clj -T:build worley`
+    * Build Perlin noise: `clj -T:build perlin`
+    * Build blue noise: `clj -T:build bluenoise`
+    * Build cloud cover: `clj -T:build cloud-cover`
+  * Celestial motion data
+    * Planetary motions: `clj -T:build download-ephemeris`
+    * Lunar reference frame: `clj -T:build download-reference-frames`
+    * Lunar motion: `clj -T:build download-lunar-pck-file`
+  * Earth cube map tiles
+    * Download NASA Bluemarble data: `clj -T:build download-bluemarble`
+    * Download NASA Blackmarble data: `clj -T:build download-Blackmarble`
+    * Download NOAA elevation data: `clj -T:build download-elevation`
+    * Download NASA JPL ephemeris data: `clj -T:build download-ephemeris`
+    * Extract elevation data: `clj -T:build extract-elevation`
+    * Convert day map sectors into pyramid of tiles: `clj -T:build map-sectors-day`
+    * Convert night map sectors into pyramid of tiles: `clj -T:build map-sectors-night`
+    * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
+    * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
+  * Lunar data (not used yet)
+    * Download Moon color images: `clj -T:build download-lunar-color`
+    * Download Moon elevation: `clj -T:build download-lunar-elevation`
+  * Atmospheric lookup tables
+    * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
+    * Perform all build steps above: `clj -T:build all`
 * Enable integration tests (requiring results of above build steps): `touch .integration`
 
 ## Further Build Steps under Windows
