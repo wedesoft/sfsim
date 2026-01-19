@@ -178,24 +178,6 @@
          (:sfsim.input/camera-rotate-z @state) => -0.5
          (-> GLFW/GLFW_KEY_KP_3 mappings (simulator-key state GLFW/GLFW_RELEASE 0))
          (:sfsim.input/camera-rotate-z @state) => 0.0
-         (:sfsim.input/camera-shift-x @state) => 0.0
-         (-> GLFW/GLFW_KEY_L mappings (simulator-key state GLFW/GLFW_PRESS 0))
-         (:sfsim.input/camera-shift-x @state) => 5.0
-         (-> GLFW/GLFW_KEY_L mappings (simulator-key state GLFW/GLFW_RELEASE 0))
-         (:sfsim.input/camera-shift-x @state) => 0.0
-         (-> GLFW/GLFW_KEY_H mappings (simulator-key state GLFW/GLFW_PRESS 0))
-         (:sfsim.input/camera-shift-x @state) => -5.0
-         (-> GLFW/GLFW_KEY_H mappings (simulator-key state GLFW/GLFW_RELEASE 0))
-         (:sfsim.input/camera-shift-x @state) => 0.0
-         (:sfsim.input/camera-shift-y @state) => 0.0
-         (-> GLFW/GLFW_KEY_K mappings (simulator-key state GLFW/GLFW_PRESS 0))
-         (:sfsim.input/camera-shift-y @state) => 5.0
-         (-> GLFW/GLFW_KEY_K mappings (simulator-key state GLFW/GLFW_RELEASE 0))
-         (:sfsim.input/camera-shift-y @state) => 0.0
-         (-> GLFW/GLFW_KEY_J mappings (simulator-key state GLFW/GLFW_PRESS 0))
-         (:sfsim.input/camera-shift-y @state) => -5.0
-         (-> GLFW/GLFW_KEY_J mappings (simulator-key state GLFW/GLFW_RELEASE 0))
-         (:sfsim.input/camera-shift-y @state) => 0.0
          (:sfsim.input/camera-distance-change @state) => 0.0
          (-> GLFW/GLFW_KEY_COMMA mappings (simulator-key state GLFW/GLFW_PRESS 0))
          (:sfsim.input/camera-distance-change @state) => 1.0
