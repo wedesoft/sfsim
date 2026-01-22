@@ -119,7 +119,7 @@
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timeseconds position orientation camera-position camera-orientation dist gear wheel-angles suspension
-                             camera-dx camera-dy throttle rcs time_]}]
+                             throttle rcs time_]}]
                     {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
@@ -132,9 +132,7 @@
                      :throttle throttle
                      :rcs rcs
                      :wheel-angles wheel-angles
-                     :suspension suspension
-                     :camera-dx camera-dx
-                     :camera-dy camera-dy})
+                     :suspension suspension})
                 (clojure.edn/read-string (slurp "recording.edn")))
           false)))
 
@@ -500,9 +498,6 @@
 (def t0 (atom (GLFW/glfwGetTime)))
 (def time-delta (atom (- ^double current-time (/ ^double @t0 86400.0))))
 
-(def camera-dx (atom 0.0))
-(def camera-dy (atom 0.0))
-
 (defn datetime-dialog-get
   ^double [time-data ^double t0]
   (let [day    (Integer/parseInt (trim (gui/edit-get (:day time-data))))
@@ -726,8 +721,6 @@
             (physics/set-pose :sfsim.physics/surface physics-state (:position frame) (:orientation frame))
             (reset! camera-position (:camera-position frame))
             (reset! camera-orientation (:camera-orientation frame))
-            (reset! camera-dx (:camera-dx frame))
-            (reset! camera-dy (:camera-dy frame))
             (reset! dist (:dist frame))
             (reset! time_ (:time_ frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
@@ -804,8 +797,6 @@
                                :orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                :camera-position origin
                                :camera-orientation camera-orientation
-                               :camera-dx @camera-dx
-                               :camera-dy @camera-dy
                                :dist @dist
                                :gear (:sfsim.physics/gear @physics-state)
                                :time_ @time_
@@ -821,9 +812,7 @@
                                               (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
                                               (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
                                              [1.0 1.0 1.0])}]
-                    (swap! recording conj frame)))))
-            (swap! camera-dx + (* ^double dt ^double (@state :sfsim.input/camera-shift-x)))
-            (swap! camera-dy + (* ^double dt ^double (@state :sfsim.input/camera-shift-y)))))
+                    (swap! recording conj frame)))))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut physics-state)
               height             (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
               pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))

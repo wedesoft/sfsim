@@ -497,5 +497,25 @@
             result)))))
 
 
+(defn byte-buffer->byte-array
+  [buffer]
+  (if buffer
+    (do
+      (let [array (byte-array (.limit ^java.nio.DirectByteBuffer buffer))]
+        (.get ^java.nio.DirectByteBuffer buffer array)
+        array))
+    (byte-array [])))
+
+
+(defn float-buffer->float-array
+  [buffer]
+  (if buffer
+    (do
+      (let [array (float-array (.limit ^java.nio.DirectFloatBufferU buffer))]
+        (.get ^java.nio.DirectFloatBufferU buffer array)
+        array))
+    (float-array [])))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

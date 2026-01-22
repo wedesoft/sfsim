@@ -9,7 +9,7 @@
       [clojure.math :refer (signum)]
       [clojure.set :refer (map-invert)]
       [sfsim.config :refer (read-user-config)]
-      [sfsim.util :refer (clamp dissoc-in)])
+      [sfsim.util :refer (clamp dissoc-in byte-buffer->byte-array float-buffer->float-array)])
     (:import
       [clojure.lang
        PersistentQueue]
@@ -143,11 +143,9 @@
   (if (GLFW/glfwJoystickPresent joystick-id)
     (let [device         (GLFW/glfwGetJoystickName joystick-id)
           axes-buffer    (GLFW/glfwGetJoystickAxes joystick-id)
-          axes           (float-array (.limit axes-buffer))
+          axes           (float-buffer->float-array axes-buffer)
           buttons-buffer (GLFW/glfwGetJoystickButtons joystick-id)
-          buttons        (byte-array (.limit buttons-buffer))]
-      (.get axes-buffer axes)
-      (.get buttons-buffer buttons)
+          buttons        (byte-buffer->byte-array buttons-buffer)]
       (-> event-buffer
           (add-joystick-axis-state joystick-axis-state device axes)
           (add-joystick-button-state joystick-buttons-state device buttons)))
@@ -274,8 +272,6 @@
          ::camera-rotate-x        0.0
          ::camera-rotate-y        0.0
          ::camera-rotate-z        0.0
-         ::camera-shift-x         0.0
-         ::camera-shift-y         0.0
          ::camera-distance-change 0.0
          }))
 
@@ -304,10 +300,6 @@
     GLFW/GLFW_KEY_KP_4      ::camera-rotate-y-negative
     GLFW/GLFW_KEY_KP_1      ::camera-rotate-z-positive
     GLFW/GLFW_KEY_KP_3      ::camera-rotate-z-negative
-    GLFW/GLFW_KEY_L         ::camera-shift-x-positive
-    GLFW/GLFW_KEY_H         ::camera-shift-x-negative
-    GLFW/GLFW_KEY_K         ::camera-shift-y-positive
-    GLFW/GLFW_KEY_J         ::camera-shift-y-negative
     GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
     GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
     }
@@ -503,26 +495,6 @@
 (defmethod simulator-key ::camera-rotate-z-negative
   [_id state action _mods]
   (swap! state assoc ::camera-rotate-z (if (keypress? action) -0.5 0.0)))
-
-
-(defmethod simulator-key ::camera-shift-x-positive
-  [_id state action _mods]
-  (swap! state assoc ::camera-shift-x (if (keypress? action) 5.0 0.0)))
-
-
-(defmethod simulator-key ::camera-shift-x-negative
-  [_id state action _mods]
-  (swap! state assoc ::camera-shift-x (if (keypress? action) -5.0 0.0)))
-
-
-(defmethod simulator-key ::camera-shift-y-positive
-  [_id state action _mods]
-  (swap! state assoc ::camera-shift-y (if (keypress? action) 5.0 0.0)))
-
-
-(defmethod simulator-key ::camera-shift-y-negative
-  [_id state action _mods]
-  (swap! state assoc ::camera-shift-y (if (keypress? action) -5.0 0.0)))
 
 
 (defmethod simulator-key ::camera-distance-change-positive
