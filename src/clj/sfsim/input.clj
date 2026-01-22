@@ -9,7 +9,7 @@
       [clojure.math :refer (signum)]
       [clojure.set :refer (map-invert)]
       [sfsim.config :refer (read-user-config)]
-      [sfsim.util :refer (clamp dissoc-in)])
+      [sfsim.util :refer (clamp dissoc-in byte-buffer->byte-array float-buffer->float-array)])
     (:import
       [clojure.lang
        PersistentQueue]
@@ -143,11 +143,9 @@
   (if (GLFW/glfwJoystickPresent joystick-id)
     (let [device         (GLFW/glfwGetJoystickName joystick-id)
           axes-buffer    (GLFW/glfwGetJoystickAxes joystick-id)
-          axes           (float-array (.limit axes-buffer))
+          axes           (float-buffer->float-array axes-buffer)
           buttons-buffer (GLFW/glfwGetJoystickButtons joystick-id)
-          buttons        (byte-array (.limit buttons-buffer))]
-      (.get axes-buffer axes)
-      (.get buttons-buffer buttons)
+          buttons        (byte-buffer->byte-array buttons-buffer)]
       (-> event-buffer
           (add-joystick-axis-state joystick-axis-state device axes)
           (add-joystick-button-state joystick-buttons-state device buttons)))
