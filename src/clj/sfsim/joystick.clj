@@ -17,15 +17,13 @@
 
 (defn joystick-present?
   "Check if joystick is present (make sure to call glfwInit and glfwPollEvents first)"
-  {:malli/schema [:=> [:cat] :boolean]}
-  [index]
+  [^long index]
   (GLFW/glfwJoystickPresent (+ GLFW/GLFW_JOYSTICK_1 index)))
 
 
 (defn get-joystick-buttons
   "Get state of joystick buttons"
-  {:malli/schema [:=> [:cat] [:vector :int]]}
-  [index]
+  [^long index]
   (let [buffer (GLFW/glfwGetJoystickButtons (+ GLFW/GLFW_JOYSTICK_1 index))
         array  (byte-array (.limit buffer))]
     (.get buffer array)
@@ -34,8 +32,7 @@
 
 (defn get-joystick-axes
   "Get state of joystick axes"
-  {:malli/schema [:=> [:cat] [:vector :double]]}
-  [index]
+  [^long index]
   (let [buffer (GLFW/glfwGetJoystickAxes (+ GLFW/GLFW_JOYSTICK_1 index))
         array  (float-array (.limit buffer))]
     (.get buffer array)
@@ -44,8 +41,7 @@
 
 (defn get-joystick-hats
   "Get state of joystick hats"
-  {:malli/schema [:=> [:cat] [:vector :int]]}
-  [index]
+  [^long index]
   (let [buffer (GLFW/glfwGetJoystickHats (+ GLFW/GLFW_JOYSTICK_1 index))
         array  (byte-array (.limit buffer))]
     (.get buffer array)
