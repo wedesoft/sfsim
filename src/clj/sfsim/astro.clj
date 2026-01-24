@@ -10,14 +10,14 @@
     [clojure.core.memoize :as z]
     [clojure.math :refer (PI)]
     [clojure.string :refer (join)]
-    [fastmath.matrix :refer (mat3x3 mulm inverse eye transpose)]
+    [fastmath.matrix :refer (mat3x3 mulm inverse eye transpose rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z)]
     [fastmath.vector :refer (add mult sub vec3)]
     [gloss.core :refer (compile-frame ordered-map string finite-block finite-frame repeated prefix sizeof)]
     [gloss.io :refer (decode)]
     [instaparse.core :as insta]
     [instaparse.transform :refer (transform)]
     [malli.core :as m]
-    [sfsim.matrix :refer (fvec3 rotation-x rotation-y rotation-z fmat3)])
+    [sfsim.matrix :refer (fvec3 fmat3)])
   (:import
     (fastmath.vector
       Vec3)
@@ -470,10 +470,10 @@
   "Compute precession matrix for Earth given Julian day (see python-skyfield precessionlib.compute_precession)"
   ^Mat3x3 [^double tdb]
   (let [t          (/ (- tdb ^double T0) 36525.0)
-        r3-chi-a   (rotation-z (* (- (chi-a t)) ^double ASEC2RAD))
-        r1-omega-a (rotation-x (* (omega-a t) ^double ASEC2RAD))
-        r3-psi-a   (rotation-z (* (psi-a t) ^double ASEC2RAD))
-        r1-eps0    (rotation-x (* (- ^double eps0) ^double ASEC2RAD))]
+        r3-chi-a   (rotation-matrix-3d-z (* (- (chi-a t)) ^double ASEC2RAD))
+        r1-omega-a (rotation-matrix-3d-x (* (omega-a t) ^double ASEC2RAD))
+        r3-psi-a   (rotation-matrix-3d-z (* (psi-a t) ^double ASEC2RAD))
+        r1-eps0    (rotation-matrix-3d-x (* (- ^double eps0) ^double ASEC2RAD))]
     (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0)))))
 
 
@@ -534,7 +534,7 @@
   "Compute Earth orientation in ICRS coordinate system depending on time t (omitting nutation)"
   (z/lru
     (fn earth-to-icrs-fn [jd-ut]
-      (mulm (inverse (icrs-to-now jd-ut)) (rotation-z (* 2.0 PI (/ (sidereal-time jd-ut) 24.0)))))
+      (mulm (inverse (icrs-to-now jd-ut)) (rotation-matrix-3d-z (* 2.0 PI (/ (sidereal-time jd-ut) 24.0)))))
     :lru/threshold 4))
 
 
@@ -578,7 +578,7 @@
   "Convert body frame information to a transformation matrix"
   [{::keys [axes angles units]}]
   (let [scale     ({"DEGREES" DEGREES2RAD "ARCSECONDS" ASEC2RAD} units)
-        rotations [rotation-x rotation-y rotation-z]
+        rotations [rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z]
         matrices  (mapv (fn [angle axis] ((rotations (dec ^long axis)) (* ^double angle ^double scale))) angles axes)]
     (reduce (fn [result rotation] (mulm rotation result)) (eye 3) matrices)))
 
@@ -593,7 +593,7 @@
             ra         (.x ^Vec3 components)
             decl       (.y ^Vec3 components)
             w          (.z ^Vec3 components)
-            rotation   (mulm matrix (mulm (rotation-z (- w)) (mulm (rotation-x (- decl)) (rotation-z (- ra)))))]
+            rotation   (mulm matrix (mulm (rotation-matrix-3d-z (- w)) (mulm (rotation-matrix-3d-x (- decl)) (rotation-matrix-3d-z (- ra)))))]
         (transpose rotation)))))
 
 

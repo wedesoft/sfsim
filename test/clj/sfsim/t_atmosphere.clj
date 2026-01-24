@@ -8,7 +8,7 @@
   (:require
     [clojure.math :refer (sqrt exp pow E PI sin cos to-radians)]
     [comb.template :as template]
-    [fastmath.matrix :refer (eye inverse)]
+    [fastmath.matrix :refer (eye inverse rotation-matrix-3d-x)]
     [fastmath.vector :refer (vec3 vec4 mult emult add dot)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -18,7 +18,7 @@
     [sfsim.clouds :as clouds]
     [sfsim.image :refer (convert-4d-to-2d get-vector3 get-vector4 get-float get-pixel)]
     [sfsim.interpolate :refer (make-lookup-table)]
-    [sfsim.matrix :refer (pack-matrices projection-matrix rotation-x transformation-matrix)]
+    [sfsim.matrix :refer (pack-matrices projection-matrix transformation-matrix)]
     [sfsim.units :refer :all]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
@@ -790,7 +790,7 @@ void main()
 
 (def initial (eye 4))
 (def shifted (transformation-matrix (eye 3) (vec3 0.2 0.4 0.5)))
-(def rotated (transformation-matrix (rotation-x (to-radians 90)) (vec3 0 0 0)))
+(def rotated (transformation-matrix (rotation-matrix-3d-x (to-radians 90)) (vec3 0 0 0)))
 
 
 (tabular "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
@@ -841,7 +841,7 @@ vec4 cloud_overlay(float depth)
                                                     -0.8 +0.8,
                                                     +0.8 +0.8]
                                    origin          (vec3 ?x ?y ?z)
-                                   camera-to-world (transformation-matrix (rotation-x ?rotation) origin)
+                                   camera-to-world (transformation-matrix (rotation-matrix-3d-x ?rotation) origin)
                                    program         (make-program :sfsim.render/vertex [vertex-atmosphere]
                                                                  :sfsim.render/fragment [(last fragment-atmosphere)
                                                                                          shaders/ray-sphere attenuation-outer
