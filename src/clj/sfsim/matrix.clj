@@ -45,30 +45,6 @@
   (fv/vec3 (v 0) (v 1) (v 2)))
 
 
-(defn rotation-x
-  "Rotation matrix around x-axis"
-  {:malli/schema [:=> [:cat :double] fmat3]}
-  [angle]
-  (let [ca (cos angle) sa (sin angle)]
-    (fm/mat3x3 1 0 0, 0 ca (- sa), 0 sa ca)))
-
-
-(defn rotation-y
-  "Rotation matrix around y-axis"
-  {:malli/schema [:=> [:cat :double] fmat3]}
-  [angle]
-  (let [ca (cos angle) sa (sin angle)]
-    (fm/mat3x3 ca 0 sa, 0 1 0, (- sa) 0 ca)))
-
-
-(defn rotation-z
-  "Rotation matrix around z-axis"
-  {:malli/schema [:=> [:cat :double] fmat3]}
-  [angle]
-  (let [ca (cos angle) sa (sin angle)]
-    (fm/mat3x3 ca (- sa) 0, sa ca 0, 0 0 1)))
-
-
 (defn quaternion->matrix
   "Convert rotation quaternion to rotation matrix"
   {:malli/schema [:=> [:cat quaternion] fmat3]}
