@@ -609,7 +609,7 @@
 (def camera-relative-position (atom (vec3 0 0 0)))
 (def dist (atom 60.0))
 (def camera-roll (atom 0.0))
-(def camera-pitch (atom 10.0))
+(def camera-pitch (atom -10.0))
 (def camera-yaw (atom 0.0))
 (def camera-target-roll (atom 0.0))
 (def camera-target-pitch (atom -10.0))
