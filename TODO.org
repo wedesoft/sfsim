@@ -13,6 +13,8 @@
     - Links by Substantial_Marzipan about linear aerospike:
       - https://aerospaceweb.org/design/aerospike/aerospike.shtml
       - https://en.m.wikipedia.org/wiki/Rocketdyne_XRS-2200
+    - Project by ertugrulcetin:
+      - https://github.com/ertugrulcetin/clojure-100k-cubes-lwjgl
   - Note taken on [2025-08-25 Mo 21:26] \\
     - [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
   - Note taken on [2025-08-24 So 20:58] \\
