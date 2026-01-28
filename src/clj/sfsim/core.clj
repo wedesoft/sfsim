@@ -672,6 +672,7 @@
 
 (catch Exception e
        (log/error e "Exception at startup")
+       (log/info "aborting sfsim" version)
        (System/exit 1)))
 
 (defn -main
@@ -959,6 +960,7 @@
     (spit "recording.edn" (with-out-str (pprint @recording))))
   (catch Exception e
          (log/error e "Exception in main function")
+         (log/info "aborting sfsim" version)
          (System/exit 1)))
   (log/info "terminating sfsim" version)
   (System/exit 0))
