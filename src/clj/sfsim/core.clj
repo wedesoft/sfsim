@@ -18,6 +18,7 @@
     [clojure.string :refer (trim)]
     [malli.dev :as dev]
     [malli.dev.pretty :as pretty]
+    [nrepl.server :refer [start-server]]
     [fastmath.matrix :refer (inverse mulv mulm cols->mat rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize dot cross)]
     [sfsim.astro :as astro]
@@ -76,6 +77,10 @@
 (set! *warn-on-reflection* true)
 
 (log/info "starting sfsim" version)
+
+
+; clj -M:nrepl -m sfsim.core
+(defonce server (start-server :port 7888))
 
 
 (when (.exists (io/file ".schemas"))
