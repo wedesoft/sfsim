@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -897,7 +897,7 @@ vec4 cloud_overlay(float depth)
 
 (def phase-probe
   (template/fn [g mu]
-    "#version 450 core
+"#version 450 core
 out vec3 fragColor;
 float phase(float g, float mu);
 void main()
