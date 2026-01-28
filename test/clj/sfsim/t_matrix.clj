@@ -145,18 +145,6 @@
          (project (fm/mulv m (fv/vec4 2  3 -13 1))) => (roughly-vector (fv/vec3  0  0 0) 1e-6)))
 
 
-(facts "Generate orthogonal vector"
-       (fv/dot (orthogonal (fv/vec3 1 0 0)) (fv/vec3 1 0 0)) => 0.0
-       (fv/mag (orthogonal (fv/vec3 1 0 0))) => 1.0
-       (fv/mag (orthogonal (fv/vec3 2 0 0))) => 1.0
-       (fv/dot (orthogonal (fv/vec3 0 1 0)) (fv/vec3 0 1 0)) => 0.0
-       (fv/mag (orthogonal (fv/vec3 0 1 0))) => 1.0
-       (fv/mag (orthogonal (fv/vec3 0 2 0))) => 1.0
-       (fv/dot (orthogonal (fv/vec3 0 0 1)) (fv/vec3 0 0 1)) => 0.0
-       (fv/mag (orthogonal (fv/vec3 0 0 1))) => 1.0
-       (fv/mag (orthogonal (fv/vec3 0 0 2))) => 1.0)
-
-
 (facts "Generate isometry with given normal vector as first row"
        (let [n (fv/vec3 0.36 0.48 0.8)
              m (oriented-matrix n)]

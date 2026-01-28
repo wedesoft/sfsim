@@ -9,7 +9,7 @@
   (:require
     [clojure.core :as c]
     [clojure.math :refer (PI E)]
-    [fastmath.vector :refer (vec3)]
+    [fastmath.vector :refer (vec3 mag dot)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -124,6 +124,18 @@
          (vec3 0.36 0.48 0.8) (/ PI 3)   :imag         0.18)
 
 
+(facts "Generate orthogonal vector"
+       (dot (orthogonal (vec3 1 0 0)) (vec3 1 0 0)) => 0.0
+       (mag (orthogonal (vec3 1 0 0))) => 1.0
+       (mag (orthogonal (vec3 2 0 0))) => 1.0
+       (dot (orthogonal (vec3 0 1 0)) (vec3 0 1 0)) => 0.0
+       (mag (orthogonal (vec3 0 1 0))) => 1.0
+       (mag (orthogonal (vec3 0 2 0))) => 1.0
+       (dot (orthogonal (vec3 0 0 1)) (vec3 0 0 1)) => 0.0
+       (mag (orthogonal (vec3 0 0 1))) => 1.0
+       (mag (orthogonal (vec3 0 0 2))) => 1.0)
+
+
 (facts "Rotate a vector using a rotation quaternion"
        (rotate-vector (rotation 0.0 (vec3 1 0 0)) (vec3 2 4 8))        => (roughly-vector (vec3 2  4 8) 1e-6)
        (rotate-vector (rotation (/ PI 2) (vec3 1 0 0)) (vec3 2 4 8)) => (roughly-vector (vec3 2 -8 4) 1e-6))
@@ -132,4 +144,5 @@
 (fact "Rotate vector u onto vector b"
       (rotate-vector (vector-to-vector-rotation (vec3 1 0 0) (vec3 1 0 0)) (vec3 1 0 0)) => (roughly-vector (vec3 1 0 0) 1e-6)
       (rotate-vector (vector-to-vector-rotation (vec3 1 0 0) (vec3 0 1 0)) (vec3 1 0 0)) => (roughly-vector (vec3 0 1 0) 1e-6)
-      (rotate-vector (vector-to-vector-rotation (vec3 2 0 0) (vec3 0 3 0)) (vec3 2 0 0)) => (roughly-vector (vec3 0 2 0) 1e-6))
+      (rotate-vector (vector-to-vector-rotation (vec3 2 0 0) (vec3 0 3 0)) (vec3 2 0 0)) => (roughly-vector (vec3 0 2 0) 1e-6)
+      (rotate-vector (vector-to-vector-rotation (vec3 1 0 0) (vec3 -1 0 0)) (vec3 2 0 0)) => (roughly-vector (vec3 -2 0 0) 1e-6))

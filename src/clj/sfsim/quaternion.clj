@@ -9,8 +9,9 @@
   (:refer-clojure :exclude [+ - *])
   (:require
    [clojure.core :as c]
-   [clojure.math :refer (cos sqrt) :as m]
-   [fastmath.vector :refer (mag mult cross dot)]
+   [clojure.math :refer (PI cos sqrt) :as m]
+   [fastmath.matrix :refer (rows eye)]
+   [fastmath.vector :refer (vec3 mag mult cross dot) :as fv]
    [malli.core :as mc]
    [sfsim.util :refer (sinc sqr)])
   (:import
@@ -162,13 +163,23 @@
   (quaternion->vector (* (* q (vector->quaternion v)) (conjugate q))))
 
 
+(defn orthogonal
+  "Create orthogonal vector to specified 3D vector"
+  {:malli/schema [:=> [:cat fvec3] fvec3]}
+  [n]
+  (let [b (first (sort-by #(abs (dot n %)) (rows (eye 3))))]
+    (fv/normalize (cross n b))))
+
+
 (defn vector-to-vector-rotation
   "Create quaternion for rotating u to v"
   {:malli/schema [:=> [:cat fvec3 fvec3] quaternion]}
   ^Quaternion [u v]
   (let [axis (cross u v)
         w    (c/+ (c/* (mag u) (mag v)) (dot u v))]
-    (normalize (Quaternion. w (nth axis 0) (nth axis 1) (nth axis 2)))))
+    (if (zero? w)
+      (rotation PI (orthogonal u))
+      (normalize (Quaternion. w (nth axis 0) (nth axis 1) (nth axis 2))))))
 
 
 (set! *warn-on-reflection* false)

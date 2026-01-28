@@ -11,7 +11,7 @@
     [fastmath.matrix :as fm]
     [fastmath.vector :as fv]
     [malli.core :as m]
-    [sfsim.quaternion :refer (quaternion rotate-vector rotation)]
+    [sfsim.quaternion :refer (quaternion rotate-vector rotation orthogonal)]
     [sfsim.util :refer (N N0)])
   (:import
     [fastmath.vector
@@ -209,14 +209,6 @@
   {:malli/schema [:=> [:cat bbox] fmat4]}
   [bounding-box]
   (fm/mulm (fm/mat4x4 0.5 0 0 0.5, 0 0.5 0 0.5, 0 0 1 0, 0 0 0 1) (shadow-box-to-ndc bounding-box)))
-
-
-(defn orthogonal
-  "Create orthogonal vector to specified 3D vector"
-  {:malli/schema [:=> [:cat fvec3] fvec3]}
-  [n]
-  (let [b (first (sort-by #(abs (fv/dot n %)) (fm/rows (fm/eye 3))))]
-    (fv/normalize (fv/cross n b))))
 
 
 (defn oriented-matrix
