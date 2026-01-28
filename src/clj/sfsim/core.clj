@@ -77,9 +77,6 @@
 
 (log/info "starting sfsim" version)
 
-; clj -M:nrepl -m sfsim.core
-;; (require '[nrepl.server :refer [start-server stop-server]])
-;; (defonce server (start-server :port 7888))
 
 (when (.exists (io/file ".schemas"))
   (dev/start! {:report (pretty/thrower)}))
