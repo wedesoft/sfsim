@@ -18,7 +18,7 @@
     [clojure.string :refer (trim)]
     [malli.dev :as dev]
     [malli.dev.pretty :as pretty]
-    [fastmath.matrix :refer (inverse mulv mulm cols->mat)]
+    [fastmath.matrix :refer (inverse mulv mulm cols->mat rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z)]
     [fastmath.vector :refer (vec3 add mult mag sub normalize dot cross)]
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
@@ -30,8 +30,7 @@
     [sfsim.gui :as gui]
     [sfsim.util :refer (dissoc-in)]
     [sfsim.jolt :as jolt]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix matrix->quaternion get-translation get-translation
-                          rotation-x rotation-y rotation-z)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix matrix->quaternion get-translation get-translation)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
@@ -78,9 +77,6 @@
 
 (log/info "starting sfsim" version)
 
-; clj -M:nrepl -m sfsim.core
-;; (require '[nrepl.server :refer [start-server stop-server]])
-;; (defonce server (start-server :port 7888))
 
 (when (.exists (io/file ".schemas"))
   (dev/start! {:report (pretty/thrower)}))
@@ -643,13 +639,13 @@
         current-roll       (swap! camera-roll #(+ (* ^double % weight-previous) (* ^double target-roll (- 1.0 weight-previous))))
         current-pitch      (swap! camera-pitch #(+ (* ^double % weight-previous) (* ^double target-pitch (- 1.0 weight-previous))))
         current-yaw        (swap! camera-yaw #(+ (* ^double % weight-previous) (* ^double target-yaw (- 1.0 weight-previous))))
-        rz                 (rotation-z (to-radians target-roll))
-        rx                 (rotation-x (to-radians target-pitch))
-        ry                 (rotation-y (to-radians target-yaw))
+        rz                 (rotation-matrix-3d-z (to-radians target-roll))
+        rx                 (rotation-matrix-3d-x (to-radians target-pitch))
+        ry                 (rotation-matrix-3d-y (to-radians target-yaw))
         target-matrix      (mulm horizon (mulm ry (mulm rx rz)))
-        rz                 (rotation-z (to-radians current-roll))
-        rx                 (rotation-x (to-radians current-pitch))
-        ry                 (rotation-y (to-radians current-yaw))
+        rz                 (rotation-matrix-3d-z (to-radians current-roll))
+        rx                 (rotation-matrix-3d-x (to-radians current-pitch))
+        ry                 (rotation-matrix-3d-y (to-radians current-yaw))
         camera-matrix      (mulm horizon (mulm ry (mulm rx rz)))
         camera-orientation (matrix->quaternion camera-matrix)
         relative-target    (mulv target-matrix (vec3 0 0 distance))

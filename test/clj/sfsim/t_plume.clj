@@ -10,13 +10,13 @@
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [fastmath.vector :refer (vec3)]
-      [fastmath.matrix :refer (mulm)]
+      [fastmath.matrix :refer (mulm rotation-matrix-3d-x rotation-matrix-3d-y)]
       [comb.template :as template]
       [sfsim.conftest :refer (roughly-vector shader-test is-image)]
       [midje.sweet :refer :all]
       [sfsim.render :refer :all]
       [sfsim.plume :refer :all]
-      [sfsim.matrix :refer (projection-matrix rotation-x rotation-y)]
+      [sfsim.matrix :refer (projection-matrix)]
       [sfsim.shaders :as shaders])
     (:import
       (org.lwjgl.glfw
@@ -605,8 +605,8 @@ void main()
                                    vao        (make-vertex-array-object program plume-indices plume-vertices ["point" 3])]
                                (use-program program)
                                (uniform-matrix4 program "projection" projection)
-                               (uniform-matrix3 program "rotation" (mulm (rotation-x (to-radians ?alpha))
-                                                                         (rotation-y (to-radians ?beta))))
+                               (uniform-matrix3 program "rotation" (mulm (rotation-matrix-3d-x (to-radians ?alpha))
+                                                                         (rotation-matrix-3d-y (to-radians ?beta))))
                                (render-quads vao)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))

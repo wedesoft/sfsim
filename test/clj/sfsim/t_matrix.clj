@@ -25,17 +25,11 @@
 (def -sa -0.5)
 
 
-(facts "Rotation matrices"
-       (rotation-x (/ PI 6)) => (roughly-matrix (fm/mat3x3 1 0 0, 0 ca -sa, 0 sa ca) 1e-6)
-       (rotation-y (/ PI 6)) => (roughly-matrix (fm/mat3x3 ca 0 sa, 0 1 0, -sa 0 ca) 1e-6)
-       (rotation-z (/ PI 6)) => (roughly-matrix (fm/mat3x3 ca -sa 0, sa ca 0, 0 0 1) 1e-6))
-
-
 (facts "Comvert rotation quaternion to rotation matrix"
        (quaternion->matrix (->Quaternion 1 0 0 0))              => (roughly-matrix (fm/eye 3) 1e-6)
-       (quaternion->matrix (rotation (/ PI 6) (fv/vec3 1 0 0))) => (roughly-matrix (rotation-x (/ PI 6)) 1e-6)
-       (quaternion->matrix (rotation (/ PI 6) (fv/vec3 0 1 0))) => (roughly-matrix (rotation-y (/ PI 6)) 1e-6)
-       (quaternion->matrix (rotation (/ PI 6) (fv/vec3 0 0 1))) => (roughly-matrix (rotation-z (/ PI 6)) 1e-6))
+       (quaternion->matrix (rotation (/ PI 6) (fv/vec3 1 0 0))) => (roughly-matrix (fm/rotation-matrix-3d-x (/ PI 6)) 1e-6)
+       (quaternion->matrix (rotation (/ PI 6) (fv/vec3 0 1 0))) => (roughly-matrix (fm/rotation-matrix-3d-y (/ PI 6)) 1e-6)
+       (quaternion->matrix (rotation (/ PI 6) (fv/vec3 0 0 1))) => (roughly-matrix (fm/rotation-matrix-3d-z (/ PI 6)) 1e-6))
 
 
 (tabular "Convert rotation matrix to quaternion"
@@ -182,7 +176,7 @@
 (facts "Choose NDC and texture coordinate matrices for shadow mapping"
        (let [projection         (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))
              camera-to-world-1 (fm/eye 4)
-             camera-to-world-2 (transformation-matrix (rotation-x (/ PI 2)) (fv/vec3 0 0 0))
+             camera-to-world-2 (transformation-matrix (fm/rotation-matrix-3d-x (/ PI 2)) (fv/vec3 0 0 0))
              light-direction   (fv/vec3 0 1 0)]
          (fm/mulv (:sfsim.matrix/world-to-shadow-ndc (shadow-matrices projection camera-to-world-1 light-direction 0.0))
                   (fv/vec4 0 750 -1000 1)) => (roughly-vector (fv/vec4 1 0 1 1) 1e-6)
@@ -265,7 +259,7 @@
 
 (facts "Shadow matrices for an object mapping object coordinates to shadow coordinates"
        (let [unrotated (shadow-patch-matrices (fm/eye 4) (fv/vec3 0 0 1) 1.0)
-             rotation  (transformation-matrix (rotation-x (/ PI 2)) (fv/vec3 0 0 0))
+             rotation  (transformation-matrix (fm/rotation-matrix-3d-x (/ PI 2)) (fv/vec3 0 0 0))
              rotated   (shadow-patch-matrices rotation (fv/vec3 0 0 1) 1.0)]
          (fm/mulv (:sfsim.matrix/object-to-shadow-ndc unrotated) (fv/vec4 0 0 1 0))
          => (fv/vec4 0 0 0.5 0)
