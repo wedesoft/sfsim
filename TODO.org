@@ -45,6 +45,7 @@
   - [ ] camera state
     - [ ] surface: forward is heading, down is earth
     - [ ] orbit: forward is speed vector, down is earth
+  - [ ] Jolt physics problem with gear ground collision at latitude below zero?
   - [ ] add RCS state to physics-state
   - [ ] use state variable to consolidate atoms and simplify recording and playback code
   - [ ] schemas for model, planet, and atmosphere geometry renderer
