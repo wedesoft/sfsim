@@ -48,10 +48,10 @@
 (facts "Camera initialisation"
        (:sfsim.camera/distance @state) => 60.0
        (:sfsim.camera/roll @state) => 0.0
-       (:sfsim.camera/pitch @state) => 10.0
+       (:sfsim.camera/pitch @state) => (roughly (to-radians -10.0) 1e-6)
        (:sfsim.camera/yaw @state) => 0.0
        (:sfsim.camera/target-roll @state) => 0.0
-       (:sfsim.camera/target-pitch @state) => 10.0
+       (:sfsim.camera/target-pitch @state) => (roughly (to-radians -10.0) 1e-6)
        (:sfsim.camera/target-yaw @state) => 0.0)
 
 (facts "Get camera pose"
@@ -60,18 +60,29 @@
        (swap! state assoc :sfsim.camera/distance 0.0)
        (set-pose :sfsim.physics/surface physics-state (vec3 0 0 (- radius)) (q/->Quaternion 1 0 0 0))
        (:sfsim.camera/position (get-camera-pose state physics-state astro/T0)) => (roughly-vector (vec3 0 0 (- radius)) 1e-3)
-       (:sfsim.camera/orientation (get-camera-pose state physics-state astro/T0)) => (roughly-quaternion (q/->Quaternion 1 0 0 0) 1e-6)
+       (:sfsim.camera/orientation (get-camera-pose state physics-state astro/T0)) => (roughly-quaternion (q/->Quaternion 0.5 -0.5 -0.5 0.5) 1e-6)
        (swap! state assoc :sfsim.camera/distance 60.0)
        (:sfsim.camera/position (get-camera-pose state physics-state astro/T0)) => (roughly-vector (vec3 -60 0 (- radius)) 1e-3)
        (set-pose :sfsim.physics/surface physics-state (vec3 0 0 radius) (q/->Quaternion 0 0 1 0))
        (:sfsim.camera/position (get-camera-pose state physics-state astro/T0)) => (roughly-vector (vec3 60 0 radius) 1e-3)
-       (:sfsim.camera/orientation (get-camera-pose state physics-state astro/T0)) => (roughly-quaternion (q/->Quaternion 0 0 1 0) 1e-6)
+       (:sfsim.camera/orientation (get-camera-pose state physics-state astro/T0)) => (roughly-quaternion (q/->Quaternion 0.5 0.5 0.5 0.5) 1e-6)
        (swap! state assoc :sfsim.camera/yaw (to-radians 90.0))
-       (:sfsim.camera/position (get-camera-pose state physics-state astro/T0)) => (roughly-vector (vec3 0 -60 radius) 1e-3)
-       (:sfsim.camera/orientation (get-camera-pose state physics-state astro/T0)) => (roughly-quaternion (q/->Quaternion 0 (sqrt 0.5) (sqrt 0.5) 0) 1e-6)
+       (:sfsim.camera/position (get-camera-pose state physics-state astro/T0)) => (roughly-vector (vec3 0 60 radius) 1e-3)
+       (:sfsim.camera/orientation (get-camera-pose state physics-state astro/T0)) => (roughly-quaternion (q/->Quaternion 0 0 (sqrt 0.5) (sqrt 0.5)) 1e-6)
        (swap! state assoc :sfsim.camera/yaw (to-radians 0.0))
        (swap! state assoc :sfsim.camera/pitch (to-radians 90.0))
-       (:sfsim.camera/orientation (get-camera-pose state physics-state astro/T0)) => (roughly-quaternion (q/->Quaternion (- (sqrt 0.5)) 0 (sqrt 0.5) 0) 1e-6))
+       (:sfsim.camera/orientation (get-camera-pose state physics-state astro/T0)) => (roughly-quaternion (q/->Quaternion 0 (sqrt 0.5) (sqrt 0.5) 0) 1e-6)
+       (swap! state assoc :sfsim.camera/pitch (to-radians 0.0)))
+
+
+(def neutral-input #:sfsim.input{:camera-rotate-x 0.0 :camera-rotate-y 0.0 :camera-rotate-z 0.0})
+
+(facts "Control camera pose"
+       (update-camera-pose state 0.25 (assoc neutral-input :sfsim.input/camera-rotate-y 8.0))
+       (:sfsim.camera/yaw @state) => 2.0
+       (update-camera-pose state 0.25 (assoc neutral-input :sfsim.input/camera-rotate-x 8.0))
+       (:sfsim.camera/pitch @state) => 2.0
+       )
 
 
 (jolt/remove-and-destroy-body sphere)

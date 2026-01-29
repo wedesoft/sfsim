@@ -6,6 +6,7 @@
 (ns sfsim.camera
     "Camera movement math"
     (:require
+      [clojure.math :refer (to-radians)]
       [fastmath.vector :refer (vec3 mult add sub cross normalize)]
       [fastmath.matrix :refer (cols->mat)]
       [sfsim.quaternion :as q]
@@ -21,10 +22,10 @@
   []
   (atom {::distance 60.0
          ::roll 0.0
-         ::pitch 10.0
+         ::pitch (to-radians -10.0)
          ::yaw 0.0
          ::target-roll 0.0
-         ::target-pitch 10.0
+         ::target-pitch (to-radians -10.0)
          ::target-yaw 0.0}))
 
 
@@ -33,16 +34,23 @@
   [camera-state physics-state jd-ut]
   (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
         orientation        (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-        forward            (q/rotate-vector orientation (vec3 1 0 0))
-        horizon-y          (cross forward position)
-        horizon-z          (sub (normalize position))
-        horizon-x          (cross horizon-y horizon-z)
-        horizon            (matrix->quaternion (cols->mat horizon-x horizon-y horizon-z))
-        yaw                (q/rotation (::yaw @camera-state) (vec3 0 0 1))
-        pitch              (q/rotation (::pitch @camera-state) (vec3 0 1 0))
-        camera-orientation (reduce q/* [horizon yaw pitch])
-        relative-position  (q/rotate-vector camera-orientation (mult (vec3 1 0 0) (- ^double (::distance @camera-state))))]
+        nose               (q/rotate-vector orientation (vec3 1 0 0))
+        up                 (normalize position)
+        right              (normalize (cross nose up))
+        backward           (cross right up)
+        horizon            (matrix->quaternion (cols->mat right up backward))
+        yaw                (q/rotation (::yaw @camera-state) (vec3 0 1 0))
+        pitch              (q/rotation (::pitch @camera-state) (vec3 1 0 0))
+        camera-orientation (q/* horizon (q/* yaw pitch))
+        relative-position  (q/rotate-vector camera-orientation (mult (vec3 0 0 1) ^double (::distance @camera-state)))]
     {::position (add position relative-position) ::orientation camera-orientation}))
+
+
+(defn update-camera-pose
+  "Update the camera position according to user input"
+  [camera-state ^double dt input-state]
+  (swap! camera-state update ::yaw + (* dt ^double (:sfsim.input/camera-rotate-y input-state)))
+  (swap! camera-state update ::pitch + (* dt ^double (:sfsim.input/camera-rotate-x input-state))))
 
 
 (set! *warn-on-reflection* false)

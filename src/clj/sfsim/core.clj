@@ -24,6 +24,7 @@
     [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.version :refer (version)]
+    [sfsim.camera :as camera]
     [sfsim.clouds :as clouds]
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
@@ -605,53 +606,57 @@
   (MemoryStack/stackPop))
 
 
+(def camera-state (camera/make-camera-state))
 
-(def camera-relative-position (atom (vec3 0 0 0)))
-(def dist (atom 60.0))
-(def camera-roll (atom 0.0))
-(def camera-pitch (atom -10.0))
-(def camera-yaw (atom 0.0))
-(def camera-target-roll (atom 0.0))
-(def camera-target-pitch (atom -10.0))
-(def camera-target-yaw (atom 0.0))
+
+(comment
+  (def camera-relative-position (atom (vec3 0 0 0)))
+  (def dist (atom 60.0))
+  (def camera-roll (atom 0.0))
+  (def camera-pitch (atom -10.0))
+  (def camera-yaw (atom 0.0))
+  (def camera-target-roll (atom 0.0))
+  (def camera-target-pitch (atom -10.0))
+  (def camera-target-yaw (atom 0.0)))
 
 (def camera-position (atom nil))
 (def camera-orientation (atom nil))
 
-(defn get-camera-pose
-  [physics-state jd-ut dt state]
-  (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
-        orientation        (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-        speed              (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
-        up                 (normalize position)
-        direction          (normalize (add speed (q/rotate-vector orientation (vec3 10 0 0))))
-        forward            (normalize (sub direction (mult up (dot direction up))))
-        right              (normalize (cross forward up))
-        horizon            (cols->mat right up (sub forward))
-        weight-previous    (pow 0.25 dt)
-        camera-delta-roll  (* ^double dt 100.0 ^double (@state :sfsim.input/camera-rotate-z))
-        camera-delta-yaw   (* ^double dt 100.0 ^double (@state :sfsim.input/camera-rotate-y))
-        camera-delta-pitch (* ^double dt 100.0 ^double (@state :sfsim.input/camera-rotate-x))
-        distance           (swap! dist * (exp (* ^double dt ^double (@state :sfsim.input/camera-distance-change))))
-        target-roll        (swap! camera-target-roll + camera-delta-roll)  ; TODO: wrap target and current when leaving [0, 360] range
-        target-pitch       (swap! camera-target-pitch + camera-delta-pitch)
-        target-yaw         (swap! camera-target-yaw + camera-delta-yaw)
-        current-roll       (swap! camera-roll #(+ (* ^double % weight-previous) (* ^double target-roll (- 1.0 weight-previous))))
-        current-pitch      (swap! camera-pitch #(+ (* ^double % weight-previous) (* ^double target-pitch (- 1.0 weight-previous))))
-        current-yaw        (swap! camera-yaw #(+ (* ^double % weight-previous) (* ^double target-yaw (- 1.0 weight-previous))))
-        rz                 (rotation-matrix-3d-z (to-radians target-roll))
-        rx                 (rotation-matrix-3d-x (to-radians target-pitch))
-        ry                 (rotation-matrix-3d-y (to-radians target-yaw))
-        target-matrix      (mulm horizon (mulm ry (mulm rx rz)))
-        rz                 (rotation-matrix-3d-z (to-radians current-roll))
-        rx                 (rotation-matrix-3d-x (to-radians current-pitch))
-        ry                 (rotation-matrix-3d-y (to-radians current-yaw))
-        camera-matrix      (mulm horizon (mulm ry (mulm rx rz)))
-        camera-orientation (matrix->quaternion camera-matrix)
-        relative-target    (mulv target-matrix (vec3 0 0 distance))
-        relative-position  (swap! camera-relative-position
-                                  #(add (mult % weight-previous) (mult relative-target (- 1.0 weight-previous))))]
-    [(add position relative-position) camera-orientation]))
+(comment
+  (defn get-camera-pose
+    [physics-state jd-ut dt state]
+    (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+          orientation        (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
+          speed              (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state)
+          up                 (normalize position)
+          direction          (normalize (add speed (q/rotate-vector orientation (vec3 10 0 0))))
+          forward            (normalize (sub direction (mult up (dot direction up))))
+          right              (normalize (cross forward up))
+          horizon            (cols->mat right up (sub forward))
+          weight-previous    (pow 0.25 dt)
+          camera-delta-roll  (* ^double dt 100.0 ^double (@state :sfsim.input/camera-rotate-z))
+          camera-delta-yaw   (* ^double dt 100.0 ^double (@state :sfsim.input/camera-rotate-y))
+          camera-delta-pitch (* ^double dt 100.0 ^double (@state :sfsim.input/camera-rotate-x))
+          distance           (swap! dist * (exp (* ^double dt ^double (@state :sfsim.input/camera-distance-change))))
+          target-roll        (swap! camera-target-roll + camera-delta-roll)  ; TODO: wrap target and current when leaving [0, 360] range
+          target-pitch       (swap! camera-target-pitch + camera-delta-pitch)
+          target-yaw         (swap! camera-target-yaw + camera-delta-yaw)
+          current-roll       (swap! camera-roll #(+ (* ^double % weight-previous) (* ^double target-roll (- 1.0 weight-previous))))
+          current-pitch      (swap! camera-pitch #(+ (* ^double % weight-previous) (* ^double target-pitch (- 1.0 weight-previous))))
+          current-yaw        (swap! camera-yaw #(+ (* ^double % weight-previous) (* ^double target-yaw (- 1.0 weight-previous))))
+          rz                 (rotation-matrix-3d-z (to-radians target-roll))
+          rx                 (rotation-matrix-3d-x (to-radians target-pitch))
+          ry                 (rotation-matrix-3d-y (to-radians target-yaw))
+          target-matrix      (mulm horizon (mulm ry (mulm rx rz)))
+          rz                 (rotation-matrix-3d-z (to-radians current-roll))
+          rx                 (rotation-matrix-3d-x (to-radians current-pitch))
+          ry                 (rotation-matrix-3d-y (to-radians current-yaw))
+          camera-matrix      (mulm horizon (mulm ry (mulm rx rz)))
+          camera-orientation (matrix->quaternion camera-matrix)
+          relative-target    (mulv target-matrix (vec3 0 0 distance))
+          relative-position  (swap! camera-relative-position
+                                    #(add (mult % weight-previous) (mult relative-target (- 1.0 weight-previous))))]
+      [(add position relative-position) camera-orientation])))
 
 
 (defn info
@@ -718,7 +723,7 @@
             (physics/set-pose :sfsim.physics/surface physics-state (:position frame) (:orientation frame))
             (reset! camera-position (:camera-position frame))
             (reset! camera-orientation (:camera-orientation frame))
-            (reset! dist (:dist frame))
+            (swap! camera-state assoc :sfsim.camera/distance (:dist frame))
             (reset! time_ (:time_ frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
             (swap! physics-state assoc :sfsim.physics/gear (:gear frame))
@@ -788,13 +793,14 @@
                                       (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
                                      [1.0 1.0 1.0]))
                 (when @recording
-                  (let [[origin camera-orientation] (get-camera-pose physics-state jd-ut dt state)
+                  (let [[origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
+                                                     (camera/get-camera-pose camera-state physics-state jd-ut))
                         frame {:timeseconds (+ (* ^double @time-delta 86400.0) ^double @t0)
                                :position (physics/get-position :sfsim.physics/surface jd-ut physics-state)
                                :orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
                                :camera-position origin
                                :camera-orientation camera-orientation
-                               :dist @dist
+                               :dist (:sfsim.camera/distance @camera-state)
                                :gear (:sfsim.physics/gear @physics-state)
                                :time_ @time_
                                :throttle (:sfsim.physics/throttle @physics-state)
@@ -815,8 +821,12 @@
               pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
               object-orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
               object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
-              [origin camera-orientation] (if playback [@camera-position @camera-orientation]
-                                            (get-camera-pose physics-state jd-ut dt state))
+              [origin camera-orientation] (if playback
+                                            [@camera-position @camera-orientation]
+                                            ((juxt :sfsim.camera/position :sfsim.camera/orientation)
+                                             (do
+                                               (camera/update-camera-pose camera-state dt @state)
+                                               (camera/get-camera-pose camera-state physics-state jd-ut))))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
