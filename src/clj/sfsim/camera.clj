@@ -6,7 +6,7 @@
 (ns sfsim.camera
     "Camera movement math"
     (:require
-      [clojure.math :refer (to-radians)]
+      [clojure.math :refer (to-radians pow)]
       [fastmath.vector :refer (vec3 mult add sub cross normalize)]
       [fastmath.matrix :refer (cols->mat)]
       [sfsim.quaternion :as q]
@@ -41,7 +41,8 @@
         horizon            (matrix->quaternion (cols->mat right up backward))
         yaw                (q/rotation (::yaw @camera-state) (vec3 0 1 0))
         pitch              (q/rotation (::pitch @camera-state) (vec3 1 0 0))
-        camera-orientation (q/* horizon (q/* yaw pitch))
+        roll               (q/rotation (::roll @camera-state) (vec3 0 0 1))
+        camera-orientation (q/* horizon (q/* (q/* yaw pitch) roll))
         relative-position  (q/rotate-vector camera-orientation (mult (vec3 0 0 1) ^double (::distance @camera-state)))]
     {::position (add position relative-position) ::orientation camera-orientation}))
 
@@ -49,8 +50,14 @@
 (defn update-camera-pose
   "Update the camera position according to user input"
   [camera-state ^double dt input-state]
-  (swap! camera-state update ::yaw + (* dt ^double (:sfsim.input/camera-rotate-y input-state)))
-  (swap! camera-state update ::pitch + (* dt ^double (:sfsim.input/camera-rotate-x input-state))))
+  (let [weight-previous (pow 0.25 dt)
+        mix             (fn [prev target] (+ (* ^double prev weight-previous) (* ^double target (- 1.0 weight-previous))))]
+    (swap! camera-state update ::target-yaw + (* dt ^double (:sfsim.input/camera-rotate-y input-state)))
+    (swap! camera-state update ::target-pitch + (* dt ^double (:sfsim.input/camera-rotate-x input-state)))
+    (swap! camera-state update ::target-roll + (* dt ^double (:sfsim.input/camera-rotate-z input-state)))
+    (swap! camera-state update ::yaw mix (::target-yaw @camera-state))
+    (swap! camera-state update ::pitch mix (::target-pitch @camera-state))
+    (swap! camera-state update ::roll mix (::target-roll @camera-state))))
 
 
 (set! *warn-on-reflection* false)
