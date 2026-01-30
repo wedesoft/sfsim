@@ -6,7 +6,7 @@
 (ns sfsim.camera
     "Camera movement math"
     (:require
-      [clojure.math :refer (to-radians pow)]
+      [clojure.math :refer (to-radians pow exp)]
       [fastmath.vector :refer (vec3 mult add div cross normalize mag)]
       [fastmath.matrix :refer (cols->mat)]
       [sfsim.quaternion :as q]
@@ -24,6 +24,7 @@
          ::roll 0.0
          ::pitch (to-radians -10.0)
          ::yaw 0.0
+         ::target-distance 60.0
          ::target-roll 0.0
          ::target-pitch (to-radians -10.0)
          ::target-yaw 0.0}))
@@ -71,9 +72,11 @@
     (swap! camera-state update ::target-yaw + (* dt ^double (:sfsim.input/camera-rotate-y input-state)))
     (swap! camera-state update ::target-pitch + (* dt ^double (:sfsim.input/camera-rotate-x input-state)))
     (swap! camera-state update ::target-roll + (* dt ^double (:sfsim.input/camera-rotate-z input-state)))
+    (swap! camera-state update ::target-distance * (exp (* dt ^double (:sfsim.input/camera-distance-change input-state))))
     (swap! camera-state update ::yaw mix (::target-yaw @camera-state))
     (swap! camera-state update ::pitch mix (::target-pitch @camera-state))
-    (swap! camera-state update ::roll mix (::target-roll @camera-state))))
+    (swap! camera-state update ::roll mix (::target-roll @camera-state))
+    (swap! camera-state update ::distance mix (::target-distance @camera-state))))
 
 
 (set! *warn-on-reflection* false)
