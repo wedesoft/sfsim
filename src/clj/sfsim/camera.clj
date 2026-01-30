@@ -6,11 +6,11 @@
 (ns sfsim.camera
     "Camera movement math"
     (:require
-      [clojure.math :refer (to-radians pow exp)]
-      [fastmath.vector :refer (vec3 mult add div cross normalize mag)]
-      [fastmath.matrix :refer (cols->mat)]
+      [clojure.math :refer (to-radians pow exp atan2 sqrt hypot)]
+      [fastmath.vector :refer (vec3 mult add div cross normalize mag dot)]
+      [fastmath.matrix :refer (cols->mat col)]
       [sfsim.quaternion :as q]
-      [sfsim.matrix :refer (matrix->quaternion)]
+      [sfsim.matrix :refer (matrix->quaternion quaternion->matrix)]
       [sfsim.physics :as physics]))
 
 
@@ -41,12 +41,37 @@
 
 
 (defn horizon-system
-  "Determine horizon matrix for given nose or speed vector and position"
+  "Determine horizon-aligned camera matrix for given nose or speed vector and position"
   [nose-or-speed position]
   (let [up       (normalize position)
         right    (unit-cross nose-or-speed up)
         backward (cross right up)]
     (cols->mat right up backward)))
+
+
+(defn euler->quaternion
+  "Convert Euler angles to quaternion for camera system"
+  [yaw pitch roll]
+  (let [rotation-y (q/rotation yaw (vec3 0 1 0))
+        rotation-x (q/rotation pitch (vec3 1 0 0))
+        rotation-z (q/rotation roll (vec3 0 0 1))]
+    (q/* (q/* rotation-y rotation-x) rotation-z)))
+
+
+(defn quaternion->euler
+  "Convert quaternion to Euler angles"
+  [quaternion]
+  (let [matrix    (quaternion->matrix quaternion)
+        x-axis    (col matrix 0)
+        y-axis    (col matrix 1)
+        z-axis    (col matrix 2)
+        yaw       (atan2 (z-axis 0) (z-axis 2))
+        pitch     (atan2 (- ^double (z-axis 1)) (hypot (z-axis 0) (z-axis 2)))
+        yaw-pitch (euler->quaternion yaw pitch 0.0)
+        x-prime   (q/rotate-vector yaw-pitch (vec3 1 0 0))
+        y-prime   (q/rotate-vector yaw-pitch (vec3 0 1 0))
+        roll      (atan2 (dot y-prime x-axis) (dot x-prime x-axis))]
+    {:yaw yaw :pitch pitch :roll roll}))
 
 
 (defn get-camera-pose
@@ -56,10 +81,10 @@
         orientation        (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
         nose               (q/rotate-vector orientation (vec3 1 0 0))
         horizon            (matrix->quaternion (horizon-system nose position))
-        yaw                (q/rotation (::yaw @camera-state) (vec3 0 1 0))
-        pitch              (q/rotation (::pitch @camera-state) (vec3 1 0 0))
-        roll               (q/rotation (::roll @camera-state) (vec3 0 0 1))
-        camera-orientation (q/* horizon (q/* (q/* yaw pitch) roll))
+        yaw                (::yaw @camera-state)
+        pitch              (::pitch @camera-state)
+        roll               (::roll @camera-state)
+        camera-orientation (q/* horizon (euler->quaternion yaw pitch roll))
         relative-position  (q/rotate-vector camera-orientation (mult (vec3 0 0 1) ^double (::distance @camera-state)))]
     {::position (add position relative-position) ::orientation camera-orientation}))
 

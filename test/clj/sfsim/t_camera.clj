@@ -6,7 +6,7 @@
 
 (ns sfsim.t-camera
   (:require
-    [clojure.math :refer (cos sin sqrt exp to-radians)]
+    [clojure.math :refer (cos sin sqrt exp to-radians to-degrees)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -50,6 +50,19 @@
        (horizon-system (vec3 0 1 -1) (vec3 0 100 0)) => (roughly-matrix (eye 3) 1e-6)
        (horizon-system (vec3 1 0  0) (vec3 0 100 0)) => (roughly-matrix (mat3x3 0 0 -1, 0 1 0, 1 0 0) 1e-6)
        (horizon-system (vec3 0 1  0) (vec3 0 100 0)) => (roughly-matrix (mat3x3 0 0 1, 0 1 0, -1 0 0) 1e-6))
+
+
+(tabular "Convert Euler angles to quaternion"
+       (facts (euler->quaternion (to-radians ?yaw) (to-radians ?pitch) (to-radians ?roll))
+              => (roughly-quaternion (q/->Quaternion ?real ?imag ?jmag ?kmag) 1e-6)
+             (map to-degrees ((juxt :yaw :pitch :roll) (quaternion->euler (q/->Quaternion ?real ?imag ?jmag ?kmag))))
+             => (roughly-vector [?yaw ?pitch ?roll] 1e-2))
+       ?yaw ?pitch ?roll ?real      ?imag     ?jmag      ?kmag
+        0.0  0.0    0.0 1.0        0.0        0.0        0.0
+       90.0  0.0    0.0 (sqrt 0.5) 0.0        (sqrt 0.5) 0.0
+        0.0 90.0    0.0 (sqrt 0.5) (sqrt 0.5) 0.0        0.0
+        0.0  0.0   90.0 (sqrt 0.5) 0.0        0.0        (sqrt 0.5)
+       10.0 20.0   30.0 0.951549   0.189308   0.038135   0.239298)
 
 
 (facts "Get camera pose"
