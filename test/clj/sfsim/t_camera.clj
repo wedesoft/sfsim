@@ -10,8 +10,9 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
+    [fastmath.matrix :refer (mat3x3 eye)]
     [fastmath.vector :refer (vec3 mult sub)]
-    [sfsim.conftest :refer (roughly-vector roughly-quaternion)]
+    [sfsim.conftest :refer (roughly-vector roughly-matrix roughly-quaternion)]
     [sfsim.quaternion :as q]
     [sfsim.astro :as astro]
     [sfsim.jolt :as jolt]
@@ -28,18 +29,6 @@
 
 (def radius 6378000.0)
 
-(defn position-from-lon-lat ;; TODO: remove this
-  [longitude latitude height]
-  (let [point (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))]
-    (mult point (+ radius height))))
-
-
-(defn orientation-from-lon-lat ;; TODO: remove this
-  [longitude latitude]
-  (let [radius-vector (position-from-lon-lat longitude latitude 1.0)]
-    (q/vector-to-vector-rotation (vec3 0 0 1) (sub radius-vector))))
-
-
 (def state (make-camera-state))
 (def sphere (jolt/create-and-add-dynamic-body (jolt/sphere-settings 1.0 1000.0) (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
 (def physics-state (make-physics-state sphere))
@@ -53,6 +42,14 @@
        (:sfsim.camera/target-roll @state) => 0.0
        (:sfsim.camera/target-pitch @state) => (roughly (to-radians -10.0) 1e-6)
        (:sfsim.camera/target-yaw @state) => 0.0)
+
+
+(facts "Determine horizon system"
+       (horizon-system (vec3 0 0 -1) (vec3 0 100 0)) => (roughly-matrix (eye 3) 1e-6)
+       (horizon-system (vec3 0 1 -1) (vec3 0 100 0)) => (roughly-matrix (eye 3) 1e-6)
+       (horizon-system (vec3 1 0  0) (vec3 0 100 0)) => (roughly-matrix (mat3x3 0 0 -1, 0 1 0, 1 0 0) 1e-6)
+       (horizon-system (vec3 0 1  0) (vec3 0 100 0)) => (roughly-matrix (mat3x3 0 0 1, 0 1 0, -1 0 0) 1e-6))
+
 
 (facts "Get camera pose"
        (swap! state assoc :sfsim.camera/pitch 0.0)

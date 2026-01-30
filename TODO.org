@@ -42,8 +42,8 @@
   - [X] use multimethod to dispatch rendering of plume, RCS, and maybe clouds
   - [X] refactor large cloud rendering method
   - [X] update LWJGL to 3.4.0
-  - [ ] camera state
-    - [ ] safeguard when nose vector and position vector are colinear
+  - [-] camera state
+    - [X] safeguard when nose vector and position vector are colinear
     - [ ] camera methods should not deal with atom (keep atom in main thread)
     - [ ] seamless conversion between systems
       - [ ] needs conversion from quaternion to yaw-pitch-roll

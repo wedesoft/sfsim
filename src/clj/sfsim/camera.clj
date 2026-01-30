@@ -7,7 +7,7 @@
     "Camera movement math"
     (:require
       [clojure.math :refer (to-radians pow)]
-      [fastmath.vector :refer (vec3 mult add sub cross normalize)]
+      [fastmath.vector :refer (vec3 mult add div cross normalize mag)]
       [fastmath.matrix :refer (cols->mat)]
       [sfsim.quaternion :as q]
       [sfsim.matrix :refer (matrix->quaternion)]
@@ -29,16 +29,32 @@
          ::target-yaw 0.0}))
 
 
+(defn unit-cross
+  "Determine a vector which is orthogonal to both a and b"
+  [a b]
+  (let [c      (cross a b)
+        length (mag c)]
+    (if (zero? length)
+      (q/orthogonal b)
+      (div c length))))
+
+
+(defn horizon-system
+  "Determine horizon matrix for given nose or speed vector and position"
+  [nose-or-speed position]
+  (let [up       (normalize position)
+        right    (unit-cross nose-or-speed up)
+        backward (cross right up)]
+    (cols->mat right up backward)))
+
+
 (defn get-camera-pose
   "Get camera pose in surface coordinates"
   [camera-state physics-state jd-ut]
   (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
         orientation        (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
         nose               (q/rotate-vector orientation (vec3 1 0 0))
-        up                 (normalize position)
-        right              (normalize (cross nose up))
-        backward           (cross right up)
-        horizon            (matrix->quaternion (cols->mat right up backward))
+        horizon            (matrix->quaternion (horizon-system nose position))
         yaw                (q/rotation (::yaw @camera-state) (vec3 0 1 0))
         pitch              (q/rotation (::pitch @camera-state) (vec3 1 0 0))
         roll               (q/rotation (::roll @camera-state) (vec3 0 0 1))
