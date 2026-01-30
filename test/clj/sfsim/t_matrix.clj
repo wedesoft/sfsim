@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -143,18 +143,6 @@
          (project (fm/mulv m (fv/vec4 7  3  -5 1))) => (roughly-vector (fv/vec3  1  0 1) 1e-6)
          (project (fm/mulv m (fv/vec4 2 11  -5 1))) => (roughly-vector (fv/vec3  0  1 1) 1e-6)
          (project (fm/mulv m (fv/vec4 2  3 -13 1))) => (roughly-vector (fv/vec3  0  0 0) 1e-6)))
-
-
-(facts "Generate orthogonal vector"
-       (fv/dot (orthogonal (fv/vec3 1 0 0)) (fv/vec3 1 0 0)) => 0.0
-       (fv/mag (orthogonal (fv/vec3 1 0 0))) => 1.0
-       (fv/mag (orthogonal (fv/vec3 2 0 0))) => 1.0
-       (fv/dot (orthogonal (fv/vec3 0 1 0)) (fv/vec3 0 1 0)) => 0.0
-       (fv/mag (orthogonal (fv/vec3 0 1 0))) => 1.0
-       (fv/mag (orthogonal (fv/vec3 0 2 0))) => 1.0
-       (fv/dot (orthogonal (fv/vec3 0 0 1)) (fv/vec3 0 0 1)) => 0.0
-       (fv/mag (orthogonal (fv/vec3 0 0 1))) => 1.0
-       (fv/mag (orthogonal (fv/vec3 0 0 2))) => 1.0)
 
 
 (facts "Generate isometry with given normal vector as first row"

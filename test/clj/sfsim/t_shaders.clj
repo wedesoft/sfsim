@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -15,7 +15,8 @@
     [midje.sweet :refer :all]
     [sfsim.conftest :refer (roughly-vector shader-test)]
     [sfsim.image :refer (get-vector3 convert-4d-to-2d)]
-    [sfsim.matrix :refer (orthogonal transformation-matrix)]
+    [sfsim.matrix :refer (transformation-matrix)]
+    [sfsim.quaternion :refer (orthogonal)]
     [sfsim.render :refer :all]
     [sfsim.shaders :refer :all]
     [sfsim.texture :refer :all])
