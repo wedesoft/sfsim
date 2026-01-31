@@ -20,7 +20,8 @@
 
 (defn make-camera-state
   []
-  (atom {::distance 60.0
+  (atom {::domain ::slow
+         ::distance 60.0
          ::roll 0.0
          ::pitch (to-radians -10.0)
          ::yaw 0.0
@@ -74,16 +75,30 @@
     {:yaw yaw :pitch pitch :roll roll}))
 
 
+(defmulti get-forward-direction (fn [domain _jd-ut _physics-state] domain))
+
+
+(defmethod get-forward-direction ::slow
+  [_domain jd-ut physics-state]
+  (let [orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)]
+    (q/rotate-vector orientation (vec3 1 0 0))))
+
+
+(defmethod get-forward-direction ::fast
+  [_domain jd-ut physics-state]
+  (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state))
+
+
 (defn get-camera-pose
   "Get camera pose in surface coordinates"
   [camera-state physics-state jd-ut]
   (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
-        orientation        (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
-        nose               (q/rotate-vector orientation (vec3 1 0 0))
-        horizon            (matrix->quaternion (horizon-system nose position))
+        domain             (::domain @camera-state)
         yaw                (::yaw @camera-state)
         pitch              (::pitch @camera-state)
         roll               (::roll @camera-state)
+        nose               (get-forward-direction domain jd-ut physics-state)
+        horizon            (matrix->quaternion (horizon-system nose position))
         camera-orientation (q/* horizon (euler->quaternion yaw pitch roll))
         relative-position  (q/rotate-vector camera-orientation (mult (vec3 0 0 1) ^double (::distance @camera-state)))]
     {::position (add position relative-position) ::orientation camera-orientation}))
