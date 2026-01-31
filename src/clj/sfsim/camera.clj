@@ -6,7 +6,7 @@
 (ns sfsim.camera
     "Camera movement math"
     (:require
-      [clojure.math :refer (to-radians pow exp atan2 sqrt hypot)]
+      [clojure.math :refer (to-radians pow exp atan2 hypot)]
       [fastmath.vector :refer (vec3 mult add div cross normalize mag dot)]
       [fastmath.matrix :refer (cols->mat col)]
       [sfsim.quaternion :as q]
@@ -55,7 +55,6 @@
   [quaternion]
   (let [matrix    (quaternion->matrix quaternion)
         x-axis    (col matrix 0)
-        y-axis    (col matrix 1)
         z-axis    (col matrix 2)
         yaw       (atan2 (z-axis 0) (z-axis 2))
         pitch     (atan2 (- ^double (z-axis 1)) (hypot (z-axis 0) (z-axis 2)))
@@ -140,15 +139,15 @@
     (atan2 (dot (col slow-horizon 0) (col fast-horizon 2)) (dot (col slow-horizon 2) (col fast-horizon 2)))))
 
 
-(defmulti set-domain (fn [target state _jd-ut _physics-state] [(::domain @state) target]))
+(defmulti set-mode (fn [target state _jd-ut _physics-state] [(::domain @state) target]))
 
 
-(defmethod set-domain :default
+(defmethod set-mode :default
   [target state _jd-ut _physics-state]
   (assert (= target (::domain @state))))
 
 
-(defmethod set-domain [::slow ::fast]
+(defmethod set-mode [::slow ::fast]
   [_target state jd-ut physics-state]
   (let [delta-angle (horizons-angle physics-state jd-ut)]
     (swap! state update ::yaw - delta-angle)
@@ -156,7 +155,7 @@
     (swap! state assoc ::domain ::fast)))
 
 
-(defmethod set-domain [::fast ::slow]
+(defmethod set-mode [::fast ::slow]
   [_target state jd-ut physics-state]
   (let [delta-angle (horizons-angle physics-state jd-ut)]
     (swap! state update ::yaw + delta-angle)
