@@ -778,7 +778,9 @@
               [origin camera-orientation] (if playback
                                             [@camera-position @camera-orientation]
                                             ((juxt :sfsim.camera/position :sfsim.camera/orientation)
-                                             (do
+                                             (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state))]
+                                               (camera/set-domain (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)
+                                                                  camera-state jd-ut physics-state)
                                                (camera/update-camera-pose camera-state dt @state)
                                                (camera/get-camera-pose camera-state physics-state jd-ut))))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))

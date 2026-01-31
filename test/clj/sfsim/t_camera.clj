@@ -123,6 +123,27 @@
        (:sfsim.camera/distance @state) => (roughly 6.0 1e-3))
 
 
+(facts "Change camera coordinate system"
+       (swap! state assoc :sfsim.camera/yaw 0.0)
+       (swap! state assoc :sfsim.camera/pitch 0.0)
+       (swap! state assoc :sfsim.camera/roll 0.0)
+       (swap! state assoc :sfsim.camera/target-yaw (to-radians 5.0))
+       (swap! state assoc :sfsim.camera/target-pitch 0.0)
+       (swap! state assoc :sfsim.camera/target-roll 0.0)
+       (let [camera-orientation (:sfsim.camera/orientation (get-camera-pose state physics-state astro/T0))]
+         (set-domain :sfsim.camera/fast state astro/T0 physics-state)
+         (:sfsim.camera/domain @state) => :sfsim.camera/fast
+         (to-degrees (:sfsim.camera/yaw @state)) => (roughly 90.0 1e-3)
+         (to-degrees (:sfsim.camera/target-yaw @state)) => (roughly 95.0 1e-3)
+         (:sfsim.camera/orientation (get-camera-pose state physics-state astro/T0)) => (roughly-quaternion camera-orientation 1e-6)
+         (set-domain :sfsim.camera/fast state astro/T0 physics-state)
+         (set-domain :sfsim.camera/slow state astro/T0 physics-state)
+         (:sfsim.camera/domain @state) => :sfsim.camera/slow
+         (to-degrees (:sfsim.camera/yaw @state)) => (roughly 0.0 1e-3)
+         (to-degrees (:sfsim.camera/target-yaw @state)) => (roughly 5.0 1e-3)
+         (set-domain :sfsim.camera/slow state astro/T0 physics-state)))
+
+
 (jolt/remove-and-destroy-body sphere)
 (jolt/jolt-destroy)
 
