@@ -10,11 +10,10 @@
     [clojure.math :refer (sqrt cos)]
     [comb.template :as template]
     [fastmath.matrix :refer (mulm eye inverse)]
-    [fastmath.vector :refer (vec3 mag)]
+    [fastmath.vector :refer (mag)]
     [malli.core :as m]
-    [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms vertex-atmosphere atmosphere-luts)]
-    [sfsim.clouds :refer (cloud-point lod-offset setup-cloud-render-uniforms setup-cloud-sampling-uniforms
-                          cloud-data overall-shading overall-shading-parameters)]
+    [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms atmosphere-luts)]
+    [sfsim.clouds :refer (overall-shading overall-shading-parameters)]
     [sfsim.plume :refer (model-vars)]
     [sfsim.cubemap :refer (cube-map-corners)]
     [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box shadow-patch)]
@@ -24,18 +23,14 @@
     [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                           destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
-                          setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-quads render-config
-                          render-vars diagonal-field-of-view make-render-vars clear framebuffer-render)
+                          setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-config
+                          render-vars diagonal-field-of-view make-render-vars)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
-                           texture-2d texture-3d make-float-texture-3d generate-mipmap make-empty-texture-2d
-                           make-empty-float-texture-2d)]
+                           texture-2d texture-3d make-float-texture-3d generate-mipmap)]
     [sfsim.worley :refer (worley-size)]
-    [sfsim.util :refer (N N0 sqr slurp-floats)])
-  (:import
-    (org.lwjgl.opengl
-      GL30)))
+    [sfsim.util :refer (N N0 sqr slurp-floats)]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
