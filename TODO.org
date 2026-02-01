@@ -1,19 +1,18 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
-  - Note taken on [2025-11-14 Fr 22:28] \\
-    float slider1 = iMouse.x / iResolution.x;
-    float slider2 = iMouse.y / iResolution.y;
-    float distortion1 = max(0.0, 5.0 * point.y * point.z * (slider1 - 0.5));
-    float distortion2 = max(0.0, 5.0 * point.y * (slider2 - 0.5));
-    float sdf = mix(baseSdf, shapeMix, mix(engine_pos, 1.0, transition)) + distortion1 + distortion2;
+  - Note taken on [2026-02-01 So 15:48] \\
+    Thrust vectoring:
+    If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
+    A combination of pitch and roll can produce whatever attitude control you need. source
+    [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
   - Note taken on [2025-08-26 Di 21:59] \\
     - [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
   - Note taken on [2025-08-26 Tue 09:21] \\
     - Links by Substantial_Marzipan about linear aerospike:
       - https://aerospaceweb.org/design/aerospike/aerospike.shtml
       - https://en.m.wikipedia.org/wiki/Rocketdyne_XRS-2200
-    - Project by ertugrulcetin:
+    - Project by ertugrulcetin u/ertucetin
       - https://github.com/ertugrulcetin/clojure-100k-cubes-lwjgl
   - Note taken on [2025-08-25 Mo 21:26] \\
     - [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
@@ -38,30 +37,18 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [X] integration test for model and plume
-  - [X] use multimethod to dispatch rendering of plume, RCS, and maybe clouds
-  - [X] refactor large cloud rendering method
-  - [X] update LWJGL to 3.4.0
-  - [-] camera state
-    - [X] safeguard when nose vector and position vector are colinear
-    - [ ] camera methods should not deal with atom (keep atom in main thread)
-    - [X] seamless conversion between systems
-      - [X] needs conversion from quaternion to yaw-pitch-roll
-      - [X] surface: forward is heading, down is earth
-      - [X] orbit: forward is speed vector, down is earth
+  - [ ] camera methods should not deal with atom (keep atom in main thread)
+  - [ ] use state variable to consolidate atoms and simplify recording and playback code
+  - [ ] create high level rendering methods to simplify main program and integration tests
+  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] Jolt physics problem with gear ground collision at latitude below zero?
   - [ ] add RCS state to physics-state
-  - [ ] use state variable to consolidate atoms and simplify recording and playback code
-  - [ ] schemas for model, planet, and atmosphere geometry renderer
-  - [ ] create high level rendering methods to simplify main program and integration tests
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
   - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
-  - [ ] Thrust vectoring:
-        If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
-        A combination of pitch and roll can produce whatever attitude control you need. source
-        [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
   - [ ] animate control surfaces and air brake
+  - [ ] reentry physics
+    - [ ] reentry flame
   - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
   - [ ] limit time step to avoid physics problems
@@ -74,7 +61,6 @@
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
   - [ ] moon landing physics (hover thrusters), hover thruster locations
   - [ ] docking physics
-  - [ ] reentry flame
 * TODO [#B] add launchpad and runway                                   :scenery:
   - Note taken on [2025-08-14 Do 12:58] \\
     [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,
