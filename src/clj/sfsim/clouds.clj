@@ -703,7 +703,7 @@
 
 
 (defn render-cloud-front
-  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars model-vars shadow-vars]
+  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars shadow-vars]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
     (use-program (:sfsim.clouds/atmosphere-front programs))
     (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-front programs) other cloud-render-vars shadow-vars)
@@ -719,7 +719,7 @@
 
 
 (defn render-cloud-back
-  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars model-vars shadow-vars]
+  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars shadow-vars]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
     (use-program (:sfsim.clouds/atmosphere-back programs))
     (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-back programs) other cloud-render-vars shadow-vars)
@@ -749,11 +749,11 @@
                          (clear (vec3 0.0 0.0 0.0) 0.0)
                          (without-depth-test
                            (with-stencils
-                             (when front (render-cloud-front other cloud-render-vars model-vars shadow-vars))
+                             (when front (render-cloud-front other cloud-render-vars shadow-vars))
                              (with-underlay-blending
                                (doseq [[thruster transform] plume-transforms]
                                       (render-plume-overlay other thruster model-vars transform))
-                               (when back (render-cloud-back other cloud-render-vars model-vars shadow-vars))))))
+                               (when back (render-cloud-back other cloud-render-vars shadow-vars))))))
      overlay)))
 
 

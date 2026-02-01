@@ -9,11 +9,10 @@
     (:require
       [malli.core :as m]
       [comb.template :as template]
-      [sfsim.matrix :refer (fvec3 fmat4)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]
-      [sfsim.render :refer (uniform-float uniform-float uniform-matrix4 uniform-vector3)]))
+      [sfsim.render :refer (uniform-float uniform-float)]))
 
 
 (def plume-phase
