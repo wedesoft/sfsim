@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -7,11 +7,11 @@
 (ns sfsim.matrix
   "Matrix and vector operations"
   (:require
-    [clojure.math :refer (cos sin tan pow atan2)]
+    [clojure.math :refer (tan pow atan2)]
     [fastmath.matrix :as fm]
     [fastmath.vector :as fv]
     [malli.core :as m]
-    [sfsim.quaternion :refer (quaternion rotate-vector rotation)]
+    [sfsim.quaternion :refer (quaternion rotate-vector rotation orthogonal)]
     [sfsim.util :refer (N N0)])
   (:import
     [fastmath.vector
@@ -43,30 +43,6 @@
   {:malli/schema [:=> [:cat fvec4] fvec3]}
   [v]
   (fv/vec3 (v 0) (v 1) (v 2)))
-
-
-(defn rotation-x
-  "Rotation matrix around x-axis"
-  {:malli/schema [:=> [:cat :double] fmat3]}
-  [angle]
-  (let [ca (cos angle) sa (sin angle)]
-    (fm/mat3x3 1 0 0, 0 ca (- sa), 0 sa ca)))
-
-
-(defn rotation-y
-  "Rotation matrix around y-axis"
-  {:malli/schema [:=> [:cat :double] fmat3]}
-  [angle]
-  (let [ca (cos angle) sa (sin angle)]
-    (fm/mat3x3 ca 0 sa, 0 1 0, (- sa) 0 ca)))
-
-
-(defn rotation-z
-  "Rotation matrix around z-axis"
-  {:malli/schema [:=> [:cat :double] fmat3]}
-  [angle]
-  (let [ca (cos angle) sa (sin angle)]
-    (fm/mat3x3 ca (- sa) 0, sa ca 0, 0 0 1)))
 
 
 (defn quaternion->matrix
@@ -233,14 +209,6 @@
   {:malli/schema [:=> [:cat bbox] fmat4]}
   [bounding-box]
   (fm/mulm (fm/mat4x4 0.5 0 0 0.5, 0 0.5 0 0.5, 0 0 1 0, 0 0 0 1) (shadow-box-to-ndc bounding-box)))
-
-
-(defn orthogonal
-  "Create orthogonal vector to specified 3D vector"
-  {:malli/schema [:=> [:cat fvec3] fvec3]}
-  [n]
-  (let [b (first (sort-by #(abs (fv/dot n %)) (fm/rows (fm/eye 3))))]
-    (fv/normalize (fv/cross n b))))
 
 
 (defn oriented-matrix

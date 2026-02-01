@@ -3,7 +3,8 @@
         levand/immuconf {:mvn/version "0.1.0"}
         org.clojure/core.memoize {:mvn/version "1.2.273"}
         comb/comb {:mvn/version "1.0.0"}
-        ch.qos.logback/logback-classic {:mvn/version "1.5.24"}
+        org.clojure/tools.logging {:mvn/version "1.3.1"}
+        ch.qos.logback/logback-classic {:mvn/version "1.5.25"}
         progrock/progrock {:mvn/version "1.0.0"}
         org.clj-commons/claypoole {:mvn/version "1.2.2"}
         generateme/fastmath {:mvn/version "2.4.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
@@ -11,19 +12,19 @@
         org.clj-commons/gloss {:mvn/version "0.3.6"}
         org.apache.commons/commons-compress {:mvn/version "1.28.0"}
         org.suskalo/coffi {:mvn/version "1.0.615"}
-        org.lwjgl/lwjgl {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-opengl {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-glfw {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-nuklear {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-nuklear$natives-linux {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-stb {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-assimp {:mvn/version "3.3.6"}
-        org.lwjgl/lwjgl-assimp$natives-linux {:mvn/version "3.3.6"}}
- :paths ["src/clj"]
+        org.lwjgl/lwjgl {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-opengl {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-glfw {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-nuklear {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-nuklear$natives-linux {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-stb {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-assimp {:mvn/version "3.4.0"}
+        org.lwjgl/lwjgl-assimp$natives-linux {:mvn/version "3.4.0"}}
+ :paths ["src/clj" "resources"]
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED" "-XX:+UseZGC"
                             "-XX:+UseDynamicNumberOfGCThreads" "--sun-misc-unsafe-memory-access=allow"]
                  :main-opts ["-m" "sfsim.core"]}

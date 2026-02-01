@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -464,7 +464,7 @@
 
 
 (defn octaves
-  "Creat eoctaves summing to one"
+  "Create octaves summing to one"
   [^long n ^double decay]
   (let [series (take n (iterate #(* ^double % decay) 1.0))
         sum    (apply + series)]
@@ -495,6 +495,24 @@
                 evicted (remove (set (keys updated)) (keys old))]
             (doseq [x evicted] (destructor (cache/lookup old x)))
             result)))))
+
+
+(defn byte-buffer->byte-array
+  [buffer]
+  (if buffer
+    (let [array (byte-array (.limit ^java.nio.DirectByteBuffer buffer))]
+      (.get ^java.nio.DirectByteBuffer buffer array)
+      array)
+    (byte-array [])))
+
+
+(defn float-buffer->float-array
+  [buffer]
+  (if buffer
+    (let [array (float-array (.limit ^java.nio.DirectFloatBufferU buffer))]
+      (.get ^java.nio.DirectFloatBufferU buffer array)
+      array)
+    (float-array [])))
 
 
 (set! *warn-on-reflection* false)

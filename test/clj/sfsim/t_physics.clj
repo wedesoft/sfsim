@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -10,11 +10,10 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [fastmath.matrix :refer (inverse mulv)]
+    [fastmath.matrix :refer (mulv rotation-matrix-3d-z)]
     [fastmath.vector :refer (vec3)]
     [sfsim.conftest :refer (roughly-vector roughly-quaternion)]
     [sfsim.quaternion :as q]
-    [sfsim.matrix :as matrix]
     [sfsim.jolt :as jolt]
     [sfsim.astro :as astro]
     [sfsim.physics :refer :all]))
@@ -125,7 +124,27 @@
 (def sphere (jolt/create-and-add-dynamic-body (jolt/sphere-settings 1.0 1000.0) (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
 
 
-(def state (atom {:sfsim.physics/position (vec3 2 3 5) :sfsim.physics/speed (vec3 1 0 0) :sfsim.physics/body sphere}))
+(def state (make-physics-state sphere))
+
+
+(facts "Initial physics state"
+       (:sfsim.physics/display-speed @state) => 0.0
+       (:sfsim.physics/throttle @state) => 0.0
+       (:sfsim.physics/air-brake @state) => 0.0
+       (:sfsim.physics/gear @state) => 1.0)
+
+
+(facts "Handle control inputs"
+       (let [input-state (atom {:sfsim.input/throttle 0.1
+                                :sfsim.input/air-brake true
+                                :sfsim.input/gear-down false})]
+         (set-control-inputs state input-state 0.25)
+         (:sfsim.physics/throttle @state) => 0.1
+         (:sfsim.physics/air-brake @state) => 0.5
+         (:sfsim.physics/gear @state) => 0.875
+         (swap! input-state assoc :sfsim.input/air-brake false)
+         (set-control-inputs state input-state 0.25)
+         (:sfsim.physics/air-brake @state) => 0.0))
 
 
 (facts "Set position of space craft near surface (rotating coordinate system centered on Earth)"
@@ -182,7 +201,7 @@
 
 
 (facts "Switch from Earth system to ICRS system and back"
-       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (matrix/rotation-z (to-radians 90.0)))]
+       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
          (set-pose :sfsim.physics/surface state (vec3 6678000 0 0) (q/rotation (to-radians 45.0) (vec3 0 0 1)))
          (set-speed :sfsim.physics/surface state (vec3 100 0 0) (vec3 1 0 0))
          (get-position :sfsim.physics/orbit astro/T0 state) => (roughly-vector (vec3 0 6678000 0) 1e-6)
@@ -249,7 +268,7 @@
 
 
 (facts "Apply forces in Earth centered rotating coordinate system"
-       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (matrix/rotation-z (to-radians 90.0)))]
+       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
          (set-pose :sfsim.physics/surface state (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
          (set-speed :sfsim.physics/surface state (vec3 0 0 0) (vec3 0 0 0))
          (add-force :sfsim.physics/surface astro/T0 state (vec3 (jolt/get-mass sphere) 0 0))
@@ -263,7 +282,7 @@
 
 
 (facts "Apply forces in Earth centered ICRS aligned coordinate system"
-      (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (matrix/rotation-z (to-radians 90.0)))]
+      (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
          (set-pose :sfsim.physics/orbit state (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
          (set-speed :sfsim.physics/orbit state (vec3 0 0 0) (vec3 0 0 0))
          (add-force :sfsim.physics/orbit astro/T0 state (vec3 (jolt/get-mass sphere) 0 0))
@@ -277,7 +296,7 @@
 
 
 (facts "Apply torques in Earth centered rotating coordinate system"
-       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (matrix/rotation-z (to-radians 90.0)))]
+       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
          (set-pose :sfsim.physics/surface state (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
          (set-speed :sfsim.physics/surface state (vec3 0 0 0) (vec3 0 0 0))
          (add-torque :sfsim.physics/surface astro/T0 state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
@@ -291,7 +310,7 @@
 
 
 (facts "Apply torques in Earth centered ICRS aligned coordinate system"
-      (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (matrix/rotation-z (to-radians 90.0)))]
+      (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
          (set-pose :sfsim.physics/orbit state (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
          (set-speed :sfsim.physics/orbit state (vec3 0 0 0) (vec3 0 0 0))
          (add-torque :sfsim.physics/orbit astro/T0 state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))

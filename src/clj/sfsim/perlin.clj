@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -32,7 +32,7 @@
    (apply vec3
           (selector [[1  1  0] [-1  1  0] [1 -1  0] [-1 -1  0]
                      [1  0  1] [-1  0  1] [1  0 -1] [-1  0 -1]
-                     [0  1  1] [+0 -1  1] [0  1 -1] [+0 -1 -1]]))))
+                     [0  1  1] [ 0 -1  1] [0  1 -1] [ 0 -1 -1]]))))
 
 
 (defn random-gradient-grid

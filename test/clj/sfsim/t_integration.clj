@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -8,7 +8,7 @@
   (:require
     [clojure.java.io :as io]
     [clojure.math :refer (PI to-radians)]
-    [fastmath.matrix :refer (mat3x3 mulm mulv)]
+    [fastmath.matrix :refer (mat3x3 mulm mulv rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z)]
     [fastmath.vector :refer (vec2 vec3 add div sub)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -19,7 +19,7 @@
     [sfsim.clouds :as clouds]
     [sfsim.config :as config]
     [sfsim.conftest :refer (roughly-vector roughly-matrix is-image)]
-    [sfsim.matrix :refer (transformation-matrix rotation-x rotation-y rotation-z rotation-matrix quaternion->matrix
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix
                           matrix->quaternion)]
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
@@ -131,7 +131,9 @@
                                                 :sfsim.model/data config/model-config
                                                 :sfsim.atmosphere/luts atmosphere-luts}
                      object-position           (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
-                     object-to-world           (transformation-matrix (mulm (rotation-y (/ PI 4)) (rotation-x (/ PI 6))) object-position)
+                     object-to-world           (transformation-matrix (mulm (rotation-matrix-3d-y (/ PI 4))
+                                                                            (rotation-matrix-3d-x (/ PI 6)))
+                                                                      object-position)
                      opacity-renderer          (opacity/make-opacity-renderer data)
                      planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
                      planet-renderer           (planet/make-planet-renderer data)
@@ -158,7 +160,7 @@
                                                                             [] geometry)
                      tex                       (texture-render-color-depth width height true
                                                                            (clear (vec3 0 1 0) 0.0)
-                                                                           (model/render-scenes scene-renderer render-vars model-vars
+                                                                           (model/render-scenes scene-renderer render-vars
                                                                                                 shadow-vars [] geometry clouds
                                                                                                 [object])
                                                                            (planet/render-planet planet-renderer render-vars
@@ -209,7 +211,9 @@
                 position                  (vec3 (+ 1.5 6378000.0) 0 0)
                 object-radius             1.4
                 object-position           (add position (q/rotate-vector orientation (vec3 0 0 -5)))
-                object-to-world           (transformation-matrix (mulm (rotation-y (/ PI 6)) (rotation-x (/ PI 6))) object-position)
+                object-to-world           (transformation-matrix (mulm (rotation-matrix-3d-y (/ PI 6))
+                                                                       (rotation-matrix-3d-x (/ PI 6)))
+                                                                 object-position)
                 opacity-renderer          (opacity/make-opacity-renderer data)
                 planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
                 planet-renderer           (planet/make-planet-renderer data)
@@ -238,7 +242,7 @@
                                                                        [] geometry)
                 tex                       (texture-render-color-depth width height true
                                                                       (clear (vec3 0 1 0) 0.0)
-                                                                      (model/render-scenes scene-renderer render-vars model-vars
+                                                                      (model/render-scenes scene-renderer render-vars
                                                                                            shadow-vars [object-shadow] geometry clouds
                                                                                            [object])
                                                                       (planet/render-planet planet-renderer render-vars shadow-vars
@@ -275,7 +279,8 @@
                 position                  (vec3 (+ 100.0 6378000.0) 0 0)
                 orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
                 object-position           (add position (q/rotate-vector orientation (vec3 0 0 -50)))
-                object-to-world           (transformation-matrix (mulm (rotation-x (/ PI -6)) (rotation-z (/ PI -2)))
+                object-to-world           (transformation-matrix (mulm (rotation-matrix-3d-x (/ PI -6))
+                                                                       (rotation-matrix-3d-z (/ PI -2)))
                                                                  object-position)
                 object-radius             (:sfsim.model/object-radius config/model-config)
                 light-direction           (vec3 1 0 0)
@@ -316,7 +321,7 @@
                                                                        [] geometry)
                 tex    (texture-render-color-depth width height true
                                                    (clear (vec3 0 0 0) 0.0)
-                                                   (model/render-scenes scene-renderer render-vars model-vars
+                                                   (model/render-scenes scene-renderer render-vars
                                                                         shadow-vars [object-shadow] geometry clouds
                                                                         [object])
                                                    (planet/render-planet planet-renderer render-vars shadow-vars
@@ -402,7 +407,8 @@ void main()
                 position                  (vec3 (+ 100.0 6378000.0) 0 0)
                 orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
                 object-position           (add position (q/rotate-vector orientation (vec3 0 0 -50)))
-                object-orientation        (matrix->quaternion (mulm (rotation-x (* 0.8 PI)) (rotation-y (* -0.4 PI))))
+                object-orientation        (matrix->quaternion (mulm (rotation-matrix-3d-x (* 0.8 PI))
+                                                                    (rotation-matrix-3d-y (* -0.4 PI))))
                 object-to-world           (transformation-matrix (quaternion->matrix object-orientation) object-position)
                 object-radius             (:sfsim.model/object-radius config/model-config)
                 light-direction           (vec3 1 0 0)
@@ -452,7 +458,7 @@ void main()
                                                                        plume-transforms geometry)
                 tex    (texture-render-color-depth width height true
                                                    (clear (vec3 0 0 0) 0.0)
-                                                   (model/render-scenes scene-renderer render-vars model-vars
+                                                   (model/render-scenes scene-renderer render-vars
                                                                         shadow-vars [object-shadow] geometry clouds
                                                                         [object])
                                                    (planet/render-planet planet-renderer render-vars shadow-vars

@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -561,8 +561,8 @@
 
 (defn fragment-scene
   "Fragment shader for rendering scene in atmosphere"
-  {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] render/shaders]}
-  [textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves]
+  {:malli/schema [:=> [:cat :boolean :boolean N N0] render/shaders]}
+  [textured bump num-steps num-scene-shadows]
   [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
    (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
    (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function cloud-overlay
@@ -628,10 +628,7 @@
   {:malli/schema [:=> [:cat :boolean :boolean N0 N0 data] :int]}
   [textured bump texture-offset num-scene-shadows data]
   (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
-        perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
-        cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
-        model-data            (:sfsim.model/data data)
-        fragment-shader       (fragment-scene textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves)
+        fragment-shader       (fragment-scene textured bump num-steps num-scene-shadows)
         program               (make-program :sfsim.render/vertex [(vertex-scene textured bump num-scene-shadows)]
                                             :sfsim.render/fragment fragment-shader)]
     (setup-scene-static-uniforms program texture-offset num-scene-shadows textured bump data)
@@ -769,10 +766,10 @@
 
 (defn render-scenes
   "Render a list of scenes"
-  {:malli/schema [:=> [:cat scene-renderer render-vars model-vars shadow-vars [:vector scene-shadow]
+  {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector scene-shadow]
                             [:map [:sfsim.clouds/distance texture-2d]] texture-2d [:vector [:map [::root node]]]]
                       :nil]}
-  [scene-renderer render-vars model-vars shadow-vars scene-shadows geometry clouds scenes]
+  [scene-renderer render-vars shadow-vars scene-shadows geometry clouds scenes]
   (let [render-config      (:sfsim.render/config scene-renderer)
         cloud-data         (:sfsim.clouds/data scene-renderer)
         atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)

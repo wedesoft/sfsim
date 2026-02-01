@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -14,7 +14,9 @@
     [sfsim.util :refer :all])
   (:import
     (java.io
-      File)))
+      File)
+    (org.lwjgl
+      BufferUtils)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -238,3 +240,23 @@
        @destruct => nil
        (sqr-cache 5.0) => 25.0
        @destruct => 9.0)
+
+
+(facts "Convert byte buffer to byte array"
+       (let [buf (BufferUtils/createByteBuffer 3)]
+         (.put buf (byte 2))
+         (.put buf (byte 3))
+         (.put buf (byte 5))
+         (.flip buf)
+         (seq (byte-buffer->byte-array buf)) => [2 3 5]
+         (seq (byte-buffer->byte-array nil)) => nil))
+
+
+(facts "Convert float buffer to float array"
+       (let [buf (BufferUtils/createFloatBuffer 3)]
+         (.put buf 2.0)
+         (.put buf 3.0)
+         (.put buf 5.0)
+         (.flip buf)
+         (seq (float-buffer->float-array buf)) => [2.0 3.0 5.0]
+         (seq (float-buffer->float-array nil)) => nil))

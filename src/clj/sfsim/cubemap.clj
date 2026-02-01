@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -9,10 +9,10 @@
   (:require
     [clojure.core.memoize :as z]
     [clojure.math :refer (cos sin sqrt floor atan2 round PI)]
-    [fastmath.matrix :refer (mulv)]
+    [fastmath.matrix :refer (mulv rotation-matrix-3d-y rotation-matrix-3d-z)]
     [fastmath.vector :refer (vec3 add mult div cross mag normalize)]
     [sfsim.image :refer (slurp-image get-pixel get-short)]
-    [sfsim.matrix :refer (rotation-y rotation-z fvec3)]
+    [sfsim.matrix :refer (fvec3)]
     [sfsim.util :refer (slurp-shorts tile-path sqr)])
   (:import
     [clojure.lang
@@ -213,7 +213,7 @@
   ^Vec3 [^Vec3 p ^long level ^long tilesize]
   (let [lon  (longitude p)
         norm (mag p)]
-    (mulv (rotation-z lon) (vec3 0 (/ (* norm PI) (* 2 tilesize (bit-shift-left 1 level))) 0))))
+    (mulv (rotation-matrix-3d-z lon) (vec3 0 (/ (* norm PI) (* 2 tilesize (bit-shift-left 1 level))) 0))))
 
 
 (defn offset-latitude
@@ -223,7 +223,7 @@
         lat  (latitude p)
         norm (mag p)
         v    (vec3 0 0 (/ (* norm PI) (* 2 tilesize (bit-shift-left 1 level))))
-        vs   (mulv (rotation-z lon) (mulv (rotation-y (- lat)) v))]
+        vs   (mulv (rotation-matrix-3d-z lon) (mulv (rotation-matrix-3d-y (- lat)) v))]
     vs))
 
 
