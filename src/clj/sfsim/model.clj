@@ -561,8 +561,8 @@
 
 (defn fragment-scene
   "Fragment shader for rendering scene in atmosphere"
-  {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] render/shaders]}
-  [textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves]
+  {:malli/schema [:=> [:cat :boolean :boolean N N0] render/shaders]}
+  [textured bump num-steps num-scene-shadows]
   [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
    (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
    (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function cloud-overlay
@@ -628,10 +628,7 @@
   {:malli/schema [:=> [:cat :boolean :boolean N0 N0 data] :int]}
   [textured bump texture-offset num-scene-shadows data]
   (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
-        perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
-        cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
-        model-data            (:sfsim.model/data data)
-        fragment-shader       (fragment-scene textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves)
+        fragment-shader       (fragment-scene textured bump num-steps num-scene-shadows)
         program               (make-program :sfsim.render/vertex [(vertex-scene textured bump num-scene-shadows)]
                                             :sfsim.render/fragment fragment-shader)]
     (setup-scene-static-uniforms program texture-offset num-scene-shadows textured bump data)

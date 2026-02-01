@@ -7,7 +7,7 @@
 (ns sfsim.matrix
   "Matrix and vector operations"
   (:require
-    [clojure.math :refer (cos sin tan pow atan2)]
+    [clojure.math :refer (tan pow atan2)]
     [fastmath.matrix :as fm]
     [fastmath.vector :as fv]
     [malli.core :as m]

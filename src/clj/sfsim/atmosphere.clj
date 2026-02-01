@@ -16,18 +16,15 @@
     [sfsim.units :refer (rankin foot pound-force slugs)]
     [sfsim.ray :refer (integral-ray ray)]
     [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
-                          uniform-vector3 destroy-program make-vertex-array-object use-textures framebuffer-render
-                          destroy-vertex-array-object render-quads render-config render-vars clear)]
+                          uniform-vector3 destroy-program make-vertex-array-object use-textures destroy-vertex-array-object
+                          render-quads render-config render-vars)]
     [sfsim.shaders :as shaders]
     [sfsim.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection sphere)]
-    [sfsim.texture :refer (destroy-texture make-vector-texture-2d make-vector-texture-4d
-                           texture-2d texture-4d make-empty-texture-2d make-empty-float-texture-2d)]
+    [sfsim.texture :refer (destroy-texture make-vector-texture-2d make-vector-texture-4d texture-2d texture-4d)]
     [sfsim.util :refer (third fourth limit-quot sqr N slurp-floats cube)])
   (:import
     (fastmath.vector
-      Vec3)
-    (org.lwjgl.opengl
-      GL30)))
+      Vec3)))
 
 
 (set! *unchecked-math* :warn-on-boxed)

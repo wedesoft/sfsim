@@ -661,7 +661,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 
 
 (tabular "Render red cube with fog and atmosphere"
-         (with-redefs [model/fragment-scene (fn [textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves]
+         (with-redefs [model/fragment-scene (fn [textured bump num-steps num-scene-shadows]
                                               (conj model-shader-mocks
                                                     (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                    {:textured textured :bump bump :num-scene-shadows 0})))
@@ -911,7 +911,7 @@ vec4 cloud_overlay(float depth)
 (tabular "Integration of model's self-shading"
          (fact
            (with-invisible-window
-             (with-redefs [model/fragment-scene (fn [textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves]
+             (with-redefs [model/fragment-scene (fn [textured bump num-steps num-scene-shadows]
                                                   (conj [model-shadow-mocks shaders/phong
                                                          (last (clouds/overall-shading 3 (repeat num-scene-shadows
                                                                                                  ["average_scene_shadow"

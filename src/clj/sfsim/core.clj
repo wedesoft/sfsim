@@ -662,9 +662,6 @@
             aileron   (@state :sfsim.input/aileron)
             elevator  (@state :sfsim.input/elevator)
             rudder    (@state :sfsim.input/rudder)
-            rcs-roll  (@state :sfsim.input/rcs-roll)
-            rcs-pitch (@state :sfsim.input/rcs-pitch)
-            rcs-yaw   (@state :sfsim.input/rcs-yaw)
             brake     (if (@state :sfsim.input/brake) 1.0 (if (@state :sfsim.input/parking-brake) 0.1 0.0))]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface jd-ut physics-state))
