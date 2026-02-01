@@ -45,10 +45,10 @@
   - [-] camera state
     - [X] safeguard when nose vector and position vector are colinear
     - [ ] camera methods should not deal with atom (keep atom in main thread)
-    - [ ] seamless conversion between systems
-      - [ ] needs conversion from quaternion to yaw-pitch-roll
-      - [ ] surface: forward is heading, down is earth
-      - [ ] orbit: forward is speed vector, down is earth
+    - [X] seamless conversion between systems
+      - [X] needs conversion from quaternion to yaw-pitch-roll
+      - [X] surface: forward is heading, down is earth
+      - [X] orbit: forward is speed vector, down is earth
   - [ ] Jolt physics problem with gear ground collision at latitude below zero?
   - [ ] add RCS state to physics-state
   - [ ] use state variable to consolidate atoms and simplify recording and playback code

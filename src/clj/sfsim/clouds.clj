@@ -636,7 +636,7 @@
 
 
 (defn setup-dynamic-cloud-uniforms
-  [program other cloud-render-vars model-vars shadow-vars]
+  [program other cloud-render-vars shadow-vars]
   (let [render-config   (:sfsim.render/config other)
         cloud-data      (:sfsim.clouds/data other)
         atmosphere-luts (:sfsim.atmosphere/luts other)]
@@ -703,37 +703,37 @@
 
 
 (defn render-cloud-front
-  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars model-vars shadow-vars]
+  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars shadow-vars]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
     (use-program (:sfsim.clouds/atmosphere-front programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-front programs) other cloud-render-vars model-vars shadow-vars)
+    (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-front programs) other cloud-render-vars shadow-vars)
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
     (use-program (:sfsim.clouds/planet-front programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-front programs) other cloud-render-vars model-vars shadow-vars)
+    (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-front programs) other cloud-render-vars shadow-vars)
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
     (use-program (:sfsim.clouds/scene-front programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/scene-front programs) other cloud-render-vars model-vars shadow-vars)
+    (setup-dynamic-cloud-uniforms (:sfsim.clouds/scene-front programs) other cloud-render-vars shadow-vars)
     (render-quads vao)))
 
 
 (defn render-cloud-back
-  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars model-vars shadow-vars]
+  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars shadow-vars]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
     (use-program (:sfsim.clouds/atmosphere-back programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-back programs) other cloud-render-vars model-vars shadow-vars)
+    (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-back programs) other cloud-render-vars shadow-vars)
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
     (use-program (:sfsim.clouds/planet-back programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-back programs) other cloud-render-vars model-vars shadow-vars)
+    (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-back programs) other cloud-render-vars shadow-vars)
     (render-quads vao)))
 
 
 (defn render-cloud-overlay
   ([cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms geometry]
    (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms geometry true true))
-  ([{:sfsim.clouds/keys [programs vao plume-vao] :as other} cloud-render-vars model-vars shadow-vars plume-transforms geometry
+  ([{:sfsim.clouds/keys [programs] :as other} cloud-render-vars model-vars shadow-vars plume-transforms geometry
     front back]
    (let [overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
          overlay-height  (:sfsim.render/overlay-height cloud-render-vars)
@@ -749,11 +749,11 @@
                          (clear (vec3 0.0 0.0 0.0) 0.0)
                          (without-depth-test
                            (with-stencils
-                             (when front (render-cloud-front other cloud-render-vars model-vars shadow-vars))
+                             (when front (render-cloud-front other cloud-render-vars shadow-vars))
                              (with-underlay-blending
                                (doseq [[thruster transform] plume-transforms]
                                       (render-plume-overlay other thruster model-vars transform))
-                               (when back (render-cloud-back other cloud-render-vars model-vars shadow-vars))))))
+                               (when back (render-cloud-back other cloud-render-vars shadow-vars))))))
      overlay)))
 
 

@@ -11,7 +11,7 @@
    [clojure.core :as c]
    [clojure.math :refer (PI cos sqrt) :as m]
    [fastmath.matrix :refer (rows eye)]
-   [fastmath.vector :refer (vec3 mag mult cross dot) :as fv]
+   [fastmath.vector :refer (mag mult cross dot) :as fv]
    [malli.core :as mc]
    [sfsim.util :refer (sinc sqr)])
   (:import
