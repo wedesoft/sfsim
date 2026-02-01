@@ -160,7 +160,7 @@
                                                                             [] geometry)
                      tex                       (texture-render-color-depth width height true
                                                                            (clear (vec3 0 1 0) 0.0)
-                                                                           (model/render-scenes scene-renderer render-vars model-vars
+                                                                           (model/render-scenes scene-renderer render-vars
                                                                                                 shadow-vars [] geometry clouds
                                                                                                 [object])
                                                                            (planet/render-planet planet-renderer render-vars
@@ -242,7 +242,7 @@
                                                                        [] geometry)
                 tex                       (texture-render-color-depth width height true
                                                                       (clear (vec3 0 1 0) 0.0)
-                                                                      (model/render-scenes scene-renderer render-vars model-vars
+                                                                      (model/render-scenes scene-renderer render-vars
                                                                                            shadow-vars [object-shadow] geometry clouds
                                                                                            [object])
                                                                       (planet/render-planet planet-renderer render-vars shadow-vars
@@ -321,7 +321,7 @@
                                                                        [] geometry)
                 tex    (texture-render-color-depth width height true
                                                    (clear (vec3 0 0 0) 0.0)
-                                                   (model/render-scenes scene-renderer render-vars model-vars
+                                                   (model/render-scenes scene-renderer render-vars
                                                                         shadow-vars [object-shadow] geometry clouds
                                                                         [object])
                                                    (planet/render-planet planet-renderer render-vars shadow-vars
@@ -458,7 +458,7 @@ void main()
                                                                        plume-transforms geometry)
                 tex    (texture-render-color-depth width height true
                                                    (clear (vec3 0 0 0) 0.0)
-                                                   (model/render-scenes scene-renderer render-vars model-vars
+                                                   (model/render-scenes scene-renderer render-vars
                                                                         shadow-vars [object-shadow] geometry clouds
                                                                         [object])
                                                    (planet/render-planet planet-renderer render-vars shadow-vars
