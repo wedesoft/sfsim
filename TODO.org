@@ -49,6 +49,7 @@
   - [ ] animate control surfaces and air brake
   - [ ] reentry physics
     - [ ] reentry flame
+    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
   - [ ] limit time step to avoid physics problems
