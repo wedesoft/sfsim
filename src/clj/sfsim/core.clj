@@ -605,7 +605,7 @@
   (MemoryStack/stackPop))
 
 
-(def camera-state (camera/make-camera-state))
+(def camera-state (atom (camera/make-camera-state)))
 
 
 (def camera-position (atom nil))
@@ -743,7 +743,7 @@
                                    [1.0 1.0 1.0]))
               (when @recording
                 (let [[origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
-                                                   (camera/get-camera-pose camera-state physics-state jd-ut))
+                                                   (camera/get-camera-pose @camera-state physics-state jd-ut))
                       frame {:timeseconds (+ (* ^double @time-delta 86400.0) ^double @t0)
                              :position (physics/get-position :sfsim.physics/surface jd-ut physics-state)
                              :orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)
@@ -773,11 +773,11 @@
               [origin camera-orientation] (if playback
                                             [@camera-position @camera-orientation]
                                             ((juxt :sfsim.camera/position :sfsim.camera/orientation)
-                                             (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state))]
-                                               (camera/set-mode (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)
-                                                                camera-state jd-ut physics-state)
-                                               (camera/update-camera-pose camera-state dt @state)
-                                               (camera/get-camera-pose camera-state physics-state jd-ut))))
+                                             (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state))
+                                                   mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
+                                               (swap! camera-state camera/set-mode mode jd-ut physics-state)
+                                               (swap! camera-state camera/update-camera-pose dt @state)
+                                               (camera/get-camera-pose @camera-state physics-state jd-ut))))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))

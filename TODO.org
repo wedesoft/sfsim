@@ -37,7 +37,11 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [ ] camera methods should not deal with atom (keep atom in main thread)
+  - [X] camera methods should not deal with atom (keep atom in main thread)
+  - [ ] input atom should be managed in core
+  - [ ] physics atom should be managed in core
+  - [ ] replace atoms in atmosphere-lut?
+  - [ ] replace atoms in clouds?
   - [ ] use state variable to consolidate atoms and simplify recording and playback code
   - [ ] create high level rendering methods to simplify main program and integration tests
   - [ ] schemas for model, planet, and atmosphere geometry renderer
