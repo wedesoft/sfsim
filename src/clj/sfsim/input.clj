@@ -536,7 +536,7 @@
 (defn simulator-joystick-with-dead-zone
   "Apply filtered joystick axis value to state"
   [aerofoil rcs-thruster epsilon state value]
-  (if (@state ::rcs)
+  (if (state ::rcs)
     (assoc state rcs-thruster (dead-zone-three-state epsilon value))
     (assoc state aerofoil (dead-zone-continuous epsilon value))))
 
@@ -547,7 +547,8 @@
 
 
 (defmethod simulator-joystick-axis nil
-  [_id _epsilon _state _value])
+  [_id _epsilon state _value]
+  state)
 
 
 (defmethod simulator-joystick-axis ::aileron-inverted
@@ -596,7 +597,8 @@
 
 
 (defmethod simulator-joystick-button nil
-  [_id _state _action])
+  [_id state _action]
+  state)
 
 
 (defmethod simulator-joystick-button ::gear
@@ -615,14 +617,16 @@
 
 (defmethod simulator-joystick-button ::parking-brake
   [_id state action]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state assoc ::parking-brake true)))
+  (if (= action GLFW/GLFW_PRESS)
+    (assoc state ::parking-brake true)
+    state))
 
 
 (defmethod simulator-joystick-button ::air-brake
   [_id state action]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::air-brake not)))
+  (if (= action GLFW/GLFW_PRESS)
+    (assoc state update ::air-brake not)
+    state))
 
 
 (defn menu-joystick-axis
