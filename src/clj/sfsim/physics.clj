@@ -296,12 +296,12 @@
         (set-speed ::surface linear-velocity angular-velocity))))
 
 
-(defmulti update-state (fn [state _dt _acceleration] (::domain @state)))
+(defmulti update-state (fn [state _dt _acceleration] (::domain state)))
 
 
 (defmethod update-state ::surface
   [state dt gravitation]
-  (let [body         (::body @state)
+  (let [body         (::body state)
         mass         (jolt/get-mass body)
         initial      {::position (jolt/get-translation body) ::speed (jolt/get-linear-velocity body)}
         omega        (vec3 0 0 astro/earth-rotation-speed)
@@ -313,78 +313,83 @@
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
-    (swap! state assoc ::display-speed (jolt/get-linear-velocity body))
-    (jolt/add-impulse body (mult dv2 mass))))
+    (let [display-speed (jolt/get-linear-velocity body)]
+      (jolt/add-impulse body (mult dv2 mass))
+      (assoc state ::display-speed display-speed))))
 
 
 (defmethod update-state ::orbit
   [state dt gravitation]
-  (let [body      (::body @state)
+  (let [body      (::body state)
         mass      (jolt/get-mass body)
-        position  (::position @state)
-        speed     (::speed @state)
+        position  (::position state)
+        speed     (::speed state)
         initial   {::position position ::speed speed}
         final     (runge-kutta initial dt (state-change gravitation) state-add state-scale)
         [dv1 dv2] (matching-scheme initial dt final mult sub)]
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
-    (swap! state assoc ::display-speed (add speed (jolt/get-linear-velocity body)))
-    (jolt/add-impulse body (mult dv2 mass))
-    (swap! state update ::position #(add % (add (mult speed dt) (jolt/get-translation body))))
-    (swap! state update ::speed #(add % (jolt/get-linear-velocity body)))
-    (jolt/set-translation body (vec3 0 0 0))
-    (jolt/set-linear-velocity body (vec3 0 0 0))))
+    (let [display-speed (jolt/get-linear-velocity body)]
+      (jolt/add-impulse body (mult dv2 mass))
+      (let [delta-position (add (mult speed dt) (jolt/get-translation body))
+            delta-speed (jolt/get-linear-velocity body)]
+        (jolt/set-translation body (vec3 0 0 0))
+        (jolt/set-linear-velocity body (vec3 0 0 0))
+        (-> state
+            (assoc ::display-speed display-speed)
+            (update ::position add delta-position)
+            (update ::speed add delta-speed))))))
 
 
-(defmulti add-force (fn [domain _jd-ut state _force_] [domain (::domain @state)]))
+(defmulti add-force (fn [domain _jd-ut state _force_] [domain (::domain state)]))
 
 
 (defmethod add-force [::surface ::surface]
   [_domain _jd-ut state force_]
-  (jolt/add-force (::body @state) force_))
+  (jolt/add-force (::body state) force_))
 
 
 (defmethod add-force [::orbit ::surface]
   [_domain jd-ut state force_]
   (let [icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))]
-    (jolt/add-force (::body @state) (mulv icrs-to-earth force_))))
+    (jolt/add-force (::body state) (mulv icrs-to-earth force_))))
 
 
 (defmethod add-force [::surface ::orbit]
   [_domain jd-ut state force_]
   (let [earth-to-icrs (astro/earth-to-icrs jd-ut)]
-    (jolt/add-force (::body @state) (mulv earth-to-icrs force_))))
+    (jolt/add-force (::body state) (mulv earth-to-icrs force_))))
 
 
 (defmethod add-force [::orbit ::orbit]
   [_domain _jd-ut state force_]
-  (jolt/add-force (::body @state) force_))
+  (jolt/add-force (::body state) force_))
 
 
-(defmulti add-torque (fn [domain _jd-ut state _torque_] [domain (::domain @state)]))
+(defmulti add-torque (fn [domain _jd-ut state _torque_] [domain (::domain state)]))
 
 
 (defmethod add-torque [::surface ::surface]
   [_domain _jd-ut state torque_]
-  (jolt/add-torque (::body @state) torque_))
+  (jolt/add-torque (::body state) torque_))
 
 
 (defmethod add-torque [::orbit ::surface]
   [_domain jd-ut state torque_]
   (let [icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))]
-    (jolt/add-torque (::body @state) (mulv icrs-to-earth torque_))))
+    (jolt/add-torque (::body state) (mulv icrs-to-earth torque_))))
 
 
 (defmethod add-torque [::surface ::orbit]
   [_domain jd-ut state torque_]
   (let [earth-to-icrs (astro/earth-to-icrs jd-ut)]
-    (jolt/add-torque (::body @state) (mulv earth-to-icrs torque_))))
+    (jolt/add-torque (::body state) (mulv earth-to-icrs torque_))))
 
 
 (defmethod add-torque [::orbit ::orbit]
   [_domain _jd-ut state torque_]
-  (jolt/add-torque (::body @state) torque_))
+  (jolt/add-torque (::body state) torque_))
 
 
 (set! *warn-on-reflection* false)
