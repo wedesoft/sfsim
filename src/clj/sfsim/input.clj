@@ -625,7 +625,7 @@
 (defmethod simulator-joystick-button ::air-brake
   [_id state action]
   (if (= action GLFW/GLFW_PRESS)
-    (assoc state update ::air-brake not)
+    (update state ::air-brake not)
     state))
 
 
