@@ -6,17 +6,17 @@
 
 (ns sfsim.t-camera
   (:require
-    [clojure.math :refer (cos sin sqrt exp to-radians to-degrees)]
+    [clojure.math :refer (sqrt exp to-radians to-degrees)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [fastmath.matrix :refer (mat3x3 eye)]
-    [fastmath.vector :refer (vec3 mult sub)]
+    [fastmath.vector :refer (vec3)]
     [sfsim.conftest :refer (roughly-vector roughly-matrix roughly-quaternion)]
     [sfsim.quaternion :as q]
     [sfsim.astro :as astro]
     [sfsim.jolt :as jolt]
-    [sfsim.physics :refer (make-physics-state get-position get-orientation set-pose set-speed)]
+    [sfsim.physics :refer (make-physics-state set-pose set-speed)]
     [sfsim.camera :refer :all]))
 
 
@@ -31,9 +31,9 @@
 
 (def state (atom (make-camera-state)))
 (def sphere (jolt/create-and-add-dynamic-body (jolt/sphere-settings 1.0 1000.0) (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
-(def physics-state (make-physics-state sphere))
-(set-pose :sfsim.physics/surface physics-state (vec3 0 0 (- radius)) (q/->Quaternion 1 0 0 0))
-(set-speed :sfsim.physics/surface physics-state (vec3 0 1 0) (vec3 0 0 0))
+(def physics-state (atom (make-physics-state sphere)))
+(swap! physics-state set-pose :sfsim.physics/surface (vec3 0 0 (- radius)) (q/->Quaternion 1 0 0 0))
+(swap! physics-state set-speed :sfsim.physics/surface (vec3 0 1 0) (vec3 0 0 0))
 
 
 (facts "Camera initialisation"
@@ -69,38 +69,38 @@
 
 
 (facts "Get reference direction depending on domain"
-       (get-forward-direction :sfsim.camera/slow astro/T0 physics-state) => (vec3 1 0 0)
-       (get-forward-direction :sfsim.camera/fast astro/T0 physics-state) => (vec3 0 1 0))
+       (get-forward-direction :sfsim.camera/slow astro/T0 @physics-state) => (vec3 1 0 0)
+       (get-forward-direction :sfsim.camera/fast astro/T0 @physics-state) => (vec3 0 1 0))
 
 
 (facts "Get camera pose"
        (swap! state assoc :sfsim.camera/pitch 0.0)
        (swap! state assoc :sfsim.camera/target-pitch 0.0)
        (swap! state assoc :sfsim.camera/distance 0.0)
-       (:sfsim.camera/position (get-camera-pose @state physics-state astro/T0))
+       (:sfsim.camera/position (get-camera-pose @state @physics-state astro/T0))
        => (roughly-vector (vec3 0 0 (- radius)) 1e-3)
-       (:sfsim.camera/orientation (get-camera-pose @state physics-state astro/T0))
+       (:sfsim.camera/orientation (get-camera-pose @state @physics-state astro/T0))
        => (roughly-quaternion (q/->Quaternion 0.5 -0.5 -0.5 0.5) 1e-6)
        (swap! state assoc :sfsim.camera/distance 60.0)
-       (:sfsim.camera/position (get-camera-pose @state physics-state astro/T0))
+       (:sfsim.camera/position (get-camera-pose @state @physics-state astro/T0))
        => (roughly-vector (vec3 -60 0 (- radius)) 1e-3)
-       (set-pose :sfsim.physics/surface physics-state (vec3 0 0 radius) (q/->Quaternion 0 0 1 0))
-       (:sfsim.camera/position (get-camera-pose @state physics-state astro/T0))
+       (swap! physics-state set-pose :sfsim.physics/surface (vec3 0 0 radius) (q/->Quaternion 0 0 1 0))
+       (:sfsim.camera/position (get-camera-pose @state @physics-state astro/T0))
        => (roughly-vector (vec3 60 0 radius) 1e-3)
-       (:sfsim.camera/orientation (get-camera-pose @state physics-state astro/T0))
+       (:sfsim.camera/orientation (get-camera-pose @state @physics-state astro/T0))
        => (roughly-quaternion (q/->Quaternion 0.5 0.5 0.5 0.5) 1e-6)
        (swap! state assoc :sfsim.camera/yaw (to-radians 90.0))
-       (:sfsim.camera/position (get-camera-pose @state physics-state astro/T0))
+       (:sfsim.camera/position (get-camera-pose @state @physics-state astro/T0))
        => (roughly-vector (vec3 0 60 radius) 1e-3)
-       (:sfsim.camera/orientation (get-camera-pose @state physics-state astro/T0))
+       (:sfsim.camera/orientation (get-camera-pose @state @physics-state astro/T0))
        => (roughly-quaternion (q/->Quaternion 0 0 (sqrt 0.5) (sqrt 0.5)) 1e-6)
        (swap! state assoc :sfsim.camera/yaw (to-radians 0.0))
        (swap! state assoc :sfsim.camera/pitch (to-radians 90.0))
-       (:sfsim.camera/orientation (get-camera-pose @state physics-state astro/T0))
+       (:sfsim.camera/orientation (get-camera-pose @state @physics-state astro/T0))
        => (roughly-quaternion (q/->Quaternion 0 (sqrt 0.5) (sqrt 0.5) 0) 1e-6)
        (swap! state assoc :sfsim.camera/pitch (to-radians 0.0))
        (swap! state assoc :sfsim.camera/roll (to-radians 90.0))
-       (:sfsim.camera/orientation (get-camera-pose @state physics-state astro/T0))
+       (:sfsim.camera/orientation (get-camera-pose @state @physics-state astro/T0))
        => (roughly-quaternion (q/->Quaternion 0 (sqrt 0.5) 0 (sqrt 0.5)) 1e-6)
        (swap! state assoc :sfsim.camera/roll (to-radians 0.0)))
 
@@ -136,18 +136,18 @@
        (swap! state assoc :sfsim.camera/target-yaw (to-radians 5.0))
        (swap! state assoc :sfsim.camera/target-pitch 0.0)
        (swap! state assoc :sfsim.camera/target-roll 0.0)
-       (let [camera-orientation (:sfsim.camera/orientation (get-camera-pose @state physics-state astro/T0))]
-         (swap! state set-mode :sfsim.camera/fast astro/T0 physics-state)
+       (let [camera-orientation (:sfsim.camera/orientation (get-camera-pose @state @physics-state astro/T0))]
+         (swap! state set-mode :sfsim.camera/fast astro/T0 @physics-state)
          (:sfsim.camera/domain @state) => :sfsim.camera/fast
          (to-degrees (:sfsim.camera/yaw @state)) => (roughly 90.0 1e-3)
          (to-degrees (:sfsim.camera/target-yaw @state)) => (roughly 95.0 1e-3)
-         (:sfsim.camera/orientation (get-camera-pose @state physics-state astro/T0)) => (roughly-quaternion camera-orientation 1e-6)
-         (swap! state set-mode :sfsim.camera/fast astro/T0 physics-state)
-         (swap! state set-mode :sfsim.camera/slow astro/T0 physics-state)
+         (:sfsim.camera/orientation (get-camera-pose @state @physics-state astro/T0)) => (roughly-quaternion camera-orientation 1e-6)
+         (swap! state set-mode :sfsim.camera/fast astro/T0 @physics-state)
+         (swap! state set-mode :sfsim.camera/slow astro/T0 @physics-state)
          (:sfsim.camera/domain @state) => :sfsim.camera/slow
          (to-degrees (:sfsim.camera/yaw @state)) => (roughly 0.0 1e-3)
          (to-degrees (:sfsim.camera/target-yaw @state)) => (roughly 5.0 1e-3)
-         (swap! state set-mode :sfsim.camera/slow astro/T0 physics-state)))
+         (swap! state set-mode :sfsim.camera/slow astro/T0 @physics-state)))
 
 
 (jolt/remove-and-destroy-body sphere)
