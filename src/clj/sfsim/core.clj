@@ -772,7 +772,7 @@
                                             ((juxt :sfsim.camera/position :sfsim.camera/orientation)
                                              (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state))
                                                    mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
-                                               (swap! camera-state camera/set-mode mode jd-ut physics-state)
+                                               (swap! camera-state camera/set-mode mode jd-ut @physics-state)
                                                (swap! camera-state camera/update-camera-pose dt @state)
                                                (camera/get-camera-pose @camera-state @physics-state jd-ut))))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
