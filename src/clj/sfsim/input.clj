@@ -638,8 +638,9 @@
 
 (defn menu-joystick-button
   [state device button action]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state assoc ::last-joystick-button [device button])))
+  (if (= action GLFW/GLFW_PRESS)
+    (assoc state ::last-joystick-button [device button])
+    state))
 
 
 (defrecord InputHandler [gui mappings]
