@@ -61,7 +61,7 @@
   (reify GLFWCharCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
          (invoke
            [_this _window codepoint]
-           (swap! event-buffer #(add-char-event % codepoint)))))
+           (swap! event-buffer add-char-event codepoint))))
 
 
 (defn key-callback
@@ -70,7 +70,7 @@
   (reify GLFWKeyCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
          (invoke
            [_this _window k _scancode action mods]
-           (swap! event-buffer #(add-key-event % k action mods)))))
+           (swap! event-buffer add-key-event k action mods))))
 
 
 (defn dead-zone-continuous
@@ -337,7 +337,8 @@
 
 
 (defmethod simulator-key nil
-  [_state _id _action _mods])
+  [state _id _action _mods]
+  state)
 
 
 (defmethod simulator-key ::menu

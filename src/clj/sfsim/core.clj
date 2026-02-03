@@ -272,9 +272,9 @@
 (def mappings (atom default-mappings))
 
 (def event-buffer (atom (make-event-buffer)))
-(def state (make-initial-state))
+(def state (atom (make-initial-state)))
 (def old-state (atom @state))
-(def input-handler (->InputHandler state gui mappings))
+(def input-handler (->InputHandler gui mappings))
 
 
 (GLFW/glfwSetCharCallback window (char-callback event-buffer))
@@ -286,7 +286,7 @@
   (reify GLFWCursorPosCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
     (invoke
       [_this _window xpos ypos]
-      (swap! event-buffer #(add-mouse-move-event % xpos ypos)))))
+      (swap! event-buffer add-mouse-move-event xpos ypos))))
 
 
 (GLFW/glfwSetMouseButtonCallback
@@ -299,7 +299,7 @@
         (GLFW/glfwGetCursorPos ^long _window cx cy)
         (let [x        (long (aget cx 0))
               y        (long (aget cy 0))]
-          (swap! event-buffer #(add-mouse-button-event % button x y action mods)))))))
+          (swap! event-buffer add-mouse-button-event button x y action mods))))))
 
 
 (def menu (atom nil))
@@ -897,7 +897,8 @@
         (GLFW/glfwPollEvents)
         (swap! event-buffer joysticks-poll)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
-        (swap! event-buffer #(process-events % input-handler))
+        (swap! state process-events @event-buffer input-handler)
+        (reset! event-buffer (make-event-buffer))
         (swap! n inc)
         (if fix-fps (reset! t0 (GLFW/glfwGetTime)) (swap! t0 + dt)))))
   (planet/destroy-tile-tree tile-tree)

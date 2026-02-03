@@ -129,6 +129,7 @@
 (facts "Test camera keys"
        (let [state    (atom (make-initial-state))
              mappings (:sfsim.input/keyboard default-mappings)]
+         (simulator-key @state nil GLFW/GLFW_PRESS 0) => some?
          (:sfsim.input/camera-rotate-x @state) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_2) GLFW/GLFW_PRESS 0)
          (:sfsim.input/camera-rotate-x @state) => 0.5
