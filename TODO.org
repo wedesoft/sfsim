@@ -38,6 +38,7 @@
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
   - [ ] use state variable to consolidate atoms and simplify recording and playback code
+  - [ ] rcs input values should be integers (-1, 0, 1)
   - [ ] change key for switching to RCS
   - [ ] create high level rendering methods to simplify main program and integration tests
   - [ ] schemas for model, planet, and atmosphere geometry renderer
