@@ -332,23 +332,20 @@
          (:sfsim.input/rcs-yaw @state) => -1.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_E) GLFW/GLFW_REPEAT 0)
          (:sfsim.input/rcs-yaw @state) => -1.0
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_E) GLFW/GLFW_RELEASE 0)
-         ))
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_E) GLFW/GLFW_RELEASE 0)))
 
 
 (facts "Process mouse events"
        (let [event-buffer (make-event-buffer)
-             playback     (atom [])
              handler      (reify InputHandlerProtocol
-                                 (process-mouse-button [_this button x y action mods]
-                                   (swap! playback conj {:button button :action action :mods mods :x x :y y}))
-                                 (process-mouse-move [_this x y]
-                                   (swap! playback conj {:x x :y y})))]
-         (process-events (add-mouse-button-event event-buffer GLFW/GLFW_MOUSE_BUTTON_LEFT 160 120 GLFW/GLFW_PRESS 0) handler)
-         @playback => [{:button GLFW/GLFW_MOUSE_BUTTON_LEFT :action GLFW/GLFW_PRESS :mods 0 :x 160 :y 120}]
-         (reset! playback [])
-         (process-events (add-mouse-move-event event-buffer 100 60) handler)
-         @playback => [{:x 100 :y 60}]))
+                                 (process-mouse-button [_this state button x y action mods]
+                                   (conj state {:button button :action action :mods mods :x x :y y}))
+                                 (process-mouse-move [_this state x y]
+                                   (conj state {:x x :y y})))]
+         (process-events [] (add-mouse-button-event event-buffer GLFW/GLFW_MOUSE_BUTTON_LEFT 160 120 GLFW/GLFW_PRESS 0) handler)
+         => [{:button GLFW/GLFW_MOUSE_BUTTON_LEFT :action GLFW/GLFW_PRESS :mods 0 :x 160 :y 120}]
+         (process-events [] (add-mouse-move-event event-buffer 100 60) handler)
+         => [{:x 100 :y 60}]))
 
 
 (facts "Dead center zone for joystick axis"

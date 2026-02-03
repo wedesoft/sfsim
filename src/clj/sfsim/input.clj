@@ -518,25 +518,27 @@
 
 
 (defn menu-mouse-button
-  [_state gui button x y action _mods]
+  [state gui button x y action _mods]
   (let [nkbutton (condp = button
                    GLFW/GLFW_MOUSE_BUTTON_RIGHT Nuklear/NK_BUTTON_RIGHT
                    GLFW/GLFW_MOUSE_BUTTON_MIDDLE Nuklear/NK_BUTTON_MIDDLE
                    Nuklear/NK_BUTTON_LEFT)]
-    (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))))
+    (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))
+    state))
 
 
 (defn menu-mouse-move
-  [_state gui x y]
-  (Nuklear/nk_input_motion (:sfsim.gui/context gui) (long x) (long y)))
+  [state gui x y]
+  (Nuklear/nk_input_motion (:sfsim.gui/context gui) (long x) (long y))
+  state)
 
 
 (defn simulator-joystick-with-dead-zone
   "Apply filtered joystick axis value to state"
   [aerofoil rcs-thruster epsilon state value]
   (if (@state ::rcs)
-    (swap! state assoc rcs-thruster (dead-zone-three-state epsilon value))
-    (swap! state assoc aerofoil (dead-zone-continuous epsilon value))))
+    (assoc state rcs-thruster (dead-zone-three-state epsilon value))
+    (assoc state aerofoil (dead-zone-continuous epsilon value))))
 
 
 (defmulti simulator-joystick-axis
@@ -580,7 +582,7 @@
 
 (defmethod simulator-joystick-axis ::throttle
   [_id epsilon state value]
-  (swap! state assoc ::throttle (* 0.5 (- 1.0 (dead-margins epsilon value)))))
+  (assoc state ::throttle (* 0.5 (- 1.0 (dead-margins epsilon value)))))
 
 
 (defmethod simulator-joystick-axis ::throttle-increment
@@ -599,15 +601,16 @@
 
 (defmethod simulator-joystick-button ::gear
   [_id state action]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::gear-down not)))
+  (if (= action GLFW/GLFW_PRESS)
+    (update state ::gear-down not)
+    state))
 
 
 (defmethod simulator-joystick-button ::brake
   [_id state action]
-  (swap! state assoc ::brake (keypress? action))
-  (when (keypress? action)
-    (swap! state assoc ::parking-brake false)))
+  (if (keypress? action)
+    (assoc state ::brake true ::parking-brake false)
+    (assoc state ::brake false)))
 
 
 (defmethod simulator-joystick-button ::parking-brake
@@ -624,8 +627,9 @@
 
 (defn menu-joystick-axis
   [state device axis _value moved]
-  (when moved
-    (swap! state assoc ::last-joystick-axis [device axis])))
+  (if moved
+    (assoc state ::last-joystick-axis [device axis])
+    state))
 
 
 (defn menu-joystick-button
@@ -638,7 +642,8 @@
   InputHandlerProtocol
   (process-char [_this state codepoint]
     (when (::menu state)
-      (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
+      (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))
+    state)
   (process-key [_this state k action mods]
     (let [keyboard-mappings (::keyboard @mappings)]
       (if (::menu state)
