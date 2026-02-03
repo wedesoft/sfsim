@@ -37,8 +37,12 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [ ] camera methods should not deal with atom (keep atom in main thread)
+  - [ ] input atom should be managed in core
+  - [ ] physics atom should be managed in core
+  - [ ] replace atoms in atmosphere-lut?
+  - [ ] replace atoms in clouds?
   - [ ] use state variable to consolidate atoms and simplify recording and playback code
+  - [ ] change key for switching to RCS
   - [ ] create high level rendering methods to simplify main program and integration tests
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] Jolt physics problem with gear ground collision at latitude below zero?
@@ -49,6 +53,7 @@
   - [ ] animate control surfaces and air brake
   - [ ] reentry physics
     - [ ] reentry flame
+    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
   - [ ] limit time step to avoid physics problems

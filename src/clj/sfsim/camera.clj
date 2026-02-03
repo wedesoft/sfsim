@@ -20,15 +20,15 @@
 
 (defn make-camera-state
   []
-  (atom {::domain ::slow
-         ::distance 60.0
-         ::roll 0.0
-         ::pitch (to-radians -10.0)
-         ::yaw 0.0
-         ::target-distance 60.0
-         ::target-roll 0.0
-         ::target-pitch (to-radians -10.0)
-         ::target-yaw 0.0}))
+  {::domain ::slow
+   ::distance 60.0
+   ::roll 0.0
+   ::pitch (to-radians -10.0)
+   ::yaw 0.0
+   ::target-distance 60.0
+   ::target-roll 0.0
+   ::target-pitch (to-radians -10.0)
+   ::target-yaw 0.0})
 
 
 (defn unit-cross
@@ -98,21 +98,18 @@
 
 (defn camera->horizon
   "Quaternion for converting camera vectors to horizon vectors"
-  [camera-state]
-  (let [yaw   (::yaw @camera-state)
-        pitch (::pitch @camera-state)
-        roll  (::roll @camera-state)]
-    (euler->quaternion yaw pitch roll)))
+  [{::keys [yaw pitch roll]}]
+  (euler->quaternion yaw pitch roll))
 
 
 (defn get-camera-pose
   "Get camera pose in surface coordinates"
   [camera-state physics-state jd-ut]
   (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
-        domain             (::domain @camera-state)
+        domain             (::domain camera-state)
         horizon            (matrix->quaternion (horizon-for-domain physics-state jd-ut domain))
         camera-orientation (q/* horizon (camera->horizon camera-state))
-        relative-position  (q/rotate-vector camera-orientation (mult (vec3 0 0 1) ^double (::distance @camera-state)))]
+        relative-position  (q/rotate-vector camera-orientation (mult (vec3 0 0 1) ^double (::distance camera-state)))]
     {::position (add position relative-position) ::orientation camera-orientation}))
 
 
@@ -121,14 +118,15 @@
   [camera-state ^double dt input-state]
   (let [weight-previous (pow 0.25 dt)
         mix             (fn [prev target] (+ (* ^double prev weight-previous) (* ^double target (- 1.0 weight-previous))))]
-    (swap! camera-state update ::target-yaw + (* dt ^double (:sfsim.input/camera-rotate-y input-state)))
-    (swap! camera-state update ::target-pitch + (* dt ^double (:sfsim.input/camera-rotate-x input-state)))
-    (swap! camera-state update ::target-roll + (* dt ^double (:sfsim.input/camera-rotate-z input-state)))
-    (swap! camera-state update ::target-distance * (exp (* dt ^double (:sfsim.input/camera-distance-change input-state))))
-    (swap! camera-state update ::yaw mix (::target-yaw @camera-state))
-    (swap! camera-state update ::pitch mix (::target-pitch @camera-state))
-    (swap! camera-state update ::roll mix (::target-roll @camera-state))
-    (swap! camera-state update ::distance mix (::target-distance @camera-state))))
+    (-> camera-state
+        (update ::target-yaw + (* dt ^double (:sfsim.input/camera-rotate-y input-state)))
+        (update ::target-pitch + (* dt ^double (:sfsim.input/camera-rotate-x input-state)))
+        (update ::target-roll + (* dt ^double (:sfsim.input/camera-rotate-z input-state)))
+        (update ::target-distance * (exp (* dt ^double (:sfsim.input/camera-distance-change input-state))))
+        (update ::yaw mix (::target-yaw camera-state))
+        (update ::pitch mix (::target-pitch camera-state))
+        (update ::roll mix (::target-roll camera-state))
+        (update ::distance mix (::target-distance camera-state)))))
 
 
 (defn horizons-angle
@@ -139,28 +137,31 @@
     (atan2 (dot (col slow-horizon 0) (col fast-horizon 2)) (dot (col slow-horizon 2) (col fast-horizon 2)))))
 
 
-(defmulti set-mode (fn [target state _jd-ut _physics-state] [(::domain @state) target]))
+(defmulti set-mode (fn [state target _jd-ut _physics-state] [(::domain state) target]))
 
 
 (defmethod set-mode :default
-  [target state _jd-ut _physics-state]
-  (assert (= target (::domain @state))))
+  [state target _jd-ut _physics-state]
+  (assert (= target (::domain state)))
+  state)
 
 
 (defmethod set-mode [::slow ::fast]
-  [_target state jd-ut physics-state]
+  [state _target jd-ut physics-state]
   (let [delta-angle (horizons-angle physics-state jd-ut)]
-    (swap! state update ::yaw - delta-angle)
-    (swap! state update ::target-yaw - delta-angle)
-    (swap! state assoc ::domain ::fast)))
+    (-> state
+        (update ::yaw - delta-angle)
+        (update ::target-yaw - delta-angle)
+        (assoc ::domain ::fast))))
 
 
 (defmethod set-mode [::fast ::slow]
-  [_target state jd-ut physics-state]
+  [state _target jd-ut physics-state]
   (let [delta-angle (horizons-angle physics-state jd-ut)]
-    (swap! state update ::yaw + delta-angle)
-    (swap! state update ::target-yaw + delta-angle)
-    (swap! state assoc ::domain ::slow)))
+    (-> state
+        (update ::yaw + delta-angle)
+        (update ::target-yaw + delta-angle)
+        (assoc ::domain ::slow))))
 
 
 (set! *warn-on-reflection* false)
