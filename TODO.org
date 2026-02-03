@@ -37,7 +37,6 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [ ] physics atom should be managed in core
   - [ ] use state variable to consolidate atoms and simplify recording and playback code
   - [ ] change key for switching to RCS
   - [ ] create high level rendering methods to simplify main program and integration tests
