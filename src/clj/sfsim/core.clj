@@ -302,7 +302,7 @@
                                                  (:sfsim.planet/radius config/planet-config)
                                                  split-orientations)
         radius     (+ height ^double (:sfsim.planet/radius config/planet-config))]
-    (mult point (max radius ^double min-radius))))
+    (mult point (max radius (+ ^double min-radius 9.0)))))
 
 
 (defn orientation-from-lon-lat
