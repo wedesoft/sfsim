@@ -42,7 +42,7 @@
   - [ ] change key for switching to RCS
   - [ ] create high level rendering methods to simplify main program and integration tests
   - [ ] schemas for model, planet, and atmosphere geometry renderer
-  - [ ] Jolt physics problem with gear ground collision at latitude below zero?
+  - [X] Jolt physics problem with gear ground collision at latitude below zero?
   - [ ] add RCS state to physics-state
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
