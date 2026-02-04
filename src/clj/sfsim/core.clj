@@ -473,6 +473,9 @@
                       (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
                       (when (gui/button-label gui "Set")
                         (let [pose (location-dialog-get position-data)]
+                          (when @vehicle
+                            (jolt/remove-and-destroy-constraint @vehicle)
+                            (reset! vehicle nil))
                           (swap! physics-state physics/set-pose :sfsim.physics/surface (:position pose) (:orientation pose))))
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))
