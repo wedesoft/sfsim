@@ -307,7 +307,7 @@
 
 (defn orientation-from-lon-lat
   [longitude latitude]
-  (let [radius-vector (position-from-lon-lat longitude latitude 1.0)]
+  (let [radius-vector (position-from-lon-lat longitude latitude 0.0)]
     (q/vector-to-vector-rotation (vec3 0 0 1) (sub radius-vector))))
 
 
