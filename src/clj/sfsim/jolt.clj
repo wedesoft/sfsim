@@ -389,15 +389,15 @@
 
 (defcfn create-and-add-vehicle-constraint-
   "Create and add vehicle constraint (private method)"
-  create_and_add_vehicle_constraint [::mem/int ::mem/pointer] ::mem/pointer)
+  create_and_add_vehicle_constraint [::mem/int ::vec3 ::mem/pointer] ::mem/pointer)
 
 
 (defn create-and-add-vehicle-constraint
   "Create and add vehicle constraint"
-  [body up forward wheels]
+  [body world-up up forward wheels]
   (let [constraint-settings (make-vehicle-constraint-settings up forward)]
     (doseq [wheel wheels] (vehicle-constraint-settings-add-wheel constraint-settings (make-wheel-settings wheel up forward)))
-    (create-and-add-vehicle-constraint- body constraint-settings)))
+    (create-and-add-vehicle-constraint- body world-up constraint-settings)))
 
 
 (defcfn set-brake-input

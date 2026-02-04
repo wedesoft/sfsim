@@ -60,7 +60,7 @@ extern "C" {
   void destroy_wheel_settings(void *wheel_settings);
   void *make_vehicle_constraint_settings(Vec3 up, Vec3 forward);
   void vehicle_constraint_settings_add_wheel(void *constraint, void *wheel_settings);
-  void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_settings);
+  void *create_and_add_vehicle_constraint(int body_id, Vec3 world_up, void *vehicle_constraint_settings);
   void set_brake_input(void *constraint, float brake_input);
   Mat4x4 get_wheel_local_transform(void *constraint, int wheel_index, Vec3 right, Vec3 up);
   float get_suspension_length(void *constraint, int wheel_index);

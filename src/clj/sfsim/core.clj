@@ -689,7 +689,9 @@
               (reset! rcs (active-rcs @state))
               (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
                 (when (not @vehicle)
-                  (reset! vehicle (jolt/create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0) wheels)))
+                  (let [position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
+                        world-up (normalize position)]
+                    (reset! vehicle (jolt/create-and-add-vehicle-constraint body world-up (vec3 0 0 -1) (vec3 1 0 0) wheels))))
                 (when @vehicle
                   (jolt/remove-and-destroy-constraint @vehicle)
                   (reset! vehicle nil)))
