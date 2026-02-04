@@ -84,20 +84,6 @@
 ; Ensure floating point numbers use a dot as decimal separator
 (java.util.Locale/setDefault java.util.Locale/US)
 
-(def earth-mass (config/planet-config :sfsim.planet/mass))
-
-; (def longitude 0.0)
-; (def latitude 0.0)
-; (def height 408000.0)
-; (def radius (config/planet-config :sfsim.planet/radius))
-; (def g physics/gravitational-constant)
-; (def orbit-radius (+ ^double radius ^double height))
-; (def speed (sqrt (/ (* ^double earth-mass ^double g) ^double orbit-radius)))
-
-(def speed 0)
-(def longitude (to-radians -1.3747))
-(def latitude (to-radians 50.9672))
-(def height 25.0)
 
 (def opacity-base 100.0)
 
@@ -325,8 +311,6 @@
     (q/vector-to-vector-rotation (vec3 0 0 1) (sub radius-vector))))
 
 
-(def pose {:position (position-from-lon-lat longitude latitude height) :orientation (orientation-from-lon-lat longitude latitude)})
-
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
 (jolt/set-friction body 0.8)
@@ -341,6 +325,14 @@
 
 ; Start with fixed summer date for better illumination.
 (def current-time (- (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}) ^double astro/T0))
+
+(def speed 0)
+(def longitude (to-radians -1.3747))
+(def latitude (to-radians 50.9672))
+(def height 25.0)
+
+(def pose {:position (position-from-lon-lat longitude latitude height)
+           :orientation (orientation-from-lon-lat longitude latitude)})
 
 (def physics-state (atom (physics/make-physics-state body)))
 (swap! physics-state physics/set-pose :sfsim.physics/surface (:position pose) (:orientation pose))
@@ -727,7 +719,9 @@
                   (physics/add-force :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/forces loads))
                   (physics/add-torque :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/moments loads))
                   (physics/add-torque :sfsim.physics/orbit jd-ut @physics-state (q/rotate-vector orientation rcs-thrust))
-                  (swap! physics-state physics/update-state dt (physics/gravitation (vec3 0 0 0) earth-mass))))
+                  (swap! physics-state
+                         physics/update-state
+                         dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass)))))
               (reset! wheel-angles (if @vehicle
                                      [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
                                       (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
