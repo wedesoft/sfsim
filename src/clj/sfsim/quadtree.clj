@@ -414,10 +414,14 @@
     (get-vector3 terrain tile-y tile-x)))
 
 
+(def planet-config
+  (m/schema [:map [:sfsim.planet/level N] [:sfsim.planet/tilesize N] [:sfsim.planet/radius :double]]))
+
+
 (defn distance-to-surface
   "Get distance of surface to planet center for given radial vector"
-  {:malli/schema [:=> [:cat fvec3 :int :int :double [:vector [:vector :boolean]]] :double]}
-  [point level tilesize radius split-orientations]
+  {:malli/schema [:=> [:cat fvec3 planet-config [:vector [:vector :boolean]]] :double]}
+  [point {:sfsim.planet/keys [level tilesize radius]} split-orientations]
   (let [p                      (project-onto-cube point)
         face                   (determine-face p)
         j                      (cube-j face p)

@@ -336,7 +336,8 @@
 
 
 (fact "Get distance of surface to planet center for given radial vector"
-      (with-redefs [cubemap/project-onto-cube (fn [point] (fact point => (vec3 2 3 5)) (vec3 0.4 0.6 1))
+      (with-redefs [planet-config #:sfsim.planet{:level 6 :tilesize 65 :radius 6378000.0}
+                    cubemap/project-onto-cube (fn [point] (fact point => (vec3 2 3 5)) (vec3 0.4 0.6 1))
                     cubemap/determine-face (fn [point] (fact point => (vec3 0.4 0.6 1)) 2)
                     cubemap/cube-i cube-i-mock
                     cubemap/cube-j cube-j-mock
@@ -365,7 +366,7 @@
                                                                     (:sfsim.ray/origin ray) => (vec3 -1 -2 -3)
                                                                     (:sfsim.ray/direction ray) => (vec3 2 3 5))
                                                              6378123.0)]
-        (distance-to-surface (vec3 2 3 5) 6 65 6378000.0 [[] [] [] [false false false false false true]])
+        (distance-to-surface (vec3 2 3 5) planet-config [[] [] [] [false false false false false true]])
         => (roughly (* 6378123.0 (mag (vec3 2 3 5))) 1e-6)))
 
 

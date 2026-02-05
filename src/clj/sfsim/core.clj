@@ -296,11 +296,7 @@
 (defn position-from-lon-lat
   ^Vec3 [^double longitude ^double latitude ^double height]
   (let [point      (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
-        min-radius (quadtree/distance-to-surface point
-                                                 (:sfsim.planet/level config/planet-config)
-                                                 (:sfsim.planet/tilesize config/planet-config)
-                                                 (:sfsim.planet/radius config/planet-config)
-                                                 split-orientations)
+        min-radius (quadtree/distance-to-surface point config/planet-config split-orientations)
         radius     (+ height ^double (:sfsim.planet/radius config/planet-config))]
     (mult point (max radius (+ ^double min-radius 9.0)))))
 
