@@ -264,9 +264,9 @@
    ::throttle               0.0
    ::air-brake              false
    ::rcs                    false
-   ::rcs-roll               0.0
-   ::rcs-pitch              0.0
-   ::rcs-yaw                0.0
+   ::rcs-roll               0
+   ::rcs-pitch              0
+   ::rcs-yaw                0
    ::camera-rotate-x        0.0
    ::camera-rotate-y        0.0
    ::camera-rotate-z        0.0
@@ -419,18 +419,18 @@
   [state _id action _mods]
   (if (keypress? action)
     (if (state ::rcs)
-      (assoc state ::rcs-roll 1.0)
+      (assoc state ::rcs-roll 1)
       (increment-clamp state ::aileron 0.0625))
-    (assoc state ::rcs-roll 0.0)))
+    (assoc state ::rcs-roll 0)))
 
 
 (defmethod simulator-key ::aileron-right
   [state _id action _mods]
   (if (keypress? action)
     (if (state ::rcs)
-      (assoc state ::rcs-roll -1.0)
+      (assoc state ::rcs-roll -1)
       (increment-clamp state ::aileron -0.0625))
-    (assoc state ::rcs-roll 0.0)))
+    (assoc state ::rcs-roll 0)))
 
 
 (defmethod simulator-key ::aileron-center
@@ -444,38 +444,38 @@
   [state _id action mods]
   (if (keypress? action)
     (if (state ::rcs)
-      (assoc state ::rcs-yaw 1.0)
+      (assoc state ::rcs-yaw 1)
       (if (= mods GLFW/GLFW_MOD_CONTROL)
         (assoc state ::rudder 0.0)
         (increment-clamp state ::rudder 0.0625)))
-    (assoc state ::rcs-yaw 0.0)))
+    (assoc state ::rcs-yaw 0)))
 
 
 (defmethod simulator-key ::rudder-right
   [state _id action _mods]
   (if (keypress? action)
     (if (state ::rcs)
-      (assoc state ::rcs-yaw -1.0)
+      (assoc state ::rcs-yaw -1)
       (increment-clamp state ::rudder -0.0625))
-    (assoc state ::rcs-yaw 0.0)))
+    (assoc state ::rcs-yaw 0)))
 
 
 (defmethod simulator-key ::elevator-down
   [state _id action _mods]
   (if (keypress? action)
     (if (state ::rcs)
-      (assoc state ::rcs-pitch 1.0)
+      (assoc state ::rcs-pitch 1)
       (increment-clamp state ::elevator 0.0625))
-    (assoc state ::rcs-pitch 0.0)))
+    (assoc state ::rcs-pitch 0)))
 
 
 (defmethod simulator-key ::elevator-up
   [state _id action _mods]
   (if (keypress? action)
     (if (state ::rcs)
-      (assoc state ::rcs-pitch -1.0)
+      (assoc state ::rcs-pitch -1)
       (increment-clamp state ::elevator -0.0625))
-    (assoc state ::rcs-pitch 0.0)))
+    (assoc state ::rcs-pitch 0)))
 
 
 (defmethod simulator-key ::camera-rotate-x-positive
