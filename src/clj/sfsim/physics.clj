@@ -7,9 +7,10 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [malli.core :as m]
+    [clojure.math :refer (cos sin to-radians)]
     [fastmath.matrix :refer (mulv inverse)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross)]
+    [malli.core :as m]
     [sfsim.jolt :as jolt]
     [sfsim.astro :as astro]
     [sfsim.quaternion :as q]

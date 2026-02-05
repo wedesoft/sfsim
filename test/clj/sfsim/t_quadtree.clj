@@ -366,7 +366,7 @@
                                                                     (:sfsim.ray/origin ray) => (vec3 -1 -2 -3)
                                                                     (:sfsim.ray/direction ray) => (vec3 2 3 5))
                                                              6378123.0)]
-        (distance-to-surface (vec3 2 3 5) planet-config [[] [] [] [false false false false false true]])
+        ((distance-to-surface planet-config [[] [] [] [false false false false false true]]) (vec3 2 3 5))
         => (roughly (* 6378123.0 (mag (vec3 2 3 5))) 1e-6)))
 
 

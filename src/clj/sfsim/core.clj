@@ -133,6 +133,9 @@
 (def shadow-data (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data))
 
 
+(def earth-radius (:sfsim.planet/radius config/planet-config))
+
+
 (def data
   {:sfsim.render/config config/render-config
    :sfsim.planet/config config/planet-config
@@ -233,6 +236,7 @@
 (def tile-tree (planet/make-tile-tree))
 
 (def split-orientations (quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8))
+(def surface (quadtree/distance-to-surface config/planet-config split-orientations))
 
 (def buffer-initial-size (* 4 1024))
 (def bitmap-font (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)))
@@ -293,28 +297,11 @@
 (declare main-dialog)
 
 
-(defn position-from-lon-lat
-  ^Vec3 [^double longitude ^double latitude ^double height]
-  (let [point      (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
-        min-radius (quadtree/distance-to-surface point config/planet-config split-orientations)
-        radius     (+ height ^double (:sfsim.planet/radius config/planet-config))]
-    (mult point (max radius (+ ^double min-radius 9.0)))))
-
-
-(defn orientation-from-lon-lat
-  [longitude latitude]
-  (let [radius-vector (position-from-lon-lat longitude latitude 0.0)]
-    (q/vector-to-vector-rotation (vec3 0 0 1) (sub radius-vector))))
-
-
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
 (jolt/set-friction body 0.8)
 (jolt/set-restitution body 0.25)
 (def mass (jolt/get-mass body))
-(def surface 198.0)
-(def chord 10.0)
-(def wingspan 20.75)
 (def thrust (* ^double mass 25.0))
 
 (def vehicle (atom nil))
@@ -322,17 +309,12 @@
 ; Start with fixed summer date for better illumination.
 (def current-time (- (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}) ^double astro/T0))
 
-(def speed 0)
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
 (def height 25.0)
 
-(def pose {:position (position-from-lon-lat longitude latitude height)
-           :orientation (orientation-from-lon-lat longitude latitude)})
-
 (def physics-state (atom (physics/make-physics-state body)))
-(swap! physics-state physics/set-pose :sfsim.physics/surface (:position pose) (:orientation pose))
-(swap! physics-state physics/set-speed :sfsim.physics/surface (mult (q/rotate-vector (:orientation pose) (vec3 1 0 0)) speed) (vec3 0 0 0))
+(swap! physics-state physics/set-longitude-latitude surface earth-radius 9.0 longitude latitude 0.0)
 
 (jolt/optimize-broad-phase)
 
@@ -357,11 +339,11 @@
             tile-x (:sfsim.quadtree/tile-x c)
             center (cubemap/tile-center face
                                         (:sfsim.planet/level config/planet-config) b a
-                                        (:sfsim.planet/radius config/planet-config))
+                                        earth-radius)
             m      (quadtree/create-local-mesh split-orientations face
                                                (:sfsim.planet/level config/planet-config)
                                                (:sfsim.planet/tilesize config/planet-config) b a tile-y tile-x
-                                               (:sfsim.planet/radius config/planet-config) center)]
+                                               earth-radius center)]
         (when @mesh (jolt/remove-and-destroy-body @mesh))
         (reset! coords c)
         (reset! mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0)))
@@ -439,10 +421,8 @@
   [position-data]
   (let [longitude   (to-radians (Double/parseDouble (gui/edit-get (:longitude position-data))))
         latitude    (to-radians (Double/parseDouble (gui/edit-get (:latitude position-data))))
-        height      (Double/parseDouble (gui/edit-get (:height position-data)))
-        position    (position-from-lon-lat longitude latitude height)
-        orientation (orientation-from-lon-lat longitude latitude)]
-    {:position position :orientation orientation}))
+        height      (Double/parseDouble (gui/edit-get (:height position-data)))]
+    {:longitude longitude :latitude latitude :height height}))
 
 
 (defn location-dialog-set
@@ -468,11 +448,11 @@
                       (gui/text-label gui "Height")
                       (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
                       (when (gui/button-label gui "Set")
-                        (let [pose (location-dialog-get position-data)]
+                        (let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
                           (when @vehicle
                             (jolt/remove-and-destroy-constraint @vehicle)
                             (reset! vehicle nil))
-                          (swap! physics-state physics/set-pose :sfsim.physics/surface (:position pose) (:orientation pose))))
+                          (swap! physics-state physics/set-longitude-latitude surface earth-radius 9.0 longitude latitude height)))
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))
 
@@ -693,7 +673,7 @@
                   (reset! vehicle nil)))
               (when @vehicle (jolt/set-brake-input @vehicle brake))
               (let [height    (- (mag (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
-                                 ^double (:sfsim.planet/radius config/planet-config))]
+                                 ^double earth-radius)]
                 (swap! physics-state
                        physics/set-domain
                        (if (>= height ^double (:sfsim.planet/space-boundary config/planet-config))
@@ -758,7 +738,7 @@
                                            [1.0 1.0 1.0])}]
                   (swap! recording conj frame))))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
-              height             (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
+              height             (- (mag object-position) ^double earth-radius)
               pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
               object-orientation (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
               object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
@@ -860,7 +840,7 @@
                                (stick gui aileron elevator rudder (:sfsim.physics/throttle @physics-state))
                                (info gui @window-height
                                      (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
-                                             (- (mag object-position) ^double (:sfsim.planet/radius config/planet-config))
+                                             (- (mag object-position) ^double earth-radius)
                                              (mag (:sfsim.physics/display-speed @physics-state))
                                              (if (@state :sfsim.input/rcs) "RCS" "aerofoil")
                                              (/ 1.0 ^double @frametime)

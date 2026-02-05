@@ -6,7 +6,7 @@
 
 (ns sfsim.t-physics
   (:require
-    [clojure.math :refer (exp to-radians)]
+    [clojure.math :refer (exp sqrt to-radians)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -185,6 +185,30 @@
        (jolt/get-angular-velocity sphere) => (vec3 0 0 2)
        (get-linear-speed :sfsim.physics/orbit astro/T0 @state) => (vec3 100 0 0)
        (get-angular-speed :sfsim.physics/orbit astro/T0 @state) => (vec3 0 0 2))
+
+
+(facts "Set longitude and latitude position of space craft"
+       (let [radius 6378000.0]
+         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 0.0 0.0 0.0)
+         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 radius 0 0) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 0.0 (to-radians 90.0) 0.0)
+         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 0 radius) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 (to-radians 90.0) 0.0 0.0)
+         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 radius 0) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 (to-radians 90.0) (to-radians 90.0) 0.0)
+         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 0 radius) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 0.0 0.0 1000.0)
+         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 1000.0) 0 0) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] (+ radius 2000.0)) radius 0.0 0.0 0.0 1000.0)
+         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 2000.0) 0 0) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] (+ radius 2000.0)) radius 5.0 0.0 0.0 1000.0)
+         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 2005.0) 0 0) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 0.0 (to-radians -90.0) 0.0)
+         (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion 1 0 0 0) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 0.0 0.0 0.0)
+         (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion (sqrt 0.5) 0 (- (sqrt 0.5)) 0) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 (to-radians 90.0) 0.0 0.0)
+         (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion 0.5 0.5 -0.5 0.5) 1e-6)))
 
 
 (fact "Do nothing when switching from surface to surface"
