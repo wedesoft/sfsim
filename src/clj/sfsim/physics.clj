@@ -196,7 +196,19 @@
   (jolt/get-orientation (::body state)))
 
 
-(defmulti set-speed (fn [_state domain _linear-velocity _angular-velocity] domain))
+(defn set-longitude-latitude
+  "Set position by specifying longitude, latitude, and height"
+  [state surface radius elevation longitude latitude height]
+  (let [point   (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
+        terrain (+ ^double (surface point) ^double elevation)]
+    (set-pose state ::surface (mult point (max terrain (+ ^double radius ^double height)))
+              (q/* (q/rotation longitude (vec3 0 0 1))
+                   (q/rotation (+ ^double latitude (to-radians 90.0)) (vec3 0 -1 0))))))
+
+
+(defmulti set-speed
+  "Set speed vector of space craft"
+  (fn [_state domain _linear-velocity _angular-velocity] domain))
 
 
 (defmethod set-speed ::surface
