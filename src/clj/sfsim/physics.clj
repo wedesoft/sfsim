@@ -99,6 +99,7 @@
 
 
 (defn make-physics-state
+  "Create initial physics state"
   [body]
   {::body body
    ::display-speed 0.0
@@ -108,6 +109,7 @@
 
 
 (defn set-control-inputs
+  "Apply inputs to space craft"
   [state inputs ^double dt]
   (-> state
       (assoc ::throttle (:sfsim.input/throttle inputs))
@@ -115,7 +117,9 @@
       (update ::gear (fn [^double x] (clamp (+ x (* (if (:sfsim.input/gear-down inputs) 0.5 -0.5) dt)) 0.0 1.0)))))
 
 
-(defmulti set-pose (fn [_state domain _position _orientation] domain))
+(defmulti set-pose
+  "Set position and orientation of space craft"
+  (fn [_state domain _position _orientation] domain))
 
 
 (defmethod set-pose ::surface
@@ -136,7 +140,9 @@
       (assoc ::position position)))  ; Store double precision position 
 
 
-(defmulti get-position (fn [domain _jd-ut state] [(::domain state) domain]))
+(defmulti get-position
+  "Get position of space craft"
+  (fn [domain _jd-ut state] [(::domain state) domain]))
 
 
 (defmethod get-position [::surface ::surface]
@@ -161,7 +167,9 @@
   (::position state))
 
 
-(defmulti get-orientation (fn [domain _jd-ut state] [(::domain state) domain]))
+(defmulti get-orientation
+  "Get orientation of space craft"
+  (fn [domain _jd-ut state] [(::domain state) domain]))
 
 
 (defmethod get-orientation [::surface ::surface]
@@ -205,7 +213,9 @@
   (assoc state ::speed linear-velocity))
 
 
-(defmulti get-linear-speed (fn [domain _jd-ut state] [(::domain state) domain]))
+(defmulti get-linear-speed
+  "Get speed vector of space craft"
+  (fn [domain _jd-ut state] [(::domain state) domain]))
 
 
 (defmethod get-linear-speed [::surface ::surface]
@@ -237,7 +247,9 @@
   (::speed state))
 
 
-(defmulti get-angular-speed (fn [domain _jd-ut state] [(::domain state) domain]))
+(defmulti get-angular-speed
+  "Get angular velocity vector of space craft"
+  (fn [domain _jd-ut state] [(::domain state) domain]))
 
 
 (defmethod get-angular-speed [::surface ::surface]
@@ -266,7 +278,9 @@
   (jolt/get-angular-velocity (::body state)))
 
 
-(defmulti set-domain (fn [state target _jd-ut] [(::domain state) target]))
+(defmulti set-domain
+  "Switch reference system of space craft"
+  (fn [state target _jd-ut] [(::domain state) target]))
 
 
 (defmethod set-domain :default
@@ -297,7 +311,9 @@
         (set-speed ::surface linear-velocity angular-velocity))))
 
 
-(defmulti update-state (fn [state _dt _acceleration] (::domain state)))
+(defmulti update-state
+  "Perform simulation step"
+  (fn [state _dt _acceleration] (::domain state)))
 
 
 (defmethod update-state ::surface
@@ -343,7 +359,9 @@
             (update ::speed add delta-speed))))))
 
 
-(defmulti add-force (fn [domain _jd-ut state _force_] [domain (::domain state)]))
+(defmulti add-force
+  "Add force affecting space craft"
+  (fn [domain _jd-ut state _force_] [domain (::domain state)]))
 
 
 (defmethod add-force [::surface ::surface]
@@ -368,7 +386,9 @@
   (jolt/add-force (::body state) force_))
 
 
-(defmulti add-torque (fn [domain _jd-ut state _torque_] [domain (::domain state)]))
+(defmulti add-torque
+  "Add torque affecting space craft"
+  (fn [domain _jd-ut state _torque_] [domain (::domain state)]))
 
 
 (defmethod add-torque [::surface ::surface]
