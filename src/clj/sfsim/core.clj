@@ -315,7 +315,7 @@
 (def height 25.0)
 
 (def physics-state (atom (physics/make-physics-state body)))
-(swap! physics-state physics/set-longitude-latitude surface config/planet-config elevation longitude latitude 0.0)
+(swap! physics-state physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
 
 (jolt/optimize-broad-phase)
 
@@ -428,14 +428,11 @@
 
 (defn location-dialog-set
   [position-data ^double time-delta ^double t0]
-  (let [t         (+ time-delta (/ ^double t0 86400.0) ^double astro/T0)
-        position  (physics/get-position :sfsim.physics/surface t @physics-state)
-        longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
-        latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
-        height    (- (mag position) 6378000.0)]
-    (gui/edit-set (:longitude position-data) (format "%.5f" (to-degrees longitude)))
-    (gui/edit-set (:latitude position-data) (format "%.5f" (to-degrees latitude)))
-    (gui/edit-set (:height position-data) (format "%.1f" height))))
+  (let [t          (+ time-delta (/ ^double t0 86400.0) ^double astro/T0)
+        geographic (physics/get-geographic @physics-state config/planet-config t)]
+    (gui/edit-set (:longitude position-data) (format "%.5f" (to-degrees (:longitude geographic))))
+    (gui/edit-set (:latitude position-data) (format "%.5f" (to-degrees (:latitude geographic))))
+    (gui/edit-set (:height position-data) (format "%.1f" (:height geographic)))))
 
 
 (defn location-dialog
@@ -454,7 +451,7 @@
         (when @vehicle
           (jolt/remove-and-destroy-constraint @vehicle)
           (reset! vehicle nil))
-        (swap! physics-state physics/set-longitude-latitude surface config/planet-config elevation longitude latitude height)))
+        (swap! physics-state physics/set-geographic surface config/planet-config elevation longitude latitude height)))
     (when (gui/button-label gui "Close")
       (reset! menu main-dialog))))
 

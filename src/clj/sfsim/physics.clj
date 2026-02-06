@@ -7,7 +7,7 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [clojure.math :refer (cos sin to-radians)]
+    [clojure.math :refer (cos sin atan2 hypot to-radians)]
     [fastmath.matrix :refer (mulv inverse)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross)]
     [malli.core :as m]
@@ -196,7 +196,7 @@
   (jolt/get-orientation (::body state)))
 
 
-(defn set-longitude-latitude
+(defn set-geographic
   "Set position by specifying longitude, latitude, and height"
   [state surface planet elevation longitude latitude height]
   (let [point       (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
@@ -208,6 +208,18 @@
     (set-pose state ::surface (mult point (max terrain (+ ^double radius ^double height)))
               (q/* (q/rotation longitude (vec3 0 0 1))
                    (q/rotation (+ ^double latitude (to-radians 90.0)) (vec3 0 -1 0))))))
+
+
+(defn get-geographic
+  "Get longitude, latitude, and height of space craft"
+  [state planet jd-ut]
+  (let [position  (get-position :sfsim.physics/surface jd-ut state)
+        longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
+        latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
+        height    (- (mag position) ^double (:sfsim.planet/radius planet))]
+    {:longitude longitude
+     :latitude latitude
+     :height height}))
 
 
 (defmulti set-speed

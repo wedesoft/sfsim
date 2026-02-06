@@ -6,7 +6,7 @@
 
 (ns sfsim.t-physics
   (:require
-    [clojure.math :refer (exp sqrt to-radians)]
+    [clojure.math :refer (exp sqrt to-radians to-degrees)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -187,33 +187,50 @@
        (get-angular-speed :sfsim.physics/orbit astro/T0 @state) => (vec3 0 0 2))
 
 
-(facts "Set longitude and latitude position of space craft"
+(facts "Set longitude, latitude, and height of space craft"
        (let [radius 6378000.0
              planet #:sfsim.planet{:radius radius :max-height 8000.0}]
-         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 0.0 0.0 0.0)
+         (swap! state set-geographic (fn [_v] radius) planet 0.0 0.0 0.0 0.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 radius 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 0.0 (to-radians 90.0) 0.0)
+         (swap! state set-geographic (fn [_v] radius) planet 0.0 0.0 (to-radians 90.0) 0.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 0 radius) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 (to-radians 90.0) 0.0 0.0)
+         (swap! state set-geographic (fn [_v] radius) planet 0.0 (to-radians 90.0) 0.0 0.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 radius 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 (to-radians 90.0) (to-radians 90.0) 0.0)
+         (swap! state set-geographic (fn [_v] radius) planet 0.0 (to-radians 90.0) (to-radians 90.0) 0.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 0 radius) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 0.0 0.0 1000.0)
+         (swap! state set-geographic (fn [_v] radius) planet 0.0 0.0 0.0 1000.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 1000.0) 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] (+ radius 2000.0)) planet 0.0 0.0 0.0 1000.0)
+         (swap! state set-geographic (fn [_v] (+ radius 2000.0)) planet 0.0 0.0 0.0 1000.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 2000.0) 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] (+ radius 2000.0)) planet 5.0 0.0 0.0 1000.0)
+         (swap! state set-geographic (fn [_v] (+ radius 2000.0)) planet 5.0 0.0 0.0 1000.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 2005.0) 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] (+ radius 20000.0)) planet 0.0 0.0 0.0 10000.0)
+         (swap! state set-geographic (fn [_v] (+ radius 20000.0)) planet 0.0 0.0 0.0 10000.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 10000.0) 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] (+ radius 8000.0)) planet 5.0 0.0 0.0 8000.0)
+         (swap! state set-geographic (fn [_v] (+ radius 8000.0)) planet 5.0 0.0 0.0 8000.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 8005.0) 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 0.0 (to-radians -90.0) 0.0)
+         (swap! state set-geographic (fn [_v] radius) planet 0.0 0.0 (to-radians -90.0) 0.0)
          (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion 1 0 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 0.0 0.0 0.0)
+         (swap! state set-geographic (fn [_v] radius) planet 0.0 0.0 0.0 0.0)
          (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion (sqrt 0.5) 0 (- (sqrt 0.5)) 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 (to-radians 90.0) 0.0 0.0)
+         (swap! state set-geographic (fn [_v] radius) planet 0.0 (to-radians 90.0) 0.0 0.0)
          (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion 0.5 0.5 -0.5 0.5) 1e-6)))
+
+
+(tabular "Get longitude, latitude, and height of space craft"
+       (let [radius 6378000.0
+             planet #:sfsim.planet{:radius radius :max-height 8000.0}]
+         (swap! state set-geographic (fn [_v] radius) planet 0.0 (to-radians ?longitude) (to-radians ?latitude) ?height)
+         (let [geo-position (get-geographic @state planet astro/T0)]
+           (facts
+             (to-degrees (:longitude geo-position)) => (roughly ?longitude 1e-3)
+             (to-degrees (:latitude geo-position)) => (roughly ?latitude 1e-3)
+             (:height geo-position) => (roughly ?height 1e-3))))
+       ?longitude ?latitude ?height
+        0.0        0.0        0.0
+        0.0        0.0      100.0
+       90.0        0.0        0.0
+        0.0       90.0        0.0
+       90.0       45.0        0.0)
 
 
 (fact "Do nothing when switching from surface to surface"

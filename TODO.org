@@ -41,7 +41,7 @@
   - [X] rcs input values should be integers (-1, 0, 1)
   - [X] put vehicle height in config
   - [X] do not check terrain height if higher than mount everest
-  - [ ] add tested method for getting longitude, latitude, and height from position vector and orientation
+  - [X] add tested method for getting longitude, latitude, and height from position vector and orientation
   - [ ] enhance physics/set-control-inputs and physics/update-state
   - [ ] allow setting of heading in location dialog
   - [ ] change key for switching to RCS
