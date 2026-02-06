@@ -18,7 +18,7 @@
     [malli.dev :as dev]
     [malli.dev.pretty :as pretty]
     [fastmath.matrix :refer (inverse mulv mulm)]
-    [fastmath.vector :refer (vec3 mult mag sub normalize)]
+    [fastmath.vector :refer (vec3 mag sub div normalize)]
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
@@ -540,10 +540,11 @@
 
 
 (defn stick
-  [gui aileron elevator rudder throttle]
-  (let [stack (MemoryStack/stackPush)
-        rect (NkRect/malloc stack)
-        rgb  (NkColor/malloc stack)]
+  [gui control-surfaces throttle]
+  (let [stack                     (MemoryStack/stackPush)
+        rect                      (NkRect/malloc stack)
+        rgb                       (NkColor/malloc stack)
+        [aileron elevator rudder] control-surfaces]
     (gui/nuklear-window gui "Yoke" 10 10 80 80 false
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
@@ -621,9 +622,6 @@
                           (/ 1.0 ^double fix-fps))
                         (- t1 ^double @t0))
             jd-ut     (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
-            aileron   (@state :sfsim.input/aileron)
-            elevator  (@state :sfsim.input/elevator)
-            rudder    (@state :sfsim.input/rudder)
             brake     (if (@state :sfsim.input/brake) 1.0 (if (@state :sfsim.input/parking-brake) 0.1 0.0))]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
@@ -671,7 +669,7 @@
                                                           (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
                                                           (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state)
                                                           (physics/get-angular-speed :sfsim.physics/surface jd-ut @physics-state)
-                                                          (mult (vec3 aileron elevator rudder) (to-radians 20))
+                                                          (:sfsim.physics/control-surfaces @physics-state)
                                                           (:sfsim.physics/gear @physics-state)
                                                           (:sfsim.physics/air-brake @physics-state))]
                 (physics/add-force :sfsim.physics/surface jd-ut @physics-state
@@ -819,7 +817,9 @@
                                (@menu gui @window-width @window-height))
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
-                               (stick gui aileron elevator rudder (:sfsim.physics/throttle @physics-state))
+                               (stick gui
+                                      (div (:sfsim.physics/control-surfaces @physics-state) (to-radians 20.0))
+                                      (:sfsim.physics/throttle @physics-state))
                                (info gui @window-height
                                      (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                              (- (mag object-position) ^double earth-radius)
