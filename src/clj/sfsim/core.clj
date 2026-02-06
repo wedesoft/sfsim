@@ -134,6 +134,7 @@
 
 
 (def earth-radius (:sfsim.planet/radius config/planet-config))
+(def elevation (:sfsim.model/elevation config/model-config))
 
 
 (def data
@@ -314,7 +315,7 @@
 (def height 25.0)
 
 (def physics-state (atom (physics/make-physics-state body)))
-(swap! physics-state physics/set-longitude-latitude surface config/planet-config 9.0 longitude latitude 0.0)
+(swap! physics-state physics/set-longitude-latitude surface config/planet-config elevation longitude latitude 0.0)
 
 (jolt/optimize-broad-phase)
 
@@ -453,7 +454,7 @@
         (when @vehicle
           (jolt/remove-and-destroy-constraint @vehicle)
           (reset! vehicle nil))
-        (swap! physics-state physics/set-longitude-latitude surface config/planet-config 9.0 longitude latitude height)))
+        (swap! physics-state physics/set-longitude-latitude surface config/planet-config elevation longitude latitude height)))
     (when (gui/button-label gui "Close")
       (reset! menu main-dialog))))
 
