@@ -134,17 +134,29 @@
        (:sfsim.physics/gear @state) => 1.0)
 
 
-(facts "Handle control inputs"
-       (let [input-state (atom {:sfsim.input/throttle 0.1
-                                :sfsim.input/air-brake true
-                                :sfsim.input/gear-down false})]
-         (swap! state set-control-inputs @input-state 0.25)
-         (:sfsim.physics/throttle @state) => 0.1
-         (:sfsim.physics/air-brake @state) => 0.5
-         (:sfsim.physics/gear @state) => 0.875
-         (swap! input-state assoc :sfsim.input/air-brake false)
-         (swap! state set-control-inputs @input-state 0.25)
-         (:sfsim.physics/air-brake @state) => 0.0))
+(tabular "Handle control inputs"
+         (let [input-state {:sfsim.input/throttle 0.0
+                            :sfsim.input/air-brake false
+                            :sfsim.input/gear-down true
+                            :sfsim.input/rcs-roll 0
+                            :sfsim.input/rcs-pitch 0
+                            :sfsim.input/rcs-yaw 0}]
+         (swap! state set-control-inputs (assoc input-state ?input ?value) ?dt)
+         (fact (?output @state) => ?expected))
+         ?input                  ?value ?dt  ?output                   ?expected
+         :sfsim.input/throttle   0.1    0.25 :sfsim.physics/throttle   0.1
+         :sfsim.input/air-brake  true   0.25 :sfsim.physics/air-brake  0.5
+         :sfsim.input/air-brake  false  0.25 :sfsim.physics/air-brake  0.0
+         :sfsim.input/gear-down  false  0.25 :sfsim.physics/gear       0.875
+         :sfsim.input/rcs-roll   -1     1.0  :sfsim.physics/rcs-thrust (vec3  1000000 0 0)
+         :sfsim.input/rcs-roll    1     1.0  :sfsim.physics/rcs-thrust (vec3 -1000000 0 0)
+         :sfsim.input/rcs-roll    0     1.0  :sfsim.physics/rcs-thrust (vec3 0 0 0)
+         :sfsim.input/rcs-pitch  -1     1.0  :sfsim.physics/rcs-thrust (vec3 0  1000000 0)
+         :sfsim.input/rcs-pitch   1     1.0  :sfsim.physics/rcs-thrust (vec3 0 -1000000 0)
+         :sfsim.input/rcs-pitch   0     1.0  :sfsim.physics/rcs-thrust (vec3 0 0 0)
+         :sfsim.input/rcs-yaw    -1     1.0  :sfsim.physics/rcs-thrust (vec3 0 0  1000000)
+         :sfsim.input/rcs-yaw     1     1.0  :sfsim.physics/rcs-thrust (vec3 0 0 -1000000)
+         :sfsim.input/rcs-yaw     0     1.0  :sfsim.physics/rcs-thrust (vec3 0 0 0))
 
 
 (facts "Set position of space craft near surface (rotating coordinate system centered on Earth)"

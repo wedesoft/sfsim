@@ -10,7 +10,7 @@
   (:require
     [clojure.java.io :as io]
     [clojure.set :refer (union)]
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians to-degrees)]
+    [clojure.math :refer (PI to-radians to-degrees)]
     [clojure.tools.logging :as log]
     [clojure.edn]
     [clojure.pprint :refer (pprint)]
@@ -18,7 +18,7 @@
     [malli.dev :as dev]
     [malli.dev.pretty :as pretty]
     [fastmath.matrix :refer (inverse mulv mulm)]
-    [fastmath.vector :refer (vec3 add mult mag sub normalize)]
+    [fastmath.vector :refer (vec3 mult mag sub normalize)]
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
@@ -45,8 +45,6 @@
                          add-mouse-button-event joysticks-poll ->InputHandler char-callback key-callback
                          get-joystick-sensor-for-mapping)])
   (:import
-    (fastmath.vector
-      Vec3)
     (org.lwjgl.glfw
       GLFW
       GLFWVidMode
@@ -195,12 +193,12 @@
 
 (defn active-rcs [state]
   (-> #{"Plume"}
-      (union (if (= (state :sfsim.input/rcs-roll) 1.0) (set (mapcat rcs-set ["RD" "LU"])) #{}))
-      (union (if (= (state :sfsim.input/rcs-roll) -1.0) (set (mapcat rcs-set ["LD" "RU"])) #{}))
-      (union (if (= (state :sfsim.input/rcs-pitch) 1.0) (set (mapcat rcs-set ["LD" "RD" "FU"])) #{}))
-      (union (if (= (state :sfsim.input/rcs-pitch) -1.0) (set (mapcat rcs-set ["LU" "RU" "LFD" "RFD"])) #{}))
-      (union (if (= (state :sfsim.input/rcs-yaw) 1.0) (set (mapcat rcs-set ["L" "RF"])) #{}))
-      (union (if (= (state :sfsim.input/rcs-yaw) -1.0) (set (mapcat rcs-set ["R" "LF"])) #{}))))
+      (union (if (= (state :sfsim.input/rcs-roll) 1) (set (mapcat rcs-set ["RD" "LU"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-roll) -1) (set (mapcat rcs-set ["LD" "RU"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-pitch) 1) (set (mapcat rcs-set ["LD" "RD" "FU"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-pitch) -1) (set (mapcat rcs-set ["LU" "RU" "LFD" "RFD"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-yaw) 1) (set (mapcat rcs-set ["L" "RF"])) #{}))
+      (union (if (= (state :sfsim.input/rcs-yaw) -1) (set (mapcat rcs-set ["R" "LF"])) #{}))))
 
 ; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
 ; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
@@ -645,97 +643,82 @@
             (reset! rcs (:rcs frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
-          (if (@state :sfsim.input/pause)
-            (when (and @recording (@state :sfsim.input/air-brake))
-              (let [position      (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
-                    speed         (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state))
-                    orientation   (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
-                    orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double elevator) (vec3 0 1 0)))
-                    orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double rudder  ) (vec3 0 0 1)))
-                    orientation   (q/* orientation (q/rotation (* ^double dt -1.0 ^double aileron ) (vec3 1 0 0)))
-                    position      (add position (mult (q/rotate-vector orientation (vec3 1 0 0))
-                                                      (* ^double dt 1000.0 ^double (@state :sfsim.input/throttle))))]
-                (swap! physics-state physics/set-pose :sfsim.physics/surface position orientation)
-                (swap! physics-state physics/set-speed :sfsim.physics/surface (mult (q/rotate-vector orientation (vec3 1 0 0)) speed)
-                       (vec3 0 0 0))))
-            (do
-              (swap! time_ + dt)
-              (swap! physics-state physics/set-control-inputs @state dt)
-              (reset! rcs (active-rcs @state))
-              (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
-                (when (not @vehicle)
-                  (let [position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
-                        world-up (normalize position)]
-                    (reset! vehicle (jolt/create-and-add-vehicle-constraint body world-up (vec3 0 0 -1) (vec3 1 0 0) wheels))))
-                (when @vehicle
-                  (jolt/remove-and-destroy-constraint @vehicle)
-                  (reset! vehicle nil)))
-              (when @vehicle (jolt/set-brake-input @vehicle brake))
-              (let [height    (- (mag (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
-                                 ^double earth-radius)]
+          (when (not (@state :sfsim.input/pause))
+            (swap! time_ + dt)
+            (swap! physics-state physics/set-control-inputs @state dt)
+            (reset! rcs (active-rcs @state))
+            (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
+              (when (not @vehicle)
+                (let [position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
+                      world-up (normalize position)]
+                  (reset! vehicle (jolt/create-and-add-vehicle-constraint body world-up (vec3 0 0 -1) (vec3 1 0 0) wheels))))
+              (when @vehicle
+                (jolt/remove-and-destroy-constraint @vehicle)
+                (reset! vehicle nil)))
+            (when @vehicle (jolt/set-brake-input @vehicle brake))
+            (let [height    (- (mag (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
+                               ^double earth-radius)]
+              (swap! physics-state
+                     physics/set-domain
+                     (if (>= height ^double (:sfsim.planet/space-boundary config/planet-config))
+                       :sfsim.physics/orbit
+                       :sfsim.physics/surface)
+                     jd-ut)
+              (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
+              (let [orientation (physics/get-orientation :sfsim.physics/orbit jd-ut @physics-state)
+                    rcs-thrust  (:sfsim.physics/rcs-thrust @physics-state)
+                    loads (aerodynamics/aerodynamic-loads height
+                                                          (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
+                                                          (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state)
+                                                          (physics/get-angular-speed :sfsim.physics/surface jd-ut @physics-state)
+                                                          (mult (vec3 aileron elevator rudder) (to-radians 20))
+                                                          (:sfsim.physics/gear @physics-state)
+                                                          (:sfsim.physics/air-brake @physics-state))]
+                (physics/add-force :sfsim.physics/surface jd-ut @physics-state
+                                   (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
+                                                    (vec3 (* ^double (:sfsim.physics/throttle @physics-state) ^double thrust)
+                                                          0
+                                                          0)))
+                (physics/add-force :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/forces loads))
+                (physics/add-torque :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/moments loads))
+                (physics/add-torque :sfsim.physics/orbit jd-ut @physics-state (q/rotate-vector orientation rcs-thrust))
                 (swap! physics-state
-                       physics/set-domain
-                       (if (>= height ^double (:sfsim.planet/space-boundary config/planet-config))
-                         :sfsim.physics/orbit
-                         :sfsim.physics/surface)
-                       jd-ut)
-                (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
-                (let [orientation (physics/get-orientation :sfsim.physics/orbit jd-ut @physics-state)
-                      rcs-thrust  (vec3 (* ^double (@state :sfsim.input/rcs-roll) -1000000.0)
-                                        (* ^double (@state :sfsim.input/rcs-pitch) -1000000.0)
-                                        (* ^double (@state :sfsim.input/rcs-yaw) -1000000.0))
-                      loads (aerodynamics/aerodynamic-loads height
-                                                            (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
-                                                            (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state)
-                                                            (physics/get-angular-speed :sfsim.physics/surface jd-ut @physics-state)
-                                                            (mult (vec3 aileron elevator rudder) (to-radians 20))
-                                                            (:sfsim.physics/gear @physics-state)
-                                                            (:sfsim.physics/air-brake @physics-state))]
-                  (physics/add-force :sfsim.physics/surface jd-ut @physics-state
-                                     (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
-                                                      (vec3 (* ^double (:sfsim.physics/throttle @physics-state) ^double thrust)
-                                                            0
-                                                            0)))
-                  (physics/add-force :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/forces loads))
-                  (physics/add-torque :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/moments loads))
-                  (physics/add-torque :sfsim.physics/orbit jd-ut @physics-state (q/rotate-vector orientation rcs-thrust))
-                  (swap! physics-state
-                         physics/update-state
-                         dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass)))))
-              (reset! wheel-angles (if @vehicle
-                                     [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
-                                      (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
-                                      (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2.0 PI)) 1.0)]
-                                     [0.0 0.0 0.0]))
-              (reset! suspension (if @vehicle
-                                   [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                    (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                    (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
-                                   [1.0 1.0 1.0]))
-              (when @recording
-                (let [[origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
-                                                   (camera/get-camera-pose @camera-state @physics-state jd-ut))
-                      frame {:timeseconds (+ (* ^double @time-delta 86400.0) ^double @t0)
-                             :position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
-                             :orientation (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
-                             :camera-position origin
-                             :camera-orientation camera-orientation
-                             :dist (:sfsim.camera/distance @camera-state)
-                             :gear (:sfsim.physics/gear @physics-state)
-                             :time_ @time_
-                             :throttle (:sfsim.physics/throttle @physics-state)
-                             :rcs @rcs
-                             :wheel-angles (if @vehicle
-                                             [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
-                                              (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
-                                              (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
-                                             [0.0 0.0 0.0])
-                             :suspension (if @vehicle
-                                           [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                            (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                            (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
-                                           [1.0 1.0 1.0])}]
-                  (swap! recording conj frame))))))
+                       physics/update-state
+                       dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass)))))
+            (reset! wheel-angles (if @vehicle
+                                   [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
+                                    (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
+                                    (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2.0 PI)) 1.0)]
+                                   [0.0 0.0 0.0]))
+            (reset! suspension (if @vehicle
+                                 [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                                  (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                                  (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                                 [1.0 1.0 1.0]))
+            (when @recording
+              (let [[origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
+                                                 (camera/get-camera-pose @camera-state @physics-state jd-ut))
+                    frame {:timeseconds (+ (* ^double @time-delta 86400.0) ^double @t0)
+                           :position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
+                           :orientation (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
+                           :camera-position origin
+                           :camera-orientation camera-orientation
+                           :dist (:sfsim.camera/distance @camera-state)
+                           :gear (:sfsim.physics/gear @physics-state)
+                           :time_ @time_
+                           :throttle (:sfsim.physics/throttle @physics-state)
+                           :rcs @rcs
+                           :wheel-angles (if @vehicle
+                                           [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
+                                            (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
+                                            (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
+                                           [0.0 0.0 0.0])
+                           :suspension (if @vehicle
+                                         [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
+                                          (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
+                                          (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                                         [1.0 1.0 1.0])}]
+                (swap! recording conj frame)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
               height             (- (mag object-position) ^double earth-radius)
               pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
