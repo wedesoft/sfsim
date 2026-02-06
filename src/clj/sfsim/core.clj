@@ -314,7 +314,7 @@
 (def height 25.0)
 
 (def physics-state (atom (physics/make-physics-state body)))
-(swap! physics-state physics/set-longitude-latitude surface earth-radius 9.0 longitude latitude 0.0)
+(swap! physics-state physics/set-longitude-latitude surface config/planet-config 9.0 longitude latitude 0.0)
 
 (jolt/optimize-broad-phase)
 
@@ -439,22 +439,23 @@
 
 (defn location-dialog
   [gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) true
-                      (gui/layout-row-dynamic gui 32 2)
-                      (gui/text-label gui "Longitude (East)")
-                      (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
-                      (gui/text-label gui "Latitude (North)")
-                      (tabbing gui (gui/edit-field gui (:latitude position-data)) 1 3)
-                      (gui/text-label gui "Height")
-                      (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
-                      (when (gui/button-label gui "Set")
-                        (let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
-                          (when @vehicle
-                            (jolt/remove-and-destroy-constraint @vehicle)
-                            (reset! vehicle nil))
-                          (swap! physics-state physics/set-longitude-latitude surface earth-radius 9.0 longitude latitude height)))
-                      (when (gui/button-label gui "Close")
-                        (reset! menu main-dialog))))
+  (gui/nuklear-window
+    gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) true
+    (gui/layout-row-dynamic gui 32 2)
+    (gui/text-label gui "Longitude (East)")
+    (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
+    (gui/text-label gui "Latitude (North)")
+    (tabbing gui (gui/edit-field gui (:latitude position-data)) 1 3)
+    (gui/text-label gui "Height")
+    (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
+    (when (gui/button-label gui "Set")
+      (let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
+        (when @vehicle
+          (jolt/remove-and-destroy-constraint @vehicle)
+          (reset! vehicle nil))
+        (swap! physics-state physics/set-longitude-latitude surface config/planet-config 9.0 longitude latitude height)))
+    (when (gui/button-label gui "Close")
+      (reset! menu main-dialog))))
 
 
 (def t0 (atom (GLFW/glfwGetTime)))

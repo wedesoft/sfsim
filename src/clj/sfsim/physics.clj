@@ -198,9 +198,13 @@
 
 (defn set-longitude-latitude
   "Set position by specifying longitude, latitude, and height"
-  [state surface radius elevation longitude latitude height]
-  (let [point   (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
-        terrain (+ ^double (surface point) ^double elevation)]
+  [state surface planet elevation longitude latitude height]
+  (let [point       (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
+        radius      (:sfsim.planet/radius planet)
+        max-terrain (:sfsim.planet/max-height planet)
+        terrain     (if (>= ^double height (+ ^double max-terrain ^double elevation))
+                      ^double radius
+                      (+ ^double (surface point) ^double elevation))]
     (set-pose state ::surface (mult point (max terrain (+ ^double radius ^double height)))
               (q/* (q/rotation longitude (vec3 0 0 1))
                    (q/rotation (+ ^double latitude (to-radians 90.0)) (vec3 0 -1 0))))))

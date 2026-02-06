@@ -40,7 +40,7 @@
   - [ ] use state variable to consolidate atoms and simplify recording and playback code
   - [X] rcs input values should be integers (-1, 0, 1)
   - [ ] put vehicle height in config
-  - [ ] do not check terrain height if higher than mount everest
+  - [X] do not check terrain height if higher than mount everest
   - [ ] add tested method for getting longitude, latitude, and height from position vector and orientation
   - [ ] enhance physics/set-control-inputs and physics/update-state
   - [ ] allow setting of heading in location dialog

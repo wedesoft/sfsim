@@ -188,26 +188,31 @@
 
 
 (facts "Set longitude and latitude position of space craft"
-       (let [radius 6378000.0]
-         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 0.0 0.0 0.0)
+       (let [radius 6378000.0
+             planet #:sfsim.planet{:radius radius :max-height 8000.0}]
+         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 0.0 0.0 0.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 radius 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 0.0 (to-radians 90.0) 0.0)
+         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 0.0 (to-radians 90.0) 0.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 0 radius) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 (to-radians 90.0) 0.0 0.0)
+         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 (to-radians 90.0) 0.0 0.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 radius 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 (to-radians 90.0) (to-radians 90.0) 0.0)
+         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 (to-radians 90.0) (to-radians 90.0) 0.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 0 radius) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 0.0 0.0 1000.0)
+         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 0.0 0.0 1000.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 1000.0) 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] (+ radius 2000.0)) radius 0.0 0.0 0.0 1000.0)
+         (swap! state set-longitude-latitude (fn [_v] (+ radius 2000.0)) planet 0.0 0.0 0.0 1000.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 2000.0) 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] (+ radius 2000.0)) radius 5.0 0.0 0.0 1000.0)
+         (swap! state set-longitude-latitude (fn [_v] (+ radius 2000.0)) planet 5.0 0.0 0.0 1000.0)
          (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 2005.0) 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 0.0 (to-radians -90.0) 0.0)
+         (swap! state set-longitude-latitude (fn [_v] (+ radius 20000.0)) planet 0.0 0.0 0.0 10000.0)
+         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 10000.0) 0 0) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] (+ radius 8000.0)) planet 5.0 0.0 0.0 8000.0)
+         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 8005.0) 0 0) 1e-6)
+         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 0.0 (to-radians -90.0) 0.0)
          (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion 1 0 0 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 0.0 0.0 0.0)
+         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 0.0 0.0 0.0)
          (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion (sqrt 0.5) 0 (- (sqrt 0.5)) 0) 1e-6)
-         (swap! state set-longitude-latitude (fn [_v] radius) radius 0.0 (to-radians 90.0) 0.0 0.0)
+         (swap! state set-longitude-latitude (fn [_v] radius) planet 0.0 (to-radians 90.0) 0.0 0.0)
          (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion 0.5 0.5 -0.5 0.5) 1e-6)))
 
 
