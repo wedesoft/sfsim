@@ -540,11 +540,13 @@
 
 
 (defn stick
-  [gui control-surfaces throttle]
-  (let [stack                     (MemoryStack/stackPush)
-        rect                      (NkRect/malloc stack)
-        rgb                       (NkColor/malloc stack)
-        [aileron elevator rudder] control-surfaces]
+  [gui input-state]
+  (let [stack    (MemoryStack/stackPush)
+        rect     (NkRect/malloc stack)
+        rgb      (NkColor/malloc stack)
+        throttle (:sfsim.input/throttle input-state)
+        aileron  (:sfsim.input/aileron input-state)
+        elevator (:sfsim.input/rudder input-state)]
     (gui/nuklear-window gui "Yoke" 10 10 80 80 false
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
@@ -817,9 +819,7 @@
                                (@menu gui @window-width @window-height))
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
-                               (stick gui
-                                      (div (:sfsim.physics/control-surfaces @physics-state) (to-radians 20.0))
-                                      (:sfsim.physics/throttle @physics-state))
+                               (stick gui @state)
                                (info gui @window-height
                                      (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                              (- (mag object-position) ^double earth-radius)
