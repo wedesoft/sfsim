@@ -146,6 +146,7 @@ The Blender model can be converted to GLB as follows:
   * [Rogue System](http://imagespaceinc.com/rogsys/)
   * [Endless Abyss](https://smoothiegames.itch.io/endless-abyss)
   * [UniVoyager](https://www.univoyager.com/)
+  * [Final Orbit](https://store.steampowered.com/app/4319800/Final_Orbit/)
   * [Space Nerds in Space](https://smcameron.github.io/space-nerds-in-space/)
   * [Alliance Space Guard](https://alliancespaceguard.com/)
   * [Pioneer Space Sim](https://pioneerspacesim.net/)
