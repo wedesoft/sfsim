@@ -370,7 +370,7 @@
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
-    (let [display-speed (jolt/get-linear-velocity body)]
+    (let [display-speed (mag (jolt/get-linear-velocity body))]
       (jolt/add-impulse body (mult dv2 mass))
       (assoc state ::display-speed display-speed))))
 
@@ -387,16 +387,15 @@
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
-    (let [display-speed (jolt/get-linear-velocity body)]
-      (jolt/add-impulse body (mult dv2 mass))
-      (let [delta-position (add (mult speed dt) (jolt/get-translation body))
-            delta-speed (jolt/get-linear-velocity body)]
-        (jolt/set-translation body (vec3 0 0 0))
-        (jolt/set-linear-velocity body (vec3 0 0 0))
-        (-> state
-            (assoc ::display-speed display-speed)
-            (update ::position add delta-position)
-            (update ::speed add delta-speed))))))
+    (jolt/add-impulse body (mult dv2 mass))
+    (let [delta-position (add (mult speed dt) (jolt/get-translation body))
+          delta-speed    (jolt/get-linear-velocity body)]
+      (jolt/set-translation body (vec3 0 0 0))
+      (jolt/set-linear-velocity body (vec3 0 0 0))
+      (-> state
+          (assoc ::display-speed (mag (add speed delta-speed)))
+          (update ::position add delta-position)
+          (update ::speed add delta-speed)))))
 
 
 (defmulti add-force

@@ -820,7 +820,7 @@
                                (info gui @window-height
                                      (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                              (- (mag object-position) ^double earth-radius)
-                                             (mag (:sfsim.physics/display-speed @physics-state))
+                                             (:sfsim.physics/display-speed @physics-state)
                                              (if (@state :sfsim.input/rcs) "RCS" "aerofoil")
                                              (/ 1.0 ^double @frametime)
                                              (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
