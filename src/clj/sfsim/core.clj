@@ -99,7 +99,7 @@
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timeseconds position orientation camera-position camera-orientation dist gear wheel-angles suspension
-                             throttle rcs time_]}]
+                             throttle rcs-throttle time_]}]
                     {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
@@ -110,7 +110,7 @@
                      :gear gear
                      :time_ time_
                      :throttle throttle
-                     :rcs rcs
+                     :rcs-throttle (apply vec3 rcs-throttle)
                      :wheel-angles wheel-angles
                      :suspension suspension})
                 (clojure.edn/read-string (slurp "recording.edn")))
@@ -187,18 +187,15 @@
 (def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Main Wheel Right"))))
 (def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform scene "Wheel Front"))))
 (def bsp-tree (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
-(defn rcs-set [rcs-name] [(str "RCS " rcs-name "1") (str "RCS " rcs-name "2") (str "RCS " rcs-name "3")])
-(def thruster-names (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
-(def thruster-transforms (into {} (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name) (mulm gltf-to-aerodynamic) (vector rcs-name))) thruster-names))))
 
-(defn active-rcs [state]
-  (-> #{"Plume"}
-      (union (if (= (state :sfsim.input/rcs-roll) 1) (set (mapcat rcs-set ["RD" "LU"])) #{}))
-      (union (if (= (state :sfsim.input/rcs-roll) -1) (set (mapcat rcs-set ["LD" "RU"])) #{}))
-      (union (if (= (state :sfsim.input/rcs-pitch) 1) (set (mapcat rcs-set ["LD" "RD" "FU"])) #{}))
-      (union (if (= (state :sfsim.input/rcs-pitch) -1) (set (mapcat rcs-set ["LU" "RU" "LFD" "RFD"])) #{}))
-      (union (if (= (state :sfsim.input/rcs-yaw) 1) (set (mapcat rcs-set ["L" "RF"])) #{}))
-      (union (if (= (state :sfsim.input/rcs-yaw) -1) (set (mapcat rcs-set ["R" "LF"])) #{}))))
+(def thruster-transforms
+  (into {}
+        (remove nil?
+                (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
+                                             (mulm gltf-to-aerodynamic)
+                                             (vector rcs-name)))
+                     (physics/all-rcs)))))
+
 
 ; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
 ; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
@@ -640,13 +637,13 @@
             (reset! time_ (:time_ frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
             (swap! physics-state assoc :sfsim.physics/gear (:gear frame))
+            (swap! physics-state assoc :sfsim.physics/rcs-thrust (:rcs-thrust frame))
             (reset! rcs (:rcs frame))
             (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
           (when (not (@state :sfsim.input/pause))
             (swap! time_ + dt)
             (swap! physics-state physics/set-control-inputs @state dt)
-            (reset! rcs (active-rcs @state))
             (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
               (when (not @vehicle)
                 (let [position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
@@ -707,7 +704,7 @@
                            :gear (:sfsim.physics/gear @physics-state)
                            :time_ @time_
                            :throttle (:sfsim.physics/throttle @physics-state)
-                           :rcs @rcs
+                           :rcs-thrust (:sfsim.physics/rcs-thrust @physics-state)
                            :wheel-angles (if @vehicle
                                            [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
                                             (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
@@ -784,7 +781,7 @@
               geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
                                                                (planet/get-current-tree tile-tree))
               object-origin      (:sfsim.render/object-origin scene-render-vars)
-              render-order       (filterv @rcs (model/bsp-render-order bsp-tree object-origin))
+              render-order       (filterv (physics/active-rcs @physics-state) (model/bsp-render-order bsp-tree object-origin))
               plume-transforms   (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
               clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms
                                                               geometry)]

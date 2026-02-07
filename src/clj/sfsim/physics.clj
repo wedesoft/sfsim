@@ -8,6 +8,7 @@
   "Physics related functions except for Jolt bindings"
   (:require
     [clojure.math :refer (cos sin atan2 hypot to-radians)]
+    [clojure.set :refer (union)]
     [fastmath.matrix :refer (mulv inverse)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross)]
     [malli.core :as m]
@@ -450,6 +451,37 @@
 (defmethod add-torque [::orbit ::orbit]
   [_domain _jd-ut state torque_]
   (jolt/add-torque (::body state) torque_))
+
+
+(defn rcs-set
+  "Get list of names for RCS thruster triplet given a location string"
+  [location]
+  [(str "RCS " location "1") (str "RCS " location "2") (str "RCS " location "3")])
+
+
+(defn rcs-sets
+  "Get set with names for RCS thruster triplets given a list of location strings"
+  [& locations]
+  (set (mapcat rcs-set locations)))
+
+
+(defn active-rcs
+  "Return set of names of active RCS thruster triplets"
+  [state]
+  (-> #{}
+      (union (when (not (zero? ^double (::throttle state))) #{"Plume"}))
+      (union (when (neg? ^double ((::rcs-thrust state) 0)) (rcs-sets "RD" "LU")))
+      (union (when (pos? ^double ((::rcs-thrust state) 0)) (rcs-sets "LD" "RU")))
+      (union (when (neg? ^double ((::rcs-thrust state) 1)) (rcs-sets "LD" "RD" "FU")))
+      (union (when (pos? ^double ((::rcs-thrust state) 1)) (rcs-sets "LU" "RU" "LFD" "RFD")))
+      (union (when (neg? ^double ((::rcs-thrust state) 2)) (rcs-sets "L" "RF")))
+      (union (when (pos? ^double ((::rcs-thrust state) 2)) (rcs-sets "R" "LF")))))
+
+
+(defn all-rcs
+  "Get list of all thruster names"
+  []
+  (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
 
 
 (set! *warn-on-reflection* false)

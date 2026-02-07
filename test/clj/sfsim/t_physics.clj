@@ -403,6 +403,26 @@
          (get-angular-speed :sfsim.physics/orbit astro/T0 @state) => (roughly-vector (vec3 0 1 0) 1e-3)))
 
 
+(facts "Get set with names of active RCS triplets"
+       (active-rcs @state) => #{}
+       (swap! state assoc :sfsim.physics/throttle 0.2)
+       (active-rcs @state) => #{"Plume"}
+       (swap! state assoc :sfsim.physics/rcs-thrust (vec3 -1000000 0 0))
+       (active-rcs @state) => #{"Plume" "RCS RD1" "RCS RD2" "RCS RD3" "RCS LU1" "RCS LU2" "RCS LU3"}
+       (swap! state assoc :sfsim.physics/throttle 0.0)
+       (swap! state assoc :sfsim.physics/rcs-thrust (vec3 1000000 0 0))
+       (active-rcs @state) => #{"RCS LD1" "RCS LD2" "RCS LD3" "RCS RU1" "RCS RU2" "RCS RU3"}
+       (swap! state assoc :sfsim.physics/rcs-thrust (vec3 0 -1000000 0))
+       (active-rcs @state) => #{"RCS LD1" "RCS LD2" "RCS LD3" "RCS RD1" "RCS RD2" "RCS RD3" "RCS FU1" "RCS FU2" "RCS FU3"}
+       (swap! state assoc :sfsim.physics/rcs-thrust (vec3 0 1000000 0))
+       (active-rcs @state) => #{"RCS LU1" "RCS LU2" "RCS LU3" "RCS RU1" "RCS RU2" "RCS RU3"
+                                "RCS LFD1" "RCS LFD2" "RCS LFD3" "RCS RFD1" "RCS RFD2" "RCS RFD3"}
+       (swap! state assoc :sfsim.physics/rcs-thrust (vec3 0 0 -1000000))
+       (active-rcs @state) => #{"RCS L1" "RCS L2" "RCS L3" "RCS RF1" "RCS RF2" "RCS RF3"}
+       (swap! state assoc :sfsim.physics/rcs-thrust (vec3 0 0 1000000))
+       (active-rcs @state) => #{"RCS R1" "RCS R2" "RCS R3" "RCS LF1" "RCS LF2" "RCS LF3"})
+
+
 (jolt/remove-and-destroy-body sphere)
 
 
