@@ -7,9 +7,11 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [malli.core :as m]
+    [clojure.math :refer (cos sin atan2 hypot to-radians)]
+    [clojure.set :refer (union)]
     [fastmath.matrix :refer (mulv inverse)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross)]
+    [malli.core :as m]
     [sfsim.jolt :as jolt]
     [sfsim.astro :as astro]
     [sfsim.quaternion :as q]
@@ -98,23 +100,38 @@
 
 
 (defn make-physics-state
+  "Create initial physics state"
   [body]
   {::body body
+   ::position (vec3 0 0 0)
+   ::speed (vec3 0 0 0)
+   ::domain ::surface
    ::display-speed 0.0
    ::throttle 0.0
    ::air-brake 0.0
-   ::gear 1.0})
+   ::gear 1.0
+   ::rcs-thrust (vec3 0 0 0)
+   ::control-surfaces (vec3 0 0 0)
+   ::brake 0.0})
 
 
 (defn set-control-inputs
+  "Apply inputs to space craft"
   [state inputs ^double dt]
   (-> state
       (assoc ::throttle (:sfsim.input/throttle inputs))
       (update ::air-brake (fn [^double x] (clamp (+ x (* (if (:sfsim.input/air-brake inputs) 2.0 -2.0) dt)) 0.0 1.0)))
-      (update ::gear (fn [^double x] (clamp (+ x (* (if (:sfsim.input/gear-down inputs) 0.5 -0.5) dt)) 0.0 1.0)))))
+      (update ::gear (fn [^double x] (clamp (+ x (* (if (:sfsim.input/gear-down inputs) 0.5 -0.5) dt)) 0.0 1.0)))
+      (assoc ::rcs-thrust (mult (vec3 (:sfsim.input/rcs-roll inputs) (:sfsim.input/rcs-pitch inputs) (:sfsim.input/rcs-yaw inputs))
+                                -1000000.0))
+      (assoc ::control-surfaces (mult (vec3 (:sfsim.input/aileron inputs) (:sfsim.input/elevator inputs) (:sfsim.input/rudder inputs))
+                                      (to-radians 20.0)))
+      (assoc ::brake (if (:sfsim.input/brake inputs) 1.0 (if (:sfsim.input/parking-brake inputs) 0.1 0.0)))))
 
 
-(defmulti set-pose (fn [_state domain _position _orientation] domain))
+(defmulti set-pose
+  "Set position and orientation of space craft"
+  (fn [_state domain _position _orientation] domain))
 
 
 (defmethod set-pose ::surface
@@ -135,7 +152,9 @@
       (assoc ::position position)))  ; Store double precision position 
 
 
-(defmulti get-position (fn [domain _jd-ut state] [(::domain state) domain]))
+(defmulti get-position
+  "Get position of space craft"
+  (fn [domain _jd-ut state] [(::domain state) domain]))
 
 
 (defmethod get-position [::surface ::surface]
@@ -160,7 +179,9 @@
   (::position state))
 
 
-(defmulti get-orientation (fn [domain _jd-ut state] [(::domain state) domain]))
+(defmulti get-orientation
+  "Get orientation of space craft"
+  (fn [domain _jd-ut state] [(::domain state) domain]))
 
 
 (defmethod get-orientation [::surface ::surface]
@@ -187,7 +208,35 @@
   (jolt/get-orientation (::body state)))
 
 
-(defmulti set-speed (fn [_state domain _linear-velocity _angular-velocity] domain))
+(defn set-geographic
+  "Set position by specifying longitude, latitude, and height"
+  [state surface planet elevation longitude latitude height]
+  (let [point       (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
+        radius      (:sfsim.planet/radius planet)
+        max-terrain (:sfsim.planet/max-height planet)
+        terrain     (if (>= ^double height (+ ^double max-terrain ^double elevation))
+                      ^double radius
+                      (+ ^double (surface point) ^double elevation))]
+    (set-pose state ::surface (mult point (max terrain (+ ^double radius ^double height)))
+              (q/* (q/rotation longitude (vec3 0 0 1))
+                   (q/rotation (+ ^double latitude (to-radians 90.0)) (vec3 0 -1 0))))))
+
+
+(defn get-geographic
+  "Get longitude, latitude, and height of space craft"
+  [state planet jd-ut]
+  (let [position  (get-position :sfsim.physics/surface jd-ut state)
+        longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
+        latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
+        height    (- (mag position) ^double (:sfsim.planet/radius planet))]
+    {:longitude longitude
+     :latitude latitude
+     :height height}))
+
+
+(defmulti set-speed
+  "Set speed vector of space craft"
+  (fn [_state domain _linear-velocity _angular-velocity] domain))
 
 
 (defmethod set-speed ::surface
@@ -204,7 +253,9 @@
   (assoc state ::speed linear-velocity))
 
 
-(defmulti get-linear-speed (fn [domain _jd-ut state] [(::domain state) domain]))
+(defmulti get-linear-speed
+  "Get speed vector of space craft"
+  (fn [domain _jd-ut state] [(::domain state) domain]))
 
 
 (defmethod get-linear-speed [::surface ::surface]
@@ -236,7 +287,9 @@
   (::speed state))
 
 
-(defmulti get-angular-speed (fn [domain _jd-ut state] [(::domain state) domain]))
+(defmulti get-angular-speed
+  "Get angular velocity vector of space craft"
+  (fn [domain _jd-ut state] [(::domain state) domain]))
 
 
 (defmethod get-angular-speed [::surface ::surface]
@@ -265,7 +318,9 @@
   (jolt/get-angular-velocity (::body state)))
 
 
-(defmulti set-domain (fn [state target _jd-ut] [(::domain state) target]))
+(defmulti set-domain
+  "Switch reference system of space craft"
+  (fn [state target _jd-ut] [(::domain state) target]))
 
 
 (defmethod set-domain :default
@@ -296,7 +351,9 @@
         (set-speed ::surface linear-velocity angular-velocity))))
 
 
-(defmulti update-state (fn [state _dt _acceleration] (::domain state)))
+(defmulti update-state
+  "Perform simulation step"
+  (fn [state _dt _acceleration] (::domain state)))
 
 
 (defmethod update-state ::surface
@@ -313,7 +370,7 @@
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
-    (let [display-speed (jolt/get-linear-velocity body)]
+    (let [display-speed (mag (jolt/get-linear-velocity body))]
       (jolt/add-impulse body (mult dv2 mass))
       (assoc state ::display-speed display-speed))))
 
@@ -330,19 +387,20 @@
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
-    (let [display-speed (jolt/get-linear-velocity body)]
-      (jolt/add-impulse body (mult dv2 mass))
-      (let [delta-position (add (mult speed dt) (jolt/get-translation body))
-            delta-speed (jolt/get-linear-velocity body)]
-        (jolt/set-translation body (vec3 0 0 0))
-        (jolt/set-linear-velocity body (vec3 0 0 0))
-        (-> state
-            (assoc ::display-speed display-speed)
-            (update ::position add delta-position)
-            (update ::speed add delta-speed))))))
+    (jolt/add-impulse body (mult dv2 mass))
+    (let [delta-position (add (mult speed dt) (jolt/get-translation body))
+          delta-speed    (jolt/get-linear-velocity body)]
+      (jolt/set-translation body (vec3 0 0 0))
+      (jolt/set-linear-velocity body (vec3 0 0 0))
+      (-> state
+          (assoc ::display-speed (mag (add speed delta-speed)))
+          (update ::position add delta-position)
+          (update ::speed add delta-speed)))))
 
 
-(defmulti add-force (fn [domain _jd-ut state _force_] [domain (::domain state)]))
+(defmulti add-force
+  "Add force affecting space craft"
+  (fn [domain _jd-ut state _force_] [domain (::domain state)]))
 
 
 (defmethod add-force [::surface ::surface]
@@ -367,7 +425,9 @@
   (jolt/add-force (::body state) force_))
 
 
-(defmulti add-torque (fn [domain _jd-ut state _torque_] [domain (::domain state)]))
+(defmulti add-torque
+  "Add torque affecting space craft"
+  (fn [domain _jd-ut state _torque_] [domain (::domain state)]))
 
 
 (defmethod add-torque [::surface ::surface]
@@ -390,6 +450,37 @@
 (defmethod add-torque [::orbit ::orbit]
   [_domain _jd-ut state torque_]
   (jolt/add-torque (::body state) torque_))
+
+
+(defn rcs-set
+  "Get list of names for RCS thruster triplet given a location string"
+  [location]
+  [(str "RCS " location "1") (str "RCS " location "2") (str "RCS " location "3")])
+
+
+(defn rcs-sets
+  "Get set with names for RCS thruster triplets given a list of location strings"
+  [& locations]
+  (set (mapcat rcs-set locations)))
+
+
+(defn active-rcs
+  "Return set of names of active RCS thruster triplets"
+  [state]
+  (-> #{}
+      (union (when (not (zero? ^double (::throttle state))) #{"Plume"}))
+      (union (when (neg? ^double ((::rcs-thrust state) 0)) (rcs-sets "RD" "LU")))
+      (union (when (pos? ^double ((::rcs-thrust state) 0)) (rcs-sets "LD" "RU")))
+      (union (when (neg? ^double ((::rcs-thrust state) 1)) (rcs-sets "LD" "RD" "FU")))
+      (union (when (pos? ^double ((::rcs-thrust state) 1)) (rcs-sets "LU" "RU" "LFD" "RFD")))
+      (union (when (neg? ^double ((::rcs-thrust state) 2)) (rcs-sets "L" "RF")))
+      (union (when (pos? ^double ((::rcs-thrust state) 2)) (rcs-sets "R" "LF")))))
+
+
+(defn all-rcs
+  "Get list of all thruster names"
+  []
+  (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
 
 
 (set! *warn-on-reflection* false)

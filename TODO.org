@@ -1,13 +1,16 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2026-02-06 Fr 22:46] \\
+    F-35 cockpit
+    [[https://realsimulator.com/f-35-cockpit/]]
+    [[https://msfsaddons.com/2021/09/29/indiafoxtecho-shows-first-images-of-the-f-35-cockpit-in-msfs/]]
   - Note taken on [2026-02-01 So 15:48] \\
     Thrust vectoring:
     If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
     A combination of pitch and roll can produce whatever attitude control you need. source
     [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
-  - Note taken on [2025-08-26 Di 21:59] \\
-    - [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
+    [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
   - Note taken on [2025-08-26 Tue 09:21] \\
     - Links by Substantial_Marzipan about linear aerospike:
       - https://aerospaceweb.org/design/aerospike/aerospike.shtml
@@ -37,12 +40,12 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
+  - [ ] enhance physics/set-control-inputs and physics/update-state
   - [ ] use state variable to consolidate atoms and simplify recording and playback code
-  - [ ] rcs input values should be integers (-1, 0, 1)
+  - [ ] allow setting of heading in location dialog
   - [ ] change key for switching to RCS
   - [ ] create high level rendering methods to simplify main program and integration tests
   - [ ] schemas for model, planet, and atmosphere geometry renderer
-  - [X] Jolt physics problem with gear ground collision at latitude below zero?
   - [ ] add RCS state to physics-state
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back

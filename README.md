@@ -59,7 +59,7 @@ cd ..
 
 # Build
 
-* Build Jolt wrapper library: `make jolt`
+* Build Jolt wrapper library (tested with Linux and Windows/MinGW): `make jolt`
 * Download space ship model: `clj -T:build download-spaceship`
 * Create content of data folder (Note that building everything takes days! You can take the data folder of a Steam playtest build instead unless latest software requires a future data release on Steam):
   * Volumetric clouds
@@ -91,7 +91,8 @@ cd ..
 
 ## Further Build Steps under Windows
 
-* Update version number in `src/clj/sfsim/version.clj`
+* Update version number in `src/clj/sfsim/version.clj` and update ChangeLog
+* make sure Jolt wrapper library was built: `make jolt`
 * Delete target and out-windows directories (do not omit this step otherwise it can generate a broken build)
 * Build JAR file: `clj -T:build uber`
 * Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json` (delete out-windows folder first)
@@ -99,7 +100,8 @@ cd ..
 
 ## Further Build Steps under GNU/Linux
 
-* Update version number in `src/clj/sfsim/version.clj`
+* Update version number in `src/clj/sfsim/version.clj` and update ChangeLog
+* make sure Jolt wrapper library was built: `make jolt`
 * Delete target and out-linux directories (do not omit this step, otherwise it can generate a broken build)
 * Build JAR file: `clj -T:build uber`
 * Create Linux executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json` (delete out-linux folder first)
@@ -144,6 +146,7 @@ The Blender model can be converted to GLB as follows:
   * [Rogue System](http://imagespaceinc.com/rogsys/)
   * [Endless Abyss](https://smoothiegames.itch.io/endless-abyss)
   * [UniVoyager](https://www.univoyager.com/)
+  * [Final Orbit](https://store.steampowered.com/app/4319800/Final_Orbit/)
   * [Space Nerds in Space](https://smcameron.github.io/space-nerds-in-space/)
   * [Alliance Space Guard](https://alliancespaceguard.com/)
   * [Pioneer Space Sim](https://pioneerspacesim.net/)
