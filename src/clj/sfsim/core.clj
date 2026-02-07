@@ -624,8 +624,7 @@
                         (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0))))))
                           (/ 1.0 ^double fix-fps))
                         (- t1 ^double @t0))
-            jd-ut     (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)
-            brake     (if (@state :sfsim.input/brake) 1.0 (if (@state :sfsim.input/parking-brake) 0.1 0.0))]
+            jd-ut     (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
         (if (@state :sfsim.input/menu)
@@ -656,7 +655,7 @@
               (when @vehicle
                 (jolt/remove-and-destroy-constraint @vehicle)
                 (reset! vehicle nil)))
-            (when @vehicle (jolt/set-brake-input @vehicle brake))
+            (when @vehicle (jolt/set-brake-input @vehicle (:sfsim.physics/brake @physics-state)))
             (let [height    (- (mag (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
                                ^double earth-radius)]
               (swap! physics-state

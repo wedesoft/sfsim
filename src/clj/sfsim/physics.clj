@@ -102,12 +102,16 @@
   "Create initial physics state"
   [body]
   {::body body
+   ::position (vec3 0 0 0)
+   ::speed (vec3 0 0 0)
+   ::domain ::surface
    ::display-speed 0.0
    ::throttle 0.0
    ::air-brake 0.0
    ::gear 1.0
    ::rcs-thrust (vec3 0 0 0)
-   ::control-surfaces (vec3 0 0 0)})
+   ::control-surfaces (vec3 0 0 0)
+   ::brake 0.0})
 
 
 (defn set-control-inputs
@@ -120,7 +124,8 @@
       (assoc ::rcs-thrust (mult (vec3 (:sfsim.input/rcs-roll inputs) (:sfsim.input/rcs-pitch inputs) (:sfsim.input/rcs-yaw inputs))
                                 -1000000.0))
       (assoc ::control-surfaces (mult (vec3 (:sfsim.input/aileron inputs) (:sfsim.input/elevator inputs) (:sfsim.input/rudder inputs))
-                                      (to-radians 20.0)))))
+                                      (to-radians 20.0)))
+      (assoc ::brake (if (:sfsim.input/brake inputs) 1.0 (if (:sfsim.input/parking-brake inputs) 0.1 0.0)))))
 
 
 (defmulti set-pose

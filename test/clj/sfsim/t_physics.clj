@@ -128,10 +128,16 @@
 
 
 (facts "Initial physics state"
+       (:sfsim.physics/position @state) => (vec3 0 0 0)
+       (:sfsim.physics/speed @state) => (vec3 0 0 0)
+       (:sfsim.physics/domain @state) => :sfsim.physics/surface
        (:sfsim.physics/display-speed @state) => 0.0
        (:sfsim.physics/throttle @state) => 0.0
        (:sfsim.physics/air-brake @state) => 0.0
-       (:sfsim.physics/gear @state) => 1.0)
+       (:sfsim.physics/gear @state) => 1.0
+       (:sfsim.physics/rcs-thrust @state) => (vec3 0 0 0)
+       (:sfsim.physics/control-surfaces @state) => (vec3 0 0 0)
+       (:sfsim.physics/brake @state) => 0.0)
 
 
 (tabular "Handle control inputs"
@@ -146,29 +152,33 @@
                             :sfsim.input/rudder 0.0}]
          (swap! state set-control-inputs (assoc input-state ?input ?value) ?dt)
          (fact (?output @state) => ?expected))
-         ?input                  ?value ?dt  ?output                         ?expected
-         :sfsim.input/throttle   0.1    0.25 :sfsim.physics/throttle         0.1
-         :sfsim.input/air-brake  true   0.25 :sfsim.physics/air-brake        0.5
-         :sfsim.input/air-brake  false  0.25 :sfsim.physics/air-brake        0.0
-         :sfsim.input/gear-down  false  0.25 :sfsim.physics/gear             0.875
-         :sfsim.input/rcs-roll   -1     1.0  :sfsim.physics/rcs-thrust       (vec3  1000000 0 0)
-         :sfsim.input/rcs-roll    1     1.0  :sfsim.physics/rcs-thrust       (vec3 -1000000 0 0)
-         :sfsim.input/rcs-roll    0     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0 0)
-         :sfsim.input/rcs-pitch  -1     1.0  :sfsim.physics/rcs-thrust       (vec3 0  1000000 0)
-         :sfsim.input/rcs-pitch   1     1.0  :sfsim.physics/rcs-thrust       (vec3 0 -1000000 0)
-         :sfsim.input/rcs-pitch   0     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0 0)
-         :sfsim.input/rcs-yaw    -1     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0  1000000)
-         :sfsim.input/rcs-yaw     1     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0 -1000000)
-         :sfsim.input/rcs-yaw     0     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0 0)
-         :sfsim.input/aileron     1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 (to-radians  20.0) 0 0) 1e-6)
-         :sfsim.input/aileron    -1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 (to-radians -20.0) 0 0) 1e-6)
-         :sfsim.input/aileron     0.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 0 0) 1e-6)
-         :sfsim.input/elevator    1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 (to-radians  20.0) 0) 1e-6)
-         :sfsim.input/elevator   -1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 (to-radians -20.0) 0) 1e-6)
-         :sfsim.input/elevator    0.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 0 0) 1e-6)
-         :sfsim.input/rudder      1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 0 (to-radians  20.0)) 1e-6)
-         :sfsim.input/rudder     -1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 0 (to-radians -20.0)) 1e-6)
-         :sfsim.input/rudder      0.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 0 0) 1e-6))
+         ?input                     ?value ?dt  ?output                         ?expected
+         :sfsim.input/throttle      0.1    0.25 :sfsim.physics/throttle         0.1
+         :sfsim.input/air-brake     true   0.25 :sfsim.physics/air-brake        0.5
+         :sfsim.input/air-brake     false  0.25 :sfsim.physics/air-brake        0.0
+         :sfsim.input/gear-down     false  0.25 :sfsim.physics/gear             0.875
+         :sfsim.input/rcs-roll      -1     1.0  :sfsim.physics/rcs-thrust       (vec3  1000000 0 0)
+         :sfsim.input/rcs-roll       1     1.0  :sfsim.physics/rcs-thrust       (vec3 -1000000 0 0)
+         :sfsim.input/rcs-roll       0     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0 0)
+         :sfsim.input/rcs-pitch     -1     1.0  :sfsim.physics/rcs-thrust       (vec3 0  1000000 0)
+         :sfsim.input/rcs-pitch      1     1.0  :sfsim.physics/rcs-thrust       (vec3 0 -1000000 0)
+         :sfsim.input/rcs-pitch      0     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0 0)
+         :sfsim.input/rcs-yaw       -1     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0  1000000)
+         :sfsim.input/rcs-yaw        1     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0 -1000000)
+         :sfsim.input/rcs-yaw        0     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0 0)
+         :sfsim.input/aileron        1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 (to-radians  20.0) 0 0) 1e-6)
+         :sfsim.input/aileron       -1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 (to-radians -20.0) 0 0) 1e-6)
+         :sfsim.input/aileron        0.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 0 0) 1e-6)
+         :sfsim.input/elevator       1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 (to-radians  20.0) 0) 1e-6)
+         :sfsim.input/elevator      -1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 (to-radians -20.0) 0) 1e-6)
+         :sfsim.input/elevator       0.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 0 0) 1e-6)
+         :sfsim.input/rudder         1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 0 (to-radians  20.0)) 1e-6)
+         :sfsim.input/rudder        -1.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 0 (to-radians -20.0)) 1e-6)
+         :sfsim.input/rudder         0.0   1.0  :sfsim.physics/control-surfaces (roughly-vector (vec3 0 0 0) 1e-6)
+         :sfsim.input/brake          true  1.0  :sfsim.physics/brake            1.0
+         :sfsim.input/brake          false 1.0  :sfsim.physics/brake            0.0
+         :sfsim.input/parking-brake  true  1.0  :sfsim.physics/brake            0.1
+         :sfsim.input/parking-brake  false 1.0  :sfsim.physics/brake            0.0)
 
 
 (facts "Set position of space craft near surface (rotating coordinate system centered on Earth)"
