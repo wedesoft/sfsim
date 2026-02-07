@@ -546,7 +546,8 @@
         rgb      (NkColor/malloc stack)
         throttle (:sfsim.input/throttle input-state)
         aileron  (:sfsim.input/aileron input-state)
-        elevator (:sfsim.input/rudder input-state)]
+        elevator (:sfsim.input/elevator input-state)
+        rudder   (:sfsim.input/rudder input-state)]
     (gui/nuklear-window gui "Yoke" 10 10 80 80 false
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
