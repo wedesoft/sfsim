@@ -12,11 +12,12 @@
     [fastmath.matrix :refer (mulv inverse)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross)]
     [malli.core :as m]
-    [sfsim.jolt :as jolt]
-    [sfsim.astro :as astro]
     [sfsim.quaternion :as q]
     [sfsim.matrix :refer (matrix->quaternion)]
-    [sfsim.util :refer (sqr clamp)])
+    [sfsim.util :refer (sqr clamp)]
+    [sfsim.jolt :as jolt]
+    [sfsim.astro :as astro]
+    [sfsim.aerodynamics :as aerodynamics])
   (:import [fastmath.vector Vec3]))
 
 
@@ -491,6 +492,20 @@
         rcs-thrust  (::rcs-thrust state)]
     (add-force ::orbit jd-ut state (q/rotate-vector orientation (vec3 (* ^double throttle ^double thrust) 0 0)))
     (add-torque ::orbit jd-ut state (q/rotate-vector orientation rcs-thrust))))
+
+
+(defn set-aerodynamic-forces
+  "Set forces and torques caused by aerodynamics"
+  [state planet jd-ut]
+  (let [radius           (:sfsim.planet/radius planet)
+        height           (- (mag (get-position ::surface jd-ut state)) ^double radius)
+        orientation      (get-orientation ::surface jd-ut state)
+        linear-velocity  (get-linear-speed ::surface jd-ut state)
+        angular-velocity (get-angular-speed ::surface jd-ut state)
+        loads  (aerodynamics/aerodynamic-loads height orientation linear-velocity angular-velocity
+                                               (::control-surfaces state) (::gear state) (::air-brake state))]
+    (add-force ::surface jd-ut state (:sfsim.aerodynamics/forces loads))
+    (add-torque ::surface jd-ut state (:sfsim.aerodynamics/moments loads))))
 
 
 (set! *warn-on-reflection* false)

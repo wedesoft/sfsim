@@ -662,19 +662,11 @@
                        :sfsim.physics/surface)
                      jd-ut)
               (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
-              (let [loads (aerodynamics/aerodynamic-loads height
-                                                          (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
-                                                          (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state)
-                                                          (physics/get-angular-speed :sfsim.physics/surface jd-ut @physics-state)
-                                                          (:sfsim.physics/control-surfaces @physics-state)
-                                                          (:sfsim.physics/gear @physics-state)
-                                                          (:sfsim.physics/air-brake @physics-state))]
-                (physics/set-thruster-forces @physics-state jd-ut thrust)
-                (physics/add-force :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/forces loads))
-                (physics/add-torque :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/moments loads))
-                (swap! physics-state
-                       physics/update-state
-                       dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass)))))
+              (physics/set-thruster-forces @physics-state jd-ut thrust)
+              (physics/set-aerodynamic-forces @physics-state config/planet-config jd-ut)
+              (swap! physics-state
+                     physics/update-state
+                     dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass))))
             (reset! wheel-angles (if @vehicle
                                    [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
                                     (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
