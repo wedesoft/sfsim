@@ -9,7 +9,6 @@
   (:gen-class)
   (:require
     [clojure.java.io :as io]
-    [clojure.set :refer (union)]
     [clojure.math :refer (PI to-radians to-degrees)]
     [clojure.tools.logging :as log]
     [clojure.edn]
@@ -18,7 +17,7 @@
     [malli.dev :as dev]
     [malli.dev.pretty :as pretty]
     [fastmath.matrix :refer (inverse mulv mulm)]
-    [fastmath.vector :refer (vec3 mag sub div normalize)]
+    [fastmath.vector :refer (vec3 mag sub normalize)]
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
