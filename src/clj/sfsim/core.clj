@@ -662,9 +662,7 @@
                        :sfsim.physics/surface)
                      jd-ut)
               (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
-              (let [orientation (physics/get-orientation :sfsim.physics/orbit jd-ut @physics-state)
-                    rcs-thrust  (:sfsim.physics/rcs-thrust @physics-state)
-                    loads (aerodynamics/aerodynamic-loads height
+              (let [loads (aerodynamics/aerodynamic-loads height
                                                           (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
                                                           (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state)
                                                           (physics/get-angular-speed :sfsim.physics/surface jd-ut @physics-state)
@@ -674,7 +672,6 @@
                 (physics/set-thruster-forces @physics-state jd-ut thrust)
                 (physics/add-force :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/forces loads))
                 (physics/add-torque :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/moments loads))
-                (physics/add-torque :sfsim.physics/orbit jd-ut @physics-state (q/rotate-vector orientation rcs-thrust))
                 (swap! physics-state
                        physics/update-state
                        dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass)))))

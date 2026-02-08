@@ -484,11 +484,13 @@
 
 
 (defn set-thruster-forces
+  "Set forces and torques of main thruster and RCS thrusters"
   [state jd-ut thrust]
   (let [orientation (get-orientation ::orbit jd-ut state)
         throttle    (::throttle state)
         rcs-thrust  (::rcs-thrust state)]
-    (add-force ::orbit jd-ut state (q/rotate-vector orientation (vec3 (* ^double throttle ^double thrust) 0 0)))))
+    (add-force ::orbit jd-ut state (q/rotate-vector orientation (vec3 (* ^double throttle ^double thrust) 0 0)))
+    (add-torque ::orbit jd-ut state (q/rotate-vector orientation rcs-thrust))))
 
 
 (set! *warn-on-reflection* false)
