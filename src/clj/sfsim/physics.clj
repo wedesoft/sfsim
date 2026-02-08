@@ -483,5 +483,13 @@
   (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
 
 
+(defn set-thruster-forces
+  [state jd-ut thrust]
+  (let [orientation (get-orientation ::orbit jd-ut state)
+        throttle    (::throttle state)
+        rcs-thrust  (::rcs-thrust state)]
+    (add-force ::orbit jd-ut state (q/rotate-vector orientation (vec3 (* ^double throttle ^double thrust) 0 0)))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

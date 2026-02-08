@@ -671,11 +671,7 @@
                                                           (:sfsim.physics/control-surfaces @physics-state)
                                                           (:sfsim.physics/gear @physics-state)
                                                           (:sfsim.physics/air-brake @physics-state))]
-                (physics/add-force :sfsim.physics/surface jd-ut @physics-state
-                                   (q/rotate-vector (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
-                                                    (vec3 (* ^double (:sfsim.physics/throttle @physics-state) ^double thrust)
-                                                          0
-                                                          0)))
+                (physics/set-thruster-forces @physics-state jd-ut thrust)
                 (physics/add-force :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/forces loads))
                 (physics/add-torque :sfsim.physics/surface jd-ut @physics-state (:sfsim.aerodynamics/moments loads))
                 (physics/add-torque :sfsim.physics/orbit jd-ut @physics-state (q/rotate-vector orientation rcs-thrust))
