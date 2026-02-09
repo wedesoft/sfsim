@@ -509,23 +509,34 @@
     (add-torque ::surface jd-ut state (:sfsim.aerodynamics/moments loads))))
 
 
+(defn create-vehicle-constraint
+  "Create vehicle constraint if it does not exist"
+  [state jd-ut wheels]
+  (if (not (::vehicle state))
+    (let [body     (::body state)
+          position (get-position ::surface jd-ut state)
+          world-up (normalize position)]
+      (assoc state ::vehicle (jolt/create-and-add-vehicle-constraint body world-up (vec3 0 0 -1) (vec3 1 0 0) wheels)))
+    state))
+
+
+(defn destroy-vehicle-constraint
+  "Destroy vehicle constraint if it exists"
+  [state]
+  (if-let [vehicle (::vehicle state)]
+          (do
+            (jolt/remove-and-destroy-constraint vehicle)
+            (assoc state ::vehicle nil))
+          state))
+
+
 (defn update-gear-status
   "Create or destroy vehicle constraint depending on whether gear is down or not"
   [state jd-ut wheels]
-  (let [gear (::gear state)
-        vehicle (::vehicle state)]
+  (let [gear (::gear state)]
     (if (= gear 1.0)
-      (if (not vehicle)
-        (let [body     (::body state)
-              position (get-position ::surface jd-ut state)
-              world-up (normalize position)]
-          (assoc state ::vehicle (jolt/create-and-add-vehicle-constraint body world-up (vec3 0 0 -1) (vec3 1 0 0) wheels)))
-        state)
-      (if vehicle
-        (do
-          (jolt/remove-and-destroy-constraint vehicle)
-          (assoc state ::vehicle nil))
-        state))))
+      (create-vehicle-constraint state jd-ut wheels)
+      (destroy-vehicle-constraint state))))
 
 
 (set! *warn-on-reflection* false)

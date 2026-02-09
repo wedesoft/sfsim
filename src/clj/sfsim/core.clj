@@ -440,9 +440,7 @@
     (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
     (when (gui/button-label gui "Set")
       (let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
-        (when-let [vehicle (:sfsim.physics/vehicle @physics-state)]
-                  (jolt/remove-and-destroy-constraint vehicle)
-                  (swap! physics-state assoc :sfsim.physics/vehicle nil))
+        (swap! physics-state physics/destroy-vehicle-constraint)
         (swap! physics-state physics/set-geographic surface config/planet-config elevation longitude latitude height)))
     (when (gui/button-label gui "Close")
       (reset! menu main-dialog))))
