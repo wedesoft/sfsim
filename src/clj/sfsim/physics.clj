@@ -539,5 +539,43 @@
       (destroy-vehicle-constraint state))))
 
 
+(defn set-wheel-angles
+  "Set wheel rotation angles in radians"
+  [state wheel-angles]
+  (when-let [vehicle (::vehicle state)]
+    (jolt/set-wheel-rotation-angle vehicle 0 (nth wheel-angles 0))
+    (jolt/set-wheel-rotation-angle vehicle 1 (nth wheel-angles 1))
+    (jolt/set-wheel-rotation-angle vehicle 2 (nth wheel-angles 2))))
+
+
+(defn get-wheel-angles
+  "Get wheel rotation angles in radians"
+  [state]
+  (if-let [vehicle (::vehicle state)]
+          [(jolt/get-wheel-rotation-angle vehicle 0)
+           (jolt/get-wheel-rotation-angle vehicle 1)
+           (jolt/get-wheel-rotation-angle vehicle 2)]
+          [0.0 0.0 0.0]))
+
+
+(defn set-suspension
+  "Set suspension lengths in meters"
+  [state suspension]
+  (when-let [vehicle (::vehicle state)]
+    (jolt/set-suspension-length vehicle 0 (nth suspension 0))
+    (jolt/set-suspension-length vehicle 1 (nth suspension 1))
+    (jolt/set-suspension-length vehicle 2 (nth suspension 2))))
+
+
+(defn get-suspension
+  "Get suspension lengths in meters"
+  [state]
+  (if-let [vehicle (::vehicle state)]
+          [(jolt/get-suspension-length vehicle 0)
+           (jolt/get-suspension-length vehicle 1)
+           (jolt/get-suspension-length vehicle 2)]
+          [(+ 0.8 0.8128) (+ 0.8 0.8128) (+ 0.5 0.5419)]))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
