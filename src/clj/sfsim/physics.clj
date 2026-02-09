@@ -113,7 +113,8 @@
    ::gear 1.0
    ::rcs-thrust (vec3 0 0 0)
    ::control-surfaces (vec3 0 0 0)
-   ::brake 0.0})
+   ::brake 0.0
+   ::vehicle nil})
 
 
 (defn set-control-inputs
@@ -506,6 +507,25 @@
                                                (::control-surfaces state) (::gear state) (::air-brake state))]
     (add-force ::surface jd-ut state (:sfsim.aerodynamics/forces loads))
     (add-torque ::surface jd-ut state (:sfsim.aerodynamics/moments loads))))
+
+
+(defn update-gear-status
+  "Create or destroy vehicle constraint depending on whether gear is down or not"
+  [state jd-ut wheels]
+  (let [gear (::gear state)
+        vehicle (::vehicle state)]
+    (if (= gear 1.0)
+      (if (not vehicle)
+        (let [body     (::body state)
+              position (get-position ::surface jd-ut state)
+              world-up (normalize position)]
+          (assoc state ::vehicle (jolt/create-and-add-vehicle-constraint body world-up (vec3 0 0 -1) (vec3 1 0 0) wheels)))
+        state)
+      (if vehicle
+        (do
+          (jolt/remove-and-destroy-constraint vehicle)
+          (assoc state ::vehicle nil))
+        state))))
 
 
 (set! *warn-on-reflection* false)

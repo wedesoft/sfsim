@@ -299,8 +299,6 @@
 (def mass (jolt/get-mass body))
 (def thrust (* ^double mass 25.0))
 
-(def vehicle (atom nil))
-
 ; Start with fixed summer date for better illumination.
 (def current-time (- (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}) ^double astro/T0))
 
@@ -442,9 +440,9 @@
     (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
     (when (gui/button-label gui "Set")
       (let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
-        (when @vehicle
-          (jolt/remove-and-destroy-constraint @vehicle)
-          (reset! vehicle nil))
+        (when-let [vehicle (:sfsim.physics/vehicle @physics-state)]
+                  (jolt/remove-and-destroy-constraint vehicle)
+                  (swap! physics-state assoc :sfsim.physics/vehicle nil))
         (swap! physics-state physics/set-geographic surface config/planet-config elevation longitude latitude height)))
     (when (gui/button-label gui "Close")
       (reset! menu main-dialog))))
@@ -634,35 +632,22 @@
             (reset! time_ (:time_ frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
             (swap! physics-state assoc :sfsim.physics/gear (:gear frame))
-            (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
-              (when (not @vehicle)
-                (let [position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
-                      world-up (normalize position)]
-                  (reset! vehicle (jolt/create-and-add-vehicle-constraint body world-up (vec3 0 0 -1) (vec3 1 0 0) wheels))))
-              (when @vehicle
-                (jolt/remove-and-destroy-constraint @vehicle)
-                (reset! vehicle nil)))
-            (when @vehicle
-              (jolt/set-wheel-rotation-angle @vehicle 0 (nth (:wheel-angles frame) 0))
-              (jolt/set-wheel-rotation-angle @vehicle 1 (nth (:wheel-angles frame) 1))
-              (jolt/set-wheel-rotation-angle @vehicle 2 (nth (:wheel-angles frame) 2))
-              (jolt/set-suspension-length @vehicle 0 (nth (:suspension frame) 0))
-              (jolt/set-suspension-length @vehicle 1 (nth (:suspension frame) 1))
-              (jolt/set-suspension-length @vehicle 2 (nth (:suspension frame) 2)))
+            (swap! physics-state physics/update-gear-status jd-ut wheels)
+            (when (:sfsim.physics/vehicle @physics-state)
+              (jolt/set-wheel-rotation-angle (:sfsim.physics/vehicle @physics-state) 0 (nth (:wheel-angles frame) 0))
+              (jolt/set-wheel-rotation-angle (:sfsim.physics/vehicle @physics-state) 1 (nth (:wheel-angles frame) 1))
+              (jolt/set-wheel-rotation-angle (:sfsim.physics/vehicle @physics-state) 2 (nth (:wheel-angles frame) 2))
+              (jolt/set-suspension-length (:sfsim.physics/vehicle @physics-state) 0 (nth (:suspension frame) 0))
+              (jolt/set-suspension-length (:sfsim.physics/vehicle @physics-state) 1 (nth (:suspension frame) 1))
+              (jolt/set-suspension-length (:sfsim.physics/vehicle @physics-state) 2 (nth (:suspension frame) 2)))
             (swap! physics-state assoc :sfsim.physics/rcs-thrust (:rcs-thrust frame))
             (reset! rcs (:rcs frame)))
           (when (not (@state :sfsim.input/pause))
             (swap! time_ + dt)
             (swap! physics-state physics/set-control-inputs @state dt)
-            (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
-              (when (not @vehicle)
-                (let [position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
-                      world-up (normalize position)]
-                  (reset! vehicle (jolt/create-and-add-vehicle-constraint body world-up (vec3 0 0 -1) (vec3 1 0 0) wheels))))
-              (when @vehicle
-                (jolt/remove-and-destroy-constraint @vehicle)
-                (reset! vehicle nil)))
-            (when @vehicle (jolt/set-brake-input @vehicle (:sfsim.physics/brake @physics-state)))
+            (swap! physics-state physics/update-gear-status jd-ut wheels)
+            (when-let [vehicle (:sfsim.physics/vehicle @physics-state)]
+              (jolt/set-brake-input vehicle (:sfsim.physics/brake @physics-state)))
             (let [height    (- (mag (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
                                ^double earth-radius)]
               (swap! physics-state
@@ -690,15 +675,15 @@
                            :time_ @time_
                            :throttle (:sfsim.physics/throttle @physics-state)
                            :rcs-thrust (:sfsim.physics/rcs-thrust @physics-state)
-                           :wheel-angles (if @vehicle
-                                           [(jolt/get-wheel-rotation-angle @vehicle 0)
-                                            (jolt/get-wheel-rotation-angle @vehicle 1)
-                                            (jolt/get-wheel-rotation-angle @vehicle 2)]
+                           :wheel-angles (if (:sfsim.physics/vehicle @physics-state)
+                                           [(jolt/get-wheel-rotation-angle (:sfsim.physics/vehicle @physics-state) 0)
+                                            (jolt/get-wheel-rotation-angle (:sfsim.physics/vehicle @physics-state) 1)
+                                            (jolt/get-wheel-rotation-angle (:sfsim.physics/vehicle @physics-state) 2)]
                                            [0.0 0.0 0.0])
-                           :suspension (if @vehicle
-                                         [(jolt/get-suspension-length @vehicle 0)
-                                          (jolt/get-suspension-length @vehicle 1)
-                                          (jolt/get-suspension-length @vehicle 2)]
+                           :suspension (if (:sfsim.physics/vehicle @physics-state)
+                                         [(jolt/get-suspension-length (:sfsim.physics/vehicle @physics-state) 0)
+                                          (jolt/get-suspension-length (:sfsim.physics/vehicle @physics-state) 1)
+                                          (jolt/get-suspension-length (:sfsim.physics/vehicle @physics-state) 2)]
                                          [(+ 0.8 0.8128) (+ 0.8 0.8128) (+ 0.5 0.5419)])}]
                 (swap! recording conj frame)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
@@ -731,30 +716,30 @@
               cloud-render-vars  (clouds/make-cloud-render-vars config/render-config planet-render-vars @window-width @window-height
                                                                 origin camera-orientation light-direction object-position
                                                                 object-orientation)
-              wheels-scene       (let [wheel-angles
-                                       (if @vehicle
-                                         [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
-                                          (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
-                                          (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2.0 PI)) 1.0)]
+              wheels-scene       (let [wheel-animation
+                                       (if (:sfsim.physics/vehicle @physics-state)
+                                         [(mod (/ ^double (jolt/get-wheel-rotation-angle (:sfsim.physics/vehicle @physics-state) 0) (* 2.0 PI)) 1.0)
+                                          (mod (/ ^double (jolt/get-wheel-rotation-angle (:sfsim.physics/vehicle @physics-state) 1) (* 2.0 PI)) 1.0)
+                                          (mod (/ ^double (jolt/get-wheel-rotation-angle (:sfsim.physics/vehicle @physics-state) 2) (* 2.0 PI)) 1.0)]
                                          [0.0 0.0 0.0])
-                                       suspension
-                                       (if @vehicle
-                                         [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
-                                          (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
-                                          (+ 1 (/ (- ^double (jolt/get-suspension-length @vehicle 2) 0.5) 0.5419))]
+                                       suspension-animation
+                                       (if (:sfsim.physics/vehicle @physics-state)
+                                         [(/ (- ^double (jolt/get-suspension-length (:sfsim.physics/vehicle @physics-state) 0) 0.8) 0.8128)
+                                          (/ (- ^double (jolt/get-suspension-length (:sfsim.physics/vehicle @physics-state) 1) 0.8) 0.8128)
+                                          (+ 1 (/ (- ^double (jolt/get-suspension-length (:sfsim.physics/vehicle @physics-state) 2) 0.5) 0.5419))]
                                          [1.0 1.0 1.0])]
                                    (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
                                      (model/apply-transforms
                                        scene
                                        (model/animations-frame
                                          model
-                                         {"GearLeft" (nth suspension 0)
-                                          "GearRight" (nth suspension 1)
-                                          "GearFront" (nth suspension 2)
-                                          "WheelLeft" (nth wheel-angles 0)
-                                          "WheelRight" (nth wheel-angles 1)
-                                          "WheelFront" (nth wheel-angles 2)}))
-                                     (if @vehicle
+                                         {"GearLeft" (nth suspension-animation 0)
+                                          "GearRight" (nth suspension-animation 1)
+                                          "GearFront" (nth suspension-animation 2)
+                                          "WheelLeft" (nth wheel-animation 0)
+                                          "WheelRight" (nth wheel-animation 1)
+                                          "WheelFront" (nth wheel-animation 2)}))
+                                     (if (:sfsim.physics/vehicle @physics-state)
                                        (model/apply-transforms
                                          scene
                                          (model/animations-frame
@@ -762,9 +747,9 @@
                                            {"GearLeft" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
                                             "GearRight" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
                                             "GearFront" (- 3.0 ^double (:sfsim.physics/gear @physics-state))
-                                            "WheelLeft" (nth wheel-angles 0)
-                                            "WheelRight" (nth wheel-angles 1)
-                                            "WheelFront" (nth wheel-angles 2)}))
+                                            "WheelLeft" (nth wheel-animation 0)
+                                            "WheelRight" (nth wheel-animation 1)
+                                            "WheelFront" (nth wheel-animation 2)}))
                                        (model/apply-transforms
                                          scene
                                          (model/animations-frame

@@ -138,7 +138,8 @@
        (:sfsim.physics/rcs-thrust @state) => (vec3 0 0 0)
        (:sfsim.physics/control-surfaces @state) => (vec3 0 0 0)
        (:sfsim.physics/brake @state) => 0.0
-       (:sfsim.physics/display-speed @state) => 0.0)
+       (:sfsim.physics/display-speed @state) => 0.0
+       (:sfsim.physics/vehicle @state) => nil)
 
 
 (tabular "Handle control inputs"
