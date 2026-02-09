@@ -98,7 +98,7 @@
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timeseconds position orientation camera-position camera-orientation dist gear wheel-angles suspension
-                             throttle rcs-throttle time_]}]
+                             throttle rcs-thrust time_]}]
                     {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
@@ -583,7 +583,6 @@
 
 
 (def frame-index (atom 0))
-(def wheel-angles (atom [0.0 0.0 0.0]))
 (def suspension (atom [1.0 1.0 1.0]))
 (def rcs (atom #{}))
 (def time_ (atom 0.0))
@@ -636,9 +635,20 @@
             (reset! time_ (:time_ frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
             (swap! physics-state assoc :sfsim.physics/gear (:gear frame))
+            (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
+              (when (not @vehicle)
+                (let [position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
+                      world-up (normalize position)]
+                  (reset! vehicle (jolt/create-and-add-vehicle-constraint body world-up (vec3 0 0 -1) (vec3 1 0 0) wheels))))
+              (when @vehicle
+                (jolt/remove-and-destroy-constraint @vehicle)
+                (reset! vehicle nil)))
+            (when @vehicle
+              (jolt/set-wheel-rotation-angle @vehicle 0 (* 2 PI (nth (:wheel-angles frame) 0)))
+              (jolt/set-wheel-rotation-angle @vehicle 1 (* 2 PI (nth (:wheel-angles frame) 1)))
+              (jolt/set-wheel-rotation-angle @vehicle 2 (* 2 PI (nth (:wheel-angles frame) 2))))
             (swap! physics-state assoc :sfsim.physics/rcs-thrust (:rcs-thrust frame))
             (reset! rcs (:rcs frame))
-            (reset! wheel-angles (:wheel-angles frame))
             (reset! suspension (:suspension frame)))
           (when (not (@state :sfsim.input/pause))
             (swap! time_ + dt)
@@ -666,11 +676,6 @@
               (swap! physics-state
                      physics/update-state
                      dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass))))
-            (reset! wheel-angles (if @vehicle
-                                   [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
-                                    (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
-                                    (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2.0 PI)) 1.0)]
-                                   [0.0 0.0 0.0]))
             (reset! suspension (if @vehicle
                                  [(/ (- ^double (jolt/get-suspension-length @vehicle 0) 0.8) 0.8128)
                                   (/ (- ^double (jolt/get-suspension-length @vehicle 1) 0.8) 0.8128)
@@ -730,35 +735,41 @@
               cloud-render-vars  (clouds/make-cloud-render-vars config/render-config planet-render-vars @window-width @window-height
                                                                 origin camera-orientation light-direction object-position
                                                                 object-orientation)
-              wheels-scene       (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
-                                   (model/apply-transforms
-                                     scene
-                                     (model/animations-frame
-                                       model
-                                       {"GearLeft" (nth @suspension 0)
-                                        "GearRight" (nth @suspension 1)
-                                        "GearFront" (nth @suspension 2)
-                                        "WheelLeft" (nth @wheel-angles 0)
-                                        "WheelRight" (nth @wheel-angles 1)
-                                        "WheelFront" (nth @wheel-angles 2)}))
-                                   (if @vehicle
+              wheels-scene       (let [wheel-angles
+                                       (if @vehicle
+                                         [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2.0 PI)) 1.0)
+                                          (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2.0 PI)) 1.0)
+                                          (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2.0 PI)) 1.0)]
+                                         [0.0 0.0 0.0])]
+                                   (if (= ^double (:sfsim.physics/gear @physics-state) 1.0)
                                      (model/apply-transforms
                                        scene
                                        (model/animations-frame
                                          model
-                                         {"GearLeft" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
-                                          "GearRight" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
-                                          "GearFront" (- 3.0 ^double (:sfsim.physics/gear @physics-state))
-                                          "WheelLeft" (nth @wheel-angles 0)
-                                          "WheelRight" (nth @wheel-angles 1)
-                                          "WheelFront" (nth @wheel-angles 2)}))
-                                     (model/apply-transforms
-                                       scene
-                                       (model/animations-frame
-                                         model
-                                         {"GearLeft" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
-                                          "GearRight" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
-                                          "GearFront" (- 3.0 ^double (:sfsim.physics/gear @physics-state))}))))
+                                         {"GearLeft" (nth @suspension 0)
+                                          "GearRight" (nth @suspension 1)
+                                          "GearFront" (nth @suspension 2)
+                                          "WheelLeft" (nth wheel-angles 0)
+                                          "WheelRight" (nth wheel-angles 1)
+                                          "WheelFront" (nth wheel-angles 2)}))
+                                     (if @vehicle
+                                       (model/apply-transforms
+                                         scene
+                                         (model/animations-frame
+                                           model
+                                           {"GearLeft" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
+                                            "GearRight" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
+                                            "GearFront" (- 3.0 ^double (:sfsim.physics/gear @physics-state))
+                                            "WheelLeft" (nth wheel-angles 0)
+                                            "WheelRight" (nth wheel-angles 1)
+                                            "WheelFront" (nth wheel-angles 2)}))
+                                       (model/apply-transforms
+                                         scene
+                                         (model/animations-frame
+                                           model
+                                           {"GearLeft" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
+                                            "GearRight" (- 2.0 ^double (:sfsim.physics/gear @physics-state))
+                                            "GearFront" (- 3.0 ^double (:sfsim.physics/gear @physics-state))})))))
               moved-scene        (assoc-in wheels-scene [:sfsim.model/root :sfsim.model/transform]
                                            (mulm object-to-world gltf-to-aerodynamic))
               object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction moved-scene)
