@@ -275,6 +275,8 @@
          (get-suspension-length vehicle 1) => (roughly 0.280 1e-3)
          (get-suspension-length vehicle 2) => (roughly 0.280 1e-3)
          (get-suspension-length vehicle 3) => (roughly 0.280 1e-3)
+         (set-suspension-length vehicle 2 0.1)
+         (get-suspension-length vehicle 2) => (roughly 0.1 1e-3)
          (get-wheel-rotation-angle vehicle 0) => (roughly 0.0 1e-3)
          (get-wheel-rotation-angle vehicle 1) => (roughly 0.0 1e-3)
          (get-wheel-rotation-angle vehicle 2) => (roughly 0.0 1e-3)
