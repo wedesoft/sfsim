@@ -579,6 +579,13 @@ float get_wheel_rotation_angle(void *constraint, int wheel_index)
   return wheel->GetRotationAngle();
 }
 
+void set_wheel_rotation_angle(void *constraint, int wheel_index, float wheel_angle)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  JPH::Wheel *wheel = vehicle_constraint->GetWheel(wheel_index);
+  return wheel->SetRotationAngle(wheel_angle);
+}
+
 char has_hit_hard_point(void *constraint, int wheel_index)
 {
   JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;

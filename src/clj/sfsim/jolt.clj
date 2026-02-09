@@ -420,6 +420,11 @@
   get_wheel_rotation_angle [::mem/pointer ::mem/int] ::mem/float)
 
 
+(defcfn set-wheel-rotation-angle
+  "Set wheel rotation angle"
+  set_wheel_rotation_angle [::mem/pointer ::mem/int ::mem/float] ::mem/void)
+
+
 (defcfn has-hit-hard-point-
   "Check if wheel suspension has hit its upper limit"
   has_hit_hard_point [::mem/pointer ::mem/int] ::mem/byte)
