@@ -643,9 +643,9 @@
                 (jolt/remove-and-destroy-constraint @vehicle)
                 (reset! vehicle nil)))
             (when @vehicle
-              (jolt/set-wheel-rotation-angle @vehicle 0 (* 2 PI (nth (:wheel-angles frame) 0)))
-              (jolt/set-wheel-rotation-angle @vehicle 1 (* 2 PI (nth (:wheel-angles frame) 1)))
-              (jolt/set-wheel-rotation-angle @vehicle 2 (* 2 PI (nth (:wheel-angles frame) 2)))
+              (jolt/set-wheel-rotation-angle @vehicle 0 (nth (:wheel-angles frame) 0))
+              (jolt/set-wheel-rotation-angle @vehicle 1 (nth (:wheel-angles frame) 1))
+              (jolt/set-wheel-rotation-angle @vehicle 2 (nth (:wheel-angles frame) 2))
               (jolt/set-suspension-length @vehicle 0 (nth (:suspension frame) 0))
               (jolt/set-suspension-length @vehicle 1 (nth (:suspension frame) 1))
               (jolt/set-suspension-length @vehicle 2 (nth (:suspension frame) 2)))
@@ -691,9 +691,9 @@
                            :throttle (:sfsim.physics/throttle @physics-state)
                            :rcs-thrust (:sfsim.physics/rcs-thrust @physics-state)
                            :wheel-angles (if @vehicle
-                                           [(mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 0) (* 2 PI)) 1.0)
-                                            (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 1) (* 2 PI)) 1.0)
-                                            (mod (/ ^double (jolt/get-wheel-rotation-angle @vehicle 2) (* 2 PI)) 1.0)]
+                                           [(jolt/get-wheel-rotation-angle @vehicle 0)
+                                            (jolt/get-wheel-rotation-angle @vehicle 1)
+                                            (jolt/get-wheel-rotation-angle @vehicle 2)]
                                            [0.0 0.0 0.0])
                            :suspension (if @vehicle
                                          [(jolt/get-suspension-length @vehicle 0)
