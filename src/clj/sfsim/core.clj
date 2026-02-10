@@ -639,8 +639,7 @@
             (swap! time_ + dt)
             (swap! physics-state physics/set-control-inputs @state dt)
             (swap! physics-state physics/update-gear-status jd-ut wheels)
-            (when-let [vehicle (:sfsim.physics/vehicle @physics-state)]
-              (jolt/set-brake-input vehicle (:sfsim.physics/brake @physics-state)))
+            (physics/update-brakes @physics-state)
             (let [height    (- (mag (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
                                ^double earth-radius)]
               (swap! physics-state

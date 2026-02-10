@@ -539,6 +539,13 @@
       (destroy-vehicle-constraint state))))
 
 
+(defn update-brakes
+  "Update vehicle constraint with brake settings"
+  [state]
+  (when-let [vehicle (::vehicle state)]
+            (jolt/set-brake-input vehicle (::brake state))))
+
+
 (defn set-wheel-angles
   "Set wheel rotation angles in radians"
   [state wheel-angles]
