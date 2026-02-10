@@ -97,9 +97,10 @@
 (def recording
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
-          (mapv (fn [{:keys [julian-date-ut position orientation camera-state dist gear
+          (mapv (fn [{:keys [start-julian-date offset-seconds position orientation camera-state dist gear
                              wheel-angles suspension throttle rcs-thrust]}]
-                    {:julian-date-ut julian-date-ut
+                    {:start-julian-date start-julian-date
+                     :offset-seconds offset-seconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
                      :camera-state camera-state
@@ -611,7 +612,8 @@
           (reset! menu nil))
         (if playback
           (let [frame (nth @recording @n)]
-            (swap! physics-state physics/set-julian-date-ut (:julian-date-ut frame))
+            (swap! physics-state assoc :sfsim.physics/start-julian-date (:start-julian-date frame))
+            (swap! physics-state assoc :sfsim.physics/offset-seconds (:offset-seconds frame))
             (swap! physics-state physics/set-pose :sfsim.physics/surface (:position frame) (:orientation frame))
             (reset! camera-state (:camera-state frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
@@ -637,7 +639,8 @@
               (swap! camera-state camera/set-mode mode jd-ut @physics-state)
               (swap! camera-state camera/update-camera-pose dt @state))
             (when (and @recording (not (@state :sfsim.input/pause)))
-              (let [frame {:julian-date-ut (physics/get-julian-date-ut @physics-state)
+              (let [frame {:start-julian-date (:sfsim.physics/start-julian-date @physics-state)
+                           :offset-seconds (:sfsim.physics/offset-seconds @physics-state)
                            :position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
                            :orientation (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
                            :camera-state @camera-state
