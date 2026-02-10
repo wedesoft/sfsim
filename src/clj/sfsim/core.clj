@@ -774,7 +774,7 @@
         (swap! state process-events @event-buffer input-handler)
         (reset! event-buffer (make-event-buffer))
         (swap! n inc)
-        (if fix-fps (reset! t0 (GLFW/glfwGetTime)) (swap! t0 + dt)))))
+        (swap! t0 + dt))))
   (planet/destroy-tile-tree tile-tree)
   (model/destroy-scene scene)
   (model/destroy-scene-shadow-renderer scene-shadow-renderer)
