@@ -417,8 +417,8 @@
 
 (defn location-dialog-set
   [position-data ^double time-delta ^double t0]
-  (let [t          (+ time-delta (/ ^double t0 86400.0) ^double astro/T0)
-        geographic (physics/get-geographic @physics-state config/planet-config t)]
+  (let [jd-ut      (+ time-delta (/ ^double t0 86400.0) ^double astro/T0)
+        geographic (physics/get-geographic @physics-state config/planet-config jd-ut)]
     (gui/edit-set (:longitude position-data) (format "%.5f" (to-degrees (:longitude geographic))))
     (gui/edit-set (:latitude position-data) (format "%.5f" (to-degrees (:latitude geographic))))
     (gui/edit-set (:height position-data) (format "%.1f" (:height geographic)))))
@@ -461,8 +461,7 @@
 
 (defn datetime-dialog-set
   [time-data ^double time-delta ^double t0]
-  (let [t     (+ time-delta (/ ^double t0 86400.0))
-        t     (+ ^double astro/T0 t 0.5)
+  (let [t     (+ time-delta (/ ^double t0 86400.0) ^double astro/T0 0.5)
         date  (astro/calendar-date (int t))
         clock (astro/clock-time (- t (int t)))]
     (gui/edit-set (:day time-data) (format "%2d" (:sfsim.astro/day date)))
