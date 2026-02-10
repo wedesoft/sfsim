@@ -97,14 +97,12 @@
 (def recording
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
-          (mapv (fn [{:keys [timeseconds position orientation camera-position camera-orientation dist gear wheel-angles suspension
+          (mapv (fn [{:keys [timeseconds position orientation camera-state dist gear wheel-angles suspension
                              throttle rcs-thrust time_]}]
                     {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
-                     :camera-position (apply vec3 camera-position)
-                     :camera-orientation (q/->Quaternion (:real camera-orientation) (:imag camera-orientation)
-                                                         (:jmag camera-orientation) (:kmag camera-orientation))
+                     :camera-state camera-state
                      :dist dist
                      :gear gear
                      :time_ time_
@@ -567,10 +565,6 @@
 (def camera-state (atom (camera/make-camera-state)))
 
 
-(def camera-position (atom nil))
-(def camera-orientation (atom nil))
-
-
 (defn info
   [gui ^long h ^String text]
   (gui/nuklear-window gui "Information" 10 (- h 42) 640 32 false
@@ -624,9 +618,7 @@
           (let [frame (nth @recording @n)]
             (reset! time-delta (/ (- ^double (:timeseconds frame) ^double @t0) 86400.0))
             (swap! physics-state physics/set-pose :sfsim.physics/surface (:position frame) (:orientation frame))
-            (reset! camera-position (:camera-position frame))
-            (reset! camera-orientation (:camera-orientation frame))
-            (swap! camera-state assoc :sfsim.camera/distance (:dist frame))
+            (reset! camera-state (:camera-state frame))
             (reset! time_ (:time_ frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
             (swap! physics-state assoc :sfsim.physics/gear (:gear frame))
@@ -635,27 +627,29 @@
             (physics/set-suspension @physics-state (:suspension frame))
             (swap! physics-state assoc :sfsim.physics/rcs-thrust (:rcs-thrust frame))
             (reset! rcs (:rcs frame)))
-          (when (not (@state :sfsim.input/pause))
-            (swap! time_ + dt)
-            (swap! physics-state physics/update-domain jd-ut config/planet-config)
-            (println (:sfsim.physics/domain @physics-state))
-            (swap! physics-state physics/set-control-inputs @state dt)
-            (swap! physics-state physics/update-gear-status jd-ut wheels)
-            (physics/update-brakes @physics-state)
-            (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
-            (physics/set-thruster-forces @physics-state jd-ut thrust)
-            (physics/set-aerodynamic-forces @physics-state config/planet-config jd-ut)
-            (swap! physics-state
-                   physics/update-state
-                   dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass)))
-            (when @recording
-              (let [[origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
-                                                 (camera/get-camera-pose @camera-state @physics-state jd-ut))
-                    frame {:timeseconds (+ (* ^double @time-delta 86400.0) ^double @t0)
+          (do
+            (when (not (@state :sfsim.input/pause))
+              (swap! time_ + dt)
+              (swap! physics-state physics/update-domain jd-ut config/planet-config)
+              (println (:sfsim.physics/domain @physics-state))
+              (swap! physics-state physics/set-control-inputs @state dt)
+              (swap! physics-state physics/update-gear-status jd-ut wheels)
+              (physics/update-brakes @physics-state)
+              (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
+              (physics/set-thruster-forces @physics-state jd-ut thrust)
+              (physics/set-aerodynamic-forces @physics-state config/planet-config jd-ut)
+              (swap! physics-state
+                     physics/update-state
+                     dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass))))
+            (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state))
+                  mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
+              (swap! camera-state camera/set-mode mode jd-ut @physics-state)
+              (swap! camera-state camera/update-camera-pose dt @state))
+            (when (and @recording (not (@state :sfsim.input/pause)))
+              (let [frame {:timeseconds (+ (* ^double @time-delta 86400.0) ^double @t0)
                            :position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
                            :orientation (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
-                           :camera-position origin
-                           :camera-orientation camera-orientation
+                           :camera-state @camera-state
                            :dist (:sfsim.camera/distance @camera-state)
                            :gear (:sfsim.physics/gear @physics-state)
                            :time_ @time_
@@ -669,14 +663,8 @@
               pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
               object-orientation (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
               object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
-              [origin camera-orientation] (if playback
-                                            [@camera-position @camera-orientation]
-                                            ((juxt :sfsim.camera/position :sfsim.camera/orientation)
-                                             (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state))
-                                                   mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
-                                               (swap! camera-state camera/set-mode mode jd-ut @physics-state)
-                                               (swap! camera-state camera/update-camera-pose dt @state)
-                                               (camera/get-camera-pose @camera-state @physics-state jd-ut))))
+              [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
+                                           (camera/get-camera-pose @camera-state @physics-state jd-ut))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
