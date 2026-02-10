@@ -461,7 +461,8 @@
 
 (defn datetime-dialog-set
   [time-data ^double time-delta ^double t0]
-  (let [t     (+ time-delta (/ ^double t0 86400.0) ^double astro/T0 0.5)
+  (let [jd-ut (+ time-delta (/ ^double t0 86400.0) ^double astro/T0)
+        t     (+ jd-ut 0.5)
         date  (astro/calendar-date (int t))
         clock (astro/clock-time (- t (int t)))]
     (gui/edit-set (:day time-data) (format "%2d" (:sfsim.astro/day date)))
