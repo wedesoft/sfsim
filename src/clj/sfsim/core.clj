@@ -98,14 +98,13 @@
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
           (mapv (fn [{:keys [timeseconds position orientation camera-state dist gear wheel-angles suspension
-                             throttle rcs-thrust time_]}]
+                             throttle rcs-thrust]}]
                     {:timeseconds timeseconds
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
                      :camera-state camera-state
                      :dist dist
                      :gear gear
-                     :time_ time_
                      :throttle throttle
                      :rcs-thrust (apply vec3 rcs-thrust)
                      :wheel-angles wheel-angles
@@ -573,7 +572,6 @@
 
 
 (def frame-index (atom 0))
-(def time_ (atom 0.0))
 
 
 (def frametime (atom 0.25))
@@ -618,7 +616,6 @@
             (reset! time-delta (/ (- ^double (:timeseconds frame) ^double @t0) 86400.0))
             (swap! physics-state physics/set-pose :sfsim.physics/surface (:position frame) (:orientation frame))
             (reset! camera-state (:camera-state frame))
-            (reset! time_ (:time_ frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
             (swap! physics-state assoc :sfsim.physics/gear (:gear frame))
             (swap! physics-state physics/update-gear-status jd-ut wheels)
@@ -627,7 +624,6 @@
             (swap! physics-state assoc :sfsim.physics/rcs-thrust (:rcs-thrust frame)))
           (do
             (when (not (@state :sfsim.input/pause))
-              (swap! time_ + dt)
               (swap! physics-state physics/update-domain jd-ut config/planet-config)
               (swap! physics-state physics/set-control-inputs @state dt)
               (swap! physics-state physics/update-gear-status jd-ut wheels)
@@ -649,7 +645,6 @@
                            :camera-state @camera-state
                            :dist (:sfsim.camera/distance @camera-state)
                            :gear (:sfsim.physics/gear @physics-state)
-                           :time_ @time_
                            :throttle (:sfsim.physics/throttle @physics-state)
                            :rcs-thrust (:sfsim.physics/rcs-thrust @physics-state)
                            :wheel-angles (physics/get-wheel-angles @physics-state)
@@ -665,7 +660,7 @@
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
-              model-vars         (model/make-model-vars @time_ pressure (:sfsim.physics/throttle @physics-state))
+              model-vars         (model/make-model-vars @t0 pressure (:sfsim.physics/throttle @physics-state))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
                                                                  light-direction object-position object-orientation model-vars)
