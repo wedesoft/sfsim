@@ -97,9 +97,9 @@
 (def recording
   ; initialize recording using "echo [] > recording.edn"
   (atom (if (.exists (java.io.File. "recording.edn"))
-          (mapv (fn [{:keys [timeseconds position orientation camera-state dist gear wheel-angles suspension
-                             throttle rcs-thrust]}]
-                    {:timeseconds timeseconds
+          (mapv (fn [{:keys [julian-date-ut position orientation camera-state dist gear
+                             wheel-angles suspension throttle rcs-thrust]}]
+                    {:julian-date-ut julian-date-ut
                      :position (apply vec3 position)
                      :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
                      :camera-state camera-state
@@ -297,7 +297,6 @@
 (def thrust (* ^double mass 25.0))
 
 ; Start with fixed summer date for better illumination.
-(def current-time (- (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}) ^double astro/T0))
 
 (def longitude (to-radians -1.3747))
 (def latitude (to-radians 50.9672))
@@ -305,6 +304,7 @@
 
 (def physics-state (atom (physics/make-physics-state body)))
 (swap! physics-state physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
+(swap! physics-state physics/set-julian-date-ut (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}))
 
 (jolt/optimize-broad-phase)
 
@@ -416,8 +416,8 @@
 
 
 (defn location-dialog-set
-  [position-data ^double time-delta ^double t0]
-  (let [jd-ut      (+ time-delta (/ ^double t0 86400.0) ^double astro/T0)
+  [position-data]
+  (let [jd-ut      (physics/get-julian-date-ut @physics-state)
         geographic (physics/get-geographic @physics-state config/planet-config jd-ut)]
     (gui/edit-set (:longitude position-data) (format "%.5f" (to-degrees (:longitude geographic))))
     (gui/edit-set (:latitude position-data) (format "%.5f" (to-degrees (:latitude geographic))))
@@ -444,10 +444,9 @@
 
 
 (def t0 (atom (GLFW/glfwGetTime)))
-(def time-delta (atom (- ^double current-time (/ ^double @t0 86400.0))))
 
 (defn datetime-dialog-get
-  ^double [time-data ^double t0]
+  ^double [time-data]
   (let [day    (Integer/parseInt (trim (gui/edit-get (:day time-data))))
         month  (Integer/parseInt (trim (gui/edit-get (:month time-data))))
         year   (Integer/parseInt (trim (gui/edit-get (:year time-data))))
@@ -456,12 +455,12 @@
         sec    (Integer/parseInt (trim (gui/edit-get (:second time-data))))
         jd     (astro/julian-date #:sfsim.astro{:year year :month month :day day})
         clock  (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
-    (- (+ (- jd ^double astro/T0 0.5) clock) (/ t0 86400.0))))
+    (+ (- jd 0.5) clock)))
 
 
 (defn datetime-dialog-set
-  [time-data ^double time-delta ^double t0]
-  (let [t     (+ time-delta (/ ^double t0 86400.0) ^double astro/T0 0.5)
+  [time-data]
+  (let [t     (+ (physics/get-julian-date-ut @physics-state) 0.5)
         date  (astro/calendar-date (int t))
         clock (astro/clock-time (- t (int t)))]
     (gui/edit-set (:day time-data) (format "%2d" (:sfsim.astro/day date)))
@@ -503,7 +502,7 @@
                                       (tabbing gui (gui/edit-field gui (:second time-data)) 5 6))
                       (gui/layout-row-dynamic gui 32 2)
                       (when (gui/button-label gui "Set")
-                        (reset! time-delta (datetime-dialog-get time-data @t0)))
+                        (swap! physics-state physics/set-julian-date-ut (datetime-dialog-get time-data)))
                       (when (gui/button-label gui "Close")
                         (reset! menu main-dialog))))
 
@@ -516,10 +515,10 @@
                       (when (gui/button-label gui "Joystick")
                         (reset! menu joystick-dialog))
                       (when (gui/button-label gui "Location")
-                        (location-dialog-set position-data @time-delta @t0)
+                        (location-dialog-set position-data)
                         (reset! menu location-dialog))
                       (when (gui/button-label gui "Date/Time")
-                        (datetime-dialog-set time-data @time-delta @t0)
+                        (datetime-dialog-set time-data)
                         (reset! menu datetime-dialog))
                       (when (gui/button-label gui "Resume")
                         (swap! state assoc :sfsim.input/menu nil))
@@ -604,7 +603,7 @@
                         (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0))))))
                           (/ 1.0 ^double fix-fps))
                         (- t1 ^double @t0))
-            jd-ut     (+ ^double @time-delta (/ ^double @t0 86400.0) ^double astro/T0)]
+            jd-ut     (physics/get-julian-date-ut @physics-state)]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
         (if (@state :sfsim.input/menu)
@@ -612,7 +611,7 @@
           (reset! menu nil))
         (if playback
           (let [frame (nth @recording @n)]
-            (reset! time-delta (/ (- ^double (:timeseconds frame) ^double @t0) 86400.0))
+            (swap! physics-state physics/set-julian-date-ut (:julian-date-ut frame))
             (swap! physics-state physics/set-pose :sfsim.physics/surface (:position frame) (:orientation frame))
             (reset! camera-state (:camera-state frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
@@ -638,7 +637,7 @@
               (swap! camera-state camera/set-mode mode jd-ut @physics-state)
               (swap! camera-state camera/update-camera-pose dt @state))
             (when (and @recording (not (@state :sfsim.input/pause)))
-              (let [frame {:timeseconds (+ (* ^double @time-delta 86400.0) ^double @t0)
+              (let [frame {:julian-date-ut (physics/get-julian-date-ut @physics-state)
                            :position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
                            :orientation (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
                            :camera-state @camera-state
@@ -659,7 +658,8 @@
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
-              model-vars         (model/make-model-vars @t0 pressure (:sfsim.physics/throttle @physics-state))
+              model-vars         (model/make-model-vars (:sfsim.physics/offset-seconds @physics-state) pressure
+                                                        (:sfsim.physics/throttle @physics-state))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  @window-width @window-height origin camera-orientation
                                                                  light-direction object-position object-orientation model-vars)
@@ -673,14 +673,15 @@
               cloud-render-vars  (clouds/make-cloud-render-vars config/render-config planet-render-vars @window-width @window-height
                                                                 origin camera-orientation light-direction object-position
                                                                 object-orientation)
-              wheels-scene       (let [wheel-animation (map #(mod (/ % (* 2.0 PI)) 1.0) (physics/get-wheel-angles @physics-state))
+              wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
+                                                            (physics/get-wheel-angles @physics-state))
                                        gear-animation
                                        (let [gear (:sfsim.physics/gear @physics-state)]
                                          (if (= ^double gear 1.0)
                                            (let [suspension (physics/get-suspension @physics-state)]
-                                             [(/ (- (nth suspension 0) 0.8) 0.8128)
-                                              (/ (- (nth suspension 1) 0.8) 0.8128)
-                                              (+ 1.0 (/ (- (nth suspension 2) 0.5) 0.5419))])
+                                             [(/ (- ^double (nth suspension 0) 0.8) 0.8128)
+                                              (/ (- ^double (nth suspension 1) 0.8) 0.8128)
+                                              (+ 1.0 (/ (- ^double (nth suspension 2) 0.5) 0.5419))])
                                            [(- 2.0 ^double gear) (- 2.0 ^double gear) (- 3.0 ^double gear)]))]
                                    (model/apply-transforms
                                      scene
