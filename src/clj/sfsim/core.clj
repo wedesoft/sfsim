@@ -573,7 +573,6 @@
 
 
 (def frame-index (atom 0))
-(def rcs (atom #{}))
 (def time_ (atom 0.0))
 
 
@@ -625,13 +624,11 @@
             (swap! physics-state physics/update-gear-status jd-ut wheels)
             (physics/set-wheel-angles @physics-state (:wheel-angles frame))
             (physics/set-suspension @physics-state (:suspension frame))
-            (swap! physics-state assoc :sfsim.physics/rcs-thrust (:rcs-thrust frame))
-            (reset! rcs (:rcs frame)))
+            (swap! physics-state assoc :sfsim.physics/rcs-thrust (:rcs-thrust frame)))
           (do
             (when (not (@state :sfsim.input/pause))
               (swap! time_ + dt)
               (swap! physics-state physics/update-domain jd-ut config/planet-config)
-              (println (:sfsim.physics/domain @physics-state))
               (swap! physics-state physics/set-control-inputs @state dt)
               (swap! physics-state physics/update-gear-status jd-ut wheels)
               (physics/update-brakes @physics-state)
