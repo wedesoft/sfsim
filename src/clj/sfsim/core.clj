@@ -637,23 +637,17 @@
             (reset! rcs (:rcs frame)))
           (when (not (@state :sfsim.input/pause))
             (swap! time_ + dt)
+            (swap! physics-state physics/update-domain jd-ut config/planet-config)
+            (println (:sfsim.physics/domain @physics-state))
             (swap! physics-state physics/set-control-inputs @state dt)
             (swap! physics-state physics/update-gear-status jd-ut wheels)
             (physics/update-brakes @physics-state)
-            (let [height    (- (mag (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
-                               ^double earth-radius)]
-              (swap! physics-state
-                     physics/set-domain
-                     (if (>= height ^double (:sfsim.planet/space-boundary config/planet-config))
-                       :sfsim.physics/orbit
-                       :sfsim.physics/surface)
-                     jd-ut)
-              (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
-              (physics/set-thruster-forces @physics-state jd-ut thrust)
-              (physics/set-aerodynamic-forces @physics-state config/planet-config jd-ut)
-              (swap! physics-state
-                     physics/update-state
-                     dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass))))
+            (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
+            (physics/set-thruster-forces @physics-state jd-ut thrust)
+            (physics/set-aerodynamic-forces @physics-state config/planet-config jd-ut)
+            (swap! physics-state
+                   physics/update-state
+                   dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass)))
             (when @recording
               (let [[origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
                                                  (camera/get-camera-pose @camera-state @physics-state jd-ut))

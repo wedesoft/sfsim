@@ -353,6 +353,13 @@
         (set-speed ::surface linear-velocity angular-velocity))))
 
 
+(defn update-domain
+  "Switch domain of space craft depending on height"
+  [state jd-ut {:sfsim.planet/keys [radius space-boundary]}]
+  (let [height (- (mag (get-position ::surface jd-ut state)) ^double radius)]
+    (set-domain state (if (>= height ^double space-boundary) ::orbit ::surface) jd-ut)))
+
+
 (defmulti update-state
   "Perform simulation step"
   (fn [state _dt _acceleration] (::domain state)))

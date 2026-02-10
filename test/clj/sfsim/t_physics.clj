@@ -314,6 +314,16 @@
          (jolt/get-angular-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 1 0 0) 1e-6)))
 
 
+(facts "Update domain depending on height of vehicle"
+       (swap! state set-domain :sfsim.physics/surface astro/T0)
+       (swap! state set-pose :sfsim.physics/surface (vec3 0 0 6378000) (q/->Quaternion 1 0 0 0))
+       (swap! state update-domain astro/T0 {:sfsim.planet/radius 6378000.0 :sfsim.planet/space-boundary 80000.0})
+       (@state :sfsim.physics/domain) => :sfsim.physics/surface
+       (swap! state set-pose :sfsim.physics/surface (vec3 0 0 6678000) (q/->Quaternion 1 0 0 0))
+       (swap! state update-domain astro/T0 {:sfsim.planet/radius 6378000.0 :sfsim.planet/space-boundary 80000.0})
+       (@state :sfsim.physics/domain) => :sfsim.physics/orbit)
+
+
 (facts "Perform physics update in Earth centered rotating coordinate system"
        (swap! state set-pose :sfsim.physics/surface (vec3 0 0 6678000) (q/->Quaternion 1 0 0 0))
        (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
