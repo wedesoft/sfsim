@@ -277,17 +277,18 @@
 
 (defmulti get-linear-speed
   "Get speed vector of space craft"
-  (fn [domain _jd-ut state] [(::domain state) domain]))
+  (fn [domain state] [(::domain state) domain]))
 
 
 (defmethod get-linear-speed [::surface ::surface]
-  [_domain _jd-ut state]
+  [_domain state]
   (jolt/get-linear-velocity (::body state)))
 
 
 (defmethod get-linear-speed [::surface ::orbit]
-  [_domain jd-ut state]
-  (let [position               (jolt/get-translation (::body state))
+  [_domain state]
+  (let [jd-ut                  (get-julian-date-ut state)
+        position               (jolt/get-translation (::body state))
         linear-velocity        (jolt/get-linear-velocity (::body state))
         earth-to-icrs          (astro/earth-to-icrs jd-ut)
         earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
@@ -296,8 +297,9 @@
 
 
 (defmethod get-linear-speed [::orbit ::surface]
-  [_domain jd-ut state]
-  (let [icrs-to-earth          (inverse (astro/earth-to-icrs jd-ut))
+  [_domain state]
+  (let [jd-ut                  (get-julian-date-ut state)
+        icrs-to-earth          (inverse (astro/earth-to-icrs jd-ut))
         linear-velocity        (mulv icrs-to-earth (::speed state))
         earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
         earth-local-speed      (cross earth-angular-velocity (get-position ::surface state))]
@@ -305,69 +307,71 @@
 
 
 (defmethod get-linear-speed [::orbit ::orbit]
-  [_domain _jd-ut state]
+  [_domain state]
   (::speed state))
 
 
 (defmulti get-angular-speed
   "Get angular velocity vector of space craft"
-  (fn [domain _jd-ut state] [(::domain state) domain]))
+  (fn [domain state] [(::domain state) domain]))
 
 
 (defmethod get-angular-speed [::surface ::surface]
-  [_domain _jd-ut state]
+  [_domain state]
   (jolt/get-angular-velocity (::body state)))
 
 
 (defmethod get-angular-speed [::surface ::orbit]
-  [_domain jd-ut state]
-  (let [angular-velocity       (jolt/get-angular-velocity (::body state))
+  [_domain state]
+  (let [jd-ut                  (get-julian-date-ut state)
+        angular-velocity       (jolt/get-angular-velocity (::body state))
         earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
         earth-to-icrs          (astro/earth-to-icrs jd-ut)]
     (mulv earth-to-icrs (add angular-velocity earth-angular-velocity))))
 
 
 (defmethod get-angular-speed [::orbit ::surface]
-  [_domain jd-ut state]
-  (let [icrs-to-earth          (inverse (astro/earth-to-icrs jd-ut))
+  [_domain state]
+  (let [jd-ut                  (get-julian-date-ut state)
+        icrs-to-earth          (inverse (astro/earth-to-icrs jd-ut))
         angular-velocity       (mulv icrs-to-earth (jolt/get-angular-velocity (::body state)))
         earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)]
     (sub angular-velocity earth-angular-velocity)))
 
 
 (defmethod get-angular-speed [::orbit ::orbit]
-  [_domain _jd-ut state]
+  [_domain state]
   (jolt/get-angular-velocity (::body state)))
 
 
 (defmulti set-domain
   "Switch reference system of space craft"
-  (fn [state target _jd-ut] [(::domain state) target]))
+  (fn [state target] [(::domain state) target]))
 
 
 (defmethod set-domain :default
-  [state target _jd-ut]
+  [state target]
   (assert (= target (::domain state)))
   state)
 
 
 (defmethod set-domain [::surface ::orbit]
-  [state _target jd-ut]
+  [state _target]
   (let [position      (get-position ::orbit state)
         orientation   (get-orientation ::orbit state)
-        linear-speed  (get-linear-speed ::orbit jd-ut state)
-        angular-speed (get-angular-speed ::orbit jd-ut state)]
+        linear-speed  (get-linear-speed ::orbit state)
+        angular-speed (get-angular-speed ::orbit state)]
     (-> state
         (set-pose ::orbit position orientation)
         (set-speed ::orbit linear-speed angular-speed))))
 
 
 (defmethod set-domain [::orbit ::surface]
-  [state _target jd-ut]
+  [state _target]
   (let [position         (get-position ::surface state)
         orientation      (get-orientation ::surface state)
-        linear-velocity  (get-linear-speed ::surface jd-ut state)
-        angular-velocity (get-angular-speed ::surface jd-ut state)]
+        linear-velocity  (get-linear-speed ::surface state)
+        angular-velocity (get-angular-speed ::surface state)]
     (-> state
         (set-pose ::surface position orientation)
         (set-speed ::surface linear-velocity angular-velocity))))
@@ -375,9 +379,9 @@
 
 (defn update-domain
   "Switch domain of space craft depending on height"
-  [state jd-ut {:sfsim.planet/keys [radius space-boundary]}]
+  [state {:sfsim.planet/keys [radius space-boundary]}]
   (let [height (- (mag (get-position ::surface state)) ^double radius)]
-    (set-domain state (if (>= height ^double space-boundary) ::orbit ::surface) jd-ut)))
+    (set-domain state (if (>= height ^double space-boundary) ::orbit ::surface))))
 
 
 (defmulti update-state
@@ -531,8 +535,8 @@
   (let [radius           (:sfsim.planet/radius planet)
         height           (- (mag (get-position ::surface state)) ^double radius)
         orientation      (get-orientation ::surface state)
-        linear-velocity  (get-linear-speed ::surface jd-ut state)
-        angular-velocity (get-angular-speed ::surface jd-ut state)
+        linear-velocity  (get-linear-speed ::surface state)
+        angular-velocity (get-angular-speed ::surface state)
         loads  (aerodynamics/aerodynamic-loads height orientation linear-velocity angular-velocity
                                                (::control-surfaces state) (::gear state) (::air-brake state))]
     (add-force ::surface jd-ut state (:sfsim.aerodynamics/forces loads))

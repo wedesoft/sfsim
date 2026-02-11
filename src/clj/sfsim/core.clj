@@ -623,7 +623,7 @@
             (swap! physics-state assoc :sfsim.physics/rcs-thrust (:rcs-thrust frame)))
           (do
             (when (not (@state :sfsim.input/pause))
-              (swap! physics-state physics/update-domain jd-ut config/planet-config)
+              (swap! physics-state physics/update-domain config/planet-config)
               (swap! physics-state physics/set-control-inputs @state dt)
               (swap! physics-state physics/update-gear-status jd-ut wheels)
               (physics/update-brakes @physics-state)
@@ -634,9 +634,9 @@
                      physics/update-state
                      dt
                      (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass))))
-            (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state))
+            (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface @physics-state))
                   mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
-              (swap! camera-state camera/set-mode mode jd-ut @physics-state)
+              (swap! camera-state camera/set-mode mode @physics-state)
               (swap! camera-state camera/update-camera-pose dt @state))
             (when (and @recording (not (@state :sfsim.input/pause)))
               (let [frame {:start-julian-date (:sfsim.physics/start-julian-date @physics-state)
@@ -657,7 +657,7 @@
               object-orientation (physics/get-orientation :sfsim.physics/surface @physics-state)
               object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
               [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
-                                           (camera/get-camera-pose @camera-state @physics-state jd-ut))
+                                           (camera/get-camera-pose @camera-state @physics-state))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
