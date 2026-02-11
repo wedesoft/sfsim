@@ -436,55 +436,59 @@
 
 (defmulti add-force
   "Add force affecting space craft"
-  (fn [domain _jd-ut state _force_] [domain (::domain state)]))
+  (fn [domain state _force_] [domain (::domain state)]))
 
 
 (defmethod add-force [::surface ::surface]
-  [_domain _jd-ut state force_]
+  [_domain state force_]
   (jolt/add-force (::body state) force_))
 
 
 (defmethod add-force [::orbit ::surface]
-  [_domain jd-ut state force_]
-  (let [icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))]
+  [_domain state force_]
+  (let [jd-ut         (get-julian-date-ut state)
+        icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))]
     (jolt/add-force (::body state) (mulv icrs-to-earth force_))))
 
 
 (defmethod add-force [::surface ::orbit]
-  [_domain jd-ut state force_]
-  (let [earth-to-icrs (astro/earth-to-icrs jd-ut)]
+  [_domain state force_]
+  (let [jd-ut         (get-julian-date-ut state)
+        earth-to-icrs (astro/earth-to-icrs jd-ut)]
     (jolt/add-force (::body state) (mulv earth-to-icrs force_))))
 
 
 (defmethod add-force [::orbit ::orbit]
-  [_domain _jd-ut state force_]
+  [_domain state force_]
   (jolt/add-force (::body state) force_))
 
 
 (defmulti add-torque
   "Add torque affecting space craft"
-  (fn [domain _jd-ut state _torque_] [domain (::domain state)]))
+  (fn [domain state _torque_] [domain (::domain state)]))
 
 
 (defmethod add-torque [::surface ::surface]
-  [_domain _jd-ut state torque_]
+  [_domain state torque_]
   (jolt/add-torque (::body state) torque_))
 
 
 (defmethod add-torque [::orbit ::surface]
-  [_domain jd-ut state torque_]
-  (let [icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))]
+  [_domain state torque_]
+  (let [jd-ut         (get-julian-date-ut state)
+        icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))]
     (jolt/add-torque (::body state) (mulv icrs-to-earth torque_))))
 
 
 (defmethod add-torque [::surface ::orbit]
-  [_domain jd-ut state torque_]
-  (let [earth-to-icrs (astro/earth-to-icrs jd-ut)]
+  [_domain state torque_]
+  (let [jd-ut         (get-julian-date-ut state)
+        earth-to-icrs (astro/earth-to-icrs jd-ut)]
     (jolt/add-torque (::body state) (mulv earth-to-icrs torque_))))
 
 
 (defmethod add-torque [::orbit ::orbit]
-  [_domain _jd-ut state torque_]
+  [_domain state torque_]
   (jolt/add-torque (::body state) torque_))
 
 
@@ -521,17 +525,17 @@
 
 (defn set-thruster-forces
   "Set forces and torques of main thruster and RCS thrusters"
-  [state jd-ut thrust]
+  [state thrust]
   (let [orientation (get-orientation ::orbit state)
         throttle    (::throttle state)
         rcs-thrust  (::rcs-thrust state)]
-    (add-force ::orbit jd-ut state (q/rotate-vector orientation (vec3 (* ^double throttle ^double thrust) 0 0)))
-    (add-torque ::orbit jd-ut state (q/rotate-vector orientation rcs-thrust))))
+    (add-force ::orbit state (q/rotate-vector orientation (vec3 (* ^double throttle ^double thrust) 0 0)))
+    (add-torque ::orbit state (q/rotate-vector orientation rcs-thrust))))
 
 
 (defn set-aerodynamic-forces
   "Set forces and torques caused by aerodynamics"
-  [state planet jd-ut]
+  [state planet]
   (let [radius           (:sfsim.planet/radius planet)
         height           (- (mag (get-position ::surface state)) ^double radius)
         orientation      (get-orientation ::surface state)
@@ -539,13 +543,13 @@
         angular-velocity (get-angular-speed ::surface state)
         loads  (aerodynamics/aerodynamic-loads height orientation linear-velocity angular-velocity
                                                (::control-surfaces state) (::gear state) (::air-brake state))]
-    (add-force ::surface jd-ut state (:sfsim.aerodynamics/forces loads))
-    (add-torque ::surface jd-ut state (:sfsim.aerodynamics/moments loads))))
+    (add-force ::surface state (:sfsim.aerodynamics/forces loads))
+    (add-torque ::surface state (:sfsim.aerodynamics/moments loads))))
 
 
 (defn create-vehicle-constraint
   "Create vehicle constraint if it does not exist"
-  [state jd-ut wheels]
+  [state wheels]
   (if (not (::vehicle state))
     (let [body     (::body state)
           position (get-position ::surface state)
@@ -566,10 +570,10 @@
 
 (defn update-gear-status
   "Create or destroy vehicle constraint depending on whether gear is down or not"
-  [state jd-ut wheels]
+  [state wheels]
   (let [gear (::gear state)]
     (if (= gear 1.0)
-      (create-vehicle-constraint state jd-ut wheels)
+      (create-vehicle-constraint state wheels)
       (destroy-vehicle-constraint state))))
 
 

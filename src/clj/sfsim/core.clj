@@ -602,8 +602,7 @@
             dt        (if fix-fps
                         (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0))))))
                           (/ 1.0 ^double fix-fps))
-                        (- t1 ^double @t0))
-            jd-ut     (physics/get-julian-date-ut @physics-state)]
+                        (- t1 ^double @t0))]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface @physics-state))
         (if (@state :sfsim.input/menu)
@@ -617,7 +616,7 @@
             (reset! camera-state (:camera-state frame))
             (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
             (swap! physics-state assoc :sfsim.physics/gear (:gear frame))
-            (swap! physics-state physics/update-gear-status jd-ut wheels)
+            (swap! physics-state physics/update-gear-status wheels)
             (physics/set-wheel-angles @physics-state (:wheel-angles frame))
             (physics/set-suspension @physics-state (:suspension frame))
             (swap! physics-state assoc :sfsim.physics/rcs-thrust (:rcs-thrust frame)))
@@ -625,11 +624,11 @@
             (when (not (@state :sfsim.input/pause))
               (swap! physics-state physics/update-domain config/planet-config)
               (swap! physics-state physics/set-control-inputs @state dt)
-              (swap! physics-state physics/update-gear-status jd-ut wheels)
+              (swap! physics-state physics/update-gear-status wheels)
               (physics/update-brakes @physics-state)
               (update-mesh! (physics/get-position :sfsim.physics/surface @physics-state))
-              (physics/set-thruster-forces @physics-state jd-ut thrust)
-              (physics/set-aerodynamic-forces @physics-state config/planet-config jd-ut)
+              (physics/set-thruster-forces @physics-state thrust)
+              (physics/set-aerodynamic-forces @physics-state config/planet-config)
               (swap! physics-state
                      physics/update-state
                      dt
@@ -658,6 +657,7 @@
               object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
               [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
                                            (camera/get-camera-pose @camera-state @physics-state))
+              jd-ut              (physics/get-julian-date-ut @physics-state)
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))

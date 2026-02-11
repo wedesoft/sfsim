@@ -364,56 +364,64 @@
 
 (facts "Apply forces in Earth centered rotating coordinate system"
        (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-pose :sfsim.physics/surface (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
          (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
-         (add-force :sfsim.physics/surface astro/T0 @state (vec3 (jolt/get-mass sphere) 0 0))
+         (add-force :sfsim.physics/surface @state (vec3 (jolt/get-mass sphere) 0 0))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
          (get-linear-speed :sfsim.physics/surface @state) => (roughly-vector (vec3 1 0 0) 1e-3)
 
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
-         (add-force :sfsim.physics/orbit astro/T0 @state (vec3 (jolt/get-mass sphere) 0 0))
+         (add-force :sfsim.physics/orbit @state (vec3 (jolt/get-mass sphere) 0 0))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
          (get-linear-speed :sfsim.physics/surface @state) => (roughly-vector (vec3 0 -1 0) 1e-3)))
 
 
 (facts "Apply forces in Earth centered ICRS aligned coordinate system"
       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
-         (swap! state set-pose :sfsim.physics/orbit (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
-         (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
-         (add-force :sfsim.physics/orbit astro/T0 @state (vec3 (jolt/get-mass sphere) 0 0))
-         (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
-         (get-linear-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 1 0 0) 1e-3)
+        (swap! state set-julian-date-ut astro/T0)
+        (swap! state set-pose :sfsim.physics/orbit (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
+        (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
+        (add-force :sfsim.physics/orbit @state (vec3 (jolt/get-mass sphere) 0 0))
+        (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
+        (get-linear-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 1 0 0) 1e-3)
 
-         (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
-         (add-force :sfsim.physics/surface astro/T0 @state (vec3 (jolt/get-mass sphere) 0 0))
-         (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
-         (get-linear-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 0 1 0) 1e-3)))
+         (swap! state set-julian-date-ut astro/T0)
+        (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
+        (add-force :sfsim.physics/surface @state (vec3 (jolt/get-mass sphere) 0 0))
+        (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
+        (get-linear-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 0 1 0) 1e-3)))
 
 
 (facts "Apply torques in Earth centered rotating coordinate system"
        (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-pose :sfsim.physics/surface (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
          (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
-         (add-torque :sfsim.physics/surface astro/T0 @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (add-torque :sfsim.physics/surface @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
          (get-angular-speed :sfsim.physics/surface @state) => (roughly-vector (vec3 1 0 0) 1e-3)
 
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
-         (add-torque :sfsim.physics/orbit astro/T0 @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (add-torque :sfsim.physics/orbit @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
          (get-angular-speed :sfsim.physics/surface @state) => (roughly-vector (vec3 0 -1 0) 1e-3)))
 
 
 (facts "Apply torques in Earth centered ICRS aligned coordinate system"
       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-pose :sfsim.physics/orbit (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
-         (add-torque :sfsim.physics/orbit astro/T0 @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (add-torque :sfsim.physics/orbit @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
          (get-angular-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 1 0 0) 1e-3)
 
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
-         (add-torque :sfsim.physics/surface astro/T0 @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (add-torque :sfsim.physics/surface @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
          (get-angular-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 0 1 0) 1e-3)))
 
