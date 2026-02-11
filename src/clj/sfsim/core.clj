@@ -418,8 +418,7 @@
 
 (defn location-dialog-set
   [position-data]
-  (let [jd-ut      (physics/get-julian-date-ut @physics-state)
-        geographic (physics/get-geographic @physics-state config/planet-config jd-ut)]
+  (let [geographic (physics/get-geographic @physics-state config/planet-config)]
     (gui/edit-set (:longitude position-data) (format "%.5f" (to-degrees (:longitude geographic))))
     (gui/edit-set (:latitude position-data) (format "%.5f" (to-degrees (:latitude geographic))))
     (gui/edit-set (:height position-data) (format "%.1f" (:height geographic)))))

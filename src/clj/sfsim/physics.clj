@@ -219,8 +219,8 @@
 
 (defmethod get-orientation [::orbit ::surface]
   [_domain state]
-  (let [jd-ut         (get-julian-date-ut state)
-        icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))
+  (let [jd-ut            (get-julian-date-ut state)
+        icrs-to-earth    (inverse (astro/earth-to-icrs jd-ut))
         icrs-orientation (matrix->quaternion icrs-to-earth)]
     (q/* icrs-orientation (jolt/get-orientation (::body state)))))
 
@@ -246,7 +246,7 @@
 
 (defn get-geographic
   "Get longitude, latitude, and height of space craft"
-  [state planet jd-ut]
+  [state planet]
   (let [position  (get-position :sfsim.physics/surface state)
         longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
         latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))

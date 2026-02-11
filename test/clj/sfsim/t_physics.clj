@@ -258,7 +258,7 @@
        (let [radius 6378000.0
              planet #:sfsim.planet{:radius radius :max-height 8000.0}]
          (swap! state set-geographic (fn [_v] radius) planet 0.0 (to-radians ?longitude) (to-radians ?latitude) ?height)
-         (let [geo-position (get-geographic @state planet astro/T0)]
+         (let [geo-position (get-geographic @state planet)]
            (facts
              (to-degrees (:longitude geo-position)) => (roughly ?longitude 1e-3)
              (to-degrees (:latitude geo-position)) => (roughly ?latitude 1e-3)
