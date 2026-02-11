@@ -606,7 +606,7 @@
                         (- t1 ^double @t0))
             jd-ut     (physics/get-julian-date-ut @physics-state)]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
-                                 (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
+                                 (physics/get-position :sfsim.physics/surface @physics-state))
         (if (@state :sfsim.input/menu)
           (swap! menu #(or % main-dialog))
           (reset! menu nil))
@@ -628,7 +628,7 @@
               (swap! physics-state physics/set-control-inputs @state dt)
               (swap! physics-state physics/update-gear-status jd-ut wheels)
               (physics/update-brakes @physics-state)
-              (update-mesh! (physics/get-position :sfsim.physics/surface jd-ut @physics-state))
+              (update-mesh! (physics/get-position :sfsim.physics/surface @physics-state))
               (physics/set-thruster-forces @physics-state jd-ut thrust)
               (physics/set-aerodynamic-forces @physics-state config/planet-config jd-ut)
               (swap! physics-state
@@ -642,8 +642,8 @@
             (when (and @recording (not (@state :sfsim.input/pause)))
               (let [frame {:start-julian-date (:sfsim.physics/start-julian-date @physics-state)
                            :offset-seconds (:sfsim.physics/offset-seconds @physics-state)
-                           :position (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
-                           :orientation (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
+                           :position (physics/get-position :sfsim.physics/surface @physics-state)
+                           :orientation (physics/get-orientation :sfsim.physics/surface @physics-state)
                            :camera-state @camera-state
                            :dist (:sfsim.camera/distance @camera-state)
                            :gear (:sfsim.physics/gear @physics-state)
@@ -652,10 +652,10 @@
                            :wheel-angles (physics/get-wheel-angles @physics-state)
                            :suspension (physics/get-suspension @physics-state)}]
                 (swap! recording conj frame)))))
-        (let [object-position    (physics/get-position :sfsim.physics/surface jd-ut @physics-state)
+        (let [object-position    (physics/get-position :sfsim.physics/surface @physics-state)
               height             (- (mag object-position) ^double earth-radius)
               pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
-              object-orientation (physics/get-orientation :sfsim.physics/surface jd-ut @physics-state)
+              object-orientation (physics/get-orientation :sfsim.physics/surface @physics-state)
               object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
               [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
                                            (camera/get-camera-pose @camera-state @physics-state jd-ut))

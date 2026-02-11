@@ -69,8 +69,8 @@
 
 
 (defmethod get-forward-direction ::slow
-  [_domain jd-ut physics-state]
-  (let [orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)]
+  [_domain _jd-ut physics-state]
+  (let [orientation (physics/get-orientation :sfsim.physics/surface physics-state)]
     (q/rotate-vector orientation (vec3 1 0 0))))
 
 
@@ -91,7 +91,7 @@
 (defn horizon-for-domain
   "Determine horizon-align4ed camera matrix for given camera domain and physics state"
   [physics-state jd-ut domain]
-  (let [position      (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+  (let [position      (physics/get-position :sfsim.physics/surface physics-state)
         nose-or-speed (get-forward-direction domain jd-ut physics-state)]
     (horizon-system nose-or-speed position)))
 
@@ -105,7 +105,7 @@
 (defn get-camera-pose
   "Get camera pose in surface coordinates"
   [camera-state physics-state jd-ut]
-  (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+  (let [position           (physics/get-position :sfsim.physics/surface physics-state)
         domain             (::domain camera-state)
         horizon            (matrix->quaternion (horizon-for-domain physics-state jd-ut domain))
         camera-orientation (q/* horizon (camera->horizon camera-state))

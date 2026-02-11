@@ -172,57 +172,61 @@
 
 (defmulti get-position
   "Get position of space craft"
-  (fn [domain _jd-ut state] [(::domain state) domain]))
+  (fn [domain state] [(::domain state) domain]))
 
 
 (defmethod get-position [::surface ::surface]
-  [_domain _jd-ut state]
+  [_domain state]
   (jolt/get-translation (::body state)))
 
 
 (defmethod get-position [::surface ::orbit]
-  [_domain jd-ut state]
-  (let [earth-to-icrs (astro/earth-to-icrs jd-ut)]
+  [_domain state]
+  (let [jd-ut         (get-julian-date-ut state)
+        earth-to-icrs (astro/earth-to-icrs jd-ut)]
     (mulv earth-to-icrs (jolt/get-translation (::body state)))))
 
 
 (defmethod get-position [::orbit ::surface]
-  [_domain jd-ut state]
-  (let [icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))]
+  [_domain state]
+  (let [jd-ut         (get-julian-date-ut state)
+        icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))]
     (mulv icrs-to-earth (::position state))))
 
 
 (defmethod get-position [::orbit ::orbit]
-  [_domain _jd-ut state]
+  [_domain state]
   (::position state))
 
 
 (defmulti get-orientation
   "Get orientation of space craft"
-  (fn [domain _jd-ut state] [(::domain state) domain]))
+  (fn [domain state] [(::domain state) domain]))
 
 
 (defmethod get-orientation [::surface ::surface]
-  [_domain _jd-ut state]
+  [_domain state]
   (jolt/get-orientation (::body state)))
 
 
 (defmethod get-orientation [::surface ::orbit]
-  [_domain jd-ut state]
-  (let [earth-to-icrs     (astro/earth-to-icrs jd-ut)
+  [_domain state]
+  (let [jd-ut             (get-julian-date-ut state)
+        earth-to-icrs     (astro/earth-to-icrs jd-ut)
         earth-orientation (matrix->quaternion earth-to-icrs)]
     (q/* earth-orientation (jolt/get-orientation (::body state)))))
 
 
 (defmethod get-orientation [::orbit ::surface]
-  [_domain jd-ut state]
-  (let [icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))
+  [_domain state]
+  (let [jd-ut         (get-julian-date-ut state)
+        icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))
         icrs-orientation (matrix->quaternion icrs-to-earth)]
     (q/* icrs-orientation (jolt/get-orientation (::body state)))))
 
 
 (defmethod get-orientation [::orbit ::orbit]
-  [_domain _jd-ut state]
+  [_domain state]
   (jolt/get-orientation (::body state)))
 
 
@@ -243,7 +247,7 @@
 (defn get-geographic
   "Get longitude, latitude, and height of space craft"
   [state planet jd-ut]
-  (let [position  (get-position :sfsim.physics/surface jd-ut state)
+  (let [position  (get-position :sfsim.physics/surface state)
         longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
         latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
         height    (- (mag position) ^double (:sfsim.planet/radius planet))]
@@ -296,7 +300,7 @@
   (let [icrs-to-earth          (inverse (astro/earth-to-icrs jd-ut))
         linear-velocity        (mulv icrs-to-earth (::speed state))
         earth-angular-velocity (vec3 0 0 astro/earth-rotation-speed)
-        earth-local-speed      (cross earth-angular-velocity (get-position ::surface jd-ut state))]
+        earth-local-speed      (cross earth-angular-velocity (get-position ::surface state))]
     (sub linear-velocity earth-local-speed)))
 
 
@@ -349,8 +353,8 @@
 
 (defmethod set-domain [::surface ::orbit]
   [state _target jd-ut]
-  (let [position      (get-position ::orbit jd-ut state)
-        orientation   (get-orientation ::orbit jd-ut state)
+  (let [position      (get-position ::orbit state)
+        orientation   (get-orientation ::orbit state)
         linear-speed  (get-linear-speed ::orbit jd-ut state)
         angular-speed (get-angular-speed ::orbit jd-ut state)]
     (-> state
@@ -360,8 +364,8 @@
 
 (defmethod set-domain [::orbit ::surface]
   [state _target jd-ut]
-  (let [position         (get-position ::surface jd-ut state)
-        orientation      (get-orientation ::surface jd-ut state)
+  (let [position         (get-position ::surface state)
+        orientation      (get-orientation ::surface state)
         linear-velocity  (get-linear-speed ::surface jd-ut state)
         angular-velocity (get-angular-speed ::surface jd-ut state)]
     (-> state
@@ -372,7 +376,7 @@
 (defn update-domain
   "Switch domain of space craft depending on height"
   [state jd-ut {:sfsim.planet/keys [radius space-boundary]}]
-  (let [height (- (mag (get-position ::surface jd-ut state)) ^double radius)]
+  (let [height (- (mag (get-position ::surface state)) ^double radius)]
     (set-domain state (if (>= height ^double space-boundary) ::orbit ::surface) jd-ut)))
 
 
@@ -514,7 +518,7 @@
 (defn set-thruster-forces
   "Set forces and torques of main thruster and RCS thrusters"
   [state jd-ut thrust]
-  (let [orientation (get-orientation ::orbit jd-ut state)
+  (let [orientation (get-orientation ::orbit state)
         throttle    (::throttle state)
         rcs-thrust  (::rcs-thrust state)]
     (add-force ::orbit jd-ut state (q/rotate-vector orientation (vec3 (* ^double throttle ^double thrust) 0 0)))
@@ -525,8 +529,8 @@
   "Set forces and torques caused by aerodynamics"
   [state planet jd-ut]
   (let [radius           (:sfsim.planet/radius planet)
-        height           (- (mag (get-position ::surface jd-ut state)) ^double radius)
-        orientation      (get-orientation ::surface jd-ut state)
+        height           (- (mag (get-position ::surface state)) ^double radius)
+        orientation      (get-orientation ::surface state)
         linear-velocity  (get-linear-speed ::surface jd-ut state)
         angular-velocity (get-angular-speed ::surface jd-ut state)
         loads  (aerodynamics/aerodynamic-loads height orientation linear-velocity angular-velocity
@@ -540,7 +544,7 @@
   [state jd-ut wheels]
   (if (not (::vehicle state))
     (let [body     (::body state)
-          position (get-position ::surface jd-ut state)
+          position (get-position ::surface state)
           world-up (normalize position)]
       (assoc state ::vehicle (jolt/create-and-add-vehicle-constraint body world-up (vec3 0 0 -1) (vec3 1 0 0) wheels)))
     state))
