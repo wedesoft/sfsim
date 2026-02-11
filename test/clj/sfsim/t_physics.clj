@@ -128,6 +128,8 @@
 
 
 (facts "Initial physics state"
+       (:sfsim.physics/start-julian-date @state) => astro/T0
+       (:sfsim.physics/offset-seconds @state) => 0.0
        (:sfsim.physics/position @state) => (vec3 0 0 0)
        (:sfsim.physics/speed @state) => (vec3 0 0 0)
        (:sfsim.physics/domain @state) => :sfsim.physics/surface
@@ -434,6 +436,19 @@
        (active-rcs @state) => #{"RCS L1" "RCS L2" "RCS L3" "RCS RF1" "RCS RF2" "RCS RF3"}
        (swap! state assoc :sfsim.physics/rcs-thrust (vec3 0 0 1000000))
        (active-rcs @state) => #{"RCS R1" "RCS R2" "RCS R3" "RCS LF1" "RCS LF2" "RCS LF3"})
+
+
+(facts "Get and set Julian date of universal time"
+       (swap! state set-julian-date-ut astro/T0)
+       (swap! state set-domain :sfsim.physics/surface astro/T0)
+       (get-julian-date-ut @state) => (roughly astro/T0 1e-6)
+       (swap! state update-state 60.0 (fn [_position _speed] (vec3 0 0 0)))
+       (get-julian-date-ut @state) => (roughly (+ astro/T0 (/ 60.0 86400.0)) 1e-6)
+       (swap! state set-domain :sfsim.physics/orbit astro/T0)
+       (swap! state update-state 60.0 (fn [_position _speed] (vec3 0 0 0)))
+       (get-julian-date-ut @state) => (roughly (+ astro/T0 (/ 120.0 86400.0)) 1e-6)
+       (swap! state set-julian-date-ut (+ astro/T0 1.0))
+       (get-julian-date-ut @state) => (roughly (+ astro/T0 1.0) 1e-6))
 
 
 (jolt/remove-and-destroy-body sphere)

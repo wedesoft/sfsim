@@ -104,6 +104,8 @@
   "Create initial physics state"
   [body]
   {::body body
+   ::start-julian-date astro/T0
+   ::offset-seconds 0.0
    ::position (vec3 0 0 0)
    ::speed (vec3 0 0 0)
    ::domain ::surface
@@ -115,6 +117,20 @@
    ::control-surfaces (vec3 0 0 0)
    ::brake 0.0
    ::vehicle nil})
+
+
+(defn get-julian-date-ut
+  "Get universal time Julian date"
+  [state]
+  (+ ^double (::start-julian-date state) (/ ^double (::offset-seconds state) 86400.0)))
+
+
+(defn set-julian-date-ut
+  "Set universal time Julian date"
+  [state jd-ut]
+  (-> state
+      (assoc ::start-julian-date jd-ut)
+      (assoc ::offset-seconds 0.0)))
 
 
 (defn set-control-inputs
@@ -381,7 +397,9 @@
     (jolt/update-system dt 1)
     (let [display-speed (mag (jolt/get-linear-velocity body))]
       (jolt/add-impulse body (mult dv2 mass))
-      (assoc state ::display-speed display-speed))))
+      (-> state
+          (update ::offset-seconds + dt)
+          (assoc ::display-speed display-speed)))))
 
 
 (defmethod update-state ::orbit
@@ -402,6 +420,7 @@
       (jolt/set-translation body (vec3 0 0 0))
       (jolt/set-linear-velocity body (vec3 0 0 0))
       (-> state
+          (update ::offset-seconds + dt)
           (assoc ::display-speed (mag (add speed delta-speed)))
           (update ::position add delta-position)
           (update ::speed add delta-speed)))))
