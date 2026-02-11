@@ -633,7 +633,8 @@
               (physics/set-aerodynamic-forces @physics-state config/planet-config jd-ut)
               (swap! physics-state
                      physics/update-state
-                     dt (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass))))
+                     dt
+                     (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass))))
             (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface jd-ut @physics-state))
                   mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
               (swap! camera-state camera/set-mode mode jd-ut @physics-state)
