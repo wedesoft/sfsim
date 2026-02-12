@@ -60,11 +60,11 @@
 (defmacro tabbing
   [gui edit idx cnt]
   `(do
-     (when (and (@state :sfsim.input/focus-new) (= (mod (@state :sfsim.input/focus-new) ~cnt) ~idx))
+     (when (and (@input-state :sfsim.input/focus-new) (= (mod (@input-state :sfsim.input/focus-new) ~cnt) ~idx))
        (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE)
-       (swap! state dissoc :sfsim.input/focus-new))
+       (swap! input-state dissoc :sfsim.input/focus-new))
      (when (= Nuklear/NK_EDIT_ACTIVE ~edit)
-       (swap! state assoc :sfsim.input/focus ~idx))))
+       (swap! input-state assoc :sfsim.input/focus ~idx))))
 
 
 (try
@@ -240,8 +240,8 @@
 (def mappings (atom default-mappings))
 
 (def event-buffer (atom (make-event-buffer)))
-(def state (atom (make-initial-state)))
-(def old-state (atom @state))
+(def input-state (atom (make-initial-state)))
+(def old-input-state (atom @input-state))
 (def input-handler (->InputHandler gui mappings))
 
 
@@ -339,17 +339,17 @@
                       (swap! mappings dissoc-in [:sfsim.input/joysticks :sfsim.input/devices device sensor-type sensor]))
                     (gui/layout-row-push gui 0.1)
                     (when (gui/button-label gui "Set")
-                      (swap! state dissoc last-event)
-                      (if (= (@state ::joystick-config) control)
-                        (swap! state dissoc ::joystick-config)
-                        (swap! state assoc ::joystick-config control)))
-                    (when-let [[device-new sensor-new] (and (= (@state ::joystick-config) control) (@state last-event))]
+                      (swap! input-state dissoc last-event)
+                      (if (= (@input-state ::joystick-config) control)
+                        (swap! input-state dissoc ::joystick-config)
+                        (swap! input-state assoc ::joystick-config control)))
+                    (when-let [[device-new sensor-new] (and (= (@input-state ::joystick-config) control) (@input-state last-event))]
                               (swap! mappings dissoc-in [:sfsim.input/joysticks :sfsim.input/devices device sensor-type sensor])
                               (swap! mappings assoc-in [:sfsim.input/joysticks :sfsim.input/devices device-new sensor-type sensor-new]
                                      control)
-                              (swap! state dissoc ::joystick-config))
+                              (swap! input-state dissoc ::joystick-config))
                     (gui/layout-row-push gui 0.6)
-                    (gui/text-label gui (if (= (@state ::joystick-config) control)
+                    (gui/text-label gui (if (= (@input-state ::joystick-config) control)
                                           prompt
                                           (if device (format "%s %d of %s" sensor-name sensor device) "None"))))))
 
@@ -506,7 +506,7 @@
                         (datetime-dialog-set time-data)
                         (reset! menu datetime-dialog))
                       (when (gui/button-label gui "Resume")
-                        (swap! state assoc :sfsim.input/menu nil))
+                        (swap! input-state assoc :sfsim.input/menu nil))
                       (when (gui/button-label gui "Quit")
                         (GLFW/glfwSetWindowShouldClose window true))))
 
@@ -572,12 +572,12 @@
         w  (int-array 1)
         h  (int-array 1)]
     (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @n (count @recording))))
-      (when (not= (@state :sfsim.input/fullscreen) (@old-state :sfsim.input/fullscreen))
+      (when (not= (@input-state :sfsim.input/fullscreen) (@old-input-state :sfsim.input/fullscreen))
         (let [monitor (GLFW/glfwGetPrimaryMonitor)
               mode (GLFW/glfwGetVideoMode monitor)
               desktop-width (.width ^GLFWVidMode mode)
               desktop-height (.height ^GLFWVidMode mode)]
-          (if (@state :sfsim.input/fullscreen)
+          (if (@input-state :sfsim.input/fullscreen)
             (GLFW/glfwSetWindowMonitor window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
             (GLFW/glfwSetWindowMonitor window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE))))
       (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
@@ -590,7 +590,7 @@
                         (- t1 ^double @t0))]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface @physics-state))
-        (if (@state :sfsim.input/menu)
+        (if (@input-state :sfsim.input/menu)
           (swap! menu #(or % main-dialog))
           (reset! menu nil))
         (if playback
@@ -598,9 +598,9 @@
             (swap! physics-state physics/load-state (:physics frame) wheels)
             (reset! camera-state (:camera frame)))
           (do
-            (when (not (@state :sfsim.input/pause))
+            (when (not (@input-state :sfsim.input/pause))
               (swap! physics-state physics/update-domain config/planet-config)
-              (swap! physics-state physics/set-control-inputs @state dt)
+              (swap! physics-state physics/set-control-inputs @input-state dt)
               (swap! physics-state physics/update-gear-status wheels)
               (physics/update-brakes @physics-state)
               (update-mesh! (physics/get-position :sfsim.physics/surface @physics-state))
@@ -613,8 +613,8 @@
             (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface @physics-state))
                   mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
               (swap! camera-state camera/set-mode mode @physics-state)
-              (swap! camera-state camera/update-camera-pose dt @state))
-            (when (and @recording (not (@state :sfsim.input/pause)))
+              (swap! camera-state camera/update-camera-pose dt @input-state))
+            (when (and @recording (not (@input-state :sfsim.input/pause)))
               (let [frame {:physics (physics/save-state @physics-state) :camera @camera-state}]
                 (swap! recording conj frame)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface @physics-state)
@@ -704,16 +704,17 @@
                                (@menu gui @window-width @window-height))
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
-                               (stick gui @state)
+                               (stick gui @input-state)
                                (info gui @window-height
                                      (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                              (- (mag object-position) ^double earth-radius)
                                              (:sfsim.physics/display-speed @physics-state)
-                                             (if (@state :sfsim.input/rcs) "RCS" "aerofoil")
+                                             (if (@input-state :sfsim.input/rcs) "RCS" "aerofoil")
                                              (/ 1.0 ^double @frametime)
-                                             (if (@state :sfsim.input/brake) ", brake" (if (@state :sfsim.input/parking-brake) ", parking brake" ""))
-                                             (if (@state :sfsim.input/air-brake) ", air brake" "")
-                                             (if (@state :sfsim.input/pause) ", pause" ""))))
+                                             (if (@input-state :sfsim.input/brake) ", brake"
+                                               (if (@input-state :sfsim.input/parking-brake) ", parking brake" ""))
+                                             (if (@input-state :sfsim.input/air-brake) ", air brake" "")
+                                             (if (@input-state :sfsim.input/pause) ", pause" ""))))
                              (gui/render-nuklear-gui gui @window-width @window-height)))
           (destroy-texture clouds)
           (clouds/destroy-cloud-geometry geometry)
@@ -731,12 +732,12 @@
                                                                :sfsim.image/height @window-height
                                                                :sfsim.image/channels 4} true)
               (swap! frame-index inc))))
-        (reset! old-state @state)
+        (reset! old-input-state @input-state)
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
         (swap! event-buffer joysticks-poll)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
-        (swap! state process-events @event-buffer input-handler)
+        (swap! input-state process-events @event-buffer input-handler)
         (reset! event-buffer (make-event-buffer))
         (swap! n inc)
         (swap! t0 + dt))))
