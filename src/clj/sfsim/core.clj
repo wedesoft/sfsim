@@ -96,22 +96,7 @@
 
 (def recording
   ; initialize recording using "echo [] > recording.edn"
-  (atom (if (.exists (java.io.File. "recording.edn"))
-          (mapv (fn [{:keys [start-julian-date offset-seconds position orientation camera-state dist gear
-                             wheel-angles suspension throttle rcs-thrust]}]
-                    {:start-julian-date start-julian-date
-                     :offset-seconds offset-seconds
-                     :position (apply vec3 position)
-                     :orientation (q/->Quaternion (:real orientation) (:imag orientation) (:jmag orientation) (:kmag orientation))
-                     :camera-state camera-state
-                     :dist dist
-                     :gear gear
-                     :throttle throttle
-                     :rcs-thrust (apply vec3 rcs-thrust)
-                     :wheel-angles wheel-angles
-                     :suspension suspension})
-                (clojure.edn/read-string (slurp "recording.edn")))
-          false)))
+  (atom (and (.exists (java.io.File. "recording.edn")) (clojure.edn/read-string (slurp "recording.edn")))))
 
 (def playback false)
 ; (def playback true)
@@ -610,16 +595,8 @@
           (reset! menu nil))
         (if playback
           (let [frame (nth @recording @n)]
-            (swap! physics-state assoc :sfsim.physics/start-julian-date (:start-julian-date frame))
-            (swap! physics-state assoc :sfsim.physics/offset-seconds (:offset-seconds frame))
-            (swap! physics-state physics/set-pose :sfsim.physics/surface (:position frame) (:orientation frame))
-            (reset! camera-state (:camera-state frame))
-            (swap! physics-state assoc :sfsim.physics/throttle (:throttle frame))
-            (swap! physics-state assoc :sfsim.physics/gear (:gear frame))
-            (swap! physics-state physics/update-gear-status wheels)
-            (physics/set-wheel-angles @physics-state (:wheel-angles frame))
-            (physics/set-suspension @physics-state (:suspension frame))
-            (swap! physics-state assoc :sfsim.physics/rcs-thrust (:rcs-thrust frame)))
+            (swap! physics-state physics/load-state (:physics frame) wheels)
+            (reset! camera-state (:camera frame)))
           (do
             (when (not (@state :sfsim.input/pause))
               (swap! physics-state physics/update-domain config/planet-config)
@@ -638,17 +615,7 @@
               (swap! camera-state camera/set-mode mode @physics-state)
               (swap! camera-state camera/update-camera-pose dt @state))
             (when (and @recording (not (@state :sfsim.input/pause)))
-              (let [frame {:start-julian-date (:sfsim.physics/start-julian-date @physics-state)
-                           :offset-seconds (:sfsim.physics/offset-seconds @physics-state)
-                           :position (physics/get-position :sfsim.physics/surface @physics-state)
-                           :orientation (physics/get-orientation :sfsim.physics/surface @physics-state)
-                           :camera-state @camera-state
-                           :dist (:sfsim.camera/distance @camera-state)
-                           :gear (:sfsim.physics/gear @physics-state)
-                           :throttle (:sfsim.physics/throttle @physics-state)
-                           :rcs-thrust (:sfsim.physics/rcs-thrust @physics-state)
-                           :wheel-angles (physics/get-wheel-angles @physics-state)
-                           :suspension (physics/get-suspension @physics-state)}]
+              (let [frame {:physics (physics/save-state @physics-state) :camera @camera-state}]
                 (swap! recording conj frame)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface @physics-state)
               height             (- (mag object-position) ^double earth-radius)

@@ -622,5 +622,39 @@
           [(+ 0.8 0.8128) (+ 0.8 0.8128) (+ 0.5 0.5419)]))
 
 
+(defn save-state
+  "Convert most of physics state to a serializable representation"
+  [state]
+  (let [domain (::domain state)]
+    {::start-julian-date (::start-julian-date state)
+     ::offset-seconds (::offset-seconds state)
+     ::domain domain
+     ::position (get-position domain state)
+     ::orientation (get-orientation domain state)
+     ::throttle (::throttle state)
+     ::gear (::gear state)
+     ::wheel-angles (get-wheel-angles state)
+     ::suspension (get-suspension state)
+     ::rcs-thrust (::rcs-thrust state)}))
+
+
+(defn load-state
+  "Load physics state from serializable representation"
+  [state data wheels]
+  (let [domain (::domain data)
+        result (-> state
+                   (assoc ::start-julian-date (::start-julian-date data))
+                   (assoc ::offset-seconds (::offset-seconds data))
+                   (set-domain domain)
+                   (set-pose domain (apply vec3 (::position data)) (q/map->Quaternion (::orientation data)))
+                   (assoc ::throttle (::throttle data))
+                   (assoc ::gear (::gear data))
+                   (assoc ::rcs-thrust (apply vec3 (::rcs-thrust data))))]
+    (update-gear-status result wheels)
+    (set-wheel-angles result (::wheel-angles data))
+    (set-suspension result (::suspension data))
+    result))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
