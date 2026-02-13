@@ -104,10 +104,10 @@
 (def fix-fps false)
 ; (def fix-fps 30)
 
-(def window-width (atom (:sfsim.render/window-width config/render-config)))
-(def window-height (atom (:sfsim.render/window-height config/render-config)))
+(def window-width (:sfsim.render/window-width config/render-config))
+(def window-height (:sfsim.render/window-height config/render-config))
 
-(def window (make-window "sfsim" @window-width @window-height true))
+(def window (make-window "sfsim" window-width window-height true))
 
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
@@ -240,7 +240,10 @@
 
 (def mappings (atom default-mappings))
 
-(def gui-state (atom {:sfsim.gui/menu nil}))
+(def gui-state (atom
+                 {:sfsim.gui/menu nil
+                  :sfsim.gui/window-width window-width
+                  :sfsim.gui/window-height window-height}))
 
 (def event-buffer (atom (make-event-buffer)))
 (def input-state (atom (make-initial-state)))
@@ -582,10 +585,12 @@
       (let [w (int-array 1)
             h (int-array 1)]
         (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
-        (reset! window-width (aget w 0))
-        (reset! window-height (aget h 0)))
-      (let [dt (if fix-fps (elapsed-time fix-fps fix-fps) (elapsed-time))]
-        (planet/update-tile-tree planet-renderer tile-tree @window-width
+        (swap! gui-state assoc :sfsim.gui/window-width (aget w 0))
+        (swap! gui-state assoc :sfsim.gui/window-height (aget h 0)))
+      (let [dt (if fix-fps (elapsed-time fix-fps fix-fps) (elapsed-time))
+            window-width (:sfsim.gui/window-width @gui-state)
+            window-height (:sfsim.gui/window-height @gui-state)]
+        (planet/update-tile-tree planet-renderer tile-tree window-width
                                  (physics/get-position :sfsim.physics/surface @physics-state))
         (if (@input-state :sfsim.input/menu)
           (swap! gui-state update :sfsim.gui/menu #(or % main-dialog))
@@ -628,16 +633,16 @@
               model-vars         (model/make-model-vars (:sfsim.physics/offset-seconds @physics-state) pressure
                                                         (:sfsim.physics/throttle @physics-state))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
-                                                                 @window-width @window-height origin camera-orientation
+                                                                 window-width window-height origin camera-orientation
                                                                  light-direction object-position object-orientation model-vars)
-              scene-render-vars  (model/make-scene-render-vars config/render-config @window-width @window-height origin
+              scene-render-vars  (model/make-scene-render-vars config/render-config window-width window-height origin
                                                                camera-orientation light-direction object-position
                                                                object-orientation config/model-config model-vars)
               shadow-render-vars (joined-render-vars planet-render-vars scene-render-vars)
               shadow-vars        (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                      cloud-data shadow-render-vars
                                                                      (planet/get-current-tree tile-tree) opacity-base)
-              cloud-render-vars  (clouds/make-cloud-render-vars config/render-config planet-render-vars @window-width @window-height
+              cloud-render-vars  (clouds/make-cloud-render-vars config/render-config planet-render-vars window-width window-height
                                                                 origin camera-orientation light-direction object-position
                                                                 object-orientation)
               wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
@@ -698,11 +703,11 @@
                                  (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds))))
                            (with-culling :sfsim.render/noculling
                              (when-let [menu (:sfsim.gui/menu @gui-state)]
-                               (menu gui @window-width @window-height))
+                               (menu gui window-width window-height))
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
                                (stick gui @input-state)
-                               (info gui @window-height
+                               (info gui window-height
                                      (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                              (- (mag object-position) ^double earth-radius)
                                              (:sfsim.physics/display-speed @physics-state)
@@ -712,21 +717,21 @@
                                                (if (@input-state :sfsim.input/parking-brake) ", parking brake" ""))
                                              (if (@input-state :sfsim.input/air-brake) ", air brake" "")
                                              (if (@input-state :sfsim.input/pause) ", pause" ""))))
-                             (gui/render-nuklear-gui gui @window-width @window-height)))
+                             (gui/render-nuklear-gui gui window-width window-height)))
           (destroy-texture clouds)
           (clouds/destroy-cloud-geometry geometry)
           (model/destroy-scene-shadow-map object-shadow)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (when playback
-            (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 ^long @window-width ^long @window-height))
-                  data   (byte-array (* 4 ^long @window-width ^long @window-height))]
+            (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 ^long window-width ^long window-height))
+                  data   (byte-array (* 4 ^long window-width ^long window-height))]
               (GL11/glFlush)
               (GL11/glFinish)
-              (GL11/glReadPixels 0 0 ^long @window-width ^long @window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
+              (GL11/glReadPixels 0 0 ^long window-width ^long window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
               (.get buffer data)
               (spit-png (format "frame%06d.png" @frame-index) {:sfsim.image/data data
-                                                               :sfsim.image/width @window-width
-                                                               :sfsim.image/height @window-height
+                                                               :sfsim.image/width window-width
+                                                               :sfsim.image/height window-height
                                                                :sfsim.image/channels 4} true)
               (swap! frame-index inc))))
         (reset! old-input-state @input-state)
