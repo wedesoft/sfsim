@@ -53,9 +53,12 @@
 (defn matching-scheme
   "Use two custom speed changes to make semi-implicit Euler result match a ground truth after the integration step"
   [y0 dt y1 scale subtract]
-  (let [delta-speed0 (scale (subtract (subtract (::position y1) (::position y0)) (scale (::speed y0) dt)) (/ 1.0 ^double dt))
-        delta-speed1 (subtract (subtract (::speed y1) (::speed y0)) delta-speed0)]
-    [delta-speed0 delta-speed1]))
+  (if (zero? ^double dt)
+    (let [delta-speed (subtract (::speed y1) (::speed y0))]
+      [(scale delta-speed 0.5) (scale delta-speed 0.5)])
+    (let [delta-speed0 (scale (subtract (subtract (::position y1) (::position y0)) (scale (::speed y0) dt)) (/ 1.0 ^double dt))
+          delta-speed1 (subtract (subtract (::speed y1) (::speed y0)) delta-speed0)]
+      [delta-speed0 delta-speed1])))
 
 
 (defn gravitation

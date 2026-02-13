@@ -82,7 +82,8 @@
          {:sfsim.physics/position 0.0 :sfsim.physics/speed 2.0} 1.0 {:sfsim.physics/position 2.0 :sfsim.physics/speed 2.0}
          {:sfsim.physics/position 0.0 :sfsim.physics/speed 0.0} 2.0 {:sfsim.physics/position 2.0 :sfsim.physics/speed 1.0}
          {:sfsim.physics/position 0.0 :sfsim.physics/speed 0.0} 2.0 {:sfsim.physics/position 0.0 :sfsim.physics/speed 1.0}
-         {:sfsim.physics/position 2.0 :sfsim.physics/speed 1.5} 2.0 {:sfsim.physics/position 5.0 :sfsim.physics/speed 1.5})
+         {:sfsim.physics/position 2.0 :sfsim.physics/speed 1.5} 2.0 {:sfsim.physics/position 5.0 :sfsim.physics/speed 1.5}
+         {:sfsim.physics/position 2.0 :sfsim.physics/speed 1.0} 0.0 {:sfsim.physics/position 2.0 :sfsim.physics/speed 3.0})
 
 
 (facts "Determine gravitation from planetary object"
