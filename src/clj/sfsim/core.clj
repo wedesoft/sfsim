@@ -33,6 +33,7 @@
     [sfsim.model :as model]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
+    [sfsim.clock :refer (start-clock elapsed-time)]
     [sfsim.physics :as physics]
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
@@ -429,8 +430,6 @@
       (swap! gui-state assoc :sfsim.gui/menu main-dialog))))
 
 
-(def t0 (atom (GLFW/glfwGetTime)))
-
 (defn datetime-dialog-get
   ^double [time-data]
   (let [day    (Integer/parseInt (trim (gui/edit-get (:day time-data))))
@@ -569,9 +568,8 @@
   "Space flight simulator main function"
   [& _args]
   (try
-  (let [n  (atom 0)
-        w  (int-array 1)
-        h  (int-array 1)]
+  (let [n (atom 0)]
+    (start-clock)
     (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @n (count @recording))))
       (when (not= (@input-state :sfsim.input/fullscreen) (@old-input-state :sfsim.input/fullscreen))
         (let [monitor (GLFW/glfwGetPrimaryMonitor)
@@ -581,14 +579,12 @@
           (if (@input-state :sfsim.input/fullscreen)
             (GLFW/glfwSetWindowMonitor window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
             (GLFW/glfwSetWindowMonitor window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE))))
-      (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
-      (reset! window-width (aget w 0))
-      (reset! window-height (aget h 0))
-      (let [t1        (GLFW/glfwGetTime)
-            dt        (if fix-fps
-                        (do (Thread/sleep (long (* 1000.0 (max 0.0 ^double (- (/ 1.0 ^double fix-fps) (- ^double t1 ^double @t0))))))
-                          (/ 1.0 ^double fix-fps))
-                        (- t1 ^double @t0))]
+      (let [w (int-array 1)
+            h (int-array 1)]
+        (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
+        (reset! window-width (aget w 0))
+        (reset! window-height (aget h 0)))
+      (let [dt (if fix-fps (elapsed-time fix-fps fix-fps) (elapsed-time))]
         (planet/update-tile-tree planet-renderer tile-tree @window-width
                                  (physics/get-position :sfsim.physics/surface @physics-state))
         (if (@input-state :sfsim.input/menu)
@@ -740,8 +736,7 @@
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
         (swap! input-state process-events @event-buffer input-handler)
         (reset! event-buffer (make-event-buffer))
-        (swap! n inc)
-        (swap! t0 + dt))))
+        (swap! n inc))))
   (planet/destroy-tile-tree tile-tree)
   (model/destroy-scene scene)
   (model/destroy-scene-shadow-renderer scene-shadow-renderer)
