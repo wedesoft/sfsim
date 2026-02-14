@@ -68,7 +68,7 @@
          (let [event-buffer (make-event-buffer)
                state        (atom (make-initial-state))
                gui          {:sfsim.gui/context :ctx}
-               handler      (->InputHandler gui (atom default-mappings))]
+               handler      (->InputHandler gui default-mappings)]
            ; Test gear up
            (:sfsim.input/gear-down @state) => true
            (swap! state process-events (-> event-buffer (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)) handler)
@@ -423,13 +423,13 @@
              map-throttle-incr-zn     {:sfsim.input/joysticks {:sfsim.input/devices
                                                                {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle-increment}}}
                                                                :sfsim.input/dead-zone 0.5}}
-             handler                  (->InputHandler gui (atom mappings))
-             handler-inv              (->InputHandler gui (atom mappings-inv))
-             handler-zn               (->InputHandler gui (atom mappings-zn))
-             handler-throttle         (->InputHandler gui (atom map-throttle))
-             handler-throttle-incr    (->InputHandler gui (atom map-throttle-incr))
-             handler-throttle-zn      (->InputHandler gui (atom map-throttle-zn))
-             handler-throttle-incr-zn (->InputHandler gui (atom map-throttle-incr-zn))]
+             handler                  (->InputHandler gui mappings)
+             handler-inv              (->InputHandler gui mappings-inv)
+             handler-zn               (->InputHandler gui mappings-zn)
+             handler-throttle         (->InputHandler gui map-throttle)
+             handler-throttle-incr    (->InputHandler gui map-throttle-incr)
+             handler-throttle-zn      (->InputHandler gui map-throttle-zn)
+             handler-throttle-incr-zn (->InputHandler gui map-throttle-incr-zn)]
          (process-events [] (add-joystick-axis-state event-buffer axis-state "Gamepad" []) mock-handler)
          => []
          (process-events [] (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75]) mock-handler)
@@ -487,7 +487,7 @@
                                                                                                  4 :sfsim.input/air-brake}}}}}
              state                    (atom (make-initial-state))
              gui                      {:sfsim.gui/context :ctx}
-             handler                  (->InputHandler gui (atom mappings))]
+             handler                  (->InputHandler gui mappings)]
          (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" []) mock-handler)
          => []
          (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" [0 0]) mock-handler)
@@ -533,7 +533,7 @@
              button-state (atom {})
              axis-state   (atom {})
              mappings     {}
-             handler      (->InputHandler gui (atom mappings))]
+             handler      (->InputHandler gui mappings)]
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0]) handler)
          (@state :sfsim.input/last-joystick-button) => nil
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1]) handler)

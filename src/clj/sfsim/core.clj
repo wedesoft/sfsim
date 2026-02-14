@@ -248,7 +248,6 @@
 (def event-buffer (atom (make-event-buffer)))
 (def input-state (atom (make-initial-state)))
 (def old-input-state (atom @input-state))
-(def input-handler (->InputHandler gui mappings))
 
 
 (GLFW/glfwSetCharCallback window (char-callback event-buffer))
@@ -739,7 +738,7 @@
         (GLFW/glfwPollEvents)
         (swap! event-buffer joysticks-poll)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
-        (swap! input-state process-events @event-buffer input-handler)
+        (swap! input-state process-events @event-buffer (->InputHandler gui @mappings))
         (reset! event-buffer (make-event-buffer))
         (swap! n inc))))
   (planet/destroy-tile-tree tile-tree)

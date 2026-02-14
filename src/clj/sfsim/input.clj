@@ -651,7 +651,7 @@
       (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))
     state)
   (process-key [_this state k action mods]
-    (let [keyboard-mappings (::keyboard @mappings)]
+    (let [keyboard-mappings (::keyboard mappings)]
       (if (::menu state)
         (menu-key state k gui action mods)
         (simulator-key state (keyboard-mappings k) action mods))))
@@ -662,12 +662,12 @@
   (process-joystick-axis [_this state device axis value moved]
     (if (::menu state)
       (menu-joystick-axis state device axis value moved)
-      (let [joystick (some-> @mappings ::joysticks ::devices (get device))]
-        (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> @mappings ::joysticks ::dead-zone) state value))))
+      (let [joystick (some-> mappings ::joysticks ::devices (get device))]
+        (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> mappings ::joysticks ::dead-zone) state value))))
   (process-joystick-button [_this state device button action]
     (if (state ::menu)
       (menu-joystick-button state device button action)
-      (let [joystick (some-> @mappings ::joysticks ::devices (get device))]
+      (let [joystick (some-> mappings ::joysticks ::devices (get device))]
         (simulator-joystick-button (some-> joystick ::buttons (get button)) state action)))))
 
 
