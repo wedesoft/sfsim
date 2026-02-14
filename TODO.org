@@ -40,7 +40,9 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [X] no need to pass jd-ut to physics module any more
+  - [ ] add more structure to input state
+  - [ ] join gui-state, input-state, physics-state to facilitate gui code refactor
+  - [ ] move gui code into gui module
   - [ ] join input, physics, and camera atom to facilitate gui code refactor and move
   - [ ] put rendering code into methods
   - [ ] simplify recording and playback code
