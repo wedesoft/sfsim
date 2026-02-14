@@ -41,7 +41,7 @@
                           joined-render-vars quad-splits-orientations with-depth-test with-culling)]
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture)]
-    [sfsim.input :refer (default-mappings make-event-buffer make-initial-state process-events add-mouse-move-event
+    [sfsim.input :refer (make-event-buffer make-initial-state process-events add-mouse-move-event
                          add-mouse-button-event joysticks-poll ->InputHandler char-callback key-callback
                          get-joystick-sensor-for-mapping)])
   (:import
@@ -238,9 +238,6 @@
    :second (gui/edit-data    "0" 3 :sfsim.gui/filter-decimal)})
 
 
-(def mappings (atom default-mappings))
-(swap! mappings assoc :sfsim.input/joysticks (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
-
 (def gui-state (atom
                  {:sfsim.gui/menu nil
                   :sfsim.gui/window-width window-width
@@ -249,6 +246,8 @@
 (def event-buffer (atom (make-event-buffer)))
 (def input-state (atom (make-initial-state)))
 (def old-input-state (atom @input-state))
+(swap! input-state assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
+       (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
 
 
 (GLFW/glfwSetCharCallback window (char-callback event-buffer))
@@ -333,14 +332,15 @@
 
 
 (defn joystick-dialog-item
-  [gui sensor-type last-event text control sensor-name prompt]
-  (let [[device sensor] (get-joystick-sensor-for-mapping @mappings sensor-type control)]
+  [input-state gui sensor-type last-event text control sensor-name prompt]
+  (let [[device sensor] (get-joystick-sensor-for-mapping (:sfsim.input/mappings @input-state) sensor-type control)]
     (gui/layout-row gui 32 4
                     (gui/layout-row-push gui 0.2)
                     (gui/text-label gui text)
                     (gui/layout-row-push gui 0.1)
                     (when (and (gui/button-label gui "Clear") device)
-                      (swap! mappings dissoc-in [:sfsim.input/joysticks :sfsim.input/devices device sensor-type sensor]))
+                      (swap! input-state dissoc-in [:sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices
+                                                    device sensor-type sensor]))
                     (gui/layout-row-push gui 0.1)
                     (when (gui/button-label gui "Set")
                       (swap! input-state dissoc last-event)
@@ -349,8 +349,8 @@
                         (swap! gui-state assoc :sfsim.gui/joystick-config control)))
                     (when-let [[device-new sensor-new] (and (= (@gui-state :sfsim.gui/joystick-config) control)
                                                             (@input-state last-event))]
-                              (swap! mappings dissoc-in [:sfsim.input/joysticks :sfsim.input/devices device sensor-type sensor])
-                              (swap! mappings assoc-in [:sfsim.input/joysticks :sfsim.input/devices device-new sensor-type sensor-new]
+                              (swap! input-state dissoc-in [:sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices device sensor-type sensor])
+                              (swap! input-state assoc-in [:sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices device-new sensor-type sensor-new]
                                      control)
                               (swap! gui-state dissoc :sfsim.gui/joystick-config))
                     (gui/layout-row-push gui 0.6)
@@ -360,42 +360,48 @@
 
 
 (defn joystick-dialog-axis-item
-  [gui text control]
-  (joystick-dialog-item gui :sfsim.input/axes :sfsim.input/last-joystick-axis text control "Axis" "Move axis to set"))
+  [input-state gui text control]
+  (joystick-dialog-item input-state gui :sfsim.input/axes :sfsim.input/last-joystick-axis text control
+                        "Axis" "Move axis to set"))
 
 
 (defn joystick-dialog-button-item
-  [gui text control]
-  (joystick-dialog-item gui :sfsim.input/buttons :sfsim.input/last-joystick-button text control "Button" "Press button to set"))
+  [input-state gui text control]
+  (joystick-dialog-item input-state gui :sfsim.input/buttons :sfsim.input/last-joystick-button text control
+                        "Button" "Press button to set"))
 
 
 (defn joystick-dialog
-  [gui ^long window-width ^long window-height]
+  [input-state gui ^long window-width ^long window-height]
   (gui/nuklear-window gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 12)) 2) 640 (* 37 12) true
-                      (joystick-dialog-axis-item gui "Aileron" :sfsim.input/aileron)
-                      (joystick-dialog-axis-item gui "Elevator" :sfsim.input/elevator)
-                      (joystick-dialog-axis-item gui "Rudder" :sfsim.input/rudder)
-                      (joystick-dialog-axis-item gui "Throttle" :sfsim.input/throttle)
-                      (joystick-dialog-axis-item gui "Throttle Increment" :sfsim.input/throttle-increment)
+                      (joystick-dialog-axis-item input-state gui "Aileron" :sfsim.input/aileron)
+                      (joystick-dialog-axis-item input-state gui "Elevator" :sfsim.input/elevator)
+                      (joystick-dialog-axis-item input-state gui "Rudder" :sfsim.input/rudder)
+                      (joystick-dialog-axis-item input-state gui "Throttle" :sfsim.input/throttle)
+                      (joystick-dialog-axis-item input-state gui "Throttle Increment" :sfsim.input/throttle-increment)
                       (gui/layout-row gui 32 2
                                       (gui/layout-row-push gui 0.2)
                                       (gui/text-label gui "Dead Zone")
                                       (gui/layout-row-push gui 0.7)
-                                      (swap! mappings update-in [:sfsim.input/joysticks :sfsim.input/dead-zone]
+                                      (swap! input-state update-in
+                                             [:sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/dead-zone]
                                              (fn [dead-zone]
                                                  (gui/slider-float gui 0.0 dead-zone 1.0 (/ 1.0 1024.0))))
                                       (gui/layout-row-push gui 0.1)
-                                      (gui/text-label gui (format "%5.3f" (get-in @mappings [:sfsim.input/joysticks :sfsim.input/dead-zone]))))
-                      (joystick-dialog-button-item gui "Gear" :sfsim.input/gear)
-                      (joystick-dialog-button-item gui "Air Brake" :sfsim.input/air-brake)
-                      (joystick-dialog-button-item gui "Brake" :sfsim.input/brake)
-                      (joystick-dialog-button-item gui "Parking Brake" :sfsim.input/parking-brake)
+                                      (gui/text-label gui (format "%5.3f" (get-in @input-state
+                                                                                  [:sfsim.input/mappings :sfsim.input/joysticks
+                                                                                   :sfsim.input/dead-zone]))))
+                      (joystick-dialog-button-item input-state gui "Gear" :sfsim.input/gear)
+                      (joystick-dialog-button-item input-state gui "Air Brake" :sfsim.input/air-brake)
+                      (joystick-dialog-button-item input-state gui "Brake" :sfsim.input/brake)
+                      (joystick-dialog-button-item input-state gui "Parking Brake" :sfsim.input/parking-brake)
                       (gui/layout-row-dynamic gui 32 2)
                       (when (gui/button-label gui "Save")
-                        (config/write-user-config "joysticks.edn" (@mappings :sfsim.input/joysticks))
+                        (config/write-user-config "joysticks.edn" (get-in @input-state [:sfsim.input/mappings :sfsim.input/joysticks]))
                         (swap! gui-state assoc :sfsim.gui/menu main-dialog))
                       (when (gui/button-label gui "Close")
-                        (swap! mappings assoc :sfsim.input/joysticks (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
+                        (swap! input-state assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
+                               (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
                         (swap! gui-state assoc :sfsim.gui/menu main-dialog))))
 
 
@@ -416,7 +422,7 @@
 
 
 (defn location-dialog
-  [gui ^long window-width ^long window-height]
+  [input-state gui ^long window-width ^long window-height]
   (gui/nuklear-window
     gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) true
     (gui/layout-row-dynamic gui 32 2)
@@ -461,7 +467,7 @@
 
 
 (defn datetime-dialog
-  [gui ^long window-width ^long window-height]
+  [input-state gui ^long window-width ^long window-height]
   (gui/nuklear-window gui "Date and Time" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) true
                       (gui/layout-row gui 32 6
                                       (gui/layout-row-push gui 0.4)
@@ -497,7 +503,7 @@
 
 
 (defn main-dialog
-  [gui ^long window-width ^long window-height]
+  [input-state gui ^long window-width ^long window-height]
   (gui/nuklear-window gui (format "sfsim %s" version)
                       (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6) true
                       (gui/layout-row-dynamic gui 32 1)
@@ -516,7 +522,7 @@
 
 
 (defn stick
-  [gui input-state]
+  [input-state gui]
   (let [stack    (MemoryStack/stackPush)
         rect     (NkRect/malloc stack)
         rgb      (NkColor/malloc stack)
@@ -704,10 +710,10 @@
                                  (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds))))
                            (with-culling :sfsim.render/noculling
                              (when-let [menu (:sfsim.gui/menu @gui-state)]
-                               (menu gui window-width window-height))
+                               (menu input-state gui window-width window-height))
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
-                               (stick gui @input-state)
+                               (stick @input-state gui)
                                (info gui window-height
                                      (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                              (- (mag object-position) ^double earth-radius)
@@ -740,7 +746,7 @@
         (GLFW/glfwPollEvents)
         (swap! event-buffer joysticks-poll)
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
-        (swap! input-state process-events @event-buffer (->InputHandler gui @mappings))
+        (swap! input-state process-events @event-buffer (->InputHandler gui))
         (reset! event-buffer (make-event-buffer))
         (swap! n inc))))
   (planet/destroy-tile-tree tile-tree)

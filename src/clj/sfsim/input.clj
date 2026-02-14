@@ -247,32 +247,6 @@
       state)))
 
 
-(defn make-initial-state
-  "Create initial state of game and space craft."
-  []
-  {::menu                   false
-   ::focus                  0
-   ::fullscreen             false
-   ::pause                  true
-   ::brake                  false
-   ::parking-brake          false
-   ::gear-down              true
-   ::aileron                0.0
-   ::elevator               0.0
-   ::rudder                 0.0
-   ::throttle               0.0
-   ::air-brake              false
-   ::rcs                    false
-   ::rcs-roll               0
-   ::rcs-pitch              0
-   ::rcs-yaw                0
-   ::camera-rotate-x        0.0
-   ::camera-rotate-y        0.0
-   ::camera-rotate-z        0.0
-   ::camera-distance-change 0.0
-   })
-
-
 (def default-mappings
   {::keyboard
    {GLFW/GLFW_KEY_ESCAPE    ::menu
@@ -302,6 +276,33 @@
     }
    ::joysticks
    {::dead-zone 0.1}})
+
+
+(defn make-initial-state
+  "Create initial state of game and space craft."
+  []
+  {::menu                   false
+   ::focus                  0
+   ::fullscreen             false
+   ::pause                  true
+   ::brake                  false
+   ::parking-brake          false
+   ::gear-down              true
+   ::aileron                0.0
+   ::elevator               0.0
+   ::rudder                 0.0
+   ::throttle               0.0
+   ::air-brake              false
+   ::rcs                    false
+   ::rcs-roll               0
+   ::rcs-pitch              0
+   ::rcs-yaw                0
+   ::camera-rotate-x        0.0
+   ::camera-rotate-y        0.0
+   ::camera-rotate-z        0.0
+   ::camera-distance-change 0.0
+   ::mappings               default-mappings
+   })
 
 
 (defn menu-key
@@ -642,14 +643,14 @@
     state))
 
 
-(defrecord InputHandler [gui mappings]
+(defrecord InputHandler [gui]
   InputHandlerProtocol
   (process-char [_this state codepoint]
     (when (::menu state)
       (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))
     state)
   (process-key [_this state k action mods]
-    (let [keyboard-mappings (::keyboard mappings)]
+    (let [keyboard-mappings (get-in state [::mappings ::keyboard])]
       (if (::menu state)
         (menu-key state k gui action mods)
         (simulator-key state (keyboard-mappings k) action mods))))
@@ -660,12 +661,13 @@
   (process-joystick-axis [_this state device axis value moved]
     (if (::menu state)
       (menu-joystick-axis state device axis value moved)
-      (let [joystick (some-> mappings ::joysticks ::devices (get device))]
-        (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> mappings ::joysticks ::dead-zone) state value))))
+      (let [joystick (some-> state ::mappings ::joysticks ::devices (get device))]
+        (simulator-joystick-axis (some-> joystick ::axes (get axis))
+                                 (some-> state ::mappings ::joysticks ::dead-zone) state value))))
   (process-joystick-button [_this state device button action]
     (if (state ::menu)
       (menu-joystick-button state device button action)
-      (let [joystick (some-> mappings ::joysticks ::devices (get device))]
+      (let [joystick (some-> state ::mappings ::joysticks ::devices (get device))]
         (simulator-joystick-button (some-> joystick ::buttons (get button)) state action)))))
 
 
