@@ -14,7 +14,6 @@
     [fastmath.vector :refer (vec3)]
     [sfsim.conftest :refer (roughly-vector roughly-matrix roughly-quaternion)]
     [sfsim.quaternion :as q]
-    [sfsim.astro :as astro]
     [sfsim.jolt :as jolt]
     [sfsim.physics :refer (make-physics-state set-pose set-speed)]
     [sfsim.camera :refer :all]))
@@ -105,14 +104,17 @@
        (swap! state assoc :sfsim.camera/roll (to-radians 0.0)))
 
 
-(def neutral-input #:sfsim.input{:camera-rotate-x 0.0 :camera-rotate-y 0.0 :camera-rotate-z 0.0 :camera-distance-change 0.0})
+(def neutral-input #:sfsim.input{:camera #:sfsim.input{:rotate-x 0.0 :rotate-y 0.0 :rotate-z 0.0 :distance-change 0.0}})
 
 
 (facts "Control camera pose"
-       (-> (update-camera-pose @state 0.25 (assoc neutral-input :sfsim.input/camera-rotate-y 8.0)) :sfsim.camera/target-yaw) => 2.0
-       (-> (update-camera-pose @state 0.25 (assoc neutral-input :sfsim.input/camera-rotate-x 8.0)) :sfsim.camera/target-pitch) => 2.0
-       (-> (update-camera-pose @state 0.25 (assoc neutral-input :sfsim.input/camera-rotate-z 8.0)) :sfsim.camera/target-roll) => 2.0
-       (-> (update-camera-pose @state 0.25 (assoc neutral-input :sfsim.input/camera-distance-change 8.0))
+       (-> (update-camera-pose @state 0.25 (assoc-in neutral-input [:sfsim.input/camera :sfsim.input/rotate-y] 8.0))
+           :sfsim.camera/target-yaw) => 2.0
+       (-> (update-camera-pose @state 0.25 (assoc-in neutral-input [:sfsim.input/camera :sfsim.input/rotate-x] 8.0))
+           :sfsim.camera/target-pitch) => 2.0
+       (-> (update-camera-pose @state 0.25 (assoc-in neutral-input [:sfsim.input/camera :sfsim.input/rotate-z] 8.0))
+           :sfsim.camera/target-roll) => 2.0
+       (-> (update-camera-pose @state 0.25 (assoc-in neutral-input [:sfsim.input/camera :sfsim.input/distance-change] 8.0))
            :sfsim.camera/target-distance) => (roughly (* 60.0 (exp 2.0)) 1e-6)
        (swap! state assoc :sfsim.camera/yaw 0.0)
        (swap! state assoc :sfsim.camera/pitch 0.0)

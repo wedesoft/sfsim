@@ -130,42 +130,42 @@
        (let [state    (atom (make-initial-state))
              mappings (get-in @state [:sfsim.input/mappings :sfsim.input/keyboard])]
          (simulator-key @state nil GLFW/GLFW_PRESS 0) => some?
-         (:sfsim.input/camera-rotate-x @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x] @state) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_2) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-x @state) => 0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => 0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_2) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-x @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_8) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-x @state) => -0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => -0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_8) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-x @state) => 0.0
-         (:sfsim.input/camera-rotate-y @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_6) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-y @state) => 0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_6) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-y @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_4) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-y @state) => -0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => -0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_4) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-y @state) => 0.0
-         (:sfsim.input/camera-rotate-z @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_1) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-z @state) => 0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_1) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-z @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_3) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-z @state) => -0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => -0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_3) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-z @state) => 0.0
-         (:sfsim.input/camera-distance-change @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_COMMA) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-distance-change @state) => 1.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 1.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_COMMA) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-distance-change @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_PERIOD) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-distance-change @state) => -1.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => -1.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_PERIOD) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-distance-change @state) => 0.0))
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 0.0))
 
 
 (facts "Test some simulator key bindings directly"

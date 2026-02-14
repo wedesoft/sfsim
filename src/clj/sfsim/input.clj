@@ -247,37 +247,6 @@
       state)))
 
 
-(def default-mappings
-  {::keyboard
-   {GLFW/GLFW_KEY_ESCAPE    ::menu
-    GLFW/GLFW_KEY_ENTER     ::fullscreen
-    GLFW/GLFW_KEY_P         ::pause
-    GLFW/GLFW_KEY_G         ::gear
-    GLFW/GLFW_KEY_B         ::brake
-    GLFW/GLFW_KEY_F         ::throttle-decrease
-    GLFW/GLFW_KEY_R         ::throttle-increase
-    GLFW/GLFW_KEY_SLASH     ::air-brake
-    GLFW/GLFW_KEY_BACKSLASH ::rcs
-    GLFW/GLFW_KEY_A         ::aileron-left
-    GLFW/GLFW_KEY_KP_5      ::aileron-center
-    GLFW/GLFW_KEY_D         ::aileron-right
-    GLFW/GLFW_KEY_W         ::elevator-down
-    GLFW/GLFW_KEY_S         ::elevator-up
-    GLFW/GLFW_KEY_Q         ::rudder-left
-    GLFW/GLFW_KEY_E         ::rudder-right
-    GLFW/GLFW_KEY_KP_2      ::camera-rotate-x-positive
-    GLFW/GLFW_KEY_KP_8      ::camera-rotate-x-negative
-    GLFW/GLFW_KEY_KP_6      ::camera-rotate-y-positive
-    GLFW/GLFW_KEY_KP_4      ::camera-rotate-y-negative
-    GLFW/GLFW_KEY_KP_1      ::camera-rotate-z-positive
-    GLFW/GLFW_KEY_KP_3      ::camera-rotate-z-negative
-    GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
-    GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
-    }
-   ::joysticks
-   {::dead-zone 0.1}})
-
-
 (defn make-initial-state
   "Create initial state of game and space craft."
   []
@@ -297,11 +266,40 @@
    ::rcs-roll               0
    ::rcs-pitch              0
    ::rcs-yaw                0
-   ::camera-rotate-x        0.0
-   ::camera-rotate-y        0.0
-   ::camera-rotate-z        0.0
-   ::camera-distance-change 0.0
-   ::mappings               default-mappings
+   ::camera
+   {::rotate-x        0.0
+    ::rotate-y        0.0
+    ::rotate-z        0.0
+    ::distance-change 0.0}
+   ::mappings
+   {::keyboard
+    {GLFW/GLFW_KEY_ESCAPE    ::menu
+     GLFW/GLFW_KEY_ENTER     ::fullscreen
+     GLFW/GLFW_KEY_P         ::pause
+     GLFW/GLFW_KEY_G         ::gear
+     GLFW/GLFW_KEY_B         ::brake
+     GLFW/GLFW_KEY_F         ::throttle-decrease
+     GLFW/GLFW_KEY_R         ::throttle-increase
+     GLFW/GLFW_KEY_SLASH     ::air-brake
+     GLFW/GLFW_KEY_BACKSLASH ::rcs
+     GLFW/GLFW_KEY_A         ::aileron-left
+     GLFW/GLFW_KEY_KP_5      ::aileron-center
+     GLFW/GLFW_KEY_D         ::aileron-right
+     GLFW/GLFW_KEY_W         ::elevator-down
+     GLFW/GLFW_KEY_S         ::elevator-up
+     GLFW/GLFW_KEY_Q         ::rudder-left
+     GLFW/GLFW_KEY_E         ::rudder-right
+     GLFW/GLFW_KEY_KP_2      ::camera-rotate-x-positive
+     GLFW/GLFW_KEY_KP_8      ::camera-rotate-x-negative
+     GLFW/GLFW_KEY_KP_6      ::camera-rotate-y-positive
+     GLFW/GLFW_KEY_KP_4      ::camera-rotate-y-negative
+     GLFW/GLFW_KEY_KP_1      ::camera-rotate-z-positive
+     GLFW/GLFW_KEY_KP_3      ::camera-rotate-z-negative
+     GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
+     GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
+     }
+    ::joysticks
+    {::dead-zone 0.1}}
    })
 
 
@@ -479,42 +477,42 @@
 
 (defmethod simulator-key ::camera-rotate-x-positive
   [state _id action _mods]
-  (assoc state ::camera-rotate-x (if (keypress? action) 0.5 0.0)))
+  (assoc-in state [::camera ::rotate-x] (if (keypress? action) 0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-x-negative
   [state _id action _mods]
-  (assoc state ::camera-rotate-x (if (keypress? action) -0.5 0.0)))
+  (assoc-in state [::camera ::rotate-x] (if (keypress? action) -0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-y-positive
   [state _id action _mods]
-  (assoc state ::camera-rotate-y (if (keypress? action) 0.5 0.0)))
+  (assoc-in state [::camera ::rotate-y] (if (keypress? action) 0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-y-negative
   [state _id action _mods]
-  (assoc state ::camera-rotate-y (if (keypress? action) -0.5 0.0)))
+  (assoc-in state [::camera ::rotate-y] (if (keypress? action) -0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-z-positive
   [state _id action _mods]
-  (assoc state ::camera-rotate-z (if (keypress? action) 0.5 0.0)))
+  (assoc-in state [::camera ::rotate-z] (if (keypress? action) 0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-z-negative
   [state _id action _mods]
-  (assoc state ::camera-rotate-z (if (keypress? action) -0.5 0.0)))
+  (assoc-in state [::camera ::rotate-z] (if (keypress? action) -0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-distance-change-positive
   [state _id action _mods]
-  (assoc state ::camera-distance-change (if (keypress? action) 1.0 0.0)))
+  (assoc-in state [::camera ::distance-change] (if (keypress? action) 1.0 0.0)))
 
 
 (defmethod simulator-key ::camera-distance-change-negative
   [state _id action _mods]
-  (assoc state ::camera-distance-change (if (keypress? action) -1.0 0.0)))
+  (assoc-in state [::camera ::distance-change] (if (keypress? action) -1.0 0.0)))
 
 
 (defn menu-mouse-button

@@ -119,10 +119,10 @@
   (let [weight-previous (pow 0.25 dt)
         mix             (fn [prev target] (+ (* ^double prev weight-previous) (* ^double target (- 1.0 weight-previous))))]
     (-> camera-state
-        (update ::target-yaw + (* dt ^double (:sfsim.input/camera-rotate-y input-state)))
-        (update ::target-pitch + (* dt ^double (:sfsim.input/camera-rotate-x input-state)))
-        (update ::target-roll + (* dt ^double (:sfsim.input/camera-rotate-z input-state)))
-        (update ::target-distance * (exp (* dt ^double (:sfsim.input/camera-distance-change input-state))))
+        (update ::target-yaw + (* dt ^double (get-in input-state [:sfsim.input/camera :sfsim.input/rotate-y])))
+        (update ::target-pitch + (* dt ^double (get-in input-state [:sfsim.input/camera :sfsim.input/rotate-x])))
+        (update ::target-roll + (* dt ^double (get-in input-state [:sfsim.input/camera :sfsim.input/rotate-z])))
+        (update ::target-distance * (exp (* dt ^double (get-in input-state [:sfsim.input/camera :sfsim.input/distance-change]))))
         (update ::yaw mix (::target-yaw camera-state))
         (update ::pitch mix (::target-pitch camera-state))
         (update ::roll mix (::target-roll camera-state))
