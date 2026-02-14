@@ -239,6 +239,7 @@
 
 
 (def mappings (atom default-mappings))
+(swap! mappings assoc :sfsim.input/joysticks (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
 
 (def gui-state (atom
                  {:sfsim.gui/menu nil
@@ -394,6 +395,7 @@
                         (config/write-user-config "joysticks.edn" (@mappings :sfsim.input/joysticks))
                         (swap! gui-state assoc :sfsim.gui/menu main-dialog))
                       (when (gui/button-label gui "Close")
+                        (swap! mappings assoc :sfsim.input/joysticks (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
                         (swap! gui-state assoc :sfsim.gui/menu main-dialog))))
 
 

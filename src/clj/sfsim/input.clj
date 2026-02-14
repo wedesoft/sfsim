@@ -8,7 +8,6 @@
     (:require
       [clojure.math :refer (signum)]
       [clojure.set :refer (map-invert)]
-      [sfsim.config :refer (read-user-config)]
       [sfsim.util :refer (clamp dissoc-in byte-buffer->byte-array float-buffer->float-array)])
     (:import
       [clojure.lang
@@ -302,8 +301,7 @@
     GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
     }
    ::joysticks
-   (read-user-config "joysticks.edn"
-                     {::dead-zone 0.1})})
+   {::dead-zone 0.1}})
 
 
 (defn menu-key
