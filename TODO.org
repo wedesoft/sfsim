@@ -40,11 +40,12 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [ ] join gui-state, input-state, physics-state to facilitate gui code refactor
+  - [X] join gui-state, input-state, physics-state to facilitate gui code refactor
   - [X] create macro ignoring nil values using <> as placeholder?
-  - [ ] tabbing is broken
-  - [ ] does update-camera-pose need the whole input state structure?
+  - [X] tabbing is broken
   - [ ] move gui code into gui module
+  - [ ] aggregate physics code in main module and move
+  - [ ] does update-camera-pose need the whole input state structure?
   - [ ] put rendering code into methods
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
