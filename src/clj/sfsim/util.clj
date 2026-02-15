@@ -515,5 +515,15 @@
     (float-array [])))
 
 
+(defmacro ignore-nil->
+  "Threading macro ignoring nil results"
+  [value identifier & body]
+  (if (empty? body)
+    value
+    `(let [~identifier ~value
+           next-value# (or ~(first body) ~identifier)]
+       (ignore-nil-> next-value# ~identifier ~@(rest body)))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

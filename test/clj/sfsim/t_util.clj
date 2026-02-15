@@ -260,3 +260,12 @@
          (.flip buf)
          (seq (float-buffer->float-array buf)) => [2.0 3.0 5.0]
          (seq (float-buffer->float-array nil)) => nil))
+
+
+(facts "Threading macro ignoring updates to nil"
+       (ignore-nil-> 42 x) => 42
+       (ignore-nil-> 42 x (inc x)) => 43
+       (ignore-nil-> 42 x (inc x) (inc x)) => 44
+       (ignore-nil-> 42 x nil) => 42
+       (ignore-nil-> 42 x (inc (inc x))) => 44
+       (ignore-nil-> 42 x (inc x) (and x nil) (inc x)) => 44)
