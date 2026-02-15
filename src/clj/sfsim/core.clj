@@ -61,12 +61,11 @@
 (defmacro tabbing
   [gui edit idx cnt]
   `(do
-     (println (-> @state :input :sfsim.input/focus-new) ~idx ~cnt)
      (when (and (-> @state :input :sfsim.input/focus-new) (= (mod (-> @state :input :sfsim.input/focus-new) ~cnt) ~idx))
        (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE)
-       (swap! state dissoc-in [:gui :sfsim.gui/focus-new]))
+       (swap! state dissoc-in [:input :sfsim.input/focus-new]))
      (when (= Nuklear/NK_EDIT_ACTIVE ~edit)
-       (swap! state assoc-in [:gui :sfsim.gui/focus] ~idx))))
+       (swap! state assoc-in [:input :sfsim.input/focus] ~idx))))
 
 
 (try
