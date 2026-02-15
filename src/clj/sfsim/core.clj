@@ -298,8 +298,6 @@
                   :input input-state
                   :physics physics-state}))
 
-(def physics-state (atom physics-state))
-
 
 (def coords (atom nil))
 (def mesh (atom nil))
@@ -422,7 +420,7 @@
 
 (defn location-dialog-set
   [position-data]
-  (let [geographic (physics/get-geographic @physics-state config/planet-config)]
+  (let [geographic (physics/get-geographic (:physics @state) config/planet-config)]
     (gui/edit-set (:longitude position-data) (format "%.5f" (to-degrees (:longitude geographic))))
     (gui/edit-set (:latitude position-data) (format "%.5f" (to-degrees (:latitude geographic))))
     (gui/edit-set (:height position-data) (format "%.1f" (:height geographic)))))
@@ -441,8 +439,8 @@
     (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
     (when (gui/button-label gui "Set")
       (let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
-        (swap! physics-state physics/destroy-vehicle-constraint)
-        (swap! physics-state physics/set-geographic surface config/planet-config elevation longitude latitude height)))
+        (swap! state update :physics physics/destroy-vehicle-constraint)
+        (swap! state update :physics physics/set-geographic surface config/planet-config elevation longitude latitude height)))
     (when (gui/button-label gui "Close")
       (swap! state assoc-in [:gui :sfsim.gui/menu] main-dialog))))
 
@@ -462,7 +460,7 @@
 
 (defn datetime-dialog-set
   [time-data]
-  (let [t     (+ (physics/get-julian-date-ut @physics-state) 0.5)
+  (let [t     (+ (physics/get-julian-date-ut (:physics @state)) 0.5)
         date  (astro/calendar-date (int t))
         clock (astro/clock-time (- t (int t)))]
     (gui/edit-set (:day time-data) (format "%2d" (:sfsim.astro/day date)))
@@ -504,7 +502,7 @@
                                       (tabbing gui (gui/edit-field gui (:second time-data)) 5 6))
                       (gui/layout-row-dynamic gui 32 2)
                       (when (gui/button-label gui "Set")
-                        (swap! physics-state physics/set-julian-date-ut (datetime-dialog-get time-data)))
+                        (swap! state update :physics physics/set-julian-date-ut (datetime-dialog-get time-data)))
                       (when (gui/button-label gui "Close")
                         (swap! state assoc-in [:gui :sfsim.gui/menu] main-dialog))))
 
@@ -607,47 +605,45 @@
             window-width (-> @state :gui :sfsim.gui/window-width)
             window-height (-> @state :gui :sfsim.gui/window-height)]
         (planet/update-tile-tree planet-renderer tile-tree window-width
-                                 (physics/get-position :sfsim.physics/surface @physics-state))
+                                 (physics/get-position :sfsim.physics/surface (:physics @state)))
         (if (-> @state :input :sfsim.input/menu)
           (swap! state update-in [:gui :sfsim.gui/menu] #(or % main-dialog))
           (swap! state assoc-in [:gui :sfsim.gui/menu] nil))
         (if playback
           (let [frame (nth @recording @n)]
-            (swap! physics-state physics/load-state (:physics frame) wheels)
+            (swap! state update :physics physics/load-state (:physics frame) wheels)
             (reset! camera-state (:camera frame)))
           (do
             (when (not (-> @state :input :sfsim.input/pause))
-              (swap! physics-state physics/update-domain config/planet-config)
-              (swap! physics-state physics/set-control-inputs (-> @state :input :sfsim.input/controls) dt)
-              (swap! physics-state physics/update-gear-status wheels)
-              (physics/update-brakes @physics-state)
-              (update-mesh! (physics/get-position :sfsim.physics/surface @physics-state))
-              (physics/set-thruster-forces @physics-state thrust)
-              (physics/set-aerodynamic-forces @physics-state config/planet-config)
-              (swap! physics-state
-                     physics/update-state
-                     dt
+              (swap! state update :physics physics/update-domain config/planet-config)
+              (swap! state update :physics physics/set-control-inputs (-> @state :input :sfsim.input/controls) dt)
+              (swap! state update :physics physics/update-gear-status wheels)
+              (physics/update-brakes (:physics @state))
+              (update-mesh! (physics/get-position :sfsim.physics/surface (:physics @state)))
+              (physics/set-thruster-forces (:physics @state) thrust)
+              (physics/set-aerodynamic-forces (:physics @state) config/planet-config)
+              (swap! state update :physics physics/update-state dt
                      (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass))))
-            (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface @physics-state))
+            (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface (:physics @state)))
                   mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
-              (swap! camera-state camera/set-mode mode @physics-state)
+              (swap! camera-state camera/set-mode mode (:physics @state))
               (swap! camera-state camera/update-camera-pose dt (:input @state)))
             (when (and @recording (not (-> @state :input :sfsim.input/pause)))
-              (let [frame {:physics (physics/save-state @physics-state) :camera @camera-state}]
+              (let [frame {:physics (physics/save-state (:physics @state)) :camera @camera-state}]
                 (swap! recording conj frame)))))
-        (let [object-position    (physics/get-position :sfsim.physics/surface @physics-state)
+        (let [object-position    (physics/get-position :sfsim.physics/surface (:physics @state))
               height             (- (mag object-position) ^double earth-radius)
               pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
-              object-orientation (physics/get-orientation :sfsim.physics/surface @physics-state)
+              object-orientation (physics/get-orientation :sfsim.physics/surface (:physics @state))
               object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
               [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
-                                           (camera/get-camera-pose @camera-state @physics-state))
-              jd-ut              (physics/get-julian-date-ut @physics-state)
+                                           (camera/get-camera-pose @camera-state (:physics @state)))
+              jd-ut              (physics/get-julian-date-ut (:physics @state))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
               light-direction    (normalize (mulv icrs-to-earth sun-pos))
-              model-vars         (model/make-model-vars (:sfsim.physics/offset-seconds @physics-state) pressure
-                                                        (:sfsim.physics/throttle @physics-state))
+              model-vars         (model/make-model-vars (:sfsim.physics/offset-seconds (:physics @state)) pressure
+                                                        (:sfsim.physics/throttle (:physics @state)))
               planet-render-vars (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                  window-width window-height origin camera-orientation
                                                                  light-direction object-position object-orientation model-vars)
@@ -662,11 +658,11 @@
                                                                 origin camera-orientation light-direction object-position
                                                                 object-orientation)
               wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
-                                                            (physics/get-wheel-angles @physics-state))
+                                                            (physics/get-wheel-angles (:physics @state)))
                                        gear-animation
-                                       (let [gear (:sfsim.physics/gear @physics-state)]
+                                       (let [gear (:sfsim.physics/gear (:physics @state))]
                                          (if (= ^double gear 1.0)
-                                           (let [suspension (physics/get-suspension @physics-state)]
+                                           (let [suspension (physics/get-suspension (:physics @state))]
                                              [(/ (- ^double (nth suspension 0) 0.8) 0.8128)
                                               (/ (- ^double (nth suspension 1) 0.8) 0.8128)
                                               (+ 1.0 (/ (- ^double (nth suspension 2) 0.5) 0.5419))])
@@ -687,7 +683,7 @@
               geometry           (model/render-joined-geometry joined-geometry-renderer scene-render-vars planet-render-vars moved-scene
                                                                (planet/get-current-tree tile-tree))
               object-origin      (:sfsim.render/object-origin scene-render-vars)
-              render-order       (filterv (physics/active-rcs @physics-state) (model/bsp-render-order bsp-tree object-origin))
+              render-order       (filterv (physics/active-rcs (:physics @state)) (model/bsp-render-order bsp-tree object-origin))
               plume-transforms   (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
               clouds             (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms
                                                               geometry)]
@@ -727,7 +723,7 @@
                                  (info gui window-height
                                        (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                                (- (mag object-position) ^double earth-radius)
-                                               (:sfsim.physics/display-speed @physics-state)
+                                               (:sfsim.physics/display-speed (:physics @state))
                                                (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
                                                (/ 1.0 ^double @frametime)
                                                (if (:sfsim.input/brake controls) ", brake"
