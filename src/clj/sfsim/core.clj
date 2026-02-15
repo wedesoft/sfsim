@@ -522,14 +522,14 @@
 
 
 (defn stick
-  [input-state gui]
+  [input-controls gui]
   (let [stack    (MemoryStack/stackPush)
         rect     (NkRect/malloc stack)
         rgb      (NkColor/malloc stack)
-        throttle (:sfsim.input/throttle input-state)
-        aileron  (:sfsim.input/aileron input-state)
-        elevator (:sfsim.input/elevator input-state)
-        rudder   (:sfsim.input/rudder input-state)]
+        throttle (:sfsim.input/throttle input-controls)
+        aileron  (:sfsim.input/aileron input-controls)
+        elevator (:sfsim.input/elevator input-controls)
+        rudder   (:sfsim.input/rudder input-controls)]
     (gui/nuklear-window gui "Yoke" 10 10 80 80 false
                         (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
                           (gui/layout-row-dynamic gui 80 1)
@@ -609,7 +609,7 @@
           (do
             (when (not (@input-state :sfsim.input/pause))
               (swap! physics-state physics/update-domain config/planet-config)
-              (swap! physics-state physics/set-control-inputs @input-state dt)
+              (swap! physics-state physics/set-control-inputs (:sfsim.input/controls @input-state) dt)
               (swap! physics-state physics/update-gear-status wheels)
               (physics/update-brakes @physics-state)
               (update-mesh! (physics/get-position :sfsim.physics/surface @physics-state))
@@ -713,17 +713,18 @@
                                (menu input-state gui window-width window-height))
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
-                               (stick @input-state gui)
-                               (info gui window-height
-                                     (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
-                                             (- (mag object-position) ^double earth-radius)
-                                             (:sfsim.physics/display-speed @physics-state)
-                                             (if (@input-state :sfsim.input/rcs) "RCS" "aerofoil")
-                                             (/ 1.0 ^double @frametime)
-                                             (if (@input-state :sfsim.input/brake) ", brake"
-                                               (if (@input-state :sfsim.input/parking-brake) ", parking brake" ""))
-                                             (if (@input-state :sfsim.input/air-brake) ", air brake" "")
-                                             (if (@input-state :sfsim.input/pause) ", pause" ""))))
+                               (let [controls (:sfsim.input/controls @input-state)]
+                                 (stick controls gui)
+                                 (info gui window-height
+                                       (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
+                                               (- (mag object-position) ^double earth-radius)
+                                               (:sfsim.physics/display-speed @physics-state)
+                                               (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
+                                               (/ 1.0 ^double @frametime)
+                                               (if (:sfsim.input/brake controls) ", brake"
+                                                 (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
+                                               (if (:sfsim.input/air-brake controls) ", air brake" "")
+                                               (if (:sfsim.input/pause @input-state) ", pause" "")))))
                              (gui/render-nuklear-gui gui window-width window-height)))
           (destroy-texture clouds)
           (clouds/destroy-cloud-geometry geometry)

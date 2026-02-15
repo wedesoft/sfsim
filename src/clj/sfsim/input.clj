@@ -250,22 +250,23 @@
 (defn make-initial-state
   "Create initial state of game and space craft."
   []
-  {::menu                   false
-   ::focus                  0
-   ::fullscreen             false
-   ::pause                  true
-   ::brake                  false
-   ::parking-brake          false
-   ::gear-down              true
-   ::aileron                0.0
-   ::elevator               0.0
-   ::rudder                 0.0
-   ::throttle               0.0
-   ::air-brake              false
-   ::rcs                    false
-   ::rcs-roll               0
-   ::rcs-pitch              0
-   ::rcs-yaw                0
+  {::menu       false
+   ::focus      0
+   ::fullscreen false
+   ::pause      true
+   ::controls
+   {::brake         false
+    ::parking-brake false
+    ::gear-down     true
+    ::aileron       0.0
+    ::elevator      0.0
+    ::rudder        0.0
+    ::throttle      0.0
+    ::air-brake     false
+    ::rcs           false
+    ::rcs-roll      0
+    ::rcs-pitch     0
+    ::rcs-yaw       0}
    ::camera
    {::rotate-x        0.0
     ::rotate-y        0.0
@@ -297,9 +298,9 @@
      GLFW/GLFW_KEY_KP_3      ::camera-rotate-z-negative
      GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
      GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
-     }
-    ::joysticks
-    {::dead-zone 0.1}}
+     }}
+   ::joysticks
+   {::dead-zone 0.1}
    })
 
 
@@ -362,7 +363,7 @@
 (defmethod simulator-key ::gear
   [state _id action _mods]
   (if (= action GLFW/GLFW_PRESS)
-    (update state ::gear-down not)
+    (update-in state [::controls ::gear-down] not)
     state))
 
 
@@ -370,18 +371,18 @@
   ([state k increment]
    (increment-clamp state k increment -1.0 1.0))
   ([state k increment lower upper]
-   (update state k #(-> ^double % (+ ^double increment) (clamp lower upper)))))
+   (update-in state [::controls k] #(-> ^double % (+ ^double increment) (clamp lower upper)))))
 
 
 (defmethod simulator-key ::brake
   [state _id action mods]
   (if (= mods GLFW/GLFW_MOD_SHIFT)
     (if (= action GLFW/GLFW_PRESS)
-      (update state ::parking-brake not)
+      (update-in state [::controls ::parking-brake] not)
       state)
     (-> state
-      (assoc ::parking-brake false)
-      (assoc ::brake (not= action GLFW/GLFW_RELEASE)))))
+        (assoc-in [::controls ::parking-brake] false)
+        (assoc-in [::controls ::brake] (not= action GLFW/GLFW_RELEASE)))))
 
 
 (defmethod simulator-key ::throttle-decrease
@@ -401,78 +402,78 @@
 (defmethod simulator-key ::air-brake
   [state _id action _mods]
   (if (= action GLFW/GLFW_PRESS)
-    (update state ::air-brake not)
+    (update-in state [::controls ::air-brake] not)
     state))
 
 
 (defmethod simulator-key ::rcs
   [state _id action _mods]
   (if (= action GLFW/GLFW_PRESS)
-    (update state ::rcs not)
+    (update-in state [::controls ::rcs] not)
     state))
 
 
 (defmethod simulator-key ::aileron-left
   [state _id action _mods]
   (if (keypress? action)
-    (if (state ::rcs)
-      (assoc state ::rcs-roll 1)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-roll] 1)
       (increment-clamp state ::aileron 0.0625))
-    (assoc state ::rcs-roll 0)))
+    (assoc-in state [::controls ::rcs-roll] 0)))
 
 
 (defmethod simulator-key ::aileron-right
   [state _id action _mods]
   (if (keypress? action)
-    (if (state ::rcs)
-      (assoc state ::rcs-roll -1)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-roll] -1)
       (increment-clamp state ::aileron -0.0625))
-    (assoc state ::rcs-roll 0)))
+    (assoc-in state [::controls ::rcs-roll] 0)))
 
 
 (defmethod simulator-key ::aileron-center
   [state _id action _mods]
   (if (keypress? action)
-    (assoc state ::aileron 0.0)
+    (assoc-in state [::controls ::aileron] 0.0)
     state))
 
 
 (defmethod simulator-key ::rudder-left
   [state _id action mods]
   (if (keypress? action)
-    (if (state ::rcs)
-      (assoc state ::rcs-yaw 1)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-yaw] 1)
       (if (= mods GLFW/GLFW_MOD_CONTROL)
-        (assoc state ::rudder 0.0)
+        (assoc-in state [::controls ::rudder] 0.0)
         (increment-clamp state ::rudder 0.0625)))
-    (assoc state ::rcs-yaw 0)))
+    (assoc-in state [::controls ::rcs-yaw] 0)))
 
 
 (defmethod simulator-key ::rudder-right
   [state _id action _mods]
   (if (keypress? action)
-    (if (state ::rcs)
-      (assoc state ::rcs-yaw -1)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-yaw] -1)
       (increment-clamp state ::rudder -0.0625))
-    (assoc state ::rcs-yaw 0)))
+    (assoc-in state [::controls ::rcs-yaw] 0)))
 
 
 (defmethod simulator-key ::elevator-down
   [state _id action _mods]
   (if (keypress? action)
-    (if (state ::rcs)
-      (assoc state ::rcs-pitch 1)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-pitch] 1)
       (increment-clamp state ::elevator 0.0625))
-    (assoc state ::rcs-pitch 0)))
+    (assoc-in state [::controls ::rcs-pitch] 0)))
 
 
 (defmethod simulator-key ::elevator-up
   [state _id action _mods]
   (if (keypress? action)
-    (if (state ::rcs)
-      (assoc state ::rcs-pitch -1)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-pitch] -1)
       (increment-clamp state ::elevator -0.0625))
-    (assoc state ::rcs-pitch 0)))
+    (assoc-in state [::controls ::rcs-pitch] 0)))
 
 
 (defmethod simulator-key ::camera-rotate-x-positive
@@ -534,9 +535,9 @@
 (defn simulator-joystick-with-dead-zone
   "Apply filtered joystick axis value to state"
   [aerofoil rcs-thruster epsilon state value]
-  (if (state ::rcs)
-    (assoc state rcs-thruster (dead-zone-three-state epsilon value))
-    (assoc state aerofoil (dead-zone-continuous epsilon value))))
+  (if (get-in state [::controls ::rcs])
+    (assoc-in state [::controls rcs-thruster] (dead-zone-three-state epsilon value))
+    (assoc-in state [::controls aerofoil] (dead-zone-continuous epsilon value))))
 
 
 (defmulti simulator-joystick-axis
@@ -581,7 +582,7 @@
 
 (defmethod simulator-joystick-axis ::throttle
   [_id epsilon state value]
-  (assoc state ::throttle (* 0.5 (- 1.0 (dead-margins epsilon value)))))
+  (assoc-in state [::controls ::throttle] (* 0.5 (- 1.0 (dead-margins epsilon value)))))
 
 
 (defmethod simulator-joystick-axis ::throttle-increment
@@ -602,28 +603,30 @@
 (defmethod simulator-joystick-button ::gear
   [_id state action]
   (if (= action GLFW/GLFW_PRESS)
-    (update state ::gear-down not)
+    (update-in state [::controls ::gear-down] not)
     state))
 
 
 (defmethod simulator-joystick-button ::brake
   [_id state action]
   (if (keypress? action)
-    (assoc state ::brake true ::parking-brake false)
-    (assoc state ::brake false)))
+    (-> state
+        (assoc-in [::controls ::brake] true)
+        (assoc-in [::controls ::parking-brake] false))
+    (assoc-in state [::controls ::brake] false)))
 
 
 (defmethod simulator-joystick-button ::parking-brake
   [_id state action]
   (if (= action GLFW/GLFW_PRESS)
-    (assoc state ::parking-brake true)
+    (assoc-in state [::controls ::parking-brake] true)
     state))
 
 
 (defmethod simulator-joystick-button ::air-brake
   [_id state action]
   (if (= action GLFW/GLFW_PRESS)
-    (update state ::air-brake not)
+    (update-in state [::controls ::air-brake] not)
     state))
 
 
