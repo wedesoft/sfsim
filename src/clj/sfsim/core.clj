@@ -63,9 +63,9 @@
   `(do
      (when (and (@input-state :sfsim.input/focus-new) (= (mod (@input-state :sfsim.input/focus-new) ~cnt) ~idx))
        (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE)
-       (swap! gui-state dissoc :sfsim.gui/focus-new))
+       (swap! state dissoc-in  [:gui :sfsim.gui/focus-new]))
      (when (= Nuklear/NK_EDIT_ACTIVE ~edit)
-       (swap! gui-state assoc :sfsim.gui/focus ~idx))))
+       (swap! state assoc-in  [:gui :sfsim.gui/focus] ~idx))))
 
 
 (try
@@ -238,16 +238,10 @@
    :second (gui/edit-data    "0" 3 :sfsim.gui/filter-decimal)})
 
 
-(def gui-state (atom
-                 {:sfsim.gui/menu nil
-                  :sfsim.gui/window-width window-width
-                  :sfsim.gui/window-height window-height}))
-
 (def event-buffer (atom (make-event-buffer)))
-(def input-state (atom (make-initial-state)))
-(def old-input-state (atom @input-state))
-(swap! input-state assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
-       (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
+(def input-state (-> (make-initial-state)
+                     (assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
+                               (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))))
 
 
 (GLFW/glfwSetCharCallback window (char-callback event-buffer))
@@ -275,9 +269,6 @@
           (swap! event-buffer add-mouse-button-event button x y action mods))))))
 
 
-(declare main-dialog)
-
-
 (def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
 (def body (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
 (jolt/set-friction body 0.8)
@@ -291,11 +282,25 @@
 (def latitude (to-radians 50.9672))
 (def height 25.0)
 
-(def physics-state (atom (physics/make-physics-state body)))
-(swap! physics-state physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
-(swap! physics-state physics/set-julian-date-ut (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}))
+(def physics-state (-> (physics/make-physics-state body)
+                       (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
+                       (physics/set-julian-date-ut (astro/julian-date {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}))))
 
 (jolt/optimize-broad-phase)
+
+
+(def gui-state {:sfsim.gui/menu nil
+                :sfsim.gui/window-width window-width
+                :sfsim.gui/window-height window-height})
+
+
+(def state (atom {:gui gui-state
+                  :input input-state
+                  :physics physics-state}))
+
+(def input-state (atom input-state))
+(def physics-state (atom physics-state))
+
 
 (def coords (atom nil))
 (def mesh (atom nil))
@@ -331,6 +336,9 @@
         (jolt/optimize-broad-phase)))))
 
 
+(declare main-dialog)
+
+
 (defn joystick-dialog-item
   [input-state gui sensor-type last-event text control sensor-name prompt]
   (let [[device sensor] (get-joystick-sensor-for-mapping (:sfsim.input/mappings @input-state) sensor-type control)]
@@ -344,15 +352,15 @@
                     (gui/layout-row-push gui 0.1)
                     (when (gui/button-label gui "Set")
                       (swap! input-state dissoc last-event)
-                      (if (= (@gui-state :sfsim.gui/joystick-config) control)
-                        (swap! gui-state dissoc :sfsim.gui/joystick-config)
-                        (swap! gui-state assoc :sfsim.gui/joystick-config control)))
-                    (when-let [[device-new sensor-new] (and (= (@gui-state :sfsim.gui/joystick-config) control)
+                      (if (= (-> @state :gui :sfsim.gui/joystick-config) control)
+                        (swap! state dissoc-in [:gui :sfsim.gui/joystick-config])
+                        (swap! state assoc-in [:gui :sfsim.gui/joystick-config] control)))
+                    (when-let [[device-new sensor-new] (and (= (-> @state :gui :sfsim.gui/joystick-config) control)
                                                             (@input-state last-event))]
                               (swap! input-state dissoc-in [:sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices device sensor-type sensor])
                               (swap! input-state assoc-in [:sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices device-new sensor-type sensor-new]
                                      control)
-                              (swap! gui-state dissoc :sfsim.gui/joystick-config))
+                              (swap! state dissoc-in [:gui :sfsim.gui/joystick-config]))
                     (gui/layout-row-push gui 0.6)
                     (gui/text-label gui (if (= (@input-state :sfsim.gui/joystick-config) control)
                                           prompt
@@ -398,11 +406,11 @@
                       (gui/layout-row-dynamic gui 32 2)
                       (when (gui/button-label gui "Save")
                         (config/write-user-config "joysticks.edn" (get-in @input-state [:sfsim.input/mappings :sfsim.input/joysticks]))
-                        (swap! gui-state assoc :sfsim.gui/menu main-dialog))
+                        (swap! state assoc-in [:gui :sfsim.gui/menu] main-dialog))
                       (when (gui/button-label gui "Close")
                         (swap! input-state assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
                                (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
-                        (swap! gui-state assoc :sfsim.gui/menu main-dialog))))
+                        (swap! state assoc-in [:gui :sfsim.gui/menu] main-dialog))))
 
 
 (defn location-dialog-get
@@ -437,7 +445,7 @@
         (swap! physics-state physics/destroy-vehicle-constraint)
         (swap! physics-state physics/set-geographic surface config/planet-config elevation longitude latitude height)))
     (when (gui/button-label gui "Close")
-      (swap! gui-state assoc :sfsim.gui/menu main-dialog))))
+      (swap! state assoc-in [:gui :sfsim.gui/menu] main-dialog))))
 
 
 (defn datetime-dialog-get
@@ -499,7 +507,7 @@
                       (when (gui/button-label gui "Set")
                         (swap! physics-state physics/set-julian-date-ut (datetime-dialog-get time-data)))
                       (when (gui/button-label gui "Close")
-                        (swap! gui-state assoc :sfsim.gui/menu main-dialog))))
+                        (swap! state assoc-in [:gui :sfsim.gui/menu] main-dialog))))
 
 
 (defn main-dialog
@@ -508,13 +516,13 @@
                       (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6) true
                       (gui/layout-row-dynamic gui 32 1)
                       (when (gui/button-label gui "Joystick")
-                        (swap! gui-state assoc :sfsim.gui/menu joystick-dialog))
+                        (swap! state assoc-in [:gui :sfsim.gui/menu] joystick-dialog))
                       (when (gui/button-label gui "Location")
                         (location-dialog-set position-data)
-                        (swap! gui-state assoc :sfsim.gui/menu location-dialog))
+                        (swap! state assoc-in [:gui :sfsim.gui/menu] location-dialog))
                       (when (gui/button-label gui "Date/Time")
                         (datetime-dialog-set time-data)
-                        (swap! gui-state assoc :sfsim.gui/menu datetime-dialog))
+                        (swap! state assoc-in [:gui :sfsim.gui/menu] datetime-dialog))
                       (when (gui/button-label gui "Resume")
                         (swap! input-state assoc :sfsim.input/menu nil))
                       (when (gui/button-label gui "Quit")
@@ -574,6 +582,8 @@
        (log/info "aborting sfsim" version)
        (System/exit 1)))
 
+(def old-input-state (atom @input-state))
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -592,16 +602,16 @@
       (let [w (int-array 1)
             h (int-array 1)]
         (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
-        (swap! gui-state assoc :sfsim.gui/window-width (aget w 0))
-        (swap! gui-state assoc :sfsim.gui/window-height (aget h 0)))
+        (swap! state assoc-in [:gui :sfsim.gui/window-width] (aget w 0))
+        (swap! state assoc-in [:gui :sfsim.gui/window-height] (aget h 0)))
       (let [dt (if fix-fps (elapsed-time fix-fps fix-fps) (elapsed-time))
-            window-width (:sfsim.gui/window-width @gui-state)
-            window-height (:sfsim.gui/window-height @gui-state)]
+            window-width (-> @state :gui :sfsim.gui/window-width)
+            window-height (-> @state :gui :sfsim.gui/window-height)]
         (planet/update-tile-tree planet-renderer tile-tree window-width
                                  (physics/get-position :sfsim.physics/surface @physics-state))
         (if (@input-state :sfsim.input/menu)
-          (swap! gui-state update :sfsim.gui/menu #(or % main-dialog))
-          (swap! gui-state assoc :sfsim.gui/menu nil))
+          (swap! state update-in [:gui :sfsim.gui/menu] #(or % main-dialog))
+          (swap! state assoc-in [:gui :sfsim.gui/menu] nil))
         (if playback
           (let [frame (nth @recording @n)]
             (swap! physics-state physics/load-state (:physics frame) wheels)
@@ -709,7 +719,7 @@
                                  ;; Render atmosphere with cloud overlay
                                  (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds))))
                            (with-culling :sfsim.render/noculling
-                             (when-let [menu (:sfsim.gui/menu @gui-state)]
+                             (when-let [menu (-> @state :gui :sfsim.gui/menu)]
                                (menu input-state gui window-width window-height))
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
