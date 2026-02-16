@@ -266,13 +266,16 @@
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
          context# (:sfsim.gui/context ~gui)]
-     (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
-                             ~(if border
-                               `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE Nuklear/NK_WINDOW_NO_SCROLLBAR)
-                               `Nuklear/NK_WINDOW_NO_SCROLLBAR))
-       ~@body
-       (Nuklear/nk_end context#))
-     (MemoryStack/stackPop)))
+     (try
+       (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
+                               ~(if border
+                                  `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE Nuklear/NK_WINDOW_NO_SCROLLBAR)
+                                  `Nuklear/NK_WINDOW_NO_SCROLLBAR))
+         (let [result# (do ~@body)]
+           (Nuklear/nk_end context#)
+           result#))
+       (finally
+         (MemoryStack/stackPop)))))
 
 
 (defn layout-row-dynamic
@@ -527,8 +530,9 @@
   [gui height cnt & body]
   `(do
      (Nuklear/nk_layout_row_begin (:sfsim.gui/context ~gui) Nuklear/NK_DYNAMIC ~height ~cnt)
-     ~@body
-     (Nuklear/nk_layout_row_end (:sfsim.gui/context ~gui))))
+     (let [result# (do ~@body)]
+       (Nuklear/nk_layout_row_end (:sfsim.gui/context ~gui))
+       result#)))
 
 
 (defn layout-row-push

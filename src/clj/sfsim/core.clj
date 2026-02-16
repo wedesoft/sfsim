@@ -336,32 +336,42 @@
 (declare main-dialog)
 
 
+(defn toggle-joystick-control
+  [state control]
+  (if (= (-> state :gui :sfsim.gui/joystick-config) control)
+    (dissoc-in state [:gui :sfsim.gui/joystick-config])
+    (assoc-in state [:gui :sfsim.gui/joystick-config] control)))
+
+
 (defn joystick-dialog-item
   [state gui sensor-type last-event text control sensor-name prompt]
-  (let [[device sensor] (get-joystick-sensor-for-mapping (-> @state :input :sfsim.input/mappings) sensor-type control)]
-    (gui/layout-row gui 32 4
+  (let [[device sensor] (get-joystick-sensor-for-mapping (-> state :input :sfsim.input/mappings) sensor-type control)]
+    (gui/layout-row
+      gui 32 4
+      (ignore-nil-> state state
                     (gui/layout-row-push gui 0.2)
                     (gui/text-label gui text)
                     (gui/layout-row-push gui 0.1)
                     (when (and (gui/button-label gui "Clear") device)
-                      (swap! state dissoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices
-                                              device sensor-type sensor]))
+                      (dissoc-in state [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices
+                                        device sensor-type sensor]))
                     (gui/layout-row-push gui 0.1)
                     (when (gui/button-label gui "Set")
-                      (swap! state dissoc-in [:input last-event])
-                      (if (= (-> @state :gui :sfsim.gui/joystick-config) control)
-                        (swap! state dissoc-in [:gui :sfsim.gui/joystick-config])
-                        (swap! state assoc-in [:gui :sfsim.gui/joystick-config] control)))
-                    (when-let [[device-new sensor-new] (and (= (-> @state :gui :sfsim.gui/joystick-config) control)
-                                                            (-> @state :input last-event))]
-                              (swap! state dissoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices device sensor-type sensor])
-                              (swap! state assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices device-new sensor-type sensor-new]
-                                     control)
-                              (swap! state dissoc-in [:gui :sfsim.gui/joystick-config]))
+                      (-> state
+                          (dissoc-in [:input last-event])
+                          (toggle-joystick-control control)))
+                    (when-let [[device-new sensor-new] (and (= (-> state :gui :sfsim.gui/joystick-config) control)
+                                                            (-> state :input last-event))]
+                              (-> state
+                                  (dissoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices
+                                              device sensor-type sensor])
+                                  (assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices
+                                             device-new sensor-type sensor-new] control)
+                                  (dissoc-in [:gui :sfsim.gui/joystick-config])))
                     (gui/layout-row-push gui 0.6)
-                    (gui/text-label gui (if (= (-> @state :input :sfsim.gui/joystick-config) control)
+                    (gui/text-label gui (if (= (-> state :input :sfsim.gui/joystick-config) control)
                                           prompt
-                                          (if device (format "%s %d of %s" sensor-name sensor device) "None"))))))
+                                          (if device (format "%s %d of %s" sensor-name sensor device) "None")))))))
 
 
 (defn joystick-dialog-axis-item
@@ -378,36 +388,41 @@
 
 (defn joystick-dialog
   [state gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 12)) 2) 640 (* 37 12) true
-                      (joystick-dialog-axis-item state gui "Aileron" :sfsim.input/aileron)
-                      (joystick-dialog-axis-item state gui "Elevator" :sfsim.input/elevator)
-                      (joystick-dialog-axis-item state gui "Rudder" :sfsim.input/rudder)
-                      (joystick-dialog-axis-item state gui "Throttle" :sfsim.input/throttle)
-                      (joystick-dialog-axis-item state gui "Throttle Increment" :sfsim.input/throttle-increment)
-                      (gui/layout-row gui 32 2
-                                      (gui/layout-row-push gui 0.2)
-                                      (gui/text-label gui "Dead Zone")
-                                      (gui/layout-row-push gui 0.7)
-                                      (swap! state update-in
-                                             [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/dead-zone]
-                                             (fn [dead-zone]
-                                                 (gui/slider-float gui 0.0 dead-zone 1.0 (/ 1.0 1024.0))))
-                                      (gui/layout-row-push gui 0.1)
-                                      (gui/text-label gui (format "%5.3f" (get-in @state
-                                                                                  [:input :sfsim.input/mappings :sfsim.input/joysticks
-                                                                                   :sfsim.input/dead-zone]))))
-                      (joystick-dialog-button-item state gui "Gear" :sfsim.input/gear)
-                      (joystick-dialog-button-item state gui "Air Brake" :sfsim.input/air-brake)
-                      (joystick-dialog-button-item state gui "Brake" :sfsim.input/brake)
-                      (joystick-dialog-button-item state gui "Parking Brake" :sfsim.input/parking-brake)
-                      (gui/layout-row-dynamic gui 32 2)
-                      (when (gui/button-label gui "Save")
-                        (config/write-user-config "joysticks.edn" (get-in @state [:input :sfsim.input/mappings :sfsim.input/joysticks]))
-                        (swap! state assoc-in [:gui :sfsim.gui/menu] main-dialog))
-                      (when (gui/button-label gui "Close")
-                        (swap! state assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks]
-                               (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
-                        (swap! state assoc-in [:gui :sfsim.gui/menu] main-dialog))))
+  (gui/nuklear-window
+    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 12)) 2) 640 (* 37 12) true
+    (ignore-nil-> state state
+                  (joystick-dialog-axis-item state gui "Aileron" :sfsim.input/aileron)
+                  (joystick-dialog-axis-item state gui "Elevator" :sfsim.input/elevator)
+                  (joystick-dialog-axis-item state gui "Rudder" :sfsim.input/rudder)
+                  (joystick-dialog-axis-item state gui "Throttle" :sfsim.input/throttle)
+                  (joystick-dialog-axis-item state gui "Throttle Increment" :sfsim.input/throttle-increment)
+                  (gui/layout-row gui 32 2
+                                  (ignore-nil-> state state
+                                                (gui/layout-row-push gui 0.2)
+                                                (gui/text-label gui "Dead Zone")
+                                                (gui/layout-row-push gui 0.7)
+                                                (update-in state
+                                                           [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/dead-zone]
+                                                           (fn [dead-zone]
+                                                               (gui/slider-float gui 0.0 dead-zone 1.0 (/ 1.0 1024.0))))
+                                                (gui/layout-row-push gui 0.1)
+                                                (gui/text-label gui (format "%5.3f" (get-in state
+                                                                                            [:input :sfsim.input/mappings
+                                                                                             :sfsim.input/joysticks
+                                                                                             :sfsim.input/dead-zone])))))
+                  (joystick-dialog-button-item state gui "Gear" :sfsim.input/gear)
+                  (joystick-dialog-button-item state gui "Air Brake" :sfsim.input/air-brake)
+                  (joystick-dialog-button-item state gui "Brake" :sfsim.input/brake)
+                  (joystick-dialog-button-item state gui "Parking Brake" :sfsim.input/parking-brake)
+                  (gui/layout-row-dynamic gui 32 2)
+                  (when (gui/button-label gui "Save")
+                    (config/write-user-config "joysticks.edn" (get-in state [:input :sfsim.input/mappings :sfsim.input/joysticks]))
+                    (assoc-in state [:gui :sfsim.gui/menu] main-dialog))
+                  (when (gui/button-label gui "Close")
+                    (-> state
+                        (assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks]
+                                  (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
+                        (assoc-in [:gui :sfsim.gui/menu] main-dialog))))))
 
 
 (defn location-dialog-get
@@ -430,19 +445,20 @@
   [state gui ^long window-width ^long window-height]
   (gui/nuklear-window
     gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) true
-    (gui/layout-row-dynamic gui 32 2)
-    (gui/text-label gui "Longitude (East)")
-    (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
-    (gui/text-label gui "Latitude (North)")
-    (tabbing gui (gui/edit-field gui (:latitude position-data)) 1 3)
-    (gui/text-label gui "Height")
-    (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
-    (when (gui/button-label gui "Set")
-      (let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
-        (swap! state update :physics physics/destroy-vehicle-constraint)
-        (swap! state update :physics physics/set-geographic surface config/planet-config elevation longitude latitude height)))
-    (when (gui/button-label gui "Close")
-      (swap! state assoc-in [:gui :sfsim.gui/menu] main-dialog))))
+    (ignore-nil-> state state
+                  (gui/layout-row-dynamic gui 32 2)
+                  (gui/text-label gui "Longitude (East)")
+                  (tabbing gui (gui/edit-field gui (:longitude position-data)) 0 3)
+                  (gui/text-label gui "Latitude (North)")
+                  (tabbing gui (gui/edit-field gui (:latitude position-data)) 1 3)
+                  (gui/text-label gui "Height")
+                  (tabbing gui (gui/edit-field gui (:height position-data)) 2 3)
+                  (when (gui/button-label gui "Set")
+                    (let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
+                      (update state :physics physics/destroy-vehicle-constraint)
+                      (update state :physics physics/set-geographic surface config/planet-config elevation longitude latitude height)))
+                  (when (gui/button-label gui "Close")
+                    (assoc-in state [:gui :sfsim.gui/menu] main-dialog)))))
 
 
 (defn datetime-dialog-get
@@ -473,57 +489,60 @@
 
 (defn datetime-dialog
   [state gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui "Date and Time" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) true
-                      (gui/layout-row gui 32 6
-                                      (gui/layout-row-push gui 0.4)
-                                      (gui/text-label gui "Date")
-                                      (gui/layout-row-push gui 0.15)
-                                      (tabbing gui (gui/edit-field gui (:day time-data)) 0 6)
-                                      (gui/layout-row-push gui 0.05)
-                                      (gui/text-label gui "/")
-                                      (gui/layout-row-push gui 0.15)
-                                      (tabbing gui (gui/edit-field gui (:month time-data)) 1 6)
-                                      (gui/layout-row-push gui 0.05)
-                                      (gui/text-label gui "/")
-                                      (gui/layout-row-push gui 0.2)
-                                      (tabbing gui (gui/edit-field gui (:year time-data)) 2 6))
-                      (gui/layout-row gui 32 6
-                                      (gui/layout-row-push gui 0.45)
-                                      (gui/text-label gui "Time")
-                                      (gui/layout-row-push gui 0.15)
-                                      (tabbing gui (gui/edit-field gui (:hour time-data)) 3 6)
-                                      (gui/layout-row-push gui 0.05)
-                                      (gui/text-label gui ":")
-                                      (gui/layout-row-push gui 0.15)
-                                      (tabbing gui (gui/edit-field gui (:minute time-data)) 4 6)
-                                      (gui/layout-row-push gui 0.05)
-                                      (gui/text-label gui ":")
-                                      (gui/layout-row-push gui 0.14999)
-                                      (tabbing gui (gui/edit-field gui (:second time-data)) 5 6))
-                      (gui/layout-row-dynamic gui 32 2)
-                      (when (gui/button-label gui "Set")
-                        (swap! state update :physics physics/set-julian-date-ut (datetime-dialog-get time-data)))
-                      (when (gui/button-label gui "Close")
-                        (swap! state assoc-in [:gui :sfsim.gui/menu] main-dialog))))
+  (gui/nuklear-window
+    gui "Date and Time" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) true
+    (ignore-nil-> state state
+                  (gui/layout-row gui 32 6
+                                  (gui/layout-row-push gui 0.4)
+                                  (gui/text-label gui "Date")
+                                  (gui/layout-row-push gui 0.15)
+                                  (tabbing gui (gui/edit-field gui (:day time-data)) 0 6)
+                                  (gui/layout-row-push gui 0.05)
+                                  (gui/text-label gui "/")
+                                  (gui/layout-row-push gui 0.15)
+                                  (tabbing gui (gui/edit-field gui (:month time-data)) 1 6)
+                                  (gui/layout-row-push gui 0.05)
+                                  (gui/text-label gui "/")
+                                  (gui/layout-row-push gui 0.2)
+                                  (tabbing gui (gui/edit-field gui (:year time-data)) 2 6))
+                  (gui/layout-row gui 32 6
+                                  (gui/layout-row-push gui 0.45)
+                                  (gui/text-label gui "Time")
+                                  (gui/layout-row-push gui 0.15)
+                                  (tabbing gui (gui/edit-field gui (:hour time-data)) 3 6)
+                                  (gui/layout-row-push gui 0.05)
+                                  (gui/text-label gui ":")
+                                  (gui/layout-row-push gui 0.15)
+                                  (tabbing gui (gui/edit-field gui (:minute time-data)) 4 6)
+                                  (gui/layout-row-push gui 0.05)
+                                  (gui/text-label gui ":")
+                                  (gui/layout-row-push gui 0.14999)
+                                  (tabbing gui (gui/edit-field gui (:second time-data)) 5 6))
+                  (gui/layout-row-dynamic gui 32 2)
+                  (when (gui/button-label gui "Set")
+                    (update state :physics physics/set-julian-date-ut (datetime-dialog-get time-data)))
+                  (when (gui/button-label gui "Close")
+                    (assoc-in state [:gui :sfsim.gui/menu] main-dialog)))))
 
 
 (defn main-dialog
   [state gui ^long window-width ^long window-height]
-  (gui/nuklear-window gui (format "sfsim %s" version)
-                      (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6) true
-                      (gui/layout-row-dynamic gui 32 1)
-                      (when (gui/button-label gui "Joystick")
-                        (swap! state assoc-in [:gui :sfsim.gui/menu] joystick-dialog))
-                      (when (gui/button-label gui "Location")
-                        (location-dialog-set position-data)
-                        (swap! state assoc-in [:gui :sfsim.gui/menu] location-dialog))
-                      (when (gui/button-label gui "Date/Time")
-                        (datetime-dialog-set time-data)
-                        (swap! state assoc-in [:gui :sfsim.gui/menu] datetime-dialog))
-                      (when (gui/button-label gui "Resume")
-                        (swap! state assoc-in [:input :sfsim.input/menu] nil))
-                      (when (gui/button-label gui "Quit")
-                        (GLFW/glfwSetWindowShouldClose window true))))
+  (gui/nuklear-window
+    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6) true
+    (ignore-nil-> state state
+                  (gui/layout-row-dynamic gui 32 1)
+                  (when (gui/button-label gui "Joystick")
+                    (assoc-in state [:gui :sfsim.gui/menu] joystick-dialog))
+                  (when (gui/button-label gui "Location")
+                    (location-dialog-set position-data)
+                    (assoc-in state [:gui :sfsim.gui/menu] location-dialog))
+                  (when (gui/button-label gui "Date/Time")
+                    (datetime-dialog-set time-data)
+                    (assoc-in state [:gui :sfsim.gui/menu] datetime-dialog))
+                  (when (gui/button-label gui "Resume")
+                    (assoc-in state [:input :sfsim.input/menu] nil))
+                  (when (gui/button-label gui "Quit")
+                    (GLFW/glfwSetWindowShouldClose window true)))))
 
 
 (defn stick
@@ -715,7 +734,7 @@
                                  (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds))))
                            (with-culling :sfsim.render/noculling
                              (when-let [menu (-> @state :gui :sfsim.gui/menu)]
-                               (menu state gui window-width window-height))
+                                       (swap! state menu gui window-width window-height))
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
                                (let [controls (-> @state :input :sfsim.input/controls)]
