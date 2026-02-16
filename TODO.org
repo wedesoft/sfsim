@@ -43,6 +43,7 @@
   - [X] join gui-state, input-state, physics-state to facilitate gui code refactor
   - [X] create macro ignoring nil values using <> as placeholder?
   - [X] tabbing is broken
+  - [ ] convert gui function to state changing one
   - [ ] move gui code into gui module
   - [ ] aggregate physics code in main module and move
   - [ ] does update-camera-pose need the whole input state structure?

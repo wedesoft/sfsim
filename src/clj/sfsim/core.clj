@@ -27,7 +27,7 @@
     [sfsim.config :as config]
     [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
-    [sfsim.util :refer (dissoc-in)]
+    [sfsim.util :refer (dissoc-in ignore-nil->)]
     [sfsim.jolt :as jolt]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
     [sfsim.model :as model]
