@@ -46,12 +46,13 @@
   - [X] convert gui function to state changing one
   - [X] move gui code into gui module
   - [ ] aggregate physics code in main module and move
+  - [ ] refactor rendering code
+    - [ ] put rendering code into methods
+    - [ ] create high level rendering methods to simplify main program and integration tests
+  - [ ] add some sound effects
   - [ ] does update-camera-pose need the whole input state structure?
-  - [ ] put rendering code into methods
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
-  - [ ] change key for switching to RCS
-  - [ ] create high level rendering methods to simplify main program and integration tests
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] add RCS state to physics-state
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
