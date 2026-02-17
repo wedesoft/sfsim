@@ -281,9 +281,6 @@
                       (gui/text-label gui text)))
 
 
-(def frame-index (atom 0))
-
-
 (def frametime (atom 0.25))
 
 (catch Exception e
@@ -456,11 +453,10 @@
               (GL11/glFinish)
               (GL11/glReadPixels 0 0 ^long window-width ^long window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
               (.get buffer data)
-              (spit-png (format "frame%06d.png" @frame-index) {:sfsim.image/data data
-                                                               :sfsim.image/width window-width
-                                                               :sfsim.image/height window-height
-                                                               :sfsim.image/channels 4} true)
-              (swap! frame-index inc))))
+              (spit-png (format "frame%06d.png" @frame-counter) {:sfsim.image/data data
+                                                                 :sfsim.image/width window-width
+                                                                 :sfsim.image/height window-height
+                                                                 :sfsim.image/channels 4} true))))
         (reset! old-state @state)
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
