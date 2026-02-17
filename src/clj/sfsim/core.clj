@@ -288,14 +288,14 @@
        (log/info "aborting sfsim" version)
        (System/exit 1)))
 
-(def old-state (atom @state))
 
 (defn -main
   "Space flight simulator main function"
   [& _args]
   (try
   (let [frame-counter (atom 0)
-        local-mesh (atom {:coords nil :mesh nil})]
+        local-mesh (atom {:coords nil :mesh nil})
+        old-state (atom @state)]
     (start-clock)
     (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @frame-counter (count @recording))))
       (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @old-state :input :sfsim.input/fullscreen))
