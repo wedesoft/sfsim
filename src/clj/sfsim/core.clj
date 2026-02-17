@@ -274,21 +274,21 @@
 (def local-mesh (atom {:coords nil :mesh nil}))
 
 
-(defn update-mesh!
-  [position]
+(defn update-local-mesh
+  [local-mesh position]
   (let [point  (cubemap/project-onto-cube position)
         face   (cubemap/determine-face point)
         j      (cubemap/cube-j face point)
         i      (cubemap/cube-i face point)
-        c      (dissoc (quadtree/tile-coordinates j i
+        coords (dissoc (quadtree/tile-coordinates j i
                                                   (:sfsim.planet/level config/planet-config)
                                                   (:sfsim.planet/tilesize config/planet-config))
                        :sfsim.quadtree/dy :sfsim.quadtree/dx)]
-    (when (not= c (:coords @local-mesh))
-      (let [b      (:sfsim.quadtree/row c)
-            a      (:sfsim.quadtree/column c)
-            tile-y (:sfsim.quadtree/tile-y c)
-            tile-x (:sfsim.quadtree/tile-x c)
+    (if (not= coords (:coords local-mesh))
+      (let [b      (:sfsim.quadtree/row coords)
+            a      (:sfsim.quadtree/column coords)
+            tile-y (:sfsim.quadtree/tile-y coords)
+            tile-x (:sfsim.quadtree/tile-x coords)
             center (cubemap/tile-center face
                                         (:sfsim.planet/level config/planet-config) b a
                                         earth-radius)
@@ -296,13 +296,14 @@
                                                (:sfsim.planet/level config/planet-config)
                                                (:sfsim.planet/tilesize config/planet-config) b a tile-y tile-x
                                                earth-radius center)]
-        (when (:mesh @local-mesh) (jolt/remove-and-destroy-body (:mesh @local-mesh)))
-        (reset! local-mesh
-                {:coords c
-                 :mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0))})
-        (jolt/set-friction (:mesh @local-mesh) 0.8)
-        (jolt/set-restitution (:mesh @local-mesh) 0.25)
-        (jolt/optimize-broad-phase)))))
+        (when-let [mesh (:mesh local-mesh)]
+                  (jolt/remove-and-destroy-body mesh))
+        (let [mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0))]
+          (jolt/set-friction mesh 0.8)
+          (jolt/set-restitution mesh 0.25)
+          (jolt/optimize-broad-phase)
+          {:coords coords :mesh mesh}))
+      local-mesh)))
 
 
 (def camera-state (atom (camera/make-camera-state)))
@@ -365,7 +366,7 @@
               (swap! state update :physics physics/set-control-inputs (-> @state :input :sfsim.input/controls) dt)
               (swap! state update :physics physics/update-gear-status wheels)
               (physics/update-brakes (:physics @state))
-              (update-mesh! (physics/get-position :sfsim.physics/surface (:physics @state)))
+              (swap! local-mesh update-local-mesh (physics/get-position :sfsim.physics/surface (:physics @state)))
               (physics/set-thruster-forces (:physics @state) thrust)
               (physics/set-aerodynamic-forces (:physics @state) config/planet-config)
               (swap! state update :physics physics/update-state dt
