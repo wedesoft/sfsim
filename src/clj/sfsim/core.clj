@@ -38,13 +38,12 @@
                           joined-render-vars quad-splits-orientations with-depth-test with-culling)]
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture)]
-    [sfsim.input :refer (make-event-buffer make-initial-state process-events add-mouse-move-event
-                         add-mouse-button-event joysticks-poll ->InputHandler char-callback key-callback)])
+    [sfsim.input :refer (make-event-buffer make-initial-state process-events add-mouse-button-event
+                         joysticks-poll ->InputHandler char-callback key-callback cursor-pos-callback)])
   (:import
     (org.lwjgl.glfw
       GLFW
       GLFWVidMode
-      GLFWCursorPosCallbackI
       GLFWMouseButtonCallbackI)
     (org.lwjgl.opengl
       GL11)
@@ -194,14 +193,7 @@
 
 (GLFW/glfwSetCharCallback window (char-callback event-buffer))
 (GLFW/glfwSetKeyCallback window (key-callback event-buffer))
-
-
-(GLFW/glfwSetCursorPosCallback
-  window
-  (reify GLFWCursorPosCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
-    (invoke
-      [_this _window xpos ypos]
-      (swap! event-buffer add-mouse-move-event xpos ypos))))
+(GLFW/glfwSetCursorPosCallback window (cursor-pos-callback event-buffer))
 
 
 (GLFW/glfwSetMouseButtonCallback

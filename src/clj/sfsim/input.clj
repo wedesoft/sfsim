@@ -15,7 +15,8 @@
       [org.lwjgl.glfw
        GLFW
        GLFWCharCallbackI
-       GLFWKeyCallbackI]
+       GLFWKeyCallbackI
+       GLFWCursorPosCallbackI]
       [org.lwjgl.nuklear
        Nuklear]))
 
@@ -70,6 +71,15 @@
          (invoke
            [_this _window k _scancode action mods]
            (swap! event-buffer add-key-event k action mods))))
+
+
+(defn cursor-pos-callback
+  "GLFW callback function for mouse move events"
+  [event-buffer]
+  (reify GLFWCursorPosCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
+    (invoke
+      [_this _window xpos ypos]
+      (swap! event-buffer add-mouse-move-event xpos ypos))))
 
 
 (defn dead-zone-continuous
