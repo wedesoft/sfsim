@@ -540,5 +540,38 @@
   (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) frac))
 
 
+(defn stick
+  [input-controls gui]
+  (let [stack    (MemoryStack/stackPush)
+        rect     (NkRect/malloc stack)
+        rgb      (NkColor/malloc stack)
+        throttle (:sfsim.input/throttle input-controls)
+        aileron  (:sfsim.input/aileron input-controls)
+        elevator (:sfsim.input/elevator input-controls)
+        rudder   (:sfsim.input/rudder input-controls)]
+    (nuklear-window gui "Yoke" 10 10 80 80 false
+                    (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
+                      (layout-row-dynamic gui 80 1)
+                      (Nuklear/nk_widget rect (::context gui))
+                      (Nuklear/nk_fill_circle canvas
+                                              (Nuklear/nk_rect (- 45 (* ^double aileron 30)) (- 45 (* ^double elevator 30)) 10 10 rect)
+                                              (Nuklear/nk_rgb 255 0 0 rgb))))
+    (nuklear-window gui "Rudder" 10 95 80 20 false
+                    (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
+                      (layout-row-dynamic gui 20 1)
+                      (Nuklear/nk_widget rect (::context gui))
+                      (Nuklear/nk_fill_circle canvas
+                                              (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
+                                              (Nuklear/nk_rgb 255 0 255 rgb))))
+    (nuklear-window gui "Throttle" 95 10 20 80 false
+                    (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
+                      (layout-row-dynamic gui 80 1)
+                      (Nuklear/nk_widget rect (::context gui))
+                      (Nuklear/nk_fill_circle canvas
+                                              (Nuklear/nk_rect 100 (- 75 (* 60 ^double throttle)) 10 10 rect)
+                                              (Nuklear/nk_rgb 255 255 255 rgb)))))
+  (MemoryStack/stackPop))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

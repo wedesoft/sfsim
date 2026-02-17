@@ -545,39 +545,6 @@
                     (GLFW/glfwSetWindowShouldClose window true)))))
 
 
-(defn stick
-  [input-controls gui]
-  (let [stack    (MemoryStack/stackPush)
-        rect     (NkRect/malloc stack)
-        rgb      (NkColor/malloc stack)
-        throttle (:sfsim.input/throttle input-controls)
-        aileron  (:sfsim.input/aileron input-controls)
-        elevator (:sfsim.input/elevator input-controls)
-        rudder   (:sfsim.input/rudder input-controls)]
-    (gui/nuklear-window gui "Yoke" 10 10 80 80 false
-                        (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
-                          (gui/layout-row-dynamic gui 80 1)
-                          (Nuklear/nk_widget rect (:sfsim.gui/context gui))
-                          (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect (- 45 (* ^double aileron 30)) (- 45 (* ^double elevator 30)) 10 10 rect)
-                                                  (Nuklear/nk_rgb 255 0 0 rgb))))
-    (gui/nuklear-window gui "Rudder" 10 95 80 20 false
-                        (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
-                          (gui/layout-row-dynamic gui 20 1)
-                          (Nuklear/nk_widget rect (:sfsim.gui/context gui))
-                          (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
-                                                  (Nuklear/nk_rgb 255 0 255 rgb))))
-    (gui/nuklear-window gui "Throttle" 95 10 20 80 false
-                        (let [canvas (Nuklear/nk_window_get_canvas (:sfsim.gui/context gui))]
-                          (gui/layout-row-dynamic gui 80 1)
-                          (Nuklear/nk_widget rect (:sfsim.gui/context gui))
-                          (Nuklear/nk_fill_circle canvas
-                                                  (Nuklear/nk_rect 100 (- 75 (* 60 ^double throttle)) 10 10 rect)
-                                                  (Nuklear/nk_rgb 255 255 255 rgb)))))
-  (MemoryStack/stackPop))
-
-
 (def camera-state (atom (camera/make-camera-state)))
 
 
@@ -738,7 +705,7 @@
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
                                (let [controls (-> @state :input :sfsim.input/controls)]
-                                 (stick controls gui)
+                                 (gui/stick controls gui)
                                  (info gui window-height
                                        (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                                (- (mag object-position) ^double earth-radius)
