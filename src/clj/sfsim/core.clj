@@ -332,9 +332,9 @@
   "Space flight simulator main function"
   [& _args]
   (try
-  (let [n (atom 0)]
+  (let [frame-counter (atom 0)]
     (start-clock)
-    (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @n (count @recording))))
+    (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @frame-counter (count @recording))))
       (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @old-state :input :sfsim.input/fullscreen))
         (let [monitor (GLFW/glfwGetPrimaryMonitor)
               mode (GLFW/glfwGetVideoMode monitor)
@@ -357,7 +357,7 @@
           (swap! state update-in [:gui :sfsim.gui/menu] #(or % gui/main-dialog))
           (swap! state assoc-in [:gui :sfsim.gui/menu] nil))
         (if playback
-          (let [frame (nth @recording @n)]
+          (let [frame (nth @recording @frame-counter)]
             (swap! state update :physics physics/load-state (:physics frame) wheels)
             (reset! camera-state (:camera frame)))
           (do
@@ -501,7 +501,7 @@
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
         (swap! state update :input process-events @event-buffer (->InputHandler gui))
         (reset! event-buffer (make-event-buffer))
-        (swap! n inc))))
+        (swap! frame-counter inc))))
   (planet/destroy-tile-tree tile-tree)
   (model/destroy-scene scene)
   (model/destroy-scene-shadow-renderer scene-shadow-renderer)
