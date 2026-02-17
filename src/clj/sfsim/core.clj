@@ -209,9 +209,6 @@
 
 
 (def event-buffer (atom (make-event-buffer)))
-(def input-state (-> (make-initial-state)
-                     (assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
-                               (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))))
 
 
 (GLFW/glfwSetCharCallback window (char-callback event-buffer))
@@ -259,22 +256,6 @@
 (jolt/optimize-broad-phase)
 
 
-(def camera-state (camera/make-camera-state))
-
-
-(def gui-state {:sfsim.gui/menu nil
-                :sfsim.gui/window-width window-width
-                :sfsim.gui/window-height window-height})
-
-
-(def state (atom {:gui gui-state
-                  :input input-state
-                  :physics physics-state
-                  :camera camera-state
-                  :surface surface
-                  :window window}))
-
-
 (catch Exception e
        (log/error e "Exception at startup")
        (log/info "aborting sfsim" version)
@@ -287,8 +268,21 @@
   (try
   (let [frame-counter (atom 0)
         local-mesh    (atom {:coords nil :mesh nil})
-        old-state     (atom @state)
-        frametime     (atom 0.25)]
+        frametime     (atom 0.25)
+        input-state   (-> (make-initial-state)
+                          (assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
+                                    (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1})))
+        camera-state  (camera/make-camera-state)
+        gui-state     {:sfsim.gui/menu nil
+                       :sfsim.gui/window-width window-width
+                       :sfsim.gui/window-height window-height}
+        state         (atom {:gui gui-state
+                          :input input-state
+                          :physics physics-state
+                          :camera camera-state
+                          :surface surface
+                          :window window})
+        old-state     (atom @state)]
     (start-clock)
     (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @frame-counter (count @recording))))
       (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @old-state :input :sfsim.input/fullscreen))
