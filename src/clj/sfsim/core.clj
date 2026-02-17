@@ -259,6 +259,9 @@
 (jolt/optimize-broad-phase)
 
 
+(def camera-state (camera/make-camera-state))
+
+
 (def gui-state {:sfsim.gui/menu nil
                 :sfsim.gui/window-width window-width
                 :sfsim.gui/window-height window-height})
@@ -267,11 +270,9 @@
 (def state (atom {:gui gui-state
                   :input input-state
                   :physics physics-state
+                  :camera camera-state
                   :surface surface
                   :window window}))
-
-
-(def camera-state (atom (camera/make-camera-state)))
 
 
 (catch Exception e
@@ -303,7 +304,7 @@
         (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
         (swap! state assoc-in [:gui :sfsim.gui/window-width] (aget w 0))
         (swap! state assoc-in [:gui :sfsim.gui/window-height] (aget h 0)))
-      (let [dt (if fix-fps (elapsed-time fix-fps fix-fps) (elapsed-time))
+      (let [dt (if fix-fps (elapsed-time (/ 1.0 fix-fps) (/ 1.0 fix-fps)) (elapsed-time))
             window-width (-> @state :gui :sfsim.gui/window-width)
             window-height (-> @state :gui :sfsim.gui/window-height)]
         (planet/update-tile-tree planet-renderer tile-tree window-width
@@ -314,7 +315,7 @@
         (if playback
           (let [frame (nth @recording @frame-counter)]
             (swap! state update :physics physics/load-state (:physics frame) wheels)
-            (reset! camera-state (:camera frame)))
+            (swap! state assoc :camera (:camera frame)))
           (do
             (when (not (-> @state :input :sfsim.input/pause))
               (swap! state update :physics physics/update-domain config/planet-config)
@@ -329,10 +330,10 @@
                      (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass))))
             (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface (:physics @state)))
                   mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
-              (swap! camera-state camera/set-mode mode (:physics @state))
-              (swap! camera-state camera/update-camera-pose dt (:input @state)))
+              (swap! state update :camera camera/set-mode mode (:physics @state))
+              (swap! state update :camera camera/update-camera-pose dt (:input @state)))
             (when (and @recording (not (-> @state :input :sfsim.input/pause)))
-              (let [frame {:physics (physics/save-state (:physics @state)) :camera @camera-state}]
+              (let [frame {:physics (physics/save-state (:physics @state)) :camera (:camera @state)}]
                 (swap! recording conj frame)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface (:physics @state))
               height             (- (mag object-position) ^double earth-radius)
@@ -340,7 +341,7 @@
               object-orientation (physics/get-orientation :sfsim.physics/surface (:physics @state))
               object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
               [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
-                                           (camera/get-camera-pose @camera-state (:physics @state)))
+                                           (camera/get-camera-pose (:camera @state) (:physics @state)))
               jd-ut              (physics/get-julian-date-ut (:physics @state))
               icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
               sun-pos            (earth-sun jd-ut)
