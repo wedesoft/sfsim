@@ -70,11 +70,6 @@
 
 (def opacity-base 100.0)
 
-(def spk (astro/make-spk-document "data/astro/de430_1850-2150.bsp"))
-(def barycenter-sun (astro/make-spk-segment-interpolator spk 0 10))
-(def barycenter-earth (astro/make-spk-segment-interpolator spk 0 3))
-(defn earth-sun [jd-ut] (sub (barycenter-sun jd-ut) (barycenter-earth jd-ut)))
-
 (GLFW/glfwInit)
 
 (jolt/jolt-init)
@@ -251,6 +246,10 @@
   (let [frame-counter     (atom 0)
         local-mesh        (atom {:coords nil :mesh nil})
         frametime         (atom 0.25)
+        spk               (astro/make-spk-document "data/astro/de430_1850-2150.bsp")  ; Spacecraft and Planet Kernel (SPK)
+        barycenter-sun    (astro/make-spk-segment-interpolator spk 0 10)
+        barycenter-earth  (astro/make-spk-segment-interpolator spk 0 3)
+        earth-sun         (fn [jd-ut] (sub (barycenter-sun jd-ut) (barycenter-earth jd-ut)))
         jd-ut             {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
         longitude         (to-radians -1.3747)
         latitude          (to-radians 50.9672)
