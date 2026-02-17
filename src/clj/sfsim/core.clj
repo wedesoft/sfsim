@@ -74,10 +74,6 @@
 (jolt/jolt-init)
 (jolt/set-gravity (vec3 0 0 0))
 
-(def recording
-  ; initialize recording using "echo [] > recording.edn"
-  (atom (and (.exists (java.io.File. "recording.edn")) (clojure.edn/read-string (slurp "recording.edn")))))
-
 (def playback false)
 ; (def playback true)
 (def fix-fps false)
@@ -267,6 +263,8 @@
                                 :camera camera-state
                                 :surface surface
                                 :window window})
+        recording           (atom (and (.exists (java.io.File. "recording.edn"))  ; Initialize recording using "echo [] > recording.edn"
+                                       (clojure.edn/read-string (slurp "recording.edn"))))
         old-state           (atom @state)]
     (start-clock)
     (jolt/set-friction body 0.8)
@@ -446,12 +444,12 @@
     (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
     (opacity/destroy-opacity-renderer opacity-renderer)
     (gui/destroy-nuklear-gui gui)
-    (gui/destroy-font-texture bitmap-font))
-  (destroy-window window)
-  (jolt/jolt-destroy)
-  (GLFW/glfwTerminate)
-  (when (and (not playback) @recording)
-    (spit "recording.edn" (with-out-str (pprint @recording))))
+    (gui/destroy-font-texture bitmap-font)
+    (destroy-window window)
+    (jolt/jolt-destroy)
+    (GLFW/glfwTerminate)
+    (when (and (not playback) @recording)
+      (spit "recording.edn" (with-out-str (pprint @recording)))))
   (catch Exception e
          (log/error e "Exception in main function")
          (log/info "aborting sfsim" version)
