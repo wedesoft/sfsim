@@ -245,10 +245,6 @@
 
 ; Start with fixed summer date for better illumination.
 
-(def longitude (to-radians -1.3747))
-(def latitude (to-radians 50.9672))
-(def height 25.0)
-
 (catch Exception e
        (log/error e "Exception at startup")
        (log/info "aborting sfsim" version)
@@ -262,13 +258,15 @@
   (let [frame-counter (atom 0)
         local-mesh    (atom {:coords nil :mesh nil})
         frametime     (atom 0.25)
-        initial-jd-ut {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
+        jd-ut         {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
+        longitude     (to-radians -1.3747)
+        latitude      (to-radians 50.9672)
         input-state   (-> (make-initial-state)
                           (assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
                                     (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1})))
         physics-state (-> (physics/make-physics-state body)
                           (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
-                          (physics/set-julian-date-ut (astro/julian-date initial-jd-ut)))
+                          (physics/set-julian-date-ut (astro/julian-date jd-ut)))
         camera-state  (camera/make-camera-state)
         gui-state     {:sfsim.gui/menu nil
                        :sfsim.gui/window-width window-width
