@@ -705,7 +705,7 @@
                              (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                              (when (not playback)
                                (let [controls (-> @state :input :sfsim.input/controls)]
-                                 (gui/stick controls gui)
+                                 (gui/flight-controls-display controls gui)
                                  (info gui window-height
                                        (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
                                                (- (mag object-position) ^double earth-radius)

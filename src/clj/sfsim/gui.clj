@@ -540,7 +540,7 @@
   (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) frac))
 
 
-(defn stick
+(defn flight-controls-display
   [input-controls gui]
   (let [stack    (MemoryStack/stackPush)
         rect     (NkRect/malloc stack)
