@@ -50,7 +50,7 @@
     - [ ] put rendering code into methods
     - [ ] create high level rendering methods to simplify main program and integration tests
   - [ ] add some sound effects
-  - [ ] does update-camera-pose need the whole input state structure?
+  - [X] does update-camera-pose need the whole input state structure?
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
   - [ ] schemas for model, planet, and atmosphere geometry renderer

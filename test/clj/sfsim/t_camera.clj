@@ -104,17 +104,17 @@
        (swap! state assoc :sfsim.camera/roll (to-radians 0.0)))
 
 
-(def neutral-input #:sfsim.input{:camera #:sfsim.input{:rotate-x 0.0 :rotate-y 0.0 :rotate-z 0.0 :distance-change 0.0}})
+(def camera-input #:sfsim.input{:rotate-x 0.0 :rotate-y 0.0 :rotate-z 0.0 :distance-change 0.0})
 
 
 (facts "Control camera pose"
-       (-> (update-camera-pose @state 0.25 (assoc-in neutral-input [:sfsim.input/camera :sfsim.input/rotate-y] 8.0))
+       (-> (update-camera-pose @state 0.25 (assoc camera-input :sfsim.input/rotate-y 8.0))
            :sfsim.camera/target-yaw) => 2.0
-       (-> (update-camera-pose @state 0.25 (assoc-in neutral-input [:sfsim.input/camera :sfsim.input/rotate-x] 8.0))
+       (-> (update-camera-pose @state 0.25 (assoc camera-input :sfsim.input/rotate-x 8.0))
            :sfsim.camera/target-pitch) => 2.0
-       (-> (update-camera-pose @state 0.25 (assoc-in neutral-input [:sfsim.input/camera :sfsim.input/rotate-z] 8.0))
+       (-> (update-camera-pose @state 0.25 (assoc camera-input :sfsim.input/rotate-z 8.0))
            :sfsim.camera/target-roll) => 2.0
-       (-> (update-camera-pose @state 0.25 (assoc-in neutral-input [:sfsim.input/camera :sfsim.input/distance-change] 8.0))
+       (-> (update-camera-pose @state 0.25 (assoc camera-input :sfsim.input/distance-change 8.0))
            :sfsim.camera/target-distance) => (roughly (* 60.0 (exp 2.0)) 1e-6)
        (swap! state assoc :sfsim.camera/yaw 0.0)
        (swap! state assoc :sfsim.camera/pitch 0.0)
@@ -124,7 +124,7 @@
        (swap! state assoc :sfsim.camera/target-pitch 2.0)
        (swap! state assoc :sfsim.camera/target-roll 4.0)
        (swap! state assoc :sfsim.camera/target-distance 8.0)
-       (swap! state update-camera-pose 1.0 neutral-input)
+       (swap! state update-camera-pose 1.0 camera-input)
        (:sfsim.camera/yaw @state) => (roughly 0.75 1e-3)
        (:sfsim.camera/pitch @state) => (roughly 1.5 1e-3)
        (:sfsim.camera/roll @state) => (roughly 3.0 1e-3)

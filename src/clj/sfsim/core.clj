@@ -291,7 +291,7 @@
             (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface (:physics @state)))
                   mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
               (swap! state update :camera camera/set-mode mode (:physics @state))
-              (swap! state update :camera camera/update-camera-pose dt (:input @state)))
+              (swap! state update :camera camera/update-camera-pose dt (-> @state :input :sfsim.input/camera)))
             (when (and @recording (not (-> @state :input :sfsim.input/pause)))
               (let [frame {:physics (physics/save-state (:physics @state)) :camera (:camera @state)}]
                 (swap! recording conj frame)))))
