@@ -271,8 +271,7 @@
                   :window window}))
 
 
-(def coords (atom nil))
-(def mesh (atom nil))
+(def local-mesh (atom {:coords nil :mesh nil}))
 
 
 (defn update-mesh!
@@ -285,7 +284,7 @@
                                                   (:sfsim.planet/level config/planet-config)
                                                   (:sfsim.planet/tilesize config/planet-config))
                        :sfsim.quadtree/dy :sfsim.quadtree/dx)]
-    (when (not= c @coords)
+    (when (not= c (:coords @local-mesh))
       (let [b      (:sfsim.quadtree/row c)
             a      (:sfsim.quadtree/column c)
             tile-y (:sfsim.quadtree/tile-y c)
@@ -297,11 +296,12 @@
                                                (:sfsim.planet/level config/planet-config)
                                                (:sfsim.planet/tilesize config/planet-config) b a tile-y tile-x
                                                earth-radius center)]
-        (when @mesh (jolt/remove-and-destroy-body @mesh))
-        (reset! coords c)
-        (reset! mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0)))
-        (jolt/set-friction @mesh 0.8)
-        (jolt/set-restitution @mesh 0.25)
+        (when (:mesh @local-mesh) (jolt/remove-and-destroy-body (:mesh @local-mesh)))
+        (reset! local-mesh
+                {:coords c
+                 :mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (q/->Quaternion 1 0 0 0))})
+        (jolt/set-friction (:mesh @local-mesh) 0.8)
+        (jolt/set-restitution (:mesh @local-mesh) 0.25)
         (jolt/optimize-broad-phase)))))
 
 
