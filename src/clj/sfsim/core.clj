@@ -236,13 +236,6 @@
           (swap! event-buffer add-mouse-button-event button x y action mods))))))
 
 
-(def convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25)))
-(def body (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0)))
-(jolt/set-friction body 0.8)
-(jolt/set-restitution body 0.25)
-(def mass (jolt/get-mass body))
-(def thrust (* ^double mass 25.0))
-
 ; Start with fixed summer date for better illumination.
 
 (catch Exception e
@@ -255,30 +248,36 @@
   "Space flight simulator main function"
   [& _args]
   (try
-  (let [frame-counter (atom 0)
-        local-mesh    (atom {:coords nil :mesh nil})
-        frametime     (atom 0.25)
-        jd-ut         {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
-        longitude     (to-radians -1.3747)
-        latitude      (to-radians 50.9672)
-        input-state   (-> (make-initial-state)
-                          (assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
-                                    (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1})))
-        physics-state (-> (physics/make-physics-state body)
-                          (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
-                          (physics/set-julian-date-ut (astro/julian-date jd-ut)))
-        camera-state  (camera/make-camera-state)
-        gui-state     {:sfsim.gui/menu nil
-                       :sfsim.gui/window-width window-width
-                       :sfsim.gui/window-height window-height}
-        state         (atom {:gui gui-state
-                          :input input-state
-                          :physics physics-state
-                          :camera camera-state
-                          :surface surface
-                          :window window})
-        old-state     (atom @state)]
+  (let [frame-counter     (atom 0)
+        local-mesh        (atom {:coords nil :mesh nil})
+        frametime         (atom 0.25)
+        jd-ut             {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
+        longitude         (to-radians -1.3747)
+        latitude          (to-radians 50.9672)
+        input-state       (-> (make-initial-state)
+                              (assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
+                                        (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1})))
+        convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25))
+        body              (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
+        mass              (jolt/get-mass body)
+        thrust            (* ^double mass 25.0)
+        physics-state     (-> (physics/make-physics-state body)
+                              (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
+                              (physics/set-julian-date-ut (astro/julian-date jd-ut)))
+        camera-state      (camera/make-camera-state)
+        gui-state         {:sfsim.gui/menu nil
+                           :sfsim.gui/window-width window-width
+                           :sfsim.gui/window-height window-height}
+        state             (atom {:gui gui-state
+                              :input input-state
+                              :physics physics-state
+                              :camera camera-state
+                              :surface surface
+                              :window window})
+        old-state         (atom @state)]
     (start-clock)
+    (jolt/set-friction body 0.8)
+    (jolt/set-restitution body 0.25)
     (jolt/optimize-broad-phase)
     (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @frame-counter (count @recording))))
       (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @old-state :input :sfsim.input/fullscreen))
