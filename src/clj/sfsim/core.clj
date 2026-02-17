@@ -281,8 +281,6 @@
                       (gui/text-label gui text)))
 
 
-(def frametime (atom 0.25))
-
 (catch Exception e
        (log/error e "Exception at startup")
        (log/info "aborting sfsim" version)
@@ -294,8 +292,9 @@
   [& _args]
   (try
   (let [frame-counter (atom 0)
-        local-mesh (atom {:coords nil :mesh nil})
-        old-state (atom @state)]
+        local-mesh    (atom {:coords nil :mesh nil})
+        old-state     (atom @state)
+        frametime     (atom 0.25)]
     (start-clock)
     (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @frame-counter (count @recording))))
       (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @old-state :input :sfsim.input/fullscreen))
