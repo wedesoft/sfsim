@@ -38,13 +38,12 @@
                           joined-render-vars quad-splits-orientations with-depth-test with-culling)]
     [sfsim.image :refer (spit-png)]
     [sfsim.texture :refer (destroy-texture)]
-    [sfsim.input :refer (make-event-buffer make-initial-state process-events add-mouse-button-event
-                         joysticks-poll ->InputHandler char-callback key-callback cursor-pos-callback)])
+    [sfsim.input :refer (make-event-buffer make-initial-state process-events joysticks-poll ->InputHandler
+                                           char-callback key-callback cursor-pos-callback mouse-button-callback)])
   (:import
     (org.lwjgl.glfw
       GLFW
-      GLFWVidMode
-      GLFWMouseButtonCallbackI)
+      GLFWVidMode)
     (org.lwjgl.opengl
       GL11)
     (org.lwjgl.nuklear
@@ -194,19 +193,7 @@
 (GLFW/glfwSetCharCallback window (char-callback event-buffer))
 (GLFW/glfwSetKeyCallback window (key-callback event-buffer))
 (GLFW/glfwSetCursorPosCallback window (cursor-pos-callback event-buffer))
-
-
-(GLFW/glfwSetMouseButtonCallback
-  window
-  (reify GLFWMouseButtonCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
-    (invoke
-      [_this _window button action mods]
-      (let [cx    (double-array 1)
-            cy    (double-array 1)]
-        (GLFW/glfwGetCursorPos ^long _window cx cy)
-        (let [x        (long (aget cx 0))
-              y        (long (aget cy 0))]
-          (swap! event-buffer add-mouse-button-event button x y action mods))))))
+(GLFW/glfwSetMouseButtonCallback window (mouse-button-callback event-buffer))
 
 
 ; Start with fixed summer date for better illumination.
