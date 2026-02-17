@@ -24,7 +24,6 @@
     [sfsim.camera :as camera]
     [sfsim.clouds :as clouds]
     [sfsim.config :as config]
-    [sfsim.cubemap :as cubemap]
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation)]
@@ -92,10 +91,6 @@
 (def cloud-data (clouds/make-cloud-data config/cloud-config))
 (def atmosphere-luts (atmosphere/make-atmosphere-luts config/max-height))
 (def shadow-data (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data))
-
-
-(def earth-radius (:sfsim.planet/radius config/planet-config))
-(def elevation (:sfsim.model/elevation config/model-config))
 
 
 (def data
@@ -260,6 +255,7 @@
         body              (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
         mass              (jolt/get-mass body)
         thrust            (* ^double mass 25.0)
+        elevation         (:sfsim.model/elevation config/model-config)
         physics-state     (-> (physics/make-physics-state body)
                               (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
                               (physics/set-julian-date-ut (astro/julian-date jd-ut)))
@@ -324,6 +320,7 @@
               (let [frame {:physics (physics/save-state (:physics @state)) :camera (:camera @state)}]
                 (swap! recording conj frame)))))
         (let [object-position    (physics/get-position :sfsim.physics/surface (:physics @state))
+              earth-radius       (:sfsim.planet/radius config/planet-config)
               height             (- (mag object-position) ^double earth-radius)
               pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
               object-orientation (physics/get-orientation :sfsim.physics/surface (:physics @state))
