@@ -274,13 +274,6 @@
 (def camera-state (atom (camera/make-camera-state)))
 
 
-(defn info
-  [gui ^long h ^String text]
-  (gui/nuklear-window gui "Information" 10 (- h 42) 640 32 false
-                      (gui/layout-row-dynamic gui 32 1)
-                      (gui/text-label gui text)))
-
-
 (catch Exception e
        (log/error e "Exception at startup")
        (log/info "aborting sfsim" version)
@@ -430,16 +423,7 @@
                              (when (not playback)
                                (let [controls (-> @state :input :sfsim.input/controls)]
                                  (gui/flight-controls-display controls gui)
-                                 (info gui window-height
-                                       (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
-                                               (- (mag object-position) ^double earth-radius)
-                                               (:sfsim.physics/display-speed (:physics @state))
-                                               (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
-                                               (/ 1.0 ^double @frametime)
-                                               (if (:sfsim.input/brake controls) ", brake"
-                                                 (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
-                                               (if (:sfsim.input/air-brake controls) ", air brake" "")
-                                               (if (-> @state :input :sfsim.input/pause) ", pause" "")))))
+                                 (gui/information-display gui window-height @state @frametime)))
                              (gui/render-nuklear-gui gui window-width window-height)))
           (destroy-texture clouds)
           (clouds/destroy-cloud-geometry geometry)

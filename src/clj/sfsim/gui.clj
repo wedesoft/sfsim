@@ -9,6 +9,7 @@
     [clojure.math :refer (to-radians to-degrees)]
     [clojure.string :refer (trim)]
     [fastmath.matrix :as fm]
+    [fastmath.vector :as fv]
     [sfsim.image :refer (white-image-with-alpha)]
     [sfsim.config :as config]
     [sfsim.version :refer (version)]
@@ -820,6 +821,25 @@
                                               (Nuklear/nk_rect 100 (- 75 (* 60 ^double throttle)) 10 10 rect)
                                               (Nuklear/nk_rgb 255 255 255 rgb)))))
   (MemoryStack/stackPop))
+
+
+(defn information-display
+  [gui ^long h state frametime]
+  (let [earth-radius    (:sfsim.planet/radius config/planet-config)
+        object-position (physics/get-position :sfsim.physics/surface (:physics state))
+        controls        (-> state :input :sfsim.input/controls)
+        text            (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
+                                (- (fv/mag object-position) ^double earth-radius)
+                                (:sfsim.physics/display-speed (:physics state))
+                                (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
+                                (/ 1.0 ^double frametime)
+                                (if (:sfsim.input/brake controls) ", brake"
+                                  (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
+                                (if (:sfsim.input/air-brake controls) ", air brake" "")
+                                (if (-> state :input :sfsim.input/pause) ", pause" ""))]
+    (nuklear-window gui "Information" 10 (- h 42) 640 32 false
+                    (layout-row-dynamic gui 32 1)
+                    (text-label gui text))))
 
 
 (set! *warn-on-reflection* false)
