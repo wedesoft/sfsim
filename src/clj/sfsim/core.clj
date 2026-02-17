@@ -192,11 +192,6 @@
 (def split-orientations (quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8))
 (def surface (quadtree/distance-to-surface config/planet-config split-orientations))
 
-(def buffer-initial-size (* 4 1024))
-(def bitmap-font (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)))
-(def gui (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size))
-(gui/nuklear-dark-style gui)
-
 
 (def event-buffer (atom (make-event-buffer)))
 
@@ -238,42 +233,46 @@
   "Space flight simulator main function"
   [& _args]
   (try
-  (let [frame-counter     (atom 0)
-        local-mesh        (atom {:coords nil :mesh nil})
-        frametime         (atom 0.25)
-        spk               (astro/make-spk-document "data/astro/de430_1850-2150.bsp")  ; Spacecraft and Planet Kernel (SPK)
-        barycenter-sun    (astro/make-spk-segment-interpolator spk 0 10)
-        barycenter-earth  (astro/make-spk-segment-interpolator spk 0 3)
-        earth-sun         (fn [jd-ut] (sub (barycenter-sun jd-ut) (barycenter-earth jd-ut)))
-        jd-ut             {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
-        longitude         (to-radians -1.3747)
-        latitude          (to-radians 50.9672)
-        input-state       (-> (make-initial-state)
-                              (assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
-                                        (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1})))
-        convex-hulls-join (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25))
-        body              (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
-        mass              (jolt/get-mass body)
-        thrust            (* ^double mass 25.0)
-        elevation         (:sfsim.model/elevation config/model-config)
-        physics-state     (-> (physics/make-physics-state body)
-                              (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
-                              (physics/set-julian-date-ut (astro/julian-date jd-ut)))
-        camera-state      (camera/make-camera-state)
-        gui-state         {:sfsim.gui/menu nil
-                           :sfsim.gui/window-width window-width
-                           :sfsim.gui/window-height window-height}
-        state             (atom {:gui gui-state
-                              :input input-state
-                              :physics physics-state
-                              :camera camera-state
-                              :surface surface
-                              :window window})
-        old-state         (atom @state)]
+  (let [frame-counter       (atom 0)
+        local-mesh          (atom {:coords nil :mesh nil})
+        frametime           (atom 0.25)
+        spk                 (astro/make-spk-document "data/astro/de430_1850-2150.bsp")  ; Spacecraft and Planet Kernel (SPK)
+        barycenter-sun      (astro/make-spk-segment-interpolator spk 0 10)
+        barycenter-earth    (astro/make-spk-segment-interpolator spk 0 3)
+        earth-sun           (fn [jd-ut] (sub (barycenter-sun jd-ut) (barycenter-earth jd-ut)))
+        jd-ut               {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
+        longitude           (to-radians -1.3747)
+        latitude            (to-radians 50.9672)
+        input-state         (-> (make-initial-state)
+                                (assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
+                                          (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1})))
+        convex-hulls-join   (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25))
+        body                (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
+        mass                (jolt/get-mass body)
+        thrust              (* ^double mass 25.0)
+        elevation           (:sfsim.model/elevation config/model-config)
+        physics-state       (-> (physics/make-physics-state body)
+                                (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
+                                (physics/set-julian-date-ut (astro/julian-date jd-ut)))
+        camera-state        (camera/make-camera-state)
+        gui-state           {:sfsim.gui/menu nil
+                             :sfsim.gui/window-width window-width
+                             :sfsim.gui/window-height window-height}
+        buffer-initial-size (* 4 1024)
+        bitmap-font         (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
+        gui                 (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)
+        state               (atom {:gui gui-state
+                                :input input-state
+                                :physics physics-state
+                                :camera camera-state
+                                :surface surface
+                                :window window})
+        old-state           (atom @state)]
     (start-clock)
     (jolt/set-friction body 0.8)
     (jolt/set-restitution body 0.25)
     (jolt/optimize-broad-phase)
+    (gui/nuklear-dark-style gui)
     (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @frame-counter (count @recording))))
       (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @old-state :input :sfsim.input/fullscreen))
         (let [monitor (GLFW/glfwGetPrimaryMonitor)
@@ -433,21 +432,21 @@
         (Nuklear/nk_input_end (:sfsim.gui/context gui))
         (swap! state update :input process-events @event-buffer (->InputHandler gui))
         (reset! event-buffer (make-event-buffer))
-        (swap! frame-counter inc))))
-  (planet/destroy-tile-tree tile-tree)
-  (model/destroy-scene scene)
-  (model/destroy-scene-shadow-renderer scene-shadow-renderer)
-  (model/destroy-scene-renderer scene-renderer)
-  (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
-  (planet/destroy-planet-renderer planet-renderer)
-  (clouds/destroy-cloud-renderer cloud-renderer)
-  (model/destroy-joined-geometry-renderer joined-geometry-renderer)
-  (atmosphere/destroy-atmosphere-luts atmosphere-luts)
-  (clouds/destroy-cloud-data cloud-data)
-  (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
-  (opacity/destroy-opacity-renderer opacity-renderer)
-  (gui/destroy-nuklear-gui gui)
-  (gui/destroy-font-texture bitmap-font)
+        (swap! frame-counter inc)))
+    (planet/destroy-tile-tree tile-tree)
+    (model/destroy-scene scene)
+    (model/destroy-scene-shadow-renderer scene-shadow-renderer)
+    (model/destroy-scene-renderer scene-renderer)
+    (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
+    (planet/destroy-planet-renderer planet-renderer)
+    (clouds/destroy-cloud-renderer cloud-renderer)
+    (model/destroy-joined-geometry-renderer joined-geometry-renderer)
+    (atmosphere/destroy-atmosphere-luts atmosphere-luts)
+    (clouds/destroy-cloud-data cloud-data)
+    (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
+    (opacity/destroy-opacity-renderer opacity-renderer)
+    (gui/destroy-nuklear-gui gui)
+    (gui/destroy-font-texture bitmap-font))
   (destroy-window window)
   (jolt/jolt-destroy)
   (GLFW/glfwTerminate)
