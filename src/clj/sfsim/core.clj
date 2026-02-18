@@ -231,33 +231,36 @@
         camera-state        (camera/make-camera-state)
         gui-state           {:sfsim.gui/menu nil
                              :sfsim.gui/window-width window-width
-                             :sfsim.gui/window-height window-height}
+                             :sfsim.gui/window-height window-height
+                             :sfsim.gui/fullscreen false}
         buffer-initial-size (* 4 1024)
         bitmap-font         (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
         gui                 (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)
         state               (atom {:gui gui-state
-                                :input input-state
-                                :physics physics-state
-                                :camera camera-state
-                                :surface surface
-                                :window window})
+                                   :input input-state
+                                   :physics physics-state
+                                   :camera camera-state
+                                   :surface surface
+                                   :window window})
         recording           (atom (and (.exists (java.io.File. "recording.edn"))  ; Initialize recording using "echo [] > recording.edn"
-                                       (clojure.edn/read-string (slurp "recording.edn"))))
-        old-state           (atom @state)]
+                                       (clojure.edn/read-string (slurp "recording.edn"))))]
     (start-clock)
     (jolt/set-friction body 0.8)
     (jolt/set-restitution body 0.25)
     (jolt/optimize-broad-phase)
     (gui/nuklear-dark-style gui)
     (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @frame-counter (count @recording))))
-      (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @old-state :input :sfsim.input/fullscreen))
-        (let [monitor (GLFW/glfwGetPrimaryMonitor)
-              mode (GLFW/glfwGetVideoMode monitor)
-              desktop-width (.width ^GLFWVidMode mode)
+      (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @state :gui :sfsim.gui/fullscreen))
+        (let [fullscreen     (-> @state :input :sfsim.input/fullscreen)
+              monitor        (GLFW/glfwGetPrimaryMonitor)
+              mode           (GLFW/glfwGetVideoMode monitor)
+              desktop-width  (.width ^GLFWVidMode mode)
               desktop-height (.height ^GLFWVidMode mode)]
-          (if (-> @state :input :sfsim.input/fullscreen)
+          (if fullscreen
             (GLFW/glfwSetWindowMonitor window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
-            (GLFW/glfwSetWindowMonitor window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2) 854 480 GLFW/GLFW_DONT_CARE))))
+            (GLFW/glfwSetWindowMonitor window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2)
+                                       window-width window-height GLFW/GLFW_DONT_CARE))
+          (swap! state assoc-in [:gui :sfsim.gui/fullscreen] fullscreen)))
       (let [w (int-array 1)
             h (int-array 1)]
         (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
@@ -390,7 +393,6 @@
                                                                  :sfsim.image/width window-width
                                                                  :sfsim.image/height window-height
                                                                  :sfsim.image/channels 4} true))))
-        (reset! old-state @state)
         (Nuklear/nk_input_begin (:sfsim.gui/context gui))
         (GLFW/glfwPollEvents)
         (swap! event-buffer joysticks-poll)
