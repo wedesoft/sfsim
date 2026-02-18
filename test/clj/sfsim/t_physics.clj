@@ -144,7 +144,8 @@
        (:sfsim.physics/control-surfaces @state) => (vec3 0 0 0)
        (:sfsim.physics/brake @state) => 0.0
        (:sfsim.physics/display-speed @state) => 0.0
-       (:sfsim.physics/vehicle @state) => nil)
+       (:sfsim.physics/vehicle @state) => nil
+       (:sfsim.physics/local-mesh @state) => {:sfsim.physics/coords nil :sfsim.physics/mesh nil})
 
 
 (tabular "Handle control inputs"

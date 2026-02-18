@@ -15,6 +15,7 @@
     [sfsim.quaternion :as q]
     [sfsim.matrix :refer (matrix->quaternion)]
     [sfsim.util :refer (sqr clamp)]
+    [sfsim.planet :as planet]
     [sfsim.jolt :as jolt]
     [sfsim.astro :as astro]
     [sfsim.aerodynamics :as aerodynamics])
@@ -119,7 +120,8 @@
    ::rcs-thrust (vec3 0 0 0)
    ::control-surfaces (vec3 0 0 0)
    ::brake 0.0
-   ::vehicle nil})
+   ::vehicle nil
+   ::local-mesh {::coords nil ::mesh nil}})
 
 
 (defn get-julian-date-ut
@@ -664,12 +666,13 @@
 
 (defn simulation-step
   "Method with all physics updates"
-  [state controls dt wheels planet-config thrust]
+  [state controls dt wheels planet-config split-orientations thrust]
   (-> state
       (update-domain planet-config)
       (set-control-inputs controls dt)
       (update-gear-status wheels)
       (update-brakes)
+      (update ::local-mesh planet/update-local-mesh split-orientations (get-position ::surface state))
       (set-thruster-forces thrust)
       (set-aerodynamic-forces planet-config)
       (update-state dt (gravitation (vec3 0 0 0) (:sfsim.planet/mass planet-config)))))
