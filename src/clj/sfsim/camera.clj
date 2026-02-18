@@ -164,5 +164,15 @@
         (assoc ::domain ::slow))))
 
 
+(defn camera-step
+  "Perform camera updates"
+  [state physics-state camera-input dt]
+  (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface physics-state))
+        mode  (if (>= speed 500.0) ::fast ::slow)]
+    (-> state
+        (set-mode mode physics-state)
+        (update-camera-pose dt camera-input))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

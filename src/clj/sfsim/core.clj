@@ -279,10 +279,7 @@
             (when (not (-> @state :input :sfsim.input/pause))
               (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) dt wheels
                      config/planet-config split-orientations thrust))
-            (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface (:physics @state)))
-                  mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
-              (swap! state update :camera camera/set-mode mode (:physics @state))
-              (swap! state update :camera camera/update-camera-pose dt (-> @state :input :sfsim.input/camera)))
+            (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
             (when (and @recording (not (-> @state :input :sfsim.input/pause)))
               (let [frame {:physics (physics/save-state (:physics @state)) :camera (:camera @state)}]
                 (swap! recording conj frame)))))
