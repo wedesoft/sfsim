@@ -533,7 +533,8 @@
         throttle    (::throttle state)
         rcs-thrust  (::rcs-thrust state)]
     (add-force ::orbit state (q/rotate-vector orientation (vec3 (* ^double throttle ^double thrust) 0 0)))
-    (add-torque ::orbit state (q/rotate-vector orientation rcs-thrust))))
+    (add-torque ::orbit state (q/rotate-vector orientation rcs-thrust))
+    state))
 
 
 (defn set-aerodynamic-forces
@@ -547,7 +548,8 @@
         loads  (aerodynamics/aerodynamic-loads height orientation linear-velocity angular-velocity
                                                (::control-surfaces state) (::gear state) (::air-brake state))]
     (add-force ::surface state (:sfsim.aerodynamics/forces loads))
-    (add-torque ::surface state (:sfsim.aerodynamics/moments loads))))
+    (add-torque ::surface state (:sfsim.aerodynamics/moments loads))
+    state))
 
 
 (defn create-vehicle-constraint
@@ -584,7 +586,8 @@
   "Update vehicle constraint with brake settings"
   [state]
   (when-let [vehicle (::vehicle state)]
-            (jolt/set-brake-input vehicle (::brake state))))
+            (jolt/set-brake-input vehicle (::brake state)))
+  state)
 
 
 (defn set-wheel-angles
@@ -657,6 +660,19 @@
     (set-wheel-angles result (::wheel-angles data))
     (set-suspension result (::suspension data))
     result))
+
+
+(defn simulation-step
+  "Method with all physics updates"
+  [state controls dt wheels planet-config thrust]
+  (-> state
+      (update-domain planet-config)
+      (set-control-inputs controls dt)
+      (update-gear-status wheels)
+      (update-brakes)
+      (set-thruster-forces thrust)
+      (set-aerodynamic-forces planet-config)
+      (update-state dt (gravitation (vec3 0 0 0) (:sfsim.planet/mass planet-config)))))
 
 
 (set! *warn-on-reflection* false)

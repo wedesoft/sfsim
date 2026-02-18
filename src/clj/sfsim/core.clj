@@ -278,16 +278,10 @@
             (swap! state assoc :camera (:camera frame)))
           (do
             (when (not (-> @state :input :sfsim.input/pause))
-              (swap! state update :physics physics/update-domain config/planet-config)
-              (swap! state update :physics physics/set-control-inputs (-> @state :input :sfsim.input/controls) dt)
-              (swap! state update :physics physics/update-gear-status wheels)
-              (physics/update-brakes (:physics @state))
               (swap! local-mesh planet/update-local-mesh split-orientations
                      (physics/get-position :sfsim.physics/surface (:physics @state)))
-              (physics/set-thruster-forces (:physics @state) thrust)
-              (physics/set-aerodynamic-forces (:physics @state) config/planet-config)
-              (swap! state update :physics physics/update-state dt
-                     (physics/gravitation (vec3 0 0 0) (config/planet-config :sfsim.planet/mass))))
+              (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) dt wheels
+                     config/planet-config thrust))
             (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface (:physics @state)))
                   mode  (if (>= speed 500.0) :sfsim.camera/fast :sfsim.camera/slow)]
               (swap! state update :camera camera/set-mode mode (:physics @state))
