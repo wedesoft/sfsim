@@ -63,9 +63,6 @@
                      opacity-renderer          (:sfsim.graphics/opacity-renderer graphics)
                      planet-shadow-renderer    (:sfsim.graphics/planet-shadow-renderer graphics)
                      planet-renderer           (:sfsim.graphics/planet-renderer graphics)
-                     atmosphere-renderer       (:sfsim.graphics/atmosphere-renderer graphics)
-                     geometry-renderer         (:sfsim.graphics/geometry-renderer graphics)
-                     cloud-renderer            (:sfsim.graphics/cloud-renderer graphics)
                      tree                      (load-tile-tree planet-renderer {} width ?position level)
                      light-direction           (vec3 1 0 0)
                      object-position           (add ?position (q/rotate-vector ?orientation (vec3 0 0 -1)))
@@ -75,19 +72,15 @@
                                                                                object-position (q/->Quaternion 1 0 0 0) model-vars)
                      shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                                    cloud-data render-vars tree opacity-base)
-                     cloud-render-vars         (clouds/make-cloud-render-vars config/render-config render-vars width height ?position
-                                                                              ?orientation light-direction object-position
-                                                                              (q/->Quaternion 1 0 0 0))
-                     geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars
-                                                                             (:sfsim.graphics/model graphics) tree)
-                     clouds                    (graphics/prepare-frame graphics cloud-render-vars model-vars shadow-vars geometry)
+                     frame                     (graphics/prepare-frame graphics render-vars model-vars shadow-vars
+                                                                       tree width height ?position ?orientation light-direction
+                                                                       object-position (q/->Quaternion 1 0 0 0))
                      tex                       (texture-render-color-depth width height true
                                                                            (graphics/render-frame graphics render-vars shadow-vars
-                                                                                                  geometry clouds tree))]
+                                                                                                  frame tree))]
                  (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.5)
                  (destroy-texture tex)
-                 (graphics/finalise-frame clouds)
-                 (clouds/destroy-cloud-geometry geometry)
+                 (graphics/finalise-frame frame)
                  (opacity/destroy-opacity-and-shadow shadow-vars)
                  (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
                  (graphics/destroy-graphics graphics))))

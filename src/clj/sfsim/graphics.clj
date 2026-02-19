@@ -43,15 +43,26 @@
 
 
 (defn prepare-frame
-  [graphics cloud-render-vars model-vars shadow-vars geometry]
-  (let [cloud-renderer (::cloud-renderer graphics)]
-    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)))
+  "Render geometry buffer for deferred rendering and cloud overlay"
+  [graphics render-vars model-vars shadow-vars tree width height position orientation light-direction
+   object-position object-orientation]
+  (let [geometry-renderer (::geometry-renderer graphics)
+        cloud-renderer    (::cloud-renderer graphics)
+        model             (::model graphics)
+        cloud-render-vars (clouds/make-cloud-render-vars config/render-config render-vars width height position
+                                                         orientation light-direction object-position object-orientation)
+        geometry          (model/render-joined-geometry geometry-renderer render-vars render-vars model tree)
+        clouds            (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)]
+    {::geometry geometry
+     ::clouds   clouds}))
 
 
 (defn render-frame
-  [graphics render-vars shadow-vars geometry clouds tree]
+  [graphics render-vars shadow-vars frame tree]
   (let [planet-renderer     (::planet-renderer graphics)
-        atmosphere-renderer (::atmosphere-renderer graphics)]
+        atmosphere-renderer (::atmosphere-renderer graphics)
+        geometry            (::geometry frame)
+        clouds              (::clouds frame)]
     (render/with-depth-test true
       (render/clear (vec3 0 1 0) 0.0)
       (planet/render-planet planet-renderer render-vars shadow-vars [] geometry clouds tree)
@@ -59,8 +70,11 @@
 
 
 (defn finalise-frame
-  [clouds]
-  (texture/destroy-texture clouds))
+  [frame]
+  (let [geometry (::geometry frame)
+        clouds   (::clouds frame)]
+    (clouds/destroy-cloud-geometry geometry)
+    (texture/destroy-texture clouds)))
 
 
 (defn destroy-graphics
