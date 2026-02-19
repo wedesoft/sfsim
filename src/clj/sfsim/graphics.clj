@@ -53,21 +53,26 @@
         model                  (::model graphics)
         shadow-data            (-> graphics ::data :sfsim.opacity/data)
         cloud-data             (-> graphics ::data :sfsim.clouds/data)
+        render-vars            (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
+                                                               width height position orientation light-direction
+                                                               object-position object-orientation model-vars)
         shadow-vars            (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                    cloud-data render-vars tree opacity-base)
         cloud-render-vars      (clouds/make-cloud-render-vars config/render-config render-vars width height position
                                                               orientation light-direction object-position object-orientation)
         geometry               (model/render-joined-geometry geometry-renderer render-vars render-vars model tree)
         clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)]
-    {::geometry    geometry
+    {::render-vars render-vars
+     ::geometry    geometry
      ::shadow-vars shadow-vars
      ::clouds      clouds}))
 
 
 (defn render-frame
-  [graphics render-vars frame tree]
+  [graphics frame tree]
   (let [planet-renderer     (::planet-renderer graphics)
         atmosphere-renderer (::atmosphere-renderer graphics)
+        render-vars         (::render-vars frame)
         geometry            (::geometry frame)
         shadow-vars         (::shadow-vars frame)
         clouds              (::clouds frame)]
