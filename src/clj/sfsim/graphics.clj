@@ -44,24 +44,32 @@
 
 (defn prepare-frame
   "Render geometry buffer for deferred rendering and cloud overlay"
-  [graphics render-vars model-vars shadow-vars tree width height position orientation light-direction
-   object-position object-orientation]
-  (let [geometry-renderer (::geometry-renderer graphics)
-        cloud-renderer    (::cloud-renderer graphics)
-        model             (::model graphics)
-        cloud-render-vars (clouds/make-cloud-render-vars config/render-config render-vars width height position
-                                                         orientation light-direction object-position object-orientation)
-        geometry          (model/render-joined-geometry geometry-renderer render-vars render-vars model tree)
-        clouds            (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)]
-    {::geometry geometry
-     ::clouds   clouds}))
+  [graphics render-vars model-vars tree width height position orientation light-direction
+   object-position object-orientation opacity-base]
+  (let [opacity-renderer       (::opacity-renderer graphics)
+        planet-shadow-renderer (::planet-shadow-renderer graphics)
+        geometry-renderer      (::geometry-renderer graphics)
+        cloud-renderer         (::cloud-renderer graphics)
+        model                  (::model graphics)
+        shadow-data            (-> graphics ::data :sfsim.opacity/data)
+        cloud-data             (-> graphics ::data :sfsim.clouds/data)
+        shadow-vars            (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
+                                                                   cloud-data render-vars tree opacity-base)
+        cloud-render-vars      (clouds/make-cloud-render-vars config/render-config render-vars width height position
+                                                              orientation light-direction object-position object-orientation)
+        geometry               (model/render-joined-geometry geometry-renderer render-vars render-vars model tree)
+        clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)]
+    {::geometry    geometry
+     ::shadow-vars shadow-vars
+     ::clouds      clouds}))
 
 
 (defn render-frame
-  [graphics render-vars shadow-vars frame tree]
+  [graphics render-vars frame tree]
   (let [planet-renderer     (::planet-renderer graphics)
         atmosphere-renderer (::atmosphere-renderer graphics)
         geometry            (::geometry frame)
+        shadow-vars         (::shadow-vars frame)
         clouds              (::clouds frame)]
     (render/with-depth-test true
       (render/clear (vec3 0 1 0) 0.0)
@@ -71,10 +79,12 @@
 
 (defn finalise-frame
   [frame]
-  (let [geometry (::geometry frame)
-        clouds   (::clouds frame)]
+  (let [geometry    (::geometry frame)
+        clouds      (::clouds frame)
+        shadow-vars (::shadow-vars frame)]
     (clouds/destroy-cloud-geometry geometry)
-    (texture/destroy-texture clouds)))
+    (texture/destroy-texture clouds)
+    (opacity/destroy-opacity-and-shadow shadow-vars)))
 
 
 (defn destroy-graphics

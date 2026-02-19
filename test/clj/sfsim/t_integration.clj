@@ -59,9 +59,6 @@
                      opacity-base              250.0
                      graphics                  (graphics/make-graphics "test/clj/sfsim/fixtures/model/empty.glb")
                      cloud-data                (-> graphics :sfsim.graphics/data :sfsim.clouds/data)
-                     shadow-data               (-> graphics :sfsim.graphics/data :sfsim.opacity/data)
-                     opacity-renderer          (:sfsim.graphics/opacity-renderer graphics)
-                     planet-shadow-renderer    (:sfsim.graphics/planet-shadow-renderer graphics)
                      planet-renderer           (:sfsim.graphics/planet-renderer graphics)
                      tree                      (load-tile-tree planet-renderer {} width ?position level)
                      light-direction           (vec3 1 0 0)
@@ -70,18 +67,14 @@
                      render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                                width height ?position ?orientation light-direction
                                                                                object-position (q/->Quaternion 1 0 0 0) model-vars)
-                     shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
-                                                                                   cloud-data render-vars tree opacity-base)
-                     frame                     (graphics/prepare-frame graphics render-vars model-vars shadow-vars
+                     frame                     (graphics/prepare-frame graphics render-vars model-vars
                                                                        tree width height ?position ?orientation light-direction
-                                                                       object-position (q/->Quaternion 1 0 0 0))
+                                                                       object-position (q/->Quaternion 1 0 0 0) opacity-base)
                      tex                       (texture-render-color-depth width height true
-                                                                           (graphics/render-frame graphics render-vars shadow-vars
-                                                                                                  frame tree))]
+                                                                           (graphics/render-frame graphics render-vars frame tree))]
                  (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.5)
                  (destroy-texture tex)
                  (graphics/finalise-frame frame)
-                 (opacity/destroy-opacity-and-shadow shadow-vars)
                  (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
                  (graphics/destroy-graphics graphics))))
            ?position                      ?orientation                               ?result
