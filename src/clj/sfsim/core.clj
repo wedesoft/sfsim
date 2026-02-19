@@ -242,7 +242,7 @@
                                    :camera camera-state
                                    :surface surface
                                    :window window})
-        recording           (atom (and (.exists (java.io.File. "recording.edn"))  ; Initialize recording using "echo [] > recording.edn"
+        recording           (atom (and (.exists (java.io.File. "recording.edn"))  ; Initialize recording with "echo [] > recording.edn"
                                        (clojure.edn/read-string (slurp "recording.edn"))))]
     (start-clock)
     (jolt/set-friction body 0.8)

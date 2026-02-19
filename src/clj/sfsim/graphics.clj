@@ -7,11 +7,14 @@
 (ns sfsim.graphics
     "High-level graphics code"
     (:require
+      [fastmath.vector :refer (vec3)]
       [sfsim.config :as config]
       [sfsim.clouds :as clouds]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.planet :as planet]
       [sfsim.model :as model]
+      [sfsim.render :as render]
+      [sfsim.texture :as texture]
       [sfsim.opacity :as opacity]))
 
 
@@ -27,7 +30,7 @@
 
 
 (defn make-graphics
-  []
+  [model-file]
   (let [data (make-graphics-data)]
     {::data data
      ::opacity-renderer       (opacity/make-opacity-renderer data)
@@ -35,7 +38,29 @@
      ::planet-renderer        (planet/make-planet-renderer data)
      ::atmosphere-renderer    (atmosphere/make-atmosphere-renderer data)
      ::geometry-renderer      (model/make-joined-geometry-renderer data)
-     ::cloud-renderer         (clouds/make-cloud-renderer data)}))
+     ::cloud-renderer         (clouds/make-cloud-renderer data)
+     ::model                  (model/read-gltf model-file)}))
+
+
+(defn prepare-frame
+  [graphics cloud-render-vars model-vars shadow-vars geometry]
+  (let [cloud-renderer (::cloud-renderer graphics)]
+    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)))
+
+
+(defn render-frame
+  [graphics render-vars shadow-vars geometry clouds tree]
+  (let [planet-renderer     (::planet-renderer graphics)
+        atmosphere-renderer (::atmosphere-renderer graphics)]
+    (render/with-depth-test true
+      (render/clear (vec3 0 1 0) 0.0)
+      (planet/render-planet planet-renderer render-vars shadow-vars [] geometry clouds tree)
+      (atmosphere/render-atmosphere atmosphere-renderer render-vars geometry clouds))))
+
+
+(defn finalise-frame
+  [clouds]
+  (texture/destroy-texture clouds))
 
 
 (defn destroy-graphics

@@ -45,7 +45,7 @@
   - [X] tabbing is broken
   - [X] convert gui function to state changing one
   - [X] move gui code into gui module
-  - [ ] aggregate physics code in main module and move
+  - [X] aggregate physics code in main module and move
   - [ ] refactor rendering code
     - [ ] put rendering code into methods
     - [ ] create high level rendering methods to simplify main program and integration tests
