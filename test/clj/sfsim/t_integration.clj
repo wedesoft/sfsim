@@ -22,6 +22,7 @@
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix
                           matrix->quaternion)]
     [sfsim.model :as model]
+    [sfsim.graphics :as graphics]
     [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
     [sfsim.plume :as plume]
@@ -57,21 +58,15 @@
                      height                    240
                      level                     5
                      opacity-base              250.0
-                     cloud-data                (clouds/make-cloud-data config/cloud-config)
-                     atmosphere-luts           (atmosphere/make-atmosphere-luts config/max-height)
-                     shadow-data               (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
-                     data                      {:sfsim.render/config config/render-config
-                                                :sfsim.planet/config config/planet-config
-                                                :sfsim.opacity/data shadow-data
-                                                :sfsim.clouds/data cloud-data
-                                                :sfsim.model/data config/model-config
-                                                :sfsim.atmosphere/luts atmosphere-luts}
-                     opacity-renderer          (opacity/make-opacity-renderer data)
-                     planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
-                     planet-renderer           (planet/make-planet-renderer data)
-                     atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
-                     geometry-renderer         (model/make-joined-geometry-renderer data)
-                     cloud-renderer            (clouds/make-cloud-renderer data)
+                     graphics                  (graphics/make-graphics)
+                     cloud-data                (-> graphics :sfsim.graphics/data :sfsim.clouds/data)
+                     shadow-data               (-> graphics :sfsim.graphics/data :sfsim.opacity/data)
+                     opacity-renderer          (:sfsim.graphics/opacity-renderer graphics)
+                     planet-shadow-renderer    (:sfsim.graphics/planet-shadow-renderer graphics)
+                     planet-renderer           (:sfsim.graphics/planet-renderer graphics)
+                     atmosphere-renderer       (:sfsim.graphics/atmosphere-renderer graphics)
+                     geometry-renderer         (:sfsim.graphics/geometry-renderer graphics)
+                     cloud-renderer            (:sfsim.graphics/cloud-renderer graphics)
                      tree                      (load-tile-tree planet-renderer {} width ?position level)
                      model                     (model/read-gltf "test/clj/sfsim/fixtures/model/empty.glb")
                      light-direction           (vec3 1 0 0)
@@ -100,14 +95,7 @@
                  (destroy-texture clouds)
                  (opacity/destroy-opacity-and-shadow shadow-vars)
                  (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
-                 (clouds/destroy-cloud-renderer cloud-renderer)
-                 (model/destroy-joined-geometry-renderer geometry-renderer)
-                 (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
-                 (planet/destroy-planet-renderer planet-renderer)
-                 (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
-                 (opacity/destroy-opacity-renderer opacity-renderer)
-                 (atmosphere/destroy-atmosphere-luts atmosphere-luts)
-                 (clouds/destroy-cloud-data cloud-data))))
+                 (graphics/destroy-graphics graphics))))
            ?position                      ?orientation                               ?result
            (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
            (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png"))
