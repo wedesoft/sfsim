@@ -1,0 +1,9 @@
+Procedural generation of volumetric clouds
+
+* Perlin, Worley noise
+* fractal brownian motion
+* curl noise
+* Midje testing of shaders
+* Generating OpenGL shaders using templates
+* cloud shadows
+* powder function
