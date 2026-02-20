@@ -15,7 +15,8 @@
       [sfsim.model :as model]
       [sfsim.render :as render]
       [sfsim.texture :as texture]
-      [sfsim.opacity :as opacity]))
+      [sfsim.opacity :as opacity]
+      [sfsim.matrix :as matrix]))
 
 
 (defn make-graphics-data
@@ -30,8 +31,10 @@
 
 
 (defn make-graphics
-  [model-file]
-  (let [data (make-graphics-data)]
+  [model-files]
+  (let [data           (make-graphics-data)
+        models         (mapv model/read-gltf model-files)
+        scene-renderer (model/make-scene-renderer data)]
     {::data data
      ::opacity-renderer       (opacity/make-opacity-renderer data)
      ::planet-shadow-renderer (planet/make-planet-shadow-renderer data)
@@ -39,20 +42,23 @@
      ::atmosphere-renderer    (atmosphere/make-atmosphere-renderer data)
      ::geometry-renderer      (model/make-joined-geometry-renderer data)
      ::cloud-renderer         (clouds/make-cloud-renderer data)
-     ::model                  (model/read-gltf model-file)}))
+     ::scene-renderer         scene-renderer
+     ::scenes                 (mapv (partial model/load-scene scene-renderer) models)}))
 
 
 (defn prepare-frame
   "Render geometry buffer for deferred rendering and cloud overlay"
-  [graphics render-vars model-vars tree width height position orientation light-direction
+  [graphics model-vars tree width height position orientation light-direction
    object-position object-orientation opacity-base]
   (let [opacity-renderer       (::opacity-renderer graphics)
         planet-shadow-renderer (::planet-shadow-renderer graphics)
         geometry-renderer      (::geometry-renderer graphics)
         cloud-renderer         (::cloud-renderer graphics)
-        model                  (::model graphics)
+        scenes                 (::scenes graphics)
         shadow-data            (-> graphics ::data :sfsim.opacity/data)
         cloud-data             (-> graphics ::data :sfsim.clouds/data)
+        object-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position)
+        objects                (mapv #(assoc-in % [:sfsim.model/root :sfsim.model/transform] object-to-world) scenes)
         render-vars            (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                width height position orientation light-direction
                                                                object-position object-orientation model-vars)
@@ -60,24 +66,28 @@
                                                                    cloud-data render-vars tree opacity-base)
         cloud-render-vars      (clouds/make-cloud-render-vars config/render-config render-vars width height position
                                                               orientation light-direction object-position object-orientation)
-        geometry               (model/render-joined-geometry geometry-renderer render-vars render-vars model tree)
+        geometry               (model/render-joined-geometry geometry-renderer render-vars render-vars (first objects) tree)
         clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)]
     {::render-vars render-vars
      ::geometry    geometry
      ::shadow-vars shadow-vars
-     ::clouds      clouds}))
+     ::clouds      clouds
+     ::objects     objects}))
 
 
 (defn render-frame
   [graphics frame tree]
   (let [planet-renderer     (::planet-renderer graphics)
         atmosphere-renderer (::atmosphere-renderer graphics)
+        scene-renderer      (::scene-renderer graphics)
         render-vars         (::render-vars frame)
         geometry            (::geometry frame)
         shadow-vars         (::shadow-vars frame)
-        clouds              (::clouds frame)]
+        clouds              (::clouds frame)
+        objects             (::objects frame)]
     (render/with-depth-test true
       (render/clear (vec3 0 1 0) 0.0)
+      (model/render-scenes scene-renderer render-vars shadow-vars [] geometry clouds objects)
       (planet/render-planet planet-renderer render-vars shadow-vars [] geometry clouds tree)
       (atmosphere/render-atmosphere atmosphere-renderer render-vars geometry clouds))))
 
@@ -94,6 +104,9 @@
 
 (defn destroy-graphics
   [graphics]
+  (doseq [scene (::scenes graphics)]
+         (model/destroy-scene scene))
+  (model/destroy-scene-renderer (::scene-renderer graphics))
   (clouds/destroy-cloud-renderer (::cloud-renderer graphics))
   (model/destroy-joined-geometry-renderer (::geometry-renderer graphics))
   (atmosphere/destroy-atmosphere-renderer (::atmosphere-renderer graphics))
