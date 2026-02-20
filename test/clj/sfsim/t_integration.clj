@@ -57,7 +57,7 @@
                      height          240
                      level           5
                      opacity-base    250.0
-                     graphics        (graphics/make-graphics [])
+                     graphics        (graphics/make-graphics [] 1.4)
                      planet-renderer (:sfsim.graphics/planet-renderer graphics)
                      tree            (load-tile-tree planet-renderer {} width ?position level)
                      light-direction (vec3 1 0 0)
@@ -85,7 +85,8 @@
                      height             240
                      level              5
                      opacity-base       250.0
-                     graphics           (graphics/make-graphics [(str "test/clj/sfsim/fixtures/model/" ?model)])
+                     object-radius      1.4
+                     graphics           (graphics/make-graphics [(str "test/clj/sfsim/fixtures/model/" ?model)] object-radius)
                      planet-renderer    (:sfsim.graphics/planet-renderer graphics)
                      object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
                      object-orientation (matrix->quaternion (mulm (rotation-matrix-3d-y (/ PI 4))
@@ -116,76 +117,26 @@
                 height                    240
                 level                     5
                 opacity-base              250.0
-                cloud-data                (clouds/make-cloud-data config/cloud-config)
-                atmosphere-luts           (atmosphere/make-atmosphere-luts config/max-height)
-                shadow-data               (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
-                data                      {:sfsim.render/config config/render-config
-                                           :sfsim.planet/config config/planet-config
-                                           :sfsim.opacity/data shadow-data
-                                           :sfsim.clouds/data cloud-data
-                                           :sfsim.model/data config/model-config
-                                           :sfsim.atmosphere/luts atmosphere-luts}
-                light-direction           (vec3 1 0 0)
-                orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
-                position                  (vec3 (+ 1.5 6378000.0) 0 0)
                 object-radius             1.4
+                graphics                  (graphics/make-graphics ["test/clj/sfsim/fixtures/model/torus.gltf"] object-radius)
+                planet-renderer           (:sfsim.graphics/planet-renderer graphics)
+                position                  (vec3 (+ 1.5 6378000.0) 0 0)
+                orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
                 object-position           (add position (q/rotate-vector orientation (vec3 0 0 -5)))
-                object-to-world           (transformation-matrix (mulm (rotation-matrix-3d-y (/ PI 6))
-                                                                       (rotation-matrix-3d-x (/ PI 6)))
-                                                                 object-position)
-                opacity-renderer          (opacity/make-opacity-renderer data)
-                planet-shadow-renderer    (planet/make-planet-shadow-renderer data)
-                planet-renderer           (planet/make-planet-renderer data)
-                atmosphere-renderer       (atmosphere/make-atmosphere-renderer data)
-                geometry-renderer         (model/make-joined-geometry-renderer data)
-                cloud-renderer            (clouds/make-cloud-renderer data)
-                scene-renderer            (model/make-scene-renderer data)
-                scene-shadow-renderer     (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
-                                                                            object-radius)
-                model                     (model/read-gltf "test/clj/sfsim/fixtures/model/torus.gltf")
-                object                    (assoc-in (model/load-scene scene-renderer model)
-                                                    [:sfsim.model/root :sfsim.model/transform] object-to-world)
+                object-orientation        (matrix->quaternion (mulm (rotation-matrix-3d-y (/ PI 6))
+                                                                    (rotation-matrix-3d-x (/ PI 6))))
+                light-direction           (vec3 1 0 0)
                 tree                      (load-tile-tree planet-renderer {} width position level)
                 model-vars                (model/make-model-vars 0.0 1.0 0.0)
-                render-vars               (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
-                                                                          width height position orientation light-direction
-                                                                          object-position (q/->Quaternion 1 0 0 0) model-vars)
-                shadow-vars               (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
-                                                                              cloud-data render-vars tree opacity-base)
-                cloud-render-vars         (clouds/make-cloud-render-vars config/render-config render-vars width height position
-                                                                         orientation light-direction object-position
-                                                                         (q/->Quaternion 1 0 0 0))
-                object-shadow             (model/scene-shadow-map scene-shadow-renderer light-direction object)
-                geometry                  (model/render-joined-geometry geometry-renderer render-vars render-vars object tree)
-                clouds                    (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                                       [] geometry)
+                frame                     (graphics/prepare-frame graphics model-vars tree width height position orientation
+                                                                  light-direction object-position object-orientation opacity-base)
                 tex                       (texture-render-color-depth width height true
-                                                                      (clear (vec3 0 1 0) 0.0)
-                                                                      (model/render-scenes scene-renderer render-vars
-                                                                                           shadow-vars [object-shadow] geometry clouds
-                                                                                           [object])
-                                                                      (planet/render-planet planet-renderer render-vars shadow-vars
-                                                                                            [object-shadow] geometry clouds tree)
-                                                                      (atmosphere/render-atmosphere atmosphere-renderer render-vars
-                                                                                                    geometry clouds))]
+                                                                      (graphics/render-frame graphics frame tree))]
             (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.3)
             (destroy-texture tex)
-            (clouds/destroy-cloud-geometry geometry)
-            (destroy-texture clouds)
-            (model/destroy-scene-shadow-map object-shadow)
-            (opacity/destroy-opacity-and-shadow shadow-vars)
+            (graphics/finalise-frame frame)
             (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
-            (clouds/destroy-cloud-renderer cloud-renderer)
-            (model/destroy-joined-geometry-renderer geometry-renderer)
-            (model/destroy-scene object)
-            (model/destroy-scene-shadow-renderer scene-shadow-renderer)
-            (model/destroy-scene-renderer scene-renderer)
-            (atmosphere/destroy-atmosphere-renderer atmosphere-renderer)
-            (planet/destroy-planet-renderer planet-renderer)
-            (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
-            (opacity/destroy-opacity-renderer opacity-renderer)
-            (atmosphere/destroy-atmosphere-luts atmosphere-luts)
-            (clouds/destroy-cloud-data cloud-data)))))
+            (graphics/destroy-graphics graphics)))))
 
 
 (when (.exists (io/file ".integration"))

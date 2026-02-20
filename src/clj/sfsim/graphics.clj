@@ -31,10 +31,11 @@
 
 
 (defn make-graphics
-  [model-files]
-  (let [data           (make-graphics-data)
-        models         (mapv model/read-gltf model-files)
-        scene-renderer (model/make-scene-renderer data)]
+  [model-files object-radius]
+  (let [data                  (make-graphics-data)
+        models                (mapv model/read-gltf model-files)
+        scene-renderer        (model/make-scene-renderer data)
+        scene-shadow-renderer (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config) object-radius)]
     {::data data
      ::opacity-renderer       (opacity/make-opacity-renderer data)
      ::planet-shadow-renderer (planet/make-planet-shadow-renderer data)
@@ -43,6 +44,7 @@
      ::geometry-renderer      (model/make-joined-geometry-renderer data)
      ::cloud-renderer         (clouds/make-cloud-renderer data)
      ::scene-renderer         scene-renderer
+     ::scene-shadow-renderer  scene-shadow-renderer
      ::scenes                 (mapv (partial model/load-scene scene-renderer) models)}))
 
 
@@ -54,6 +56,7 @@
         planet-shadow-renderer (::planet-shadow-renderer graphics)
         geometry-renderer      (::geometry-renderer graphics)
         cloud-renderer         (::cloud-renderer graphics)
+        scene-shadow-renderer  (::scene-shadow-renderer graphics)
         scenes                 (::scenes graphics)
         shadow-data            (-> graphics ::data :sfsim.opacity/data)
         cloud-data             (-> graphics ::data :sfsim.clouds/data)
@@ -66,13 +69,15 @@
                                                                    cloud-data render-vars tree opacity-base)
         cloud-render-vars      (clouds/make-cloud-render-vars config/render-config render-vars width height position
                                                               orientation light-direction object-position object-orientation)
+        object-shadows         (mapv (partial model/scene-shadow-map scene-shadow-renderer light-direction) objects)
         geometry               (model/render-joined-geometry geometry-renderer render-vars render-vars (first objects) tree)
         clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)]
-    {::render-vars render-vars
-     ::geometry    geometry
-     ::shadow-vars shadow-vars
-     ::clouds      clouds
-     ::objects     objects}))
+    {::render-vars    render-vars
+     ::geometry       geometry
+     ::shadow-vars    shadow-vars
+     ::clouds         clouds
+     ::object-shadows object-shadows
+     ::objects        objects}))
 
 
 (defn render-frame
@@ -84,28 +89,35 @@
         geometry            (::geometry frame)
         shadow-vars         (::shadow-vars frame)
         clouds              (::clouds frame)
+        object-shadows      (::object-shadows frame)
         objects             (::objects frame)]
     (render/with-depth-test true
       (render/clear (vec3 0 1 0) 0.0)
-      (model/render-scenes scene-renderer render-vars shadow-vars [] geometry clouds objects)
-      (planet/render-planet planet-renderer render-vars shadow-vars [] geometry clouds tree)
+      (model/render-scenes scene-renderer render-vars shadow-vars object-shadows geometry clouds objects)
+      (planet/render-planet planet-renderer render-vars shadow-vars object-shadows geometry clouds tree)
       (atmosphere/render-atmosphere atmosphere-renderer render-vars geometry clouds))))
 
 
 (defn finalise-frame
+  "Cleanup frame data"
   [frame]
-  (let [geometry    (::geometry frame)
-        clouds      (::clouds frame)
-        shadow-vars (::shadow-vars frame)]
+  (let [geometry       (::geometry frame)
+        clouds         (::clouds frame)
+        shadow-vars    (::shadow-vars frame)
+        object-shadows (::object-shadows frame)]
+    (doseq [object-shadow object-shadows]
+           (model/destroy-scene-shadow-map object-shadow))
     (clouds/destroy-cloud-geometry geometry)
     (texture/destroy-texture clouds)
     (opacity/destroy-opacity-and-shadow shadow-vars)))
 
 
 (defn destroy-graphics
+  "Destroy graphics renderers"
   [graphics]
   (doseq [scene (::scenes graphics)]
          (model/destroy-scene scene))
+  (model/destroy-scene-shadow-renderer (::scene-shadow-renderer graphics))
   (model/destroy-scene-renderer (::scene-renderer graphics))
   (clouds/destroy-cloud-renderer (::cloud-renderer graphics))
   (model/destroy-joined-geometry-renderer (::geometry-renderer graphics))
