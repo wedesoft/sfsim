@@ -7,10 +7,12 @@
 (ns sfsim.graphics
     "High-level graphics code"
     (:require
+      [fastmath.matrix :refer (mulm)]
       [fastmath.vector :refer (vec3)]
       [sfsim.config :as config]
       [sfsim.clouds :as clouds]
       [sfsim.atmosphere :as atmosphere]
+      [sfsim.aerodynamics :as aerodynamics]
       [sfsim.planet :as planet]
       [sfsim.model :as model]
       [sfsim.render :as render]
@@ -45,13 +47,14 @@
      ::cloud-renderer         (clouds/make-cloud-renderer data)
      ::scene-renderer         scene-renderer
      ::scene-shadow-renderer  scene-shadow-renderer
+     ::models                 models
      ::scenes                 (mapv (partial model/load-scene scene-renderer) models)}))
 
 
 (defn prepare-frame
   "Render geometry buffer for deferred rendering and cloud overlay"
   [graphics model-vars tree width height position orientation light-direction
-   object-position object-orientation opacity-base]
+   object-position object-orientation plume-transforms opacity-base]
   (let [opacity-renderer       (::opacity-renderer graphics)
         planet-shadow-renderer (::planet-shadow-renderer graphics)
         geometry-renderer      (::geometry-renderer graphics)
@@ -61,7 +64,9 @@
         shadow-data            (-> graphics ::data :sfsim.opacity/data)
         cloud-data             (-> graphics ::data :sfsim.clouds/data)
         object-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position)
-        objects                (mapv #(assoc-in % [:sfsim.model/root :sfsim.model/transform] object-to-world) scenes)
+        gltf-to-aerodynamic    (matrix/rotation-matrix aerodynamics/gltf-to-aerodynamic)
+        objects                (mapv #(assoc-in % [:sfsim.model/root :sfsim.model/transform]
+                                                (mulm object-to-world gltf-to-aerodynamic)) scenes)
         render-vars            (planet/make-planet-render-vars config/planet-config cloud-data config/render-config
                                                                width height position orientation light-direction
                                                                object-position object-orientation model-vars)
@@ -71,7 +76,8 @@
                                                               orientation light-direction object-position object-orientation)
         object-shadows         (mapv (partial model/scene-shadow-map scene-shadow-renderer light-direction) objects)
         geometry               (model/render-joined-geometry geometry-renderer render-vars render-vars (first objects) tree)
-        clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)]
+        clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms
+                                                            geometry)]
     {::render-vars    render-vars
      ::geometry       geometry
      ::shadow-vars    shadow-vars
