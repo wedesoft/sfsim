@@ -1,14 +1,20 @@
 ; https://github.com/LWJGL/lwjgl3/blob/master/modules/samples/src/test/java/org/lwjgl/demo/openal/ALCDemo.java
 (ns play
+    (:require [clojure.java.io :as io])
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
              (org.lwjgl BufferUtils)
              (org.lwjgl.system MemoryUtil)
              (org.lwjgl.openal ALC10 ALC AL AL10 EXTThreadLocalContext)))
 
-(def file-path "etc/audio.ogg")
+(def file-path "sample-1.ogg")
+
+(when (not (.exists (io/file file-path)))
+  (io/copy
+    (io/input-stream "https://getsamplefiles.com/download/ogg/sample-1.ogg")
+    (io/output-stream file-path)))
+
 (def error  (int-array 1))
-(def vorbis (STBVorbis/stb_vorbis_open_filename file-path error nil))
-; check not zero
+(def vorbis (STBVorbis/stb_vorbis_open_filename file-path error nil)) ; TODO: check not zero
 (def info (STBVorbisInfo/malloc))
 (STBVorbis/stb_vorbis_get_info vorbis info)
 (def sample-rate (.sample_rate info))
@@ -17,11 +23,6 @@
 
 (def pcm (BufferUtils/createShortBuffer (* num-samples num-channels)))
 (STBVorbis/stb_vorbis_get_samples_short_interleaved vorbis num-channels pcm)
-
-; convert to integer array
-(def pcm-arr (short-array (* num-channels num-samples)))
-(.get pcm pcm-arr)
-(.flip pcm)
 
 (STBVorbis/stb_vorbis_close vorbis)
 
