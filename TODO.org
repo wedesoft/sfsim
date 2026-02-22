@@ -46,9 +46,9 @@
   - [X] convert gui function to state changing one
   - [X] move gui code into gui module
   - [X] aggregate physics code in main module and move
-  - [ ] refactor rendering code
-    - [ ] put rendering code into methods
-    - [ ] create high level rendering methods to simplify main program and integration tests
+  - [X] refactor rendering code
+    - [X] put rendering code into methods
+    - [X] create high level rendering methods to simplify main program and integration tests
   - [ ] add some sound effects
   - [X] does update-camera-pose need the whole input state structure?
   - [ ] simplify recording and playback code
