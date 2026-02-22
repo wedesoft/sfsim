@@ -45,10 +45,12 @@
 
 (def buffer (AL10/alGenBuffers))
 
+;; You need one source per sound
 (def source (AL10/alGenSources))
 
 (AL10/alBufferData buffer (if (= num-channels 1) AL10/AL_FORMAT_MONO16 AL10/AL_FORMAT_STEREO16) pcm sample-rate)
 
+;; Multiple sources can share the same buffer
 (AL10/alSourcei source AL10/AL_BUFFER buffer)
 
 (AL10/alSourcePlay source)
