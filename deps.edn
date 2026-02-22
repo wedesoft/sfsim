@@ -22,6 +22,8 @@
         org.lwjgl/lwjgl-nuklear$natives-linux {:mvn/version "3.4.1"}
         org.lwjgl/lwjgl-stb {:mvn/version "3.4.1"}
         org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.4.1"}
+        org.lwjgl/lwjgl-openal {:mvn/version "3.4.1"}
+        org.lwjgl/lwjgl-openal$natives-linux {:mvn/version "3.4.1"}
         org.lwjgl/lwjgl-assimp {:mvn/version "3.4.1"}
         org.lwjgl/lwjgl-assimp$natives-linux {:mvn/version "3.4.1"}}
  :paths ["src/clj" "resources"]
