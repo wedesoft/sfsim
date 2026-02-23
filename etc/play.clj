@@ -64,6 +64,12 @@
 ;        (let [unqueue (int-array 1)]
 ;          (AL10/alSourceUnqueueBuffers source unqueue)))
 
+; (def i (atom 0))
+; (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
+;        (swap! i inc)
+;        (AL10/alSourcef source AL10/AL_GAIN (/ (abs (- 50 (mod @i 100))) 50.0))
+;        (Thread/sleep 100))
+
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
        (Thread/sleep 100))
 
