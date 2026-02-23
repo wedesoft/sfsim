@@ -53,6 +53,8 @@
 ;; Multiple sources can share the same buffer
 (AL10/alSourcei source AL10/AL_BUFFER buffer)
 
+; (AL10/alSourcei source AL10/AL_LOOPING AL10/AL_TRUE)
+
 (AL10/alSourcePlay source)
 
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
