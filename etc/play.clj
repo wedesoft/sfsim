@@ -58,6 +58,12 @@
 
 (AL10/alSourcePlay source)
 
+; (AL10/alSourceQueueBuffers source (int-array [buffer buffer buffer]))
+; (while (> (AL10/alGetSourcei source AL10/AL_BUFFERS_PROCESSED) 0)
+;        (println "unqueueing buffer")
+;        (let [unqueue (int-array 1)]
+;          (AL10/alSourceUnqueueBuffers source unqueue)))
+
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
        (Thread/sleep 100))
 
