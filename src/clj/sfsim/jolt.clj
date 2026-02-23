@@ -416,9 +416,19 @@
   get_suspension_length [::mem/pointer ::mem/int] ::mem/float)
 
 
+(defcfn set-suspension-length
+  "Set wheel suspension length"
+  set_suspension_length [::mem/pointer ::mem/int ::mem/float] ::mem/void)
+
+
 (defcfn get-wheel-rotation-angle
   "Get wheel rotation angle"
   get_wheel_rotation_angle [::mem/pointer ::mem/int] ::mem/float)
+
+
+(defcfn set-wheel-rotation-angle
+  "Set wheel rotation angle"
+  set_wheel_rotation_angle [::mem/pointer ::mem/int ::mem/float] ::mem/void)
 
 
 (defcfn has-hit-hard-point-

@@ -68,13 +68,13 @@
          (let [event-buffer (make-event-buffer)
                state        (atom (make-initial-state))
                gui          {:sfsim.gui/context :ctx}
-               handler      (->InputHandler gui (atom default-mappings))]
+               handler      (->InputHandler gui)]
            ; Test gear up
-           (:sfsim.input/gear-down @state) => true
+           (:sfsim.input/gear-down (:sfsim.input/controls @state)) => true
            (swap! state process-events (-> event-buffer (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)) handler)
-           (:sfsim.input/gear-down @state) => false
+           (:sfsim.input/gear-down (:sfsim.input/controls @state)) => false
            (swap! state process-events (-> event-buffer (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0)) handler)
-           (:sfsim.input/gear-down @state) => false
+           (:sfsim.input/gear-down (:sfsim.input/controls @state)) => false
            (swap! state process-events
                   (-> event-buffer
                       (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
@@ -82,7 +82,7 @@
                       (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
                       (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0))
                   handler)
-           (:sfsim.input/gear-down @state) => false
+           (:sfsim.input/gear-down (:sfsim.input/controls @state)) => false
            ; Test fullscreen
            (:sfsim.input/fullscreen @state) => false
            (swap! state process-events
@@ -107,13 +107,13 @@
            (:sfsim.input/menu @state) => false
            ; Test no gear operation when menu is shown
            (swap! state assoc :sfsim.input/menu true)
-           (:sfsim.input/gear-down @state) => false
+           (:sfsim.input/gear-down (:sfsim.input/controls @state)) => false
            (swap! state process-events
                   (-> event-buffer
                       (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_PRESS 0)
                       (add-key-event GLFW/GLFW_KEY_G GLFW/GLFW_RELEASE 0))
                   handler)
-           (:sfsim.input/gear-down @state) => false
+           (:sfsim.input/gear-down (:sfsim.input/controls @state)) => false
            ; Test no fullscreen toggle when menu is shown
            (:sfsim.input/fullscreen @state) => true
            (swap! state process-events
@@ -128,49 +128,49 @@
 
 (facts "Test camera keys"
        (let [state    (atom (make-initial-state))
-             mappings (:sfsim.input/keyboard default-mappings)]
+             mappings (get-in @state [:sfsim.input/mappings :sfsim.input/keyboard])]
          (simulator-key @state nil GLFW/GLFW_PRESS 0) => some?
-         (:sfsim.input/camera-rotate-x @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x] @state) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_2) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-x @state) => 0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => 0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_2) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-x @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_8) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-x @state) => -0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => -0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_8) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-x @state) => 0.0
-         (:sfsim.input/camera-rotate-y @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_6) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-y @state) => 0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_6) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-y @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_4) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-y @state) => -0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => -0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_4) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-y @state) => 0.0
-         (:sfsim.input/camera-rotate-z @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_1) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-z @state) => 0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_1) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-z @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_3) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-rotate-z @state) => -0.5
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => -0.5
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_3) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-rotate-z @state) => 0.0
-         (:sfsim.input/camera-distance-change @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_COMMA) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-distance-change @state) => 1.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 1.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_COMMA) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-distance-change @state) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_PERIOD) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/camera-distance-change @state) => -1.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => -1.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_PERIOD) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/camera-distance-change @state) => 0.0))
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 0.0))
 
 
 (facts "Test some simulator key bindings directly"
        (let [state    (atom (make-initial-state))
-             mappings (:sfsim.input/keyboard default-mappings)]
+             mappings (get-in @state [:sfsim.input/mappings :sfsim.input/keyboard])]
          ; Pause
          (:sfsim.input/pause @state) => true
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_P) GLFW/GLFW_PRESS 0)
@@ -181,158 +181,158 @@
          (:sfsim.input/pause @state) => true
          ; Brakes
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_PRESS 0)
-         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [true false]
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) (:sfsim.input/controls @state)) => [true false]
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_REPEAT 0)
-         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [true false]
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) (:sfsim.input/controls @state)) => [true false]
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_RELEASE 0)
-         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [false false]
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) (:sfsim.input/controls @state)) => [false false]
          ; Parking brakes
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT)
-         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [false true]
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) (:sfsim.input/controls @state)) => [false true]
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT)
-         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [false false]
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) (:sfsim.input/controls @state)) => [false false]
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_PRESS 0)
-         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) @state) => [true false]
+         ((juxt :sfsim.input/brake :sfsim.input/parking-brake) (:sfsim.input/controls @state)) => [true false]
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_B) GLFW/GLFW_RELEASE 0)
          ; Aileron
-         (:sfsim.input/aileron @state) => 0.0
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/aileron @state) => 0.0625
-         (swap! state assoc :sfsim.input/aileron 0.0)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.0625
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/aileron] 0.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/aileron @state) => -0.0625
-         (swap! state assoc :sfsim.input/aileron 0.0)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => -0.0625
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/aileron] 0.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_REPEAT 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/aileron @state) => (* 2 -0.0625)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => (* 2 -0.0625)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_5) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_5) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/aileron @state) => 0.0
-         (swap! state assoc :sfsim.input/aileron -1.0)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.0
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/aileron] -1.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/aileron @state) => -1.0
-         (swap! state assoc :sfsim.input/aileron 1.0)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => -1.0
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/aileron] 1.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/aileron @state) => 1.0
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 1.0
          ; Elevator
-         (:sfsim.input/elevator @state) => 0.0
+         (:sfsim.input/elevator (:sfsim.input/controls @state)) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_W) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_W) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/elevator @state) => 0.0625
-         (swap! state assoc :sfsim.input/elevator 0.0)
+         (:sfsim.input/elevator (:sfsim.input/controls @state)) => 0.0625
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/elevator] 0.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_S) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_S) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/elevator @state) => -0.0625
-         (swap! state assoc :sfsim.input/elevator -1.0)
+         (:sfsim.input/elevator (:sfsim.input/controls @state)) => -0.0625
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/elevator] -1.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_S) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_S) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/elevator @state) => -1.0
-         (swap! state assoc :sfsim.input/elevator 1.0)
+         (:sfsim.input/elevator (:sfsim.input/controls @state)) => -1.0
+         (swap! state assoc-in [:sfsim.input/controls  :sfsim.input/elevator] 1.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_W) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_W) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/elevator @state) => 1.0
+         (:sfsim.input/elevator (:sfsim.input/controls @state)) => 1.0
          ; Rudder
-         (:sfsim.input/rudder @state) => 0.0
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rudder @state) => 0.0625
-         (swap! state assoc :sfsim.input/rudder 0.0)
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => 0.0625
+         (swap! state assoc-in [:sfsim.input/controls  :sfsim.input/rudder] 0.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_E) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_E) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rudder @state) => -0.0625
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => -0.0625
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_PRESS GLFW/GLFW_MOD_CONTROL)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_RELEASE GLFW/GLFW_MOD_CONTROL)
-         (:sfsim.input/rudder @state) => 0.0
-         (swap! state assoc :sfsim.input/rudder -1.0)
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => 0.0
+         (swap! state assoc-in [:sfsim.input/controls  :sfsim.input/rudder] -1.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_E) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_E) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rudder @state) => -1.0
-         (swap! state assoc :sfsim.input/rudder 1.0)
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => -1.0
+         (swap! state assoc-in [:sfsim.input/controls  :sfsim.input/rudder] 1.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rudder @state) => 1.0
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => 1.0
          ; Throttle
-         (:sfsim.input/throttle @state) => 0.0
+         (:sfsim.input/throttle (:sfsim.input/controls @state)) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_R) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_R) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/throttle @state) => 0.0625
+         (:sfsim.input/throttle (:sfsim.input/controls @state)) => 0.0625
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_F) GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_F) GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT)
-         (:sfsim.input/throttle @state) => 0.0
+         (:sfsim.input/throttle (:sfsim.input/controls @state)) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_F) GLFW/GLFW_PRESS GLFW/GLFW_MOD_SHIFT)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_F) GLFW/GLFW_RELEASE GLFW/GLFW_MOD_SHIFT)
-         (:sfsim.input/throttle @state) => 0.0
-         (swap! state assoc :sfsim.input/throttle 1.0)
+         (:sfsim.input/throttle (:sfsim.input/controls @state)) => 0.0
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/throttle] 1.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_R) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_R) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/throttle @state) => 1.0
-         (:sfsim.input/air-brake @state) => false
+         (:sfsim.input/throttle (:sfsim.input/controls @state)) => 1.0
+         (:sfsim.input/air-brake (:sfsim.input/controls @state)) => false
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_SLASH) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_SLASH) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/air-brake @state) => true
+         (:sfsim.input/air-brake (:sfsim.input/controls @state)) => true
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_SLASH) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_SLASH) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/air-brake @state) => false
+         (:sfsim.input/air-brake (:sfsim.input/controls @state)) => false
          ; Toggle aerofoil surfaces/RCS thrusters
-         (:sfsim.input/rcs @state) => false
+         (:sfsim.input/rcs (:sfsim.input/controls @state)) => false
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_BACKSLASH) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_BACKSLASH) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rcs @state) => true
+         (:sfsim.input/rcs (:sfsim.input/controls @state)) => true
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_BACKSLASH) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_BACKSLASH) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rcs @state) => false
+         (:sfsim.input/rcs (:sfsim.input/controls @state)) => false
          ; RCS roll
-         (swap! state assoc :sfsim.input/rcs true)
-         (:sfsim.input/rcs-roll @state) => 0
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/rcs] true)
+         (:sfsim.input/rcs-roll (:sfsim.input/controls @state)) => 0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/rcs-roll @state) => 1
+         (:sfsim.input/rcs-roll (:sfsim.input/controls @state)) => 1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_REPEAT 0)
-         (:sfsim.input/rcs-roll @state) => 1
+         (:sfsim.input/rcs-roll (:sfsim.input/controls @state)) => 1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rcs-roll @state) => 0
+         (:sfsim.input/rcs-roll (:sfsim.input/controls @state)) => 0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/rcs-roll @state) => -1
+         (:sfsim.input/rcs-roll (:sfsim.input/controls @state)) => -1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_REPEAT 0)
-         (:sfsim.input/rcs-roll @state) => -1
+         (:sfsim.input/rcs-roll (:sfsim.input/controls @state)) => -1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rcs-roll @state) => 0
+         (:sfsim.input/rcs-roll (:sfsim.input/controls @state)) => 0
          ; RCS pitch
-         (swap! state assoc :sfsim.input/rcs true)
-         (:sfsim.input/rcs-pitch @state) => 0
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/rcs] true)
+         (:sfsim.input/rcs-pitch (:sfsim.input/controls @state)) => 0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_W) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/rcs-pitch @state) => 1
+         (:sfsim.input/rcs-pitch (:sfsim.input/controls @state)) => 1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_W) GLFW/GLFW_REPEAT 0)
-         (:sfsim.input/rcs-pitch @state) => 1
+         (:sfsim.input/rcs-pitch (:sfsim.input/controls @state)) => 1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_W) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rcs-pitch @state) => 0
+         (:sfsim.input/rcs-pitch (:sfsim.input/controls @state)) => 0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_S) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/rcs-pitch @state) => -1
+         (:sfsim.input/rcs-pitch (:sfsim.input/controls @state)) => -1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_S) GLFW/GLFW_REPEAT 0)
-         (:sfsim.input/rcs-pitch @state) => -1
+         (:sfsim.input/rcs-pitch (:sfsim.input/controls @state)) => -1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_S) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rcs-pitch @state) => 0
+         (:sfsim.input/rcs-pitch (:sfsim.input/controls @state)) => 0
          ; RCS yaw
-         (swap! state assoc :sfsim.input/rcs true)
-         (:sfsim.input/rcs-yaw @state) => 0
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/rcs] true)
+         (:sfsim.input/rcs-yaw (:sfsim.input/controls @state)) => 0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/rcs-yaw @state) => 1
+         (:sfsim.input/rcs-yaw (:sfsim.input/controls @state)) => 1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_REPEAT 0)
-         (:sfsim.input/rcs-yaw @state) => 1
+         (:sfsim.input/rcs-yaw (:sfsim.input/controls @state)) => 1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_RELEASE 0)
-         (:sfsim.input/rcs-yaw @state) => 0
+         (:sfsim.input/rcs-yaw (:sfsim.input/controls @state)) => 0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_E) GLFW/GLFW_PRESS 0)
-         (:sfsim.input/rcs-yaw @state) => -1
+         (:sfsim.input/rcs-yaw (:sfsim.input/controls @state)) => -1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_E) GLFW/GLFW_REPEAT 0)
-         (:sfsim.input/rcs-yaw @state) => -1
+         (:sfsim.input/rcs-yaw (:sfsim.input/controls @state)) => -1
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_E) GLFW/GLFW_RELEASE 0)))
 
 
@@ -423,54 +423,58 @@
              map-throttle-incr-zn     {:sfsim.input/joysticks {:sfsim.input/devices
                                                                {"Gamepad" {:sfsim.input/axes {0 :sfsim.input/throttle-increment}}}
                                                                :sfsim.input/dead-zone 0.5}}
-             handler                  (->InputHandler gui (atom mappings))
-             handler-inv              (->InputHandler gui (atom mappings-inv))
-             handler-zn               (->InputHandler gui (atom mappings-zn))
-             handler-throttle         (->InputHandler gui (atom map-throttle))
-             handler-throttle-incr    (->InputHandler gui (atom map-throttle-incr))
-             handler-throttle-zn      (->InputHandler gui (atom map-throttle-zn))
-             handler-throttle-incr-zn (->InputHandler gui (atom map-throttle-incr-zn))]
+             handler                  (->InputHandler gui)]
          (process-events [] (add-joystick-axis-state event-buffer axis-state "Gamepad" []) mock-handler)
          => []
          (process-events [] (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75]) mock-handler)
          => [{:device "Gamepad" :axis 0 :value -0.5} {:device "Gamepad" :axis 1 :value -0.75}]
          ; Aerofoil surfaces
+         (swap! state assoc :sfsim.input/mappings mappings)
          (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
-         (:sfsim.input/aileron @state) => 0.5
-         (:sfsim.input/elevator @state) => 0.75
-         (:sfsim.input/rudder @state) => -0.5
-         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler-inv)
-         (:sfsim.input/aileron @state) => -0.5
-         (:sfsim.input/elevator @state) => -0.75
-         (:sfsim.input/rudder @state) => 0.5
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.5
+         (:sfsim.input/elevator (:sfsim.input/controls @state)) => 0.75
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => -0.5
+         (swap! state assoc :sfsim.input/mappings mappings-inv)
+         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => -0.5
+         (:sfsim.input/elevator (:sfsim.input/controls @state)) => -0.75
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => 0.5
          ; RCS thrusters
-         (swap! state assoc :sfsim.input/rcs true)
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/rcs] true)
+         (swap! state assoc :sfsim.input/mappings mappings)
          (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
-         (:sfsim.input/rcs-roll @state) => 1.0
-         (:sfsim.input/rcs-pitch @state) => 1.0
-         (:sfsim.input/rcs-yaw @state) => -1.0
-         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler-inv)
-         (:sfsim.input/rcs-roll @state) => -1.0
-         (:sfsim.input/rcs-pitch @state) => -1.0
-         (:sfsim.input/rcs-yaw @state) => 1.0
-         (swap! state assoc :sfsim.input/rcs false)
+         (:sfsim.input/rcs-roll (:sfsim.input/controls @state)) => 1.0
+         (:sfsim.input/rcs-pitch (:sfsim.input/controls @state)) => 1.0
+         (:sfsim.input/rcs-yaw (:sfsim.input/controls @state)) => -1.0
+         (swap! state assoc :sfsim.input/mappings mappings-inv)
+         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
+         (:sfsim.input/rcs-roll (:sfsim.input/controls @state)) => -1.0
+         (:sfsim.input/rcs-pitch (:sfsim.input/controls @state)) => -1.0
+         (:sfsim.input/rcs-yaw (:sfsim.input/controls @state)) => 1.0
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/rcs] false)
          ; Dead zone testing
-         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.75]) handler-zn)
-         (:sfsim.input/aileron @state) => 0.5
+         (swap! state assoc :sfsim.input/mappings mappings-zn)
+         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.75]) handler)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.5
          ; Throttle
-         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [0.75]) handler-throttle)
-         (:sfsim.input/throttle @state) => 0.125
-         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [0.25]) handler-throttle-zn)
-         (:sfsim.input/throttle @state) => 0.25
-         (swap! state assoc :sfsim.input/throttle 0.0)
+         (swap! state assoc :sfsim.input/mappings map-throttle)
+         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [0.75]) handler)
+         (:sfsim.input/throttle (:sfsim.input/controls @state)) => 0.125
+         (swap! state assoc :sfsim.input/mappings map-throttle-zn)
+         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [0.25]) handler)
+         (:sfsim.input/throttle (:sfsim.input/controls @state)) => 0.25
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/throttle] 0.0)
          ; Incremental throttle
-         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-1.0]) handler-throttle-incr)
-         (:sfsim.input/throttle @state) => 0.0625
-         (swap! state assoc :sfsim.input/throttle 0.0)
-         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [1.0]) handler-throttle-incr)
-         (:sfsim.input/throttle @state) => 0.0
-         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.75]) handler-throttle-incr-zn)
-         (:sfsim.input/throttle @state) => (* 0.5 0.0625)
+         (swap! state assoc :sfsim.input/mappings map-throttle-incr)
+         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-1.0]) handler)
+         (:sfsim.input/throttle (:sfsim.input/controls @state)) => 0.0625
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/throttle] 0.0)
+         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [1.0]) handler)
+         (:sfsim.input/throttle (:sfsim.input/controls @state)) => 0.0
+         (swap! state assoc :sfsim.input/mappings map-throttle-incr-zn)
+         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.75]) handler)
+         (:sfsim.input/throttle (:sfsim.input/controls @state)) => (* 0.5 0.0625)
+         (swap! state assoc :sfsim.input/mappings mappings)
          (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Unknown" [0.0 0.0]) handler)))
 
 
@@ -485,9 +489,9 @@
                                                                                                  2 :sfsim.input/brake
                                                                                                  3 :sfsim.input/parking-brake
                                                                                                  4 :sfsim.input/air-brake}}}}}
-             state                    (atom (make-initial-state))
+             state                    (atom (assoc (make-initial-state) :sfsim.input/mappings mappings))
              gui                      {:sfsim.gui/context :ctx}
-             handler                  (->InputHandler gui (atom mappings))]
+             handler                  (->InputHandler gui)]
          (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" []) mock-handler)
          => []
          (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" [0 0]) mock-handler)
@@ -498,42 +502,41 @@
          => [{:device "Gamepad" :button 1 :action GLFW/GLFW_REPEAT}]
          (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" [0 0]) mock-handler)
          => [{:device "Gamepad" :button 1 :action GLFW/GLFW_RELEASE}]
-         (:sfsim.input/gear-down @state) => true
+         (:sfsim.input/gear-down (:sfsim.input/controls @state)) => true
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 1]) handler)
-         (:sfsim.input/gear-down @state) => false
-         (:sfsim.input/brake @state) => false
+         (:sfsim.input/gear-down (:sfsim.input/controls @state)) => false
+         (:sfsim.input/brake (:sfsim.input/controls @state)) => false
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1]) handler)
-         (:sfsim.input/brake @state) => true
+         (:sfsim.input/brake (:sfsim.input/controls @state)) => true
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1]) handler)
-         (:sfsim.input/brake @state) => true
+         (:sfsim.input/brake (:sfsim.input/controls @state)) => true
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0]) handler)
-         (:sfsim.input/brake @state) => false
-         (:sfsim.input/parking-brake @state) => false
+         (:sfsim.input/brake (:sfsim.input/controls @state)) => false
+         (:sfsim.input/parking-brake (:sfsim.input/controls @state)) => false
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 1]) handler)
-         (:sfsim.input/parking-brake @state) => true
+         (:sfsim.input/parking-brake (:sfsim.input/controls @state)) => true
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0]) handler)
-         (:sfsim.input/parking-brake @state) => true
+         (:sfsim.input/parking-brake (:sfsim.input/controls @state)) => true
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1 0]) handler)
-         (:sfsim.input/parking-brake @state) => false
-         (:sfsim.input/air-brake @state) => false
+         (:sfsim.input/parking-brake (:sfsim.input/controls @state)) => false
+         (:sfsim.input/air-brake (:sfsim.input/controls @state)) => false
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 1]) handler)
-         (:sfsim.input/air-brake @state) => true
+         (:sfsim.input/air-brake (:sfsim.input/controls @state)) => true
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 0]) handler)
-         (:sfsim.input/air-brake @state) => true
+         (:sfsim.input/air-brake (:sfsim.input/controls @state)) => true
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 1]) handler)
-         (:sfsim.input/air-brake @state) => false
+         (:sfsim.input/air-brake (:sfsim.input/controls @state)) => false
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 0]) handler)
-         (:sfsim.input/air-brake @state) => false))
+         (:sfsim.input/air-brake (:sfsim.input/controls @state)) => false))
 
 
 (facts "Recording last active joystick axis or button"
        (let [event-buffer (make-event-buffer)
              gui          {:sfsim.gui/context :ctx}
-             state        (atom {:sfsim.input/menu true})
+             state        (atom {:sfsim.input/menu true :sfsim.input/mappings {}})
              button-state (atom {})
              axis-state   (atom {})
-             mappings     {}
-             handler      (->InputHandler gui (atom mappings))]
+             handler      (->InputHandler gui)]
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0]) handler)
          (@state :sfsim.input/last-joystick-button) => nil
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1]) handler)

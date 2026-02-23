@@ -12,14 +12,16 @@
     [fastmath.matrix :refer (mulm eye inverse)]
     [fastmath.vector :refer (mag)]
     [malli.core :as m]
+    [sfsim.config :as config]
     [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms atmosphere-luts)]
     [sfsim.clouds :refer (overall-shading overall-shading-parameters)]
     [sfsim.plume :refer (model-vars)]
-    [sfsim.cubemap :refer (cube-map-corners)]
+    [sfsim.cubemap :refer (cube-map-corners project-onto-cube determine-face cube-j cube-i tile-center)]
     [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box shadow-patch)]
     [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
-                            quadtree-extract)]
-    [sfsim.quaternion :refer (quaternion)]
+                            quadtree-extract tile-coordinates create-local-mesh)]
+    [sfsim.quaternion :refer (quaternion ->Quaternion)]
+    [sfsim.jolt :as jolt]
     [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                           destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
@@ -479,6 +481,36 @@ void main()
   (use-program program)
   (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))
   (render-tree program tree (inverse (:sfsim.render/camera-to-world render-vars)) [] [:sfsim.planet/surf-tex]))
+
+
+(defn update-local-mesh
+  "Method for maintaining a small 3x3 local mesh in order to handle collisions"
+  [local-mesh split-orientations position]
+  (let [point  (project-onto-cube position)
+        face   (determine-face point)
+        j      (cube-j face point)
+        i      (cube-i face point)
+        coords (dissoc (tile-coordinates j i (:sfsim.planet/level config/planet-config) (:sfsim.planet/tilesize config/planet-config))
+                       :sfsim.quadtree/dy :sfsim.quadtree/dx)]
+    (if (not= coords (:coords local-mesh))
+      (let [b            (:sfsim.quadtree/row coords)
+            a            (:sfsim.quadtree/column coords)
+            tile-y       (:sfsim.quadtree/tile-y coords)
+            tile-x       (:sfsim.quadtree/tile-x coords)
+            earth-radius (:sfsim.planet/radius config/planet-config)
+            center       (tile-center face (:sfsim.planet/level config/planet-config) b a earth-radius)
+            m            (create-local-mesh split-orientations face
+                                            (:sfsim.planet/level config/planet-config)
+                                            (:sfsim.planet/tilesize config/planet-config) b a tile-y tile-x
+                                            earth-radius center)]
+        (when-let [mesh (:mesh local-mesh)]
+                  (jolt/remove-and-destroy-body mesh))
+        (let [mesh (jolt/create-and-add-static-body (jolt/mesh-settings m 5.9742e+24) center (->Quaternion 1 0 0 0))]
+          (jolt/set-friction mesh 0.8)
+          (jolt/set-restitution mesh 0.25)
+          (jolt/optimize-broad-phase)
+          {:coords coords :mesh mesh}))
+      local-mesh)))
 
 
 (set! *warn-on-reflection* false)

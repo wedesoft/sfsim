@@ -2,17 +2,25 @@
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
-;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+;; which you can obteclipse/solar/2026-august-12ain at https://www.eclipse.org/legal/epl-v10.html
 
 (ns sfsim.gui
   (:require
+    [clojure.math :refer (to-radians to-degrees)]
+    [clojure.string :refer (trim)]
     [fastmath.matrix :as fm]
+    [fastmath.vector :as fv]
     [sfsim.image :refer (white-image-with-alpha)]
+    [sfsim.config :as config]
+    [sfsim.version :refer (version)]
+    [sfsim.physics :as physics]
+    [sfsim.astro :as astro]
+    [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil->)]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
-                                       with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
-                                       destroy-vertex-array-object)]
+                          with-scissor set-scissor destroy-program setup-vertex-attrib-pointers
+                          make-vertex-array-stream destroy-vertex-array-object)]
     [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)]
-    [sfsim.util :refer (slurp-byte-buffer)])
+    [sfsim.input :refer (get-joystick-sensor-for-mapping)])
   (:import
     (java.nio
       DirectByteBuffer)
@@ -22,6 +30,8 @@
       Mat4x4)
     (org.lwjgl
       BufferUtils)
+    (org.lwjgl.glfw
+      GLFW)
     (org.lwjgl.nuklear
       NkAllocator
       NkBuffer
@@ -266,13 +276,16 @@
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
          context# (:sfsim.gui/context ~gui)]
-     (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
-                             ~(if border
-                               `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE Nuklear/NK_WINDOW_NO_SCROLLBAR)
-                               `Nuklear/NK_WINDOW_NO_SCROLLBAR))
-       ~@body
-       (Nuklear/nk_end context#))
-     (MemoryStack/stackPop)))
+     (try
+       (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
+                               ~(if border
+                                  `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE Nuklear/NK_WINDOW_NO_SCROLLBAR)
+                                  `Nuklear/NK_WINDOW_NO_SCROLLBAR))
+         (let [result# (do ~@body)]
+           (Nuklear/nk_end context#)
+           result#))
+       (finally
+         (MemoryStack/stackPop)))))
 
 
 (defn layout-row-dynamic
@@ -527,13 +540,306 @@
   [gui height cnt & body]
   `(do
      (Nuklear/nk_layout_row_begin (:sfsim.gui/context ~gui) Nuklear/NK_DYNAMIC ~height ~cnt)
-     ~@body
-     (Nuklear/nk_layout_row_end (:sfsim.gui/context ~gui))))
+     (let [result# (do ~@body)]
+       (Nuklear/nk_layout_row_end (:sfsim.gui/context ~gui))
+       result#)))
 
 
 (defn layout-row-push
   [gui frac]
   (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) frac))
+
+
+(defmacro tabbing
+  [gui state edit idx cnt]
+  `(ignore-nil->
+     ~'state ~state
+     (when (and (-> ~'state :input :sfsim.input/focus-new) (= (mod (-> ~'state :input :sfsim.input/focus-new) ~cnt) ~idx))
+       (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE)
+       (dissoc-in ~'state [:input :sfsim.input/focus-new]))
+     (when (= Nuklear/NK_EDIT_ACTIVE ~edit)
+       (assoc-in ~'state [:input :sfsim.input/focus] ~idx))))
+
+
+(declare main-dialog)
+
+
+(defn toggle-joystick-control
+  [state control]
+  (if (= (-> state :gui ::joystick-config) control)
+    (dissoc-in state [:gui ::joystick-config])
+    (assoc-in state [:gui ::joystick-config] control)))
+
+
+(defn joystick-dialog-item
+  [state gui sensor-type last-event text control sensor-name prompt]
+  (let [[device sensor] (get-joystick-sensor-for-mapping (-> state :input :sfsim.input/mappings) sensor-type control)]
+    (layout-row
+      gui 32 4
+      (ignore-nil-> state state
+                    (layout-row-push gui 0.2)
+                    (text-label gui text)
+                    (layout-row-push gui 0.1)
+                    (when (and (button-label gui "Clear") device)
+                      (dissoc-in state [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices
+                                        device sensor-type sensor]))
+                    (layout-row-push gui 0.1)
+                    (when (button-label gui "Set")
+                      (-> state
+                          (dissoc-in [:input last-event])
+                          (toggle-joystick-control control)))
+                    (when-let [[device-new sensor-new] (and (= (-> state :gui ::joystick-config) control)
+                                                            (-> state :input last-event))]
+                              (-> state
+                                  (dissoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices
+                                              device sensor-type sensor])
+                                  (assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices
+                                             device-new sensor-type sensor-new] control)
+                                  (dissoc-in [:gui ::joystick-config])))
+                    (layout-row-push gui 0.6)
+                    (text-label gui (if (= (-> state :input ::joystick-config) control)
+                                      prompt
+                                      (if device (format "%s %d of %s" sensor-name sensor device) "None")))))))
+
+
+(defn joystick-dialog-axis-item
+  [state gui text control]
+  (joystick-dialog-item state gui :sfsim.input/axes :sfsim.input/last-joystick-axis text control
+                        "Axis" "Move axis to set"))
+
+
+(defn joystick-dialog-button-item
+  [state gui text control]
+  (joystick-dialog-item state gui :sfsim.input/buttons :sfsim.input/last-joystick-button text control
+                        "Button" "Press button to set"))
+
+
+(defn joystick-dialog
+  [state gui ^long window-width ^long window-height]
+  (nuklear-window
+    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 12)) 2) 640 (* 37 12) true
+    (ignore-nil-> state state
+                  (joystick-dialog-axis-item state gui "Aileron" :sfsim.input/aileron)
+                  (joystick-dialog-axis-item state gui "Elevator" :sfsim.input/elevator)
+                  (joystick-dialog-axis-item state gui "Rudder" :sfsim.input/rudder)
+                  (joystick-dialog-axis-item state gui "Throttle" :sfsim.input/throttle)
+                  (joystick-dialog-axis-item state gui "Throttle Increment" :sfsim.input/throttle-increment)
+                  (layout-row gui 32 2
+                              (ignore-nil-> state state
+                                            (layout-row-push gui 0.2)
+                                            (text-label gui "Dead Zone")
+                                            (layout-row-push gui 0.7)
+                                            (update-in state
+                                                       [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/dead-zone]
+                                                       (fn [dead-zone]
+                                                           (slider-float gui 0.0 dead-zone 1.0 (/ 1.0 1024.0))))
+                                            (layout-row-push gui 0.1)
+                                            (text-label gui (format "%5.3f" (get-in state
+                                                                                    [:input :sfsim.input/mappings
+                                                                                     :sfsim.input/joysticks
+                                                                                     :sfsim.input/dead-zone])))))
+                  (joystick-dialog-button-item state gui "Gear" :sfsim.input/gear)
+                  (joystick-dialog-button-item state gui "Air Brake" :sfsim.input/air-brake)
+                  (joystick-dialog-button-item state gui "Brake" :sfsim.input/brake)
+                  (joystick-dialog-button-item state gui "Parking Brake" :sfsim.input/parking-brake)
+                  (layout-row-dynamic gui 32 2)
+                  (when (button-label gui "Save")
+                    (config/write-user-config "joysticks.edn" (get-in state [:input :sfsim.input/mappings :sfsim.input/joysticks]))
+                    (assoc-in state [:gui ::menu] main-dialog))
+                  (when (button-label gui "Close")
+                    (-> state
+                        (assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks]
+                                  (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
+                        (assoc-in [:gui ::menu] main-dialog))))))
+
+
+(def position-data
+  {:longitude (edit-data "0.0" 32 :sfsim.gui/filter-float)
+   :latitude  (edit-data "0.0" 32 :sfsim.gui/filter-float)
+   :height    (edit-data "0.0" 32 :sfsim.gui/filter-float)})
+
+
+(defn location-dialog-get
+  [position-data]
+  (let [longitude   (to-radians (Double/parseDouble (edit-get (:longitude position-data))))
+        latitude    (to-radians (Double/parseDouble (edit-get (:latitude position-data))))
+        height      (Double/parseDouble (edit-get (:height position-data)))]
+    {:longitude longitude :latitude latitude :height height}))
+
+
+(defn location-dialog-set
+  [position-data state]
+  (let [geographic (physics/get-geographic (:physics state) config/planet-config)]
+    (edit-set (:longitude position-data) (format "%.5f" (to-degrees (:longitude geographic))))
+    (edit-set (:latitude position-data) (format "%.5f" (to-degrees (:latitude geographic))))
+    (edit-set (:height position-data) (format "%.1f" (:height geographic)))))
+
+
+(defn location-dialog
+  [state gui ^long window-width ^long window-height]
+  (nuklear-window
+    gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) true
+    (ignore-nil-> state state
+                  (layout-row-dynamic gui 32 2)
+                  (text-label gui "Longitude (East)")
+                  (tabbing gui state (edit-field gui (:longitude position-data)) 0 3)
+                  (text-label gui "Latitude (North)")
+                  (tabbing gui state (edit-field gui (:latitude position-data)) 1 3)
+                  (text-label gui "Height")
+                  (tabbing gui state (edit-field gui (:height position-data)) 2 3)
+                  (when (button-label gui "Set")
+                    (let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
+                      (-> state
+                          (update :physics physics/destroy-vehicle-constraint)
+                          (update :physics physics/set-geographic (:surface state) config/planet-config
+                                  (:sfsim.model/elevation config/model-config) longitude latitude height))))
+                  (when (button-label gui "Close")
+                    (assoc-in state [:gui ::menu] main-dialog)))))
+
+
+(def time-data
+  {:day    (edit-data    "1" 3 :sfsim.gui/filter-decimal)
+   :month  (edit-data    "1" 3 :sfsim.gui/filter-decimal)
+   :year   (edit-data "2000" 5 :sfsim.gui/filter-decimal)
+   :hour   (edit-data   "12" 3 :sfsim.gui/filter-decimal)
+   :minute (edit-data    "0" 3 :sfsim.gui/filter-decimal)
+   :second (edit-data    "0" 3 :sfsim.gui/filter-decimal)})
+
+
+(defn datetime-dialog-get
+  ^double [time-data]
+  (let [day    (Integer/parseInt (trim (edit-get (:day time-data))))
+        month  (Integer/parseInt (trim (edit-get (:month time-data))))
+        year   (Integer/parseInt (trim (edit-get (:year time-data))))
+        hour   (Integer/parseInt (trim (edit-get (:hour time-data))))
+        minute (Integer/parseInt (trim (edit-get (:minute time-data))))
+        sec    (Integer/parseInt (trim (edit-get (:second time-data))))
+        jd     (astro/julian-date #:sfsim.astro{:year year :month month :day day})
+        clock  (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
+    (+ (- jd 0.5) clock)))
+
+
+(defn datetime-dialog-set
+  [time-data state]
+  (let [t     (+ ^double (physics/get-julian-date-ut (:physics state)) 0.5)
+        date  (astro/calendar-date (int t))
+        clock (astro/clock-time (- t (int t)))]
+    (edit-set (:day time-data) (format "%2d" (:sfsim.astro/day date)))
+    (edit-set (:month time-data) (format "%2d" (:sfsim.astro/month date)))
+    (edit-set (:year time-data) (format "%4d" (:sfsim.astro/year date)))
+    (edit-set (:hour time-data) (format "%2d" (:sfsim.astro/hour clock)))
+    (edit-set (:minute time-data) (format "%2d" (:sfsim.astro/minute clock)))
+    (edit-set (:second time-data) (format "%2d" (:sfsim.astro/second clock)))))
+
+
+(defn datetime-dialog
+  [state gui ^long window-width ^long window-height]
+  (nuklear-window
+    gui "Date and Time" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) true
+    (ignore-nil-> state state
+                  (layout-row gui 32 6
+                              (layout-row-push gui 0.4)
+                              (text-label gui "Date")
+                              (layout-row-push gui 0.15)
+                              (tabbing gui state (edit-field gui (:day time-data)) 0 6)
+                              (layout-row-push gui 0.05)
+                              (text-label gui "/")
+                              (layout-row-push gui 0.15)
+                              (tabbing gui state (edit-field gui (:month time-data)) 1 6)
+                              (layout-row-push gui 0.05)
+                              (text-label gui "/")
+                              (layout-row-push gui 0.2)
+                              (tabbing gui state (edit-field gui (:year time-data)) 2 6))
+                  (layout-row gui 32 6
+                              (layout-row-push gui 0.45)
+                              (text-label gui "Time")
+                              (layout-row-push gui 0.15)
+                              (tabbing gui state (edit-field gui (:hour time-data)) 3 6)
+                              (layout-row-push gui 0.05)
+                              (text-label gui ":")
+                              (layout-row-push gui 0.15)
+                              (tabbing gui state (edit-field gui (:minute time-data)) 4 6)
+                              (layout-row-push gui 0.05)
+                              (text-label gui ":")
+                              (layout-row-push gui 0.14999)
+                              (tabbing gui state (edit-field gui (:second time-data)) 5 6))
+                  (layout-row-dynamic gui 32 2)
+                  (when (button-label gui "Set")
+                    (update state :physics physics/set-julian-date-ut (datetime-dialog-get time-data)))
+                  (when (button-label gui "Close")
+                    (assoc-in state [:gui ::menu] main-dialog)))))
+
+
+(defn main-dialog
+  [state gui ^long window-width ^long window-height]
+  (nuklear-window
+    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6) true
+    (ignore-nil-> state state
+                  (layout-row-dynamic gui 32 1)
+                  (when (button-label gui "Joystick")
+                    (assoc-in state [:gui ::menu] joystick-dialog))
+                  (when (button-label gui "Location")
+                    (location-dialog-set position-data state)
+                    (assoc-in state [:gui ::menu] location-dialog))
+                  (when (button-label gui "Date/Time")
+                    (datetime-dialog-set time-data state)
+                    (assoc-in state [:gui ::menu] datetime-dialog))
+                  (when (button-label gui "Resume")
+                    (assoc-in state [:input :sfsim.input/menu] nil))
+                  (when (button-label gui "Quit")
+                    (GLFW/glfwSetWindowShouldClose (:window state) true)))))
+
+
+(defn flight-controls-display
+  [input-controls gui]
+  (let [stack    (MemoryStack/stackPush)
+        rect     (NkRect/malloc stack)
+        rgb      (NkColor/malloc stack)
+        throttle (:sfsim.input/throttle input-controls)
+        aileron  (:sfsim.input/aileron input-controls)
+        elevator (:sfsim.input/elevator input-controls)
+        rudder   (:sfsim.input/rudder input-controls)]
+    (nuklear-window gui "Yoke" 10 10 80 80 false
+                    (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
+                      (layout-row-dynamic gui 80 1)
+                      (Nuklear/nk_widget rect (::context gui))
+                      (Nuklear/nk_fill_circle canvas
+                                              (Nuklear/nk_rect (- 45 (* ^double aileron 30)) (- 45 (* ^double elevator 30)) 10 10 rect)
+                                              (Nuklear/nk_rgb 255 0 0 rgb))))
+    (nuklear-window gui "Rudder" 10 95 80 20 false
+                    (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
+                      (layout-row-dynamic gui 20 1)
+                      (Nuklear/nk_widget rect (::context gui))
+                      (Nuklear/nk_fill_circle canvas
+                                              (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
+                                              (Nuklear/nk_rgb 255 0 255 rgb))))
+    (nuklear-window gui "Throttle" 95 10 20 80 false
+                    (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
+                      (layout-row-dynamic gui 80 1)
+                      (Nuklear/nk_widget rect (::context gui))
+                      (Nuklear/nk_fill_circle canvas
+                                              (Nuklear/nk_rect 100 (- 75 (* 60 ^double throttle)) 10 10 rect)
+                                              (Nuklear/nk_rgb 255 255 255 rgb)))))
+  (MemoryStack/stackPop))
+
+
+(defn information-display
+  [gui ^long h state frametime]
+  (let [earth-radius    (:sfsim.planet/radius config/planet-config)
+        object-position (physics/get-position :sfsim.physics/surface (:physics state))
+        controls        (-> state :input :sfsim.input/controls)
+        text            (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
+                                (- (fv/mag object-position) ^double earth-radius)
+                                (:sfsim.physics/display-speed (:physics state))
+                                (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
+                                (/ 1.0 ^double frametime)
+                                (if (:sfsim.input/brake controls) ", brake"
+                                  (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
+                                (if (:sfsim.input/air-brake controls) ", air brake" "")
+                                (if (-> state :input :sfsim.input/pause) ", pause" ""))]
+    (nuklear-window gui "Information" 10 (- h 42) 640 32 false
+                    (layout-row-dynamic gui 32 1)
+                    (text-label gui text))))
 
 
 (set! *warn-on-reflection* false)

@@ -7,6 +7,8 @@
 (ns sfsim.t-physics
   (:require
     [clojure.math :refer (exp sqrt to-radians to-degrees)]
+    [clojure.edn :as edn]
+    [clojure.pprint :refer (pprint)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -80,7 +82,8 @@
          {:sfsim.physics/position 0.0 :sfsim.physics/speed 2.0} 1.0 {:sfsim.physics/position 2.0 :sfsim.physics/speed 2.0}
          {:sfsim.physics/position 0.0 :sfsim.physics/speed 0.0} 2.0 {:sfsim.physics/position 2.0 :sfsim.physics/speed 1.0}
          {:sfsim.physics/position 0.0 :sfsim.physics/speed 0.0} 2.0 {:sfsim.physics/position 0.0 :sfsim.physics/speed 1.0}
-         {:sfsim.physics/position 2.0 :sfsim.physics/speed 1.5} 2.0 {:sfsim.physics/position 5.0 :sfsim.physics/speed 1.5})
+         {:sfsim.physics/position 2.0 :sfsim.physics/speed 1.5} 2.0 {:sfsim.physics/position 5.0 :sfsim.physics/speed 1.5}
+         {:sfsim.physics/position 2.0 :sfsim.physics/speed 1.0} 0.0 {:sfsim.physics/position 2.0 :sfsim.physics/speed 3.0})
 
 
 (facts "Determine gravitation from planetary object"
@@ -128,6 +131,8 @@
 
 
 (facts "Initial physics state"
+       (:sfsim.physics/start-julian-date @state) => astro/T0
+       (:sfsim.physics/offset-seconds @state) => 0.0
        (:sfsim.physics/position @state) => (vec3 0 0 0)
        (:sfsim.physics/speed @state) => (vec3 0 0 0)
        (:sfsim.physics/domain @state) => :sfsim.physics/surface
@@ -138,7 +143,9 @@
        (:sfsim.physics/rcs-thrust @state) => (vec3 0 0 0)
        (:sfsim.physics/control-surfaces @state) => (vec3 0 0 0)
        (:sfsim.physics/brake @state) => 0.0
-       (:sfsim.physics/display-speed @state) => 0.0)
+       (:sfsim.physics/display-speed @state) => 0.0
+       (:sfsim.physics/vehicle @state) => nil
+       (:sfsim.physics/local-mesh @state) => {:sfsim.physics/coords nil :sfsim.physics/mesh nil})
 
 
 (tabular "Handle control inputs"
@@ -188,8 +195,8 @@
        (@state :sfsim.physics/position) => (vec3 0 0 0)
        (jolt/get-translation sphere) => (vec3 6378000 0 0)
        (jolt/get-orientation sphere) => (q/->Quaternion 0 1 0 0)
-       (get-position :sfsim.physics/surface astro/T0 @state) => (vec3 6378000 0 0)
-       (get-orientation :sfsim.physics/surface astro/T0 @state) => (q/->Quaternion 0 1 0 0))
+       (get-position :sfsim.physics/surface @state) => (vec3 6378000 0 0)
+       (get-orientation :sfsim.physics/surface @state) => (q/->Quaternion 0 1 0 0))
 
 
 (facts "Set position of space craft not near surface (ICRS aligned coordinate system centered on Earth)"
@@ -198,8 +205,8 @@
        (@state :sfsim.physics/position) => (vec3 6678000 0 0)
        (jolt/get-translation sphere) => (vec3 0 0 0)
        (jolt/get-orientation sphere) => (q/->Quaternion 0 0 1 0)
-       (get-position :sfsim.physics/orbit astro/T0 @state) => (vec3 6678000 0 0)
-       (get-orientation :sfsim.physics/orbit astro/T0 @state) => (q/->Quaternion 0 0 1 0))
+       (get-position :sfsim.physics/orbit @state) => (vec3 6678000 0 0)
+       (get-orientation :sfsim.physics/orbit @state) => (q/->Quaternion 0 0 1 0))
 
 
 (facts "Set linear and angular speed of space craft near surface (rotating coordinate system centered on Earth)"
@@ -208,8 +215,8 @@
        (@state :sfsim.physics/speed) => (vec3 0 0 0)
        (jolt/get-linear-velocity sphere) => (vec3 100 0 0)
        (jolt/get-angular-velocity sphere) => (vec3 0 0 1)
-       (get-linear-speed :sfsim.physics/surface astro/T0 @state) => (vec3 100 0 0)
-       (get-angular-speed :sfsim.physics/surface astro/T0 @state) => (vec3 0 0 1))
+       (get-linear-speed :sfsim.physics/surface @state) => (vec3 100 0 0)
+       (get-angular-speed :sfsim.physics/surface @state) => (vec3 0 0 1))
 
 
 (facts "Set linear and angular speed of space craft not near surface (ICRS aligned coordinate system centered on Earth)"
@@ -218,44 +225,44 @@
        (@state :sfsim.physics/speed) => (vec3 100 0 0)
        (jolt/get-linear-velocity sphere) => (vec3 0 0 0)
        (jolt/get-angular-velocity sphere) => (vec3 0 0 2)
-       (get-linear-speed :sfsim.physics/orbit astro/T0 @state) => (vec3 100 0 0)
-       (get-angular-speed :sfsim.physics/orbit astro/T0 @state) => (vec3 0 0 2))
+       (get-linear-speed :sfsim.physics/orbit @state) => (vec3 100 0 0)
+       (get-angular-speed :sfsim.physics/orbit @state) => (vec3 0 0 2))
 
 
 (facts "Set longitude, latitude, and height of space craft"
        (let [radius 6378000.0
              planet #:sfsim.planet{:radius radius :max-height 8000.0}]
          (swap! state set-geographic (fn [_v] radius) planet 0.0 0.0 0.0 0.0)
-         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 radius 0 0) 1e-6)
+         (get-position :sfsim.physics/surface @state) => (roughly-vector (vec3 radius 0 0) 1e-6)
          (swap! state set-geographic (fn [_v] radius) planet 0.0 0.0 (to-radians 90.0) 0.0)
-         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 0 radius) 1e-6)
+         (get-position :sfsim.physics/surface @state) => (roughly-vector (vec3 0 0 radius) 1e-6)
          (swap! state set-geographic (fn [_v] radius) planet 0.0 (to-radians 90.0) 0.0 0.0)
-         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 radius 0) 1e-6)
+         (get-position :sfsim.physics/surface @state) => (roughly-vector (vec3 0 radius 0) 1e-6)
          (swap! state set-geographic (fn [_v] radius) planet 0.0 (to-radians 90.0) (to-radians 90.0) 0.0)
-         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 0 radius) 1e-6)
+         (get-position :sfsim.physics/surface @state) => (roughly-vector (vec3 0 0 radius) 1e-6)
          (swap! state set-geographic (fn [_v] radius) planet 0.0 0.0 0.0 1000.0)
-         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 1000.0) 0 0) 1e-6)
+         (get-position :sfsim.physics/surface @state) => (roughly-vector (vec3 (+ radius 1000.0) 0 0) 1e-6)
          (swap! state set-geographic (fn [_v] (+ radius 2000.0)) planet 0.0 0.0 0.0 1000.0)
-         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 2000.0) 0 0) 1e-6)
+         (get-position :sfsim.physics/surface @state) => (roughly-vector (vec3 (+ radius 2000.0) 0 0) 1e-6)
          (swap! state set-geographic (fn [_v] (+ radius 2000.0)) planet 5.0 0.0 0.0 1000.0)
-         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 2005.0) 0 0) 1e-6)
+         (get-position :sfsim.physics/surface @state) => (roughly-vector (vec3 (+ radius 2005.0) 0 0) 1e-6)
          (swap! state set-geographic (fn [_v] (+ radius 20000.0)) planet 0.0 0.0 0.0 10000.0)
-         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 10000.0) 0 0) 1e-6)
+         (get-position :sfsim.physics/surface @state) => (roughly-vector (vec3 (+ radius 10000.0) 0 0) 1e-6)
          (swap! state set-geographic (fn [_v] (+ radius 8000.0)) planet 5.0 0.0 0.0 8000.0)
-         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 (+ radius 8005.0) 0 0) 1e-6)
+         (get-position :sfsim.physics/surface @state) => (roughly-vector (vec3 (+ radius 8005.0) 0 0) 1e-6)
          (swap! state set-geographic (fn [_v] radius) planet 0.0 0.0 (to-radians -90.0) 0.0)
-         (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion 1 0 0 0) 1e-6)
+         (get-orientation :sfsim.physics/surface @state) => (roughly-quaternion (q/->Quaternion 1 0 0 0) 1e-6)
          (swap! state set-geographic (fn [_v] radius) planet 0.0 0.0 0.0 0.0)
-         (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion (sqrt 0.5) 0 (- (sqrt 0.5)) 0) 1e-6)
+         (get-orientation :sfsim.physics/surface @state) => (roughly-quaternion (q/->Quaternion (sqrt 0.5) 0 (- (sqrt 0.5)) 0) 1e-6)
          (swap! state set-geographic (fn [_v] radius) planet 0.0 (to-radians 90.0) 0.0 0.0)
-         (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/->Quaternion 0.5 0.5 -0.5 0.5) 1e-6)))
+         (get-orientation :sfsim.physics/surface @state) => (roughly-quaternion (q/->Quaternion 0.5 0.5 -0.5 0.5) 1e-6)))
 
 
 (tabular "Get longitude, latitude, and height of space craft"
        (let [radius 6378000.0
              planet #:sfsim.planet{:radius radius :max-height 8000.0}]
          (swap! state set-geographic (fn [_v] radius) planet 0.0 (to-radians ?longitude) (to-radians ?latitude) ?height)
-         (let [geo-position (get-geographic @state planet astro/T0)]
+         (let [geo-position (get-geographic @state planet)]
            (facts
              (to-degrees (:longitude geo-position)) => (roughly ?longitude 1e-3)
              (to-degrees (:latitude geo-position)) => (roughly ?latitude 1e-3)
@@ -271,7 +278,7 @@
 (fact "Do nothing when switching from surface to surface"
       (swap! state set-pose :sfsim.physics/surface (vec3 6678000 0 0) (q/rotation (to-radians 45.0) (vec3 0 0 1)))
       (swap! state set-speed :sfsim.physics/surface (vec3 100 0 0) (vec3 1 0 0))
-      (swap! state set-domain :sfsim.physics/surface astro/T0)
+      (swap! state set-domain :sfsim.physics/surface)
       (@state :sfsim.physics/domain) => :sfsim.physics/surface
       (@state :sfsim.physics/position) => (roughly-vector (vec3 0 0 0) 1e-6)
       (jolt/get-translation (@state :sfsim.physics/body)) => (vec3 6678000 0 0)
@@ -285,12 +292,12 @@
        (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
          (swap! state set-pose :sfsim.physics/surface (vec3 6678000 0 0) (q/rotation (to-radians 45.0) (vec3 0 0 1)))
          (swap! state set-speed :sfsim.physics/surface (vec3 100 0 0) (vec3 1 0 0))
-         (get-position :sfsim.physics/orbit astro/T0 @state) => (roughly-vector (vec3 0 6678000 0) 1e-6)
-         (get-orientation :sfsim.physics/orbit astro/T0 @state) => (roughly-quaternion (q/rotation (to-radians 135.0) (vec3 0 0 1)) 1e-6)
-         (get-linear-speed :sfsim.physics/orbit astro/T0 @state) => (roughly-vector (vec3 (- (* 6678000 astro/earth-rotation-speed)) 100 0) 1e-6)
-         (get-angular-speed :sfsim.physics/orbit astro/T0 @state) => (roughly-vector (vec3 0 1 astro/earth-rotation-speed) 1e-6)
+         (get-position :sfsim.physics/orbit @state) => (roughly-vector (vec3 0 6678000 0) 1e-6)
+         (get-orientation :sfsim.physics/orbit @state) => (roughly-quaternion (q/rotation (to-radians 135.0) (vec3 0 0 1)) 1e-6)
+         (get-linear-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 (- (* 6678000 astro/earth-rotation-speed)) 100 0) 1e-6)
+         (get-angular-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 0 1 astro/earth-rotation-speed) 1e-6)
 
-         (swap! state set-domain :sfsim.physics/orbit astro/T0)
+         (swap! state set-domain :sfsim.physics/orbit)
          (@state :sfsim.physics/domain) => :sfsim.physics/orbit
          (@state :sfsim.physics/position) => (roughly-vector (vec3 0 6678000 0) 1e-6)
          (jolt/get-translation (@state :sfsim.physics/body)) => (vec3 0 0 0)
@@ -298,12 +305,12 @@
          (@state :sfsim.physics/speed) => (roughly-vector (vec3 (- (* 6678000 astro/earth-rotation-speed)) 100 0) 1e-6)
          (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (vec3 0 0 0)
          (jolt/get-angular-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 0 1 astro/earth-rotation-speed) 1e-6)
-         (get-position :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 6678000 0 0) 1e-6)
-         (get-orientation :sfsim.physics/surface astro/T0 @state) => (roughly-quaternion (q/rotation (to-radians 45.0) (vec3 0 0 1)) 1e-6)
-         (get-linear-speed :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 100 0 0) 1e-6)
-         (get-angular-speed :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 1 0 0) 1e-6)
+         (get-position :sfsim.physics/surface @state) => (roughly-vector (vec3 6678000 0 0) 1e-6)
+         (get-orientation :sfsim.physics/surface @state) => (roughly-quaternion (q/rotation (to-radians 45.0) (vec3 0 0 1)) 1e-6)
+         (get-linear-speed :sfsim.physics/surface @state) => (roughly-vector (vec3 100 0 0) 1e-6)
+         (get-angular-speed :sfsim.physics/surface @state) => (roughly-vector (vec3 1 0 0) 1e-6)
 
-         (swap! state set-domain :sfsim.physics/surface astro/T0)
+         (swap! state set-domain :sfsim.physics/surface)
          (@state :sfsim.physics/domain) => :sfsim.physics/surface
          (@state :sfsim.physics/position) => (vec3 0 0 0)
          (jolt/get-translation (@state :sfsim.physics/body)) => (roughly-vector (vec3 6678000 0 0) 1e-6)
@@ -311,6 +318,16 @@
          (@state :sfsim.physics/speed) => (vec3 0 0 0)
          (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 100 0 0) 1e-6)
          (jolt/get-angular-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 1 0 0) 1e-6)))
+
+
+(facts "Update domain depending on height of vehicle"
+       (swap! state set-domain :sfsim.physics/surface)
+       (swap! state set-pose :sfsim.physics/surface (vec3 0 0 6378000) (q/->Quaternion 1 0 0 0))
+       (swap! state update-domain {:sfsim.planet/radius 6378000.0 :sfsim.planet/space-boundary 80000.0})
+       (@state :sfsim.physics/domain) => :sfsim.physics/surface
+       (swap! state set-pose :sfsim.physics/surface (vec3 0 0 6678000) (q/->Quaternion 1 0 0 0))
+       (swap! state update-domain {:sfsim.planet/radius 6378000.0 :sfsim.planet/space-boundary 80000.0})
+       (@state :sfsim.physics/domain) => :sfsim.physics/orbit)
 
 
 (facts "Perform physics update in Earth centered rotating coordinate system"
@@ -351,58 +368,66 @@
 
 (facts "Apply forces in Earth centered rotating coordinate system"
        (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-pose :sfsim.physics/surface (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
          (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
-         (add-force :sfsim.physics/surface astro/T0 @state (vec3 (jolt/get-mass sphere) 0 0))
+         (add-force :sfsim.physics/surface @state (vec3 (jolt/get-mass sphere) 0 0))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
-         (get-linear-speed :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 1 0 0) 1e-3)
+         (get-linear-speed :sfsim.physics/surface @state) => (roughly-vector (vec3 1 0 0) 1e-3)
 
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
-         (add-force :sfsim.physics/orbit astro/T0 @state (vec3 (jolt/get-mass sphere) 0 0))
+         (add-force :sfsim.physics/orbit @state (vec3 (jolt/get-mass sphere) 0 0))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
-         (get-linear-speed :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 -1 0) 1e-3)))
+         (get-linear-speed :sfsim.physics/surface @state) => (roughly-vector (vec3 0 -1 0) 1e-3)))
 
 
 (facts "Apply forces in Earth centered ICRS aligned coordinate system"
       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
-         (swap! state set-pose :sfsim.physics/orbit (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
-         (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
-         (add-force :sfsim.physics/orbit astro/T0 @state (vec3 (jolt/get-mass sphere) 0 0))
-         (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
-         (get-linear-speed :sfsim.physics/orbit astro/T0 @state) => (roughly-vector (vec3 1 0 0) 1e-3)
+        (swap! state set-julian-date-ut astro/T0)
+        (swap! state set-pose :sfsim.physics/orbit (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
+        (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
+        (add-force :sfsim.physics/orbit @state (vec3 (jolt/get-mass sphere) 0 0))
+        (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
+        (get-linear-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 1 0 0) 1e-3)
 
-         (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
-         (add-force :sfsim.physics/surface astro/T0 @state (vec3 (jolt/get-mass sphere) 0 0))
-         (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
-         (get-linear-speed :sfsim.physics/orbit astro/T0 @state) => (roughly-vector (vec3 0 1 0) 1e-3)))
+         (swap! state set-julian-date-ut astro/T0)
+        (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
+        (add-force :sfsim.physics/surface @state (vec3 (jolt/get-mass sphere) 0 0))
+        (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
+        (get-linear-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 0 1 0) 1e-3)))
 
 
 (facts "Apply torques in Earth centered rotating coordinate system"
        (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-pose :sfsim.physics/surface (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
          (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
-         (add-torque :sfsim.physics/surface astro/T0 @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (add-torque :sfsim.physics/surface @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
-         (get-angular-speed :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 1 0 0) 1e-3)
+         (get-angular-speed :sfsim.physics/surface @state) => (roughly-vector (vec3 1 0 0) 1e-3)
 
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
-         (add-torque :sfsim.physics/orbit astro/T0 @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (add-torque :sfsim.physics/orbit @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
-         (get-angular-speed :sfsim.physics/surface astro/T0 @state) => (roughly-vector (vec3 0 -1 0) 1e-3)))
+         (get-angular-speed :sfsim.physics/surface @state) => (roughly-vector (vec3 0 -1 0) 1e-3)))
 
 
 (facts "Apply torques in Earth centered ICRS aligned coordinate system"
       (with-redefs [astro/earth-to-icrs (fn [jd-ut] (fact jd-ut => astro/T0) (rotation-matrix-3d-z (to-radians 90.0)))]
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-pose :sfsim.physics/orbit (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
-         (add-torque :sfsim.physics/orbit astro/T0 @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (add-torque :sfsim.physics/orbit @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
-         (get-angular-speed :sfsim.physics/orbit astro/T0 @state) => (roughly-vector (vec3 1 0 0) 1e-3)
+         (get-angular-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 1 0 0) 1e-3)
 
+         (swap! state set-julian-date-ut astro/T0)
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
-         (add-torque :sfsim.physics/surface astro/T0 @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
+         (add-torque :sfsim.physics/surface @state (mulv (jolt/get-inertia sphere) (vec3 1 0 0)))
          (swap! state update-state 1.0 (constantly (vec3 0 0 0)))
-         (get-angular-speed :sfsim.physics/orbit astro/T0 @state) => (roughly-vector (vec3 0 1 0) 1e-3)))
+         (get-angular-speed :sfsim.physics/orbit @state) => (roughly-vector (vec3 0 1 0) 1e-3)))
 
 
 (facts "Get set with names of active RCS triplets"
@@ -423,6 +448,42 @@
        (active-rcs @state) => #{"RCS L1" "RCS L2" "RCS L3" "RCS RF1" "RCS RF2" "RCS RF3"}
        (swap! state assoc :sfsim.physics/rcs-thrust (vec3 0 0 1000000))
        (active-rcs @state) => #{"RCS R1" "RCS R2" "RCS R3" "RCS LF1" "RCS LF2" "RCS LF3"})
+
+
+(facts "Get and set Julian date of universal time"
+       (swap! state set-julian-date-ut astro/T0)
+       (swap! state set-domain :sfsim.physics/surface)
+       (get-julian-date-ut @state) => (roughly astro/T0 1e-6)
+       (swap! state update-state 60.0 (fn [_position _speed] (vec3 0 0 0)))
+       (get-julian-date-ut @state) => (roughly (+ astro/T0 (/ 60.0 86400.0)) 1e-6)
+       (swap! state set-domain :sfsim.physics/orbit)
+       (swap! state update-state 60.0 (fn [_position _speed] (vec3 0 0 0)))
+       (get-julian-date-ut @state) => (roughly (+ astro/T0 (/ 120.0 86400.0)) 1e-6)
+       (swap! state set-julian-date-ut (+ astro/T0 1.0))
+       (get-julian-date-ut @state) => (roughly (+ astro/T0 1.0) 1e-6))
+
+
+(destroy-vehicle-constraint @state)
+
+
+(facts "Save and load physics state"
+       (let [state  (-> (make-physics-state sphere)
+                          (set-julian-date-ut (+ astro/T0 42.0))
+                          (assoc :sfsim.physics/offset-seconds 86400.0)
+                          (set-domain :sfsim.physics/orbit)
+                          (set-pose :sfsim.physics/orbit (vec3 6678000 0 0) (q/->Quaternion 1.0 0.0 0.0 0.0))
+                          (assoc :sfsim.physics/throttle 0.25)
+                          (assoc :sfsim.physics/gear 0.5)
+                          (assoc :sfsim.physics/rcs-thrust (vec3 0.25 0.5 -0.5)))
+             data   (edn/read-string (with-out-str (pprint (save-state state))))
+             result (load-state (make-physics-state sphere) data [])]
+         (get-julian-date-ut result) => (roughly (+ astro/T0 43.0) 1e-6)
+         (:sfsim.physics/domain result) => :sfsim.physics/orbit
+         (get-position :sfsim.physics/orbit result) => (vec3 6678000 0 0)
+         (get-orientation :sfsim.physics/orbit result) => (q/->Quaternion 1.0 0.0 0.0 0.0)
+         (:sfsim.physics/throttle result) => 0.25
+         (:sfsim.physics/gear result) => 0.5
+         (:sfsim.physics/rcs-thrust result) => (vec3 0.25 0.5 -0.5)))
 
 
 (jolt/remove-and-destroy-body sphere)

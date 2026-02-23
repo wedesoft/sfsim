@@ -572,11 +572,31 @@ float get_suspension_length(void *constraint, int wheel_index)
   return wheel->GetSuspensionLength();
 }
 
+class SuspensionAccessor: public JPH::Wheel
+{
+  public:
+    void SetSuspensionLength(float inLength) { mSuspensionLength = inLength; }
+};
+
+void set_suspension_length(void *constraint, int wheel_index, float suspension_length)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  SuspensionAccessor *wheel = static_cast<SuspensionAccessor *>(vehicle_constraint->GetWheel(wheel_index));
+  return wheel->SetSuspensionLength(suspension_length);
+}
+
 float get_wheel_rotation_angle(void *constraint, int wheel_index)
 {
   JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
   JPH::Wheel *wheel = vehicle_constraint->GetWheel(wheel_index);
   return wheel->GetRotationAngle();
+}
+
+void set_wheel_rotation_angle(void *constraint, int wheel_index, float wheel_angle)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  JPH::Wheel *wheel = vehicle_constraint->GetWheel(wheel_index);
+  return wheel->SetRotationAngle(wheel_angle);
 }
 
 char has_hit_hard_point(void *constraint, int wheel_index)

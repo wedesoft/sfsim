@@ -65,18 +65,18 @@
     {:yaw yaw :pitch pitch :roll roll}))
 
 
-(defmulti get-forward-direction (fn [domain _jd-ut _physics-state] domain))
+(defmulti get-forward-direction (fn [domain _physics-state] domain))
 
 
 (defmethod get-forward-direction ::slow
-  [_domain jd-ut physics-state]
-  (let [orientation (physics/get-orientation :sfsim.physics/surface jd-ut physics-state)]
+  [_domain physics-state]
+  (let [orientation (physics/get-orientation :sfsim.physics/surface physics-state)]
     (q/rotate-vector orientation (vec3 1 0 0))))
 
 
 (defmethod get-forward-direction ::fast
-  [_domain jd-ut physics-state]
-  (physics/get-linear-speed :sfsim.physics/surface jd-ut physics-state))
+  [_domain physics-state]
+  (physics/get-linear-speed :sfsim.physics/surface physics-state))
 
 
 (defn horizon-system
@@ -90,9 +90,9 @@
 
 (defn horizon-for-domain
   "Determine horizon-align4ed camera matrix for given camera domain and physics state"
-  [physics-state jd-ut domain]
-  (let [position      (physics/get-position :sfsim.physics/surface jd-ut physics-state)
-        nose-or-speed (get-forward-direction domain jd-ut physics-state)]
+  [physics-state domain]
+  (let [position      (physics/get-position :sfsim.physics/surface physics-state)
+        nose-or-speed (get-forward-direction domain physics-state)]
     (horizon-system nose-or-speed position)))
 
 
@@ -104,10 +104,10 @@
 
 (defn get-camera-pose
   "Get camera pose in surface coordinates"
-  [camera-state physics-state jd-ut]
-  (let [position           (physics/get-position :sfsim.physics/surface jd-ut physics-state)
+  [camera-state physics-state]
+  (let [position           (physics/get-position :sfsim.physics/surface physics-state)
         domain             (::domain camera-state)
-        horizon            (matrix->quaternion (horizon-for-domain physics-state jd-ut domain))
+        horizon            (matrix->quaternion (horizon-for-domain physics-state domain))
         camera-orientation (q/* horizon (camera->horizon camera-state))
         relative-position  (q/rotate-vector camera-orientation (mult (vec3 0 0 1) ^double (::distance camera-state)))]
     {::position (add position relative-position) ::orientation camera-orientation}))
@@ -115,14 +115,14 @@
 
 (defn update-camera-pose
   "Update the camera position according to user input"
-  [camera-state ^double dt input-state]
+  [camera-state ^double dt camera-input]
   (let [weight-previous (pow 0.25 dt)
         mix             (fn [prev target] (+ (* ^double prev weight-previous) (* ^double target (- 1.0 weight-previous))))]
     (-> camera-state
-        (update ::target-yaw + (* dt ^double (:sfsim.input/camera-rotate-y input-state)))
-        (update ::target-pitch + (* dt ^double (:sfsim.input/camera-rotate-x input-state)))
-        (update ::target-roll + (* dt ^double (:sfsim.input/camera-rotate-z input-state)))
-        (update ::target-distance * (exp (* dt ^double (:sfsim.input/camera-distance-change input-state))))
+        (update ::target-yaw + (* dt ^double (:sfsim.input/rotate-y camera-input)))
+        (update ::target-pitch + (* dt ^double (:sfsim.input/rotate-x camera-input)))
+        (update ::target-roll + (* dt ^double (:sfsim.input/rotate-z camera-input)))
+        (update ::target-distance * (exp (* dt ^double (:sfsim.input/distance-change camera-input))))
         (update ::yaw mix (::target-yaw camera-state))
         (update ::pitch mix (::target-pitch camera-state))
         (update ::roll mix (::target-roll camera-state))
@@ -131,24 +131,24 @@
 
 (defn horizons-angle
   "Determine angle between forward direction of horizon systems"
-  [physics-state jd-ut]
-  (let [slow-horizon (horizon-for-domain physics-state jd-ut ::slow)
-        fast-horizon (horizon-for-domain physics-state jd-ut ::fast)]
+  [physics-state]
+  (let [slow-horizon (horizon-for-domain physics-state ::slow)
+        fast-horizon (horizon-for-domain physics-state ::fast)]
     (atan2 (dot (col slow-horizon 0) (col fast-horizon 2)) (dot (col slow-horizon 2) (col fast-horizon 2)))))
 
 
-(defmulti set-mode (fn [state target _jd-ut _physics-state] [(::domain state) target]))
+(defmulti set-mode (fn [state target _physics-state] [(::domain state) target]))
 
 
 (defmethod set-mode :default
-  [state target _jd-ut _physics-state]
+  [state target _physics-state]
   (assert (= target (::domain state)))
   state)
 
 
 (defmethod set-mode [::slow ::fast]
-  [state _target jd-ut physics-state]
-  (let [delta-angle (horizons-angle physics-state jd-ut)]
+  [state _target physics-state]
+  (let [delta-angle (horizons-angle physics-state)]
     (-> state
         (update ::yaw - delta-angle)
         (update ::target-yaw - delta-angle)
@@ -156,12 +156,22 @@
 
 
 (defmethod set-mode [::fast ::slow]
-  [state _target jd-ut physics-state]
-  (let [delta-angle (horizons-angle physics-state jd-ut)]
+  [state _target physics-state]
+  (let [delta-angle (horizons-angle physics-state)]
     (-> state
         (update ::yaw + delta-angle)
         (update ::target-yaw + delta-angle)
         (assoc ::domain ::slow))))
+
+
+(defn camera-step
+  "Perform camera updates"
+  [state physics-state camera-input dt]
+  (let [speed (mag (physics/get-linear-speed :sfsim.physics/surface physics-state))
+        mode  (if (>= speed 500.0) ::fast ::slow)]
+    (-> state
+        (set-mode mode physics-state)
+        (update-camera-pose dt camera-input))))
 
 
 (set! *warn-on-reflection* false)

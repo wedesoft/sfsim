@@ -40,11 +40,19 @@
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [ ] enhance physics/set-control-inputs and physics/update-state
-  - [ ] use state variable to consolidate atoms and simplify recording and playback code
+  - [X] join gui-state, input-state, physics-state to facilitate gui code refactor
+  - [X] create macro ignoring nil values using <> as placeholder?
+  - [X] tabbing is broken
+  - [X] convert gui function to state changing one
+  - [X] move gui code into gui module
+  - [X] aggregate physics code in main module and move
+  - [X] refactor rendering code
+    - [X] put rendering code into methods
+    - [X] create high level rendering methods to simplify main program and integration tests
+  - [ ] add some sound effects
+  - [X] does update-camera-pose need the whole input state structure?
+  - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
-  - [ ] change key for switching to RCS
-  - [ ] create high level rendering methods to simplify main program and integration tests
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] add RCS state to physics-state
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
@@ -56,7 +64,8 @@
     - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
-  - [ ] limit time step to avoid physics problems
+  - [X] limit time step to avoid physics problems
+  - [ ] use different dead zone for RCS thruster joystick control
   - [ ] yaw stabilisation
   - [ ] kill rotation
   - [ ] display perihel aphel and time to, Check out poliastro and hapsira
