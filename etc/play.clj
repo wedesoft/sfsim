@@ -47,6 +47,9 @@
 
 (def caps (AL/createCapabilities device-caps))
 
+(AL10/alDopplerFactor 1.0)
+(AL10/alDopplerVelocity 343.3)
+
 (def buffer (AL10/alGenBuffers))
 
 ;; You need one source per sound
@@ -58,14 +61,22 @@
 (AL10/alSourcei source AL10/AL_BUFFER buffer)
 
 ; (AL10/alSourcei source AL10/AL_LOOPING AL10/AL_TRUE)
-; (AL10/alSourcef source AL10/AL_GAIN 0.5)
+(AL10/alSourcef source AL10/AL_GAIN 1.0)
+(AL10/alSourcef source AL10/AL_ROLLOFF_FACTOR 0.0)
+
+(def x0 -300.0)
+(def speed 100.0)
+(AL10/alListener3f AL10/AL_POSITION 0.0 0.0 0.0)
+(AL10/alSource3f source AL10/AL_POSITION x0 0.0 10.0)
+
+(AL10/alListener3f AL10/AL_VELOCITY 0.0 0.0 0.0)
+(AL10/alSource3f source AL10/AL_VELOCITY speed 0.0 0.0)
 
 (AL10/alSourcePlay source)
 
 ; only works for mono audio buffer
-(AL10/alListener3f AL10/AL_POSITION 0.0 0.0 0.0)
-(AL10/alSource3f source AL10/AL_POSITION -1.0 0.0 0.0)
-(AL10/alListenerfv AL10/AL_ORIENTATION (float-array [0.707 0.0 0.707 0.0 1.0 0.0]))
+; forward and up vector
+; (AL10/alListenerfv AL10/AL_ORIENTATION (float-array [0.707 0.0 0.707 0.0 1.0 0.0]))
 
 ; (AL10/alSourceQueueBuffers source (int-array [buffer buffer buffer]))
 ; (while (> (AL10/alGetSourcei source AL10/AL_BUFFERS_PROCESSED) 0)
@@ -79,8 +90,15 @@
 ;        (AL10/alSourcef source AL10/AL_GAIN (/ (abs (- 50 (mod @i 100))) 50.0))
 ;        (Thread/sleep 100))
 
+;(while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
+;       (Thread/sleep 100))
+
+(def t (atom 0.0))
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
-       (Thread/sleep 100))
+       (Thread/sleep 10)
+       (swap! t + 0.01)
+       (AL10/alSource3f source AL10/AL_POSITION (+ x0 (* speed @t)) 0.0 10.0))
+
 
 (AL10/alSourceStop source)
 
