@@ -54,6 +54,7 @@
 (AL10/alSourcei source AL10/AL_BUFFER buffer)
 
 ; (AL10/alSourcei source AL10/AL_LOOPING AL10/AL_TRUE)
+; (AL10/alSourcef source AL10/AL_GAIN 0.5)
 
 (AL10/alSourcePlay source)
 
