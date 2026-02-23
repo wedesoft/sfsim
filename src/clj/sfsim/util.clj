@@ -520,9 +520,10 @@
   [value identifier & body]
   (if (empty? body)
     value
-    `(let [~identifier ~value
-           next-value# (or ~(first body) ~identifier)]
-       (ignore-nil-> next-value# ~identifier ~@(rest body)))))
+    `(let [~identifier    ~value
+           result#        ~(first body)
+           non-nil-value# (if (nil? result#) ~identifier result#)]
+       (ignore-nil-> non-nil-value# ~identifier ~@(rest body)))))
 
 
 (set! *warn-on-reflection* false)

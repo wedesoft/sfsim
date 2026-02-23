@@ -267,6 +267,7 @@
        (ignore-nil-> 42 x (inc x)) => 43
        (ignore-nil-> 42 x (inc x) (inc x)) => 44
        (ignore-nil-> 42 x nil) => 42
+       (ignore-nil-> 42 x false) => false
        (ignore-nil-> 42 x (inc (inc x))) => 44
        (ignore-nil-> 42 x (inc x) (and x nil) (inc x)) => 44
        (let [x 0] (ignore-nil-> 42 x (inc x))) => 43
