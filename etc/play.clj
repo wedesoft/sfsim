@@ -13,8 +13,8 @@
 ;     (io/input-stream "https://getsamplefiles.com/download/ogg/sample-1.ogg")
 ;     (io/output-stream file-path)))
 
-(def file-path "aerospike.ogg")
-; (def file-path "mono.ogg")
+; (def file-path "aerospike.ogg")
+(def file-path "mono.ogg")
 ; (def file-path "warning.ogg")
 
 (def error  (int-array 1))
@@ -63,8 +63,9 @@
 (AL10/alSourcePlay source)
 
 ; only works for mono audio buffer
-; (AL10/alListener3f AL10/AL_POSITION 0.0 0.0 0.0)
-; (AL10/alSource3f source AL10/AL_POSITION -1.0 0.0 0.0)
+(AL10/alListener3f AL10/AL_POSITION 0.0 0.0 0.0)
+(AL10/alSource3f source AL10/AL_POSITION -1.0 0.0 0.0)
+(AL10/alListenerfv AL10/AL_ORIENTATION (float-array [0.707 0.0 0.707 0.0 1.0 0.0]))
 
 ; (AL10/alSourceQueueBuffers source (int-array [buffer buffer buffer]))
 ; (while (> (AL10/alGetSourcei source AL10/AL_BUFFERS_PROCESSED) 0)
