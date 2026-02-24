@@ -16,8 +16,8 @@
 ;     (io/output-stream file-path)))
 
 ; (def file-path "aerospike.ogg")
-(def file-path "mono.ogg")
-; (def file-path "warning.ogg")
+; (def file-path "test/clj/sfsim/fixtures/audio/beep.ogg")
+(def file-path "warning.ogg")
 
 (def error  (int-array 1))
 (def vorbis (STBVorbis/stb_vorbis_open_filename file-path error nil)) ; TODO: check not zero
@@ -35,12 +35,7 @@
 
 (def audio (audio/initialize-audio ""))
 
-(AL10/alDistanceModel AL10/AL_INVERSE_DISTANCE_CLAMPED)
-
-(AL10/alListener3f AL10/AL_POSITION 0.0 0.0 0.0)
-; forward and up vector
-(AL10/alListenerfv AL10/AL_ORIENTATION (float-array [0.0 0.0 -1.0 0.0 1.0 0.0]))
-
+; (AL10/alListenerf AL10/AL_GAIN 1.0)
 
 (def buffer (AL10/alGenBuffers))
 
@@ -54,10 +49,7 @@
 
 ; (AL10/alSourcei source AL10/AL_LOOPING AL10/AL_TRUE)
 (AL10/alSourcef source AL10/AL_GAIN 1.0)
-(AL10/alSourcei source AL10/AL_SOURCE_RELATIVE AL10/AL_FALSE)
-(AL10/alSourcef source AL10/AL_REFERENCE_DISTANCE 10.0)
-(AL10/alSourcef source AL10/AL_MAX_DISTANCE 100.0)
-(AL10/alSourcef source AL10/AL_ROLLOFF_FACTOR 1.0)
+(audio/setup-sample-attenuation source)
 (AL10/alSource3f source AL10/AL_POSITION 0.0 0.0 5.0)
 
 (AL10/alSourcePlay source)
