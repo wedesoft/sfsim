@@ -1,7 +1,6 @@
 ; https://github.com/LWJGL/lwjgl3/blob/master/modules/samples/src/test/java/org/lwjgl/demo/openal/ALCDemo.java
 (ns play
-    (:require [clojure.math :refer (sin)]
-              [sfsim.audio :as audio])
+    (:require [sfsim.audio :as audio])
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
              (org.lwjgl BufferUtils)
              (org.lwjgl.system MemoryUtil)
@@ -30,7 +29,8 @@
                    (:sfsim.audio/sample-rate sound))
 
 ;; Multiple sources can share the same buffer
-(AL10/alSourcei source AL10/AL_BUFFER buffer)
+; (AL10/alSourcei source AL10/AL_BUFFER buffer)
+(AL10/alSourceQueueBuffers source (int-array [buffer buffer buffer]))
 
 ; (AL10/alSourcei source AL10/AL_LOOPING AL10/AL_TRUE)
 (AL10/alSourcef source AL10/AL_GAIN 1.0)
@@ -39,16 +39,16 @@
 
 (AL10/alSourcePlay source)
 
-; (AL10/alSourceQueueBuffers source (int-array [buffer buffer buffer]))
 ; (while (> (AL10/alGetSourcei source AL10/AL_BUFFERS_PROCESSED) 0)
 ;        (println "unqueueing buffer")
 ;        (let [unqueue (int-array 1)]
 ;          (AL10/alSourceUnqueueBuffers source unqueue)))
 
-(def t (atom 0.0))
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
-       (swap! t + 0.1)
-       (AL10/alSource3f source AL10/AL_POSITION (* 10.0 (sin @t)) 0.0 5.0)
+       (when (> (AL10/alGetSourcei source AL10/AL_BUFFERS_PROCESSED) 0)
+        (println "unqueueing buffer")
+        (let [unqueue (int-array 1)]
+          (AL10/alSourceUnqueueBuffers source unqueue)))
        (Thread/sleep 100))
 
 (AL10/alSourceStop source)
