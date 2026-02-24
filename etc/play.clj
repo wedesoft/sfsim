@@ -1,7 +1,6 @@
 ; https://github.com/LWJGL/lwjgl3/blob/master/modules/samples/src/test/java/org/lwjgl/demo/openal/ALCDemo.java
 (ns play
-    (:require [clojure.java.io :as io]
-              [clojure.math :refer (sin)]
+    (:require [clojure.math :refer (sin)]
               [sfsim.audio :as audio])
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
              (org.lwjgl BufferUtils)
@@ -10,11 +9,6 @@
 
 ; (def file-path "sample-1.ogg")
 ;
-; (when (not (.exists (io/file file-path)))
-;   (io/copy
-;     (io/input-stream "https://getsamplefiles.com/download/ogg/sample-1.ogg")
-;     (io/output-stream file-path)))
-
 ; (def file-path "aerospike.ogg")
 ; (def file-path "test/clj/sfsim/fixtures/audio/beep.ogg")
 (def file-path "warning.ogg")
