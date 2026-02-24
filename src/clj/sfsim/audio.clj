@@ -61,10 +61,24 @@
 (defn load-vorbis
   "Load Ogg Vorbis file"
   [path]
-  (let [error (int-array 1)
-        vorbis (STBVorbis/stb_vorbis_open_filename ^String path ^ints error nil)]
+  (let [error  (int-array 1)
+        vorbis (STBVorbis/stb_vorbis_open_filename ^String path ^ints error nil)
+        info   (STBVorbisInfo/malloc)]
     (when (zero? ^long vorbis)
-      (throw (RuntimeException. (format "Error opening Ogg Vorbis file \"%s\"." path))))))
+      (throw (RuntimeException. (format "Error opening Ogg Vorbis file \"%s\"." path))))
+    (STBVorbis/stb_vorbis_get_info vorbis info)
+    (try
+      (let [channels    (.channels info)
+            sample-rate (.sample_rate info)
+            samples     (STBVorbis/stb_vorbis_stream_length_in_samples vorbis)
+            pcm         (BufferUtils/createShortBuffer (* channels samples))]
+        (STBVorbis/stb_vorbis_get_samples_short_interleaved vorbis channels pcm)
+        {::channels channels
+         ::sample-rate sample-rate
+         ::samples samples
+         ::pcm pcm})
+      (finally
+        (STBVorbis/stb_vorbis_close vorbis)))))
 
 
 (set! *warn-on-reflection* false)

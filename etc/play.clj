@@ -19,19 +19,7 @@
 ; (def file-path "test/clj/sfsim/fixtures/audio/beep.ogg")
 (def file-path "warning.ogg")
 
-(def error  (int-array 1))
-(def vorbis (STBVorbis/stb_vorbis_open_filename file-path error nil)) ; TODO: check not zero
-(def info (STBVorbisInfo/malloc))
-(STBVorbis/stb_vorbis_get_info vorbis info)
-(def sample-rate (.sample_rate info))
-(def num-channels (.channels info))
-(def num-samples (STBVorbis/stb_vorbis_stream_length_in_samples vorbis))
-
-(def pcm (BufferUtils/createShortBuffer (* num-samples num-channels)))
-(STBVorbis/stb_vorbis_get_samples_short_interleaved vorbis num-channels pcm)
-
-(STBVorbis/stb_vorbis_close vorbis)
-
+(def sound (audio/load-vorbis file-path))
 
 (def audio (audio/initialize-audio ""))
 
@@ -42,7 +30,10 @@
 ;; You need one source per sound
 (def source (AL10/alGenSources))
 
-(AL10/alBufferData buffer (if (= num-channels 1) AL10/AL_FORMAT_MONO16 AL10/AL_FORMAT_STEREO16) pcm sample-rate)
+(AL10/alBufferData buffer
+                   (if (= (:sfsim.audio/channels sound) 1) AL10/AL_FORMAT_MONO16 AL10/AL_FORMAT_STEREO16)
+                   (:sfsim.audio/pcm sound)
+                   (:sfsim.audio/sample-rate sound))
 
 ;; Multiple sources can share the same buffer
 (AL10/alSourcei source AL10/AL_BUFFER buffer)

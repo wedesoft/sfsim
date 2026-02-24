@@ -17,4 +17,9 @@
 
 
 (facts "Load Ogg Vorbis audio"
-       (load-vorbis "test/clj/sfsim/fixtures/audio/nosuchfile.ogg") => (throws RuntimeException))
+       (load-vorbis "test/clj/sfsim/fixtures/audio/nosuchfile.ogg") => (throws RuntimeException)
+       (let [sound (load-vorbis "test/clj/sfsim/fixtures/audio/beep.ogg")]
+         (:sfsim.audio/channels sound) => 2
+         (:sfsim.audio/sample-rate sound) => 48000
+         (:sfsim.audio/samples sound) => 9216
+         (.limit (:sfsim.audio/pcm sound)) => (* 9216 2)))
