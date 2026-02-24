@@ -43,6 +43,8 @@
 (AL10/alSourceQueueBuffers source (int-array [buffer]))
 
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
+       ; print number of enqueued buffers
+       (println (AL10/alGetSourcei source AL10/AL_BUFFERS_QUEUED) " enqueued buffers")
        (when (> (AL10/alGetSourcei source AL10/AL_BUFFERS_PROCESSED) 0)
         (println "unqueueing buffer")
         (let [unqueue (int-array 1)]
