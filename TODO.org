@@ -179,6 +179,7 @@
    - [ ] breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs
 ** TODO steam page
    steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
+   gamespress.com press release,
    show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
    (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
    first 4 screenshots important - bright ones and dark ones (at least 3 different environments),

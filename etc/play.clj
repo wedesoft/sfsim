@@ -1,6 +1,7 @@
 ; https://github.com/LWJGL/lwjgl3/blob/master/modules/samples/src/test/java/org/lwjgl/demo/openal/ALCDemo.java
 (ns play
-    (:require [clojure.java.io :as io])
+    (:require [clojure.java.io :as io]
+              [sfsim.audio :as audio])
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
              (org.lwjgl BufferUtils)
              (org.lwjgl.system MemoryUtil)
@@ -31,13 +32,12 @@
 (STBVorbis/stb_vorbis_close vorbis)
 
 
-(def device (ALC10/alcOpenDevice ""))
+(def audio (audio/initialize-audio ""))
+(def device (:sfsim.audio/device audio))
+(def device-caps (:sfsim.audio/caps audio))
+(def context (:sfsim.audio/context audio))
 
-(def device-caps (ALC/createCapabilities device))
-
-(def default-device (ALC10/alcGetString device ALC10/ALC_DEVICE_SPECIFIER))
-
-(def context (ALC10/alcCreateContext device nil))
+; (def default-device (ALC10/alcGetString device ALC10/ALC_DEVICE_SPECIFIER))
 
 (def use-tlc (and (.ALC_EXT_thread_local_context device-caps)
                   (EXTThreadLocalContext/alcSetThreadContext context)))
@@ -108,8 +108,8 @@
     (AL10/alSource3f source AL10/AL_VELOCITY vel 0.0 0.0)))
 
 
-    (loop [t 0.0]
-      (when (< t 20.0)
+(loop [t 0.0]
+      (when (< t 3.0)
         (update-source source t)
         (Thread/sleep 16)
         (recur (+ t 0.016))))
@@ -136,4 +136,4 @@
 (MemoryUtil/memFree (.getAddressBuffer caps))
 
 (ALC10/alcDestroyContext context)
-(ALC10/alcCloseDevice device)
+(audio/finalize-audio audio)
