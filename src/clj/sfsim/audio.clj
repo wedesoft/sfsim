@@ -18,16 +18,26 @@
   (let [device (ALC10/alcOpenDevice device-name)]
     (when (zero? device)
       (throw (RuntimeException. (format "Error opening sound device \"%s\"." device-name))))
-    (let [caps (ALC/createCapabilities device)
-          context (ALC10/alcCreateContext device nil)]
-      {::device device
-       ::caps caps
-       ::context context})))
+    (let [device-caps (ALC/createCapabilities device)
+          context     (ALC10/alcCreateContext device nil)
+          use-tlc     (and (.ALC_EXT_thread_local_context device-caps)
+                           (EXTThreadLocalContext/alcSetThreadContext context))]
+      (when-not use-tlc
+                (ALC10/alcMakeContextCurrent context))
+      (let [caps (AL/createCapabilities device-caps)]
+        {::device device
+         ::device-caps device-caps
+         ::caps caps
+         ::context context
+         ::use-tlc use-tlc}))))
 
 
 (defn finalize-audio
   "Close audio device"
   [audio]
-  (ALC10/alcDestroyContext (::context audio))
   (MemoryUtil/memFree (.getAddressBuffer (::caps audio)))
+  (if (::use-tlc audio)
+    (AL/setCurrentThread nil)
+    (AL/setCurrentProcess nil))
+  (ALC10/alcDestroyContext (::context audio))
   (ALC10/alcCloseDevice (::device audio)))
