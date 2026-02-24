@@ -1,10 +1,11 @@
-; https://github.com/LWJGL/lwjgl3/blob/master/modules/samples/src/test/java/org/lwjgl/demo/openal/ALCDemo.java
+;; https://github.com/LWJGL/lwjgl3/blob/master/modules/samples/src/test/java/org/lwjgl/demo/openal/ALCDemo.java
+;; https://javadoc.lwjgl.org/org/lwjgl/openal/package-summary.html
 (ns play
     (:require [sfsim.audio :as audio])
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
              (org.lwjgl BufferUtils)
              (org.lwjgl.system MemoryUtil)
-             (org.lwjgl.openal ALC10 ALC AL AL10 EXTThreadLocalContext)))
+             (org.lwjgl.openal ALC10 ALC AL AL10 AL11 EXTThreadLocalContext)))
 
 ; (def file-path "sample-1.ogg")
 ;
@@ -45,6 +46,8 @@
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
        ; print number of enqueued buffers
        (println (AL10/alGetSourcei source AL10/AL_BUFFERS_QUEUED) " enqueued buffers")
+       ; get seconds offset
+       (println (AL10/alGetSourcef source AL11/AL_SEC_OFFSET))
        (when (> (AL10/alGetSourcei source AL10/AL_BUFFERS_PROCESSED) 0)
         (println "unqueueing buffer")
         (let [unqueue (int-array 1)]
