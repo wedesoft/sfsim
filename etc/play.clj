@@ -14,11 +14,9 @@
 ; (def file-path "test/clj/sfsim/fixtures/audio/beep.ogg")
 (def file-path "warning.ogg")
 
-(def sound (audio/load-vorbis file-path))
-
 (def audio (audio/initialize-audio ""))
 
-(def buffer (audio/make-audio-buffer sound))
+(def buffer (-> file-path audio/load-vorbis audio/make-audio-buffer))
 
 (def source (audio/make-source buffer false))
 
