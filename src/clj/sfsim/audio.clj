@@ -32,7 +32,7 @@
     (let [device-caps (ALC/createCapabilities device)
           context     (ALC10/alcCreateContext ^long device (int-array 1))
           use-tlc     (and (.ALC_EXT_thread_local_context device-caps)
-                           (EXTThreadLocalContext/alcSetThreadContext context))]
+(EXTThreadLocalContext/alcSetThreadContext context))]
       (when-not use-tlc
                 (ALC10/alcMakeContextCurrent context))
       (let [caps (AL/createCapabilities device-caps)]
@@ -102,6 +102,41 @@
   [buffer]
   (AL10/alDeleteBuffers buffer))
 
+
+(defn make-source
+  "Create audio source"
+  [buffer looping]
+  (let [source (AL10/alGenSources)]
+    (AL10/alSourcei source AL10/AL_BUFFER buffer)
+    (AL10/alSourcef source AL10/AL_GAIN 1.0)
+    (AL10/alSourcei source AL10/AL_LOOPING (if looping AL10/AL_TRUE AL10/AL_FALSE))
+    (setup-sample-attenuation source)
+    source))
+
+
+(defn set-source-position
+  "Set audio source position"
+  [source position]
+  (let [[x y z] position]
+    (AL10/alSource3f source AL10/AL_POSITION x y z)))
+
+
+(defn play-source
+  "Play audio source"
+  [source]
+  (AL10/alSourcePlay source))
+
+
+(defn stop-source
+  "Stop playing audio source"
+  [source]
+  (AL10/alSourceStop source))
+
+
+(defn destroy-source
+  "Delete audio source"
+  [source]
+  (AL10/alDeleteSources source))
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
