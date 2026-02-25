@@ -18,8 +18,6 @@
 
 (def audio (audio/initialize-audio ""))
 
-; (AL10/alListenerf AL10/AL_GAIN 1.0)
-
 (def buffer (audio/make-audio-buffer sound))
 
 (def source (audio/make-source buffer false))
