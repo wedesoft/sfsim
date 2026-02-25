@@ -19,15 +19,10 @@
 
 ; (AL10/alListenerf AL10/AL_GAIN 1.0)
 
-(def buffer (AL10/alGenBuffers))
-
 ;; You need one source per sound
 (def source (AL10/alGenSources))
 
-(AL10/alBufferData buffer
-                   (if (= (:sfsim.audio/channels sound) 1) AL10/AL_FORMAT_MONO16 AL10/AL_FORMAT_STEREO16)
-                   (:sfsim.audio/pcm sound)
-                   (:sfsim.audio/sample-rate sound))
+(def buffer (audio/make-audio-buffer sound))
 
 ;; Multiple sources can share the same buffer
 ; (AL10/alSourcei source AL10/AL_BUFFER buffer)
@@ -40,8 +35,8 @@
 
 (AL10/alSourcePlay source)
 
-; enqueue buffer again
-(AL10/alSourceQueueBuffers source (int-array [buffer]))
+;; enqueue buffer again
+;(AL10/alSourceQueueBuffers source (int-array [buffer]))
 
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
        ; print number of enqueued buffers
@@ -58,7 +53,7 @@
 
 (AL10/alDeleteSources source)
 
-(AL10/alDeleteBuffers buffer)
+(audio/destroy-audio-buffer buffer)
 
 (ALC10/alcMakeContextCurrent 0)
 

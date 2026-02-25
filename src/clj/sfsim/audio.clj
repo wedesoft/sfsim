@@ -81,5 +81,27 @@
         (STBVorbis/stb_vorbis_close vorbis)))))
 
 
+(defn audio-format
+  "Determine audio format for one or two channels"
+  [channels]
+  (if (= channels 1)
+    AL10/AL_FORMAT_MONO16
+    AL10/AL_FORMAT_STEREO16))
+
+
+(defn make-audio-buffer
+  "Create audio buffer from PCM data"
+  [sound]
+  (let [buffer (AL10/alGenBuffers)]
+    (AL10/alBufferData buffer (audio-format (::channels sound)) (::pcm sound) (::sample-rate sound))
+    buffer))
+
+
+(defn destroy-audio-buffer
+  "Delete audio buffer"
+  [buffer]
+  (AL10/alDeleteBuffers buffer))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
