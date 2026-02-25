@@ -3,10 +3,7 @@
 (ns play
     (:require [fastmath.vector :refer (vec3)]
               [sfsim.audio :as audio])
-    (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
-             (org.lwjgl BufferUtils)
-             (org.lwjgl.system MemoryUtil)
-             (org.lwjgl.openal ALC10 ALC AL AL10 AL11 EXTThreadLocalContext)))
+    (:import (org.lwjgl.openal AL10 AL11)))
 
 ; (def file-path "sample-1.ogg")
 ;
@@ -32,7 +29,5 @@
 (audio/destroy-source source)
 
 (audio/destroy-audio-buffer buffer)
-
-(ALC10/alcMakeContextCurrent 0)
 
 (audio/finalize-audio audio)

@@ -50,10 +50,11 @@
 (defn finalize-audio
   "Close audio device"
   [audio]
-  (MemoryUtil/memFree (.getAddressBuffer ^ALCapabilities (::caps audio)))
+  (ALC10/alcMakeContextCurrent 0)
   (if (::use-tlc audio)
     (AL/setCurrentThread nil)
     (AL/setCurrentProcess nil))
+  (MemoryUtil/memFree (.getAddressBuffer ^ALCapabilities (::caps audio)))
   (ALC10/alcDestroyContext (::context audio))
   (ALC10/alcCloseDevice (::device audio)))
 
