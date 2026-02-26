@@ -6,6 +6,7 @@
 
 (ns sfsim.audio
     "OpenAL method calls for sound output"
+    (:require [fastmath.vector :refer (vec3)])
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
              (org.lwjgl BufferUtils)
              (org.lwjgl.system MemoryUtil)
@@ -23,6 +24,11 @@
   (AL10/alSourcef source AL10/AL_ROLLOFF_FACTOR 1.0))
 
 
+(defn set-listener-position
+  [position]
+  (AL10/alListener3f AL10/AL_POSITION (position 0) (position 1) (position 2)))
+
+
 (defn initialize-audio
   "Open audio device"
   [^String device-name]
@@ -32,12 +38,12 @@
     (let [device-caps (ALC/createCapabilities device)
           context     (ALC10/alcCreateContext ^long device (int-array 1))
           use-tlc     (and (.ALC_EXT_thread_local_context device-caps)
-(EXTThreadLocalContext/alcSetThreadContext context))]
+                           (EXTThreadLocalContext/alcSetThreadContext context))]
       (when-not use-tlc
                 (ALC10/alcMakeContextCurrent context))
       (let [caps (AL/createCapabilities device-caps)]
         (AL10/alDistanceModel AL10/AL_INVERSE_DISTANCE_CLAMPED)
-        (AL10/alListener3f AL10/AL_POSITION 0.0 0.0 0.0)
+        (set-listener-position (vec3 0 0 0))
         ; forward and up vector
         (AL10/alListenerfv AL10/AL_ORIENTATION (float-array [0.0 0.0 -1.0 0.0 1.0 0.0]))
         {::device device
