@@ -92,7 +92,7 @@
 
 (defn audio-format
   "Determine audio format for one or two channels"
-  [channels]
+  ^long [^long channels]
   (if (= channels 1)
     AL10/AL_FORMAT_MONO16
     AL10/AL_FORMAT_STEREO16))
@@ -102,13 +102,13 @@
   "Create audio buffer from PCM data"
   [sound]
   (let [buffer (AL10/alGenBuffers)]
-    (AL10/alBufferData buffer (audio-format (::channels sound)) (::pcm sound) (::sample-rate sound))
+    (AL10/alBufferData buffer (audio-format (::channels sound)) ^java.nio.DirectShortBufferU (::pcm sound) ^long (::sample-rate sound))
     buffer))
 
 
 (defn destroy-audio-buffer
   "Delete audio buffer"
-  [buffer]
+  [^long buffer]
   (AL10/alDeleteBuffers buffer))
 
 
@@ -167,8 +167,49 @@
 
 (defn destroy-source
   "Delete audio source"
-  [source]
+  [^long source]
   (AL10/alDeleteSources source))
+
+
+(defn make-audio-state
+  []
+  (let [audio (initialize-audio "")
+        gear-deploy-buffer (-> "data/audio/gear-deploy.ogg" load-vorbis make-audio-buffer)
+        gear-retract-buffer (-> "data/audio/gear-retract.ogg" load-vorbis make-audio-buffer)
+        gear-deploy-source (make-source gear-deploy-buffer false)
+        gear-retract-source (make-source gear-retract-buffer false)]
+    {::audio audio
+     ::gear-deploy-buffer gear-deploy-buffer
+     ::gear-retract-buffer gear-retract-buffer
+     ::gear-deploy-source gear-deploy-source
+     ::gear-retract-source gear-retract-source
+     ::gear-down true}))
+
+
+(defn update-state
+  [state physics inputs]
+  (when-not (= (::gear-down state) (:sfsim.input/gear-down inputs))
+    (if (:sfsim.input/gear-down inputs)
+      (do
+        (source-stop (::gear-retract-source state))
+        (set-source-offset (::gear-deploy-source state) (* 4.0 ^double (:sfsim.physics/gear physics)))
+        (source-play (::gear-deploy-source state)))
+      (do
+        (source-stop (::gear-deploy-source state))
+        (set-source-offset (::gear-retract-source state) (* 4.0 (- 1.0 ^double (:sfsim.physics/gear physics))))
+        (source-play (::gear-retract-source state)))))
+  (-> state
+      (assoc ::gear-down (:sfsim.input/gear-down inputs))))
+
+
+(defn destroy-audio-state
+  [state]
+  (destroy-source (::gear-deploy-source state))
+  (destroy-source (::gear-retract-source state))
+  (destroy-audio-buffer (::gear-deploy-buffer state))
+  (destroy-audio-buffer (::gear-retract-buffer state))
+  (finalize-audio (::audio state)))
+
 
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

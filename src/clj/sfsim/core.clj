@@ -35,6 +35,7 @@
     [sfsim.render :refer (make-window destroy-window onscreen-render quad-splits-orientations with-culling)]
     [sfsim.graphics :as graphics]
     [sfsim.image :refer (spit-png)]
+    [sfsim.audio :as audio]
     [sfsim.input :refer (make-event-buffer make-initial-state process-events joysticks-poll ->InputHandler
                          char-callback key-callback cursor-pos-callback mouse-button-callback)])
   (:import
@@ -187,10 +188,12 @@
         buffer-initial-size (* 4 1024)
         bitmap-font         (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
         gui                 (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)
+        audio-state         (audio/make-audio-state)
         state               (atom {:gui gui-state
                                    :input input-state
                                    :physics physics-state
                                    :camera camera-state
+                                   :audio audio-state
                                    :surface surface
                                    :window window})
         recording           (atom (and (.exists (java.io.File. "recording.edn"))  ; Initialize recording with "echo [] > recording.edn"
@@ -231,6 +234,7 @@
             (swap! state assoc :camera (:camera frame)))
           (do
             (when (not (-> @state :input :sfsim.input/pause))
+              (swap! state update :audio audio/update-state (:physics @state) (-> @state :input :sfsim.input/controls))
               (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) dt wheels
                      config/planet-config split-orientations thrust))
             (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
@@ -313,6 +317,7 @@
         (swap! frame-counter inc)))
     (planet/destroy-tile-tree tile-tree)
     (graphics/destroy-graphics graphics)
+    (audio/destroy-audio-state audio-state)
     (gui/destroy-nuklear-gui gui)
     (gui/destroy-font-texture bitmap-font)
     (destroy-window window)

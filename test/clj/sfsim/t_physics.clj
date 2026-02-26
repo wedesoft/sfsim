@@ -164,7 +164,7 @@
          :sfsim.input/throttle      0.1    0.25 :sfsim.physics/throttle         0.1
          :sfsim.input/air-brake     true   0.25 :sfsim.physics/air-brake        0.5
          :sfsim.input/air-brake     false  0.25 :sfsim.physics/air-brake        0.0
-         :sfsim.input/gear-down     false  0.25 :sfsim.physics/gear             0.875
+         :sfsim.input/gear-down     false  0.25 :sfsim.physics/gear             0.9375
          :sfsim.input/rcs-roll      -1     1.0  :sfsim.physics/rcs-thrust       (vec3  1000000 0 0)
          :sfsim.input/rcs-roll       1     1.0  :sfsim.physics/rcs-thrust       (vec3 -1000000 0 0)
          :sfsim.input/rcs-roll       0     1.0  :sfsim.physics/rcs-thrust       (vec3 0 0 0)
