@@ -132,8 +132,7 @@
 (defn set-source-position
   "Set audio source position"
   [source position]
-  (let [[x y z] position]
-    (AL10/alSource3f source AL10/AL_POSITION x y z)))
+  (AL10/alSource3f source AL10/AL_POSITION (position 0) (position 1) (position 2)))
 
 
 (defn source-play
