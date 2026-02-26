@@ -24,7 +24,7 @@
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
        ; get seconds offset
        (println (AL10/alGetSourcef source AL11/AL_SEC_OFFSET))
-       (Thread/sleep 100))
+       (Thread/sleep 50))
 
 (audio/destroy-source source)
 

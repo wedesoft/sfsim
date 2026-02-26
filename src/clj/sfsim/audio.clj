@@ -104,12 +104,18 @@
   (AL10/alDeleteBuffers buffer))
 
 
+(defn set-source-gain
+  "Set audio volume of source"
+  [source gain]
+  (AL10/alSourcef source AL10/AL_GAIN gain))
+
+
 (defn make-source
   "Create audio source"
   [buffer looping]
   (let [source (AL10/alGenSources)]
     (AL10/alSourcei source AL10/AL_BUFFER buffer)
-    (AL10/alSourcef source AL10/AL_GAIN 1.0)
+    (set-source-gain source 1.0)
     (AL10/alSourcei source AL10/AL_LOOPING (if looping AL10/AL_TRUE AL10/AL_FALSE))
     (setup-sample-attenuation source)
     source))
