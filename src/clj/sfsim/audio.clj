@@ -122,13 +122,19 @@
     (AL10/alSource3f source AL10/AL_POSITION x y z)))
 
 
-(defn play-source
+(defn source-play
   "Play audio source"
   [source]
   (AL10/alSourcePlay source))
 
 
-(defn stop-source
+(defn source-pause
+  "Pause audio source"
+  [source]
+  (AL10/alSourcePause source))
+
+
+(defn source-stop
   "Stop playing audio source"
   [source]
   (AL10/alSourceStop source))

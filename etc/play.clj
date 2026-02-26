@@ -19,7 +19,7 @@
 
 (audio/set-source-position source (vec3 0.0 0.0 5.0))
 
-(audio/play-source source)
+(audio/source-play source)
 
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
        ; get seconds offset
