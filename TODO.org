@@ -50,6 +50,15 @@
     - [X] put rendering code into methods
     - [X] create high level rendering methods to simplify main program and integration tests
   - [ ] add some sound effects
+    - [ ] add landing gear [[https://pixabay.com/sound-effects/search/landing-gear/]]
+    - [ ] seek audio position for landing gear if necessary
+    - [ ] play background music
+    - [ ] set volume of background music
+    - [ ] set volume of sound effects
+    - [ ] position sound effects
+    - [ ] adjust thruster volume depending on throttle and play/stop
+    - [ ] play/stop individual RCS thrusters
+    - [ ] reduce volume when leaving atmosphere
   - [X] does update-camera-pose need the whole input state structure?
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
