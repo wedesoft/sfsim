@@ -18,6 +18,7 @@
 
 
 (defn setup-sample-attenuation
+  "Configure distance attenuation model"
   [source]
   (AL10/alSourcef source AL10/AL_REFERENCE_DISTANCE 10.0)
   (AL10/alSourcef source AL10/AL_MAX_DISTANCE 100.0)
@@ -25,6 +26,7 @@
 
 
 (defn set-listener-position
+  "Set listener position"
   [position]
   (AL10/alListener3f AL10/AL_POSITION (position 0) (position 1) (position 2)))
 
