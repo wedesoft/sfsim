@@ -6,11 +6,11 @@
               [sfsim.audio :as audio])
     (:import (org.lwjgl.openal AL10 AL11)))
 
-(def file-path "mono.ogg")
+; (def file-path "mono.ogg")
 ;
 ; (def file-path "aerospike.ogg")
 ; (def file-path "test/clj/sfsim/fixtures/audio/beep.ogg")
-; (def file-path "warning.ogg")
+(def file-path "warning.ogg")
 
 (def audio (audio/initialize-audio ""))
 
@@ -22,15 +22,8 @@
 
 (audio/source-play source)
 
-(def t (atom 0.0))
-
 (while (= (AL10/alGetSourcei source AL10/AL_SOURCE_STATE) AL10/AL_PLAYING)
-       ; get seconds offset
-       (swap! t + 0.05)
-       (let [x (* 20.0 (sin (* 2.0 @t)))]
-         (println  x)
-         (audio/set-source-position source (vec3 x 0.0 -2.0)))
-       (Thread/sleep 50))
+       (Thread/sleep 100))
 
 (audio/destroy-source source)
 
