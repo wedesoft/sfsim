@@ -1,10 +1,9 @@
 ;; https://github.com/LWJGL/lwjgl3/blob/master/modules/samples/src/test/java/org/lwjgl/demo/openal/ALCDemo.java
 ;; https://javadoc.lwjgl.org/org/lwjgl/openal/package-summary.html
 (ns play
-    (:require [clojure.math :refer (sin)]
-              [fastmath.vector :refer (vec3)]
+    (:require [fastmath.vector :refer (vec3)]
               [sfsim.audio :as audio])
-    (:import (org.lwjgl.openal AL10 AL11)))
+    (:import (org.lwjgl.openal AL10)))
 
 ; (def file-path "mono.ogg")
 ;
