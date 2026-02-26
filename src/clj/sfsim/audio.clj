@@ -10,7 +10,7 @@
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
              (org.lwjgl BufferUtils)
              (org.lwjgl.system MemoryUtil)
-             (org.lwjgl.openal ALC10 ALC AL ALCapabilities AL10 EXTThreadLocalContext)))
+             (org.lwjgl.openal AL AL10 AL11 ALC ALC10 ALCapabilities EXTThreadLocalContext)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -152,6 +152,18 @@
   "Stop playing audio source"
   [source]
   (AL10/alSourceStop source))
+
+
+(defn get-source-offset
+  "Get current time of audio track"
+  [source]
+  (AL10/alGetSourcef source AL11/AL_SEC_OFFSET))
+
+
+(defn set-source-offset
+  "Seek to specified time in audio track"
+  [source offset]
+  (AL10/alSourcef source AL11/AL_SEC_OFFSET offset))
 
 
 (defn destroy-source
