@@ -1,18 +1,22 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
-  - Note taken on [2025-11-14 Fr 22:28] \\
-    float slider1 = iMouse.x / iResolution.x;
-    float slider2 = iMouse.y / iResolution.y;
-    float distortion1 = max(0.0, 5.0 * point.y * point.z * (slider1 - 0.5));
-    float distortion2 = max(0.0, 5.0 * point.y * (slider2 - 0.5));
-    float sdf = mix(baseSdf, shapeMix, mix(engine_pos, 1.0, transition)) + distortion1 + distortion2;
-  - Note taken on [2025-08-26 Di 21:59] \\
-    - [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
+  - Note taken on [2026-02-06 Fr 22:46] \\
+    F-35 cockpit
+    [[https://realsimulator.com/f-35-cockpit/]]
+    [[https://msfsaddons.com/2021/09/29/indiafoxtecho-shows-first-images-of-the-f-35-cockpit-in-msfs/]]
+  - Note taken on [2026-02-01 So 15:48] \\
+    Thrust vectoring:
+    If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
+    A combination of pitch and roll can produce whatever attitude control you need. source
+    [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
+    [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
   - Note taken on [2025-08-26 Tue 09:21] \\
     - Links by Substantial_Marzipan about linear aerospike:
       - https://aerospaceweb.org/design/aerospike/aerospike.shtml
       - https://en.m.wikipedia.org/wiki/Rocketdyne_XRS-2200
+    - Project by ertugrulcetin u/ertucetin
+      - https://github.com/ertugrulcetin/clojure-100k-cubes-lwjgl
   - Note taken on [2025-08-25 Mo 21:26] \\
     - [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
   - Note taken on [2025-08-24 So 20:58] \\
@@ -34,43 +38,44 @@
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
-  - [ ] use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
-        also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-    - [-] render cloud and plume low res overlay
-      - [X] cloud and plume rendering with atmospheric attenuation with alpha as transmittance using glBlendFuncSeparate
-        - [X] change all integration tests to use new cloud shaders
-        - [X] change main program to use new cloud shader
-        - [X] delete atmosphere cloud and planet cloud shader
-        - [X] switch model clouds to overlay, try out plume graphics
-        - [X] remove cloud-plume-cloud-outer
-        - [X] implement depth-aware upsampling for model, planet, and atmosphere (use z-far for atmosphere?)
-        - [X] render plume box instead of fullscreen
-          - [X] limit plume box using max-slope and length
-          - [X] use cube as vertex array object with backface pointing outside, test rendering from inside cube
-          - [X] problem when object radius is larger than distance to object
-          - [X] problem with shadow map size being adapted to object radius
-          - [X] use different vertex shader using transform and air pressure to move and scale box
-      - [-] implement RCS thrusters
-        - [X] implement rcs-segment.glsl
-        - [X] use different values for rcs: nozzle, throttle, max-slope
-        - [X] vertex and fragment shader for RCS thruster
-        - [X] store RCS coordinate systems in Blender
-        - [-] use binary space partitioning tree
-        - [ ] integration test for model and plume
-    - [ ] disable color buffer when rendering frame buffer and it is not required?
-  - [ ] use macros when doing front face culling or disabling depth test
+    - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
+      also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
+  - [X] join gui-state, input-state, physics-state to facilitate gui code refactor
+  - [X] create macro ignoring nil values using <> as placeholder?
+  - [X] tabbing is broken
+  - [X] convert gui function to state changing one
+  - [X] move gui code into gui module
+  - [X] aggregate physics code in main module and move
+  - [X] refactor rendering code
+    - [X] put rendering code into methods
+    - [X] create high level rendering methods to simplify main program and integration tests
+  - [ ] add some sound effects
+    - [ ] seek audio position for landing gear if necessary
+    - [ ] set positions of sound effects (and update position of listener)
+    - [ ] add landing gear [[https://pixabay.com/sound-effects/search/landing-gear/]]
+    - [ ] play background music
+    - [ ] set volume of background music
+    - [ ] set volume of sound effects
+    - [ ] adjust thruster volume depending on throttle and play/stop
+    - [ ] play/stop individual RCS thrusters
+    - [ ] reduce volume when leaving atmosphere
+    - [ ] wheel sounds when hitting runway
+  - [X] does update-camera-pose need the whole input state structure?
+  - [ ] simplify recording and playback code
+  - [ ] allow setting of heading in location dialog
+  - [ ] schemas for model, planet, and atmosphere geometry renderer
+  - [ ] add RCS state to physics-state
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
-  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
-  - [ ] Thrust vectoring:
-        If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
-        A combination of pitch and roll can produce whatever attitude control you need. source
-        [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
   - [ ] animate control surfaces and air brake
+  - [ ] reentry physics
+    - [ ] reentry flame
+    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
-  - [ ] limit time step to avoid physics problems
+  - [X] limit time step to avoid physics problems
+  - [ ] use different dead zone for RCS thruster joystick control
   - [ ] yaw stabilisation
   - [ ] kill rotation
   - [ ] display perihel aphel and time to, Check out poliastro and hapsira
@@ -80,7 +85,6 @@
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
   - [ ] moon landing physics (hover thrusters), hover thruster locations
   - [ ] docking physics
-  - [ ] reentry flame
 * TODO [#B] add launchpad and runway                                   :scenery:
   - Note taken on [2025-08-14 Do 12:58] \\
     [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,
@@ -185,6 +189,7 @@
    - [ ] breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs
 ** TODO steam page
    steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
+   gamespress.com press release,
    show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
    (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
    first 4 screenshots important - bright ones and dark ones (at least 3 different environments),
@@ -247,6 +252,7 @@
   - [ ] winter daytime is too dark, adjust range?
   - [ ] limit timestep on startup to prevent numerical problems
   - [ ] add keyboard mapping help page!
+  - [ ] borderless fullscreen support
   - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] configurable key controls
   - [ ] joystick hat to control camera
@@ -270,3 +276,9 @@
     - [ ] bake animation when exporting (use NLP track names)
       - [ ] is "depth" initialised when rendering space ship or planet?
   - [ ] keyboard shortcut customisation
+  - [ ] crashes
+    - [ ] crashes on ground
+    - [ ] crashes in water
+    - [ ] burning up
+    - [ ] wing stress
+  - [ ] free camera (move around camera freely)

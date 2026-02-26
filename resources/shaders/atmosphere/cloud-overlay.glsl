@@ -12,6 +12,8 @@ uniform int overlay_height;
 
 const vec2 vector01 = vec2(0.0, 1.0);
 
+// Depth-aware bilinear upsampling
+// https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/
 vec4 cloud_overlay(float depth)
 {
   vec2 point = gl_FragCoord.xy / cloud_subsampling;

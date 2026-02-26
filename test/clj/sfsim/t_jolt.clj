@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -6,7 +6,7 @@
 
 (ns sfsim.t-jolt
   (:require
-    [clojure.math :refer (PI)]
+    [clojure.math :refer (PI to-radians)]
     [fastmath.matrix :refer (mat3x3 mat4x4)]
     [fastmath.vector :refer (vec3)]
     [midje.sweet :refer :all]
@@ -26,7 +26,7 @@
 
 
 (def sphere (create-and-add-dynamic-body (sphere-settings 0.5 1000.0) (vec3 2 3 5) (q/->Quaternion 0 1 0 0)))
-(set-angular-velocity sphere (vec3 (/ PI 2) 0 0))
+(set-angular-velocity sphere (vec3 (to-radians 90.0) 0 0))
 
 
 (facts "Get position vector, rotation matrix, and velocities of sphere body"
@@ -34,7 +34,7 @@
        (get-rotation sphere) => (mat3x3 1 0 0, 0 -1 0, 0 0 -1)
        (get-orientation sphere) => (q/->Quaternion 0 1 0 0)
        (get-linear-velocity sphere) => (vec3 0 0 0)
-       (get-angular-velocity sphere) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6))
+       (get-angular-velocity sphere) => (roughly-vector (vec3 (to-radians 90.0) 0 0) 1e-6))
 
 
 (facts "Check position and speed after time step"
@@ -43,7 +43,7 @@
        (get-translation sphere) => (vec3 2 2 5)
        (get-linear-velocity sphere) => (vec3 0 -1 0)
        (get-rotation sphere) => (roughly-matrix (mat3x3 1 0 0, 0 0 1, 0 -1 0) 1e-6)
-       (get-angular-velocity sphere) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6))
+       (get-angular-velocity sphere) => (roughly-vector (vec3 (to-radians 90.0) 0 0) 1e-6))
 
 
 (facts "Test setting position of sphere"
@@ -105,11 +105,11 @@
 
 (facts "Get position vector, rotation matrix, and velocities of box body"
        (let [box (create-and-add-dynamic-body (box-settings (vec3 0.2 0.3 0.5) 1000.0) (vec3 2 3 5) (q/->Quaternion 0 1 0 0))]
-         (set-angular-velocity box (vec3 (/ PI 2) 0 0))
+         (set-angular-velocity box (vec3 (to-radians 90.0) 0 0))
          (get-translation box) => (vec3 2 3 5)
          (get-rotation box) => (mat3x3 1 0 0, 0 -1 0, 0 0 -1)
          (get-linear-velocity box) => (vec3 0 0 0)
-         (get-angular-velocity box) => (roughly-vector (vec3 (/ PI 2) 0 0) 1e-6)
+         (get-angular-velocity box) => (roughly-vector (vec3 (to-radians 90.0) 0 0) 1e-6)
          (remove-and-destroy-body box)))
 
 
@@ -256,7 +256,7 @@
                                                  (vec3 0.0 0.0 -2.0) (q/->Quaternion 1 0 0 0))
              body    (create-and-add-dynamic-body (box-settings (vec3 0.5 0.5 0.3) 1000.0)
                                                   (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0))
-             vehicle (create-and-add-vehicle-constraint body (vec3 0 0 1) (vec3 1 0 0) [wheel1 wheel2 wheel3 wheel4])]
+             vehicle (create-and-add-vehicle-constraint body (vec3 0 0 1) (vec3 0 0 1) (vec3 1 0 0) [wheel1 wheel2 wheel3 wheel4])]
          (set-gravity (vec3 0 0 -1))
          (set-friction floor 0.3)
          (set-restitution floor 0.2)
@@ -275,10 +275,14 @@
          (get-suspension-length vehicle 1) => (roughly 0.280 1e-3)
          (get-suspension-length vehicle 2) => (roughly 0.280 1e-3)
          (get-suspension-length vehicle 3) => (roughly 0.280 1e-3)
+         (set-suspension-length vehicle 2 0.1)
+         (get-suspension-length vehicle 2) => (roughly 0.1 1e-3)
          (get-wheel-rotation-angle vehicle 0) => (roughly 0.0 1e-3)
          (get-wheel-rotation-angle vehicle 1) => (roughly 0.0 1e-3)
          (get-wheel-rotation-angle vehicle 2) => (roughly 0.0 1e-3)
          (get-wheel-rotation-angle vehicle 3) => (roughly 0.0 1e-3)
+         (set-wheel-rotation-angle vehicle 2 (to-radians 90.0))
+         (get-wheel-rotation-angle vehicle 2) => (roughly (to-radians 90.0) 1e-3)
          (has-hit-hard-point vehicle 0) => false
          (has-hit-hard-point vehicle 1) => false
          (has-hit-hard-point vehicle 2) => false
@@ -302,7 +306,7 @@
                                                 (vec3 0.0 0.0 -2.0) (q/->Quaternion 1 0 0 0))
             body    (create-and-add-dynamic-body (box-settings (vec3 0.5 0.5 0.3) 1000.0)
                                                  (vec3 0.0 0.0 0.0) (q/->Quaternion 0 1 0 0))
-            vehicle (create-and-add-vehicle-constraint body (vec3 0 0 -1) (vec3 1 0 0)
+            vehicle (create-and-add-vehicle-constraint body (vec3 0 0 1) (vec3 0 0 -1) (vec3 1 0 0)
                                                        [wheel1-inv wheel2-inv wheel3-inv wheel4-inv])]
         (set-gravity (vec3 0 0 -1))
         (set-friction floor 0.3)
@@ -322,7 +326,7 @@
                        (box-settings (vec3 100.0 100.0 0.5) 1000.0) (vec3 0.0 0.0 -1.353) (q/->Quaternion 1 0 0 0))
              body    (create-and-add-dynamic-body (box-settings (vec3 0.5 0.5 0.3) 1000.0)
                                                   (vec3 0.0 0.0 0.0) (q/->Quaternion 1 0 0 0))
-             vehicle (create-and-add-vehicle-constraint body (vec3 0 0 1) (vec3 1 0 0) [wheel1 wheel2 wheel3 wheel4])]
+             vehicle (create-and-add-vehicle-constraint body (vec3 0 0 1) (vec3 0 0 1) (vec3 1 0 0) [wheel1 wheel2 wheel3 wheel4])]
          (set-gravity (vec3 0 0 -1))
          (set-friction floor 0.5)
          (set-restitution floor 0.2)

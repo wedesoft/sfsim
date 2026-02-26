@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -7,7 +7,7 @@
 (ns sfsim.t-astro
   (:require
     [clojure.math :refer (PI)]
-    [fastmath.matrix :refer (mat3x3 mulm mulv eye)]
+    [fastmath.matrix :refer (mat3x3 mulm mulv eye rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z)]
     [fastmath.vector :refer (vec3)]
     [gloss.core :refer (sizeof)]
     [instaparse.core :as insta]
@@ -306,10 +306,10 @@
                     astro/omega-a mock-omega-a
                     astro/chi-a   mock-chi-a]
         (let [tdb        (+ T0 36525.0)
-              r3-chi-a   (rotation-z (* -0.5 PI))
-              r1-omega-a (rotation-x (* 0.25 PI))
-              r3-psi-a   (rotation-z (* 0.125 PI))
-              r1-eps0    (rotation-x (* (- eps0) ASEC2RAD))]
+              r3-chi-a   (rotation-matrix-3d-z (* -0.5 PI))
+              r1-omega-a (rotation-matrix-3d-x (* 0.25 PI))
+              r3-psi-a   (rotation-matrix-3d-z (* 0.125 PI))
+              r1-eps0    (rotation-matrix-3d-x (* (- eps0) ASEC2RAD))]
           (compute-precession tdb) => (mulm r3-chi-a (mulm r1-omega-a (mulm r3-psi-a r1-eps0))))))
 
 
@@ -399,10 +399,10 @@
        (frame-kernel-body-frame {:sfsim.astro/angles [] :sfsim.astro/axes [] :sfsim.astro/units "DEGREES"})
        => (eye 3)
        (frame-kernel-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [1] :sfsim.astro/units "DEGREES"})
-       => (rotation-x (/ PI 6.0))
+       => (rotation-matrix-3d-x (/ PI 6.0))
        (frame-kernel-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [2] :sfsim.astro/units "DEGREES"})
-       => (rotation-y (/ PI 6.0))
+       => (rotation-matrix-3d-y (/ PI 6.0))
        (frame-kernel-body-frame {:sfsim.astro/angles [30.0] :sfsim.astro/axes [3] :sfsim.astro/units "DEGREES"})
-       => (rotation-z (/ PI 6.0))
+       => (rotation-matrix-3d-z (/ PI 6.0))
        (frame-kernel-body-frame {:sfsim.astro/angles [30.0 45.0] :sfsim.astro/axes [3 2] :sfsim.astro/units "DEGREES"})
-       => (mulm (rotation-y (/ PI 4.0)) (rotation-z (/ PI 6.0))))
+       => (mulm (rotation-matrix-3d-y (/ PI 4.0)) (rotation-matrix-3d-z (/ PI 6.0))))

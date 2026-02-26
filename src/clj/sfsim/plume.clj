@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -9,11 +9,10 @@
     (:require
       [malli.core :as m]
       [comb.template :as template]
-      [sfsim.matrix :refer (fvec3 fmat4)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]
-      [sfsim.render :refer (uniform-float uniform-float uniform-matrix4 uniform-vector3)]))
+      [sfsim.render :refer (uniform-float uniform-float)]))
 
 
 (def plume-phase
@@ -167,23 +166,9 @@
   (uniform-float program "rcs_step" (:sfsim.model/rcs-step model-data)))
 
 
-(def plume-vars (m/schema [:map [:sfsim.render/object-origin fvec3]
-                                [:sfsim.render/object-distance :double]
-                                [:sfsim.render/camera-to-object fmat4]]))
 (def model-vars (m/schema [:map [:sfsim.model/time :double]
                                 [:sfsim.model/pressure :double]
                                 [:sfsim.model/throttle :double]]))
-
-
-(defn setup-dynamic-plume-uniforms
-  {:malli/schema [:=> [:cat :int plume-vars model-vars] :nil]}
-  [program render-vars model-vars]
-  (uniform-vector3 program "object_origin" (:sfsim.render/object-origin render-vars))
-  (uniform-float program "object_distance" (:sfsim.render/object-distance render-vars))
-  (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object render-vars))
-  (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
-  (uniform-float program "time" (:sfsim.model/time model-vars))
-  (uniform-float program "plume_throttle" (:sfsim.model/throttle model-vars)))
 
 
 (def plume-indices

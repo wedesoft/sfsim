@@ -1,0 +1,51 @@
+sfsim (0.10-1)
+
+	* Bugfix for speed display in orbit
+	* move some input handling code into physics module
+	* move geographic conversions into physics module
+
+-- Jan Wedekind <jan@wedesoft.de>  Sat, 07 Feb 2026 23:47:01 +0000
+
+sfsim (0.9-1)
+
+	* bugfix (need to pass correct up vector for Jolt vehicle physics)
+	* bugfix for when deadzone for joystick is set to 1.0
+	* added logging
+	* handle input devices without axes or without buttons
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 04 Feb 2026 22:58:00 +0000
+
+sfsim (0.6-1)
+
+	* RCS thrusters
+	* deferred rendering
+	* depth-aware upsampling of clouds
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 04 Jan 2026 22:00:00 +0000
+
+sfsim (0.5-1)
+
+	* rocket plume graphics with Mach diamonds
+
+-- Jan Wedekind <jan@wedesoft.de>  Wed, 19 Nov 2025 22:00:00 +0000
+
+sfsim (0.4-1)
+
+	* high accuracy orbital physics
+	* following camera
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 24 Aug 2025 22:47:00 +0100
+
+sfsim (0.3-1)
+
+	* GUI tabbing
+	* implemented joystick/controller support
+
+-- Jan Wedekind <jan@wedesoft.de>  Wed, 30 Jul 2025 16:04:00 +0100
+
+sfsim (0.2-1)
+
+	* working on input module
+	* bugfix for uninitialised deep opacity map voxels
+
+ -- Jan Wedekind <jan@wedesoft.de>  Thu, 24 Jul 2025 15:38:12 +0100

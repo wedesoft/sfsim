@@ -509,14 +509,14 @@ void vehicle_constraint_settings_add_wheel(void *constraint, void *wheel_setting
   vehicle_constraint_settings->mWheels.push_back(wheel_settings_wv);
 }
 
-void *create_and_add_vehicle_constraint(int body_id, void *vehicle_constraint_settings)
+void *create_and_add_vehicle_constraint(int body_id, Vec3 world_up, void *vehicle_constraint_settings)
 {
   JPH::BodyLockWrite lock(physics_system->GetBodyLockInterface(), JPH::BodyID(body_id));
   if (lock.Succeeded()) {
     JPH::Body &body = lock.GetBody();
     JPH::VehicleConstraintSettings *vehicle_constraint_settings_ = (JPH::VehicleConstraintSettings *)vehicle_constraint_settings;
     JPH::VehicleConstraint *constraint = new JPH::VehicleConstraint(body, *vehicle_constraint_settings_);
-    JPH::VehicleCollisionTester *tester = new JPH::VehicleCollisionTesterRay(MOVING, JPH::Vec3(0.0f, 0.0f, 1.0f));
+    JPH::VehicleCollisionTester *tester = new JPH::VehicleCollisionTesterRay(MOVING, JPH::Vec3(world_up.x, world_up.y, world_up.z));
     constraint->SetVehicleCollisionTester(tester);
     physics_system->AddConstraint(constraint);
     physics_system->AddStepListener(constraint);
@@ -572,11 +572,31 @@ float get_suspension_length(void *constraint, int wheel_index)
   return wheel->GetSuspensionLength();
 }
 
+class SuspensionAccessor: public JPH::Wheel
+{
+  public:
+    void SetSuspensionLength(float inLength) { mSuspensionLength = inLength; }
+};
+
+void set_suspension_length(void *constraint, int wheel_index, float suspension_length)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  SuspensionAccessor *wheel = static_cast<SuspensionAccessor *>(vehicle_constraint->GetWheel(wheel_index));
+  return wheel->SetSuspensionLength(suspension_length);
+}
+
 float get_wheel_rotation_angle(void *constraint, int wheel_index)
 {
   JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
   JPH::Wheel *wheel = vehicle_constraint->GetWheel(wheel_index);
   return wheel->GetRotationAngle();
+}
+
+void set_wheel_rotation_angle(void *constraint, int wheel_index, float wheel_angle)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  JPH::Wheel *wheel = vehicle_constraint->GetWheel(wheel_index);
+  return wheel->SetRotationAngle(wheel_angle);
 }
 
 char has_hit_hard_point(void *constraint, int wheel_index)

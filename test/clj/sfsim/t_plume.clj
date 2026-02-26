@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -10,13 +10,13 @@
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [fastmath.vector :refer (vec3)]
-      [fastmath.matrix :refer (mulm)]
+      [fastmath.matrix :refer (mulm rotation-matrix-3d-x rotation-matrix-3d-y)]
       [comb.template :as template]
       [sfsim.conftest :refer (roughly-vector shader-test is-image)]
       [midje.sweet :refer :all]
       [sfsim.render :refer :all]
       [sfsim.plume :refer :all]
-      [sfsim.matrix :refer (projection-matrix rotation-x rotation-y)]
+      [sfsim.matrix :refer (projection-matrix)]
       [sfsim.shaders :as shaders])
     (:import
       (org.lwjgl.glfw
@@ -237,7 +237,7 @@ void main()
 
 (def rcs-transfer-test (shader-test (fn [program throttle]
                                         (uniform-float program "pressure" 1.0)
-                                        (uniform-float program "rcs_throttle" throttle))
+                                        (uniform-float program "plume_throttle" throttle))
                                     rcs-transfer-probe (last (rcs-transfer 1.0))))
 
 
@@ -438,7 +438,7 @@ void main()
 (def rcs-box-test
   (shader-test (fn [program nozzle throttle max-slope]
                    (uniform-float program "rcs_nozzle" nozzle)
-                   (uniform-float program "rcs_throttle" throttle)
+                   (uniform-float program "plume_throttle" throttle)
                    (uniform-float program "rcs_max_slope" max-slope))
                rcs-box-probe [(last rcs-box-size) (last rcs-box)]))
 
@@ -605,8 +605,8 @@ void main()
                                    vao        (make-vertex-array-object program plume-indices plume-vertices ["point" 3])]
                                (use-program program)
                                (uniform-matrix4 program "projection" projection)
-                               (uniform-matrix3 program "rotation" (mulm (rotation-x (to-radians ?alpha))
-                                                                         (rotation-y (to-radians ?beta))))
+                               (uniform-matrix3 program "rotation" (mulm (rotation-matrix-3d-x (to-radians ?alpha))
+                                                                         (rotation-matrix-3d-y (to-radians ?beta))))
                                (render-quads vao)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))

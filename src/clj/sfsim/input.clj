@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -8,15 +8,16 @@
     (:require
       [clojure.math :refer (signum)]
       [clojure.set :refer (map-invert)]
-      [sfsim.config :refer (read-user-config)]
-      [sfsim.util :refer (clamp dissoc-in)])
+      [sfsim.util :refer (clamp dissoc-in byte-buffer->byte-array float-buffer->float-array)])
     (:import
       [clojure.lang
        PersistentQueue]
       [org.lwjgl.glfw
        GLFW
        GLFWCharCallbackI
-       GLFWKeyCallbackI]
+       GLFWKeyCallbackI
+       GLFWCursorPosCallbackI
+       GLFWMouseButtonCallbackI]
       [org.lwjgl.nuklear
        Nuklear]))
 
@@ -61,7 +62,7 @@
   (reify GLFWCharCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
          (invoke
            [_this _window codepoint]
-           (swap! event-buffer #(add-char-event % codepoint)))))
+           (swap! event-buffer add-char-event codepoint))))
 
 
 (defn key-callback
@@ -70,14 +71,37 @@
   (reify GLFWKeyCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
          (invoke
            [_this _window k _scancode action mods]
-           (swap! event-buffer #(add-key-event % k action mods)))))
+           (swap! event-buffer add-key-event k action mods))))
+
+
+(defn cursor-pos-callback
+  "GLFW callback function for mouse move events"
+  [event-buffer]
+  (reify GLFWCursorPosCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
+    (invoke
+      [_this _window xpos ypos]
+      (swap! event-buffer add-mouse-move-event xpos ypos))))
+
+
+(defn mouse-button-callback
+  "GLFW callback function for mouse button events"
+  [event-buffer]
+  (reify GLFWMouseButtonCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
+    (invoke
+      [_this _window button action mods]
+      (let [cx    (double-array 1)
+            cy    (double-array 1)]
+        (GLFW/glfwGetCursorPos ^long _window cx cy)
+        (let [x        (long (aget cx 0))
+              y        (long (aget cy 0))]
+          (swap! event-buffer add-mouse-button-event button x y action mods))))))
 
 
 (defn dead-zone-continuous
   "Dead zone function for joystick axis controlling aerofoil"
   ^double [^double epsilon ^double value]
   (let [|value| (abs value)]
-    (if (>= |value| epsilon)
+    (if (> |value| epsilon)
       (* (signum value) (/ (- |value| epsilon) (- 1.0 epsilon)))
       0.0)))
 
@@ -143,11 +167,9 @@
   (if (GLFW/glfwJoystickPresent joystick-id)
     (let [device         (GLFW/glfwGetJoystickName joystick-id)
           axes-buffer    (GLFW/glfwGetJoystickAxes joystick-id)
-          axes           (float-array (.limit axes-buffer))
+          axes           (float-buffer->float-array axes-buffer)
           buttons-buffer (GLFW/glfwGetJoystickButtons joystick-id)
-          buttons        (byte-array (.limit buttons-buffer))]
-      (.get axes-buffer axes)
-      (.get buttons-buffer buttons)
+          buttons        (byte-buffer->byte-array buttons-buffer)]
       (-> event-buffer
           (add-joystick-axis-state joystick-axis-state device axes)
           (add-joystick-button-state joystick-buttons-state device buttons)))
@@ -186,12 +208,12 @@
 
 
 (defprotocol InputHandlerProtocol
-  (process-char [this codepoint])
-  (process-key [this k action mods])
-  (process-mouse-button [this button x y action mods])
-  (process-mouse-move [this x y])
-  (process-joystick-axis [this device axis value moved])
-  (process-joystick-button [this device button action]))
+  (process-char [this state codepoint])
+  (process-key [this state k action mods])
+  (process-mouse-button [this state button x y action mods])
+  (process-mouse-move [this state x y])
+  (process-joystick-axis [this state device axis value moved])
+  (process-joystick-button [this state device button action]))
 
 
 (defn keypress?
@@ -208,353 +230,339 @@
 
 (defmulti process-event
   "Dispatch event to different methods of handler depending on event type"
-  (fn [event _handler] (::event event)))
+  (fn [_state event _handler] (::event event)))
 
 
 (defmethod process-event ::char
-  [event handler]
-  (process-char handler (::codepoint event)))
+  [state event handler]
+  (process-char handler state (::codepoint event)))
 
 
 (defmethod process-event ::key
-  [event handler]
-  (process-key handler (::k event) (::action event) (::mods event)))
+  [state event handler]
+  (process-key handler state (::k event) (::action event) (::mods event)))
 
 
 (defmethod process-event ::mouse-button
-  [event handler]
-  (process-mouse-button handler (::button event) (::x event) (::y event) (::action event) (::mods event)))
+  [state event handler]
+  (process-mouse-button handler state (::button event) (::x event) (::y event) (::action event) (::mods event)))
 
 
 (defmethod process-event ::mouse-move
-  [event handler]
-  (process-mouse-move handler (::x event) (::y event)))
+  [state event handler]
+  (process-mouse-move handler state (::x event) (::y event)))
 
 
 (defmethod process-event ::joystick-axis
-  [{::keys [device axis value moved]} handler]
-  (process-joystick-axis handler device axis value moved))
+  [state {::keys [device axis value moved]} handler]
+  (process-joystick-axis handler state device axis value moved))
 
 
 (defmethod process-event ::joystick-button
-  [event handler]
-  (process-joystick-button handler (::device event) (::button event) (::action event)))
+  [state event handler]
+  (process-joystick-button handler state (::device event) (::button event) (::action event)))
 
 
 (defn process-events
   "Take events from the event buffer and process them"
-  [event-buffer handler]
-  (let [event (peek event-buffer)]
-    (if event
-      (if (false? (process-event event handler))
-        (pop event-buffer)
-        (recur (pop event-buffer) handler))
-      event-buffer)))
+  [state event-buffer handler]
+  (let [state state event-buffer event-buffer]
+    (if (peek event-buffer)
+      (recur (process-event state (peek event-buffer) handler) (pop event-buffer) handler)
+      state)))
 
 
 (defn make-initial-state
   "Create initial state of game and space craft."
   []
-  (atom {::menu                   false
-         ::focus                  0
-         ::fullscreen             false
-         ::pause                  true
-         ::brake                  false
-         ::parking-brake          false
-         ::gear-down              true
-         ::aileron                0.0
-         ::elevator               0.0
-         ::rudder                 0.0
-         ::throttle               0.0
-         ::air-brake              false
-         ::rcs                    false
-         ::rcs-roll               0.0
-         ::rcs-pitch              0.0
-         ::rcs-yaw                0.0
-         ::camera-rotate-x        0.0
-         ::camera-rotate-y        0.0
-         ::camera-rotate-z        0.0
-         ::camera-shift-x         0.0
-         ::camera-shift-y         0.0
-         ::camera-distance-change 0.0
-         }))
-
-
-(def default-mappings
-  {::keyboard
-   {GLFW/GLFW_KEY_ESCAPE    ::menu
-    GLFW/GLFW_KEY_ENTER     ::fullscreen
-    GLFW/GLFW_KEY_P         ::pause
-    GLFW/GLFW_KEY_G         ::gear
-    GLFW/GLFW_KEY_B         ::brake
-    GLFW/GLFW_KEY_F         ::throttle-decrease
-    GLFW/GLFW_KEY_R         ::throttle-increase
-    GLFW/GLFW_KEY_SLASH     ::air-brake
-    GLFW/GLFW_KEY_BACKSLASH ::rcs
-    GLFW/GLFW_KEY_A         ::aileron-left
-    GLFW/GLFW_KEY_KP_5      ::aileron-center
-    GLFW/GLFW_KEY_D         ::aileron-right
-    GLFW/GLFW_KEY_W         ::elevator-down
-    GLFW/GLFW_KEY_S         ::elevator-up
-    GLFW/GLFW_KEY_Q         ::rudder-left
-    GLFW/GLFW_KEY_E         ::rudder-right
-    GLFW/GLFW_KEY_KP_2      ::camera-rotate-x-positive
-    GLFW/GLFW_KEY_KP_8      ::camera-rotate-x-negative
-    GLFW/GLFW_KEY_KP_6      ::camera-rotate-y-positive
-    GLFW/GLFW_KEY_KP_4      ::camera-rotate-y-negative
-    GLFW/GLFW_KEY_KP_1      ::camera-rotate-z-positive
-    GLFW/GLFW_KEY_KP_3      ::camera-rotate-z-negative
-    GLFW/GLFW_KEY_L         ::camera-shift-x-positive
-    GLFW/GLFW_KEY_H         ::camera-shift-x-negative
-    GLFW/GLFW_KEY_K         ::camera-shift-y-positive
-    GLFW/GLFW_KEY_J         ::camera-shift-y-negative
-    GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
-    GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
-    }
+  {::menu       false
+   ::focus      0
+   ::fullscreen false
+   ::pause      true
+   ::controls
+   {::brake         false
+    ::parking-brake false
+    ::gear-down     true
+    ::aileron       0.0
+    ::elevator      0.0
+    ::rudder        0.0
+    ::throttle      0.0
+    ::air-brake     false
+    ::rcs           false
+    ::rcs-roll      0
+    ::rcs-pitch     0
+    ::rcs-yaw       0}
+   ::camera
+   {::rotate-x        0.0
+    ::rotate-y        0.0
+    ::rotate-z        0.0
+    ::distance-change 0.0}
+   ::mappings
+   {::keyboard
+    {GLFW/GLFW_KEY_ESCAPE    ::menu
+     GLFW/GLFW_KEY_ENTER     ::fullscreen
+     GLFW/GLFW_KEY_P         ::pause
+     GLFW/GLFW_KEY_G         ::gear
+     GLFW/GLFW_KEY_B         ::brake
+     GLFW/GLFW_KEY_F         ::throttle-decrease
+     GLFW/GLFW_KEY_R         ::throttle-increase
+     GLFW/GLFW_KEY_SLASH     ::air-brake
+     GLFW/GLFW_KEY_BACKSLASH ::rcs
+     GLFW/GLFW_KEY_A         ::aileron-left
+     GLFW/GLFW_KEY_KP_5      ::aileron-center
+     GLFW/GLFW_KEY_D         ::aileron-right
+     GLFW/GLFW_KEY_W         ::elevator-down
+     GLFW/GLFW_KEY_S         ::elevator-up
+     GLFW/GLFW_KEY_Q         ::rudder-left
+     GLFW/GLFW_KEY_E         ::rudder-right
+     GLFW/GLFW_KEY_KP_2      ::camera-rotate-x-positive
+     GLFW/GLFW_KEY_KP_8      ::camera-rotate-x-negative
+     GLFW/GLFW_KEY_KP_6      ::camera-rotate-y-positive
+     GLFW/GLFW_KEY_KP_4      ::camera-rotate-y-negative
+     GLFW/GLFW_KEY_KP_1      ::camera-rotate-z-positive
+     GLFW/GLFW_KEY_KP_3      ::camera-rotate-z-negative
+     GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
+     GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
+     }}
    ::joysticks
-   (read-user-config "joysticks.edn"
-                     {::dead-zone 0.1})})
+   {::dead-zone 0.1}
+   })
 
 
 (defn menu-key
   "Key handling when menu is shown"
-  [k state gui action mods]
+  [state k gui action mods]
   (let [press (keypress? action)
         shift (shift? mods)]
-    (condp = k
-      GLFW/GLFW_KEY_DELETE      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
-      GLFW/GLFW_KEY_ENTER       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
-      GLFW/GLFW_KEY_BACKSPACE   (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_BACKSPACE press)
-      GLFW/GLFW_KEY_UP          (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_UP press)
-      GLFW/GLFW_KEY_DOWN        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DOWN press)
-      GLFW/GLFW_KEY_LEFT        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_LEFT press)
-      GLFW/GLFW_KEY_RIGHT       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_RIGHT press)
-      GLFW/GLFW_KEY_HOME        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_START press)
-      GLFW/GLFW_KEY_END         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_END press)
-      GLFW/GLFW_KEY_LEFT_SHIFT  (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
-      GLFW/GLFW_KEY_RIGHT_SHIFT (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
-      GLFW/GLFW_KEY_TAB         (when press (swap! state (fn [s] (assoc s ::focus-new ((if shift dec inc) (::focus s))))))
-      GLFW/GLFW_KEY_ESCAPE      (when press (swap! state update ::menu not) false)
-      true)))
+    (or
+      (condp
+        = k
+        GLFW/GLFW_KEY_DELETE      (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DEL press)
+        GLFW/GLFW_KEY_ENTER       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_ENTER press)
+        GLFW/GLFW_KEY_BACKSPACE   (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_BACKSPACE press)
+        GLFW/GLFW_KEY_UP          (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_UP press)
+        GLFW/GLFW_KEY_DOWN        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_DOWN press)
+        GLFW/GLFW_KEY_LEFT        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_LEFT press)
+        GLFW/GLFW_KEY_RIGHT       (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_RIGHT press)
+        GLFW/GLFW_KEY_HOME        (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_START press)
+        GLFW/GLFW_KEY_END         (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_TEXT_END press)
+        GLFW/GLFW_KEY_LEFT_SHIFT  (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
+        GLFW/GLFW_KEY_RIGHT_SHIFT (Nuklear/nk_input_key (:sfsim.gui/context gui) Nuklear/NK_KEY_SHIFT press)
+        GLFW/GLFW_KEY_TAB         (when press (assoc state ::focus-new ((if shift dec inc) (::focus state))))
+        GLFW/GLFW_KEY_ESCAPE      (when press (update state ::menu not))
+        state)
+      state)))
 
 
 (defmulti simulator-key
   "Simulation key handling when menu is hidden"
-  (fn [id _state _action _mods] id))
+  (fn [_state id _action _mods] id))
 
 
 (defmethod simulator-key nil
-  [_id _state _action _mods])
+  [state _id _action _mods]
+  state)
 
 
 (defmethod simulator-key ::menu
-  [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::menu not)
-    false))
+  [state _id action _mods]
+  (if (= action GLFW/GLFW_PRESS)
+    (update state ::menu not)
+    state))
 
 
 (defmethod simulator-key ::fullscreen
-  [_id state action mods]
-  (when (and (= action GLFW/GLFW_PRESS) (= mods GLFW/GLFW_MOD_ALT))
-    (swap! state update ::fullscreen not)))
+  [state _id action mods]
+  (if (and (= action GLFW/GLFW_PRESS) (= mods GLFW/GLFW_MOD_ALT))
+    (update state ::fullscreen not)
+    state))
 
 
 (defmethod simulator-key ::pause
-  [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::pause not)))
+  [state _id action _mods]
+  (if (= action GLFW/GLFW_PRESS)
+    (update state ::pause not)
+    state))
 
 
 (defmethod simulator-key ::gear
-  [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::gear-down not)))
+  [state _id action _mods]
+  (if (= action GLFW/GLFW_PRESS)
+    (update-in state [::controls ::gear-down] not)
+    state))
 
 
 (defn increment-clamp
   ([state k increment]
    (increment-clamp state k increment -1.0 1.0))
   ([state k increment lower upper]
-   (swap! state update k #(-> ^double % (+ ^double increment) (clamp lower upper)))))
+   (update-in state [::controls k] #(-> ^double % (+ ^double increment) (clamp lower upper)))))
 
 
 (defmethod simulator-key ::brake
-  [_id state action mods]
+  [state _id action mods]
   (if (= mods GLFW/GLFW_MOD_SHIFT)
-    (when (= action GLFW/GLFW_PRESS)
-      (swap! state update ::parking-brake not))
-    (do
-      (swap! state assoc ::parking-brake false)
-      (swap! state assoc ::brake (not= action GLFW/GLFW_RELEASE)))))
+    (if (= action GLFW/GLFW_PRESS)
+      (update-in state [::controls ::parking-brake] not)
+      state)
+    (-> state
+        (assoc-in [::controls ::parking-brake] false)
+        (assoc-in [::controls ::brake] (not= action GLFW/GLFW_RELEASE)))))
 
 
 (defmethod simulator-key ::throttle-decrease
-  [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::throttle -0.0625 0.0 1.0)))
+  [state _id action _mods]
+  (if (keypress? action)
+    (increment-clamp state ::throttle -0.0625 0.0 1.0)
+    state))
 
 
 (defmethod simulator-key ::throttle-increase
-  [_id state action _mods]
-  (when (keypress? action)
-    (increment-clamp state ::throttle 0.0625 0.0 1.0)))
+  [state _id action _mods]
+  (if (keypress? action)
+    (increment-clamp state ::throttle 0.0625 0.0 1.0)
+    state))
 
 
 (defmethod simulator-key ::air-brake
-  [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::air-brake not)))
+  [state _id action _mods]
+  (if (= action GLFW/GLFW_PRESS)
+    (update-in state [::controls ::air-brake] not)
+    state))
 
 
 (defmethod simulator-key ::rcs
-  [_id state action _mods]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::rcs not)))
+  [state _id action _mods]
+  (if (= action GLFW/GLFW_PRESS)
+    (update-in state [::controls ::rcs] not)
+    state))
 
 
 (defmethod simulator-key ::aileron-left
-  [_id state action _mods]
+  [state _id action _mods]
   (if (keypress? action)
-    (if (@state ::rcs)
-      (swap! state assoc ::rcs-roll 1.0)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-roll] 1)
       (increment-clamp state ::aileron 0.0625))
-    (swap! state assoc ::rcs-roll 0.0)))
+    (assoc-in state [::controls ::rcs-roll] 0)))
 
 
 (defmethod simulator-key ::aileron-right
-  [_id state action _mods]
+  [state _id action _mods]
   (if (keypress? action)
-    (if (@state ::rcs)
-      (swap! state assoc ::rcs-roll -1.0)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-roll] -1)
       (increment-clamp state ::aileron -0.0625))
-    (swap! state assoc ::rcs-roll 0.0)))
+    (assoc-in state [::controls ::rcs-roll] 0)))
 
 
 (defmethod simulator-key ::aileron-center
-  [_id state action _mods]
-  (when (keypress? action)
-    (swap! state assoc ::aileron 0.0)))
+  [state _id action _mods]
+  (if (keypress? action)
+    (assoc-in state [::controls ::aileron] 0.0)
+    state))
 
 
 (defmethod simulator-key ::rudder-left
-  [_id state action mods]
+  [state _id action mods]
   (if (keypress? action)
-    (if (@state ::rcs)
-      (swap! state assoc ::rcs-yaw 1.0)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-yaw] 1)
       (if (= mods GLFW/GLFW_MOD_CONTROL)
-        (swap! state assoc ::rudder 0.0)
+        (assoc-in state [::controls ::rudder] 0.0)
         (increment-clamp state ::rudder 0.0625)))
-    (swap! state assoc ::rcs-yaw 0.0)))
+    (assoc-in state [::controls ::rcs-yaw] 0)))
 
 
 (defmethod simulator-key ::rudder-right
-  [_id state action _mods]
+  [state _id action _mods]
   (if (keypress? action)
-    (if (@state ::rcs)
-      (swap! state assoc ::rcs-yaw -1.0)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-yaw] -1)
       (increment-clamp state ::rudder -0.0625))
-    (swap! state assoc ::rcs-yaw 0.0)))
+    (assoc-in state [::controls ::rcs-yaw] 0)))
 
 
 (defmethod simulator-key ::elevator-down
-  [_id state action _mods]
+  [state _id action _mods]
   (if (keypress? action)
-    (if (@state ::rcs)
-      (swap! state assoc ::rcs-pitch 1.0)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-pitch] 1)
       (increment-clamp state ::elevator 0.0625))
-    (swap! state assoc ::rcs-pitch 0.0)))
+    (assoc-in state [::controls ::rcs-pitch] 0)))
 
 
 (defmethod simulator-key ::elevator-up
-  [_id state action _mods]
+  [state _id action _mods]
   (if (keypress? action)
-    (if (@state ::rcs)
-      (swap! state assoc ::rcs-pitch -1.0)
+    (if (get-in state [::controls ::rcs])
+      (assoc-in state [::controls ::rcs-pitch] -1)
       (increment-clamp state ::elevator -0.0625))
-    (swap! state assoc ::rcs-pitch 0.0)))
+    (assoc-in state [::controls ::rcs-pitch] 0)))
 
 
 (defmethod simulator-key ::camera-rotate-x-positive
-  [_id state action _mods]
-  (swap! state assoc ::camera-rotate-x (if (keypress? action) 0.5 0.0)))
+  [state _id action _mods]
+  (assoc-in state [::camera ::rotate-x] (if (keypress? action) 0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-x-negative
-  [_id state action _mods]
-  (swap! state assoc ::camera-rotate-x (if (keypress? action) -0.5 0.0)))
+  [state _id action _mods]
+  (assoc-in state [::camera ::rotate-x] (if (keypress? action) -0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-y-positive
-  [_id state action _mods]
-  (swap! state assoc ::camera-rotate-y (if (keypress? action) 0.5 0.0)))
+  [state _id action _mods]
+  (assoc-in state [::camera ::rotate-y] (if (keypress? action) 0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-y-negative
-  [_id state action _mods]
-  (swap! state assoc ::camera-rotate-y (if (keypress? action) -0.5 0.0)))
+  [state _id action _mods]
+  (assoc-in state [::camera ::rotate-y] (if (keypress? action) -0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-z-positive
-  [_id state action _mods]
-  (swap! state assoc ::camera-rotate-z (if (keypress? action) 0.5 0.0)))
+  [state _id action _mods]
+  (assoc-in state [::camera ::rotate-z] (if (keypress? action) 0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-rotate-z-negative
-  [_id state action _mods]
-  (swap! state assoc ::camera-rotate-z (if (keypress? action) -0.5 0.0)))
-
-
-(defmethod simulator-key ::camera-shift-x-positive
-  [_id state action _mods]
-  (swap! state assoc ::camera-shift-x (if (keypress? action) 5.0 0.0)))
-
-
-(defmethod simulator-key ::camera-shift-x-negative
-  [_id state action _mods]
-  (swap! state assoc ::camera-shift-x (if (keypress? action) -5.0 0.0)))
-
-
-(defmethod simulator-key ::camera-shift-y-positive
-  [_id state action _mods]
-  (swap! state assoc ::camera-shift-y (if (keypress? action) 5.0 0.0)))
-
-
-(defmethod simulator-key ::camera-shift-y-negative
-  [_id state action _mods]
-  (swap! state assoc ::camera-shift-y (if (keypress? action) -5.0 0.0)))
+  [state _id action _mods]
+  (assoc-in state [::camera ::rotate-z] (if (keypress? action) -0.5 0.0)))
 
 
 (defmethod simulator-key ::camera-distance-change-positive
-  [_id state action _mods]
-  (swap! state assoc ::camera-distance-change (if (keypress? action) 1.0 0.0)))
+  [state _id action _mods]
+  (assoc-in state [::camera ::distance-change] (if (keypress? action) 1.0 0.0)))
 
 
 (defmethod simulator-key ::camera-distance-change-negative
-  [_id state action _mods]
-  (swap! state assoc ::camera-distance-change (if (keypress? action) -1.0 0.0)))
+  [state _id action _mods]
+  (assoc-in state [::camera ::distance-change] (if (keypress? action) -1.0 0.0)))
 
 
 (defn menu-mouse-button
-  [_state gui button x y action _mods]
+  [state gui button x y action _mods]
   (let [nkbutton (condp = button
                    GLFW/GLFW_MOUSE_BUTTON_RIGHT Nuklear/NK_BUTTON_RIGHT
                    GLFW/GLFW_MOUSE_BUTTON_MIDDLE Nuklear/NK_BUTTON_MIDDLE
                    Nuklear/NK_BUTTON_LEFT)]
-    (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))))
+    (Nuklear/nk_input_button (:sfsim.gui/context gui) nkbutton x y (= action GLFW/GLFW_PRESS))
+    state))
 
 
 (defn menu-mouse-move
-  [_state gui x y]
-  (Nuklear/nk_input_motion (:sfsim.gui/context gui) (long x) (long y)))
+  [state gui x y]
+  (Nuklear/nk_input_motion (:sfsim.gui/context gui) (long x) (long y))
+  state)
 
 
 (defn simulator-joystick-with-dead-zone
   "Apply filtered joystick axis value to state"
   [aerofoil rcs-thruster epsilon state value]
-  (if (@state ::rcs)
-    (swap! state assoc rcs-thruster (dead-zone-three-state epsilon value))
-    (swap! state assoc aerofoil (dead-zone-continuous epsilon value))))
+  (if (get-in state [::controls ::rcs])
+    (assoc-in state [::controls rcs-thruster] (dead-zone-three-state epsilon value))
+    (assoc-in state [::controls aerofoil] (dead-zone-continuous epsilon value))))
 
 
 (defmulti simulator-joystick-axis
@@ -563,7 +571,8 @@
 
 
 (defmethod simulator-joystick-axis nil
-  [_id _epsilon _state _value])
+  [_id _epsilon state _value]
+  state)
 
 
 (defmethod simulator-joystick-axis ::aileron-inverted
@@ -598,7 +607,7 @@
 
 (defmethod simulator-joystick-axis ::throttle
   [_id epsilon state value]
-  (swap! state assoc ::throttle (* 0.5 (- 1.0 (dead-margins epsilon value)))))
+  (assoc-in state [::controls ::throttle] (* 0.5 (- 1.0 (dead-margins epsilon value)))))
 
 
 (defmethod simulator-joystick-axis ::throttle-increment
@@ -612,69 +621,79 @@
 
 
 (defmethod simulator-joystick-button nil
-  [_id _state _action])
+  [_id state _action]
+  state)
 
 
 (defmethod simulator-joystick-button ::gear
   [_id state action]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::gear-down not)))
+  (if (= action GLFW/GLFW_PRESS)
+    (update-in state [::controls ::gear-down] not)
+    state))
 
 
 (defmethod simulator-joystick-button ::brake
   [_id state action]
-  (swap! state assoc ::brake (keypress? action))
-  (when (keypress? action)
-    (swap! state assoc ::parking-brake false)))
+  (if (keypress? action)
+    (-> state
+        (assoc-in [::controls ::brake] true)
+        (assoc-in [::controls ::parking-brake] false))
+    (assoc-in state [::controls ::brake] false)))
 
 
 (defmethod simulator-joystick-button ::parking-brake
   [_id state action]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state assoc ::parking-brake true)))
+  (if (= action GLFW/GLFW_PRESS)
+    (assoc-in state [::controls ::parking-brake] true)
+    state))
 
 
 (defmethod simulator-joystick-button ::air-brake
   [_id state action]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state update ::air-brake not)))
+  (if (= action GLFW/GLFW_PRESS)
+    (update-in state [::controls ::air-brake] not)
+    state))
 
 
 (defn menu-joystick-axis
   [state device axis _value moved]
-  (when moved
-    (swap! state assoc ::last-joystick-axis [device axis])))
+  (if moved
+    (assoc state ::last-joystick-axis [device axis])
+    state))
 
 
 (defn menu-joystick-button
   [state device button action]
-  (when (= action GLFW/GLFW_PRESS)
-    (swap! state assoc ::last-joystick-button [device button])))
+  (if (= action GLFW/GLFW_PRESS)
+    (assoc state ::last-joystick-button [device button])
+    state))
 
 
-(defrecord InputHandler [state gui mappings]
+(defrecord InputHandler [gui]
   InputHandlerProtocol
-  (process-char [_this codepoint]
-    (when (::menu @state)
-      (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint)))
-  (process-key [_this k action mods]
-    (let [keyboard-mappings (::keyboard @mappings)]
-      (if (::menu @state)
-        (-> k (menu-key state gui action mods))
-        (-> k keyboard-mappings (simulator-key state action mods)))))
-  (process-mouse-button [_this button x y action mods]
+  (process-char [_this state codepoint]
+    (when (::menu state)
+      (Nuklear/nk_input_unicode (:sfsim.gui/context gui) codepoint))
+    state)
+  (process-key [_this state k action mods]
+    (let [keyboard-mappings (get-in state [::mappings ::keyboard])]
+      (if (::menu state)
+        (menu-key state k gui action mods)
+        (simulator-key state (keyboard-mappings k) action mods))))
+  (process-mouse-button [_this state button x y action mods]
     (menu-mouse-button state gui button x y action mods))
-  (process-mouse-move [_this x y]
+  (process-mouse-move [_this state x y]
     (menu-mouse-move state gui x y))
-  (process-joystick-axis [_this device axis value moved]
-    (if (::menu @state)
+  (process-joystick-axis [_this state device axis value moved]
+    (if (::menu state)
       (menu-joystick-axis state device axis value moved)
-      (let [joystick (some-> @mappings ::joysticks ::devices (get device))]
-        (simulator-joystick-axis (some-> joystick ::axes (get axis)) (some-> @mappings ::joysticks ::dead-zone) state value))))
-  (process-joystick-button [_this device button action]
-    (if (@state ::menu)
+      (let [joystick (some-> state ::mappings ::joysticks ::devices (get device))]
+        (simulator-joystick-axis (some-> joystick ::axes (get axis))
+                                 (some-> state ::mappings ::joysticks ::dead-zone) state value))))
+  (process-joystick-button [_this state device button action]
+    (if (state ::menu)
       (menu-joystick-button state device button action)
-      (let [joystick (some-> @mappings ::joysticks ::devices (get device))]
+      (let [joystick (some-> state ::mappings ::joysticks ::devices (get device))]
         (simulator-joystick-button (some-> joystick ::buttons (get button)) state action)))))
 
 
