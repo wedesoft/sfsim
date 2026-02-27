@@ -49,16 +49,17 @@
   - [X] refactor rendering code
     - [X] put rendering code into methods
     - [X] create high level rendering methods to simplify main program and integration tests
-  - [ ] add some sound effects
-    - [ ] seek audio position for landing gear if necessary
+  - [-] add some sound effects
+    - [X] seek audio position for landing gear if necessary
+    - [X] add landing gear [[https://pixabay.com/sound-effects/search/landing-gear/]]
+    - [X] adjust thruster volume depending on throttle and play/stop
+    - [X] play/stop individual RCS thrusters
+    - [X] reduce volume when leaving atmosphere
+    - [ ] sound of air, air brake and gear friction
     - [ ] set positions of sound effects (and update position of listener)
-    - [ ] add landing gear [[https://pixabay.com/sound-effects/search/landing-gear/]]
     - [ ] play background music
     - [ ] set volume of background music
     - [ ] set volume of sound effects
-    - [ ] adjust thruster volume depending on throttle and play/stop
-    - [ ] play/stop individual RCS thrusters
-    - [ ] reduce volume when leaving atmosphere
     - [ ] wheel sounds when hitting runway
   - [X] does update-camera-pose need the whole input state structure?
   - [ ] simplify recording and playback code
