@@ -101,6 +101,9 @@
   - Note taken on [2025-08-16 Sa 22:05] \\
     [[https://freesound.org/people/Andrewkn/sounds/502864/]]
     [[https://www.epidemicsound.com/sound-effects/]]
+    [[https://www.youtube.com/watch?v=FcW9kUUTfxY]]
+    [[https://pixabay.com/sound-effects/film-special-effects-cockpit-sound-of-landing-gear-deployment-aviation-audio-328162/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-thud4-42479/]]
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)

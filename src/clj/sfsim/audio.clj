@@ -176,14 +176,19 @@
   (let [audio (initialize-audio "")
         gear-deploy-buffer (-> "data/audio/gear-deploy.ogg" load-vorbis make-audio-buffer)
         gear-retract-buffer (-> "data/audio/gear-retract.ogg" load-vorbis make-audio-buffer)
+        throttle-buffer (-> "data/audio/main-engine.ogg" load-vorbis make-audio-buffer)
         gear-deploy-source (make-source gear-deploy-buffer false)
-        gear-retract-source (make-source gear-retract-buffer false)]
+        gear-retract-source (make-source gear-retract-buffer false)
+        throttle-source (make-source throttle-buffer true)]
     {::audio audio
      ::gear-deploy-buffer gear-deploy-buffer
      ::gear-retract-buffer gear-retract-buffer
+     ::throttle-buffer throttle-buffer
      ::gear-deploy-source gear-deploy-source
      ::gear-retract-source gear-retract-source
-     ::gear-down true}))
+     ::throttle-source throttle-source
+     ::gear-down true
+     ::throttle 0.0}))
 
 
 (defn update-state
@@ -198,8 +203,15 @@
         (source-stop (::gear-deploy-source state))
         (set-source-offset (::gear-retract-source state) (* 4.0 (- 1.0 ^double (:sfsim.physics/gear physics))))
         (source-play (::gear-retract-source state)))))
-  (-> state
-      (assoc ::gear-down (:sfsim.input/gear-down inputs))))
+  (when-not (= (zero? (::throttle state)) (zero? (:sfsim.input/throttle inputs)))
+            (if (zero? (:sfsim.input/throttle inputs))
+              (source-stop (::throttle-source state))
+              (source-play (::throttle-source state))))
+  (when-let [throttle (:sfsim.input/throttle inputs)]
+            (set-source-gain (::throttle-source state) throttle))
+  (assoc state
+         ::gear-down (:sfsim.input/gear-down inputs)
+         ::throttle (:sfsim.input/throttle inputs)))
 
 
 (defn destroy-audio-state
