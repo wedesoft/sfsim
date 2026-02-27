@@ -351,6 +351,16 @@
       (io/input-stream url)
       (io/file filename))))
 
+(defn download-audio
+  "Download Spaceship model"
+  [& _]
+  (doseq [filename ["gear-deploy.ogg" "gear-retract.ogg"]]
+         (let [url      (str "https://www.wedesoft.de/downloads/" filename)]
+           (.println *err* (str "Downloading " url " ..."))
+           (io/copy
+             (io/input-stream url)
+             (io/file (str "data/audio/" filename))))))
+
 (defn download-ephemeris
   "Download NASA JPL planet ephemeris data from https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/"
   [& _]
@@ -392,6 +402,7 @@
   (bluenoise)
   (cloud-cover)
   (download-spaceship)
+  (download-audio)
   (download-bluemarble)
   (download-blackmarble)
   (download-elevation)
