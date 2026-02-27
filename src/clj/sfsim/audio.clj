@@ -198,24 +198,28 @@
         gear-deploy-buffer (-> "data/audio/gear-deploy.ogg" load-vorbis make-audio-buffer)
         gear-retract-buffer (-> "data/audio/gear-retract.ogg" load-vorbis make-audio-buffer)
         throttle-buffer (-> "data/audio/main-engine.ogg" load-vorbis make-audio-buffer)
+        rcs-buffer (-> "data/audio/thruster.ogg" load-vorbis make-audio-buffer)
         gear-deploy-source (make-source gear-deploy-buffer false)
         gear-retract-source (make-source gear-retract-buffer false)
-        throttle-source (make-source throttle-buffer true)]
+        throttle-source (make-source throttle-buffer true)
+        rcs-thruster (make-source rcs-buffer true)]
     {::audio audio
-     ::buffers [gear-deploy-buffer gear-retract-buffer throttle-buffer]
+     ::buffers [gear-deploy-buffer gear-retract-buffer throttle-buffer rcs-buffer]
      ::sources {::gear-deploy gear-deploy-source
                 ::gear-retract gear-retract-source
-                ::throttle throttle-source}
+                ::throttle throttle-source
+                ::rcs-thruster rcs-thruster}
      ::gear-down true
      ::throttle 0.0
-     ::paused []
-     }))
+     ::rcs-count 0
+     ::paused []}))
 
 
 (defn update-state
   [state physics inputs]
   (let [sources            (::sources state)
         controls           (:sfsim.input/controls inputs)
+        rcs-count          (reduce + (map (comp abs controls) [:sfsim.input/rcs-yaw :sfsim.input/rcs-pitch :sfsim.input/rcs-roll]))
         height             (get-height physics config/planet-config)
         sea-level-pressure (pressure-at-height 0.0)
         pressure           (pressure-at-height height)
@@ -244,9 +248,15 @@
                     (source-play (::throttle sources))))
         (when-let [throttle (:sfsim.input/throttle controls)]
                   (set-source-gain (::throttle sources) (* relative-pressure ^double throttle)))
+        (when-not (= (zero? rcs-count) (zero? (::rcs-count state)))
+                  (if (zero? rcs-count)
+                    (source-stop (::rcs-thruster sources))
+                    (source-play (::rcs-thruster sources))))
+        (set-source-gain (::rcs-thruster sources) (* relative-pressure (/ rcs-count 3.0)))
         (assoc state
                ::gear-down (:sfsim.input/gear-down controls)
                ::throttle (:sfsim.input/throttle controls)
+               ::rcs-count rcs-count
                ::paused [])))))
 
 
