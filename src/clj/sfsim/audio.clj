@@ -248,11 +248,11 @@
                     (source-play (::throttle sources))))
         (when-let [throttle (:sfsim.input/throttle controls)]
                   (set-source-gain (::throttle sources) (* relative-pressure ^double throttle)))
-        (when-not (= (zero? rcs-count) (zero? (::rcs-count state)))
-                  (if (zero? rcs-count)
+        (when-not (= (zero? ^long rcs-count) (zero? ^long (::rcs-count state)))
+                  (if (zero? ^long rcs-count)
                     (source-stop (::rcs-thruster sources))
                     (source-play (::rcs-thruster sources))))
-        (set-source-gain (::rcs-thruster sources) (* relative-pressure (/ rcs-count 3.0)))
+        (set-source-gain (::rcs-thruster sources) (* relative-pressure (/ ^long rcs-count 3.0)))
         (assoc state
                ::gear-down (:sfsim.input/gear-down controls)
                ::throttle (:sfsim.input/throttle controls)
