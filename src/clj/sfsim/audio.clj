@@ -184,40 +184,39 @@
         gear-retract-source (make-source gear-retract-buffer false)
         throttle-source (make-source throttle-buffer true)]
     {::audio audio
-     ::gear-deploy-buffer gear-deploy-buffer
-     ::gear-retract-buffer gear-retract-buffer
-     ::throttle-buffer throttle-buffer
-     ::gear-deploy-source gear-deploy-source
-     ::gear-retract-source gear-retract-source
-     ::throttle-source throttle-source
+     ::buffers [gear-deploy-buffer gear-retract-buffer throttle-buffer]
+     ::sources {::gear-deploy gear-deploy-source
+                ::gear-retract gear-retract-source
+                ::throttle throttle-source}
      ::gear-down true
      ::throttle 0.0}))
 
 
 (defn update-state
   [state physics inputs]
-  (let [height             (get-height physics config/planet-config)
+  (let [sources            (::sources state)
+        height             (get-height physics config/planet-config)
         sea-level-pressure (pressure-at-height 0.0)
         pressure           (pressure-at-height height)
         relative-pressure  (/ pressure sea-level-pressure)]
     (when-not (= (::gear-down state) (:sfsim.input/gear-down inputs))
               (if (:sfsim.input/gear-down inputs)
                 (do
-                  (source-stop (::gear-retract-source state))
-                  (set-source-offset (::gear-deploy-source state) (* 4.0 ^double (:sfsim.physics/gear physics)))
-                  (source-play (::gear-deploy-source state)))
+                  (source-stop (::gear-retract sources))
+                  (set-source-offset (::gear-deploy sources) (* 4.0 ^double (:sfsim.physics/gear physics)))
+                  (source-play (::gear-deploy sources)))
                 (do
-                  (source-stop (::gear-deploy-source state))
-                  (set-source-offset (::gear-retract-source state) (* 4.0 (- 1.0 ^double (:sfsim.physics/gear physics))))
-                  (source-play (::gear-retract-source state)))))
-    (set-source-gain (::gear-deploy-source state) relative-pressure)
-    (set-source-gain (::gear-retract-source state) relative-pressure)
+                  (source-stop (::gear-deploy sources))
+                  (set-source-offset (::gear-retract sources) (* 4.0 (- 1.0 ^double (:sfsim.physics/gear physics))))
+                  (source-play (::gear-retract sources)))))
+    (set-source-gain (::gear-deploy sources) relative-pressure)
+    (set-source-gain (::gear-retract sources) relative-pressure)
     (when-not (= (zero? (::throttle state)) (zero? (:sfsim.input/throttle inputs)))
               (if (zero? (:sfsim.input/throttle inputs))
-                (source-stop (::throttle-source state))
-                (source-play (::throttle-source state))))
+                (source-stop (::throttle sources))
+                (source-play (::throttle sources))))
     (when-let [throttle (:sfsim.input/throttle inputs)]
-              (set-source-gain (::throttle-source state) (* relative-pressure throttle)))
+              (set-source-gain (::throttle sources) (* relative-pressure throttle)))
     (assoc state
            ::gear-down (:sfsim.input/gear-down inputs)
            ::throttle (:sfsim.input/throttle inputs))))
@@ -225,10 +224,8 @@
 
 (defn destroy-audio-state
   [state]
-  (destroy-source (::gear-deploy-source state))
-  (destroy-source (::gear-retract-source state))
-  (destroy-audio-buffer (::gear-deploy-buffer state))
-  (destroy-audio-buffer (::gear-retract-buffer state))
+  (doseq [source (vals (::sources state))] (destroy-source source))
+  (doseq [buffer (::buffers state)] (destroy-audio-buffer buffer))
   (finalize-audio (::audio state)))
 
 
