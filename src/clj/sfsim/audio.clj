@@ -238,12 +238,12 @@
                       (source-play (::gear-retract sources)))))
         (set-source-gain (::gear-deploy sources) relative-pressure)
         (set-source-gain (::gear-retract sources) relative-pressure)
-        (when-not (= (zero? (::throttle state)) (zero? (:sfsim.input/throttle controls)))
-                  (if (zero? (:sfsim.input/throttle controls))
+        (when-not (= (zero? ^double (::throttle state)) (zero? ^double (:sfsim.input/throttle controls)))
+                  (if (zero? ^double (:sfsim.input/throttle controls))
                     (source-stop (::throttle sources))
                     (source-play (::throttle sources))))
         (when-let [throttle (:sfsim.input/throttle controls)]
-                  (set-source-gain (::throttle sources) (* relative-pressure throttle)))
+                  (set-source-gain (::throttle sources) (* relative-pressure ^double throttle)))
         (assoc state
                ::gear-down (:sfsim.input/gear-down controls)
                ::throttle (:sfsim.input/throttle controls)
