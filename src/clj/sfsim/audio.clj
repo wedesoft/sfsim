@@ -150,6 +150,24 @@
   (AL10/alSourcePause source))
 
 
+(defn source-state
+  "Get state of audio source"
+  [source]
+  (AL10/alGetSourcei source AL10/AL_SOURCE_STATE))
+
+
+(defn source-playing?
+  "Determine whether an audio source is playing"
+  [source]
+  (= (source-state source) AL10/AL_PLAYING))
+
+
+(defn source-paused?
+  "Determine whether an audio source is paused"
+  [source]
+  (= (source-state source) AL10/AL_PAUSED))
+
+
 (defn source-stop
   "Stop playing audio source"
   [source]
@@ -189,37 +207,47 @@
                 ::gear-retract gear-retract-source
                 ::throttle throttle-source}
      ::gear-down true
-     ::throttle 0.0}))
+     ::throttle 0.0
+     ::paused []
+     }))
 
 
 (defn update-state
   [state physics inputs]
   (let [sources            (::sources state)
+        controls           (:sfsim.input/controls inputs)
         height             (get-height physics config/planet-config)
         sea-level-pressure (pressure-at-height 0.0)
         pressure           (pressure-at-height height)
         relative-pressure  (/ pressure sea-level-pressure)]
-    (when-not (= (::gear-down state) (:sfsim.input/gear-down inputs))
-              (if (:sfsim.input/gear-down inputs)
-                (do
-                  (source-stop (::gear-retract sources))
-                  (set-source-offset (::gear-deploy sources) (* 4.0 ^double (:sfsim.physics/gear physics)))
-                  (source-play (::gear-deploy sources)))
-                (do
-                  (source-stop (::gear-deploy sources))
-                  (set-source-offset (::gear-retract sources) (* 4.0 (- 1.0 ^double (:sfsim.physics/gear physics))))
-                  (source-play (::gear-retract sources)))))
-    (set-source-gain (::gear-deploy sources) relative-pressure)
-    (set-source-gain (::gear-retract sources) relative-pressure)
-    (when-not (= (zero? (::throttle state)) (zero? (:sfsim.input/throttle inputs)))
-              (if (zero? (:sfsim.input/throttle inputs))
-                (source-stop (::throttle sources))
-                (source-play (::throttle sources))))
-    (when-let [throttle (:sfsim.input/throttle inputs)]
-              (set-source-gain (::throttle sources) (* relative-pressure throttle)))
-    (assoc state
-           ::gear-down (:sfsim.input/gear-down inputs)
-           ::throttle (:sfsim.input/throttle inputs))))
+    (if (:sfsim.input/pause inputs)
+      (let [playing-sources (filter source-playing? (vals sources))]
+        (doseq [source playing-sources] (source-pause source))
+        (update state ::paused into playing-sources))
+      (let [paused-sources (filter source-paused? (vals sources))]
+        (doseq [source paused-sources] (source-play source))
+        (when-not (= (::gear-down state) (:sfsim.input/gear-down controls))
+                  (if (:sfsim.input/gear-down controls)
+                    (do
+                      (source-stop (::gear-retract sources))
+                      (set-source-offset (::gear-deploy sources) (* 4.0 ^double (:sfsim.physics/gear physics)))
+                      (source-play (::gear-deploy sources)))
+                    (do
+                      (source-stop (::gear-deploy sources))
+                      (set-source-offset (::gear-retract sources) (* 4.0 (- 1.0 ^double (:sfsim.physics/gear physics))))
+                      (source-play (::gear-retract sources)))))
+        (set-source-gain (::gear-deploy sources) relative-pressure)
+        (set-source-gain (::gear-retract sources) relative-pressure)
+        (when-not (= (zero? (::throttle state)) (zero? (:sfsim.input/throttle controls)))
+                  (if (zero? (:sfsim.input/throttle controls))
+                    (source-stop (::throttle sources))
+                    (source-play (::throttle sources))))
+        (when-let [throttle (:sfsim.input/throttle controls)]
+                  (set-source-gain (::throttle sources) (* relative-pressure throttle)))
+        (assoc state
+               ::gear-down (:sfsim.input/gear-down controls)
+               ::throttle (:sfsim.input/throttle controls)
+               ::paused [])))))
 
 
 (defn destroy-audio-state

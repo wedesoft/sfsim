@@ -233,8 +233,8 @@
             (swap! state update :physics physics/load-state (:physics frame) wheels)
             (swap! state assoc :camera (:camera frame)))
           (do
+            (swap! state update :audio audio/update-state (:physics @state) (:input @state))
             (when (not (-> @state :input :sfsim.input/pause))
-              (swap! state update :audio audio/update-state (:physics @state) (-> @state :input :sfsim.input/controls))
               (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) dt wheels
                      config/planet-config split-orientations thrust))
             (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
