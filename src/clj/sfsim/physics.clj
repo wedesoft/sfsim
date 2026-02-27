@@ -160,19 +160,19 @@
 (defmethod set-pose ::surface
   [state _domain position orientation]
   (jolt/set-translation (::body state) position)  ; Jolt handles position information to detect collisions with surface
-  (jolt/set-orientation (::body state) orientation)  ; Jolt handles orientation information 
+  (jolt/set-orientation (::body state) orientation)  ; Jolt handles orientation information
   (-> state
       (assoc ::domain ::surface)
-      (assoc ::position (vec3 0 0 0))))  ; Position offset is zero 
+      (assoc ::position (vec3 0 0 0))))  ; Position offset is zero
 
 
 (defmethod set-pose ::orbit
   [state _domain position orientation]
   (jolt/set-translation (::body state) (vec3 0 0 0))  ; Jolt only handles position changes
-  (jolt/set-orientation (::body state) orientation)  ; Jolt handles orientation information 
+  (jolt/set-orientation (::body state) orientation)  ; Jolt handles orientation information
   (-> state
       (assoc ::domain ::orbit)
-      (assoc ::position position)))  ; Store double precision position 
+      (assoc ::position position)))  ; Store double precision position
 
 
 (defmulti get-position
@@ -259,6 +259,13 @@
     {:longitude longitude
      :latitude latitude
      :height height}))
+
+
+(defn get-height
+  "Get height of space craft"
+  [state planet]
+  (let [position  (get-position :sfsim.physics/surface state)]
+    (- (mag position) ^double (:sfsim.planet/radius planet))))
 
 
 (defmulti set-speed
