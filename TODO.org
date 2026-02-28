@@ -55,7 +55,7 @@
     - [X] adjust thruster volume depending on throttle and play/stop
     - [X] play/stop individual RCS thrusters
     - [X] reduce volume when leaving atmosphere
-    - [ ] sound of air, air brake and gear friction
+    - [X] sound of air, air brake and gear friction
     - [ ] set positions of sound effects (and update position of listener)
     - [ ] play background music
     - [ ] set volume of background music
