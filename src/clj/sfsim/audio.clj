@@ -197,21 +197,35 @@
 (defn make-audio-state
   []
   (let [audio (initialize-audio "")
+        surrealism-mix-buffer (-> "data/audio/andrew-kn-surrealism-ambient-mix.ogg" load-vorbis make-audio-buffer)
+        edge-of-space-buffer (-> "data/audio/andrew-kn-at-the-edge-of-space.ogg" load-vorbis make-audio-buffer)
         gear-deploy-buffer (-> "data/audio/gear-deploy.ogg" load-vorbis make-audio-buffer)
         gear-retract-buffer (-> "data/audio/gear-retract.ogg" load-vorbis make-audio-buffer)
         throttle-buffer (-> "data/audio/main-engine.ogg" load-vorbis make-audio-buffer)
         rcs-buffer (-> "data/audio/thruster.ogg" load-vorbis make-audio-buffer)
         air-flow-buffer (-> "data/audio/air-flow.ogg" load-vorbis make-audio-buffer)
         drag-buffer (-> "data/audio/drag.ogg" load-vorbis make-audio-buffer)
+        surrealism-mix-source (make-source surrealism-mix-buffer false)
+        edge-of-space-source (make-source edge-of-space-buffer false)
         gear-deploy-source (make-source gear-deploy-buffer false)
         gear-retract-source (make-source gear-retract-buffer false)
         throttle-source (make-source throttle-buffer true)
         rcs-thruster-source (make-source rcs-buffer true)
         air-flow-source (make-source air-flow-buffer true)
         drag-source (make-source drag-buffer true)]
-    {::audio audio
-     ::buffers [gear-deploy-buffer gear-retract-buffer throttle-buffer rcs-buffer]
-     ::sources {::gear-deploy gear-deploy-source
+    {::music nil
+     ::audio audio
+     ::buffers [surrealism-mix-buffer
+                edge-of-space-buffer
+                gear-deploy-buffer
+                gear-retract-buffer
+                throttle-buffer
+                rcs-buffer
+                air-flow-buffer
+                drag-buffer]
+     ::sources {::surrealism-mix surrealism-mix-source
+                ::edge-of-space edge-of-space-source
+                ::gear-deploy gear-deploy-source
                 ::gear-retract gear-retract-source
                 ::throttle throttle-source
                 ::rcs-thruster rcs-thruster-source
@@ -226,11 +240,12 @@
 (defn update-state
   [state physics inputs]
   (let [sources                   (::sources state)
+        height                    (get-height physics config/planet-config)
+        music                     (if (<= ^double height 100000.0) (::surrealism-mix sources) (::edge-of-space sources))
         controls                  (:sfsim.input/controls inputs)
         gear                      (:sfsim.physics/gear physics)
         rcs-count                 (reduce + (map (comp abs controls)
                                                  [:sfsim.input/rcs-yaw :sfsim.input/rcs-pitch :sfsim.input/rcs-roll]))
-        height                    (get-height physics config/planet-config)
         sea-level-pressure        (pressure-at-height 0.0)
         pressure                  (pressure-at-height height)
         relative-pressure         (/ pressure sea-level-pressure)
@@ -246,6 +261,11 @@
         (update state ::paused into playing-sources))
       (let [paused-sources (filter source-paused? (vals sources))]
         (doseq [source paused-sources] (source-play source))
+        (when-not (= (::music state) music)
+                  (when-not (nil? (::music state))
+                            (source-stop (::music state)))
+                  (set-source-gain music 0.5)
+                  (source-play music))
         (when-not (= (::gear-down state) (:sfsim.input/gear-down controls))
                   (if (:sfsim.input/gear-down controls)
                     (do
@@ -277,6 +297,7 @@
               (source-stop (::drag sources))
               (source-play (::drag sources))))
         (assoc state
+               ::music music
                ::gear-down (:sfsim.input/gear-down controls)
                ::throttle (:sfsim.input/throttle controls)
                ::rcs-count rcs-count

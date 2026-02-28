@@ -354,7 +354,9 @@
 (defn download-audio
   "Download Spaceship model"
   [& _]
-  (doseq [filename ["gear-deploy.ogg"
+  (doseq [filename ["andrew-kn-at-the-edge-of-space.ogg"
+                    "andrew-kn-surrealism-ambient-mix.ogg"
+                    "gear-deploy.ogg"
                     "gear-retract.ogg"
                     "main-engine.ogg"
                     "thruster.ogg"
