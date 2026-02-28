@@ -100,6 +100,7 @@
   - [ ] try one object casting shadow on another (pack object shadow maps into one?)
 * TODO [#B] sound effects                                            :immersion:
   - Note taken on [2025-08-16 Sa 22:05] \\
+    ffmpeg -i input.mp3 -filter:a "asetrate=96000" -r 48000 -ac 1 output.mp3
     [[https://freesound.org/people/Andrewkn/sounds/502864/]]
     [[https://www.epidemicsound.com/sound-effects/]]
     [[https://www.youtube.com/watch?v=FcW9kUUTfxY]]
@@ -107,6 +108,10 @@
     [[https://pixabay.com/sound-effects/film-special-effects-thud4-42479/]]
     [[https://pixabay.com/sound-effects/film-special-effects-large-rocket-engine-86240/]]
     [[https://pixabay.com/sound-effects/film-special-effects-blazing-fire-394355/]]
+    [[https://pixabay.com/sound-effects/technology-air-conditioner-02-414913/]]
+    [[https://pixabay.com/sound-effects/nature-air-ambience-234180/]]
+    [[https://pixabay.com/sound-effects/technology-wall-air-conditioner-43901/]]
+    [[https://pixabay.com/sound-effects/technology-air-conditioner-running-return-vent-391936/]]
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)

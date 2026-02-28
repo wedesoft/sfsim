@@ -354,7 +354,12 @@
 (defn download-audio
   "Download Spaceship model"
   [& _]
-  (doseq [filename ["gear-deploy.ogg" "gear-retract.ogg" "main-engine.ogg" "thruster.ogg"]]
+  (doseq [filename ["gear-deploy.ogg"
+                    "gear-retract.ogg"
+                    "main-engine.ogg"
+                    "thruster.ogg"
+                    "air-flow.ogg"
+                    "drag.ogg"]]
          (let [url      (str "https://www.wedesoft.de/downloads/" filename)]
            (.println *err* (str "Downloading " url " ..."))
            (io/copy

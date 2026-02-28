@@ -6,10 +6,12 @@
 
 (ns sfsim.audio
     "OpenAL method calls for sound output"
-    (:require [fastmath.vector :refer (vec3)]
+    (:require [fastmath.vector :refer (vec3 mag)]
               [sfsim.config :as config]
-              [sfsim.physics :refer (get-height)]
-              [sfsim.atmosphere :refer (pressure-at-height)])
+              [sfsim.physics :refer (get-height get-linear-speed)]
+              [sfsim.atmosphere :refer (pressure-at-height density-at-height)]
+              [sfsim.aerodynamics :refer (dynamic-pressure drag-multiplier)]
+              [sfsim.units :refer (pound-force foot)])
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
              (org.lwjgl BufferUtils)
              (org.lwjgl.system MemoryUtil)
@@ -199,16 +201,22 @@
         gear-retract-buffer (-> "data/audio/gear-retract.ogg" load-vorbis make-audio-buffer)
         throttle-buffer (-> "data/audio/main-engine.ogg" load-vorbis make-audio-buffer)
         rcs-buffer (-> "data/audio/thruster.ogg" load-vorbis make-audio-buffer)
+        air-flow-buffer (-> "data/audio/air-flow.ogg" load-vorbis make-audio-buffer)
+        drag-buffer (-> "data/audio/drag.ogg" load-vorbis make-audio-buffer)
         gear-deploy-source (make-source gear-deploy-buffer false)
         gear-retract-source (make-source gear-retract-buffer false)
         throttle-source (make-source throttle-buffer true)
-        rcs-thruster (make-source rcs-buffer true)]
+        rcs-thruster-source (make-source rcs-buffer true)
+        air-flow-source (make-source air-flow-buffer true)
+        drag-source (make-source drag-buffer true)]
     {::audio audio
      ::buffers [gear-deploy-buffer gear-retract-buffer throttle-buffer rcs-buffer]
      ::sources {::gear-deploy gear-deploy-source
                 ::gear-retract gear-retract-source
                 ::throttle throttle-source
-                ::rcs-thruster rcs-thruster}
+                ::rcs-thruster rcs-thruster-source
+                ::air-flow air-flow-source
+                ::drag drag-source}
      ::gear-down true
      ::throttle 0.0
      ::rcs-count 0
@@ -217,13 +225,21 @@
 
 (defn update-state
   [state physics inputs]
-  (let [sources            (::sources state)
-        controls           (:sfsim.input/controls inputs)
-        rcs-count          (reduce + (map (comp abs controls) [:sfsim.input/rcs-yaw :sfsim.input/rcs-pitch :sfsim.input/rcs-roll]))
-        height             (get-height physics config/planet-config)
-        sea-level-pressure (pressure-at-height 0.0)
-        pressure           (pressure-at-height height)
-        relative-pressure  (/ pressure sea-level-pressure)]
+  (let [sources                   (::sources state)
+        controls                  (:sfsim.input/controls inputs)
+        gear                      (:sfsim.physics/gear physics)
+        rcs-count                 (reduce + (map (comp abs controls)
+                                                 [:sfsim.input/rcs-yaw :sfsim.input/rcs-pitch :sfsim.input/rcs-roll]))
+        height                    (get-height physics config/planet-config)
+        sea-level-pressure        (pressure-at-height 0.0)
+        pressure                  (pressure-at-height height)
+        relative-pressure         (/ pressure sea-level-pressure)
+        linear-velocity           (get-linear-speed :sfsim.physics/surface physics)
+        density                   (density-at-height height)
+        dynamic-pressure          (dynamic-pressure density (mag linear-velocity))
+        relative-dynamic-pressure (min 1.0 (/ dynamic-pressure (* 1000.0 (/ ^double pound-force (* ^double foot ^double foot)))))
+        air-brake                 (:sfsim.physics/air-brake physics)
+        drag                      (/ (- (drag-multiplier gear air-brake) 1.0) 0.6)]
     (if (:sfsim.input/pause inputs)
       (let [playing-sources (filter source-playing? (vals sources))]
         (doseq [source playing-sources] (source-pause source))
@@ -234,11 +250,11 @@
                   (if (:sfsim.input/gear-down controls)
                     (do
                       (source-stop (::gear-retract sources))
-                      (set-source-offset (::gear-deploy sources) (* 4.0 ^double (:sfsim.physics/gear physics)))
+                      (set-source-offset (::gear-deploy sources) (* 4.0 ^double gear))
                       (source-play (::gear-deploy sources)))
                     (do
                       (source-stop (::gear-deploy sources))
-                      (set-source-offset (::gear-retract sources) (* 4.0 (- 1.0 ^double (:sfsim.physics/gear physics))))
+                      (set-source-offset (::gear-retract sources) (* 4.0 (- 1.0 ^double gear)))
                       (source-play (::gear-retract sources)))))
         (set-source-gain (::gear-deploy sources) relative-pressure)
         (set-source-gain (::gear-retract sources) relative-pressure)
@@ -253,6 +269,13 @@
                     (source-stop (::rcs-thruster sources))
                     (source-play (::rcs-thruster sources))))
         (set-source-gain (::rcs-thruster sources) (* relative-pressure (/ ^long rcs-count 3.0)))
+        (set-source-gain (::air-flow sources) relative-dynamic-pressure)
+        (when-not (source-playing? (::air-flow sources)) (source-play (::air-flow sources)))
+        (set-source-gain (::drag sources) (* drag relative-dynamic-pressure))
+        (when-not (= (> drag 0.0) (source-playing? (::drag sources)))
+            (if (zero? drag)
+              (source-stop (::drag sources))
+              (source-play (::drag sources))))
         (assoc state
                ::gear-down (:sfsim.input/gear-down controls)
                ::throttle (:sfsim.input/throttle controls)
