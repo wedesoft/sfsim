@@ -9,7 +9,7 @@
     (:require [fastmath.vector :refer (vec3 mag)]
               [sfsim.config :as config]
               [sfsim.physics :refer (get-height get-linear-speed)]
-              [sfsim.atmosphere :refer (pressure-at-height density-at-height)]
+              [sfsim.atmosphere :refer (pressure-at-height density-at-height temperature-at-height speed-of-sound)]
               [sfsim.aerodynamics :refer (dynamic-pressure drag-multiplier)]
               [sfsim.jolt :as jolt]
               [sfsim.units :refer (pound-force foot)])
@@ -207,6 +207,7 @@
         rcs-buffer (-> "data/audio/thruster.ogg" load-vorbis make-audio-buffer)
         air-flow-buffer (-> "data/audio/air-flow.ogg" load-vorbis make-audio-buffer)
         drag-buffer (-> "data/audio/drag.ogg" load-vorbis make-audio-buffer)
+        sonic-boom-buffer (-> "data/audio/sonic-boom.ogg" load-vorbis make-audio-buffer)
         surrealism-mix-source (make-source surrealism-mix-buffer false)
         edge-of-space-source (make-source edge-of-space-buffer false)
         gear-deploy-source (make-source gear-deploy-buffer false)
@@ -217,7 +218,8 @@
         throttle-source (make-source throttle-buffer true)
         rcs-thruster-source (make-source rcs-buffer true)
         air-flow-source (make-source air-flow-buffer true)
-        drag-source (make-source drag-buffer true)]
+        drag-source (make-source drag-buffer true)
+        sonic-boom-source (make-source sonic-boom-buffer false)]
     {::music nil
      ::audio audio
      ::buffers [surrealism-mix-buffer
@@ -228,7 +230,8 @@
                 throttle-buffer
                 rcs-buffer
                 air-flow-buffer
-                drag-buffer]
+                drag-buffer
+                sonic-boom-buffer]
      ::sources {::surrealism-mix surrealism-mix-source
                 ::edge-of-space edge-of-space-source
                 ::gear-deploy gear-deploy-source
@@ -239,7 +242,8 @@
                 ::throttle throttle-source
                 ::rcs-thruster rcs-thruster-source
                 ::air-flow air-flow-source
-                ::drag drag-source}
+                ::drag drag-source
+                ::sonic-boom sonic-boom-source}
      ::tyre-squeal-sources [tyre-squeal-source-0 tyre-squeal-source-1 tyre-squeal-source-2]
      ::gear-down true
      ::wheel-contact [false false false]
@@ -247,6 +251,7 @@
      ::wheel-speed [0.0 0.0 0.0]
      ::throttle 0.0
      ::rcs-count 0
+     ::supersonic false
      ::paused []}))
 
 
@@ -272,6 +277,8 @@
         pressure                  (pressure-at-height height)
         relative-pressure         (/ pressure sea-level-pressure)
         speed                     (mag (get-linear-speed :sfsim.physics/surface physics))
+        speed-of-sound            (speed-of-sound (temperature-at-height height))
+        supersonic                (>= speed speed-of-sound)
         density                   (density-at-height height)
         dynamic-pressure          (dynamic-pressure density speed)
         relative-dynamic-pressure (min 1.0 (/ dynamic-pressure (* 1000.0 (/ ^double pound-force (* ^double foot ^double foot)))))
@@ -335,6 +342,12 @@
             (if (zero? drag)
               (source-stop (::drag sources))
               (source-play (::drag sources))))
+        ;; Supersonic boom
+        (println speed "/" speed-of-sound "," relative-dynamic-pressure)
+        (when (and supersonic (not (::supersonic state)))
+          (let [source (::sonic-boom sources)]
+            (set-source-gain source (min 1.0 (* 4.0 relative-dynamic-pressure)))
+            (source-play source)))
         ;; Return updated state
         (assoc state
                ::music music
@@ -343,6 +356,7 @@
                ::wheel-speed wheel-speed
                ::throttle (:sfsim.input/throttle controls)
                ::rcs-count rcs-count
+               ::supersonic supersonic
                ::paused [])))))
 
 
