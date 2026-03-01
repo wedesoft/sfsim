@@ -56,11 +56,12 @@
     - [X] play/stop individual RCS thrusters
     - [X] reduce volume when leaving atmosphere
     - [X] sound of air, air brake and gear friction
-    - [ ] set positions of sound effects (and update position of listener)
+    - [X] wheel sounds when hitting runway
+    - [ ] supersonic boom
+    - [ ] set position of listener
     - [ ] play background music
-    - [ ] set volume of background music
-    - [ ] set volume of sound effects
-    - [ ] wheel sounds when hitting runway
+    - [ ] set gain of listener
+    - [ ] enable/disable music
   - [X] does update-camera-pose need the whole input state structure?
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
