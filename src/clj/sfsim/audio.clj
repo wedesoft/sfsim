@@ -243,6 +243,8 @@
      ::tyre-squeal-sources [tyre-squeal-source-0 tyre-squeal-source-1 tyre-squeal-source-2]
      ::gear-down true
      ::wheel-contact [false false false]
+     ::wheel-radius [(* 0.5 1.1303) (* 0.5 1.1303) (* 0.5 0.8128)]
+     ::wheel-speed [0.0 0.0 0.0]
      ::throttle 0.0
      ::rcs-count 0
      ::paused []}))
@@ -255,9 +257,15 @@
         music                     (if (<= ^double height 100000.0) nil (::edge-of-space sources))
         controls                  (:sfsim.input/controls inputs)
         gear                      (:sfsim.physics/gear physics)
-        wheel-contact             (if-let [vehicle (:sfsim.physics/vehicle physics)]
-                                          (mapv (partial jolt/has-contact? vehicle) (range 3))
-                                          [false false false])
+        vehicle                   (:sfsim.physics/vehicle physics)
+        wheel-contact             (if vehicle
+                                    (mapv (partial jolt/has-contact? vehicle) (range 3))
+                                    [false false false])
+        wheel-speed               (if vehicle
+                                    (mapv (fn [i radius] (* radius (jolt/get-wheel-angular-velocity vehicle i)))
+                                          (range 3)
+                                          (::wheel-radius state))
+                                    [0.0 0.0 0.0])
         rcs-count                 (reduce + (map (comp abs controls)
                                                  [:sfsim.input/rcs-yaw :sfsim.input/rcs-pitch :sfsim.input/rcs-roll]))
         sea-level-pressure        (pressure-at-height 0.0)
@@ -299,10 +307,12 @@
                       (source-play (::gear-retract sources)))))
         ;; Tyre squeal when hitting the ground
         (doseq [wheel-index (range 3)]
-               (when (and (nth wheel-contact wheel-index) (not (nth (::wheel-contact state) wheel-index)))
-                 (let [source (nth (::tyre-squeal-sources state) wheel-index)]
-                   (set-source-gain source (min 1.0 (/ speed 100.0)))
-                   (source-play source))))
+               (let [source (nth (::tyre-squeal-sources state) wheel-index)]
+                 (when (and (nth wheel-contact wheel-index) (not (nth (::wheel-contact state) wheel-index)))
+                   (set-source-gain source (min 1.0 (/ (abs (- speed (nth (::wheel-speed state) wheel-index))) 100.0)))
+                   (source-play source))
+                 (when-not (nth wheel-contact wheel-index)
+                           (source-stop source))))
         ;; Main engine
         (when-not (= (zero? ^double (::throttle state)) (zero? ^double (:sfsim.input/throttle controls)))
                   (if (zero? ^double (:sfsim.input/throttle controls))
@@ -330,6 +340,7 @@
                ::music music
                ::gear-down (:sfsim.input/gear-down controls)
                ::wheel-contact wheel-contact
+               ::wheel-speed wheel-speed
                ::throttle (:sfsim.input/throttle controls)
                ::rcs-count rcs-count
                ::paused [])))))

@@ -430,6 +430,16 @@
   set_wheel_rotation_angle [::mem/pointer ::mem/int ::mem/float] ::mem/void)
 
 
+(defcfn get-wheel-angular-velocity
+  "Get wheel angular velocity"
+  get_wheel_angular_velocity [::mem/pointer ::mem/int] ::mem/float)
+
+
+(defcfn set-wheel-angular-velocity
+  "Set wheel angular velocity"
+  set_wheel_angular_velocity [::mem/pointer ::mem/int ::mem/float] ::mem/void)
+
+
 (defcfn has-contact-
   "Check if wheel has contact with an object"
   has_contact [::mem/pointer ::mem/int] ::mem/byte)
