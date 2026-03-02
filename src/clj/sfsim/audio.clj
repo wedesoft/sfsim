@@ -301,20 +301,39 @@
     gear-down))
 
 
+(defn trigger-tyre-squeals
+  "Sound of tyre squealing when hitting the ground"
+  [state physics _inputs]
+  (let [vehicle       (:sfsim.physics/vehicle physics)
+        speed         (mag (get-linear-speed :sfsim.physics/surface physics))
+        wheel-contact (if vehicle
+                        (mapv (partial jolt/has-contact? vehicle) (range 3))
+                        [false false false])
+        wheel-speed   (if vehicle
+                        (mapv (fn [i radius] (* radius (jolt/get-wheel-angular-velocity vehicle i)))
+                              (range 3)
+                              (::wheel-radius state))
+                        [0.0 0.0 0.0])]
+    (doseq [wheel-index (range 3)]
+           (let [source (nth (::tyre-squeal-sources state) wheel-index)
+                 contact (nth wheel-contact wheel-index)
+                 prev-contact (nth (::wheel-contact state) wheel-index)
+                 wheel-speed (nth (::wheel-speed state) wheel-index)]
+             (if contact
+               (when (not prev-contact)
+                 (set-source-gain source (min 1.0 (/ (abs (- speed wheel-speed)) 100.0)))
+                 (source-play source))
+               (when-not contact
+                         (source-stop source)))))
+    {::wheel-contact wheel-contact
+     ::wheel-speed wheel-speed}))
+
+
 (defn update-state
   [state physics inputs]
   (let [sources                   (::sources state)
         height                    (get-height physics config/planet-config)
         controls                  (:sfsim.input/controls inputs)
-        vehicle                   (:sfsim.physics/vehicle physics)
-        wheel-contact             (if vehicle
-                                    (mapv (partial jolt/has-contact? vehicle) (range 3))
-                                    [false false false])
-        wheel-speed               (if vehicle
-                                    (mapv (fn [i radius] (* radius (jolt/get-wheel-angular-velocity vehicle i)))
-                                          (range 3)
-                                          (::wheel-radius state))
-                                    [0.0 0.0 0.0])
         rcs-count                 (reduce + (map (comp abs controls)
                                                  [:sfsim.input/rcs-yaw :sfsim.input/rcs-pitch :sfsim.input/rcs-roll]))
         sea-level-pressure        (pressure-at-height 0.0)
@@ -338,15 +357,8 @@
         ;; Resume all sources
         (doseq [source paused-sources] (source-play source))
         (let [music (trigger-music state physics inputs)
-              gear-down (trigger-gear state physics inputs)]
-          ;; Tyre squeal when hitting the ground
-          (doseq [wheel-index (range 3)]
-                 (let [source (nth (::tyre-squeal-sources state) wheel-index)]
-                   (when (and (nth wheel-contact wheel-index) (not (nth (::wheel-contact state) wheel-index)))
-                     (set-source-gain source (min 1.0 (/ (abs (- speed (nth (::wheel-speed state) wheel-index))) 100.0)))
-                     (source-play source))
-                   (when-not (nth wheel-contact wheel-index)
-                             (source-stop source))))
+              gear-down (trigger-gear state physics inputs)
+              wheel-state (trigger-tyre-squeals state physics inputs)]
           ;; Main engine
           (when-not (= (zero? ^double (::throttle state)) (zero? ^double (:sfsim.input/throttle controls)))
                     (if (zero? ^double (:sfsim.input/throttle controls))
@@ -377,9 +389,9 @@
           ;; Return updated state
           (assoc state
                  ::music music
-                 ::gear-down (:sfsim.input/gear-down controls)
-                 ::wheel-contact wheel-contact
-                 ::wheel-speed wheel-speed
+                 ::gear-down gear-down
+                 ::wheel-contact (::wheel-contact wheel-state)
+                 ::wheel-speed (::wheel-speed wheel-state)
                  ::throttle (:sfsim.input/throttle controls)
                  ::rcs-count rcs-count
                  ::supersonic supersonic
