@@ -257,7 +257,7 @@
 
 (defn relative-pressure
   "Current pressure divided by sea-level pressure"
-  [physics]
+  ^double [physics]
   (let [height             (get-height physics config/planet-config)
         sea-level-pressure (pressure-at-height 0.0)
         pressure           (pressure-at-height height)]
@@ -310,7 +310,7 @@
                         (mapv (partial jolt/has-contact? vehicle) (range 3))
                         [false false false])
         wheel-speed   (if vehicle
-                        (mapv (fn [i radius] (* radius (jolt/get-wheel-angular-velocity vehicle i)))
+                        (mapv (fn [i radius] (* ^double radius ^double (jolt/get-wheel-angular-velocity vehicle i)))
                               (range 3)
                               (::wheel-radius state))
                         [0.0 0.0 0.0])]
@@ -321,7 +321,7 @@
                  wheel-speed (nth (::wheel-speed state) wheel-index)]
              (if contact
                (when (not prev-contact)
-                 (set-source-gain source (min 1.0 (/ (abs (- speed wheel-speed)) 100.0)))
+                 (set-source-gain source (min 1.0 (/ (abs (- speed ^double wheel-speed)) 100.0)))
                  (source-play source))
                (when-not contact
                          (source-stop source)))))
@@ -359,16 +359,32 @@
     rcs-count))
 
 
+(defn relative-dynamic-pressure
+  ^double [physics]
+  (let [height           (get-height physics config/planet-config)
+        speed            (mag (get-linear-speed :sfsim.physics/surface physics))
+        density          (density-at-height height)
+        dynamic-pressure (dynamic-pressure density speed)]
+    (min 1.0 (/ dynamic-pressure (* 1000.0 (/ ^double pound-force (* ^double foot ^double foot)))))))
+
+
+(defn trigger-air-flow
+  "Sound of air flow"
+  [state physics _inputs]
+  (let [source                    (-> state ::sources ::air-flow)
+        relative-dynamic-pressure (relative-dynamic-pressure physics)]
+    (set-source-gain source relative-dynamic-pressure)
+    (when-not (source-playing? source) (source-play source))))
+
+
 (defn update-state
   [state physics inputs]
   (let [sources                   (::sources state)
         height                    (get-height physics config/planet-config)
         speed                     (mag (get-linear-speed :sfsim.physics/surface physics))
         speed-of-sound            (speed-of-sound (temperature-at-height height))
+        relative-dynamic-pressure (relative-dynamic-pressure physics)
         supersonic                (>= speed speed-of-sound)
-        density                   (density-at-height height)
-        dynamic-pressure          (dynamic-pressure density speed)
-        relative-dynamic-pressure (min 1.0 (/ dynamic-pressure (* 1000.0 (/ ^double pound-force (* ^double foot ^double foot)))))
         air-brake                 (:sfsim.physics/air-brake physics)
         gear                      (:sfsim.physics/gear physics)
         drag                      (/ (- (drag-multiplier gear air-brake) 1.0) 0.6)]
@@ -384,10 +400,8 @@
               gear-down (trigger-gear state physics inputs)
               wheel-state (trigger-tyre-squeals state physics inputs)
               throttle (trigger-throttle state physics inputs)
-              rcs-count (trigger-rcs-thrusters state physics inputs)]
-          ;; Air flow
-          (set-source-gain (::air-flow sources) relative-dynamic-pressure)
-          (when-not (source-playing? (::air-flow sources)) (source-play (::air-flow sources)))
+              rcs-count (trigger-rcs-thrusters state physics inputs)
+              _ (trigger-air-flow state physics inputs)]
           ;; Drag of gear and air brake
           (set-source-gain (::drag sources) (* drag relative-dynamic-pressure))
           (when-not (= (> drag 0.0) (source-playing? (::drag sources)))
