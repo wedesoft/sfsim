@@ -301,6 +301,20 @@
     gear-down))
 
 
+(defn trigger-throttle
+  "Sound of throttle pedal being pressed"
+  [state physics inputs]
+  (let [throttle          (-> inputs :sfsim.input/controls :sfsim.input/throttle)
+        source            (-> state ::sources ::throttle)
+        relative-pressure (relative-pressure physics)]
+    (set-source-gain source (* relative-pressure ^double throttle))
+    (when-not (= (zero? ^double (::throttle state)) (zero? ^double throttle))
+              (if (zero? ^double throttle)
+                (source-stop source)
+                (source-play source)))
+    throttle))
+
+
 (defn trigger-tyre-squeals
   "Sound of tyre squealing when hitting the ground"
   [state physics _inputs]
@@ -358,14 +372,8 @@
         (doseq [source paused-sources] (source-play source))
         (let [music (trigger-music state physics inputs)
               gear-down (trigger-gear state physics inputs)
-              wheel-state (trigger-tyre-squeals state physics inputs)]
-          ;; Main engine
-          (when-not (= (zero? ^double (::throttle state)) (zero? ^double (:sfsim.input/throttle controls)))
-                    (if (zero? ^double (:sfsim.input/throttle controls))
-                      (source-stop (::throttle sources))
-                      (source-play (::throttle sources))))
-          (when-let [throttle (:sfsim.input/throttle controls)]
-                    (set-source-gain (::throttle sources) (* relative-pressure ^double throttle)))
+              wheel-state (trigger-tyre-squeals state physics inputs)
+              throttle (trigger-throttle state physics inputs)]
           ;; RCS thrusters
           (when-not (= (zero? ^long rcs-count) (zero? ^long (::rcs-count state)))
                     (if (zero? ^long rcs-count)
@@ -392,7 +400,7 @@
                  ::gear-down gear-down
                  ::wheel-contact (::wheel-contact wheel-state)
                  ::wheel-speed (::wheel-speed wheel-state)
-                 ::throttle (:sfsim.input/throttle controls)
+                 ::throttle throttle
                  ::rcs-count rcs-count
                  ::supersonic supersonic
                  ::paused []))))))
