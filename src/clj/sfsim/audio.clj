@@ -377,6 +377,21 @@
     (when-not (source-playing? source) (source-play source))))
 
 
+(defn trigger-drag
+  "Sound of drag caused by gear and air brake"
+  [state physics _inputs]
+  (let [source                    (-> state ::sources ::drag)
+        gear                      (:sfsim.physics/gear physics)
+        air-brake                 (:sfsim.physics/air-brake physics)
+        drag                      (/ (- (drag-multiplier gear air-brake) 1.0) 0.6)
+        relative-dynamic-pressure (relative-dynamic-pressure physics)]
+    (set-source-gain source relative-dynamic-pressure)
+    (when-not (= (> drag 0.0) (source-playing? source))
+              (if (zero? drag)
+                (source-stop source)
+                (source-play source)))))
+
+
 (defn update-state
   [state physics inputs]
   (let [sources                   (::sources state)
@@ -384,10 +399,7 @@
         speed                     (mag (get-linear-speed :sfsim.physics/surface physics))
         speed-of-sound            (speed-of-sound (temperature-at-height height))
         relative-dynamic-pressure (relative-dynamic-pressure physics)
-        supersonic                (>= speed speed-of-sound)
-        air-brake                 (:sfsim.physics/air-brake physics)
-        gear                      (:sfsim.physics/gear physics)
-        drag                      (/ (- (drag-multiplier gear air-brake) 1.0) 0.6)]
+        supersonic                (>= speed speed-of-sound)]
     (if (:sfsim.input/pause inputs)
       (let [playing-sources (filter source-playing? (vals sources))]
         ;; Pause all sources
@@ -401,13 +413,8 @@
               wheel-state (trigger-tyre-squeals state physics inputs)
               throttle (trigger-throttle state physics inputs)
               rcs-count (trigger-rcs-thrusters state physics inputs)
-              _ (trigger-air-flow state physics inputs)]
-          ;; Drag of gear and air brake
-          (set-source-gain (::drag sources) (* drag relative-dynamic-pressure))
-          (when-not (= (> drag 0.0) (source-playing? (::drag sources)))
-                    (if (zero? drag)
-                      (source-stop (::drag sources))
-                      (source-play (::drag sources))))
+              _ (trigger-air-flow state physics inputs)
+              _ (trigger-drag state physics inputs)]
           ;; Supersonic boom
           (when (and supersonic (not (::supersonic state)))
             (let [source (::sonic-boom sources)]
