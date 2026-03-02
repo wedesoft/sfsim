@@ -255,11 +255,23 @@
      ::paused []}))
 
 
+(defn trigger-music
+  [state physics inputs]
+  (let [height (get-height physics config/planet-config)
+        music  (if (<= ^double height 100000.0) nil (-> state ::sources ::edge-of-space))]
+    (when-not (= (::music state) music)
+              (when-not (nil? (::music state))
+                        (source-stop (::music state)))
+              (when-not (nil? music)
+                        (set-source-gain music 0.5)
+                        (source-play music)))
+    music))
+
+
 (defn update-state
   [state physics inputs]
   (let [sources                   (::sources state)
         height                    (get-height physics config/planet-config)
-        music                     (if (<= ^double height 100000.0) nil (::edge-of-space sources))
         controls                  (:sfsim.input/controls inputs)
         gear                      (:sfsim.physics/gear physics)
         vehicle                   (:sfsim.physics/vehicle physics)
@@ -292,72 +304,65 @@
       (let [paused-sources (filter source-paused? (vals sources))]
         ;; Resume all sources
         (doseq [source paused-sources] (source-play source))
-        ;; Trigger music depending on game state
-        (when-not (= (::music state) music)
-                  (when-not (nil? (::music state))
-                            (source-stop (::music state)))
-                  (when-not (nil? music)
-                            (set-source-gain music 0.5)
-                            (source-play music)))
-        ;; Gear retract and gear deploy sound
-        (set-source-gain (::gear-deploy sources) relative-pressure)
-        (set-source-gain (::gear-retract sources) relative-pressure)
-        (when-not (= (::gear-down state) (:sfsim.input/gear-down controls))
-                  (if (:sfsim.input/gear-down controls)
-                    (do
-                      (source-stop (::gear-retract sources))
-                      (set-source-offset (::gear-deploy sources) (* 4.0 ^double gear))
-                      (source-play (::gear-deploy sources)))
-                    (do
-                      (source-stop (::gear-deploy sources))
-                      (set-source-offset (::gear-retract sources) (* 4.0 (- 1.0 ^double gear)))
-                      (source-play (::gear-retract sources)))))
-        ;; Tyre squeal when hitting the ground
-        (doseq [wheel-index (range 3)]
-               (let [source (nth (::tyre-squeal-sources state) wheel-index)]
-                 (when (and (nth wheel-contact wheel-index) (not (nth (::wheel-contact state) wheel-index)))
-                   (set-source-gain source (min 1.0 (/ (abs (- speed (nth (::wheel-speed state) wheel-index))) 100.0)))
-                   (source-play source))
-                 (when-not (nth wheel-contact wheel-index)
-                           (source-stop source))))
-        ;; Main engine
-        (when-not (= (zero? ^double (::throttle state)) (zero? ^double (:sfsim.input/throttle controls)))
-                  (if (zero? ^double (:sfsim.input/throttle controls))
-                    (source-stop (::throttle sources))
-                    (source-play (::throttle sources))))
-        (when-let [throttle (:sfsim.input/throttle controls)]
-                  (set-source-gain (::throttle sources) (* relative-pressure ^double throttle)))
-        ;; RCS thrusters
-        (when-not (= (zero? ^long rcs-count) (zero? ^long (::rcs-count state)))
-                  (if (zero? ^long rcs-count)
-                    (source-stop (::rcs-thruster sources))
-                    (source-play (::rcs-thruster sources))))
-        (set-source-gain (::rcs-thruster sources) (* relative-pressure (/ ^long rcs-count 3.0)))
-        ;; Air flow
-        (set-source-gain (::air-flow sources) relative-dynamic-pressure)
-        (when-not (source-playing? (::air-flow sources)) (source-play (::air-flow sources)))
-        ;; Drag of gear and air brake
-        (set-source-gain (::drag sources) (* drag relative-dynamic-pressure))
-        (when-not (= (> drag 0.0) (source-playing? (::drag sources)))
-            (if (zero? drag)
-              (source-stop (::drag sources))
-              (source-play (::drag sources))))
-        ;; Supersonic boom
-        (println speed "/" speed-of-sound "," relative-dynamic-pressure)
-        (when (and supersonic (not (::supersonic state)))
-          (let [source (::sonic-boom sources)]
-            (set-source-gain source (min 1.0 (* 4.0 relative-dynamic-pressure)))
-            (source-play source)))
-        ;; Return updated state
-        (assoc state
-               ::music music
-               ::gear-down (:sfsim.input/gear-down controls)
-               ::wheel-contact wheel-contact
-               ::wheel-speed wheel-speed
-               ::throttle (:sfsim.input/throttle controls)
-               ::rcs-count rcs-count
-               ::supersonic supersonic
-               ::paused [])))))
+        (let [music (trigger-music state physics inputs)]
+          ;; Gear retract and gear deploy sound
+          (set-source-gain (::gear-deploy sources) relative-pressure)
+          (set-source-gain (::gear-retract sources) relative-pressure)
+          (when-not (= (::gear-down state) (:sfsim.input/gear-down controls))
+                    (if (:sfsim.input/gear-down controls)
+                      (do
+                        (source-stop (::gear-retract sources))
+                        (set-source-offset (::gear-deploy sources) (* 4.0 ^double gear))
+                        (source-play (::gear-deploy sources)))
+                      (do
+                        (source-stop (::gear-deploy sources))
+                        (set-source-offset (::gear-retract sources) (* 4.0 (- 1.0 ^double gear)))
+                        (source-play (::gear-retract sources)))))
+          ;; Tyre squeal when hitting the ground
+          (doseq [wheel-index (range 3)]
+                 (let [source (nth (::tyre-squeal-sources state) wheel-index)]
+                   (when (and (nth wheel-contact wheel-index) (not (nth (::wheel-contact state) wheel-index)))
+                     (set-source-gain source (min 1.0 (/ (abs (- speed (nth (::wheel-speed state) wheel-index))) 100.0)))
+                     (source-play source))
+                   (when-not (nth wheel-contact wheel-index)
+                             (source-stop source))))
+          ;; Main engine
+          (when-not (= (zero? ^double (::throttle state)) (zero? ^double (:sfsim.input/throttle controls)))
+                    (if (zero? ^double (:sfsim.input/throttle controls))
+                      (source-stop (::throttle sources))
+                      (source-play (::throttle sources))))
+          (when-let [throttle (:sfsim.input/throttle controls)]
+                    (set-source-gain (::throttle sources) (* relative-pressure ^double throttle)))
+          ;; RCS thrusters
+          (when-not (= (zero? ^long rcs-count) (zero? ^long (::rcs-count state)))
+                    (if (zero? ^long rcs-count)
+                      (source-stop (::rcs-thruster sources))
+                      (source-play (::rcs-thruster sources))))
+          (set-source-gain (::rcs-thruster sources) (* relative-pressure (/ ^long rcs-count 3.0)))
+          ;; Air flow
+          (set-source-gain (::air-flow sources) relative-dynamic-pressure)
+          (when-not (source-playing? (::air-flow sources)) (source-play (::air-flow sources)))
+          ;; Drag of gear and air brake
+          (set-source-gain (::drag sources) (* drag relative-dynamic-pressure))
+          (when-not (= (> drag 0.0) (source-playing? (::drag sources)))
+                    (if (zero? drag)
+                      (source-stop (::drag sources))
+                      (source-play (::drag sources))))
+          ;; Supersonic boom
+          (when (and supersonic (not (::supersonic state)))
+            (let [source (::sonic-boom sources)]
+              (set-source-gain source (min 1.0 (* 4.0 relative-dynamic-pressure)))
+              (source-play source)))
+          ;; Return updated state
+          (assoc state
+                 ::music music
+                 ::gear-down (:sfsim.input/gear-down controls)
+                 ::wheel-contact wheel-contact
+                 ::wheel-speed wheel-speed
+                 ::throttle (:sfsim.input/throttle controls)
+                 ::rcs-count rcs-count
+                 ::supersonic supersonic
+                 ::paused []))))))
 
 
 (defn destroy-audio-state
