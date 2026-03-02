@@ -361,7 +361,9 @@
                     "main-engine.ogg"
                     "thruster.ogg"
                     "air-flow.ogg"
-                    "drag.ogg"]]
+                    "drag.ogg"
+                    "tyre-squeal.ogg"
+                    "sonic-boom.ogg"]]
          (let [url      (str "https://www.wedesoft.de/downloads/" filename)]
            (.println *err* (str "Downloading " url " ..."))
            (io/copy

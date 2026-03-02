@@ -261,6 +261,9 @@
          (set-friction floor 0.3)
          (set-restitution floor 0.2)
          (optimize-broad-phase)
+         (has-contact? vehicle 0) => false
+         (has-contact? vehicle 1) => false
+         (has-contact? vehicle 2) => false
          (dotimes [i 25] (update-system 0.1 1))
          (get-translation body) => (roughly-vector (vec3 0 0 -0.631) 1e-3)
          (matrix/get-translation (get-wheel-local-transform vehicle 0 (vec3 0 1 0) (vec3 0 0 1)))
@@ -283,10 +286,13 @@
          (get-wheel-rotation-angle vehicle 3) => (roughly 0.0 1e-3)
          (set-wheel-rotation-angle vehicle 2 (to-radians 90.0))
          (get-wheel-rotation-angle vehicle 2) => (roughly (to-radians 90.0) 1e-3)
-         (has-hit-hard-point vehicle 0) => false
-         (has-hit-hard-point vehicle 1) => false
-         (has-hit-hard-point vehicle 2) => false
-         (has-hit-hard-point vehicle 3) => false
+         (has-hit-hard-point? vehicle 0) => false
+         (has-hit-hard-point? vehicle 1) => false
+         (has-hit-hard-point? vehicle 2) => false
+         (has-hit-hard-point? vehicle 3) => false
+         (has-contact? vehicle 0) => true
+         (has-contact? vehicle 1) => true
+         (has-contact? vehicle 2) => true
          (remove-and-destroy-constraint vehicle)
          (remove-and-destroy-body floor)
          (remove-and-destroy-body body)))

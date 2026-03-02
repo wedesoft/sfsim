@@ -56,11 +56,12 @@
     - [X] play/stop individual RCS thrusters
     - [X] reduce volume when leaving atmosphere
     - [X] sound of air, air brake and gear friction
-    - [ ] set positions of sound effects (and update position of listener)
+    - [X] wheel sounds when hitting runway
+    - [ ] supersonic boom
+    - [ ] set position of listener
     - [ ] play background music
-    - [ ] set volume of background music
-    - [ ] set volume of sound effects
-    - [ ] wheel sounds when hitting runway
+    - [ ] set gain of listener
+    - [ ] enable/disable music
   - [X] does update-camera-pose need the whole input state structure?
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
@@ -112,6 +113,8 @@
     [[https://pixabay.com/sound-effects/nature-air-ambience-234180/]]
     [[https://pixabay.com/sound-effects/technology-wall-air-conditioner-43901/]]
     [[https://pixabay.com/sound-effects/technology-air-conditioner-running-return-vent-391936/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-car-brake-325519/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-breaking-the-sound-barrier-77353/]]
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
