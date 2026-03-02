@@ -255,8 +255,18 @@
      ::paused []}))
 
 
+(defn relative-pressure
+  "Current pressure divided by sea-level pressure"
+  [physics]
+  (let [height             (get-height physics config/planet-config)
+        sea-level-pressure (pressure-at-height 0.0)
+        pressure           (pressure-at-height height)]
+    (/ pressure sea-level-pressure)))
+
+
 (defn trigger-music
-  [state physics inputs]
+  "Method for playing music tracks"
+  [state physics _inputs]
   (let [height (get-height physics config/planet-config)
         music  (if (<= ^double height 100000.0) nil (-> state ::sources ::edge-of-space))]
     (when-not (= (::music state) music)
@@ -268,12 +278,34 @@
     music))
 
 
+(defn trigger-gear
+  "Sound of retracting or deploying gear"
+  [state physics inputs]
+  (let [gear              (:sfsim.physics/gear physics)
+        gear-down         (-> inputs :sfsim.input/controls :sfsim.input/gear-down)
+        gear-deploy       (-> state ::sources ::gear-deploy)
+        gear-retract      (-> state ::sources ::gear-retract)
+        relative-pressure (relative-pressure physics)]
+    (set-source-gain gear-deploy relative-pressure)
+    (set-source-gain gear-retract relative-pressure)
+    (when-not (= (::gear-down state) gear-down)
+              (if gear-down
+                (do
+                  (source-stop gear-retract)
+                  (set-source-offset gear-deploy (* 4.0 ^double gear))
+                  (source-play gear-deploy))
+                (do
+                  (source-stop gear-deploy)
+                  (set-source-offset gear-retract (* 4.0 (- 1.0 ^double gear)))
+                  (source-play gear-retract))))
+    gear-down))
+
+
 (defn update-state
   [state physics inputs]
   (let [sources                   (::sources state)
         height                    (get-height physics config/planet-config)
         controls                  (:sfsim.input/controls inputs)
-        gear                      (:sfsim.physics/gear physics)
         vehicle                   (:sfsim.physics/vehicle physics)
         wheel-contact             (if vehicle
                                     (mapv (partial jolt/has-contact? vehicle) (range 3))
@@ -295,6 +327,7 @@
         dynamic-pressure          (dynamic-pressure density speed)
         relative-dynamic-pressure (min 1.0 (/ dynamic-pressure (* 1000.0 (/ ^double pound-force (* ^double foot ^double foot)))))
         air-brake                 (:sfsim.physics/air-brake physics)
+        gear                      (:sfsim.physics/gear physics)
         drag                      (/ (- (drag-multiplier gear air-brake) 1.0) 0.6)]
     (if (:sfsim.input/pause inputs)
       (let [playing-sources (filter source-playing? (vals sources))]
@@ -304,20 +337,8 @@
       (let [paused-sources (filter source-paused? (vals sources))]
         ;; Resume all sources
         (doseq [source paused-sources] (source-play source))
-        (let [music (trigger-music state physics inputs)]
-          ;; Gear retract and gear deploy sound
-          (set-source-gain (::gear-deploy sources) relative-pressure)
-          (set-source-gain (::gear-retract sources) relative-pressure)
-          (when-not (= (::gear-down state) (:sfsim.input/gear-down controls))
-                    (if (:sfsim.input/gear-down controls)
-                      (do
-                        (source-stop (::gear-retract sources))
-                        (set-source-offset (::gear-deploy sources) (* 4.0 ^double gear))
-                        (source-play (::gear-deploy sources)))
-                      (do
-                        (source-stop (::gear-deploy sources))
-                        (set-source-offset (::gear-retract sources) (* 4.0 (- 1.0 ^double gear)))
-                        (source-play (::gear-retract sources)))))
+        (let [music (trigger-music state physics inputs)
+              gear-down (trigger-gear state physics inputs)]
           ;; Tyre squeal when hitting the ground
           (doseq [wheel-index (range 3)]
                  (let [source (nth (::tyre-squeal-sources state) wheel-index)]
