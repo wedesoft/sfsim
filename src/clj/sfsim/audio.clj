@@ -6,7 +6,13 @@
 
 (ns sfsim.audio
     "OpenAL method calls for sound output"
-    (:require [fastmath.vector :refer (vec3)])
+    (:require [fastmath.vector :refer (vec3 mag)]
+              [sfsim.config :as config]
+              [sfsim.physics :refer (get-height get-linear-speed)]
+              [sfsim.atmosphere :refer (pressure-at-height density-at-height temperature-at-height speed-of-sound)]
+              [sfsim.aerodynamics :refer (dynamic-pressure drag-multiplier)]
+              [sfsim.jolt :as jolt]
+              [sfsim.units :refer (pound-force foot)])
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
              (org.lwjgl BufferUtils)
              (org.lwjgl.system MemoryUtil)
@@ -147,6 +153,24 @@
   (AL10/alSourcePause source))
 
 
+(defn source-state
+  "Get state of audio source"
+  [source]
+  (AL10/alGetSourcei source AL10/AL_SOURCE_STATE))
+
+
+(defn source-playing?
+  "Determine whether an audio source is playing"
+  [source]
+  (= (source-state source) AL10/AL_PLAYING))
+
+
+(defn source-paused?
+  "Determine whether an audio source is paused"
+  [source]
+  (= (source-state source) AL10/AL_PAUSED))
+
+
 (defn source-stop
   "Stop playing audio source"
   [source]
@@ -174,40 +198,245 @@
 (defn make-audio-state
   []
   (let [audio (initialize-audio "")
+        surrealism-mix-buffer (-> "data/audio/andrew-kn-surrealism-ambient-mix.ogg" load-vorbis make-audio-buffer)
+        edge-of-space-buffer (-> "data/audio/andrew-kn-at-the-edge-of-space.ogg" load-vorbis make-audio-buffer)
         gear-deploy-buffer (-> "data/audio/gear-deploy.ogg" load-vorbis make-audio-buffer)
         gear-retract-buffer (-> "data/audio/gear-retract.ogg" load-vorbis make-audio-buffer)
+        tyre-squeal-buffer (-> "data/audio/tyre-squeal.ogg" load-vorbis make-audio-buffer)
+        throttle-buffer (-> "data/audio/main-engine.ogg" load-vorbis make-audio-buffer)
+        rcs-buffer (-> "data/audio/thruster.ogg" load-vorbis make-audio-buffer)
+        air-flow-buffer (-> "data/audio/air-flow.ogg" load-vorbis make-audio-buffer)
+        drag-buffer (-> "data/audio/drag.ogg" load-vorbis make-audio-buffer)
+        sonic-boom-buffer (-> "data/audio/sonic-boom.ogg" load-vorbis make-audio-buffer)
+        surrealism-mix-source (make-source surrealism-mix-buffer false)
+        edge-of-space-source (make-source edge-of-space-buffer false)
         gear-deploy-source (make-source gear-deploy-buffer false)
-        gear-retract-source (make-source gear-retract-buffer false)]
-    {::audio audio
-     ::gear-deploy-buffer gear-deploy-buffer
-     ::gear-retract-buffer gear-retract-buffer
-     ::gear-deploy-source gear-deploy-source
-     ::gear-retract-source gear-retract-source
-     ::gear-down true}))
+        gear-retract-source (make-source gear-retract-buffer false)
+        tyre-squeal-source-0 (make-source tyre-squeal-buffer false)
+        tyre-squeal-source-1 (make-source tyre-squeal-buffer false)
+        tyre-squeal-source-2 (make-source tyre-squeal-buffer false)
+        throttle-source (make-source throttle-buffer true)
+        rcs-thruster-source (make-source rcs-buffer true)
+        air-flow-source (make-source air-flow-buffer true)
+        drag-source (make-source drag-buffer true)
+        sonic-boom-source (make-source sonic-boom-buffer false)]
+    {::music nil
+     ::audio audio
+     ::buffers [surrealism-mix-buffer
+                edge-of-space-buffer
+                gear-deploy-buffer
+                gear-retract-buffer
+                tyre-squeal-buffer
+                throttle-buffer
+                rcs-buffer
+                air-flow-buffer
+                drag-buffer
+                sonic-boom-buffer]
+     ::sources {::surrealism-mix surrealism-mix-source
+                ::edge-of-space edge-of-space-source
+                ::gear-deploy gear-deploy-source
+                ::gear-retract gear-retract-source
+                ::tyre-squeal-0 tyre-squeal-source-0
+                ::tyre-squeal-1 tyre-squeal-source-1
+                ::tyre-squeal-2 tyre-squeal-source-2
+                ::throttle throttle-source
+                ::rcs-thruster rcs-thruster-source
+                ::air-flow air-flow-source
+                ::drag drag-source
+                ::sonic-boom sonic-boom-source}
+     ::tyre-squeal-sources [tyre-squeal-source-0 tyre-squeal-source-1 tyre-squeal-source-2]
+     ::gear-down true
+     ::wheel-contact [false false false]
+     ::wheel-radius [(* 0.5 1.1303) (* 0.5 1.1303) (* 0.5 0.8128)]
+     ::wheel-speed [0.0 0.0 0.0]
+     ::throttle 0.0
+     ::rcs-count 0
+     ::supersonic false
+     ::paused []}))
+
+
+(defn relative-pressure
+  "Current pressure divided by sea-level pressure"
+  ^double [physics]
+  (let [height             (get-height physics config/planet-config)
+        sea-level-pressure (pressure-at-height 0.0)
+        pressure           (pressure-at-height height)]
+    (/ pressure sea-level-pressure)))
+
+
+(defn relative-dynamic-pressure
+  ^double [physics]
+  (let [height           (get-height physics config/planet-config)
+        speed            (mag (get-linear-speed :sfsim.physics/surface physics))
+        density          (density-at-height height)
+        dynamic-pressure (dynamic-pressure density speed)]
+    (min 1.0 (/ dynamic-pressure (* 1000.0 (/ ^double pound-force (* ^double foot ^double foot)))))))
+
+
+(defn trigger-music
+  "Method for playing music tracks"
+  [state physics _inputs]
+  (let [height (get-height physics config/planet-config)
+        music  (if (<= ^double height 100000.0) nil (-> state ::sources ::edge-of-space))]
+    (when-not (= (::music state) music)
+              (when-not (nil? (::music state))
+                        (source-stop (::music state)))
+              (when-not (nil? music)
+                        (set-source-gain music 0.5)
+                        (source-play music)))
+    (assoc state ::music music)))
+
+
+(defn trigger-gear
+  "Sound of retracting or deploying gear"
+  [state physics inputs]
+  (let [gear              (:sfsim.physics/gear physics)
+        gear-down         (-> inputs :sfsim.input/controls :sfsim.input/gear-down)
+        gear-deploy       (-> state ::sources ::gear-deploy)
+        gear-retract      (-> state ::sources ::gear-retract)
+        relative-pressure (relative-pressure physics)]
+    (set-source-gain gear-deploy relative-pressure)
+    (set-source-gain gear-retract relative-pressure)
+    (when-not (= (::gear-down state) gear-down)
+              (if gear-down
+                (do
+                  (source-stop gear-retract)
+                  (set-source-offset gear-deploy (* 4.0 ^double gear))
+                  (source-play gear-deploy))
+                (do
+                  (source-stop gear-deploy)
+                  (set-source-offset gear-retract (* 4.0 (- 1.0 ^double gear)))
+                  (source-play gear-retract))))
+    (assoc state ::gear-down gear-down)))
+
+
+(defn trigger-tyre-squeals
+  "Sound of tyre squealing when hitting the ground"
+  [state physics _inputs]
+  (let [vehicle       (:sfsim.physics/vehicle physics)
+        speed         (mag (get-linear-speed :sfsim.physics/surface physics))
+        wheel-contact (if vehicle
+                        (mapv (partial jolt/has-contact? vehicle) (range 3))
+                        [false false false])
+        wheel-speed   (if vehicle
+                        (mapv (fn [i radius] (* ^double radius ^double (jolt/get-wheel-angular-velocity vehicle i)))
+                              (range 3)
+                              (::wheel-radius state))
+                        [0.0 0.0 0.0])]
+    (doseq [wheel-index (range 3)]
+           (let [source (nth (::tyre-squeal-sources state) wheel-index)
+                 contact (nth wheel-contact wheel-index)
+                 prev-contact (nth (::wheel-contact state) wheel-index)
+                 wheel-speed (nth (::wheel-speed state) wheel-index)]
+             (if contact
+               (when (not prev-contact)
+                 (set-source-gain source (min 1.0 (/ (abs (- speed ^double wheel-speed)) 100.0)))
+                 (source-play source))
+               (when-not contact
+                         (source-stop source)))))
+    (assoc state
+           ::wheel-contact wheel-contact
+           ::wheel-speed wheel-speed)))
+
+
+(defn trigger-throttle
+  "Sound of throttle pedal being pressed"
+  [state physics inputs]
+  (let [throttle          (-> inputs :sfsim.input/controls :sfsim.input/throttle)
+        source            (-> state ::sources ::throttle)
+        relative-pressure (relative-pressure physics)]
+    (set-source-gain source (* relative-pressure ^double throttle))
+    (when-not (= (zero? ^double (::throttle state)) (zero? ^double throttle))
+              (if (zero? ^double throttle)
+                (source-stop source)
+                (source-play source)))
+    (assoc state ::throttle throttle)))
+
+
+(defn trigger-rcs-thrusters
+  "Sound of RCS thrusters being triggered"
+  [state physics inputs]
+  (let [controls          (:sfsim.input/controls inputs)
+        rcs-count         (reduce + (map (comp abs controls)
+                                         [:sfsim.input/rcs-yaw :sfsim.input/rcs-pitch :sfsim.input/rcs-roll]))
+        rcs-thruster      (-> state ::sources ::rcs-thruster)
+        relative-pressure (relative-pressure physics)]
+    (set-source-gain rcs-thruster (* relative-pressure (/ ^long rcs-count 3.0)))
+    (when-not (= (zero? ^double (::rcs-count state)) (zero? ^double rcs-count))
+              (if (zero? ^double rcs-count)
+                (source-stop rcs-thruster)
+                (source-play rcs-thruster)))
+    (assoc state ::rcs-count rcs-count)))
+
+
+(defn trigger-air-flow
+  "Sound of air flow"
+  [state physics _inputs]
+  (let [source                    (-> state ::sources ::air-flow)
+        relative-dynamic-pressure (relative-dynamic-pressure physics)]
+    (set-source-gain source relative-dynamic-pressure)
+    (when-not (source-playing? source) (source-play source))
+    state))
+
+
+(defn trigger-drag
+  "Sound of drag caused by gear and air brake"
+  [state physics _inputs]
+  (let [source                    (-> state ::sources ::drag)
+        gear                      (:sfsim.physics/gear physics)
+        air-brake                 (:sfsim.physics/air-brake physics)
+        drag                      (/ (- (drag-multiplier gear air-brake) 1.0) 0.6)
+        relative-dynamic-pressure (relative-dynamic-pressure physics)]
+    (set-source-gain source (* drag relative-dynamic-pressure))
+    (when-not (= (> drag 0.0) (source-playing? source))
+              (if (zero? drag)
+                (source-stop source)
+                (source-play source)))
+    state))
+
+
+(defn trigger-supersonic
+  "Sound of supersonic engine"
+  [state physics _inputs]
+  (let [source                    (-> state ::sources ::sonic-boom)
+        height                    (get-height physics config/planet-config)
+        speed                     (mag (get-linear-speed :sfsim.physics/surface physics))
+        speed-of-sound            (speed-of-sound (temperature-at-height height))
+        supersonic                (>= speed speed-of-sound)
+        relative-dynamic-pressure (relative-dynamic-pressure physics)]
+    (when (and supersonic (not (::supersonic state)))
+      (set-source-gain source (min 1.0 (* 4.0 relative-dynamic-pressure)))
+      (source-play source))
+    (assoc state ::supersonic supersonic)))
 
 
 (defn update-state
   [state physics inputs]
-  (when-not (= (::gear-down state) (:sfsim.input/gear-down inputs))
-    (if (:sfsim.input/gear-down inputs)
-      (do
-        (source-stop (::gear-retract-source state))
-        (set-source-offset (::gear-deploy-source state) (* 4.0 ^double (:sfsim.physics/gear physics)))
-        (source-play (::gear-deploy-source state)))
-      (do
-        (source-stop (::gear-deploy-source state))
-        (set-source-offset (::gear-retract-source state) (* 4.0 (- 1.0 ^double (:sfsim.physics/gear physics))))
-        (source-play (::gear-retract-source state)))))
-  (-> state
-      (assoc ::gear-down (:sfsim.input/gear-down inputs))))
+  (let [sources (::sources state)]
+    (if (:sfsim.input/pause inputs)
+      (let [playing-sources (filter source-playing? (vals sources))]
+        ;; Pause all sources
+        (doseq [source playing-sources] (source-pause source))
+        (update state ::paused into playing-sources))
+      (let [paused-sources (filter source-paused? (vals sources))]
+        ;; Resume all sources
+        (doseq [source paused-sources] (source-play source))
+        (-> state
+            (trigger-music physics inputs)
+            (trigger-gear physics inputs)
+            (trigger-tyre-squeals physics inputs)
+            (trigger-throttle physics inputs)
+            (trigger-rcs-thrusters physics inputs)
+            (trigger-air-flow physics inputs)
+            (trigger-drag physics inputs)
+            (trigger-supersonic physics inputs)
+            (assoc ::paused []))))))
 
 
 (defn destroy-audio-state
   [state]
-  (destroy-source (::gear-deploy-source state))
-  (destroy-source (::gear-retract-source state))
-  (destroy-audio-buffer (::gear-deploy-buffer state))
-  (destroy-audio-buffer (::gear-retract-buffer state))
+  (doseq [source (vals (::sources state))] (destroy-source source))
+  (doseq [buffer (::buffers state)] (destroy-audio-buffer buffer))
   (finalize-audio (::audio state)))
 
 

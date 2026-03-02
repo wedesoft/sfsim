@@ -67,6 +67,9 @@ extern "C" {
   void set_suspension_length(void *constraint, int wheel_index, float suspension_length);
   float get_wheel_rotation_angle(void *constraint, int wheel_index);
   void set_wheel_rotation_angle(void *constraint, int wheel_index, float wheel_angle);
+  float get_wheel_angular_velocity(void *constraint, int wheel_index);
+  void set_wheel_angular_velocity(void *constraint, int wheel_index, float wheel_angular_velocity);
+  char has_contact(void *constraint, int wheel_index);
   char has_hit_hard_point(void *constraint, int wheel_index);
   void remove_and_destroy_constraint(void *constraint);
 #ifdef __cplusplus

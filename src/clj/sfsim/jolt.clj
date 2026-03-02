@@ -430,12 +430,33 @@
   set_wheel_rotation_angle [::mem/pointer ::mem/int ::mem/float] ::mem/void)
 
 
+(defcfn get-wheel-angular-velocity
+  "Get wheel angular velocity"
+  get_wheel_angular_velocity [::mem/pointer ::mem/int] ::mem/float)
+
+
+(defcfn set-wheel-angular-velocity
+  "Set wheel angular velocity"
+  set_wheel_angular_velocity [::mem/pointer ::mem/int ::mem/float] ::mem/void)
+
+
+(defcfn has-contact-
+  "Check if wheel has contact with an object"
+  has_contact [::mem/pointer ::mem/int] ::mem/byte)
+
+
+(definline has-contact?
+  "Check if wheel has contact with an object"
+  [constraint wheel]
+  `(not (zero? (has-contact- ~constraint ~wheel))))
+
+
 (defcfn has-hit-hard-point-
   "Check if wheel suspension has hit its upper limit"
   has_hit_hard_point [::mem/pointer ::mem/int] ::mem/byte)
 
 
-(definline has-hit-hard-point
+(definline has-hit-hard-point?
   "Check if wheel suspension has hit its upper limit"
   [constraint wheel]
   `(not (zero? (has-hit-hard-point- ~constraint ~wheel))))

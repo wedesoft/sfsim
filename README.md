@@ -61,6 +61,7 @@ cd ..
 
 * Build Jolt wrapper library (tested with Linux and Windows/MinGW): `make jolt`
 * Download space ship model: `clj -T:build download-spaceship`
+* Download audio files: `clj -T:build download-audio`
 * Create content of data folder (Note that building everything takes days! You can take the data folder of a Steam playtest build instead unless latest software requires a future data release on Steam):
   * Volumetric clouds
     * Build Worley noise: `clj -T:build worley`

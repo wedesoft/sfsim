@@ -14,6 +14,7 @@
       [sfsim.matrix :refer [fvec3]]
       [sfsim.quaternion :as q]
       [sfsim.atmosphere :as atmosphere]
+      [sfsim.units :refer (pound-force foot)]
       [sfsim.util :refer (sqr cube)])
     (:import
       [fastmath.vector

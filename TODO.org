@@ -49,17 +49,19 @@
   - [X] refactor rendering code
     - [X] put rendering code into methods
     - [X] create high level rendering methods to simplify main program and integration tests
-  - [ ] add some sound effects
-    - [ ] seek audio position for landing gear if necessary
-    - [ ] set positions of sound effects (and update position of listener)
-    - [ ] add landing gear [[https://pixabay.com/sound-effects/search/landing-gear/]]
-    - [ ] play background music
-    - [ ] set volume of background music
-    - [ ] set volume of sound effects
-    - [ ] adjust thruster volume depending on throttle and play/stop
-    - [ ] play/stop individual RCS thrusters
-    - [ ] reduce volume when leaving atmosphere
-    - [ ] wheel sounds when hitting runway
+  - [-] add some sound effects
+    - [X] seek audio position for landing gear if necessary
+    - [X] add landing gear [[https://pixabay.com/sound-effects/search/landing-gear/]]
+    - [X] adjust thruster volume depending on throttle and play/stop
+    - [X] play/stop individual RCS thrusters
+    - [X] reduce volume when leaving atmosphere
+    - [X] sound of air, air brake and gear friction
+    - [X] wheel sounds when hitting runway
+    - [X] supersonic boom
+    - [ ] set position of listener
+    - [X] play background music
+    - [ ] set gain of listener
+    - [ ] enable/disable music
   - [X] does update-camera-pose need the whole input state structure?
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
@@ -99,8 +101,20 @@
   - [ ] try one object casting shadow on another (pack object shadow maps into one?)
 * TODO [#B] sound effects                                            :immersion:
   - Note taken on [2025-08-16 Sa 22:05] \\
+    ffmpeg -i input.mp3 -filter:a "asetrate=96000" -r 48000 -ac 1 output.mp3
     [[https://freesound.org/people/Andrewkn/sounds/502864/]]
     [[https://www.epidemicsound.com/sound-effects/]]
+    [[https://www.youtube.com/watch?v=FcW9kUUTfxY]]
+    [[https://pixabay.com/sound-effects/film-special-effects-cockpit-sound-of-landing-gear-deployment-aviation-audio-328162/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-thud4-42479/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-large-rocket-engine-86240/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-blazing-fire-394355/]]
+    [[https://pixabay.com/sound-effects/technology-air-conditioner-02-414913/]]
+    [[https://pixabay.com/sound-effects/nature-air-ambience-234180/]]
+    [[https://pixabay.com/sound-effects/technology-wall-air-conditioner-43901/]]
+    [[https://pixabay.com/sound-effects/technology-air-conditioner-running-return-vent-391936/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-car-brake-325519/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-breaking-the-sound-barrier-77353/]]
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
