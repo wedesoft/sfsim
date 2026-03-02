@@ -392,14 +392,24 @@
                 (source-play source)))))
 
 
-(defn update-state
-  [state physics inputs]
-  (let [sources                   (::sources state)
+(defn trigger-supersonic
+  "Sound of supersonic engine"
+  [state physics _inputs]
+  (let [source                    (-> state ::sources ::sonic-boom)
         height                    (get-height physics config/planet-config)
         speed                     (mag (get-linear-speed :sfsim.physics/surface physics))
         speed-of-sound            (speed-of-sound (temperature-at-height height))
-        relative-dynamic-pressure (relative-dynamic-pressure physics)
-        supersonic                (>= speed speed-of-sound)]
+        supersonic                (>= speed speed-of-sound)
+        relative-dynamic-pressure (relative-dynamic-pressure physics)]
+    (when (and supersonic (not (::supersonic state)))
+      (set-source-gain source (min 1.0 (* 4.0 relative-dynamic-pressure)))
+      (source-play source))
+    supersonic))
+
+
+(defn update-state
+  [state physics inputs]
+  (let [sources (::sources state)]
     (if (:sfsim.input/pause inputs)
       (let [playing-sources (filter source-playing? (vals sources))]
         ;; Pause all sources
@@ -414,12 +424,8 @@
               throttle (trigger-throttle state physics inputs)
               rcs-count (trigger-rcs-thrusters state physics inputs)
               _ (trigger-air-flow state physics inputs)
-              _ (trigger-drag state physics inputs)]
-          ;; Supersonic boom
-          (when (and supersonic (not (::supersonic state)))
-            (let [source (::sonic-boom sources)]
-              (set-source-gain source (min 1.0 (* 4.0 relative-dynamic-pressure)))
-              (source-play source)))
+              _ (trigger-drag state physics inputs)
+              supersonic (trigger-supersonic state physics inputs)]
           ;; Return updated state
           (assoc state
                  ::music music
