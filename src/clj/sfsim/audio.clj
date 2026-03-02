@@ -301,20 +301,6 @@
     gear-down))
 
 
-(defn trigger-throttle
-  "Sound of throttle pedal being pressed"
-  [state physics inputs]
-  (let [throttle          (-> inputs :sfsim.input/controls :sfsim.input/throttle)
-        source            (-> state ::sources ::throttle)
-        relative-pressure (relative-pressure physics)]
-    (set-source-gain source (* relative-pressure ^double throttle))
-    (when-not (= (zero? ^double (::throttle state)) (zero? ^double throttle))
-              (if (zero? ^double throttle)
-                (source-stop source)
-                (source-play source)))
-    throttle))
-
-
 (defn trigger-tyre-squeals
   "Sound of tyre squealing when hitting the ground"
   [state physics _inputs]
@@ -343,16 +329,40 @@
      ::wheel-speed wheel-speed}))
 
 
+(defn trigger-throttle
+  "Sound of throttle pedal being pressed"
+  [state physics inputs]
+  (let [throttle          (-> inputs :sfsim.input/controls :sfsim.input/throttle)
+        source            (-> state ::sources ::throttle)
+        relative-pressure (relative-pressure physics)]
+    (set-source-gain source (* relative-pressure ^double throttle))
+    (when-not (= (zero? ^double (::throttle state)) (zero? ^double throttle))
+              (if (zero? ^double throttle)
+                (source-stop source)
+                (source-play source)))
+    throttle))
+
+
+(defn trigger-rcs-thrusters
+  "Sound of RCS thrusters being triggered"
+  [state physics inputs]
+  (let [controls          (:sfsim.input/controls inputs)
+        rcs-count         (reduce + (map (comp abs controls)
+                                         [:sfsim.input/rcs-yaw :sfsim.input/rcs-pitch :sfsim.input/rcs-roll]))
+        rcs-thruster      (-> state ::sources ::rcs-thruster)
+        relative-pressure (relative-pressure physics)]
+    (set-source-gain rcs-thruster (* relative-pressure (/ ^long rcs-count 3.0)))
+    (when-not (= (zero? ^double (::rcs-count state)) (zero? ^double rcs-count))
+              (if (zero? ^double rcs-count)
+                (source-stop rcs-thruster)
+                (source-play rcs-thruster)))
+    rcs-count))
+
+
 (defn update-state
   [state physics inputs]
   (let [sources                   (::sources state)
         height                    (get-height physics config/planet-config)
-        controls                  (:sfsim.input/controls inputs)
-        rcs-count                 (reduce + (map (comp abs controls)
-                                                 [:sfsim.input/rcs-yaw :sfsim.input/rcs-pitch :sfsim.input/rcs-roll]))
-        sea-level-pressure        (pressure-at-height 0.0)
-        pressure                  (pressure-at-height height)
-        relative-pressure         (/ pressure sea-level-pressure)
         speed                     (mag (get-linear-speed :sfsim.physics/surface physics))
         speed-of-sound            (speed-of-sound (temperature-at-height height))
         supersonic                (>= speed speed-of-sound)
@@ -373,13 +383,8 @@
         (let [music (trigger-music state physics inputs)
               gear-down (trigger-gear state physics inputs)
               wheel-state (trigger-tyre-squeals state physics inputs)
-              throttle (trigger-throttle state physics inputs)]
-          ;; RCS thrusters
-          (when-not (= (zero? ^long rcs-count) (zero? ^long (::rcs-count state)))
-                    (if (zero? ^long rcs-count)
-                      (source-stop (::rcs-thruster sources))
-                      (source-play (::rcs-thruster sources))))
-          (set-source-gain (::rcs-thruster sources) (* relative-pressure (/ ^long rcs-count 3.0)))
+              throttle (trigger-throttle state physics inputs)
+              rcs-count (trigger-rcs-thrusters state physics inputs)]
           ;; Air flow
           (set-source-gain (::air-flow sources) relative-dynamic-pressure)
           (when-not (source-playing? (::air-flow sources)) (source-play (::air-flow sources)))
