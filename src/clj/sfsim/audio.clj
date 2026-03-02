@@ -264,6 +264,15 @@
     (/ pressure sea-level-pressure)))
 
 
+(defn relative-dynamic-pressure
+  ^double [physics]
+  (let [height           (get-height physics config/planet-config)
+        speed            (mag (get-linear-speed :sfsim.physics/surface physics))
+        density          (density-at-height height)
+        dynamic-pressure (dynamic-pressure density speed)]
+    (min 1.0 (/ dynamic-pressure (* 1000.0 (/ ^double pound-force (* ^double foot ^double foot)))))))
+
+
 (defn trigger-music
   "Method for playing music tracks"
   [state physics _inputs]
@@ -275,7 +284,7 @@
               (when-not (nil? music)
                         (set-source-gain music 0.5)
                         (source-play music)))
-    music))
+    (assoc state ::music music)))
 
 
 (defn trigger-gear
@@ -298,7 +307,7 @@
                   (source-stop gear-deploy)
                   (set-source-offset gear-retract (* 4.0 (- 1.0 ^double gear)))
                   (source-play gear-retract))))
-    gear-down))
+    (assoc state ::gear-down gear-down)))
 
 
 (defn trigger-tyre-squeals
@@ -325,8 +334,9 @@
                  (source-play source))
                (when-not contact
                          (source-stop source)))))
-    {::wheel-contact wheel-contact
-     ::wheel-speed wheel-speed}))
+    (assoc state
+           ::wheel-contact wheel-contact
+           ::wheel-speed wheel-speed)))
 
 
 (defn trigger-throttle
@@ -340,7 +350,7 @@
               (if (zero? ^double throttle)
                 (source-stop source)
                 (source-play source)))
-    throttle))
+    (assoc state ::throttle throttle)))
 
 
 (defn trigger-rcs-thrusters
@@ -356,16 +366,7 @@
               (if (zero? ^double rcs-count)
                 (source-stop rcs-thruster)
                 (source-play rcs-thruster)))
-    rcs-count))
-
-
-(defn relative-dynamic-pressure
-  ^double [physics]
-  (let [height           (get-height physics config/planet-config)
-        speed            (mag (get-linear-speed :sfsim.physics/surface physics))
-        density          (density-at-height height)
-        dynamic-pressure (dynamic-pressure density speed)]
-    (min 1.0 (/ dynamic-pressure (* 1000.0 (/ ^double pound-force (* ^double foot ^double foot)))))))
+    (assoc state ::rcs-count rcs-count)))
 
 
 (defn trigger-air-flow
@@ -374,7 +375,8 @@
   (let [source                    (-> state ::sources ::air-flow)
         relative-dynamic-pressure (relative-dynamic-pressure physics)]
     (set-source-gain source relative-dynamic-pressure)
-    (when-not (source-playing? source) (source-play source))))
+    (when-not (source-playing? source) (source-play source))
+    state))
 
 
 (defn trigger-drag
@@ -385,11 +387,12 @@
         air-brake                 (:sfsim.physics/air-brake physics)
         drag                      (/ (- (drag-multiplier gear air-brake) 1.0) 0.6)
         relative-dynamic-pressure (relative-dynamic-pressure physics)]
-    (set-source-gain source relative-dynamic-pressure)
+    (set-source-gain source (* drag relative-dynamic-pressure))
     (when-not (= (> drag 0.0) (source-playing? source))
               (if (zero? drag)
                 (source-stop source)
-                (source-play source)))))
+                (source-play source)))
+    state))
 
 
 (defn trigger-supersonic
@@ -404,7 +407,7 @@
     (when (and supersonic (not (::supersonic state)))
       (set-source-gain source (min 1.0 (* 4.0 relative-dynamic-pressure)))
       (source-play source))
-    supersonic))
+    (assoc state ::supersonic supersonic)))
 
 
 (defn update-state
@@ -418,24 +421,16 @@
       (let [paused-sources (filter source-paused? (vals sources))]
         ;; Resume all sources
         (doseq [source paused-sources] (source-play source))
-        (let [music (trigger-music state physics inputs)
-              gear-down (trigger-gear state physics inputs)
-              wheel-state (trigger-tyre-squeals state physics inputs)
-              throttle (trigger-throttle state physics inputs)
-              rcs-count (trigger-rcs-thrusters state physics inputs)
-              _ (trigger-air-flow state physics inputs)
-              _ (trigger-drag state physics inputs)
-              supersonic (trigger-supersonic state physics inputs)]
-          ;; Return updated state
-          (assoc state
-                 ::music music
-                 ::gear-down gear-down
-                 ::wheel-contact (::wheel-contact wheel-state)
-                 ::wheel-speed (::wheel-speed wheel-state)
-                 ::throttle throttle
-                 ::rcs-count rcs-count
-                 ::supersonic supersonic
-                 ::paused []))))))
+        (-> state
+            (trigger-music physics inputs)
+            (trigger-gear physics inputs)
+            (trigger-tyre-squeals physics inputs)
+            (trigger-throttle physics inputs)
+            (trigger-rcs-thrusters physics inputs)
+            (trigger-air-flow physics inputs)
+            (trigger-drag physics inputs)
+            (trigger-supersonic physics inputs)
+            (assoc ::paused []))))))
 
 
 (defn destroy-audio-state
