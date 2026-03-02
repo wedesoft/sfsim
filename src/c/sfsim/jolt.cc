@@ -599,6 +599,27 @@ void set_wheel_rotation_angle(void *constraint, int wheel_index, float wheel_ang
   return wheel->SetRotationAngle(wheel_angle);
 }
 
+float get_wheel_angular_velocity(void *constraint, int wheel_index)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  JPH::Wheel *wheel = vehicle_constraint->GetWheel(wheel_index);
+  return wheel->GetAngularVelocity();
+}
+
+void set_wheel_angular_velocity(void *constraint, int wheel_index, float wheel_angular_velocity)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  JPH::Wheel *wheel = vehicle_constraint->GetWheel(wheel_index);
+  return wheel->SetAngularVelocity(wheel_angular_velocity);
+}
+
+char has_contact(void *constraint, int wheel_index)
+{
+  JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;
+  JPH::Wheel *wheel = vehicle_constraint->GetWheel(wheel_index);
+  return wheel->HasContact();
+}
+
 char has_hit_hard_point(void *constraint, int wheel_index)
 {
   JPH::VehicleConstraint *vehicle_constraint = (JPH::VehicleConstraint *)constraint;

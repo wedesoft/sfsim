@@ -144,7 +144,7 @@
   (-> state
       (assoc ::throttle (:sfsim.input/throttle inputs))
       (update ::air-brake (fn [^double x] (clamp (+ x (* (if (:sfsim.input/air-brake inputs) 2.0 -2.0) dt)) 0.0 1.0)))
-      (update ::gear (fn [^double x] (clamp (+ x (* (if (:sfsim.input/gear-down inputs) 0.5 -0.5) dt)) 0.0 1.0)))
+      (update ::gear (fn [^double x] (clamp (+ x (* (if (:sfsim.input/gear-down inputs) 0.25 -0.25) dt)) 0.0 1.0)))
       (assoc ::rcs-thrust (mult (vec3 (:sfsim.input/rcs-roll inputs) (:sfsim.input/rcs-pitch inputs) (:sfsim.input/rcs-yaw inputs))
                                 -1000000.0))
       (assoc ::control-surfaces (mult (vec3 (:sfsim.input/aileron inputs) (:sfsim.input/elevator inputs) (:sfsim.input/rudder inputs))
@@ -160,19 +160,19 @@
 (defmethod set-pose ::surface
   [state _domain position orientation]
   (jolt/set-translation (::body state) position)  ; Jolt handles position information to detect collisions with surface
-  (jolt/set-orientation (::body state) orientation)  ; Jolt handles orientation information 
+  (jolt/set-orientation (::body state) orientation)  ; Jolt handles orientation information
   (-> state
       (assoc ::domain ::surface)
-      (assoc ::position (vec3 0 0 0))))  ; Position offset is zero 
+      (assoc ::position (vec3 0 0 0))))  ; Position offset is zero
 
 
 (defmethod set-pose ::orbit
   [state _domain position orientation]
   (jolt/set-translation (::body state) (vec3 0 0 0))  ; Jolt only handles position changes
-  (jolt/set-orientation (::body state) orientation)  ; Jolt handles orientation information 
+  (jolt/set-orientation (::body state) orientation)  ; Jolt handles orientation information
   (-> state
       (assoc ::domain ::orbit)
-      (assoc ::position position)))  ; Store double precision position 
+      (assoc ::position position)))  ; Store double precision position
 
 
 (defmulti get-position
@@ -259,6 +259,13 @@
     {:longitude longitude
      :latitude latitude
      :height height}))
+
+
+(defn get-height
+  "Get height of space craft"
+  [state planet]
+  (let [position  (get-position :sfsim.physics/surface state)]
+    (- (mag position) ^double (:sfsim.planet/radius planet))))
 
 
 (defmulti set-speed
