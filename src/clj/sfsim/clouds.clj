@@ -10,10 +10,10 @@
     [clojure.math :refer (tan pow log)]
     [clojure.string :refer (split)]
     [comb.template :as template]
-    [fastmath.vector :refer (vec4 vec3 mag)]
-    [fastmath.matrix :refer (mulm mulv inverse)]
+    [fastmath.vector :refer (vec3 mag)]
+    [fastmath.matrix :refer (mulm inverse)]
     [malli.core :as m]
-    [sfsim.matrix :refer (transformation-matrix vec4->vec3 quaternion->matrix projection-matrix get-translation)]
+    [sfsim.matrix :refer (transformation-matrix quaternion->matrix projection-matrix get-translation)]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.bluenoise :refer (noise-size) :as bluenoise]
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures

@@ -8,12 +8,12 @@
   "Functions for doing OpenGL rendering"
   (:require
     [clojure.math :refer (sin asin hypot)]
-    [fastmath.matrix :refer (mulm mulv inverse mat->float-array)]
-    [fastmath.vector :refer (vec3 vec4 mag)]
+    [fastmath.matrix :refer (mulm inverse mat->float-array)]
+    [fastmath.vector :refer (vec3 mag)]
     [malli.core :as m]
     [sfsim.image :refer (get-pixel)]
     [sfsim.matrix :refer (fvec2 fvec3 fvec4 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix
-                          vec4->vec3 get-translation)]
+                          get-translation)]
     [sfsim.quaternion :refer (quaternion)]
     [sfsim.shaders :refer (vertex-passthrough)]
     [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
