@@ -208,7 +208,7 @@
         edge-of-space-buffer (-> "data/audio/andrew-kn-at-the-edge-of-space.ogg" load-vorbis make-audio-buffer)
         gear-deploy-buffer (-> "data/audio/gear-deploy.ogg" load-vorbis make-audio-buffer)
         gear-retract-buffer (-> "data/audio/gear-retract.ogg" load-vorbis make-audio-buffer)
-        tyre-squeal-buffer (-> "data/audio/tyre-squeal.ogg" load-vorbis make-audio-buffer)
+        tyre-skid-buffer (-> "data/audio/tyre-skid.ogg" load-vorbis make-audio-buffer)
         throttle-buffer (-> "data/audio/main-engine.ogg" load-vorbis make-audio-buffer)
         rcs-buffer (-> "data/audio/thruster.ogg" load-vorbis make-audio-buffer)
         air-flow-buffer (-> "data/audio/air-flow.ogg" load-vorbis make-audio-buffer)
@@ -218,9 +218,9 @@
         edge-of-space-source (make-source edge-of-space-buffer false)
         gear-deploy-source (make-source gear-deploy-buffer false)
         gear-retract-source (make-source gear-retract-buffer false)
-        tyre-squeal-source-0 (make-source tyre-squeal-buffer false)
-        tyre-squeal-source-1 (make-source tyre-squeal-buffer false)
-        tyre-squeal-source-2 (make-source tyre-squeal-buffer false)
+        tyre-skid-source-0 (make-source tyre-skid-buffer false)
+        tyre-skid-source-1 (make-source tyre-skid-buffer false)
+        tyre-skid-source-2 (make-source tyre-skid-buffer false)
         throttle-source (make-source throttle-buffer true)
         rcs-thruster-source (make-source rcs-buffer true)
         air-flow-source (make-source air-flow-buffer true)
@@ -233,7 +233,7 @@
                 edge-of-space-buffer
                 gear-deploy-buffer
                 gear-retract-buffer
-                tyre-squeal-buffer
+                tyre-skid-buffer
                 throttle-buffer
                 rcs-buffer
                 air-flow-buffer
@@ -243,15 +243,15 @@
                 ::edge-of-space edge-of-space-source
                 ::gear-deploy gear-deploy-source
                 ::gear-retract gear-retract-source
-                ::tyre-squeal-0 tyre-squeal-source-0
-                ::tyre-squeal-1 tyre-squeal-source-1
-                ::tyre-squeal-2 tyre-squeal-source-2
+                ::tyre-skid-0 tyre-skid-source-0
+                ::tyre-skid-1 tyre-skid-source-1
+                ::tyre-skid-2 tyre-skid-source-2
                 ::throttle throttle-source
                 ::rcs-thruster rcs-thruster-source
                 ::air-flow air-flow-source
                 ::drag drag-source
                 ::sonic-boom sonic-boom-source}
-     ::tyre-squeal-sources [tyre-squeal-source-0 tyre-squeal-source-1 tyre-squeal-source-2]
+     ::tyre-skid-sources [tyre-skid-source-0 tyre-skid-source-1 tyre-skid-source-2]
      ::gear-down true
      ::wheel-contact [false false false]
      ::wheel-radius [(* 0.5 1.1303) (* 0.5 1.1303) (* 0.5 0.8128)]
@@ -317,8 +317,8 @@
     (assoc state ::gear-down gear-down)))
 
 
-(defn trigger-tyre-squeals
-  "Sound of tyre squealing when hitting the ground"
+(defn trigger-tyre-skids
+  "Sound of tyre skiding when hitting the ground"
   [state physics _inputs]
   (let [vehicle       (:sfsim.physics/vehicle physics)
         speed         (mag (get-linear-speed :sfsim.physics/surface physics))
@@ -331,7 +331,7 @@
                               (::wheel-radius state))
                         [0.0 0.0 0.0])]
     (doseq [wheel-index (range 3)]
-           (let [source (nth (::tyre-squeal-sources state) wheel-index)
+           (let [source (nth (::tyre-skid-sources state) wheel-index)
                  contact (nth wheel-contact wheel-index)
                  prev-contact (nth (::wheel-contact state) wheel-index)
                  wheel-speed (nth (::wheel-speed state) wheel-index)]
@@ -432,7 +432,7 @@
         (-> state
             (trigger-music physics inputs)
             (trigger-gear physics inputs)
-            (trigger-tyre-squeals physics inputs)
+            (trigger-tyre-skids physics inputs)
             (trigger-throttle physics inputs)
             (trigger-rcs-thrusters physics inputs)
             (trigger-air-flow physics inputs)
