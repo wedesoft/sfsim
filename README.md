@@ -108,6 +108,10 @@ cd ..
 * Create Linux executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json` (delete out-linux folder first)
 * Upload to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login <account_name> <password> +run_app_build /home/..../sfsim/scripts/sfsim_playtest_linux.vdf +quit`
 
+## Data Upload to Steam
+
+* Upload data to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login <account_name> <password> +run_app_build /home/..../sfsim/scripts/sfsim_playtest_data.vdf +quit`
+
 # Lint
 
 * [Install clj-kondo](https://github.com/clj-kondo/clj-kondo/blob/master/doc/install.md)
