@@ -471,6 +471,27 @@
     (double (aget buffer 0))))
 
 
+(defn property-int
+  "Create a property slider with integer value"
+  {:malli/schema [:=> [:cat :some :string :int :int :int :int :double] :double]}
+  [gui text minimum value maximum step inc-per-pixel]
+  (let [buffer (int-array 1)]
+    (aset-int buffer 0 value)
+    (Nuklear/nk_property_int ^NkContext (::context gui) ^String text ^int minimum buffer ^int maximum ^int step ^float inc-per-pixel)
+    (aget buffer 0)))
+
+
+(defn property-float
+  "Create a property slider with float value"
+  {:malli/schema [:=> [:cat :some :string :double :double :double :double :double] :double]}
+  [gui text minimum value maximum step inc-per-pixel]
+  (let [buffer (float-array 1)]
+    (aset-float buffer 0 value)
+    (Nuklear/nk_property_float ^NkContext (::context gui) ^String text ^float minimum buffer ^float maximum ^float step
+                               ^float inc-per-pixel)
+    (double (aget buffer 0))))
+
+
 (defn button-label
   "Create a button with text label"
   [gui label]
@@ -653,6 +674,25 @@
                         (assoc-in [:gui ::menu] main-dialog))))))
 
 
+(defn sound-dialog
+  [state gui ^long window-width ^long window-height]
+  (nuklear-window
+    gui "Sound" (quot (- window-width 320) 2) (quot (- window-height (* 37 3)) 2) 320 (* 37 3) true
+    (ignore-nil-> state state
+                  (layout-row-dynamic gui 32 2)
+                  (text-label gui "Volume")
+                  (update-in state [:audio :sfsim.audio/settings :sfsim.audio/volume] #(property-float gui "volume" 0.0 % 1.0 0.1 0.0025))
+                  (layout-row-dynamic gui 32 2)
+                  (when (button-label gui "Save")
+                    (config/write-user-config "sound.edn" (get-in state [:audio :sfsim.audio/settings]))
+                    (assoc-in state [:gui ::menu] main-dialog))
+                  (when (button-label gui "Close")
+                    (-> state
+                        (assoc-in [:audio :sfsim.audio/settings]
+                                  (config/read-user-config "sound.edn" {:sfsim.audio/volume 1.0}))
+                        (assoc-in [:gui ::menu] main-dialog))))))
+
+
 (def position-data
   {:longitude (edit-data "0.0" 32 :sfsim.gui/filter-float)
    :latitude  (edit-data "0.0" 32 :sfsim.gui/filter-float)
@@ -773,17 +813,19 @@
 (defn main-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 6)) 2) 320 (* 37 6) true
+    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 7)) 2) 320 (* 37 6) true
     (ignore-nil-> state state
                   (layout-row-dynamic gui 32 1)
-                  (when (button-label gui "Joystick")
-                    (assoc-in state [:gui ::menu] joystick-dialog))
                   (when (button-label gui "Location")
                     (location-dialog-set position-data state)
                     (assoc-in state [:gui ::menu] location-dialog))
                   (when (button-label gui "Date/Time")
                     (datetime-dialog-set time-data state)
                     (assoc-in state [:gui ::menu] datetime-dialog))
+                  (when (button-label gui "Joystick")
+                    (assoc-in state [:gui ::menu] joystick-dialog))
+                  (when (button-label gui "Sound")
+                    (assoc-in state [:gui ::menu] sound-dialog))
                   (when (button-label gui "Resume")
                     (assoc-in state [:input :sfsim.input/menu] nil))
                   (when (button-label gui "Quit")
