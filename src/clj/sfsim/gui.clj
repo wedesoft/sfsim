@@ -471,6 +471,27 @@
     (double (aget buffer 0))))
 
 
+(defn property-int
+  "Create a property slider with integer value"
+  {:malli/schema [:=> [:cat :some :string :int :int :int :int :double] :double]}
+  [gui text minimum value maximum step inc-per-pixel]
+  (let [buffer (int-array 1)]
+    (aset-int buffer 0 value)
+    (Nuklear/nk_property_int ^NkContext (::context gui) ^String text ^int minimum buffer ^int maximum ^int step ^float inc-per-pixel)
+    (aget buffer 0)))
+
+
+(defn property-float
+  "Create a property slider with float value"
+  {:malli/schema [:=> [:cat :some :string :double :double :double :double :double] :double]}
+  [gui text minimum value maximum step inc-per-pixel]
+  (let [buffer (float-array 1)]
+    (aset-float buffer 0 value)
+    (Nuklear/nk_property_float ^NkContext (::context gui) ^String text ^float minimum buffer ^float maximum ^float step
+                               ^float inc-per-pixel)
+    (double (aget buffer 0))))
+
+
 (defn button-label
   "Create a button with text label"
   [gui label]
@@ -660,7 +681,7 @@
     (ignore-nil-> state state
                   (layout-row-dynamic gui 32 2)
                   (text-label gui "Volume")
-                  (update-in state [:audio :sfsim.audio/settings :sfsim.audio/volume] #(slider-float gui 0.0 % 1.0 0.01))
+                  (update-in state [:audio :sfsim.audio/settings :sfsim.audio/volume] #(property-float gui "volume" 0.0 % 1.0 0.1 0.0025))
                   (layout-row-dynamic gui 32 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "sound.edn" (get-in state [:audio :sfsim.audio/settings]))
