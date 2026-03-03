@@ -58,14 +58,16 @@
     - [X] sound of air, air brake and gear friction
     - [X] wheel sounds when hitting runway
     - [X] supersonic boom
+    - [ ] set gain of listener, save in config file
+    - [ ] enable/disable music
     - [ ] set position of listener
     - [X] play background music
-    - [ ] set gain of listener
-    - [ ] enable/disable music
-  - [X] does update-camera-pose need the whole input state structure?
+  - [ ] move joystick config loading from core into input module
+  - [ ] release new version and post about it
+  - [ ] finish tidying up core
+  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
-  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] add RCS state to physics-state
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back

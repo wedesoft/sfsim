@@ -37,6 +37,12 @@
   (AL10/alListener3f AL10/AL_POSITION (position 0) (position 1) (position 2)))
 
 
+(defn set-listener-gain
+  "Set audio volume of listener"
+  [gain]
+  (AL10/alListenerf AL10/AL_GAIN gain))
+
+
 (defn initialize-audio
   "Open audio device"
   [^String device-name]
@@ -220,7 +226,8 @@
         air-flow-source (make-source air-flow-buffer true)
         drag-source (make-source drag-buffer true)
         sonic-boom-source (make-source sonic-boom-buffer false)]
-    {::music nil
+    {::settings (config/read-user-config "sound.edn" {::volume 1.0})
+     ::music nil
      ::audio audio
      ::buffers [surrealism-mix-buffer
                 edge-of-space-buffer
@@ -421,6 +428,7 @@
       (let [paused-sources (filter source-paused? (vals sources))]
         ;; Resume all sources
         (doseq [source paused-sources] (source-play source))
+        (set-listener-gain (-> state ::settings ::volume))
         (-> state
             (trigger-music physics inputs)
             (trigger-gear physics inputs)
