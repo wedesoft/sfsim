@@ -813,7 +813,7 @@
 (defn main-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 7)) 2) 320 (* 37 6) true
+    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 7)) 2) 320 (* 37 7) true
     (ignore-nil-> state state
                   (layout-row-dynamic gui 32 1)
                   (when (button-label gui "Location")
