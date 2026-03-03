@@ -7,10 +7,13 @@
 (ns sfsim.audio
     "OpenAL method calls for sound output"
     (:require [fastmath.vector :refer (vec3 mag)]
+              [fastmath.matrix :refer (mulm mulv inverse eye)]
               [sfsim.config :as config]
-              [sfsim.physics :refer (get-height get-linear-speed)]
+              [sfsim.matrix :refer (transformation-matrix quaternion->matrix get-translation get-rotation)]
+              [sfsim.physics :refer (get-height get-linear-speed get-position get-orientation)]
               [sfsim.atmosphere :refer (pressure-at-height density-at-height temperature-at-height speed-of-sound)]
               [sfsim.aerodynamics :refer (dynamic-pressure drag-multiplier)]
+              [sfsim.camera :as camera]
               [sfsim.jolt :as jolt]
               [sfsim.units :refer (pound-force foot)])
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
@@ -26,8 +29,8 @@
 (defn setup-sample-attenuation
   "Configure distance attenuation model"
   [source]
-  (AL10/alSourcef source AL10/AL_REFERENCE_DISTANCE 10.0)
-  (AL10/alSourcef source AL10/AL_MAX_DISTANCE 100.0)
+  (AL10/alSourcef source AL10/AL_REFERENCE_DISTANCE 50.0)
+  (AL10/alSourcef source AL10/AL_MAX_DISTANCE 5000.0)
   (AL10/alSourcef source AL10/AL_ROLLOFF_FACTOR 1.0))
 
 
@@ -35,6 +38,15 @@
   "Set listener position"
   [position]
   (AL10/alListener3f AL10/AL_POSITION (position 0) (position 1) (position 2)))
+
+
+
+(defn set-listener-orientation
+  "Set orientation of listener"
+  [matrix]
+  (let [forward (mulv matrix (vec3 0 0 -1))
+        up      (mulv matrix (vec3 0 1  0))]
+    (AL10/alListenerfv AL10/AL_ORIENTATION (float-array (concat forward up)))))
 
 
 (defn set-listener-gain
@@ -58,8 +70,7 @@
       (let [caps (AL/createCapabilities device-caps)]
         (AL10/alDistanceModel AL10/AL_INVERSE_DISTANCE_CLAMPED)
         (set-listener-position (vec3 0 0 0))
-        ; forward and up vector
-        (AL10/alListenerfv AL10/AL_ORIENTATION (float-array [0.0 0.0 -1.0 0.0 1.0 0.0]))
+        (set-listener-orientation (eye 3))
         {::device device
          ::device-caps device-caps
          ::caps caps
@@ -130,21 +141,23 @@
   (AL10/alSourcef source AL10/AL_GAIN gain))
 
 
-(defn make-source
-  "Create audio source"
-  [buffer looping]
-  (let [source (AL10/alGenSources)]
-    (AL10/alSourcei source AL10/AL_BUFFER buffer)
-    (set-source-gain source 1.0)
-    (AL10/alSourcei source AL10/AL_LOOPING (if looping AL10/AL_TRUE AL10/AL_FALSE))
-    (setup-sample-attenuation source)
-    source))
-
-
 (defn set-source-position
   "Set audio source position"
   [source position]
   (AL10/alSource3f source AL10/AL_POSITION (position 0) (position 1) (position 2)))
+
+
+(defn make-source
+  "Create audio source"
+  [buffer looping attenuation]
+  (let [source (AL10/alGenSources)]
+    (AL10/alSourcei source AL10/AL_BUFFER buffer)
+    (set-source-gain source 1.0)
+    (AL10/alSourcei source AL10/AL_LOOPING (if looping AL10/AL_TRUE AL10/AL_FALSE))
+    (when attenuation
+      (setup-sample-attenuation source)
+      (set-source-position source (vec3 0 0 0)))
+    source))
 
 
 (defn source-play
@@ -214,18 +227,18 @@
         air-flow-buffer (-> "data/audio/air-flow.ogg" load-vorbis make-audio-buffer)
         drag-buffer (-> "data/audio/drag.ogg" load-vorbis make-audio-buffer)
         sonic-boom-buffer (-> "data/audio/sonic-boom.ogg" load-vorbis make-audio-buffer)
-        surrealism-mix-source (make-source surrealism-mix-buffer false)
-        edge-of-space-source (make-source edge-of-space-buffer false)
-        gear-deploy-source (make-source gear-deploy-buffer false)
-        gear-retract-source (make-source gear-retract-buffer false)
-        tyre-skid-source-0 (make-source tyre-skid-buffer false)
-        tyre-skid-source-1 (make-source tyre-skid-buffer false)
-        tyre-skid-source-2 (make-source tyre-skid-buffer false)
-        throttle-source (make-source throttle-buffer true)
-        rcs-thruster-source (make-source rcs-buffer true)
-        air-flow-source (make-source air-flow-buffer true)
-        drag-source (make-source drag-buffer true)
-        sonic-boom-source (make-source sonic-boom-buffer false)]
+        surrealism-mix-source (make-source surrealism-mix-buffer false false)
+        edge-of-space-source (make-source edge-of-space-buffer false false)
+        gear-deploy-source (make-source gear-deploy-buffer false true)
+        gear-retract-source (make-source gear-retract-buffer false true)
+        tyre-skid-source-0 (make-source tyre-skid-buffer false true)
+        tyre-skid-source-1 (make-source tyre-skid-buffer false true)
+        tyre-skid-source-2 (make-source tyre-skid-buffer false true)
+        throttle-source (make-source throttle-buffer true true)
+        rcs-thruster-source (make-source rcs-buffer true true)
+        air-flow-source (make-source air-flow-buffer true true)
+        drag-source (make-source drag-buffer true true)
+        sonic-boom-source (make-source sonic-boom-buffer false true)]
     {::settings (config/read-user-config "sound.edn" {::volume 1.0})
      ::music nil
      ::audio audio
@@ -418,8 +431,17 @@
 
 
 (defn update-state
-  [state physics inputs]
-  (let [sources (::sources state)]
+  [state physics inputs camera]
+  (let [sources                     (::sources state)
+        [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
+                                     (camera/get-camera-pose camera physics))
+        object-position             (get-position :sfsim.physics/surface physics)
+        object-orientation          (get-orientation :sfsim.physics/surface physics)
+        world-to-object             (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
+        camera-to-world             (transformation-matrix (quaternion->matrix camera-orientation) origin)
+        camera-to-object            (mulm world-to-object camera-to-world)]
+    (set-listener-position (get-translation camera-to-object))
+    (set-listener-orientation (get-rotation camera-to-object))
     (if (:sfsim.input/pause inputs)
       (let [playing-sources (filter source-playing? (vals sources))]
         ;; Pause all sources

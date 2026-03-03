@@ -59,9 +59,9 @@
     - [X] sound of air, air brake and gear friction
     - [X] wheel sounds when hitting runway
     - [X] supersonic boom
-    - [ ] set gain of listener, save in config file
+    - [X] set gain of listener, save in config file
+    - [X] set position of listener
     - [ ] enable/disable music
-    - [ ] set position of listener
     - [X] play background music
   - [ ] move joystick config loading from core into input module
   - [ ] release new version and post about it
