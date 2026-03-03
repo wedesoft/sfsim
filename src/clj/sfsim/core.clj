@@ -16,7 +16,7 @@
     [malli.dev :as dev]
     [malli.dev.pretty :as pretty]
     [fastmath.matrix :refer (inverse mulv mulm)]
-    [fastmath.vector :refer (vec3 vec4 mag sub normalize)]
+    [fastmath.vector :refer (vec3 mag sub normalize)]
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
@@ -25,7 +25,7 @@
     [sfsim.config :as config]
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation vec4->vec3 get-translation)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation get-translation)]
     [sfsim.model :as model]
     [sfsim.planet :as planet]
     [sfsim.clock :refer (start-clock elapsed-time)]
@@ -246,7 +246,6 @@
               height             (- (mag object-position) ^double earth-radius)
               pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
               object-orientation (physics/get-orientation :sfsim.physics/surface (:physics @state))
-              object-to-world    (transformation-matrix (quaternion->matrix object-orientation) object-position)
               [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
                                            (camera/get-camera-pose (:camera @state) (:physics @state)))
               jd-ut              (physics/get-julian-date-ut (:physics @state))

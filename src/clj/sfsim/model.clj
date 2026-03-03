@@ -10,7 +10,7 @@
     [clojure.math :refer (floor)]
     [comb.template :as template]
     [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
-    [fastmath.vector :refer (vec3 vec4 mult add)]
+    [fastmath.vector :refer (vec3 mult add)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
                               destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay)]
@@ -50,8 +50,6 @@
       AIVector3D$Buffer
       AIVectorKey
       Assimp)
-    (fastmath.vector
-      Vec4)
     (org.lwjgl.stb
       STBImage)
     (org.lwjgl.opengl
