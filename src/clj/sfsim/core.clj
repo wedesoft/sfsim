@@ -25,7 +25,7 @@
     [sfsim.config :as config]
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation vec4->vec3)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation vec4->vec3 get-translation)]
     [sfsim.model :as model]
     [sfsim.planet :as planet]
     [sfsim.clock :refer (start-clock elapsed-time)]
@@ -233,11 +233,11 @@
             (swap! state update :physics physics/load-state (:physics frame) wheels)
             (swap! state assoc :camera (:camera frame)))
           (do
-            (swap! state update :audio audio/update-state (:physics @state) (:input @state))
             (when (not (-> @state :input :sfsim.input/pause))
               (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) dt wheels
                      config/planet-config split-orientations thrust))
             (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
+            (swap! state update :audio audio/update-state (:physics @state) (:input @state) (:camera @state))
             (when (and @recording (not (-> @state :input :sfsim.input/pause)))
               (let [frame {:physics (physics/save-state (:physics @state)) :camera (:camera @state)}]
                 (swap! recording conj frame)))))
@@ -258,7 +258,7 @@
               camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) origin)
               world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
               camera-to-object   (mulm world-to-object camera-to-world)
-              object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
+              object-origin      (get-translation camera-to-object)
               render-order       (filterv (physics/active-rcs (:physics @state)) (model/bsp-render-order bsp-tree object-origin))
               plume-transforms   (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
               wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
