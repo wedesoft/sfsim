@@ -10,7 +10,7 @@
     [clojure.math :refer (floor)]
     [comb.template :as template]
     [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
-    [fastmath.vector :refer (vec3 vec4 mult add)]
+    [fastmath.vector :refer (vec3 mult add)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
                               destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay)]
@@ -18,7 +18,7 @@
     [sfsim.plume :refer (model-data model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3 fvec3
-                          fmat4 rotation-matrix get-translation)]
+                          fmat4 rotation-matrix get-translation get-translation)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
                           render-planet-geometry)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
@@ -50,8 +50,6 @@
       AIVector3D$Buffer
       AIVectorKey
       Assimp)
-    (fastmath.vector
-      Vec4)
     (org.lwjgl.stb
       STBImage)
     (org.lwjgl.opengl
@@ -677,8 +675,7 @@
 (defn- extract-empty
   "Convert empty node to vector"
   [node]
-  (let [v (mulv (::transform node) (vec4 0 0 0 1))]
-    (vec3 (.x ^Vec4 v) (.y ^Vec4 v) (.z ^Vec4 v))))
+  (get-translation (::transform node)))
 
 
 (defn- extract-hull

@@ -7,10 +7,13 @@
 (ns sfsim.audio
     "OpenAL method calls for sound output"
     (:require [fastmath.vector :refer (vec3 mag)]
+              [fastmath.matrix :refer (mulm mulv inverse eye)]
               [sfsim.config :as config]
-              [sfsim.physics :refer (get-height get-linear-speed)]
+              [sfsim.matrix :refer (transformation-matrix quaternion->matrix get-translation get-rotation)]
+              [sfsim.physics :refer (get-height get-linear-speed get-position get-orientation)]
               [sfsim.atmosphere :refer (pressure-at-height density-at-height temperature-at-height speed-of-sound)]
               [sfsim.aerodynamics :refer (dynamic-pressure drag-multiplier)]
+              [sfsim.camera :as camera]
               [sfsim.jolt :as jolt]
               [sfsim.units :refer (pound-force foot)])
     (:import (org.lwjgl.stb STBVorbis STBVorbisInfo)
@@ -26,8 +29,8 @@
 (defn setup-sample-attenuation
   "Configure distance attenuation model"
   [source]
-  (AL10/alSourcef source AL10/AL_REFERENCE_DISTANCE 10.0)
-  (AL10/alSourcef source AL10/AL_MAX_DISTANCE 100.0)
+  (AL10/alSourcef source AL10/AL_REFERENCE_DISTANCE 50.0)
+  (AL10/alSourcef source AL10/AL_MAX_DISTANCE 5000.0)
   (AL10/alSourcef source AL10/AL_ROLLOFF_FACTOR 1.0))
 
 
@@ -35,6 +38,21 @@
   "Set listener position"
   [position]
   (AL10/alListener3f AL10/AL_POSITION (position 0) (position 1) (position 2)))
+
+
+
+(defn set-listener-orientation
+  "Set orientation of listener"
+  [matrix]
+  (let [forward (mulv matrix (vec3 0 0 -1))
+        up      (mulv matrix (vec3 0 1  0))]
+    (AL10/alListenerfv AL10/AL_ORIENTATION (float-array (concat forward up)))))
+
+
+(defn set-listener-gain
+  "Set audio volume of listener"
+  [gain]
+  (AL10/alListenerf AL10/AL_GAIN gain))
 
 
 (defn initialize-audio
@@ -52,8 +70,7 @@
       (let [caps (AL/createCapabilities device-caps)]
         (AL10/alDistanceModel AL10/AL_INVERSE_DISTANCE_CLAMPED)
         (set-listener-position (vec3 0 0 0))
-        ; forward and up vector
-        (AL10/alListenerfv AL10/AL_ORIENTATION (float-array [0.0 0.0 -1.0 0.0 1.0 0.0]))
+        (set-listener-orientation (eye 3))
         {::device device
          ::device-caps device-caps
          ::caps caps
@@ -124,21 +141,23 @@
   (AL10/alSourcef source AL10/AL_GAIN gain))
 
 
-(defn make-source
-  "Create audio source"
-  [buffer looping]
-  (let [source (AL10/alGenSources)]
-    (AL10/alSourcei source AL10/AL_BUFFER buffer)
-    (set-source-gain source 1.0)
-    (AL10/alSourcei source AL10/AL_LOOPING (if looping AL10/AL_TRUE AL10/AL_FALSE))
-    (setup-sample-attenuation source)
-    source))
-
-
 (defn set-source-position
   "Set audio source position"
   [source position]
   (AL10/alSource3f source AL10/AL_POSITION (position 0) (position 1) (position 2)))
+
+
+(defn make-source
+  "Create audio source"
+  [buffer looping attenuation]
+  (let [source (AL10/alGenSources)]
+    (AL10/alSourcei source AL10/AL_BUFFER buffer)
+    (set-source-gain source 1.0)
+    (AL10/alSourcei source AL10/AL_LOOPING (if looping AL10/AL_TRUE AL10/AL_FALSE))
+    (when attenuation
+      (setup-sample-attenuation source)
+      (set-source-position source (vec3 0 0 0)))
+    source))
 
 
 (defn source-play
@@ -202,31 +221,32 @@
         edge-of-space-buffer (-> "data/audio/andrew-kn-at-the-edge-of-space.ogg" load-vorbis make-audio-buffer)
         gear-deploy-buffer (-> "data/audio/gear-deploy.ogg" load-vorbis make-audio-buffer)
         gear-retract-buffer (-> "data/audio/gear-retract.ogg" load-vorbis make-audio-buffer)
-        tyre-squeal-buffer (-> "data/audio/tyre-squeal.ogg" load-vorbis make-audio-buffer)
+        tyre-skid-buffer (-> "data/audio/tyre-skid.ogg" load-vorbis make-audio-buffer)
         throttle-buffer (-> "data/audio/main-engine.ogg" load-vorbis make-audio-buffer)
         rcs-buffer (-> "data/audio/thruster.ogg" load-vorbis make-audio-buffer)
         air-flow-buffer (-> "data/audio/air-flow.ogg" load-vorbis make-audio-buffer)
         drag-buffer (-> "data/audio/drag.ogg" load-vorbis make-audio-buffer)
         sonic-boom-buffer (-> "data/audio/sonic-boom.ogg" load-vorbis make-audio-buffer)
-        surrealism-mix-source (make-source surrealism-mix-buffer false)
-        edge-of-space-source (make-source edge-of-space-buffer false)
-        gear-deploy-source (make-source gear-deploy-buffer false)
-        gear-retract-source (make-source gear-retract-buffer false)
-        tyre-squeal-source-0 (make-source tyre-squeal-buffer false)
-        tyre-squeal-source-1 (make-source tyre-squeal-buffer false)
-        tyre-squeal-source-2 (make-source tyre-squeal-buffer false)
-        throttle-source (make-source throttle-buffer true)
-        rcs-thruster-source (make-source rcs-buffer true)
-        air-flow-source (make-source air-flow-buffer true)
-        drag-source (make-source drag-buffer true)
-        sonic-boom-source (make-source sonic-boom-buffer false)]
-    {::music nil
+        surrealism-mix-source (make-source surrealism-mix-buffer false false)
+        edge-of-space-source (make-source edge-of-space-buffer false false)
+        gear-deploy-source (make-source gear-deploy-buffer false true)
+        gear-retract-source (make-source gear-retract-buffer false true)
+        tyre-skid-source-0 (make-source tyre-skid-buffer false true)
+        tyre-skid-source-1 (make-source tyre-skid-buffer false true)
+        tyre-skid-source-2 (make-source tyre-skid-buffer false true)
+        throttle-source (make-source throttle-buffer true true)
+        rcs-thruster-source (make-source rcs-buffer true true)
+        air-flow-source (make-source air-flow-buffer true true)
+        drag-source (make-source drag-buffer true true)
+        sonic-boom-source (make-source sonic-boom-buffer false true)]
+    {::settings (config/read-user-config "sound.edn" {::volume 1.0})
+     ::music nil
      ::audio audio
      ::buffers [surrealism-mix-buffer
                 edge-of-space-buffer
                 gear-deploy-buffer
                 gear-retract-buffer
-                tyre-squeal-buffer
+                tyre-skid-buffer
                 throttle-buffer
                 rcs-buffer
                 air-flow-buffer
@@ -236,15 +256,15 @@
                 ::edge-of-space edge-of-space-source
                 ::gear-deploy gear-deploy-source
                 ::gear-retract gear-retract-source
-                ::tyre-squeal-0 tyre-squeal-source-0
-                ::tyre-squeal-1 tyre-squeal-source-1
-                ::tyre-squeal-2 tyre-squeal-source-2
+                ::tyre-skid-0 tyre-skid-source-0
+                ::tyre-skid-1 tyre-skid-source-1
+                ::tyre-skid-2 tyre-skid-source-2
                 ::throttle throttle-source
                 ::rcs-thruster rcs-thruster-source
                 ::air-flow air-flow-source
                 ::drag drag-source
                 ::sonic-boom sonic-boom-source}
-     ::tyre-squeal-sources [tyre-squeal-source-0 tyre-squeal-source-1 tyre-squeal-source-2]
+     ::tyre-skid-sources [tyre-skid-source-0 tyre-skid-source-1 tyre-skid-source-2]
      ::gear-down true
      ::wheel-contact [false false false]
      ::wheel-radius [(* 0.5 1.1303) (* 0.5 1.1303) (* 0.5 0.8128)]
@@ -310,8 +330,8 @@
     (assoc state ::gear-down gear-down)))
 
 
-(defn trigger-tyre-squeals
-  "Sound of tyre squealing when hitting the ground"
+(defn trigger-tyre-skids
+  "Sound of tyre skiding when hitting the ground"
   [state physics _inputs]
   (let [vehicle       (:sfsim.physics/vehicle physics)
         speed         (mag (get-linear-speed :sfsim.physics/surface physics))
@@ -324,7 +344,7 @@
                               (::wheel-radius state))
                         [0.0 0.0 0.0])]
     (doseq [wheel-index (range 3)]
-           (let [source (nth (::tyre-squeal-sources state) wheel-index)
+           (let [source (nth (::tyre-skid-sources state) wheel-index)
                  contact (nth wheel-contact wheel-index)
                  prev-contact (nth (::wheel-contact state) wheel-index)
                  wheel-speed (nth (::wheel-speed state) wheel-index)]
@@ -411,8 +431,17 @@
 
 
 (defn update-state
-  [state physics inputs]
-  (let [sources (::sources state)]
+  [state physics inputs camera]
+  (let [sources                     (::sources state)
+        [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
+                                     (camera/get-camera-pose camera physics))
+        object-position             (get-position :sfsim.physics/surface physics)
+        object-orientation          (get-orientation :sfsim.physics/surface physics)
+        world-to-object             (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
+        camera-to-world             (transformation-matrix (quaternion->matrix camera-orientation) origin)
+        camera-to-object            (mulm world-to-object camera-to-world)]
+    (set-listener-position (get-translation camera-to-object))
+    (set-listener-orientation (get-rotation camera-to-object))
     (if (:sfsim.input/pause inputs)
       (let [playing-sources (filter source-playing? (vals sources))]
         ;; Pause all sources
@@ -421,10 +450,11 @@
       (let [paused-sources (filter source-paused? (vals sources))]
         ;; Resume all sources
         (doseq [source paused-sources] (source-play source))
+        (set-listener-gain (-> state ::settings ::volume))
         (-> state
             (trigger-music physics inputs)
             (trigger-gear physics inputs)
-            (trigger-tyre-squeals physics inputs)
+            (trigger-tyre-skids physics inputs)
             (trigger-throttle physics inputs)
             (trigger-rcs-thrusters physics inputs)
             (trigger-air-flow physics inputs)

@@ -10,10 +10,10 @@
     [clojure.math :refer (tan pow log)]
     [clojure.string :refer (split)]
     [comb.template :as template]
-    [fastmath.vector :refer (vec4 vec3 mag)]
-    [fastmath.matrix :refer (mulm mulv inverse)]
+    [fastmath.vector :refer (vec3 mag)]
+    [fastmath.matrix :refer (mulm inverse)]
     [malli.core :as m]
-    [sfsim.matrix :refer (transformation-matrix vec4->vec3 quaternion->matrix projection-matrix)]
+    [sfsim.matrix :refer (transformation-matrix quaternion->matrix projection-matrix get-translation)]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.bluenoise :refer (noise-size) :as bluenoise]
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
@@ -561,7 +561,7 @@
         camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
         camera-to-object   (mulm world-to-object camera-to-world)
-        object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
+        object-origin      (get-translation camera-to-object)
         z-far              (:sfsim.render/z-far planet-render-vars)
         z-offset           1.0
         overlay-projection (projection-matrix overlay-width overlay-height min-z-near (+ ^double z-far ^double z-offset) fov)]

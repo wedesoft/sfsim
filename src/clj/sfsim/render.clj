@@ -8,12 +8,12 @@
   "Functions for doing OpenGL rendering"
   (:require
     [clojure.math :refer (sin asin hypot)]
-    [fastmath.matrix :refer (mulm mulv inverse mat->float-array)]
-    [fastmath.vector :refer (vec3 vec4 mag)]
+    [fastmath.matrix :refer (mulm inverse mat->float-array)]
+    [fastmath.vector :refer (vec3 mag)]
     [malli.core :as m]
     [sfsim.image :refer (get-pixel)]
     [sfsim.matrix :refer (fvec2 fvec3 fvec4 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix
-                          vec4->vec3)]
+                          get-translation)]
     [sfsim.quaternion :refer (quaternion)]
     [sfsim.shaders :refer (vertex-passthrough)]
     [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
@@ -676,7 +676,7 @@
         camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
         camera-to-object   (mulm world-to-object camera-to-world)
-        object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
+        object-origin      (get-translation camera-to-object)
         z-offset           1.0
         projection         (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)
         overlay-projection (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) fov)]
