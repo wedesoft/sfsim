@@ -272,6 +272,16 @@
       state)))
 
 
+(defn get-key-name
+  ^String [^long key-number]
+  (let [scancode (GLFW/glfwGetKeyScancode key-number)
+        prefix   (cond
+                   (= key-number GLFW/GLFW_KEY_ESCAPE) "Escape"
+                   (and (>= key-number GLFW/GLFW_KEY_KP_0) (<= key-number GLFW/GLFW_KEY_KP_9)) "Numpad "
+                   :else "")]
+    (str prefix (GLFW/glfwGetKeyName key-number scancode))))
+
+
 (defn make-initial-state
   "Create initial state of game and space craft."
   []

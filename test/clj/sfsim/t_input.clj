@@ -19,6 +19,9 @@
 (mi/instrument! {:report (pretty/thrower)})
 
 
+(GLFW/glfwInit)
+
+
 (facts "Process character events"
        (let [event-buffer (make-event-buffer)
              handler      (reify InputHandlerProtocol
@@ -547,3 +550,14 @@
          (@state :sfsim.input/last-joystick-axis) => ["Gamepad" 0]
          (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [1.0 0.0]) handler)
          (@state :sfsim.input/last-joystick-axis) => ["Gamepad" 0]))
+
+
+(facts "Get human readable key name"
+       (get-key-name GLFW/GLFW_KEY_P) => "p"
+       (get-key-name GLFW/GLFW_KEY_BACKSLASH) => "\\"
+       (get-key-name GLFW/GLFW_KEY_ESCAPE) => "Escape"
+       (get-key-name GLFW/GLFW_KEY_5) => "5"
+       (get-key-name GLFW/GLFW_KEY_KP_5) => "Numpad 5")
+
+
+(GLFW/glfwTerminate)
