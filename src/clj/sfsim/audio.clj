@@ -239,7 +239,7 @@
         air-flow-source (make-source air-flow-buffer true true)
         drag-source (make-source drag-buffer true true)
         sonic-boom-source (make-source sonic-boom-buffer false true)]
-    {::settings (config/read-user-config "sound.edn" {::volume 1.0})
+    {::settings (config/read-user-config "sound.edn" {::volume 1.0 ::no-music false})
      ::music nil
      ::audio audio
      ::buffers [surrealism-mix-buffer
@@ -297,7 +297,11 @@
   "Method for playing music tracks"
   [state physics _inputs]
   (let [height (get-height physics config/planet-config)
-        music  (if (<= ^double height 100000.0) nil (-> state ::sources ::edge-of-space))]
+        music  (if (-> state ::settings ::no-music)
+                 nil
+                 (if (<= ^double height 100000.0)
+                   nil
+                   (-> state ::sources ::edge-of-space)))]
     (when-not (= (::music state) music)
               (when-not (nil? (::music state))
                         (source-stop (::music state)))

@@ -498,6 +498,12 @@
   (Nuklear/nk_button_label ^NkContext (::context gui) ^String label))
 
 
+(defn check-label
+  "Create a check box with text"
+  [gui text on]
+  (Nuklear/nk_check_label ^NkContext (::context gui) ^String text ^boolean on))
+
+
 (defn text-label
   "Create a text label"
   ([gui label]
@@ -677,11 +683,14 @@
 (defn sound-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Sound" (quot (- window-width 320) 2) (quot (- window-height (* 37 3)) 2) 320 (* 37 3) true
+    gui "Sound" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) true
     (ignore-nil-> state state
                   (layout-row-dynamic gui 32 2)
                   (text-label gui "Volume")
                   (update-in state [:audio :sfsim.audio/settings :sfsim.audio/volume] #(property-float gui "volume" 0.0 % 1.0 0.1 0.0025))
+                  (text-label gui "Music")
+                  (update-in state [:audio :sfsim.audio/settings :sfsim.audio/no-music]
+                             (fn [off] (not (check-label gui "enable" (not off)))))
                   (layout-row-dynamic gui 32 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "sound.edn" (get-in state [:audio :sfsim.audio/settings]))
