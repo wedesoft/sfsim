@@ -273,3 +273,8 @@
        (let [x 0] (ignore-nil-> 42 x (inc x))) => 43
        (let [x 42] (ignore-nil-> x x (inc x))) => 43
        (let [y 0] (ignore-nil-> 42 y (inc y))) => 43)
+
+
+(facts "Invert hash map"
+       (invert-map {}) => {}
+       (invert-map {:a 1 :b 2}) => {1 :a 2 :b})

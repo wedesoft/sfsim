@@ -526,5 +526,12 @@
        (ignore-nil-> non-nil-value# ~identifier ~@(rest body)))))
 
 
+(defn invert-map
+  "Invert hash map"
+  {:malli/schema [:=> [:cat [:map-of :any :any]] [:map-of :any :any]]}
+  [input]
+  (zipmap (vals input) (keys input)))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
