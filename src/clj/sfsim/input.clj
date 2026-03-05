@@ -705,6 +705,13 @@
     state))
 
 
+(defmethod simulator-joystick-button ::rcs
+  [_id state action]
+  (if (= action GLFW/GLFW_PRESS)
+    (update-in state [::controls ::rcs] not)
+    state))
+
+
 (defn menu-joystick-axis
   [state device axis _value moved]
   (if moved

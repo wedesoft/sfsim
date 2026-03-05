@@ -645,7 +645,7 @@
 (defn joystick-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 12)) 2) 640 (* 37 12) :dialog
+    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 13)) 2) 640 (* 37 13) :dialog
     (ignore-nil-> state state
                   (joystick-dialog-axis-item state gui "Aileron" :sfsim.input/aileron)
                   (joystick-dialog-axis-item state gui "Elevator" :sfsim.input/elevator)
@@ -668,6 +668,7 @@
                                                                                      :sfsim.input/dead-zone])))))
                   (joystick-dialog-button-item state gui "Gear" :sfsim.input/gear)
                   (joystick-dialog-button-item state gui "Air Brake" :sfsim.input/air-brake)
+                  (joystick-dialog-button-item state gui "RCS/aerofoil" :sfsim.input/rcs)
                   (joystick-dialog-button-item state gui "Brake" :sfsim.input/brake)
                   (joystick-dialog-button-item state gui "Parking Brake" :sfsim.input/parking-brake)
                   (layout-row-dynamic gui 32 2)
@@ -698,6 +699,8 @@
       (ignore-nil-> state state
                     (layout-row-dynamic gui (* 32 10) 1)
                     (group gui "keyboard" "Keyboard"
+                           (layout-row-dynamic gui 32 1)
+                           (text-label gui "Note that joystick overrides keyboard commands!")
                            (layout-row-dynamic gui 32 2)
                            (doseq [[control-key control-name]
                                    [[:sfsim.input/menu                            "Toggle menu"             ]
