@@ -352,9 +352,8 @@
      GLFW/GLFW_KEY_F         ::throttle-decrease
      GLFW/GLFW_KEY_R         ::throttle-increase
      GLFW/GLFW_KEY_SLASH     ::air-brake
-     GLFW/GLFW_KEY_BACKSLASH ::rcs
+     GLFW/GLFW_KEY_SEMICOLON ::rcs
      GLFW/GLFW_KEY_A         ::aileron-left
-     GLFW/GLFW_KEY_KP_5      ::aileron-center
      GLFW/GLFW_KEY_D         ::aileron-right
      GLFW/GLFW_KEY_W         ::elevator-down
      GLFW/GLFW_KEY_S         ::elevator-up
@@ -484,11 +483,13 @@
 
 
 (defmethod simulator-key ::aileron-left
-  [state _id action _mods]
+  [state _id action mods]
   (if (keypress? action)
     (if (get-in state [::controls ::rcs])
       (assoc-in state [::controls ::rcs-roll] 1)
-      (increment-clamp state ::aileron 0.0625))
+      (if (= mods GLFW/GLFW_MOD_CONTROL)
+        (assoc-in state [::controls ::aileron] 0.0)
+       (increment-clamp state ::aileron 0.0625)))
     (assoc-in state [::controls ::rcs-roll] 0)))
 
 
@@ -499,13 +500,6 @@
       (assoc-in state [::controls ::rcs-roll] -1)
       (increment-clamp state ::aileron -0.0625))
     (assoc-in state [::controls ::rcs-roll] 0)))
-
-
-(defmethod simulator-key ::aileron-center
-  [state _id action _mods]
-  (if (keypress? action)
-    (assoc-in state [::controls ::aileron] 0.0)
-    state))
 
 
 (defmethod simulator-key ::rudder-left

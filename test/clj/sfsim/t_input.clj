@@ -174,6 +174,18 @@
 (facts "Test some simulator key bindings directly"
        (let [state    (atom (make-initial-state))
              mappings (get-in @state [:sfsim.input/mappings :sfsim.input/keyboard])]
+         ; Do not use Numpad
+         (mappings GLFW/GLFW_KEY_KP_1) => nil
+         (mappings GLFW/GLFW_KEY_KP_2) => nil
+         (mappings GLFW/GLFW_KEY_KP_3) => nil
+         (mappings GLFW/GLFW_KEY_KP_4) => nil
+         (mappings GLFW/GLFW_KEY_KP_5) => nil
+         (mappings GLFW/GLFW_KEY_KP_6) => nil
+         (mappings GLFW/GLFW_KEY_KP_7) => nil
+         (mappings GLFW/GLFW_KEY_KP_8) => nil
+         (mappings GLFW/GLFW_KEY_KP_9) => nil
+         ; Do not use backslash
+         (mappings GLFW/GLFW_KEY_BACKSLASH) => nil
          ; Pause
          (:sfsim.input/pause @state) => true
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_P) GLFW/GLFW_PRESS 0)
@@ -215,8 +227,8 @@
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_REPEAT 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_RELEASE 0)
          (:sfsim.input/aileron (:sfsim.input/controls @state)) => (* 2 -0.0625)
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_5) GLFW/GLFW_PRESS 0)
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_5) GLFW/GLFW_RELEASE 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_PRESS  GLFW/GLFW_MOD_CONTROL)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_RELEASE GLFW/GLFW_MOD_CONTROL)
          (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.0
          (swap! state assoc-in [:sfsim.input/controls :sfsim.input/aileron] -1.0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_PRESS 0)
@@ -287,11 +299,11 @@
          (:sfsim.input/air-brake (:sfsim.input/controls @state)) => false
          ; Toggle aerofoil surfaces/RCS thrusters
          (:sfsim.input/rcs (:sfsim.input/controls @state)) => false
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_BACKSLASH) GLFW/GLFW_PRESS 0)
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_BACKSLASH) GLFW/GLFW_RELEASE 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_SEMICOLON) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_SEMICOLON) GLFW/GLFW_RELEASE 0)
          (:sfsim.input/rcs (:sfsim.input/controls @state)) => true
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_BACKSLASH) GLFW/GLFW_PRESS 0)
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_BACKSLASH) GLFW/GLFW_RELEASE 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_SEMICOLON) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_SEMICOLON) GLFW/GLFW_RELEASE 0)
          (:sfsim.input/rcs (:sfsim.input/controls @state)) => false
          ; RCS roll
          (swap! state assoc-in [:sfsim.input/controls :sfsim.input/rcs] true)
