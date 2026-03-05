@@ -37,7 +37,7 @@
     [sfsim.image :refer (spit-png)]
     [sfsim.audio :as audio]
     [sfsim.input :refer (make-event-buffer make-initial-state process-events joysticks-poll ->InputHandler
-                         char-callback key-callback cursor-pos-callback mouse-button-callback)])
+                         char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback)])
   (:import
     (org.lwjgl.glfw
       GLFW
@@ -146,6 +146,7 @@
 (GLFW/glfwSetKeyCallback window (key-callback event-buffer))
 (GLFW/glfwSetCursorPosCallback window (cursor-pos-callback event-buffer))
 (GLFW/glfwSetMouseButtonCallback window (mouse-button-callback event-buffer))
+(GLFW/glfwSetScrollCallback window (scroll-callback event-buffer))
 
 
 ; Start with fixed summer date for better illumination.

@@ -684,7 +684,7 @@
 (defmacro group
   [gui group-name group-title & body]
   `(try
-     (println (Nuklear/nk_group_begin_titled ^NkContext (::context ~gui) ~group-name ~group-title Nuklear/NK_WINDOW_BORDER))
+     (Nuklear/nk_group_begin_titled ^NkContext (::context ~gui) ~group-name ~group-title Nuklear/NK_WINDOW_BORDER)
      ~@body
      (finally
        (Nuklear/nk_group_end ^NkContext (::context ~gui)))))
@@ -701,11 +701,11 @@
                            (layout-row-dynamic gui 32 2)
                            (doseq [[control-key control-name]
                                    [[:sfsim.input/menu                            "Toggle menu"             ]
-                                    ["alt-return"                                 "Toggle fullscreen"       ]
+                                    ["Alt-Return"                                 "Toggle fullscreen"       ]
                                     [:sfsim.input/pause                           "Pause/unpause"           ]
                                     [:sfsim.input/gear                            "Gear up/down"            ]
                                     [:sfsim.input/brake                           "Brake"                   ]
-                                    ["shift-b"                                    "Parking brake"           ]
+                                    ["Shift-B"                                    "Parking brake"           ]
                                     [:sfsim.input/throttle-decrease               "Throttle decrease"       ]
                                     [:sfsim.input/throttle-increase               "Throttle increase"       ]
                                     [:sfsim.input/air-brake                       "Air brake"               ]
@@ -717,7 +717,7 @@
                                     [:sfsim.input/elevator-up                     "Elevator up"             ]
                                     [:sfsim.input/rudder-left                     "Rudder left"             ]
                                     [:sfsim.input/rudder-right                    "Rudder right"            ]
-                                    ["ctrl-q"                                     "Center rudder"           ]
+                                    ["Ctrl-Q"                                     "Center rudder"           ]
                                     [:sfsim.input/camera-rotate-x-positive        "Camera rotate X positive"]
                                     [:sfsim.input/camera-rotate-x-negative        "Camera rotate X negative"]
                                     [:sfsim.input/camera-rotate-y-positive        "Camera rotate Y positive"]

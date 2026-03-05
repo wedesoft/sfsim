@@ -345,11 +345,15 @@
                                  (process-mouse-button [_this state button x y action mods]
                                    (conj state {:button button :action action :mods mods :x x :y y}))
                                  (process-mouse-move [_this state x y]
-                                   (conj state {:x x :y y})))]
+                                   (conj state {:x x :y y}))
+                                 (process-scroll [_this state dx dy]
+                                   (conj state {:dx dx :dy dy})))]
          (process-events [] (add-mouse-button-event event-buffer GLFW/GLFW_MOUSE_BUTTON_LEFT 160 120 GLFW/GLFW_PRESS 0) handler)
          => [{:button GLFW/GLFW_MOUSE_BUTTON_LEFT :action GLFW/GLFW_PRESS :mods 0 :x 160 :y 120}]
          (process-events [] (add-mouse-move-event event-buffer 100 60) handler)
-         => [{:x 100 :y 60}]))
+         => [{:x 100 :y 60}]
+         (process-events [] (add-scroll-event event-buffer 120 240) handler)
+         => [{:dx 120 :dy 240}]))
 
 
 (facts "Dead center zone for joystick axis"
@@ -553,7 +557,7 @@
 
 
 (facts "Get human readable key name"
-       (get-key-name GLFW/GLFW_KEY_P) => "p"
+       (get-key-name GLFW/GLFW_KEY_P) => "P"
        (get-key-name GLFW/GLFW_KEY_BACKSLASH) => "\\"
        (get-key-name GLFW/GLFW_KEY_ESCAPE) => "Escape"
        (get-key-name GLFW/GLFW_KEY_5) => "5"

@@ -7,6 +7,7 @@
 (ns sfsim.input
     (:require
       [clojure.math :refer (signum)]
+      [clojure.string :refer (upper-case)]
       [clojure.set :refer (map-invert)]
       [sfsim.util :refer (clamp dissoc-in byte-buffer->byte-array float-buffer->float-array)])
     (:import
@@ -17,9 +18,13 @@
        GLFWCharCallbackI
        GLFWKeyCallbackI
        GLFWCursorPosCallbackI
-       GLFWMouseButtonCallbackI]
+       GLFWMouseButtonCallbackI
+       GLFWScrollCallbackI]
       [org.lwjgl.nuklear
-       Nuklear]))
+       NkVec2
+       Nuklear]
+      [org.lwjgl.system
+       MemoryStack]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -54,6 +59,12 @@
   "Add mouse move event to event buffer"
   [event-buffer x y]
   (conj event-buffer {::event ::mouse-move ::x x ::y y}))
+
+
+(defn add-scroll-event
+  "Add scroll event to event buffer"
+  [event-buffer dx dy]
+  (conj event-buffer {::event ::scroll ::dx dx ::dy dy}))
 
 
 (defn char-callback
@@ -95,6 +106,15 @@
         (let [x        (long (aget cx 0))
               y        (long (aget cy 0))]
           (swap! event-buffer add-mouse-button-event button x y action mods))))))
+
+
+(defn scroll-callback
+  "GLFW callback function for scroll events"
+  [event-buffer]
+  (reify GLFWScrollCallbackI
+    (invoke
+      [_this _window xoffset yoffset]
+      (swap! event-buffer add-scroll-event xoffset yoffset))))
 
 
 (defn dead-zone-continuous
@@ -212,6 +232,7 @@
   (process-key [this state k action mods])
   (process-mouse-button [this state button x y action mods])
   (process-mouse-move [this state x y])
+  (process-scroll [this state dx dy])
   (process-joystick-axis [this state device axis value moved])
   (process-joystick-button [this state device button action]))
 
@@ -253,6 +274,11 @@
   (process-mouse-move handler state (::x event) (::y event)))
 
 
+(defmethod process-event ::scroll
+  [state event handler]
+  (process-scroll handler state (::dx event) (::dy event)))
+
+
 (defmethod process-event ::joystick-axis
   [state {::keys [device axis value moved]} handler]
   (process-joystick-axis handler state device axis value moved))
@@ -279,7 +305,7 @@
                    (= key-number GLFW/GLFW_KEY_ESCAPE) "Escape"
                    (and (>= key-number GLFW/GLFW_KEY_KP_0) (<= key-number GLFW/GLFW_KEY_KP_9)) "Numpad "
                    :else "")]
-    (str prefix (GLFW/glfwGetKeyName key-number scancode))))
+    (str prefix (upper-case (or (GLFW/glfwGetKeyName key-number scancode) "")))))
 
 
 (defn make-initial-state
@@ -567,6 +593,17 @@
   state)
 
 
+(defn menu-scroll
+  [state gui dx dy]
+  (let [stack  (MemoryStack/stackPush)
+        scroll (NkVec2/malloc stack)]
+    (.x scroll dx)
+    (.y scroll dy)
+    (Nuklear/nk_input_scroll (:sfsim.gui/context gui) scroll)
+    (MemoryStack/stackPop)
+    state))
+
+
 (defn simulator-joystick-with-dead-zone
   "Apply filtered joystick axis value to state"
   [aerofoil rcs-thruster epsilon state value]
@@ -694,6 +731,8 @@
     (menu-mouse-button state gui button x y action mods))
   (process-mouse-move [_this state x y]
     (menu-mouse-move state gui x y))
+  (process-scroll [_this state dx dy]
+    (menu-scroll state gui dx dy))
   (process-joystick-axis [_this state device axis value moved]
     (if (::menu state)
       (menu-joystick-axis state device axis value moved)
