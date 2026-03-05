@@ -589,6 +589,16 @@
        (assoc-in ~'state [:input :sfsim.input/focus] ~idx))))
 
 
+(defmacro group
+  "Macro to set up widget group, do not forget to set the layout as first command in body"
+  [gui group-name group-title & body]
+  `(try
+     (Nuklear/nk_group_begin_titled ^NkContext (::context ~gui) ~group-name ~group-title Nuklear/NK_WINDOW_BORDER)
+     ~@body
+     (finally
+       (Nuklear/nk_group_end ^NkContext (::context ~gui)))))
+
+
 (declare main-dialog)
 
 
@@ -624,7 +634,7 @@
                                   (assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices
                                              device-new sensor-type sensor-new] control)
                                   (dissoc-in [:gui ::joystick-config])))
-                    (layout-row-push gui 0.6)
+                    (layout-row-push gui 0.57)
                     (text-label gui (if (= (-> state :input ::joystick-config) control)
                                       prompt
                                       (if device (format "%s %d of %s" sensor-name sensor device) "None")))))))
@@ -645,32 +655,45 @@
 (defn joystick-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 13)) 2) 640 (* 37 13) :dialog
+    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 12)) 2) 640 (* 37 12) :dialog
     (ignore-nil-> state state
-                  (joystick-dialog-axis-item state gui "Aileron" :sfsim.input/aileron)
-                  (joystick-dialog-axis-item state gui "Elevator" :sfsim.input/elevator)
-                  (joystick-dialog-axis-item state gui "Rudder" :sfsim.input/rudder)
-                  (joystick-dialog-axis-item state gui "Throttle" :sfsim.input/throttle)
-                  (joystick-dialog-axis-item state gui "Throttle Increment" :sfsim.input/throttle-increment)
-                  (layout-row gui 32 2
-                              (ignore-nil-> state state
-                                            (layout-row-push gui 0.2)
-                                            (text-label gui "Dead Zone")
-                                            (layout-row-push gui 0.7)
-                                            (update-in state
-                                                       [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/dead-zone]
-                                                       (fn [dead-zone]
-                                                           (slider-float gui 0.0 dead-zone 1.0 (/ 1.0 1024.0))))
-                                            (layout-row-push gui 0.1)
-                                            (text-label gui (format "%5.3f" (get-in state
-                                                                                    [:input :sfsim.input/mappings
-                                                                                     :sfsim.input/joysticks
-                                                                                     :sfsim.input/dead-zone])))))
-                  (joystick-dialog-button-item state gui "Gear" :sfsim.input/gear)
-                  (joystick-dialog-button-item state gui "Air Brake" :sfsim.input/air-brake)
-                  (joystick-dialog-button-item state gui "RCS/aerofoil" :sfsim.input/rcs)
-                  (joystick-dialog-button-item state gui "Brake" :sfsim.input/brake)
-                  (joystick-dialog-button-item state gui "Parking Brake" :sfsim.input/parking-brake)
+                  (layout-row-dynamic gui (* 32 11) 1)
+                  (group gui "joystick" "Joystick"
+                         (ignore-nil->
+                           state state
+                           (layout-row-dynamic gui 32 2)
+                           (joystick-dialog-axis-item state gui "Aileron" :sfsim.input/aileron)
+                           (joystick-dialog-axis-item state gui "Elevator" :sfsim.input/elevator)
+                           (joystick-dialog-axis-item state gui "Rudder" :sfsim.input/rudder)
+                           (joystick-dialog-axis-item state gui "Throttle" :sfsim.input/throttle)
+                           (joystick-dialog-axis-item state gui "Throttle increment" :sfsim.input/throttle-increment)
+                           (layout-row gui 32 2
+                                       (ignore-nil-> state state
+                                                     (layout-row-push gui 0.2)
+                                                     (text-label gui "Dead zone")
+                                                     (layout-row-push gui 0.67)
+                                                     (update-in state
+                                                                [:input :sfsim.input/mappings
+                                                                 :sfsim.input/joysticks
+                                                                 :sfsim.input/dead-zone]
+                                                                (fn [dead-zone]
+                                                                    (slider-float gui 0.0 dead-zone 1.0 (/ 1.0 1024.0))))
+                                                     (layout-row-push gui 0.1)
+                                                     (text-label gui (format "%5.3f" (get-in state
+                                                                                             [:input :sfsim.input/mappings
+                                                                                              :sfsim.input/joysticks
+                                                                                              :sfsim.input/dead-zone])))))
+                           (joystick-dialog-button-item state gui "Gear" :sfsim.input/gear)
+                           (joystick-dialog-button-item state gui "Air brake" :sfsim.input/air-brake)
+                           (joystick-dialog-button-item state gui "RCS/aerofoil" :sfsim.input/rcs)
+                           (joystick-dialog-button-item state gui "Brake" :sfsim.input/brake)
+                           (joystick-dialog-button-item state gui "Parking brake" :sfsim.input/parking-brake)
+                           (joystick-dialog-button-item state gui "Camera down" :sfsim.input/camera-rotate-x-positive)
+                           (joystick-dialog-button-item state gui "Camera up" :sfsim.input/camera-rotate-x-negative)
+                           (joystick-dialog-button-item state gui "Camera left" :sfsim.input/camera-rotate-y-negative)
+                           (joystick-dialog-button-item state gui "Camera right" :sfsim.input/camera-rotate-y-positive)
+                           (joystick-dialog-button-item state gui "Camera roll left" :sfsim.input/camera-rotate-z-positive)
+                           (joystick-dialog-button-item state gui "Camera roll right" :sfsim.input/camera-rotate-z-negative)))
                   (layout-row-dynamic gui 32 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "joysticks.edn" (get-in state [:input :sfsim.input/mappings :sfsim.input/joysticks]))
@@ -680,15 +703,6 @@
                         (assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks]
                                   (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
                         (assoc-in [:gui ::menu] main-dialog))))))
-
-
-(defmacro group
-  [gui group-name group-title & body]
-  `(try
-     (Nuklear/nk_group_begin_titled ^NkContext (::context ~gui) ~group-name ~group-title Nuklear/NK_WINDOW_BORDER)
-     ~@body
-     (finally
-       (Nuklear/nk_group_end ^NkContext (::context ~gui)))))
 
 
 (defn keyboard-dialog

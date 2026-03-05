@@ -712,6 +712,36 @@
     state))
 
 
+(defmethod simulator-joystick-button ::camera-rotate-x-positive
+  [_id state action]
+  (assoc-in state [::camera ::rotate-x] (if (keypress? action) 0.5 0.0)))
+
+
+(defmethod simulator-joystick-button ::camera-rotate-x-negative
+  [_id state action]
+  (assoc-in state [::camera ::rotate-x] (if (keypress? action) -0.5 0.0)))
+
+
+(defmethod simulator-joystick-button ::camera-rotate-y-positive
+  [_id state action]
+  (assoc-in state [::camera ::rotate-y] (if (keypress? action) 0.5 0.0)))
+
+
+(defmethod simulator-joystick-button ::camera-rotate-y-negative
+  [_id state action]
+  (assoc-in state [::camera ::rotate-y] (if (keypress? action) -0.5 0.0)))
+
+
+(defmethod simulator-joystick-button ::camera-rotate-z-positive
+  [_id state action]
+  (assoc-in state [::camera ::rotate-z] (if (keypress? action) 0.5 0.0)))
+
+
+(defmethod simulator-joystick-button ::camera-rotate-z-negative
+  [_id state action]
+  (assoc-in state [::camera ::rotate-z] (if (keypress? action) -0.5 0.0)))
+
+
 (defn menu-joystick-axis
   [state device axis _value moved]
   (if moved

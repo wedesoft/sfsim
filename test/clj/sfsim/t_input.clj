@@ -500,57 +500,93 @@
 (facts "Process joystick button events"
        (let [event-buffer             (make-event-buffer)
              button-state             (atom {})
+             button                   (fn [index on] (conj (vec (repeat index 0)) (if on 1 0)))
              mock-handler             (reify InputHandlerProtocol
                                              (process-joystick-button [_this state device button action]
                                                (conj state {:device device :button button :action action})))
              mappings                 {:sfsim.input/joysticks {:sfsim.input/devices
-                                                               {"Gamepad" {:sfsim.input/buttons {1 :sfsim.input/gear
-                                                                                                 2 :sfsim.input/brake
-                                                                                                 3 :sfsim.input/parking-brake
-                                                                                                 4 :sfsim.input/air-brake
-                                                                                                 5 :sfsim.input/rcs}}}}}
+                                                               {"Gamepad" {:sfsim.input/buttons
+                                                                           {1 :sfsim.input/gear
+                                                                            2 :sfsim.input/brake
+                                                                            3 :sfsim.input/parking-brake
+                                                                            4 :sfsim.input/air-brake
+                                                                            5 :sfsim.input/rcs
+                                                                            6 :sfsim.input/camera-rotate-x-positive
+                                                                            7 :sfsim.input/camera-rotate-x-negative
+                                                                            8 :sfsim.input/camera-rotate-y-positive
+                                                                            9 :sfsim.input/camera-rotate-y-negative
+                                                                            10 :sfsim.input/camera-rotate-z-positive
+                                                                            11 :sfsim.input/camera-rotate-z-negative}}}}}
              state                    (atom (assoc (make-initial-state) :sfsim.input/mappings mappings))
              gui                      {:sfsim.gui/context :ctx}
              handler                  (->InputHandler gui)]
          (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" []) mock-handler)
          => []
-         (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" [0 0]) mock-handler)
+         (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" (button 1 false)) mock-handler)
          => []
-         (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" [0 1]) mock-handler)
+         (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" (button 1 true)) mock-handler)
          => [{:device "Gamepad" :button 1 :action GLFW/GLFW_PRESS}]
-         (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" [0 1]) mock-handler)
+         (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" (button 1 true)) mock-handler)
          => [{:device "Gamepad" :button 1 :action GLFW/GLFW_REPEAT}]
-         (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" [0 0]) mock-handler)
+         (process-events [] (add-joystick-button-state event-buffer button-state "Gamepad" (button 1 false)) mock-handler)
          => [{:device "Gamepad" :button 1 :action GLFW/GLFW_RELEASE}]
          (:sfsim.input/gear-down (:sfsim.input/controls @state)) => true
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 1]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 1 true)) handler)
          (:sfsim.input/gear-down (:sfsim.input/controls @state)) => false
          (:sfsim.input/brake (:sfsim.input/controls @state)) => false
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 2 true)) handler)
          (:sfsim.input/brake (:sfsim.input/controls @state)) => true
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 2 true)) handler)
          (:sfsim.input/brake (:sfsim.input/controls @state)) => true
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 2 false)) handler)
          (:sfsim.input/brake (:sfsim.input/controls @state)) => false
          (:sfsim.input/parking-brake (:sfsim.input/controls @state)) => false
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 1]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 3 true)) handler)
          (:sfsim.input/parking-brake (:sfsim.input/controls @state)) => true
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 3 false)) handler)
          (:sfsim.input/parking-brake (:sfsim.input/controls @state)) => true
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 1 0]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (conj(button 2 true) 0)) handler)
          (:sfsim.input/parking-brake (:sfsim.input/controls @state)) => false
          (:sfsim.input/air-brake (:sfsim.input/controls @state)) => false
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 1]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 4 true)) handler)
          (:sfsim.input/air-brake (:sfsim.input/controls @state)) => true
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 0]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 4 false)) handler)
          (:sfsim.input/air-brake (:sfsim.input/controls @state)) => true
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 1]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 4 true)) handler)
          (:sfsim.input/air-brake (:sfsim.input/controls @state)) => false
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 0]) handler)
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 4 false)) handler)
          (:sfsim.input/air-brake (:sfsim.input/controls @state)) => false
          (:sfsim.input/rcs (:sfsim.input/controls @state)) => false
-         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" [0 0 0 0 0 1]) handler)
-         (:sfsim.input/rcs (:sfsim.input/controls @state)) => true))
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 5 true)) handler)
+         (:sfsim.input/rcs (:sfsim.input/controls @state)) => true
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 5 false)) handler)
+         (:sfsim.input/rcs (:sfsim.input/controls @state)) => true
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 6 true)) handler)
+         (:sfsim.input/rotate-x (:sfsim.input/camera @state)) => 0.5
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 6 true)) handler)
+         (:sfsim.input/rotate-x (:sfsim.input/camera @state)) => 0.5
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 6 false)) handler)
+         (:sfsim.input/rotate-x (:sfsim.input/camera @state)) => 0.0
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 7 true)) handler)
+         (:sfsim.input/rotate-x (:sfsim.input/camera @state)) => -0.5
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 7 false)) handler)
+         (:sfsim.input/rotate-x (:sfsim.input/camera @state)) => 0.0
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 8 true)) handler)
+         (:sfsim.input/rotate-y (:sfsim.input/camera @state)) => 0.5
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 8 false)) handler)
+         (:sfsim.input/rotate-y (:sfsim.input/camera @state)) => 0.0
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 9 true)) handler)
+         (:sfsim.input/rotate-y (:sfsim.input/camera @state)) => -0.5
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 9 false)) handler)
+         (:sfsim.input/rotate-y (:sfsim.input/camera @state)) => 0.0
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 10 true)) handler)
+         (:sfsim.input/rotate-z (:sfsim.input/camera @state)) => 0.5
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 10 false)) handler)
+         (:sfsim.input/rotate-z (:sfsim.input/camera @state)) => 0.0
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 11 true)) handler)
+         (:sfsim.input/rotate-z (:sfsim.input/camera @state)) => -0.5
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 11 false)) handler)
+         (:sfsim.input/rotate-z (:sfsim.input/camera @state)) => 0.0))
 
 
 (facts "Recording last active joystick axis or button"
