@@ -303,6 +303,15 @@
   (let [scancode (GLFW/glfwGetKeyScancode key-number)
         prefix   (cond
                    (= key-number GLFW/GLFW_KEY_ESCAPE) "Escape"
+                   (= key-number GLFW/GLFW_KEY_LEFT) "Left"
+                   (= key-number GLFW/GLFW_KEY_RIGHT) "Right"
+                   (= key-number GLFW/GLFW_KEY_UP) "Up"
+                   (= key-number GLFW/GLFW_KEY_DOWN) "Down"
+                   (= key-number GLFW/GLFW_KEY_HOME) "Home"
+                   (= key-number GLFW/GLFW_KEY_END) "End"
+                   (= key-number GLFW/GLFW_KEY_PAGE_DOWN) "Page Down"
+                   (= key-number GLFW/GLFW_KEY_PAGE_UP) "Page Up"
+                   (= key-number GLFW/GLFW_KEY_ENTER) "Enter"
                    (and (>= key-number GLFW/GLFW_KEY_KP_0) (<= key-number GLFW/GLFW_KEY_KP_9)) "Numpad "
                    :else "")]
     (str prefix (upper-case (or (GLFW/glfwGetKeyName key-number scancode) "")))))
@@ -351,12 +360,12 @@
      GLFW/GLFW_KEY_S         ::elevator-up
      GLFW/GLFW_KEY_Q         ::rudder-left
      GLFW/GLFW_KEY_E         ::rudder-right
-     GLFW/GLFW_KEY_KP_2      ::camera-rotate-x-positive
-     GLFW/GLFW_KEY_KP_8      ::camera-rotate-x-negative
-     GLFW/GLFW_KEY_KP_6      ::camera-rotate-y-positive
-     GLFW/GLFW_KEY_KP_4      ::camera-rotate-y-negative
-     GLFW/GLFW_KEY_KP_1      ::camera-rotate-z-positive
-     GLFW/GLFW_KEY_KP_3      ::camera-rotate-z-negative
+     GLFW/GLFW_KEY_DOWN      ::camera-rotate-x-positive
+     GLFW/GLFW_KEY_UP        ::camera-rotate-x-negative
+     GLFW/GLFW_KEY_RIGHT     ::camera-rotate-y-positive
+     GLFW/GLFW_KEY_LEFT      ::camera-rotate-y-negative
+     GLFW/GLFW_KEY_END       ::camera-rotate-z-positive
+     GLFW/GLFW_KEY_PAGE_DOWN ::camera-rotate-z-negative
      GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
      GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
      }}

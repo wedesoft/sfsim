@@ -134,31 +134,31 @@
              mappings (get-in @state [:sfsim.input/mappings :sfsim.input/keyboard])]
          (simulator-key @state nil GLFW/GLFW_PRESS 0) => some?
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x] @state) => 0.0
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_2) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_DOWN) GLFW/GLFW_PRESS 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => 0.5
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_2) GLFW/GLFW_RELEASE 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_DOWN) GLFW/GLFW_RELEASE 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => 0.0
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_8) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_UP) GLFW/GLFW_PRESS 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => -0.5
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_8) GLFW/GLFW_RELEASE 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_UP) GLFW/GLFW_RELEASE 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-x]) => 0.0
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.0
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_6) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_RIGHT) GLFW/GLFW_PRESS 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.5
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_6) GLFW/GLFW_RELEASE 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_RIGHT) GLFW/GLFW_RELEASE 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.0
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_4) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_LEFT) GLFW/GLFW_PRESS 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => -0.5
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_4) GLFW/GLFW_RELEASE 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_LEFT) GLFW/GLFW_RELEASE 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-y]) => 0.0
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.0
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_1) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_END) GLFW/GLFW_PRESS 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.5
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_1) GLFW/GLFW_RELEASE 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_END) GLFW/GLFW_RELEASE 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.0
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_3) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_PAGE_DOWN) GLFW/GLFW_PRESS 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => -0.5
-         (swap! state simulator-key (mappings GLFW/GLFW_KEY_KP_3) GLFW/GLFW_RELEASE 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_PAGE_DOWN) GLFW/GLFW_RELEASE 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/rotate-z]) => 0.0
          (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_COMMA) GLFW/GLFW_PRESS 0)
@@ -561,7 +561,16 @@
        (get-key-name GLFW/GLFW_KEY_BACKSLASH) => "\\"
        (get-key-name GLFW/GLFW_KEY_ESCAPE) => "Escape"
        (get-key-name GLFW/GLFW_KEY_5) => "5"
-       (get-key-name GLFW/GLFW_KEY_KP_5) => "Numpad 5")
+       (get-key-name GLFW/GLFW_KEY_KP_5) => "Numpad 5"
+       (get-key-name GLFW/GLFW_KEY_LEFT) => "Left"
+       (get-key-name GLFW/GLFW_KEY_RIGHT) => "Right"
+       (get-key-name GLFW/GLFW_KEY_UP) => "Up"
+       (get-key-name GLFW/GLFW_KEY_DOWN) => "Down"
+       (get-key-name GLFW/GLFW_KEY_HOME) => "Home"
+       (get-key-name GLFW/GLFW_KEY_END) => "End"
+       (get-key-name GLFW/GLFW_KEY_PAGE_DOWN) => "Page Down"
+       (get-key-name GLFW/GLFW_KEY_PAGE_UP) => "Page Up"
+       (get-key-name GLFW/GLFW_KEY_ENTER) => "Enter")
 
 
 (GLFW/glfwTerminate)

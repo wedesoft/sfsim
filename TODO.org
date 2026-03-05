@@ -65,7 +65,8 @@
     - [X] play background music
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
   - [ ] add button to reset camera position
-  - [ ] do not use numpad and backslash in default keybindings (camera, RCS)
+  - [X] do not use numpad in default keybindings (camera)
+  - [ ] do not use backslash in default keybindings (RCS)
   - [ ] control RCS and camera with gamepad
   - [ ] move joystick config loading from core into input module
   - [ ] release new version and post about it
