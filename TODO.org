@@ -50,7 +50,7 @@
   - [X] refactor rendering code
     - [X] put rendering code into methods
     - [X] create high level rendering methods to simplify main program and integration tests
-  - [-] add some sound effects
+  - [X] add some sound effects
     - [X] seek audio position for landing gear if necessary
     - [X] add landing gear [[https://pixabay.com/sound-effects/search/landing-gear/]]
     - [X] adjust thruster volume depending on throttle and play/stop
@@ -61,8 +61,10 @@
     - [X] supersonic boom
     - [X] set gain of listener, save in config file
     - [X] set position of listener
-    - [ ] enable/disable music
+    - [X] enable/disable music
     - [X] play background music
+  - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
+  - [ ] add button to reset camera position
   - [ ] move joystick config loading from core into input module
   - [ ] release new version and post about it
   - [ ] finish tidying up core
