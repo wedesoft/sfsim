@@ -655,13 +655,12 @@
 (defn joystick-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 12)) 2) 640 (* 37 12) :dialog
+    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 11)) 2) 640 (* 37 11) :dialog
     (ignore-nil-> state state
-                  (layout-row-dynamic gui (* 32 11) 1)
+                  (layout-row-dynamic gui (* 32 10) 1)
                   (group gui "joystick" "Joystick"
                          (ignore-nil->
                            state state
-                           (layout-row-dynamic gui 32 2)
                            (joystick-dialog-axis-item state gui "Aileron" :sfsim.input/aileron)
                            (joystick-dialog-axis-item state gui "Elevator" :sfsim.input/elevator)
                            (joystick-dialog-axis-item state gui "Rudder" :sfsim.input/rudder)
