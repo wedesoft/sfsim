@@ -44,7 +44,7 @@
   - [X] do not use numpad in default keybindings (camera)
   - [X] do not use backslash in default keybindings (RCS)
   - [X] control RCS with gamepad
-  - [ ] control camera with gamepad
+  - [X] control camera with gamepad
   - [ ] add button to reset camera position
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
   - [ ] move joystick config loading from core into input module
