@@ -253,8 +253,17 @@
   - [ ] winter daytime is too dark, adjust range?
   - [X] limit timestep to prevent numerical problems
   - [X] add keyboard mapping help page!
+  - [-] common playtest errors
+    - [X] audio too loud
+    - [ ] tutorial
+    - [ ] scale UI according to screen resolution
+    - [ ] feedback for player accomplishments
+    - [ ] keyboard bindings customisation
+    - [ ] difficulty spikes
+    - [ ] clear objectives
+    - [ ] camera problems
   - [ ] borderless fullscreen support
-  - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
+  - [X] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] configurable key controls
   - [ ] joystick hat to control camera
   - [ ] limit dt or pause
