@@ -41,28 +41,12 @@
     - [[https://freesound.org/people/craigsmith/sounds/479498/]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [X] join gui-state, input-state, physics-state to facilitate gui code refactor
-  - [X] create macro ignoring nil values using <> as placeholder?
-  - [X] tabbing is broken
-  - [X] convert gui function to state changing one
-  - [X] move gui code into gui module
-  - [X] aggregate physics code in main module and move
-  - [X] refactor rendering code
-    - [X] put rendering code into methods
-    - [X] create high level rendering methods to simplify main program and integration tests
-  - [-] add some sound effects
-    - [X] seek audio position for landing gear if necessary
-    - [X] add landing gear [[https://pixabay.com/sound-effects/search/landing-gear/]]
-    - [X] adjust thruster volume depending on throttle and play/stop
-    - [X] play/stop individual RCS thrusters
-    - [X] reduce volume when leaving atmosphere
-    - [X] sound of air, air brake and gear friction
-    - [X] wheel sounds when hitting runway
-    - [X] supersonic boom
-    - [X] set gain of listener, save in config file
-    - [X] set position of listener
-    - [ ] enable/disable music
-    - [X] play background music
+  - [X] do not use numpad in default keybindings (camera)
+  - [X] do not use backslash in default keybindings (RCS)
+  - [X] control RCS with gamepad
+  - [X] control camera with gamepad
+  - [ ] add button to reset camera position
+  - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
   - [ ] move joystick config loading from core into input module
   - [ ] release new version and post about it
   - [ ] finish tidying up core
@@ -269,8 +253,17 @@
   - [ ] winter daytime is too dark, adjust range?
   - [X] limit timestep to prevent numerical problems
   - [X] add keyboard mapping help page!
+  - [-] common playtest errors
+    - [X] audio too loud
+    - [ ] tutorial
+    - [ ] scale UI according to screen resolution
+    - [ ] feedback for player accomplishments
+    - [ ] keyboard bindings customisation
+    - [ ] difficulty spikes
+    - [ ] clear objectives
+    - [ ] camera problems
   - [ ] borderless fullscreen support
-  - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
+  - [X] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] configurable key controls
   - [ ] joystick hat to control camera
   - [ ] limit dt or pause

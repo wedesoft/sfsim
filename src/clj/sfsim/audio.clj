@@ -239,7 +239,7 @@
         air-flow-source (make-source air-flow-buffer true true)
         drag-source (make-source drag-buffer true true)
         sonic-boom-source (make-source sonic-boom-buffer false true)]
-    {::settings (config/read-user-config "sound.edn" {::volume 1.0 ::no-music false})
+    {::settings (config/read-user-config "sound.edn" {::volume 0.5 ::no-music false})
      ::music nil
      ::audio audio
      ::buffers [surrealism-mix-buffer

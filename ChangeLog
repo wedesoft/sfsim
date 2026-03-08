@@ -1,3 +1,24 @@
+sfsim (0.13-1)
+
+  * handle mouse scroll events
+	* control camera with game controller
+	* switch RCS/aerofoil using game controller
+	* change some key bindings
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 08 Mar 2026 22:14:00 +0000
+
+sfsim (0.12-1)
+
+    * keyboard help window
+
+-- Jan Wedekind <jan@wedesoft.de>  Wed, 04 Mar 2026 23:31:01 +0000
+
+sfsim (0.11-1)
+
+    * sound effects
+
+-- Jan Wedekind <jan@wedesoft.de>  Tue, 03 Mar 2026 23:00:01 +0000
+
 sfsim (0.10-1)
 
 	* Bugfix for speed display in orbit
