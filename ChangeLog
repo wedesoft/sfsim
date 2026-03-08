@@ -1,3 +1,12 @@
+sfsim (0.13-1)
+
+  * handle mouse scroll events
+	* control camera with game controller
+	* switch RCS/aerofoil using game controller
+	* change some key bindings
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 08 Mar 2026 22:14:00 +0000
+
 sfsim (0.12-1)
 
     * keyboard help window
