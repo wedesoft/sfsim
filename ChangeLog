@@ -1,3 +1,4 @@
+	* wrap around current and target camera angles
   * add key and controller bindings for resetting camera
 
 sfsim (0.13-1)
