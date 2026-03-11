@@ -692,7 +692,8 @@
                            (joystick-dialog-button-item state gui "Camera left" :sfsim.input/camera-rotate-y-negative)
                            (joystick-dialog-button-item state gui "Camera right" :sfsim.input/camera-rotate-y-positive)
                            (joystick-dialog-button-item state gui "Camera roll left" :sfsim.input/camera-rotate-z-positive)
-                           (joystick-dialog-button-item state gui "Camera roll right" :sfsim.input/camera-rotate-z-negative)))
+                           (joystick-dialog-button-item state gui "Camera roll right" :sfsim.input/camera-rotate-z-negative)
+                           (joystick-dialog-button-item state gui "Camera reset" :sfsim.input/camera-reset)))
                   (layout-row-dynamic gui 32 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "joysticks.edn" (get-in state [:input :sfsim.input/mappings :sfsim.input/joysticks]))
@@ -741,7 +742,8 @@
                                     [:sfsim.input/camera-rotate-z-positive        "Camera rotate Z positive"]
                                     [:sfsim.input/camera-rotate-z-negative        "Camera rotate Z negative"]
                                     [:sfsim.input/camera-distance-change-positive "Increase camera distance"]
-                                    [:sfsim.input/camera-distance-change-negative "Decrease camera distance"]]]
+                                    [:sfsim.input/camera-distance-change-negative "Decrease camera distance"]
+                                    [:sfsim.input/camera-reset                    "Reset camera"]]]
                                   (text-label gui control-name)
                                   (text-label gui (if (keyword? control-key) (get-key-name (control-key mappings)) control-key))))
                     (layout-row-dynamic gui 32 1)

@@ -128,7 +128,12 @@
        (:sfsim.camera/yaw @state) => (roughly 0.75 1e-3)
        (:sfsim.camera/pitch @state) => (roughly 1.5 1e-3)
        (:sfsim.camera/roll @state) => (roughly 3.0 1e-3)
-       (:sfsim.camera/distance @state) => (roughly 6.0 1e-3))
+       (:sfsim.camera/distance @state) => (roughly 6.0 1e-3)
+       (swap! state update-camera-pose 0.25 (assoc camera-input :sfsim.input/reset true))
+       (:sfsim.camera/target-yaw @state) => 0.0
+       (:sfsim.camera/target-pitch @state) => (to-radians -10.0)
+       (:sfsim.camera/target-roll @state) => 0.0
+       (:sfsim.camera/target-distance @state) => 60.0)
 
 
 (facts "Change camera coordinate system"

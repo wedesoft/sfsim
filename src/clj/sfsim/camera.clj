@@ -118,7 +118,13 @@
   [camera-state ^double dt camera-input]
   (let [weight-previous (pow 0.25 dt)
         mix             (fn [prev target] (+ (* ^double prev weight-previous) (* ^double target (- 1.0 weight-previous))))]
-    (-> camera-state
+    (-> (if (:sfsim.input/reset camera-input)
+          (assoc camera-state
+                 ::target-yaw 0.0
+                 ::target-pitch (to-radians -10.0)
+                 ::target-roll 0.0
+                 ::target-distance 60.0)
+          camera-state)
         (update ::target-yaw + (* dt ^double (:sfsim.input/rotate-y camera-input)))
         (update ::target-pitch + (* dt ^double (:sfsim.input/rotate-x camera-input)))
         (update ::target-roll + (* dt ^double (:sfsim.input/rotate-z camera-input)))
