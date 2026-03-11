@@ -9,11 +9,12 @@
   (:require
     [clojure.math :refer (cos sin atan2 hypot to-radians)]
     [clojure.set :refer (union)]
-    [fastmath.matrix :refer (mulv inverse)]
+    [fastmath.matrix :refer (mulv mulm inverse)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross)]
     [malli.core :as m]
     [sfsim.quaternion :as q]
-    [sfsim.matrix :refer (matrix->quaternion)]
+    [sfsim.matrix :refer (matrix->quaternion get-translation rotation-matrix)]
+    [sfsim.model :as model]
     [sfsim.util :refer (sqr clamp)]
     [sfsim.planet :as planet]
     [sfsim.jolt :as jolt]
@@ -122,6 +123,52 @@
    ::brake 0.0
    ::vehicle nil
    ::local-mesh {::coords nil ::mesh nil}})
+
+
+; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
+; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
+; damping: c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
+; brake torque: m * a * r (use half mass, a = 1.5 m/s^2)
+(def main-wheel-base {:sfsim.jolt/width 0.4064
+                      :sfsim.jolt/radius (* 0.5 1.1303)
+                      :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
+                      :sfsim.jolt/angular-damping 0.2
+                      :sfsim.jolt/suspension-min-length (+ 0.8)
+                      :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
+                      :sfsim.jolt/stiffness 1915744.798
+                      :sfsim.jolt/damping 415231.299
+                      :sfsim.jolt/max-brake-torque 100000.0})
+
+(def front-wheel-base {:sfsim.jolt/width 0.22352
+                       :sfsim.jolt/radius (* 0.5 0.8128)
+                       :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
+                       :sfsim.jolt/angular-damping 0.2
+                       :sfsim.jolt/suspension-min-length (+ 0.5)
+                       :sfsim.jolt/suspension-max-length (+ 0.5 0.5419)
+                       :sfsim.jolt/stiffness 1077473.882
+                       :sfsim.jolt/damping 155702.159})
+
+
+(defn initialize-wheels
+  "Get wheel positions from model and set up wheel parameters"
+  [state model]
+  (let [gltf-to-aerodynamic  (rotation-matrix aerodynamics/gltf-to-aerodynamic)
+        main-wheel-left-pos  (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Main Wheel Left")))
+        main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Main Wheel Right")))
+        front-wheel-pos      (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Wheel Front")))
+        main-wheel-left      (assoc main-wheel-base
+                                    :sfsim.jolt/position
+                                    (sub main-wheel-left-pos
+                                         (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8))))
+        main-wheel-right     (assoc main-wheel-base
+                                    :sfsim.jolt/position
+                                    (sub main-wheel-right-pos
+                                         (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8))))
+        front-wheel          (assoc front-wheel-base
+                                    :sfsim.jolt/position
+                                    (sub front-wheel-pos
+                                         (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length front-wheel-base) 0.5))))]
+    (assoc state ::wheels [main-wheel-left main-wheel-right front-wheel])))
 
 
 (defn get-julian-date-ut
@@ -584,8 +631,9 @@
 
 (defn update-gear-status
   "Create or destroy vehicle constraint depending on whether gear is down or not"
-  [state wheels]
-  (let [gear (::gear state)]
+  [state]
+  (let [wheels (::wheels state)
+        gear   (::gear state)]
     (if (= gear 1.0)
       (create-vehicle-constraint state wheels)
       (destroy-vehicle-constraint state))))
@@ -655,7 +703,7 @@
 
 (defn load-state
   "Load physics state from serializable representation"
-  [state data wheels]
+  [state data]
   (let [domain (::domain data)
         result (-> state
                    (assoc ::start-julian-date (::start-julian-date data))
@@ -665,7 +713,7 @@
                    (assoc ::throttle (::throttle data))
                    (assoc ::gear (::gear data))
                    (assoc ::rcs-thrust (apply vec3 (::rcs-thrust data))))]
-    (update-gear-status result wheels)
+    (update-gear-status result)
     (set-wheel-angles result (::wheel-angles data))
     (set-suspension result (::suspension data))
     result))
@@ -673,11 +721,11 @@
 
 (defn simulation-step
   "Method with all physics updates"
-  [state controls dt wheels planet-config split-orientations thrust]
+  [state controls dt planet-config split-orientations thrust]
   (-> state
       (update-domain planet-config)
       (set-control-inputs controls dt)
-      (update-gear-status wheels)
+      (update-gear-status)
       (update-brakes)
       (update ::local-mesh planet/update-local-mesh split-orientations (get-position ::surface state))
       (set-thruster-forces thrust)

@@ -479,7 +479,7 @@
                           (assoc :sfsim.physics/gear 0.5)
                           (assoc :sfsim.physics/rcs-thrust (vec3 0.25 0.5 -0.5)))
              data   (edn/read-string (with-out-str (pprint (save-state state))))
-             result (load-state (make-physics-state sphere) data [])]
+             result (load-state (make-physics-state sphere) data)]
          (get-julian-date-ut result) => (roughly (+ astro/T0 43.0) 1e-6)
          (:sfsim.physics/domain result) => :sfsim.physics/orbit
          (get-position :sfsim.physics/orbit result) => (vec3 6678000 0 0)

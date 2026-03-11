@@ -87,9 +87,6 @@
 (def model (first (:sfsim.graphics/models graphics)))
 (def convex-hulls (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 
-(def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Main Wheel Left"))))
-(def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Main Wheel Right"))))
-(def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Wheel Front"))))
 (def bsp-tree (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 
 (def thruster-transforms
@@ -100,38 +97,6 @@
                                              (vector rcs-name)))
                      (physics/all-rcs)))))
 
-
-; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
-; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
-; damping: c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
-; brake torque: m * a * r (use half mass, a = 1.5 m/s^2)
-(def main-wheel-base {:sfsim.jolt/width 0.4064
-                      :sfsim.jolt/radius (* 0.5 1.1303)
-                      :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
-                      :sfsim.jolt/angular-damping 0.2
-                      :sfsim.jolt/suspension-min-length (+ 0.8)
-                      :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
-                      :sfsim.jolt/stiffness 1915744.798
-                      :sfsim.jolt/damping 415231.299
-                      :sfsim.jolt/max-brake-torque 100000.0})
-(def front-wheel-base {:sfsim.jolt/width 0.22352
-                       :sfsim.jolt/radius (* 0.5 0.8128)
-                       :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
-                       :sfsim.jolt/angular-damping 0.2
-                       :sfsim.jolt/suspension-min-length (+ 0.5)
-                       :sfsim.jolt/suspension-max-length (+ 0.5 0.5419)
-                       :sfsim.jolt/stiffness 1077473.882
-                       :sfsim.jolt/damping 155702.159})
-(def main-wheel-left (assoc main-wheel-base
-                            :sfsim.jolt/position
-                            (sub main-wheel-left-pos (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
-(def main-wheel-right (assoc main-wheel-base
-                             :sfsim.jolt/position
-                             (sub main-wheel-right-pos (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
-(def front-wheel (assoc front-wheel-base
-                        :sfsim.jolt/position
-                        (sub front-wheel-pos (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length front-wheel-base) 0.5)))))
-(def wheels [main-wheel-left main-wheel-right front-wheel])
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -179,6 +144,7 @@
         thrust              (* ^double mass 25.0)
         elevation           (:sfsim.model/elevation config/model-config)
         physics-state       (-> (physics/make-physics-state body)
+                                (physics/initialize-wheels model)
                                 (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
                                 (physics/set-julian-date-ut (astro/julian-date jd-ut)))
         camera-state        (camera/make-camera-state)
@@ -231,11 +197,11 @@
           (swap! state assoc-in [:gui :sfsim.gui/menu] nil))
         (if playback
           (let [frame (nth @recording @frame-counter)]
-            (swap! state update :physics physics/load-state (:physics frame) wheels)
+            (swap! state update :physics physics/load-state (:physics frame))
             (swap! state assoc :camera (:camera frame)))
           (do
             (when (not (-> @state :input :sfsim.input/pause))
-              (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) dt wheels
+              (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) dt
                      config/planet-config split-orientations thrust))
             (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
             (swap! state update :audio audio/update-state (:physics @state) (:input @state) (:camera @state))
