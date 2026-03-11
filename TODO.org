@@ -46,7 +46,7 @@
   - [X] control RCS with gamepad
   - [X] control camera with gamepad
   - [X] space key and controller button to reset camera position
-  - [ ] wrap around for angles of target camera position (increment/decrement both target and current angle!)
+  - [X] wrap around for angles of target camera position (increment/decrement both target and current angle!)
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
   - [ ] move joystick config loading from core into input module
   - [ ] release new version and post about it

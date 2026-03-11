@@ -278,3 +278,12 @@
 (facts "Invert hash map"
        (invert-map {}) => {}
        (invert-map {:a 1 :b 2}) => {1 :a 2 :b})
+
+
+(facts "Limit angle"
+       (limit-angle 0.0) => 0.0
+       (limit-angle (* 0.5 PI)) => (* 0.5 PI)
+       (limit-angle PI) => (- PI)
+       (limit-angle (* 2 PI)) => 0.0
+       (limit-angle (* -3 PI)) => (- PI)
+       (limit-angle (* 4 PI)) => 0.0)
