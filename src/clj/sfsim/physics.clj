@@ -171,6 +171,37 @@
     (assoc state ::wheels [main-wheel-left main-wheel-right front-wheel])))
 
 
+(defn rcs-set
+  "Get list of names for RCS thruster triplet given a location string"
+  [location]
+  [(str "RCS " location "1") (str "RCS " location "2") (str "RCS " location "3")])
+
+
+(defn rcs-sets
+  "Get set with names for RCS thruster triplets given a list of location strings"
+  [& locations]
+  (set (mapcat rcs-set locations)))
+
+
+(defn all-rcs
+  "Get list of all thruster names"
+  []
+  (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
+
+
+(defn initialize-thrusters
+  "Get thruster transforms from model"
+  [state model]
+  (let [gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic)]
+    (assoc state ::thrusters
+           (into {}
+                 (remove nil?
+                         (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
+                                                      (mulm gltf-to-aerodynamic)
+                                                      (vector rcs-name)))
+                              (all-rcs)))))))
+
+
 (defn get-julian-date-ut
   "Get universal time Julian date"
   [state]
@@ -551,18 +582,6 @@
   (jolt/add-torque (::body state) torque_))
 
 
-(defn rcs-set
-  "Get list of names for RCS thruster triplet given a location string"
-  [location]
-  [(str "RCS " location "1") (str "RCS " location "2") (str "RCS " location "3")])
-
-
-(defn rcs-sets
-  "Get set with names for RCS thruster triplets given a list of location strings"
-  [& locations]
-  (set (mapcat rcs-set locations)))
-
-
 (defn active-rcs
   "Return set of names of active RCS thruster triplets"
   [state]
@@ -574,12 +593,6 @@
       (union (when (pos? ^double ((::rcs-thrust state) 1)) (rcs-sets "LU" "RU" "LFD" "RFD")))
       (union (when (neg? ^double ((::rcs-thrust state) 2)) (rcs-sets "L" "RF")))
       (union (when (pos? ^double ((::rcs-thrust state) 2)) (rcs-sets "R" "LF")))))
-
-
-(defn all-rcs
-  "Get list of all thruster names"
-  []
-  (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
 
 
 (defn set-thruster-forces

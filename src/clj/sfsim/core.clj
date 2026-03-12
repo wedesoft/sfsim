@@ -89,15 +89,6 @@
 
 (def bsp-tree (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 
-(def thruster-transforms
-  (into {}
-        (remove nil?
-                (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
-                                             (mulm gltf-to-aerodynamic)
-                                             (vector rcs-name)))
-                     (physics/all-rcs)))))
-
-
 (def tile-tree (planet/make-tile-tree))
 
 (def split-orientations (quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8))
@@ -143,6 +134,7 @@
         elevation           (:sfsim.model/elevation config/model-config)
         physics-state       (-> (physics/make-physics-state body)
                                 (physics/initialize-wheels model)
+                                (physics/initialize-thrusters model)
                                 (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
                                 (physics/set-julian-date-ut (astro/julian-date jd-ut)))
         camera-state        (camera/make-camera-state)
@@ -206,49 +198,50 @@
             (when (and @recording (not (-> @state :input :sfsim.input/pause)))
               (let [frame {:physics (physics/save-state (:physics @state)) :camera (:camera @state)}]
                 (swap! recording conj frame)))))
-        (let [object-position    (physics/get-position :sfsim.physics/surface (:physics @state))
-              earth-radius       (:sfsim.planet/radius config/planet-config)
-              height             (- (mag object-position) ^double earth-radius)
-              pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
-              object-orientation (physics/get-orientation :sfsim.physics/surface (:physics @state))
+        (let [object-position     (physics/get-position :sfsim.physics/surface (:physics @state))
+              earth-radius        (:sfsim.planet/radius config/planet-config)
+              height              (- (mag object-position) ^double earth-radius)
+              pressure            (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
+              object-orientation  (physics/get-orientation :sfsim.physics/surface (:physics @state))
               [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
                                            (camera/get-camera-pose (:camera @state) (:physics @state)))
-              jd-ut              (physics/get-julian-date-ut (:physics @state))
-              icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
-              sun-pos            (earth-sun jd-ut)
-              light-direction    (normalize (mulv icrs-to-earth sun-pos))
-              model-vars         (model/make-model-vars (:sfsim.physics/offset-seconds (:physics @state)) pressure
-                                                        (:sfsim.physics/throttle (:physics @state)))
-              camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) origin)
-              world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
-              camera-to-object   (mulm world-to-object camera-to-world)
-              object-origin      (get-translation camera-to-object)
-              render-order       (filterv (physics/active-rcs (:physics @state)) (model/bsp-render-order bsp-tree object-origin))
-              plume-transforms   (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
-              wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
-                                                            (physics/get-wheel-angles (:physics @state)))
-                                       gear-animation
-                                       (let [gear (:sfsim.physics/gear (:physics @state))]
-                                         (if (= ^double gear 1.0)
-                                           (let [suspension (physics/get-suspension (:physics @state))]
-                                             [(/ (- ^double (nth suspension 0) 0.8) 0.8128)
-                                              (/ (- ^double (nth suspension 1) 0.8) 0.8128)
-                                              (+ 1.0 (/ (- ^double (nth suspension 2) 0.5) 0.5419))])
-                                           [(- 2.0 ^double gear) (- 2.0 ^double gear) (- 3.0 ^double gear)]))]
-                                   (model/apply-transforms
-                                     (first (:sfsim.graphics/scenes graphics))
-                                     (model/animations-frame
-                                       model
-                                       {"GearLeft" (nth gear-animation 0)
-                                        "GearRight" (nth gear-animation 1)
-                                        "GearFront" (nth gear-animation 2)
-                                        "WheelLeft" (nth wheel-animation 0)
-                                        "WheelRight" (nth wheel-animation 1)
-                                        "WheelFront" (nth wheel-animation 2)})))
-              frame              (graphics/prepare-frame (assoc graphics :sfsim.graphics/scenes [wheels-scene]) model-vars
-                                                         (planet/get-current-tree tile-tree) window-width window-height
-                                                         origin camera-orientation light-direction object-position
-                                                          object-orientation plume-transforms opacity-base)]
+              jd-ut               (physics/get-julian-date-ut (:physics @state))
+              icrs-to-earth       (inverse (astro/earth-to-icrs jd-ut))
+              sun-pos             (earth-sun jd-ut)
+              light-direction     (normalize (mulv icrs-to-earth sun-pos))
+              model-vars          (model/make-model-vars (:sfsim.physics/offset-seconds (:physics @state)) pressure
+                                                         (:sfsim.physics/throttle (:physics @state)))
+              camera-to-world     (transformation-matrix (quaternion->matrix camera-orientation) origin)
+              world-to-object     (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
+              camera-to-object    (mulm world-to-object camera-to-world)
+              object-origin       (get-translation camera-to-object)
+              render-order        (filterv (physics/active-rcs (:physics @state)) (model/bsp-render-order bsp-tree object-origin))
+              thruster-transforms (get-in @state [:physics :sfsim.physics/thrusters])
+              plume-transforms    (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
+              wheels-scene        (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
+                                                             (physics/get-wheel-angles (:physics @state)))
+                                        gear-animation
+                                        (let [gear (:sfsim.physics/gear (:physics @state))]
+                                          (if (= ^double gear 1.0)
+                                            (let [suspension (physics/get-suspension (:physics @state))]
+                                              [(/ (- ^double (nth suspension 0) 0.8) 0.8128)
+                                               (/ (- ^double (nth suspension 1) 0.8) 0.8128)
+                                               (+ 1.0 (/ (- ^double (nth suspension 2) 0.5) 0.5419))])
+                                            [(- 2.0 ^double gear) (- 2.0 ^double gear) (- 3.0 ^double gear)]))]
+                                    (model/apply-transforms
+                                      (first (:sfsim.graphics/scenes graphics))
+                                      (model/animations-frame
+                                        model
+                                        {"GearLeft" (nth gear-animation 0)
+                                         "GearRight" (nth gear-animation 1)
+                                         "GearFront" (nth gear-animation 2)
+                                         "WheelLeft" (nth wheel-animation 0)
+                                         "WheelRight" (nth wheel-animation 1)
+                                         "WheelFront" (nth wheel-animation 2)})))
+              frame               (graphics/prepare-frame (assoc graphics :sfsim.graphics/scenes [wheels-scene]) model-vars
+                                                          (planet/get-current-tree tile-tree) window-width window-height
+                                                          origin camera-orientation light-direction object-position
+                                                           object-orientation plume-transforms opacity-base)]
           (onscreen-render window
                            (graphics/render-frame graphics frame (planet/get-current-tree tile-tree))
                            (with-culling :sfsim.render/noculling
