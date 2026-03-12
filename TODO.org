@@ -48,7 +48,7 @@
   - [X] space key and controller button to reset camera position
   - [X] wrap around for angles of target camera position (increment/decrement both target and current angle!)
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
-  - [ ] move joystick config loading from core into input module
+  - [X] move joystick config loading from core into input module
   - [ ] release new version and post about it
   - [ ] finish tidying up core
   - [ ] schemas for model, planet, and atmosphere geometry renderer
