@@ -595,6 +595,20 @@
       (union (when (pos? ^double ((::rcs-thrust state) 2)) (rcs-sets "R" "LF")))))
 
 
+(defn ordered-rcs-transforms
+  "Get transforms of RCS thrusters for ordered list of names"
+  [transforms rcs-names]
+  (mapv (fn [rcs-name] [rcs-name (transforms rcs-name)]) rcs-names))
+
+
+(defn active-rcs-transforms
+  "Get transforms of active RCS thrusters given ordered list of names"
+  [state ordered-names]
+  (let [transforms   (::thrusters state)
+        active-names (active-rcs state)]
+    (ordered-rcs-transforms transforms (filter active-names ordered-names))))
+
+
 (defn set-thruster-forces
   "Set forces and torques of main thruster and RCS thrusters"
   [state thrust]

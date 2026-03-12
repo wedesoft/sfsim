@@ -7,12 +7,13 @@
 (ns sfsim.t-physics
   (:require
     [clojure.math :refer (exp sqrt to-radians to-degrees)]
+    [clojure.set :refer (intersection)]
     [clojure.edn :as edn]
     [clojure.pprint :refer (pprint)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [fastmath.matrix :refer (mulv rotation-matrix-3d-z)]
+    [fastmath.matrix :refer (mulv rotation-matrix-3d-z eye)]
     [fastmath.vector :refer (vec3)]
     [sfsim.conftest :refer (roughly-vector roughly-quaternion)]
     [sfsim.quaternion :as q]
@@ -487,6 +488,24 @@
          (:sfsim.physics/throttle result) => 0.25
          (:sfsim.physics/gear result) => 0.5
          (:sfsim.physics/rcs-thrust result) => (vec3 0.25 0.5 -0.5)))
+
+
+(facts "Test requesting of RCS transforms"
+       (rcs-set "TEST") => ["RCS TEST1" "RCS TEST2" "RCS TEST3"]
+       (rcs-sets) => #{}
+       (rcs-sets "TEST") => #{"RCS TEST1" "RCS TEST2" "RCS TEST3"}
+       (intersection (set (all-rcs)) #{"RCS FF1" "RCS L3" "Plume"}) => #{"RCS FF1" "RCS L3" "Plume"}
+       (ordered-rcs-transforms {} []) => []
+       (ordered-rcs-transforms {"A" (eye 4)} ["A"]) => [["A" (eye 4)]]
+       (ordered-rcs-transforms {"A" (eye 4)} []) => []
+       (active-rcs-transforms {:sfsim.physics/throttle 1.0
+                               :sfsim.physics/rcs-thrust (vec3 0 0 0)
+                               :sfsim.physics/thrusters {"Plume" (eye 4)}}
+                              ["A"]) => []
+       (active-rcs-transforms {:sfsim.physics/throttle 1.0
+                               :sfsim.physics/rcs-thrust (vec3 0 0 0)
+                               :sfsim.physics/thrusters {"Plume" (eye 4)}}
+                              ["A" "Plume"]) => [["Plume" (eye 4)]])
 
 
 (jolt/remove-and-destroy-body sphere)
