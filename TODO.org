@@ -57,7 +57,7 @@
   - [ ] add RCS state to physics-state
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
-  - [-] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
+  - [X] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
   - [ ] animate control surfaces and air brake
   - [ ] reentry physics
     - [ ] reentry flame
