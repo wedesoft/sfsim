@@ -9,7 +9,7 @@
   (:require
     [clojure.core.cache :as cache]
     [clojure.java.io :as io]
-    [clojure.math :refer (sin)]
+    [clojure.math :refer (PI sin)]
     [clojure.set :refer (map-invert)]
     [malli.core :as m]
     [progrock.core :as p])
@@ -531,6 +531,12 @@
   {:malli/schema [:=> [:cat [:map-of :any :any]] [:map-of :any :any]]}
   [input]
   (zipmap (vals input) (keys input)))
+
+
+(defn limit-angle
+  "Wrap around angle to be between -PI and +PI"
+  ^double [^double angle]
+  (- ^double (mod (+ angle PI) (* 2.0 PI)) PI))
 
 
 (set! *warn-on-reflection* false)

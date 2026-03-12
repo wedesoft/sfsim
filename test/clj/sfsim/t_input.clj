@@ -168,7 +168,12 @@
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_PERIOD) GLFW/GLFW_PRESS 0)
          (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => -1.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_PERIOD) GLFW/GLFW_RELEASE 0)
-         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 0.0))
+         (get-in @state [:sfsim.input/camera :sfsim.input/distance-change]) => 0.0
+         (get-in @state [:sfsim.input/camera :sfsim.input/reset]) => false
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_SPACE) GLFW/GLFW_PRESS 0)
+         (get-in @state [:sfsim.input/camera :sfsim.input/reset]) => true
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_SPACE) GLFW/GLFW_RELEASE 0)
+         (get-in @state [:sfsim.input/camera :sfsim.input/reset]) => false))
 
 
 (facts "Test some simulator key bindings directly"
@@ -516,7 +521,8 @@
                                                                             8 :sfsim.input/camera-rotate-y-positive
                                                                             9 :sfsim.input/camera-rotate-y-negative
                                                                             10 :sfsim.input/camera-rotate-z-positive
-                                                                            11 :sfsim.input/camera-rotate-z-negative}}}}}
+                                                                            11 :sfsim.input/camera-rotate-z-negative
+                                                                            12 :sfsim.input/camera-reset}}}}}
              state                    (atom (assoc (make-initial-state) :sfsim.input/mappings mappings))
              gui                      {:sfsim.gui/context :ctx}
              handler                  (->InputHandler gui)]
@@ -586,7 +592,11 @@
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 11 true)) handler)
          (:sfsim.input/rotate-z (:sfsim.input/camera @state)) => -0.5
          (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 11 false)) handler)
-         (:sfsim.input/rotate-z (:sfsim.input/camera @state)) => 0.0))
+         (:sfsim.input/rotate-z (:sfsim.input/camera @state)) => 0.0
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 12 true)) handler)
+         (:sfsim.input/reset (:sfsim.input/camera @state)) => true
+         (swap! state process-events (add-joystick-button-state event-buffer button-state "Gamepad" (button 12 false)) handler)
+         (:sfsim.input/reset (:sfsim.input/camera @state)) => false))
 
 
 (facts "Recording last active joystick axis or button"
@@ -612,6 +622,7 @@
        (get-key-name GLFW/GLFW_KEY_P) => "P"
        (get-key-name GLFW/GLFW_KEY_BACKSLASH) => "\\"
        (get-key-name GLFW/GLFW_KEY_ESCAPE) => "Escape"
+       (get-key-name GLFW/GLFW_KEY_SPACE) => "Space"
        (get-key-name GLFW/GLFW_KEY_5) => "5"
        (get-key-name GLFW/GLFW_KEY_KP_5) => "Numpad 5"
        (get-key-name GLFW/GLFW_KEY_LEFT) => "Left"

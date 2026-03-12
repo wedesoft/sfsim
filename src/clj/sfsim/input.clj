@@ -303,6 +303,7 @@
   (let [scancode (GLFW/glfwGetKeyScancode key-number)
         prefix   (cond
                    (= key-number GLFW/GLFW_KEY_ESCAPE) "Escape"
+                   (= key-number GLFW/GLFW_KEY_SPACE) "Space"
                    (= key-number GLFW/GLFW_KEY_LEFT) "Left"
                    (= key-number GLFW/GLFW_KEY_RIGHT) "Right"
                    (= key-number GLFW/GLFW_KEY_UP) "Up"
@@ -341,7 +342,8 @@
    {::rotate-x        0.0
     ::rotate-y        0.0
     ::rotate-z        0.0
-    ::distance-change 0.0}
+    ::distance-change 0.0
+    ::reset           false}
    ::mappings
    {::keyboard
     {GLFW/GLFW_KEY_ESCAPE    ::menu
@@ -367,6 +369,7 @@
      GLFW/GLFW_KEY_PAGE_DOWN ::camera-rotate-z-negative
      GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
      GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
+     GLFW/GLFW_KEY_SPACE     ::camera-reset
      }}
    ::joysticks
    {::dead-zone 0.1}
@@ -580,6 +583,11 @@
   (assoc-in state [::camera ::distance-change] (if (keypress? action) -1.0 0.0)))
 
 
+(defmethod simulator-key ::camera-reset
+  [state _id action _mods]
+  (assoc-in state [::camera ::reset] (keypress? action)))
+
+
 (defn menu-mouse-button
   [state gui button x y action _mods]
   (let [nkbutton (condp = button
@@ -740,6 +748,11 @@
 (defmethod simulator-joystick-button ::camera-rotate-z-negative
   [_id state action]
   (assoc-in state [::camera ::rotate-z] (if (keypress? action) -0.5 0.0)))
+
+
+(defmethod simulator-joystick-button ::camera-reset
+  [_id state action]
+  (assoc-in state [::camera ::reset] (keypress? action)))
 
 
 (defn menu-joystick-axis
