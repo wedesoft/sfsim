@@ -10,7 +10,7 @@
 #define OFFSET 0.05
 #define ALPHA 2.0
 #define STEP 0.0025
-#define SHOCK 0.01
+#define SHOCK 0.05
 
 uniform vec2 iResolution;
 uniform float iTime;
@@ -80,6 +80,13 @@ float line_sdf(vec2 p) {
   return length(p - vec2(x, y));
 }
 
+float wave(float x) {
+  if (x < 0)
+    return 0.0;
+  else
+    return x * exp(1 - x);
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec2 uv = (fragCoord - iResolution.xy / 2.0) / (iResolution.x / 2.0);
   float sdf = line_sdf(uv);
@@ -87,8 +94,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     fragColor = vec4(SHIP_COLOR, 1);
   else {
     float parabola = parabola(uv);
-    float depth = uv.x - parabola;
-    float strength = bell(depth, SHOCK);
+    float depth = parabola - uv.x;
+    float strength = wave(depth / SHOCK);
     fragColor = vec4(0.5 * FLAME_TALE_COLOR * strength, 1);
   };
 }
