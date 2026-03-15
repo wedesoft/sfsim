@@ -7,10 +7,10 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [clojure.math :refer (cos sin atan2 hypot to-radians)]
+    [clojure.math :refer (cos sin atan2 hypot to-radians sqrt)]
     [clojure.set :refer (union)]
     [fastmath.matrix :refer (mulv mulm inverse)]
-    [fastmath.vector :refer (vec3 mag normalize mult add sub cross)]
+    [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot)]
     [malli.core :as m]
     [sfsim.quaternion :as q]
     [sfsim.matrix :refer (matrix->quaternion get-translation rotation-matrix)]
@@ -330,7 +330,7 @@
 (defn get-geographic
   "Get longitude, latitude, and height of space craft"
   [state planet]
-  (let [position  (get-position :sfsim.physics/surface state)
+  (let [position  (get-position ::surface state)
         longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
         latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
         height    (- (mag position) ^double (:sfsim.planet/radius planet))]
@@ -342,7 +342,7 @@
 (defn get-height
   "Get height of space craft"
   [state planet]
-  (let [position  (get-position :sfsim.physics/surface state)]
+  (let [position  (get-position ::surface state)]
     (- (mag position) ^double (:sfsim.planet/radius planet))))
 
 
@@ -768,10 +768,51 @@
 
 (defn specific-mechanical-energy
   "Get specific mechanical energy of orbiting object"
-  [planet state]
+  ^double [planet state]
   (let [speed (mag (get-linear-speed ::orbit state))]
     (- (* 0.5 speed speed)
        (/ (gravitational-parameter planet) (mag (get-position ::orbit state))))))
+
+
+(defn specific-angular-momentum
+  "Get specific angular momentum of orbiting object"
+  ^Vec3 [state]
+  (let [position (get-position ::orbit state)
+        speed    (get-linear-speed ::orbit state)]
+    (cross position speed)))
+
+
+(defn semi-major-axis
+  "Get semi-major axis of orbit"
+  ^double [planet state]
+  (let [mu      (gravitational-parameter planet)
+        epsilon (specific-mechanical-energy planet state)]
+    (- (/ mu (* 2.0 epsilon)))))
+
+
+(defn eccentricity
+  "Get eccentricity of orbit"
+  ^double [planet state]
+  (let [mu      (gravitational-parameter planet)
+        epsilon (specific-mechanical-energy planet state)
+        h       (specific-angular-momentum state)]
+    (sqrt (+ 1.0 (/ (* 2.0 epsilon (dot h h)) (* mu mu))))))
+
+
+(defn periapsis
+  "Get periapsis (lowest radius) of orbit"
+  ^double [planet state]
+  (let [a (semi-major-axis planet state)
+        e (eccentricity planet state)]
+    (* a (- 1.0 e))))
+
+
+(defn apoapsis
+  "Get apoapsis (highest radius) of orbit"
+  ^double [planet state]
+  (let [a (semi-major-axis planet state)
+        e (eccentricity planet state)]
+    (* a (+ 1.0 e))))
 
 
 (set! *warn-on-reflection* false)
