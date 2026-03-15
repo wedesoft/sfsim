@@ -57,6 +57,11 @@
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
   - [ ] animate control surfaces and air brake
+  - [ ] reentry physics
+    - [ ] reentry flame
+      - [[https://www.shadertoy.com/view/XX3fDH]]
+      - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
+    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
   - [ ] use different dead zone for RCS thruster joystick control
