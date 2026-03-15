@@ -760,5 +760,19 @@
       (update-state dt (gravitation (vec3 0 0 0) (:sfsim.planet/mass planet-config)))))
 
 
+(defn gravitational-parameter
+  "Get gravitational parameter of planet"
+  ^double [planet]
+  (* ^double (:sfsim.planet/mass planet) ^double gravitational-constant))
+
+
+(defn specific-mechanical-energy
+  "Get specific mechanical energy of orbiting object"
+  [planet state]
+  (let [speed (mag (get-linear-speed ::orbit state))]
+    (- (* 0.5 speed speed)
+       (/ (gravitational-parameter planet) (mag (get-position ::orbit state))))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
