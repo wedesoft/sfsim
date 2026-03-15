@@ -46,6 +46,8 @@
       - [ ] add aerodynamics tests for control authority (pitch rate)
       - [ ] add aerodynamics tests for trajectory (bank angle to control vertical lift component, tolerable g-forces and heat)
     - [ ] reentry flame
+      - [[https://www.shadertoy.com/view/XX3fDH]]
+      - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
     - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
   - [ ] release new version and post about it
@@ -57,11 +59,6 @@
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
   - [ ] animate control surfaces and air brake
-  - [ ] reentry physics
-    - [ ] reentry flame
-      - [[https://www.shadertoy.com/view/XX3fDH]]
-      - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
-    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
   - [ ] use different dead zone for RCS thruster joystick control
