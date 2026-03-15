@@ -508,17 +508,19 @@
                               ["A" "Plume"]) => [["Plume" (eye 4)]])
 
 
-(fact "Gravitational parameter"
-      (gravitational-parameter {:sfsim.planet/mass 5.9722e+24}) => (* 5.9722e+24 6.67430e-11))
-
-
-(facts "Get specifical mechanical energy"
+(facts "Get orbital parameters"
        (let [planet {:sfsim.planet/mass 5.9722e+24}]
+         (gravitational-parameter {:sfsim.planet/mass 5.9722e+24}) => (* 5.9722e+24 6.67430e-11) 
          (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion 1 0 0 0))
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
          (specific-mechanical-energy planet @state) => (- (/ (gravitational-parameter planet) 6658000.0))
-         (swap! state set-speed :sfsim.physics/orbit (vec3 0 8000 0) (vec3 0 0 0))
-         (specific-mechanical-energy planet @state) => (- (/ (* 8000.0 8000.0) 2.0) (/ (gravitational-parameter planet) 6658000.0))))
+         (swap! state set-speed :sfsim.physics/orbit (vec3 0 9000 0) (vec3 0 0 0))
+         (specific-mechanical-energy planet @state) => (- (/ (* 9000.0 9000.0) 2.0) (/ (gravitational-parameter planet) 6658000.0))
+         (semi-major-axis planet @state) => (roughly 10290123.277 1e-3)
+         (specific-angular-momentum @state) => (roughly-vector (vec3 0 0 59922000000) 1e-3)
+         (eccentricity planet @state) => (roughly 0.352972 1e-6)
+         (periapsis planet @state) => (roughly 6658000.0 1e-3)
+         (apoapsis planet @state) => (roughly 13922246.555 1e-3)))
 
 
 (jolt/remove-and-destroy-body sphere)
