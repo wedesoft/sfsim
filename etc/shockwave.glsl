@@ -11,6 +11,7 @@
 #define OFFSET 0.05
 #define ALPHA 2.0
 #define STEP 0.01
+#define THICKNESS 0.005
 #define SHOCK 0.05
 #define XPOS 0.6
 
@@ -66,11 +67,11 @@ float erf(float x) {
 
 float inverfdiff(float d) {
   float threshold = erf(-PLUME) - erf(- PLUME - 2.0 * SIZE);
-  for (float result = - PLUME - 2.0 * SIZE; result <= 0; result += STEP) {
+  for (float result = - PLUME - 2.0 * SIZE; result <= 0.0; result += STEP) {
     threshold -= gauss(result, SIGMA) * STEP;
-    threshold += gauss(result + 2 * SIZE, SIGMA) * STEP;
+    threshold += gauss(result + 2.0 * SIZE, SIGMA) * STEP;
     if (threshold >= d)
-      return max(-result - 2.0 * SIZE, 0);
+      return max(-result - 2.0 * SIZE, 0.0);
   };
   return 0.0;
 }
@@ -95,13 +96,13 @@ float wave(float x) {
   if (x < 0.0)
     return 0.0;
   else
-    return x * exp(1 - x);
+    return x * exp(1.0 - x);
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec2 uv = (fragCoord - iResolution.xy / 2.0) / (iResolution.x / 2.0);
   float sdf = line_sdf(uv);
-  if (sdf < STEP)
+  if (sdf < THICKNESS)
     fragColor = vec4(SHIP_COLOR, 1);
   else {
     float parabola = parabola(uv);
