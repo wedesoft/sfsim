@@ -7,7 +7,7 @@
 #define SHIP_COLOR vec3(0.7, 0.7, 0.8)
 #define SIZE 0.1
 #define PLUME 0.5
-#define SIGMA 0.02
+#define SIGMA 0.04
 #define OFFSET 0.05
 #define ALPHA 2.0
 #define STEP 0.01
