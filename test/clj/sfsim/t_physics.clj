@@ -508,6 +508,19 @@
                               ["A" "Plume"]) => [["Plume" (eye 4)]])
 
 
+(fact "Gravitational parameter"
+      (gravitational-parameter {:sfsim.planet/mass 5.9722e+24}) => (* 5.9722e+24 6.67430e-11))
+
+
+(facts "Get specifical mechanical energy"
+       (let [planet {:sfsim.planet/mass 5.9722e+24}]
+         (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion 1 0 0 0))
+         (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
+         (specific-mechanical-energy planet @state) => (- (/ (gravitational-parameter planet) 6658000.0))
+         (swap! state set-speed :sfsim.physics/orbit (vec3 0 8000 0) (vec3 0 0 0))
+         (specific-mechanical-energy planet @state) => (- (/ (* 8000.0 8000.0) 2.0) (/ (gravitational-parameter planet) 6658000.0))))
+
+
 (jolt/remove-and-destroy-body sphere)
 
 
