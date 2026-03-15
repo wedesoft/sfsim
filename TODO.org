@@ -41,33 +41,28 @@
     - [[https://freesound.org/people/craigsmith/sounds/479498/]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [X] do not use numpad in default keybindings (camera)
-  - [X] do not use backslash in default keybindings (RCS)
-  - [X] control RCS with gamepad
-  - [X] control camera with gamepad
-  - [X] space key and controller button to reset camera position
-  - [X] wrap around for angles of target camera position (increment/decrement both target and current angle!)
+  - [ ] reentry physics
+    - [ ] controlled reentry should be possible
+      - [ ] add aerodynamics tests for control authority (pitch rate)
+      - [ ] add aerodynamics tests for trajectory (bank angle to control vertical lift component, tolerable g-forces and heat)
+    - [ ] reentry flame
+    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
-  - [X] move joystick config loading from core into input module
   - [ ] release new version and post about it
   - [ ] finish tidying up core
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
-  - [ ] add RCS state to physics-state
+  - [ ] thrust vectoring
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
-  - [X] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
   - [ ] animate control surfaces and air brake
-  - [ ] reentry physics
-    - [ ] reentry flame
-    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
-  - [X] limit time step to avoid physics problems
   - [ ] use different dead zone for RCS thruster joystick control
   - [ ] yaw stabilisation
   - [ ] kill rotation
+  - [ ] safe time lapse inside and outside of atmosphere
   - [ ] display perihel aphel and time to, Check out poliastro and hapsira
   - [ ] block gear up when on the ground
   - [ ] Radar altitude
