@@ -41,6 +41,7 @@
     - [[https://freesound.org/people/craigsmith/sounds/479498/]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
+  - [ ] display perihel aphel and time to, Check out poliastro and hapsira
   - [ ] reentry physics
     - [ ] controlled reentry should be possible
       - [ ] add aerodynamics tests for control authority (pitch rate)
@@ -65,7 +66,6 @@
   - [ ] yaw stabilisation
   - [ ] kill rotation
   - [ ] safe time lapse inside and outside of atmosphere
-  - [ ] display perihel aphel and time to, Check out poliastro and hapsira
   - [ ] block gear up when on the ground
   - [ ] Radar altitude
   - [ ] Elevator trim
