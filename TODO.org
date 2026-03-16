@@ -1,18 +1,22 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
-  - Note taken on [2025-11-14 Fr 22:28] \\
-    float slider1 = iMouse.x / iResolution.x;
-    float slider2 = iMouse.y / iResolution.y;
-    float distortion1 = max(0.0, 5.0 * point.y * point.z * (slider1 - 0.5));
-    float distortion2 = max(0.0, 5.0 * point.y * (slider2 - 0.5));
-    float sdf = mix(baseSdf, shapeMix, mix(engine_pos, 1.0, transition)) + distortion1 + distortion2;
-  - Note taken on [2025-08-26 Di 21:59] \\
-    - [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
+  - Note taken on [2026-02-06 Fr 22:46] \\
+    F-35 cockpit
+    [[https://realsimulator.com/f-35-cockpit/]]
+    [[https://msfsaddons.com/2021/09/29/indiafoxtecho-shows-first-images-of-the-f-35-cockpit-in-msfs/]]
+  - Note taken on [2026-02-01 So 15:48] \\
+    Thrust vectoring:
+    If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
+    A combination of pitch and roll can produce whatever attitude control you need. source
+    [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
+    [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/][thrust vectoring with aerospike]]
   - Note taken on [2025-08-26 Tue 09:21] \\
     - Links by Substantial_Marzipan about linear aerospike:
       - https://aerospaceweb.org/design/aerospike/aerospike.shtml
       - https://en.m.wikipedia.org/wiki/Rocketdyne_XRS-2200
+    - Project by ertugrulcetin u/ertucetin
+      - https://github.com/ertugrulcetin/clojure-100k-cubes-lwjgl
   - Note taken on [2025-08-25 Mo 21:26] \\
     - [[http://mae-nas.eng.usu.edu/MAE_5540_Web/propulsion_systems/section4/section4.2.pdf][section4.2.pdf]]
   - Note taken on [2025-08-24 So 20:58] \\
@@ -34,37 +38,40 @@
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
     - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
+    - [[https://freesound.org/people/craigsmith/sounds/479498/]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [X] integration test for model and plume
-  - [X] use multimethod to dispatch rendering of plume, RCS, and maybe clouds
-  - [X] refactor large cloud rendering method
-  - [X] update LWJGL to 3.4.0
-  - [ ] add RCS state to physics-state
-  - [ ] use state variable to consolidate atoms and simplify recording and playback code
+  - [ ] display perihel aphel and time to, Check out poliastro and hapsira
+  - [ ] reentry physics
+    - [ ] controlled reentry should be possible
+      - [ ] add aerodynamics tests for control authority (pitch rate)
+      - [ ] add aerodynamics tests for trajectory (bank angle to control vertical lift component, tolerable g-forces and heat)
+    - [ ] reentry flame
+      - [[https://www.shadertoy.com/view/XX3fDH]]
+      - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
+    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
+  - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
+  - [ ] release new version and post about it
+  - [ ] finish tidying up core
   - [ ] schemas for model, planet, and atmosphere geometry renderer
-  - [ ] create high level rendering methods to simplify main program and integration tests
+  - [ ] simplify recording and playback code
+  - [ ] allow setting of heading in location dialog
+  - [ ] thrust vectoring
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
-  - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
-  - [ ] Thrust vectoring:
-        If they downthrottle the chambers on one side, they can pitch; if they downthrottle on opposite corners, they can roll.
-        A combination of pitch and roll can produce whatever attitude control you need. source
-        [[https://forum.kerbalspaceprogram.com/topic/188379-is-a-gimballed-aerospike-possible/]]
   - [ ] animate control surfaces and air brake
   - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
-  - [ ] limit time step to avoid physics problems
+  - [ ] use different dead zone for RCS thruster joystick control
   - [ ] yaw stabilisation
   - [ ] kill rotation
-  - [ ] display perihel aphel and time to, Check out poliastro and hapsira
+  - [ ] safe time lapse inside and outside of atmosphere
   - [ ] block gear up when on the ground
   - [ ] Radar altitude
   - [ ] Elevator trim
   - [ ] nav lights, strobe lights, landing lights, blinking beacon/position lights
   - [ ] moon landing physics (hover thrusters), hover thruster locations
   - [ ] docking physics
-  - [ ] reentry flame
 * TODO [#B] add launchpad and runway                                   :scenery:
   - Note taken on [2025-08-14 Do 12:58] \\
     [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,
@@ -79,8 +86,20 @@
   - [ ] try one object casting shadow on another (pack object shadow maps into one?)
 * TODO [#B] sound effects                                            :immersion:
   - Note taken on [2025-08-16 Sa 22:05] \\
+    ffmpeg -i input.mp3 -filter:a "asetrate=96000" -r 48000 -ac 1 output.mp3
     [[https://freesound.org/people/Andrewkn/sounds/502864/]]
     [[https://www.epidemicsound.com/sound-effects/]]
+    [[https://www.youtube.com/watch?v=FcW9kUUTfxY]]
+    [[https://pixabay.com/sound-effects/film-special-effects-cockpit-sound-of-landing-gear-deployment-aviation-audio-328162/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-thud4-42479/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-large-rocket-engine-86240/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-blazing-fire-394355/]]
+    [[https://pixabay.com/sound-effects/technology-air-conditioner-02-414913/]]
+    [[https://pixabay.com/sound-effects/nature-air-ambience-234180/]]
+    [[https://pixabay.com/sound-effects/technology-wall-air-conditioner-43901/]]
+    [[https://pixabay.com/sound-effects/technology-air-conditioner-running-return-vent-391936/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-car-brake-325519/]]
+    [[https://pixabay.com/sound-effects/film-special-effects-breaking-the-sound-barrier-77353/]]
   - [ ] beep-beep sound, paraglider audio?
   - [ ] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
@@ -169,6 +188,7 @@
    - [ ] breakdown into five tasks (What player does in your game), what actions the player uses to fulfill this task, be as specific as you can, add GIFs
 ** TODO steam page
    steam page with trailer 90-180 seconds long (starting with gameplay immediately, end with call to action (wishlist now),
+   gamespress.com press release,
    show UI (make outside cockpit UI?), easy to understand shots with player interaction 3-5 seconds each, show variety in biomes,
    (1920x1080, 5000 kbps, 30 fps, mp4)), capsule art (recognisable professional designed thumbnail),
    first 4 screenshots important - bright ones and dark ones (at least 3 different environments),
@@ -229,10 +249,19 @@
     * Visual effects
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
   - [ ] winter daytime is too dark, adjust range?
-  - [ ] limit timestep on startup to prevent numerical problems
-  - [ ] add keyboard mapping help page!
+  - [X] limit timestep to prevent numerical problems
+  - [X] add keyboard mapping help page!
+  - [-] common playtest errors
+    - [X] audio too loud
+    - [ ] tutorial
+    - [ ] scale UI according to screen resolution
+    - [ ] feedback for player accomplishments
+    - [ ] keyboard bindings customisation
+    - [ ] difficulty spikes
+    - [ ] clear objectives
+    - [ ] camera problems
   - [ ] borderless fullscreen support
-  - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
+  - [X] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] configurable key controls
   - [ ] joystick hat to control camera
   - [ ] limit dt or pause
@@ -260,3 +289,4 @@
     - [ ] crashes in water
     - [ ] burning up
     - [ ] wing stress
+  - [ ] free camera (move around camera freely)

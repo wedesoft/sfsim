@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -150,7 +150,7 @@
                                bitmap-font#         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
                                ~gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font#) buffer-initial-size#)]
                            (nuklear-dark-style ~gui)
-                           (nuklear-window ~gui "control test window" 0 0 160 40 false
+                           (nuklear-window ~gui "control test window" 0 0 160 40 :widget
                                            ~@body)
                            (render-nuklear-gui ~gui 160 40)
                            (destroy-nuklear-gui ~gui)
@@ -174,10 +174,10 @@
                gui1                (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)
                gui2                (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size)]
            (gui-framebuffer-render 320 40
-                                   (nuklear-window gui1 "window-1" 0 0 160 40 false
+                                   (nuklear-window gui1 "window-1" 0 0 160 40 :widget
                                                    (layout-row-dynamic gui1 32 1)
                                                    (button-label gui1 "Button A"))
-                                   (nuklear-window gui2 "window-2" 160 0 160 40 false
+                                   (nuklear-window gui2 "window-2" 160 0 160 40 :widget
                                                    (layout-row-dynamic gui2 32 1)
                                                    (button-label gui2 "Button B"))
                                    (render-nuklear-gui gui1 320 40)

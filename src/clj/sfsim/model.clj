@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -10,7 +10,7 @@
     [clojure.math :refer (floor)]
     [comb.template :as template]
     [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
-    [fastmath.vector :refer (vec3 vec4 mult add)]
+    [fastmath.vector :refer (vec3 mult add)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
                               destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay)]
@@ -18,7 +18,7 @@
     [sfsim.plume :refer (model-data model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3 fvec3
-                          fmat4 rotation-matrix get-translation)]
+                          fmat4 rotation-matrix get-translation get-translation)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
                           render-planet-geometry)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
@@ -50,8 +50,6 @@
       AIVector3D$Buffer
       AIVectorKey
       Assimp)
-    (fastmath.vector
-      Vec4)
     (org.lwjgl.stb
       STBImage)
     (org.lwjgl.opengl
@@ -561,8 +559,8 @@
 
 (defn fragment-scene
   "Fragment shader for rendering scene in atmosphere"
-  {:malli/schema [:=> [:cat :boolean :boolean N N0 [:vector :double] [:vector :double]] render/shaders]}
-  [textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves]
+  {:malli/schema [:=> [:cat :boolean :boolean N N0] render/shaders]}
+  [textured bump num-steps num-scene-shadows]
   [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
    (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
    (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function cloud-overlay
@@ -628,10 +626,7 @@
   {:malli/schema [:=> [:cat :boolean :boolean N0 N0 data] :int]}
   [textured bump texture-offset num-scene-shadows data]
   (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
-        perlin-octaves        (-> data :sfsim.clouds/data :sfsim.clouds/perlin-octaves)
-        cloud-octaves         (-> data :sfsim.clouds/data :sfsim.clouds/cloud-octaves)
-        model-data            (:sfsim.model/data data)
-        fragment-shader       (fragment-scene textured bump num-steps num-scene-shadows perlin-octaves cloud-octaves)
+        fragment-shader       (fragment-scene textured bump num-steps num-scene-shadows)
         program               (make-program :sfsim.render/vertex [(vertex-scene textured bump num-scene-shadows)]
                                             :sfsim.render/fragment fragment-shader)]
     (setup-scene-static-uniforms program texture-offset num-scene-shadows textured bump data)
@@ -680,8 +675,7 @@
 (defn- extract-empty
   "Convert empty node to vector"
   [node]
-  (let [v (mulv (::transform node) (vec4 0 0 0 1))]
-    (vec3 (.x ^Vec4 v) (.y ^Vec4 v) (.z ^Vec4 v))))
+  (get-translation (::transform node)))
 
 
 (defn- extract-hull
@@ -769,10 +763,10 @@
 
 (defn render-scenes
   "Render a list of scenes"
-  {:malli/schema [:=> [:cat scene-renderer render-vars model-vars shadow-vars [:vector scene-shadow]
+  {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector scene-shadow]
                             [:map [:sfsim.clouds/distance texture-2d]] texture-2d [:vector [:map [::root node]]]]
                       :nil]}
-  [scene-renderer render-vars model-vars shadow-vars scene-shadows geometry clouds scenes]
+  [scene-renderer render-vars shadow-vars scene-shadows geometry clouds scenes]
   (let [render-config      (:sfsim.render/config scene-renderer)
         cloud-data         (:sfsim.clouds/data scene-renderer)
         atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)

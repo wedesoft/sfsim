@@ -13,12 +13,12 @@ jobs:
     - uses: actions/checkout@v6
     - name: Cache Jolt bindings
       id: cache-libjolt
-      uses: actions/cache@v5.0.2
+      uses: actions/cache@v5.0.3
       with:
         path: libjolt.so
         key: ${{ runner.os }}-libjolt-5.5.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
     - name: Cache Maven packages
-      uses: actions/cache@v5.0.2
+      uses: actions/cache@v5.0.3
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('deps.edn') }}
@@ -57,7 +57,7 @@ jobs:
     - name: Install Clojure
       uses: DeLaGuardo/setup-clojure@13.5.2
       with:
-        cli: 1.12.4.1582
+        cli: 1.12.4.1602
     - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
       name: Build Jolt bindings
       run: make

@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -389,15 +389,15 @@
 
 (defcfn create-and-add-vehicle-constraint-
   "Create and add vehicle constraint (private method)"
-  create_and_add_vehicle_constraint [::mem/int ::mem/pointer] ::mem/pointer)
+  create_and_add_vehicle_constraint [::mem/int ::vec3 ::mem/pointer] ::mem/pointer)
 
 
 (defn create-and-add-vehicle-constraint
   "Create and add vehicle constraint"
-  [body up forward wheels]
+  [body world-up up forward wheels]
   (let [constraint-settings (make-vehicle-constraint-settings up forward)]
     (doseq [wheel wheels] (vehicle-constraint-settings-add-wheel constraint-settings (make-wheel-settings wheel up forward)))
-    (create-and-add-vehicle-constraint- body constraint-settings)))
+    (create-and-add-vehicle-constraint- body world-up constraint-settings)))
 
 
 (defcfn set-brake-input
@@ -415,9 +415,40 @@
   get_suspension_length [::mem/pointer ::mem/int] ::mem/float)
 
 
+(defcfn set-suspension-length
+  "Set wheel suspension length"
+  set_suspension_length [::mem/pointer ::mem/int ::mem/float] ::mem/void)
+
+
 (defcfn get-wheel-rotation-angle
   "Get wheel rotation angle"
   get_wheel_rotation_angle [::mem/pointer ::mem/int] ::mem/float)
+
+
+(defcfn set-wheel-rotation-angle
+  "Set wheel rotation angle"
+  set_wheel_rotation_angle [::mem/pointer ::mem/int ::mem/float] ::mem/void)
+
+
+(defcfn get-wheel-angular-velocity
+  "Get wheel angular velocity"
+  get_wheel_angular_velocity [::mem/pointer ::mem/int] ::mem/float)
+
+
+(defcfn set-wheel-angular-velocity
+  "Set wheel angular velocity"
+  set_wheel_angular_velocity [::mem/pointer ::mem/int ::mem/float] ::mem/void)
+
+
+(defcfn has-contact-
+  "Check if wheel has contact with an object"
+  has_contact [::mem/pointer ::mem/int] ::mem/byte)
+
+
+(definline has-contact?
+  "Check if wheel has contact with an object"
+  [constraint wheel]
+  `(not (zero? (has-contact- ~constraint ~wheel))))
 
 
 (defcfn has-hit-hard-point-
@@ -425,7 +456,7 @@
   has_hit_hard_point [::mem/pointer ::mem/int] ::mem/byte)
 
 
-(definline has-hit-hard-point
+(definline has-hit-hard-point?
   "Check if wheel suspension has hit its upper limit"
   [constraint wheel]
   `(not (zero? (has-hit-hard-point- ~constraint ~wheel))))

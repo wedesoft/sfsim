@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -414,26 +414,31 @@
     (get-vector3 terrain tile-y tile-x)))
 
 
+(def planet-config
+  (m/schema [:map [:sfsim.planet/level N] [:sfsim.planet/tilesize N] [:sfsim.planet/radius :double]]))
+
+
 (defn distance-to-surface
   "Get distance of surface to planet center for given radial vector"
-  {:malli/schema [:=> [:cat fvec3 :int :int :double [:vector [:vector :boolean]]] :double]}
-  [point level tilesize radius split-orientations]
-  (let [p                      (project-onto-cube point)
-        face                   (determine-face p)
-        j                      (cube-j face p)
-        i                      (cube-i face p)
-        {::keys [^long row ^long column ^long tile-y ^long tile-x ^double dy ^double dx]}
-                               (tile-coordinates j i level tilesize)
-        terrain                (load-surface-tile level tilesize face row column)
-        center                 (tile-center face level row column radius)
-        orientation            (nth (nth split-orientations tile-y) tile-x)
-        triangle               (mapv (fn [[^long y ^long x]] (get-vector3 terrain (+ y ^long tile-y) (+ x ^long tile-x)))
-                                     (tile-triangle dy dx orientation))
-        plane                  (apply points->plane triangle)
-        ray                    #:sfsim.ray{:origin (sub center) :direction point}
-        multiplier             (ray-plane-intersection-parameter plane ray)
-        magnitude-point        (mag point)]
-    (* ^double multiplier magnitude-point)))
+  {:malli/schema [:=> [:cat planet-config [:vector [:vector :boolean]]] [:=> [:cat fvec3] :double]]}
+  [{:sfsim.planet/keys [level tilesize radius]} split-orientations]
+  (fn [point]
+      (let [p                      (project-onto-cube point)
+            face                   (determine-face p)
+            j                      (cube-j face p)
+            i                      (cube-i face p)
+            {::keys [^long row ^long column ^long tile-y ^long tile-x ^double dy ^double dx]}
+            (tile-coordinates j i level tilesize)
+            terrain                (load-surface-tile level tilesize face row column)
+            center                 (tile-center face level row column radius)
+            orientation            (nth (nth split-orientations tile-y) tile-x)
+            triangle               (mapv (fn [[^long y ^long x]] (get-vector3 terrain (+ y ^long tile-y) (+ x ^long tile-x)))
+                                         (tile-triangle dy dx orientation))
+            plane                  (apply points->plane triangle)
+            ray                    #:sfsim.ray{:origin (sub center) :direction point}
+            multiplier             (ray-plane-intersection-parameter plane ray)
+            magnitude-point        (mag point)]
+        (* ^double multiplier magnitude-point))))
 
 
 (defn rotate-b-long

@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -9,7 +9,7 @@
   (:require
     [clojure.core.cache :as cache]
     [clojure.java.io :as io]
-    [clojure.math :refer (sin)]
+    [clojure.math :refer (PI sin)]
     [clojure.set :refer (map-invert)]
     [malli.core :as m]
     [progrock.core :as p])
@@ -500,21 +500,43 @@
 (defn byte-buffer->byte-array
   [buffer]
   (if buffer
-    (do
-      (let [array (byte-array (.limit ^java.nio.DirectByteBuffer buffer))]
-        (.get ^java.nio.DirectByteBuffer buffer array)
-        array))
+    (let [array (byte-array (.limit ^java.nio.DirectByteBuffer buffer))]
+      (.get ^java.nio.DirectByteBuffer buffer array)
+      array)
     (byte-array [])))
 
 
 (defn float-buffer->float-array
   [buffer]
   (if buffer
-    (do
-      (let [array (float-array (.limit ^java.nio.DirectFloatBufferU buffer))]
-        (.get ^java.nio.DirectFloatBufferU buffer array)
-        array))
+    (let [array (float-array (.limit ^java.nio.DirectFloatBufferU buffer))]
+      (.get ^java.nio.DirectFloatBufferU buffer array)
+      array)
     (float-array [])))
+
+
+(defmacro ignore-nil->
+  "Threading macro ignoring nil results"
+  [value identifier & body]
+  (if (empty? body)
+    value
+    `(let [~identifier    ~value
+           result#        ~(first body)
+           non-nil-value# (if (nil? result#) ~identifier result#)]
+       (ignore-nil-> non-nil-value# ~identifier ~@(rest body)))))
+
+
+(defn invert-map
+  "Invert hash map"
+  {:malli/schema [:=> [:cat [:map-of :any :any]] [:map-of :any :any]]}
+  [input]
+  (zipmap (vals input) (keys input)))
+
+
+(defn limit-angle
+  "Wrap around angle to be between -PI and +PI"
+  ^double [^double angle]
+  (- ^double (mod (+ angle PI) (* 2.0 PI)) PI))
 
 
 (set! *warn-on-reflection* false)

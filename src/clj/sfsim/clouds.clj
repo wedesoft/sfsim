@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -10,10 +10,10 @@
     [clojure.math :refer (tan pow log)]
     [clojure.string :refer (split)]
     [comb.template :as template]
-    [fastmath.vector :refer (vec4 vec3 mag)]
-    [fastmath.matrix :refer (mulm mulv inverse)]
+    [fastmath.vector :refer (vec3 mag)]
+    [fastmath.matrix :refer (mulm inverse)]
     [malli.core :as m]
-    [sfsim.matrix :refer (transformation-matrix vec4->vec3 quaternion->matrix projection-matrix)]
+    [sfsim.matrix :refer (transformation-matrix quaternion->matrix projection-matrix get-translation)]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.bluenoise :refer (noise-size) :as bluenoise]
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
@@ -561,7 +561,7 @@
         camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
         camera-to-object   (mulm world-to-object camera-to-world)
-        object-origin      (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
+        object-origin      (get-translation camera-to-object)
         z-far              (:sfsim.render/z-far planet-render-vars)
         z-offset           1.0
         overlay-projection (projection-matrix overlay-width overlay-height min-z-near (+ ^double z-far ^double z-offset) fov)]
@@ -636,7 +636,7 @@
 
 
 (defn setup-dynamic-cloud-uniforms
-  [program other cloud-render-vars model-vars shadow-vars]
+  [program other cloud-render-vars shadow-vars]
   (let [render-config   (:sfsim.render/config other)
         cloud-data      (:sfsim.clouds/data other)
         atmosphere-luts (:sfsim.atmosphere/luts other)]
@@ -703,37 +703,37 @@
 
 
 (defn render-cloud-front
-  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars model-vars shadow-vars]
+  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars shadow-vars]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
     (use-program (:sfsim.clouds/atmosphere-front programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-front programs) other cloud-render-vars model-vars shadow-vars)
+    (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-front programs) other cloud-render-vars shadow-vars)
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
     (use-program (:sfsim.clouds/planet-front programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-front programs) other cloud-render-vars model-vars shadow-vars)
+    (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-front programs) other cloud-render-vars shadow-vars)
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
     (use-program (:sfsim.clouds/scene-front programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/scene-front programs) other cloud-render-vars model-vars shadow-vars)
+    (setup-dynamic-cloud-uniforms (:sfsim.clouds/scene-front programs) other cloud-render-vars shadow-vars)
     (render-quads vao)))
 
 
 (defn render-cloud-back
-  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars model-vars shadow-vars]
+  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars shadow-vars]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
     (use-program (:sfsim.clouds/atmosphere-back programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-back programs) other cloud-render-vars model-vars shadow-vars)
+    (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-back programs) other cloud-render-vars shadow-vars)
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
     (use-program (:sfsim.clouds/planet-back programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-back programs) other cloud-render-vars model-vars shadow-vars)
+    (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-back programs) other cloud-render-vars shadow-vars)
     (render-quads vao)))
 
 
 (defn render-cloud-overlay
   ([cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms geometry]
    (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms geometry true true))
-  ([{:sfsim.clouds/keys [programs vao plume-vao] :as other} cloud-render-vars model-vars shadow-vars plume-transforms geometry
+  ([{:sfsim.clouds/keys [programs] :as other} cloud-render-vars model-vars shadow-vars plume-transforms geometry
     front back]
    (let [overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
          overlay-height  (:sfsim.render/overlay-height cloud-render-vars)
@@ -749,11 +749,11 @@
                          (clear (vec3 0.0 0.0 0.0) 0.0)
                          (without-depth-test
                            (with-stencils
-                             (when front (render-cloud-front other cloud-render-vars model-vars shadow-vars))
+                             (when front (render-cloud-front other cloud-render-vars shadow-vars))
                              (with-underlay-blending
                                (doseq [[thruster transform] plume-transforms]
                                       (render-plume-overlay other thruster model-vars transform))
-                               (when back (render-cloud-back other cloud-render-vars model-vars shadow-vars))))))
+                               (when back (render-cloud-back other cloud-render-vars shadow-vars))))))
      overlay)))
 
 

@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -30,9 +30,7 @@
     (clojure.lang
       Keyword)
     (org.lwjgl.glfw
-      GLFW)
-    (org.lwjgl.opengl
-      GL30)))
+      GLFW)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -150,7 +148,6 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
-  vec3 object_point;
   vec4 camera_point;
 } frag_in;
 out vec3 fragColor;
@@ -381,7 +378,6 @@ out GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
-  vec3 object_point;
   vec4 camera_point;
 } vs_out;
 void main()
@@ -608,7 +604,6 @@ in GEO_OUT
 {
   vec2 colorcoord;
   vec3 point;
-  vec3 object_point;
   vec4 camera_point;
 } fs_in;
 out vec3 fragColor;

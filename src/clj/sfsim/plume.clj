@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -9,11 +9,10 @@
     (:require
       [malli.core :as m]
       [comb.template :as template]
-      [sfsim.matrix :refer (fvec3 fmat4)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]
-      [sfsim.render :refer (uniform-float uniform-float uniform-matrix4 uniform-vector3)]))
+      [sfsim.render :refer (uniform-float uniform-float)]))
 
 
 (def plume-phase

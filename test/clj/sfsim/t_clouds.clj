@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -1624,7 +1624,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
          (facts
            (with-redefs [clouds/make-cloud-program make-mock-cloud-program
                          clouds/setup-geometry-uniforms mock-setup-geometry-uniforms
-                         clouds/setup-dynamic-cloud-uniforms (fn [_program _other _cloud-render-vars _model-vars _shadow-vars])
+                         clouds/setup-dynamic-cloud-uniforms (fn [_program _other _cloud-render-vars _shadow-vars])
                          plume/plume-indices [2 3 1 0]
                          plume/plume-vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]]
              (with-invisible-window

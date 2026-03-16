@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -351,6 +351,25 @@
       (io/input-stream url)
       (io/file filename))))
 
+(defn download-audio
+  "Download Spaceship model"
+  [& _]
+  (doseq [filename ["andrew-kn-at-the-edge-of-space.ogg"
+                    "andrew-kn-surrealism-ambient-mix.ogg"
+                    "gear-deploy.ogg"
+                    "gear-retract.ogg"
+                    "main-engine.ogg"
+                    "thruster.ogg"
+                    "air-flow.ogg"
+                    "drag.ogg"
+                    "tyre-skid.ogg"
+                    "sonic-boom.ogg"]]
+         (let [url      (str "https://www.wedesoft.de/downloads/" filename)]
+           (.println *err* (str "Downloading " url " ..."))
+           (io/copy
+             (io/input-stream url)
+             (io/file (str "data/audio/" filename))))))
+
 (defn download-ephemeris
   "Download NASA JPL planet ephemeris data from https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/"
   [& _]
@@ -392,6 +411,7 @@
   (bluenoise)
   (cloud-cover)
   (download-spaceship)
+  (download-audio)
   (download-bluemarble)
   (download-blackmarble)
   (download-elevation)

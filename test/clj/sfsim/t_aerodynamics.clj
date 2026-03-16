@@ -1,4 +1,4 @@
-;; Copyright (C) 2025 Jan Wedekind <jan@wedesoft.de>
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
 ;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
 ;;
 ;; This source code is licensed under the Eclipse Public License v1.0
@@ -553,3 +553,10 @@
              (:sfsim.aerodynamics/moments (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed
                                                              (vec3 0 1 2) 0.25 0.4))
              => (q/rotate-vector (q/->Quaternion 0.0 1.0 0.0 0.0) (vec3 -0.5 -0.125 -0.25))))))
+
+
+(facts "Test control authority and lift for different flight stages"
+       (let [{:sfsim.aerodynamics/keys [forces moments]}
+             (aerodynamic-loads 0.0 (q/->Quaternion 1 0 0 0) (vec3 0 0 0) (vec3 0 0 0) (vec3 0 0 0) 0.0 0.0)]
+         forces => (roughly-vector (vec3 0 0 0) 1e-6)
+         moments => (roughly-vector (vec3 0 0 0) 1e-6)))
