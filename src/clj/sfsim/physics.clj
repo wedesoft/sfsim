@@ -7,7 +7,7 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [clojure.math :refer (PI cos sin atan2 hypot to-radians sqrt acos)]
+    [clojure.math :refer (PI cos sin tan atan2 hypot to-radians sqrt acos log1p sinh)]
     [clojure.set :refer (union)]
     [fastmath.matrix :refer (mulv mulm inverse)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot)]
@@ -795,7 +795,7 @@
   ^double [planet state]
   (let [epsilon (specific-mechanical-energy planet state)
         h       (specific-angular-momentum state)]
-    (/ (mag h) (sqrt (* -2.0 epsilon)))))
+    (/ (mag h) (sqrt (abs (* 2.0 epsilon))))))
 
 
 (defn eccentricity
@@ -833,22 +833,36 @@
         v      (get-linear-speed ::orbit state)
         sign   (if (>= (dot v r) 0.0) 1.0 -1.0)
         cos-nu (* (/ 1.0 e) (- (/ (dot h h) (* mu (mag r))) 1.0))]
-    (* sign (acos cos-nu))))
+    (* sign (acos (clamp cos-nu -1.0 1.0)))))
 
 
 (defn eccentric-anomaly
-  "Get angle between periapsis and current position"
+  "Get angle between periapsis and current position for elliptical orbit"
   ^double [planet state]
   (let [f (true-anomaly planet state)
         e (eccentricity planet state)]
     (atan2 (* (sqrt (- 1.0 e e)) (sin f)) (+ e (cos f)))))
 
 
+(defn atanh
+  "atanh(x) = 0.5 * log(1 + (2x / 1-x)"
+  ^double [^double x]
+  (* 0.5 (log1p (* 2.0 (/ x (- 1.0 x))))))
+
+
+(defn hyperbolic-anomaly
+  "Get angle between periapsis and current position for hyperbolic orbit"
+  ^double [planet state]
+  (let [f (true-anomaly planet state)
+        e (eccentricity planet state)]
+    (* 2.0 (atanh (* (sqrt (/ (- e 1.0) (+ e 1.0))) (tan (/ f 2.0)))))))  ; TODO: test for p
+
+
 (defn mean-motion
   "Get mean motion of orbit in radians per second"
   ^double [planet state]
   (let [mu     (gravitational-parameter planet)
-        a      (semi-major-axis planet state)]
+        a      (abs (semi-major-axis planet state))]
     (sqrt (/ mu (* a a a)))))
 
 
@@ -861,9 +875,12 @@
 (defn mean-anomaly
   "Get mean anomaly of orbit"
   ^double [planet state]
-  (let [E (eccentric-anomaly planet state)
-        e (eccentricity planet state)]
-    (- E (* e (sin E)))))
+  (let [e (eccentricity planet state)]
+    (if (<= e 1.0)
+      (let [E (eccentric-anomaly planet state)]
+        (- E (* e (sin E))))
+      (let [H (hyperbolic-anomaly planet state)]
+        (- (* e (sinh H)) H)))))
 
 
 (defn time-since-periapsis

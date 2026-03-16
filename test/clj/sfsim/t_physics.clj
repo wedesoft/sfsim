@@ -510,12 +510,15 @@
 
 (facts "Get orbital parameters"
        (let [planet {:sfsim.planet/mass 5.9722e+24}]
+         ; Stationary position
          (gravitational-parameter {:sfsim.planet/mass 5.9722e+24}) => (* 5.9722e+24 6.67430e-11)
          (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion 1 0 0 0))
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
          (specific-mechanical-energy planet @state) => (- (/ (gravitational-parameter planet) 6658000.0))
+         ; At periapsis of elliptical orbit
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 9000 0) (vec3 0 0 0))
-         (specific-mechanical-energy planet @state) => (- (/ (* 9000.0 9000.0) 2.0) (/ (gravitational-parameter planet) 6658000.0))
+         (specific-mechanical-energy planet @state) => (- (/ (* 9000.0 9000.0) 2.0)
+                                                          (/ (gravitational-parameter planet) 6658000.0))
          (semi-major-axis planet @state) => (roughly 10290123.277 1e-3)
          (semi-minor-axis planet @state) => (roughly 9627788.820 1e-3)
          (specific-angular-momentum @state) => (roughly-vector (vec3 0 0 59922000000) 1e-3)
@@ -531,6 +534,7 @@
                alpha     (atan2 e -1)
                v-mag     (sqrt (* 2.0 (+ epsilon (/ (gravitational-parameter planet) p))))
                v         (vec3 (* v-mag (cos alpha)) (* v-mag (sin alpha)) 0)]
+           ; At semi-parameter position of elliptical orbit
            (swap! state set-pose :sfsim.physics/orbit (vec3 0 p 0) (q/->Quaternion 1 0 0 0))
            (swap! state set-speed :sfsim.physics/orbit v (vec3 0 0 0))
            (eccentricity planet @state) => (roughly 0.352972 1e-6)
@@ -539,10 +543,43 @@
            (mean-anomaly planet @state) => (roughly 0.697955 1e-6)
            (time-since-periapsis planet @state) => (roughly 1153.953 1e-3)
            (time-since-apoapsis planet @state) => (roughly (- 1153.953 (/ 10388.210 2.0)) 1e-3)
+           ; At other semi-parameter position of elliptical orbit
            (swap! state set-speed :sfsim.physics/orbit (sub v) (vec3 0 0 0))
            (true-anomaly planet @state) => (roughly (- (/ PI 2)) 1e-6)
            (time-since-periapsis planet @state) => (roughly -1153.953 1e-3)
-           (time-since-apoapsis planet @state) => (roughly (- (/ 10388.210 2.0) 1153.953) 1e-3))))
+           (time-since-apoapsis planet @state) => (roughly (- (/ 10388.210 2.0) 1153.953) 1e-3))
+         ; At periapsis of hyperbolic orbit
+         (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion 1 0 0 0))
+         (swap! state set-speed :sfsim.physics/orbit (vec3 0 12000 0) (vec3 0 0 0))
+         (specific-mechanical-energy planet @state) => (- (/ (* 12000.0 12000.0) 2.0)
+                                                          (/ (gravitational-parameter planet) 6658000.0))
+         (semi-major-axis planet @state) => (roughly -16428019.136 1e-3)
+         (semi-minor-axis planet @state) => (roughly 16219878.755 1e-3)
+         (eccentricity planet @state) => (roughly 1.405283 1e-6)
+         (periapsis planet @state) => (roughly 6658000.0 1e-3)
+         (apoapsis planet @state) => (roughly -39514038.272 1e-3)
+         (true-anomaly planet @state) => 0.0
+         (mean-anomaly planet @state) => 0.0
+         (time-since-periapsis planet @state) => 0.0
+         (let [a         (semi-major-axis planet @state)
+               e         (eccentricity planet @state)
+               epsilon   (specific-mechanical-energy planet @state)
+               p         (* a (- 1.0 (* e e)))
+               alpha     (atan2 e -1)
+               v-mag     (sqrt (* 2.0 (+ epsilon (/ (gravitational-parameter planet) p))))
+               v         (vec3 (* v-mag (cos alpha)) (* v-mag (sin alpha)) 0)]
+           ; At semi-parameter position of hyperbolic orbit
+           (swap! state set-pose :sfsim.physics/orbit (vec3 0 p 0) (q/->Quaternion 1 0 0 0))
+           (swap! state set-speed :sfsim.physics/orbit v (vec3 0 0 0))
+           (eccentricity planet @state) => (roughly 1.405283 1e-6)
+           (true-anomaly planet @state) => (roughly (/ PI 2) 1e-6)
+           (hyperbolic-anomaly planet @state) => (roughly 0.872386 1e-6)
+           (mean-anomaly planet @state) => (roughly 0.515092 1e-6)
+           (time-since-periapsis planet @state) => (roughly 1717.880 1e-3)
+           ; At other semi-parameter position of hyperbolic orbit
+           (swap! state set-speed :sfsim.physics/orbit (sub v) (vec3 0 0 0))
+           (true-anomaly planet @state) => (roughly (- (/ PI 2)) 1e-6)
+           (time-since-periapsis planet @state) => (roughly -1717.880 1e-3))))
 
 
 (jolt/remove-and-destroy-body sphere)
