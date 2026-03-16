@@ -951,21 +951,30 @@
   [gui ^long h state frametime]
   (let [earth-radius    (:sfsim.planet/radius config/planet-config)
         object-position (physics/get-position :sfsim.physics/surface (:physics state))
+        eccentricity    (physics/eccentricity config/planet-config (:physics state))
         controls        (-> state :input :sfsim.input/controls)
-        text            (format "\rh = %10.1f m, v = %7.1f m/s, hp = %10.1f m, tp = %7.1f s, %s%s%s%s, fps = %6.1f"
+        text1           (format "h = %10.1f m, v = %7.1f m/s, %s%s%s%s, fps = %6.1f"
                                 (- (fv/mag object-position) ^double earth-radius)
                                 (:sfsim.physics/display-speed (:physics state))
-                                (- (physics/periapsis config/planet-config (:physics state)) earth-radius)
-                                (- (physics/time-since-periapsis config/planet-config (:physics state)))
                                 (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
                                 (if (:sfsim.input/brake controls) ", brake"
                                   (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
                                 (if (:sfsim.input/air-brake controls) ", air brake" "")
                                 (if (-> state :input :sfsim.input/pause) ", pause" "")
-                                (/ 1.0 ^double frametime))]
-    (nuklear-window gui "Information" 10 (- h 42) 640 32 :widget
-                    (layout-row-dynamic gui 32 1)
-                    (text-label gui text))))
+                                (/ 1.0 ^double frametime))
+        text2           (format "hp = %10.1f m, ha = %10.1f m, tp = %7.1f s, ta = %7.1f s"
+                                (- (physics/periapsis config/planet-config (:physics state)) earth-radius)
+                                (if (< eccentricity 1.0)
+                                  (- (physics/apoapsis config/planet-config (:physics state)) earth-radius)
+                                  ##NaN)
+                                (- (physics/time-since-periapsis config/planet-config (:physics state)))
+                                (if (< eccentricity 1.0)
+                                  (- (physics/time-since-apoapsis config/planet-config (:physics state)))
+                                  ##NaN))]
+    (nuklear-window gui "Information" 10 (- h 64) 640 64 :widget
+                    (layout-row-dynamic gui 26 1)
+                    (text-label gui text1)
+                    (text-label gui text2))))
 
 
 (set! *warn-on-reflection* false)
