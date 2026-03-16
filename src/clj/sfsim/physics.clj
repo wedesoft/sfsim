@@ -790,6 +790,14 @@
     (- (/ mu (* 2.0 epsilon)))))
 
 
+(defn semi-minor-axis
+  "Get semi-minor axis of orbit"
+  ^double [planet state]
+  (let [epsilon (specific-mechanical-energy planet state)
+        h       (specific-angular-momentum state)]
+    (/ (mag h) (sqrt (* -2.0 epsilon)))))
+
+
 (defn eccentricity
   "Get eccentricity of orbit"
   ^double [planet state]
