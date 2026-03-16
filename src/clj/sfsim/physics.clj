@@ -7,7 +7,7 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [clojure.math :refer (cos sin atan2 hypot to-radians sqrt acos)]
+    [clojure.math :refer (PI cos sin atan2 hypot to-radians sqrt acos)]
     [clojure.set :refer (union)]
     [fastmath.matrix :refer (mulv mulm inverse)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot)]
@@ -836,12 +836,52 @@
     (* sign (acos cos-nu))))
 
 
+(defn eccentric-anomaly
+  "Get angle between periapsis and current position"
+  ^double [planet state]
+  (let [f (true-anomaly planet state)
+        e (eccentricity planet state)]
+    (atan2 (* (sqrt (- 1.0 e e)) (sin f)) (+ e (cos f)))))
+
+
 (defn mean-motion
   "Get mean motion of orbit in radians per second"
   ^double [planet state]
   (let [mu     (gravitational-parameter planet)
         a      (semi-major-axis planet state)]
     (sqrt (/ mu (* a a a)))))
+
+
+(defn orbital-period
+  "Get time to complete one orbit in seconds"
+  ^double [planet state]
+  (/ (* 2.0 PI) (mean-motion planet state)))
+
+
+(defn mean-anomaly
+  "Get mean anomaly of orbit"
+  ^double [planet state]
+  (let [E (eccentric-anomaly planet state)
+        e (eccentricity planet state)]
+    (- E (* e (sin E)))))
+
+
+(defn time-since-periapsis
+  "Get time since periapsis"
+  ^double [planet state]
+  (let [M (mean-anomaly planet state)
+        n (mean-motion planet state)]
+    (/ M n)))
+
+
+(defn time-since-apoapsis
+  "Get time since apoapsis"
+  ^double [planet state]
+  (let [t (time-since-periapsis planet state)
+        T (orbital-period planet state)]
+    (if (>= t 0.0)
+      (- t (* 0.5 T))
+      (+ (* 0.5 T) t))))
 
 
 (set! *warn-on-reflection* false)

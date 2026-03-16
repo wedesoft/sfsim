@@ -523,6 +523,7 @@
          (periapsis planet @state) => (roughly 6658000.0 1e-3)
          (apoapsis planet @state) => (roughly 13922246.555 1e-3)
          (/ (* 2.0 PI) (mean-motion planet @state)) => (roughly 10388.210 1e-3)
+         (orbital-period planet @state) => (roughly 10388.210 1e-3)
          (let [a         (semi-major-axis planet @state)
                e         (eccentricity planet @state)
                epsilon   (specific-mechanical-energy planet @state)
@@ -534,8 +535,14 @@
            (swap! state set-speed :sfsim.physics/orbit v (vec3 0 0 0))
            (eccentricity planet @state) => (roughly 0.352972 1e-6)
            (true-anomaly planet @state) => (roughly (/ PI 2) 1e-6)
+           (eccentric-anomaly planet @state) => (roughly 0.993778 1e-6)
+           (mean-anomaly planet @state) => (roughly 0.697955 1e-6)
+           (time-since-periapsis planet @state) => (roughly 1153.953 1e-3)
+           (time-since-apoapsis planet @state) => (roughly (- 1153.953 (/ 10388.210 2.0)) 1e-3)
            (swap! state set-speed :sfsim.physics/orbit (sub v) (vec3 0 0 0))
-           (true-anomaly planet @state) => (roughly (- (/ PI 2)) 1e-6))))
+           (true-anomaly planet @state) => (roughly (- (/ PI 2)) 1e-6)
+           (time-since-periapsis planet @state) => (roughly -1153.953 1e-3)
+           (time-since-apoapsis planet @state) => (roughly (- (/ 10388.210 2.0) 1153.953) 1e-3))))
 
 
 (jolt/remove-and-destroy-body sphere)
