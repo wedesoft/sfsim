@@ -524,21 +524,15 @@
          (apoapsis planet @state) => (roughly 13922246.555 1e-3)
          (let [a         (semi-major-axis planet @state)
                e         (eccentricity planet @state)
-               b         (semi-minor-axis planet @state)
                epsilon   (specific-mechanical-energy planet @state)
-               periapsis (periapsis planet @state)
-               p         (* a (- 1 (* e e)))
-               x         (- p)
-               z         (* (- a periapsis) (/ b a))
-               alpha     (atan2 z x)
+               p         (* a (- 1.0 (* e e)))
+               alpha     (atan2 e -1)
                v-mag     (sqrt (* 2.0 (+ epsilon (/ (gravitational-parameter planet) p))))
-               v         (vec3 (* v-mag (cos alpha)) 0 (* v-mag (sin alpha)))]
-           (println v-mag v)
-           (swap! state set-pose :sfsim.physics/orbit (vec3 0 0 p) (q/->Quaternion 1 0 0 0))
+               v         (vec3 (* v-mag (cos alpha)) (* v-mag (sin alpha)) 0)]
+           (swap! state set-pose :sfsim.physics/orbit (vec3 0 p 0) (q/->Quaternion 1 0 0 0))
            (swap! state set-speed :sfsim.physics/orbit v (vec3 0 0 0))
            (eccentricity planet @state) => (roughly 0.352972 1e-6)
-           ; (true-anomaly planet @state) => (roughly (/ PI 2) 1e-6)
-           )))
+           (true-anomaly planet @state) => (roughly (/ PI 2) 1e-6))))
 
 
 (jolt/remove-and-destroy-body sphere)
