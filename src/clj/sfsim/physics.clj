@@ -7,7 +7,7 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [clojure.math :refer (cos sin atan2 hypot to-radians sqrt)]
+    [clojure.math :refer (cos sin atan2 hypot to-radians sqrt acos)]
     [clojure.set :refer (union)]
     [fastmath.matrix :refer (mulv mulm inverse)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot)]
@@ -813,6 +813,18 @@
   (let [a (semi-major-axis planet state)
         e (eccentricity planet state)]
     (* a (+ 1.0 e))))
+
+
+(defn true-anomaly
+  "Get angle between periapsis and current position"
+  ^double [planet state]
+  (let [mu     (gravitational-parameter planet)
+        e      (eccentricity planet state)
+        h      (specific-angular-momentum state)
+        r      (get-position ::orbit state)
+        v      (get-linear-speed ::orbit state)
+        cos-nu (* (/ 1.0 e) (- (/ (dot h h) (* mu (mag r))) 1.0))]
+    (acos cos-nu)))
 
 
 (set! *warn-on-reflection* false)

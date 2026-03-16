@@ -6,7 +6,7 @@
 
 (ns sfsim.t-physics
   (:require
-    [clojure.math :refer (exp sqrt to-radians to-degrees)]
+    [clojure.math :refer (PI exp sqrt to-radians to-degrees atan2 cos sin)]
     [clojure.set :refer (intersection)]
     [clojure.edn :as edn]
     [clojure.pprint :refer (pprint)]
@@ -510,7 +510,7 @@
 
 (facts "Get orbital parameters"
        (let [planet {:sfsim.planet/mass 5.9722e+24}]
-         (gravitational-parameter {:sfsim.planet/mass 5.9722e+24}) => (* 5.9722e+24 6.67430e-11) 
+         (gravitational-parameter {:sfsim.planet/mass 5.9722e+24}) => (* 5.9722e+24 6.67430e-11)
          (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion 1 0 0 0))
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
          (specific-mechanical-energy planet @state) => (- (/ (gravitational-parameter planet) 6658000.0))
@@ -520,7 +520,22 @@
          (specific-angular-momentum @state) => (roughly-vector (vec3 0 0 59922000000) 1e-3)
          (eccentricity planet @state) => (roughly 0.352972 1e-6)
          (periapsis planet @state) => (roughly 6658000.0 1e-3)
-         (apoapsis planet @state) => (roughly 13922246.555 1e-3)))
+         (apoapsis planet @state) => (roughly 13922246.555 1e-3)
+         (let [a         (semi-major-axis planet @state)
+               e         (eccentricity planet @state)
+               b         (* a (sqrt (- 1.0 (* e e))))
+               epsilon   (specific-mechanical-energy planet @state)
+               periapsis (* a (- 1.0 e))
+               p         (* a (- 1 (* e e)))
+               x         (- p)
+               z         (* (- a periapsis) (/ b a))
+               alpha     (atan2 z x)
+               v         (sqrt (* 2.0 (+ epsilon (/ (gravitational-parameter planet) p))))]
+           (swap! state set-pose :sfsim.physics/orbit (vec3 0 0 p) (q/->Quaternion 1 0 0 0))
+           (swap! state set-speed :sfsim.physics/orbit (vec3 (* v (cos alpha)) 0 (* v (sin alpha))) (vec3 0 0 0))
+           (eccentricity planet @state) => (roughly 0.352972 1e-6)
+           ; (true-anomaly planet @state) => (roughly (/ PI 2) 1e-6)
+           )))
 
 
 (jolt/remove-and-destroy-body sphere)
