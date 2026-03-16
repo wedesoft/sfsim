@@ -841,7 +841,7 @@
   ^double [planet state]
   (let [f (true-anomaly planet state)
         e (eccentricity planet state)]
-    (atan2 (* (sqrt (- 1.0 e e)) (sin f)) (+ e (cos f)))))
+    (atan2 (* (sqrt (- 1.0 (* e e))) (sin f)) (+ e (cos f)))))
 
 
 (defn atanh
@@ -897,7 +897,7 @@
   (let [t (time-since-periapsis planet state)
         T (orbital-period planet state)]
     (if (>= t 0.0)
-      (- t (* 0.5 T))
+      (- t (* 0.5 T)),
       (+ (* 0.5 T) t))))
 
 
