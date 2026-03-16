@@ -14,7 +14,7 @@
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [fastmath.matrix :refer (mulv rotation-matrix-3d-z eye)]
-    [fastmath.vector :refer (vec3)]
+    [fastmath.vector :refer (vec3 sub)]
     [sfsim.conftest :refer (roughly-vector roughly-quaternion)]
     [sfsim.quaternion :as q]
     [sfsim.jolt :as jolt]
@@ -522,6 +522,7 @@
          (eccentricity planet @state) => (roughly 0.352972 1e-6)
          (periapsis planet @state) => (roughly 6658000.0 1e-3)
          (apoapsis planet @state) => (roughly 13922246.555 1e-3)
+         (/ (* 2.0 PI) (mean-motion planet @state)) => (roughly 10388.210 1e-3)
          (let [a         (semi-major-axis planet @state)
                e         (eccentricity planet @state)
                epsilon   (specific-mechanical-energy planet @state)
@@ -532,7 +533,9 @@
            (swap! state set-pose :sfsim.physics/orbit (vec3 0 p 0) (q/->Quaternion 1 0 0 0))
            (swap! state set-speed :sfsim.physics/orbit v (vec3 0 0 0))
            (eccentricity planet @state) => (roughly 0.352972 1e-6)
-           (true-anomaly planet @state) => (roughly (/ PI 2) 1e-6))))
+           (true-anomaly planet @state) => (roughly (/ PI 2) 1e-6)
+           (swap! state set-speed :sfsim.physics/orbit (sub v) (vec3 0 0 0))
+           (true-anomaly planet @state) => (roughly (- (/ PI 2)) 1e-6))))
 
 
 (jolt/remove-and-destroy-body sphere)

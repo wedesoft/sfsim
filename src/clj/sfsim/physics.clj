@@ -831,8 +831,17 @@
         h      (specific-angular-momentum state)
         r      (get-position ::orbit state)
         v      (get-linear-speed ::orbit state)
+        sign   (if (>= (dot v r) 0.0) 1.0 -1.0)
         cos-nu (* (/ 1.0 e) (- (/ (dot h h) (* mu (mag r))) 1.0))]
-    (acos cos-nu)))
+    (* sign (acos cos-nu))))
+
+
+(defn mean-motion
+  "Get mean motion of orbit in radians per second"
+  ^double [planet state]
+  (let [mu     (gravitational-parameter planet)
+        a      (semi-major-axis planet state)]
+    (sqrt (/ mu (* a a a)))))
 
 
 (set! *warn-on-reflection* false)
