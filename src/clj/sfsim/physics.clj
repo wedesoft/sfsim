@@ -855,7 +855,7 @@
   ^double [planet state]
   (let [f (true-anomaly planet state)
         e (eccentricity planet state)]
-    (* 2.0 (atanh (* (sqrt (/ (- e 1.0) (+ e 1.0))) (tan (/ f 2.0)))))))  ; TODO: test for p
+    (* 2.0 (atanh (* (sqrt (/ (- e 1.0) (+ e 1.0))) (tan (/ f 2.0)))))))
 
 
 (defn mean-motion
