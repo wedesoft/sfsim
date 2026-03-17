@@ -55,9 +55,9 @@ jobs:
         distribution: 'oracle'
         java-version: '25'
     - name: Install Clojure
-      uses: DeLaGuardo/setup-clojure@13.5.2
+      uses: DeLaGuardo/setup-clojure@13.5.3
       with:
-        cli: 1.12.4.1602
+        cli: 1.12.4.1618
     - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
       name: Build Jolt bindings
       run: make
