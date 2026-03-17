@@ -138,6 +138,15 @@ The Blender model can be converted to GLB as follows:
 
 # External Links
 
+* Sfsim
+  * [Sfsim homepage](https://wedesoft.github.io/sfsim/)
+  * [Sfsim on Steam](https://store.steampowered.com/app/3687560/sfsim/)
+  * [Sfsim on IndieDB](https://www.indiedb.com/games/sfsim)
+  * [Sfsim on Impress](https://impress.games/press-kit/jan-wedekind/sfsim)
+  * [Sfsim on Github](https://github.com/wedesoft/sfsim)
+  * [Sfsim on Gitlab](https://gitlab.com/wedesoft/sfsim)
+  * [Sfsim on Bitbucket](https://bitbucket.org/wedesoft/sfsim/)
+  * [Sfsim on Codeberg](https://codeberg.org/wedesoft/sfsim)
 * Simulators
   * [Orbiter 2016](https://github.com/mschweiger/orbiter)
   * [Open Orbiter Sim](https://openorbiter.space/)

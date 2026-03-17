@@ -1,5 +1,10 @@
+sfsim (0.14-1)
+
+	* display height and time to periapsis and apoapsis
 	* wrap around current and target camera angles
   * add key and controller bindings for resetting camera
+
+-- Jan Wedekind <jan@wedesoft.de>  Tue, 17 Mar 2026 19:46:14 +0000
 
 sfsim (0.13-1)
 

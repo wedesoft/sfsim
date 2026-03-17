@@ -36,7 +36,7 @@
     [sfsim.graphics :as graphics]
     [sfsim.image :refer (spit-png)]
     [sfsim.audio :as audio]
-    [sfsim.input :refer (make-event-buffer make-initial-state process-events joysticks-poll ->InputHandler
+    [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config process-events joysticks-poll ->InputHandler
                          char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback)])
   (:import
     (org.lwjgl.glfw
@@ -89,15 +89,6 @@
 
 (def bsp-tree (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 
-(def thruster-transforms
-  (into {}
-        (remove nil?
-                (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
-                                             (mulm gltf-to-aerodynamic)
-                                             (vector rcs-name)))
-                     (physics/all-rcs)))))
-
-
 (def tile-tree (planet/make-tile-tree))
 
 (def split-orientations (quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8))
@@ -135,9 +126,7 @@
         jd-ut               {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
         longitude           (to-radians -1.3747)
         latitude            (to-radians 50.9672)
-        input-state         (-> (make-initial-state)
-                                (assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
-                                          (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1})))
+        input-state         (-> (make-initial-state) read-joystick-config)
         convex-hulls-join   (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25))
         body                (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
         mass                (jolt/get-mass body)
@@ -145,6 +134,7 @@
         elevation           (:sfsim.model/elevation config/model-config)
         physics-state       (-> (physics/make-physics-state body)
                                 (physics/initialize-wheels model)
+                                (physics/initialize-thrusters model)
                                 (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
                                 (physics/set-julian-date-ut (astro/julian-date jd-ut)))
         camera-state        (camera/make-camera-state)
@@ -225,8 +215,7 @@
               world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
               camera-to-object   (mulm world-to-object camera-to-world)
               object-origin      (get-translation camera-to-object)
-              render-order       (filterv (physics/active-rcs (:physics @state)) (model/bsp-render-order bsp-tree object-origin))
-              plume-transforms   (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
+              plume-transforms   (physics/active-rcs-transforms (:physics @state) (model/bsp-render-order bsp-tree object-origin))
               wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
                                                             (physics/get-wheel-angles (:physics @state)))
                                        gear-animation
