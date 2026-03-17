@@ -592,7 +592,8 @@
            (swap! state set-speed :sfsim.physics/orbit (vec3 0 v-mag 0) (vec3 0 0 0))
            (specific-mechanical-energy planet @state) => (roughly 0.0 1e-6)
            (eccentricity planet @state) => (roughly 1.0 1e-6)
-           (periapsis planet @state) => (roughly 6658000.0 1e-3))))
+           (periapsis planet @state) => (roughly 6658000.0 1e-3)
+           (time-since-periapsis planet @state) => (roughly 0.0 1e-3))))
 
 
 (jolt/remove-and-destroy-body sphere)
