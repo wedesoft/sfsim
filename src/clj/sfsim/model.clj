@@ -180,8 +180,8 @@
 (defn- decode-material
   "Fetch material data for material with given index"
   {:malli/schema [:=> [:cat :some N0] material]}
-  [scene i]
-  (let [material (AIMaterial/create ^long (.get (.mMaterials ^AIScene scene) ^long i))]
+  [^AIScene scene ^long i]
+  (let [material (AIMaterial/create ^long (.get (.mMaterials scene) ^long i))]
     {::diffuse              (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)
      ::color-texture-index  (decode-texture-index material Assimp/aiTextureType_DIFFUSE)
      ::normal-texture-index (decode-texture-index material Assimp/aiTextureType_NORMALS)}))
@@ -679,6 +679,7 @@
 
 (defn- extract-empty
   "Convert empty node to vector"
+  {:malli/schema [:=> [:cat node] fvec3]}
   [node]
   (get-translation (::transform node)))
 
