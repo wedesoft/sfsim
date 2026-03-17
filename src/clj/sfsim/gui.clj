@@ -963,9 +963,9 @@
                                 (if (-> state :input :sfsim.input/pause) ", pause" "")
                                 (/ 1.0 ^double frametime))
         text2           (format "hp = %10.1f m, ha = %10.1f m, tp = %7.1f s, ta = %7.1f s"
-                                (- (physics/periapsis config/planet-config (:physics state)) earth-radius)
+                                (- (physics/periapsis config/planet-config (:physics state)) ^double earth-radius)
                                 (if (< eccentricity 1.0)
-                                  (- (physics/apoapsis config/planet-config (:physics state)) earth-radius)
+                                  (- (physics/apoapsis config/planet-config (:physics state)) ^double earth-radius)
                                   ##NaN)
                                 (- (physics/time-since-periapsis config/planet-config (:physics state)))
                                 (if (< eccentricity 1.0)
