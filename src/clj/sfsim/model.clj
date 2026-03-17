@@ -173,8 +173,8 @@
   (m/schema [:map [::diffuse fvec3]
              [::color-texture-index [:maybe :int]]
              [::normal-texture-index [:maybe :int]]
-             [::colors [:maybe texture-2d]]
-             [::normals [:maybe texture-2d]]]))
+             [::colors {:optional true} [:maybe texture-2d]]
+             [::normals {:optional true} [:maybe texture-2d]]]))
 
 
 (defn- decode-material
@@ -549,6 +549,7 @@
 
 (defn material-type
   "Determine information for dispatching to correct render method"
+  {:malli/schema [:=> [:cat material] [:tuple :boolean :boolean]]}
   [{::keys [color-texture-index normal-texture-index]}]
   [(boolean color-texture-index) (boolean normal-texture-index)])
 
