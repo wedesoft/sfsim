@@ -585,7 +585,14 @@
            (swap! state set-speed :sfsim.physics/orbit (vec3 0 400 0) (vec3 0 0 0))
            (orbital-period planet @state) => (roughly 1915.365 1e-3)
            (time-since-periapsis planet @state) => (roughly 957.683 1e-3)
-           (time-since-apoapsis planet @state) => (roughly 0.0 1e-3))))
+           (time-since-apoapsis planet @state) => (roughly 0.0 1e-3))
+         (let [v-mag (sqrt (* 2.0 (/ (gravitational-parameter planet) 6658000.0)))]
+           ; Orbit with eccentricity 1.0
+           (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion 1 0 0 0))
+           (swap! state set-speed :sfsim.physics/orbit (vec3 0 v-mag 0) (vec3 0 0 0))
+           (specific-mechanical-energy planet @state) => (roughly 0.0 1e-6)
+           (eccentricity planet @state) => (roughly 1.0 1e-6)
+           (periapsis planet @state) => (roughly 6658000.0 1e-3))))
 
 
 (jolt/remove-and-destroy-body sphere)

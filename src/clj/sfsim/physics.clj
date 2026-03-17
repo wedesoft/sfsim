@@ -810,9 +810,10 @@
 (defn periapsis
   "Get periapsis (lowest radius) of orbit"
   ^double [planet state]
-  (let [a (semi-major-axis planet state)
-        e (eccentricity planet state)]
-    (* a (- 1.0 e))))
+  (let [mu (gravitational-parameter planet)
+        h  (specific-angular-momentum state)
+        e  (eccentricity planet state)]
+    (/ (dot h h) (* mu (+ 1.0 e)))))
 
 
 (defn apoapsis
