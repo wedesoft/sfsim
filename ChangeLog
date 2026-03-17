@@ -1,3 +1,9 @@
+sfsim (0.15-1)
+
+  * play sound track when reaching orbit
+
+-- Jan Wedekind <jan@wedesoft.de>  Tue, 17 Mar 2026 21:00:44 +0000
+
 sfsim (0.14-1)
 
 	* display height and time to periapsis and apoapsis
