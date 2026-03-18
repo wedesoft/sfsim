@@ -41,9 +41,11 @@
     - [[https://freesound.org/people/craigsmith/sounds/479498/]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [X] display perihel aphel and time to, Check out poliastro and hapsira
-  - [ ] use vec2 and vec3 in model when decoding vectors?
-  - [ ] schemas for model, planet, and atmosphere geometry renderer
+    - Shuttle Primary Avionics Software System (PASS)
+      [[https://www.ibiblio.org/apollo/Shuttle/PASS%20USER%20GUIDE%20-%20OI32.pdf]]
+      [[https://www.ibiblio.org/apollo/links-shuttle.html#gsc.tab=0]]
+      [[https://news.ycombinator.com/item?id=45145794]]
+    - [[https://www.youtube.com/watch?v=1oyCzT6sB_4][Lockheed Martin F-35 Lightning II Stealth Fighter Cockpit Demonstrator Hands-On]]
   - [ ] reentry physics
     - [ ] controlled reentry should be possible
       - [ ] add aerodynamics tests for control authority (pitch rate)
@@ -52,6 +54,7 @@
       - [[https://www.shadertoy.com/view/XX3fDH]]
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
     - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
+  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
   - [ ] finish tidying up core
   - [ ] simplify recording and playback code
@@ -251,7 +254,7 @@
   - [ ] winter daytime is too dark, adjust range?
   - [X] limit timestep to prevent numerical problems
   - [X] add keyboard mapping help page!
-  - [-] common playtest errors
+  - [-] common playtest errors [[https://www.reddit.com/r/gamedev/comments/1rm9lyw/we_playtested_over_400_games_these_are_the_top/]]
     - [X] audio too loud
     - [ ] tutorial
     - [ ] scale UI according to screen resolution
