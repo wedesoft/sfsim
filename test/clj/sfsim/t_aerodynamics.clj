@@ -588,17 +588,21 @@
   (atmosphere/speed-of-sound (atmosphere/temperature-at-height height)))
 
 
+(defn bisection-inverse
+  [f y x0 x1 accuracy]
+  (let [xm (/ (+ x0 x1) 2.0)
+        fm (f xm)]
+    (cond
+      (< (- x1 x0) accuracy) xm
+      (< y fm) (recur f y x0 xm accuracy)
+      (> y fm) (recur f y xm x1 accuracy))))
+
+
 (defn optimal-speed-for-height
   [height desired-g]
   (let [lower-bound 0.0
         upper-bound (* 30.0 (speed-of-sound-at-height height))]
-    (loop [lower-bound lower-bound upper-bound upper-bound]
-          (let [mid-speed    (* 0.5 (+ lower-bound upper-bound))
-                deceleration (deceleration-at-reentry height mid-speed)
-                error        (- deceleration (* desired-g gravitation))]
-            (cond (< (- upper-bound lower-bound) 1.0) mid-speed
-                  (pos? error) (recur lower-bound mid-speed)
-                  :else (recur mid-speed upper-bound))))))
+    (bisection-inverse (partial deceleration-at-reentry height) (* gravitation desired-g) lower-bound upper-bound 1.0)))
 
 
 (facts "Test control authority and lift for different flight stages"
