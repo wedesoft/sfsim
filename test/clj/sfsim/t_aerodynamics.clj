@@ -11,10 +11,11 @@
       [malli.instrument :as mi]
       [clojure.math :refer (PI to-radians sqrt cos)]
       [fastmath.matrix :refer (eye col)]
-      [fastmath.vector :refer (vec3)]
+      [fastmath.vector :refer (vec3 mag)]
       [sfsim.conftest :refer (roughly-vector)]
       [sfsim.quaternion :as q]
       [sfsim.util :refer (sqr)]
+      [sfsim.units :refer :all]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.aerodynamics :refer :all :as aerodynamics])
     (:import
@@ -553,6 +554,51 @@
              (:sfsim.aerodynamics/moments (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed
                                                              (vec3 0 1 2) 0.25 0.4))
              => (q/rotate-vector (q/->Quaternion 0.0 1.0 0.0 0.0) (vec3 -0.5 -0.125 -0.25))))))
+
+
+(def reentry-angle (akima-spline
+                     0.0  (to-radians 5)
+                     1.0  (to-radians 5)
+                     5.0  (to-radians 10)
+                     12.0 (to-radians 40)
+                     25.0 (to-radians 40)
+                     30.0 (to-radians 40)))
+
+
+(def optimal-deceleration (* 1.7 gravitation))
+
+
+(defn orientation-for-speed
+  [speed-mach]
+  (q/rotation (reentry-angle speed-mach) (vec3 0 1 0)))
+
+
+(defn deceleration-at-reentry
+  [height speed]
+  (let [mass-with-payload (+ 100000.0 25000.0)
+        speed-of-sound    (atmosphere/speed-of-sound (atmosphere/temperature-at-height height))
+        speed-mach        (/ speed speed-of-sound)
+        orientation       (orientation-for-speed speed-mach)
+        loads             (aerodynamic-loads height orientation (vec3 speed 0 0) (vec3 0 0 0) (vec3 0 0 0) 0.0 0.0)]
+    (/ (mag (:sfsim.aerodynamics/forces loads)) mass-with-payload)))
+
+
+(defn speed-of-sound-at-height
+  [height]
+  (atmosphere/speed-of-sound (atmosphere/temperature-at-height height)))
+
+
+(defn optimal-speed-for-height
+  [height desired-g]
+  (let [lower-bound 0.0
+        upper-bound (* 30.0 (speed-of-sound-at-height height))]
+    (loop [lower-bound lower-bound upper-bound upper-bound]
+          (let [mid-speed    (* 0.5 (+ lower-bound upper-bound))
+                deceleration (deceleration-at-reentry height mid-speed)
+                error        (- deceleration (* desired-g gravitation))]
+            (cond (< (- upper-bound lower-bound) 1.0) mid-speed
+                  (pos? error) (recur lower-bound mid-speed)
+                  :else (recur mid-speed upper-bound))))))
 
 
 (facts "Test control authority and lift for different flight stages"
