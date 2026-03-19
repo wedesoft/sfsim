@@ -11,7 +11,7 @@
       [malli.instrument :as mi]
       [clojure.math :refer (PI to-radians sqrt cos)]
       [fastmath.matrix :refer (eye col)]
-      [fastmath.vector :refer (vec3 mag)]
+      [fastmath.vector :refer (vec3 mag div)]
       [sfsim.conftest :refer (roughly-vector)]
       [sfsim.quaternion :as q]
       [sfsim.util :refer (sqr)]
@@ -573,19 +573,24 @@
   (q/rotation (reentry-angle speed-mach) (vec3 0 1 0)))
 
 
-(defn deceleration-at-reentry
-  [height speed]
-  (let [mass-with-payload (+ 100000.0 25000.0)
-        speed-of-sound    (atmosphere/speed-of-sound (atmosphere/temperature-at-height height))
-        speed-mach        (/ speed speed-of-sound)
-        orientation       (orientation-for-speed speed-mach)
-        loads             (aerodynamic-loads height orientation (vec3 speed 0 0) (vec3 0 0 0) (vec3 0 0 0) 0.0 0.0)]
-    (/ (mag (:sfsim.aerodynamics/forces loads)) mass-with-payload)))
-
-
 (defn speed-of-sound-at-height
   [height]
   (atmosphere/speed-of-sound (atmosphere/temperature-at-height height)))
+
+
+(defn deceleration-at-reentry
+  [height speed]
+  (let [mass-with-payload (+ 100000.0 25000.0)
+        speed-of-sound    (speed-of-sound-at-height height)
+        speed-mach        (/ speed speed-of-sound)
+        orientation       (orientation-for-speed speed-mach)
+        loads             (aerodynamic-loads height orientation (vec3 speed 0 0) (vec3 0 0 0) (vec3 0 0 0) 0.0 0.0)]
+    (div (:sfsim.aerodynamics/forces loads) mass-with-payload)))
+
+
+(defn deceleration-magnitude-at-reentry
+  [height speed]
+  (mag (deceleration-at-reentry height speed)))
 
 
 (defn bisection-inverse
@@ -602,7 +607,7 @@
   [height desired-g]
   (let [lower-bound 0.0
         upper-bound (* 30.0 (speed-of-sound-at-height height))]
-    (bisection-inverse (partial deceleration-at-reentry height) (* gravitation desired-g) lower-bound upper-bound 1.0)))
+    (bisection-inverse (partial deceleration-magnitude-at-reentry height) (* gravitation desired-g) lower-bound upper-bound 1.0)))
 
 
 (facts "Test control authority and lift for different flight stages"
