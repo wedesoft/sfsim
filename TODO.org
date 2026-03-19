@@ -46,6 +46,7 @@
       [[https://www.ibiblio.org/apollo/links-shuttle.html#gsc.tab=0]]
       [[https://news.ycombinator.com/item?id=45145794]]
     - [[https://www.youtube.com/watch?v=1oyCzT6sB_4][Lockheed Martin F-35 Lightning II Stealth Fighter Cockpit Demonstrator Hands-On]]
+    - nominal angular RCS accelerations according to Gemini: 1 degree for roll and pitch, 2 degrees per second square for yaw
   - [ ] reentry physics
     - [ ] controlled reentry should be possible
       - [ ] add aerodynamics tests for control authority (pitch rate)
