@@ -575,9 +575,14 @@
 (def optimal-deceleration (* 1.7 gravitation))
 
 
+(defn orientation-pitch
+  [pitch-angle]
+  (q/rotation pitch-angle (vec3 0 1 0)))
+
+
 (defn orientation-for-speed
   [speed-mach]
-  (q/rotation (reentry-angle speed-mach) (vec3 0 1 0)))
+  (orientation-pitch (reentry-angle speed-mach)))
 
 
 (defn speed-of-sound-at-height
@@ -651,3 +656,45 @@
               (when (<= height 73000.0)
                 height => (fn [height] (<= (:lower (pitch-acceleration height)) (- nominal-pitch-acceleration)))
                 height => (fn [height] (>= (:upper (pitch-acceleration height)) (+ nominal-pitch-acceleration))))))
+
+
+(comment
+
+  (spit "/tmp/curve.gnuplot"
+"#!/usr/bin/gnuplot -c
+set terminal pngcairo size 1280,720
+set output ARG2
+set xlabel ARG3
+set ylabel ARG4
+plot ARG1 using 1:2 with lines title ARG4
+")
+
+  (require '[clojure.java.shell :refer [sh]])
+  (require '[clojure.math :refer (to-degrees)])
+
+
+  (def mach (range 0.0 30.0 0.125))
+  (spit "/tmp/angle-of-attack.dat" (apply str (map (fn [x y] (str x " " y "\n")) mach (map (comp to-degrees reentry-angle) mach))))
+  (sh "gnuplot" "-c" "/tmp/curve.gnuplot" "/tmp/angle-of-attack.dat" "/tmp/angle-of-attack.png" "speed/Ma" "AoA/°" "AoA vs. Mach")
+  (sh "display" "/tmp/angle-of-attack.png")
+
+  (def height (range 0.0 121000.0 1000.0))
+  (spit "/tmp/speed.dat" (apply str (map (fn [x y] (str x " " y "\n")) height (map (fn [height] (/ (optimal-speed-for-height height) (speed-of-sound-at-height height))) height))))
+  (sh "gnuplot" "-c" "/tmp/curve.gnuplot" "/tmp/speed.dat" "/tmp/speed.png" "height/m" "speed/Ma" "speed vs. height")
+  (sh "display" "/tmp/speed.png")
+
+  (spit "/tmp/area.gnuplot"
+"#!/usr/bin/gnuplot -c
+set terminal pngcairo size 1280,720
+set output ARG2
+set xlabel ARG3
+set ylabel ARG4
+plot ARG1 using 1:2:3 with filledcurves title ARG4
+")
+
+  (def height (range 0.0 121000.0 1000.0))
+  (spit "/tmp/control.dat" (apply str (map (fn [x {:keys [lower upper]}] (str x " " (to-degrees lower) " " (to-degrees upper) "\n")) height (map pitch-acceleration height))))
+  (sh "gnuplot" "-c" "/tmp/area.gnuplot" "/tmp/control.dat" "/tmp/control.png" "height/m" "pitch-control/(°/s²)" "height vs. pitch-control range")
+  (sh "display" "/tmp/control.png")
+
+  )
