@@ -300,9 +300,9 @@
         radius (:sfsim.planet/radius config/planet-config)
         music  (when (not (-> state ::settings ::no-music))
                  (when (>= ^double height 100000.0)
-                   (if (and (>= (periapsis config/planet-config physics) (+ radius 160000.0))
+                   (if (and (>= (periapsis config/planet-config physics) (+ ^double radius 160000.0))
                             (or (>= (eccentricity config/planet-config physics) 1.0)
-                                (>= (apoapsis config/planet-config physics) (+ radius 160000.0))))
+                                (>= (apoapsis config/planet-config physics) (+ ^double radius 160000.0))))
                      (-> state ::sources ::surrealism-mix)
                      (-> state ::sources ::edge-of-space))))]
     (when-not (= (::music state) music)
