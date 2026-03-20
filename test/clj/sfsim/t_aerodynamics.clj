@@ -660,6 +660,8 @@
 
 (comment
 
+  ;; https://www.researchgate.net/publication/268557220_Continuous_Aerodynamic_Modelling_of_Entry_Shapes
+
   (spit "/tmp/curve.gnuplot"
 "#!/usr/bin/gnuplot -c
 set terminal pngcairo size 1280,720
