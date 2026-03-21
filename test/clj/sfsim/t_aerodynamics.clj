@@ -660,6 +660,18 @@
 
 (comment
 
+  (ns user
+      (:require
+        [clojure.math :refer (PI to-radians to-degrees sqrt cos)]
+        [clojure.java.shell :refer [sh]]
+        [fastmath.matrix :refer (mat3x3 mulv eye col inverse)]
+        [fastmath.vector :refer (vec3 mag div)]
+        [sfsim.quaternion :as q]
+        [sfsim.util :refer (sqr)]
+        [sfsim.units :refer :all]
+        [sfsim.atmosphere :as atmosphere]
+        [sfsim.aerodynamics :refer :all :as aerodynamics]))
+
   ;; https://www.researchgate.net/publication/268557220_Continuous_Aerodynamic_Modelling_of_Entry_Shapes
 
   (spit "/tmp/curve.gnuplot"
@@ -670,10 +682,6 @@ set xlabel ARG3
 set ylabel ARG4
 plot ARG1 using 1:2 with lines title ARG4
 ")
-
-  (require '[clojure.java.shell :refer [sh]])
-  (require '[clojure.math :refer (to-degrees)])
-
 
   (def mach (range 0.0 30.0 0.125))
   (spit "/tmp/angle-of-attack.dat" (apply str (map (fn [x y] (str x " " y "\n")) mach (map (comp to-degrees reentry-angle) mach))))
