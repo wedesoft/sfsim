@@ -165,6 +165,7 @@ The Blender model can be converted to GLB as follows:
   * [Space Nerds in Space](https://smcameron.github.io/space-nerds-in-space/)
   * [Alliance Space Guard](https://alliancespaceguard.com/)
   * [Pioneer Space Sim](https://pioneerspacesim.net/)
+  * [Cosmorama Space Flight Simulator](https://www.cosmorama.com/space-flight-sim/)
 * Engines
   * [Jolt Physics](https://github.com/jrouwe/JoltPhysics)
   * [Project Chrono physics engine](https://projectchrono.org/)
