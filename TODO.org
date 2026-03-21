@@ -1,6 +1,9 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2026-03-21 Sa 20:56] \\
+    local pressure C_p = C_p,s sin^2 \theta where C_p,s is stagnation point pressure and \theta is surface inclination angle
+    convective heating at stagnation point: q_c,s = k \rho^N1 V^N2, N1=0.5, N2=3, k=1.83e-4/sqrt(R_n), R_n is nose radius
   - Note taken on [2026-02-06 Fr 22:46] \\
     F-35 cockpit
     [[https://realsimulator.com/f-35-cockpit/]]
@@ -241,7 +244,7 @@
 ** TODO introduce variation to cloud height
 * TODO [#C] other improvements
   - Note taken on [2025-10-04 Sa 13:42] \\
-    Press g? to get orgmode help
+    Press leader g? to get orgmode help
   - Note taken on [2025-09-15 Mo 18:52] \\
     https://www.reddit.com/user/bsless/
     Willing to lend a hand with any perf work if you're interested
