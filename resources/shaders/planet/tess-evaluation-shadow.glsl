@@ -17,7 +17,6 @@ out TES_OUT
 {
   vec2 colorcoord;
   vec3 point;
-  vec3 object_point;
   vec4 camera_point;
 } tes_out;
 

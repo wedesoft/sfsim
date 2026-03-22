@@ -59,8 +59,9 @@ cd ..
 
 # Build
 
-* Build Jolt wrapper library: `make jolt`
+* Build Jolt wrapper library (tested with Linux and Windows/MinGW): `make jolt`
 * Download space ship model: `clj -T:build download-spaceship`
+* Download audio files: `clj -T:build download-audio`
 * Create content of data folder (Note that building everything takes days! You can take the data folder of a Steam playtest build instead unless latest software requires a future data release on Steam):
   * Volumetric clouds
     * Build Worley noise: `clj -T:build worley`
@@ -91,7 +92,8 @@ cd ..
 
 ## Further Build Steps under Windows
 
-* Update version number in `src/clj/sfsim/version.clj`
+* Update version number in `src/clj/sfsim/version.clj` and update ChangeLog
+* make sure Jolt wrapper library was built: `make jolt`
 * Delete target and out-windows directories (do not omit this step otherwise it can generate a broken build)
 * Build JAR file: `clj -T:build uber`
 * Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json` (delete out-windows folder first)
@@ -99,11 +101,16 @@ cd ..
 
 ## Further Build Steps under GNU/Linux
 
-* Update version number in `src/clj/sfsim/version.clj`
+* Update version number in `src/clj/sfsim/version.clj` and update ChangeLog
+* make sure Jolt wrapper library was built: `make jolt`
 * Delete target and out-linux directories (do not omit this step, otherwise it can generate a broken build)
 * Build JAR file: `clj -T:build uber`
 * Create Linux executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json` (delete out-linux folder first)
 * Upload to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login <account_name> <password> +run_app_build /home/..../sfsim/scripts/sfsim_playtest_linux.vdf +quit`
+
+## Data Upload to Steam
+
+* Upload data to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login <account_name> <password> +run_app_build /home/..../sfsim/scripts/sfsim_playtest_data.vdf +quit`
 
 # Lint
 
@@ -131,6 +138,16 @@ The Blender model can be converted to GLB as follows:
 
 # External Links
 
+* Sfsim
+  * [Sfsim homepage](https://wedesoft.github.io/sfsim/)
+  * [Sfsim on Steam](https://store.steampowered.com/app/3687560/sfsim/)
+  * [Sfsim on IndieDB](https://www.indiedb.com/games/sfsim)
+  * [Sfsim on Impress](https://impress.games/press-kit/jan-wedekind/sfsim)
+  * [Sfsim on IndieLoot](https://indieloot.io/games/sfsim)
+  * [Sfsim on Github](https://github.com/wedesoft/sfsim)
+  * [Sfsim on Gitlab](https://gitlab.com/wedesoft/sfsim)
+  * [Sfsim on Bitbucket](https://bitbucket.org/wedesoft/sfsim/)
+  * [Sfsim on Codeberg](https://codeberg.org/wedesoft/sfsim)
 * Simulators
   * [Orbiter 2016](https://github.com/mschweiger/orbiter)
   * [Open Orbiter Sim](https://openorbiter.space/)
@@ -144,9 +161,11 @@ The Blender model can be converted to GLB as follows:
   * [Rogue System](http://imagespaceinc.com/rogsys/)
   * [Endless Abyss](https://smoothiegames.itch.io/endless-abyss)
   * [UniVoyager](https://www.univoyager.com/)
+  * [Final Orbit](https://store.steampowered.com/app/4319800/Final_Orbit/)
   * [Space Nerds in Space](https://smcameron.github.io/space-nerds-in-space/)
   * [Alliance Space Guard](https://alliancespaceguard.com/)
   * [Pioneer Space Sim](https://pioneerspacesim.net/)
+  * [Cosmorama Space Flight Simulator](https://www.cosmorama.com/space-flight-sim/)
 * Engines
   * [Jolt Physics](https://github.com/jrouwe/JoltPhysics)
   * [Project Chrono physics engine](https://projectchrono.org/)

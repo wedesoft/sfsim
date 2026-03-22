@@ -260,3 +260,30 @@
          (.flip buf)
          (seq (float-buffer->float-array buf)) => [2.0 3.0 5.0]
          (seq (float-buffer->float-array nil)) => nil))
+
+
+(facts "Threading macro ignoring updates to nil"
+       (ignore-nil-> 42 x) => 42
+       (ignore-nil-> 42 x (inc x)) => 43
+       (ignore-nil-> 42 x (inc x) (inc x)) => 44
+       (ignore-nil-> 42 x nil) => 42
+       (ignore-nil-> 42 x false) => false
+       (ignore-nil-> 42 x (inc (inc x))) => 44
+       (ignore-nil-> 42 x (inc x) (and x nil) (inc x)) => 44
+       (let [x 0] (ignore-nil-> 42 x (inc x))) => 43
+       (let [x 42] (ignore-nil-> x x (inc x))) => 43
+       (let [y 0] (ignore-nil-> 42 y (inc y))) => 43)
+
+
+(facts "Invert hash map"
+       (invert-map {}) => {}
+       (invert-map {:a 1 :b 2}) => {1 :a 2 :b})
+
+
+(facts "Limit angle"
+       (limit-angle 0.0) => 0.0
+       (limit-angle (* 0.5 PI)) => (* 0.5 PI)
+       (limit-angle PI) => (- PI)
+       (limit-angle (* 2 PI)) => 0.0
+       (limit-angle (* -3 PI)) => (- PI)
+       (limit-angle (* 4 PI)) => 0.0)
