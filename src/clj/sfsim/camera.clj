@@ -11,7 +11,8 @@
       [fastmath.matrix :refer (cols->mat col)]
       [sfsim.quaternion :as q]
       [sfsim.matrix :refer (matrix->quaternion quaternion->matrix)]
-      [sfsim.physics :as physics]))
+      [sfsim.physics :as physics]
+      [sfsim.util :refer (limit-angle)]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -113,20 +114,51 @@
     {::position (add position relative-position) ::orientation camera-orientation}))
 
 
+(defn wrap-angles
+  "Wrap around target and current angle in sync"
+  {:malli/schema [:=> [:cat :map :keyword :keyword] :map]}
+  [state target-key current-key]
+  (let [target (target-key state)
+        current (current-key state)
+        difference (- ^double target ^double current)
+        limit-target (limit-angle target)]
+    (assoc state
+           target-key limit-target
+           current-key (- limit-target difference))))
+
+
+(defn mix-values
+  "Make current angle approach target angle"
+  {:malli/schema [:=> [:cat :map :keyword :keyword :double] :map]}
+  [state target-key current-key weight-current]
+  (let [target (target-key state)
+        current (current-key state)]
+  (assoc state
+         current-key (+ (* ^double current ^double weight-current) (* ^double target (- 1.0 ^double weight-current))))))
+
+
 (defn update-camera-pose
   "Update the camera position according to user input"
   [camera-state ^double dt camera-input]
-  (let [weight-previous (pow 0.25 dt)
-        mix             (fn [prev target] (+ (* ^double prev weight-previous) (* ^double target (- 1.0 weight-previous))))]
-    (-> camera-state
+  (let [weight-previous (pow 0.25 dt)]
+    (-> (if (:sfsim.input/reset camera-input)
+          (assoc camera-state
+                 ::target-yaw 0.0
+                 ::target-pitch (to-radians -10.0)
+                 ::target-roll 0.0
+                 ::target-distance 60.0)
+          camera-state)
+        (wrap-angles ::target-yaw ::yaw)
+        (wrap-angles ::target-pitch ::pitch)
+        (wrap-angles ::target-roll ::roll)
         (update ::target-yaw + (* dt ^double (:sfsim.input/rotate-y camera-input)))
         (update ::target-pitch + (* dt ^double (:sfsim.input/rotate-x camera-input)))
         (update ::target-roll + (* dt ^double (:sfsim.input/rotate-z camera-input)))
         (update ::target-distance * (exp (* dt ^double (:sfsim.input/distance-change camera-input))))
-        (update ::yaw mix (::target-yaw camera-state))
-        (update ::pitch mix (::target-pitch camera-state))
-        (update ::roll mix (::target-roll camera-state))
-        (update ::distance mix (::target-distance camera-state)))))
+        (mix-values ::target-yaw ::yaw weight-previous)
+        (mix-values ::target-pitch ::pitch weight-previous)
+        (mix-values ::target-roll ::roll weight-previous)
+        (mix-values ::target-distance ::distance weight-previous))))
 
 
 (defn horizons-angle

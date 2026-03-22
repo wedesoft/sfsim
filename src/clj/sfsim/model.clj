@@ -17,8 +17,8 @@
     [sfsim.clouds :refer (lod-offset overall-shading overall-shading-parameters render-cloud-geometry)]
     [sfsim.plume :refer (model-data model-vars)]
     [sfsim.image :refer (image)]
-    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3 fvec3
-                          fmat4 rotation-matrix get-translation get-translation)]
+    [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3
+                          fvec3 fmat4 rotation-matrix get-translation get-translation)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
                           render-planet-geometry)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
@@ -110,24 +110,27 @@
 
 (defn- decode-vector2
   "Get x and inverse y from 2D vector"
-  [v]
-  [(.x ^AIVector3D v) (- 1.0 (.y ^AIVector3D v))])
+  {:malli/schema [:=> [:cat :some] [:tuple :double :double]]}
+  [^AIVector3D v]
+  [(.x v) (- 1.0 (.y v))])
 
 
 (defn- decode-vector3
   "Get x, y, and z from vector"
-  [v]
-  [(.x ^AIVector3D v) (.y ^AIVector3D v) (.z ^AIVector3D v)])
+  {:malli/schema [:=> [:cat :some] [:tuple :double :double :double]]}
+  [^AIVector3D v]
+  [(.x v) (.y v) (.z v)])
 
 
 (defn- decode-vertices
   "Get vertex data from mesh"
-  [mesh has-color-texture has-normal-texture]
-  (let [vertices   (.mVertices ^AIMesh mesh)
-        tangents   (.mTangents ^AIMesh mesh)
-        bitangents (.mBitangents ^AIMesh mesh)
-        normals    (.mNormals ^AIMesh mesh)
-        texcoords  (AIVector3D$Buffer. ^long (.get (.mTextureCoords ^AIMesh mesh) 0) (.mNumVertices ^AIMesh mesh))]
+  {:malli/schema [:=> [:cat :some :boolean :boolean] [:vector :double]]}
+  [^AIMesh mesh has-color-texture has-normal-texture]
+  (let [vertices   (.mVertices mesh)
+        tangents   (.mTangents mesh)
+        bitangents (.mBitangents mesh)
+        normals    (.mNormals mesh)
+        texcoords  (AIVector3D$Buffer. ^long (.get (.mTextureCoords mesh) 0) (.mNumVertices mesh))]
     (vec
       (mapcat
         (fn decode-vertex
@@ -138,14 +141,15 @@
             (if has-normal-texture (decode-vector3 (.get bitangents i)) [])
             (decode-vector3 (.get normals i))
             (if (or has-color-texture has-normal-texture) (decode-vector2 (.get texcoords i)) [])))
-        (range (.mNumVertices ^AIMesh mesh))))))
+        (range (.mNumVertices mesh))))))
 
 
 (defn- decode-color
   "Get RGB color of material"
-  [material property]
+  {:malli/schema [:=> [:cat :some :string] fvec3]}
+  [^AIMaterial material ^String property]
   (let [color (AIColor4D/create)]
-    (Assimp/aiGetMaterialColor ^AIMaterial material ^String property Assimp/aiTextureType_NONE 0 color)
+    (Assimp/aiGetMaterialColor material property Assimp/aiTextureType_NONE 0 color)
     (vec3 (.r color) (.g color) (.b color))))
 
 
@@ -154,10 +158,11 @@
 
 (defn- decode-texture-index
   "Get texture index of material"
-  [material property]
+  {:malli/schema [:=> [:cat :some :string] [:maybe :int]]}
+  [^AIMaterial material ^String property]
   (when (not (zero? (Assimp/aiGetMaterialTextureCount material property)))
     (let [path (AIString/calloc)]
-      (Assimp/aiGetMaterialTexture ^AIMaterial material ^String property 0 path nil nil nil nil nil nil)
+      (Assimp/aiGetMaterialTexture material property 0 path nil nil nil nil nil nil)
       (Integer/parseInt (subs (.dataString path) 1)))))
 
 
@@ -168,15 +173,15 @@
   (m/schema [:map [::diffuse fvec3]
              [::color-texture-index [:maybe :int]]
              [::normal-texture-index [:maybe :int]]
-             [::colors [:maybe texture-2d]]
-             [::normals [:maybe texture-2d]]]))
+             [::colors {:optional true} [:maybe texture-2d]]
+             [::normals {:optional true} [:maybe texture-2d]]]))
 
 
 (defn- decode-material
   "Fetch material data for material with given index"
   {:malli/schema [:=> [:cat :some N0] material]}
-  [scene i]
-  (let [material (AIMaterial/create ^long (.get (.mMaterials ^AIScene scene) ^long i))]
+  [^AIScene scene ^long i]
+  (let [material (AIMaterial/create ^long (.get (.mMaterials scene) ^long i))]
     {::diffuse              (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)
      ::color-texture-index  (decode-texture-index material Assimp/aiTextureType_DIFFUSE)
      ::normal-texture-index (decode-texture-index material Assimp/aiTextureType_NORMALS)}))
@@ -544,6 +549,7 @@
 
 (defn material-type
   "Determine information for dispatching to correct render method"
+  {:malli/schema [:=> [:cat material] [:tuple :boolean :boolean]]}
   [{::keys [color-texture-index normal-texture-index]}]
   [(boolean color-texture-index) (boolean normal-texture-index)])
 
@@ -674,6 +680,7 @@
 
 (defn- extract-empty
   "Convert empty node to vector"
+  {:malli/schema [:=> [:cat node] fvec3]}
   [node]
   (get-translation (::transform node)))
 

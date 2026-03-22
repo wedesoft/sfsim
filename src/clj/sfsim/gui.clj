@@ -15,12 +15,12 @@
     [sfsim.version :refer (version)]
     [sfsim.physics :as physics]
     [sfsim.astro :as astro]
-    [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil->)]
+    [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map)]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers
                           make-vertex-array-stream destroy-vertex-array-object)]
     [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)]
-    [sfsim.input :refer (get-joystick-sensor-for-mapping)])
+    [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name)])
   (:import
     (java.nio
       DirectByteBuffer)
@@ -272,15 +272,16 @@
 
 
 (defmacro nuklear-window
-  [gui title x y width height border & body]
+  [gui title x y width height decoration & body]
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
          context# (:sfsim.gui/context ~gui)]
      (try
        (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
-                               ~(if border
-                                  `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE Nuklear/NK_WINDOW_NO_SCROLLBAR)
-                                  `Nuklear/NK_WINDOW_NO_SCROLLBAR))
+                               ~(case decoration
+                                  :dialog `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE Nuklear/NK_WINDOW_NO_SCROLLBAR)
+                                  :window `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE)
+                                  :widget `Nuklear/NK_WINDOW_NO_SCROLLBAR))
          (let [result# (do ~@body)]
            (Nuklear/nk_end context#)
            result#))
@@ -498,6 +499,12 @@
   (Nuklear/nk_button_label ^NkContext (::context gui) ^String label))
 
 
+(defn check-label
+  "Create a check box with text"
+  [gui text on]
+  (Nuklear/nk_check_label ^NkContext (::context gui) ^String text ^boolean on))
+
+
 (defn text-label
   "Create a text label"
   ([gui label]
@@ -582,6 +589,16 @@
        (assoc-in ~'state [:input :sfsim.input/focus] ~idx))))
 
 
+(defmacro group
+  "Macro to set up widget group, do not forget to set the layout as first command in body"
+  [gui group-name group-title & body]
+  `(try
+     (Nuklear/nk_group_begin_titled ^NkContext (::context ~gui) ~group-name ~group-title Nuklear/NK_WINDOW_BORDER)
+     ~@body
+     (finally
+       (Nuklear/nk_group_end ^NkContext (::context ~gui)))))
+
+
 (declare main-dialog)
 
 
@@ -617,7 +634,7 @@
                                   (assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/devices
                                              device-new sensor-type sensor-new] control)
                                   (dissoc-in [:gui ::joystick-config])))
-                    (layout-row-push gui 0.6)
+                    (layout-row-push gui 0.57)
                     (text-label gui (if (= (-> state :input ::joystick-config) control)
                                       prompt
                                       (if device (format "%s %d of %s" sensor-name sensor device) "None")))))))
@@ -638,31 +655,45 @@
 (defn joystick-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 12)) 2) 640 (* 37 12) true
+    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 11)) 2) 640 (* 37 11) :dialog
     (ignore-nil-> state state
-                  (joystick-dialog-axis-item state gui "Aileron" :sfsim.input/aileron)
-                  (joystick-dialog-axis-item state gui "Elevator" :sfsim.input/elevator)
-                  (joystick-dialog-axis-item state gui "Rudder" :sfsim.input/rudder)
-                  (joystick-dialog-axis-item state gui "Throttle" :sfsim.input/throttle)
-                  (joystick-dialog-axis-item state gui "Throttle Increment" :sfsim.input/throttle-increment)
-                  (layout-row gui 32 2
-                              (ignore-nil-> state state
-                                            (layout-row-push gui 0.2)
-                                            (text-label gui "Dead Zone")
-                                            (layout-row-push gui 0.7)
-                                            (update-in state
-                                                       [:input :sfsim.input/mappings :sfsim.input/joysticks :sfsim.input/dead-zone]
-                                                       (fn [dead-zone]
-                                                           (slider-float gui 0.0 dead-zone 1.0 (/ 1.0 1024.0))))
-                                            (layout-row-push gui 0.1)
-                                            (text-label gui (format "%5.3f" (get-in state
-                                                                                    [:input :sfsim.input/mappings
-                                                                                     :sfsim.input/joysticks
-                                                                                     :sfsim.input/dead-zone])))))
-                  (joystick-dialog-button-item state gui "Gear" :sfsim.input/gear)
-                  (joystick-dialog-button-item state gui "Air Brake" :sfsim.input/air-brake)
-                  (joystick-dialog-button-item state gui "Brake" :sfsim.input/brake)
-                  (joystick-dialog-button-item state gui "Parking Brake" :sfsim.input/parking-brake)
+                  (layout-row-dynamic gui (* 32 10) 1)
+                  (group gui "joystick" "Joystick"
+                         (ignore-nil->
+                           state state
+                           (joystick-dialog-axis-item state gui "Aileron" :sfsim.input/aileron)
+                           (joystick-dialog-axis-item state gui "Elevator" :sfsim.input/elevator)
+                           (joystick-dialog-axis-item state gui "Rudder" :sfsim.input/rudder)
+                           (joystick-dialog-axis-item state gui "Throttle" :sfsim.input/throttle)
+                           (joystick-dialog-axis-item state gui "Throttle increment" :sfsim.input/throttle-increment)
+                           (layout-row gui 32 2
+                                       (ignore-nil-> state state
+                                                     (layout-row-push gui 0.2)
+                                                     (text-label gui "Dead zone")
+                                                     (layout-row-push gui 0.67)
+                                                     (update-in state
+                                                                [:input :sfsim.input/mappings
+                                                                 :sfsim.input/joysticks
+                                                                 :sfsim.input/dead-zone]
+                                                                (fn [dead-zone]
+                                                                    (slider-float gui 0.0 dead-zone 1.0 (/ 1.0 1024.0))))
+                                                     (layout-row-push gui 0.1)
+                                                     (text-label gui (format "%5.3f" (get-in state
+                                                                                             [:input :sfsim.input/mappings
+                                                                                              :sfsim.input/joysticks
+                                                                                              :sfsim.input/dead-zone])))))
+                           (joystick-dialog-button-item state gui "Gear" :sfsim.input/gear)
+                           (joystick-dialog-button-item state gui "Air brake" :sfsim.input/air-brake)
+                           (joystick-dialog-button-item state gui "RCS/aerofoil" :sfsim.input/rcs)
+                           (joystick-dialog-button-item state gui "Brake" :sfsim.input/brake)
+                           (joystick-dialog-button-item state gui "Parking brake" :sfsim.input/parking-brake)
+                           (joystick-dialog-button-item state gui "Camera down" :sfsim.input/camera-rotate-x-positive)
+                           (joystick-dialog-button-item state gui "Camera up" :sfsim.input/camera-rotate-x-negative)
+                           (joystick-dialog-button-item state gui "Camera left" :sfsim.input/camera-rotate-y-negative)
+                           (joystick-dialog-button-item state gui "Camera right" :sfsim.input/camera-rotate-y-positive)
+                           (joystick-dialog-button-item state gui "Camera roll left" :sfsim.input/camera-rotate-z-positive)
+                           (joystick-dialog-button-item state gui "Camera roll right" :sfsim.input/camera-rotate-z-negative)
+                           (joystick-dialog-button-item state gui "Camera reset" :sfsim.input/camera-reset)))
                   (layout-row-dynamic gui 32 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "joysticks.edn" (get-in state [:input :sfsim.input/mappings :sfsim.input/joysticks]))
@@ -674,14 +705,63 @@
                         (assoc-in [:gui ::menu] main-dialog))))))
 
 
+(defn keyboard-dialog
+  [state gui ^long window-width ^long window-height]
+  (let [mappings (invert-map (get-in state [:input :sfsim.input/mappings :sfsim.input/keyboard]))]
+    (nuklear-window
+      gui "Keyboard" (quot (- window-width 480) 2) (quot (- window-height (* 37 11)) 2) 480 (* 37 11) :dialog
+      (ignore-nil-> state state
+                    (layout-row-dynamic gui (* 32 10) 1)
+                    (group gui "keyboard" "Keyboard"
+                           (layout-row-dynamic gui 32 1)
+                           (text-label gui "Note that joystick overrides keyboard commands!")
+                           (layout-row-dynamic gui 32 2)
+                           (doseq [[control-key control-name]
+                                   [[:sfsim.input/menu                            "Toggle menu"             ]
+                                    ["Alt-Return"                                 "Toggle fullscreen"       ]
+                                    [:sfsim.input/pause                           "Pause/unpause"           ]
+                                    [:sfsim.input/gear                            "Gear up/down"            ]
+                                    [:sfsim.input/brake                           "Brake"                   ]
+                                    ["Shift-B"                                    "Parking brake"           ]
+                                    [:sfsim.input/throttle-decrease               "Throttle decrease"       ]
+                                    [:sfsim.input/throttle-increase               "Throttle increase"       ]
+                                    [:sfsim.input/air-brake                       "Air brake"               ]
+                                    [:sfsim.input/rcs                             "Toggle RCS/aerofoil"     ]
+                                    [:sfsim.input/aileron-left                    "Aileron left"            ]
+                                    [:sfsim.input/aileron-right                   "Aileron right"           ]
+                                    ["Ctrl-A"                                     "Aileron center"          ]
+                                    [:sfsim.input/elevator-down                   "Elevator down"           ]
+                                    [:sfsim.input/elevator-up                     "Elevator up"             ]
+                                    [:sfsim.input/rudder-left                     "Rudder left"             ]
+                                    [:sfsim.input/rudder-right                    "Rudder right"            ]
+                                    ["Ctrl-Q"                                     "Center rudder"           ]
+                                    [:sfsim.input/camera-rotate-x-positive        "Camera rotate X positive"]
+                                    [:sfsim.input/camera-rotate-x-negative        "Camera rotate X negative"]
+                                    [:sfsim.input/camera-rotate-y-positive        "Camera rotate Y positive"]
+                                    [:sfsim.input/camera-rotate-y-negative        "Camera rotate Y negative"]
+                                    [:sfsim.input/camera-rotate-z-positive        "Camera rotate Z positive"]
+                                    [:sfsim.input/camera-rotate-z-negative        "Camera rotate Z negative"]
+                                    [:sfsim.input/camera-distance-change-positive "Increase camera distance"]
+                                    [:sfsim.input/camera-distance-change-negative "Decrease camera distance"]
+                                    [:sfsim.input/camera-reset                    "Reset camera"]]]
+                                  (text-label gui control-name)
+                                  (text-label gui (if (keyword? control-key) (get-key-name (control-key mappings)) control-key))))
+                    (layout-row-dynamic gui 32 1)
+                    (when (button-label gui "Close")
+                      (assoc-in state [:gui ::menu] main-dialog))))))
+
+
 (defn sound-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Sound" (quot (- window-width 320) 2) (quot (- window-height (* 37 3)) 2) 320 (* 37 3) true
+    gui "Sound" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui 32 2)
                   (text-label gui "Volume")
                   (update-in state [:audio :sfsim.audio/settings :sfsim.audio/volume] #(property-float gui "volume" 0.0 % 1.0 0.1 0.0025))
+                  (text-label gui "Music")
+                  (update-in state [:audio :sfsim.audio/settings :sfsim.audio/no-music]
+                             (fn [off] (not (check-label gui "enable" (not off)))))
                   (layout-row-dynamic gui 32 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "sound.edn" (get-in state [:audio :sfsim.audio/settings]))
@@ -718,7 +798,7 @@
 (defn location-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) true
+    gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui 32 2)
                   (text-label gui "Longitude (East)")
@@ -775,7 +855,7 @@
 (defn datetime-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Date and Time" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) true
+    gui "Date and Time" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) :dialog
     (ignore-nil-> state state
                   (layout-row gui 32 6
                               (layout-row-push gui 0.4)
@@ -813,7 +893,7 @@
 (defn main-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 7)) 2) 320 (* 37 7) true
+    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 8)) 2) 320 (* 37 8) :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui 32 1)
                   (when (button-label gui "Location")
@@ -824,6 +904,8 @@
                     (assoc-in state [:gui ::menu] datetime-dialog))
                   (when (button-label gui "Joystick")
                     (assoc-in state [:gui ::menu] joystick-dialog))
+                  (when (button-label gui "Keyboard")
+                    (assoc-in state [:gui ::menu] keyboard-dialog))
                   (when (button-label gui "Sound")
                     (assoc-in state [:gui ::menu] sound-dialog))
                   (when (button-label gui "Resume")
@@ -841,21 +923,21 @@
         aileron  (:sfsim.input/aileron input-controls)
         elevator (:sfsim.input/elevator input-controls)
         rudder   (:sfsim.input/rudder input-controls)]
-    (nuklear-window gui "Yoke" 10 10 80 80 false
+    (nuklear-window gui "Yoke" 10 10 80 80 :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
                       (layout-row-dynamic gui 80 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
                                               (Nuklear/nk_rect (- 45 (* ^double aileron 30)) (- 45 (* ^double elevator 30)) 10 10 rect)
                                               (Nuklear/nk_rgb 255 0 0 rgb))))
-    (nuklear-window gui "Rudder" 10 95 80 20 false
+    (nuklear-window gui "Rudder" 10 95 80 20 :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
                       (layout-row-dynamic gui 20 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
                                               (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
                                               (Nuklear/nk_rgb 255 0 255 rgb))))
-    (nuklear-window gui "Throttle" 95 10 20 80 false
+    (nuklear-window gui "Throttle" 95 10 20 80 :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
                       (layout-row-dynamic gui 80 1)
                       (Nuklear/nk_widget rect (::context gui))
@@ -869,19 +951,31 @@
   [gui ^long h state frametime]
   (let [earth-radius    (:sfsim.planet/radius config/planet-config)
         object-position (physics/get-position :sfsim.physics/surface (:physics state))
+        eccentricity    (physics/eccentricity config/planet-config (:physics state))
         controls        (-> state :input :sfsim.input/controls)
-        text            (format "\rheight = %10.1f m, speed = %7.1f m/s, ctrl: %s, fps = %6.1f%s%s%s"
+        text1           (format "h = %.1f m, vs = %.1f m/s, v = %.1f m/s, %s%s%s%s, fps = %5.1f"
                                 (- (fv/mag object-position) ^double earth-radius)
+                                (:sfsim.physics/display-vertical-speed (:physics state))
                                 (:sfsim.physics/display-speed (:physics state))
                                 (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
-                                (/ 1.0 ^double frametime)
                                 (if (:sfsim.input/brake controls) ", brake"
                                   (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
                                 (if (:sfsim.input/air-brake controls) ", air brake" "")
-                                (if (-> state :input :sfsim.input/pause) ", pause" ""))]
-    (nuklear-window gui "Information" 10 (- h 42) 640 32 false
-                    (layout-row-dynamic gui 32 1)
-                    (text-label gui text))))
+                                (if (-> state :input :sfsim.input/pause) ", pause" "")
+                                (/ 1.0 ^double frametime))
+        text2           (format "hp = %.1f m, ha = %.1f m, tp = %.1f s, ta = %.1f s"
+                                (- (physics/periapsis config/planet-config (:physics state)) ^double earth-radius)
+                                (if (< eccentricity 1.0)
+                                  (- (physics/apoapsis config/planet-config (:physics state)) ^double earth-radius)
+                                  ##NaN)
+                                (- (physics/time-since-periapsis config/planet-config (:physics state)))
+                                (if (< eccentricity 1.0)
+                                  (- (physics/time-since-apoapsis config/planet-config (:physics state)))
+                                  ##NaN))]
+    (nuklear-window gui "Information" 10 (- h 64) 640 64 :widget
+                    (layout-row-dynamic gui 26 1)
+                    (text-label gui text1)
+                    (text-label gui text2))))
 
 
 (set! *warn-on-reflection* false)

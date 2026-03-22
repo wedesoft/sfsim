@@ -36,8 +36,8 @@
     [sfsim.graphics :as graphics]
     [sfsim.image :refer (spit-png)]
     [sfsim.audio :as audio]
-    [sfsim.input :refer (make-event-buffer make-initial-state process-events joysticks-poll ->InputHandler
-                         char-callback key-callback cursor-pos-callback mouse-button-callback)])
+    [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config process-events joysticks-poll ->InputHandler
+                         char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback)])
   (:import
     (org.lwjgl.glfw
       GLFW
@@ -89,51 +89,7 @@
 (def model (first (:sfsim.graphics/models graphics)))
 (def convex-hulls (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
 
-(def main-wheel-left-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Main Wheel Left"))))
-(def main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Main Wheel Right"))))
-(def front-wheel-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Wheel Front"))))
 (def bsp-tree (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %)))
-
-(def thruster-transforms
-  (into {}
-        (remove nil?
-                (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
-                                             (mulm gltf-to-aerodynamic)
-                                             (vector rcs-name)))
-                     (physics/all-rcs)))))
-
-
-; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
-; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
-; damping: c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
-; brake torque: m * a * r (use half mass, a = 1.5 m/s^2)
-(def main-wheel-base {:sfsim.jolt/width 0.4064
-                      :sfsim.jolt/radius (* 0.5 1.1303)
-                      :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
-                      :sfsim.jolt/angular-damping 0.2
-                      :sfsim.jolt/suspension-min-length (+ 0.8)
-                      :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
-                      :sfsim.jolt/stiffness 1915744.798
-                      :sfsim.jolt/damping 415231.299
-                      :sfsim.jolt/max-brake-torque 100000.0})
-(def front-wheel-base {:sfsim.jolt/width 0.22352
-                       :sfsim.jolt/radius (* 0.5 0.8128)
-                       :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
-                       :sfsim.jolt/angular-damping 0.2
-                       :sfsim.jolt/suspension-min-length (+ 0.5)
-                       :sfsim.jolt/suspension-max-length (+ 0.5 0.5419)
-                       :sfsim.jolt/stiffness 1077473.882
-                       :sfsim.jolt/damping 155702.159})
-(def main-wheel-left (assoc main-wheel-base
-                            :sfsim.jolt/position
-                            (sub main-wheel-left-pos (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
-(def main-wheel-right (assoc main-wheel-base
-                             :sfsim.jolt/position
-                             (sub main-wheel-right-pos (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8)))))
-(def front-wheel (assoc front-wheel-base
-                        :sfsim.jolt/position
-                        (sub front-wheel-pos (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length front-wheel-base) 0.5)))))
-(def wheels [main-wheel-left main-wheel-right front-wheel])
 
 (def tile-tree (planet/make-tile-tree))
 
@@ -148,6 +104,7 @@
 (GLFW/glfwSetKeyCallback window (key-callback event-buffer))
 (GLFW/glfwSetCursorPosCallback window (cursor-pos-callback event-buffer))
 (GLFW/glfwSetMouseButtonCallback window (mouse-button-callback event-buffer))
+(GLFW/glfwSetScrollCallback window (scroll-callback event-buffer))
 
 
 ; Start with fixed summer date for better illumination.
@@ -171,15 +128,15 @@
         jd-ut               {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
         longitude           (to-radians -1.3747)
         latitude            (to-radians 50.9672)
-        input-state         (-> (make-initial-state)
-                                (assoc-in [:sfsim.input/mappings :sfsim.input/joysticks]
-                                          (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1})))
+        input-state         (-> (make-initial-state) read-joystick-config)
         convex-hulls-join   (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25))
         body                (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
         mass                (jolt/get-mass body)
         thrust              (* ^double mass 25.0)
         elevation           (:sfsim.model/elevation config/model-config)
         physics-state       (-> (physics/make-physics-state body)
+                                (physics/initialize-wheels model)
+                                (physics/initialize-thrusters model)
                                 (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
                                 (physics/set-julian-date-ut (astro/julian-date jd-ut)))
         camera-state        (camera/make-camera-state)
@@ -232,11 +189,11 @@
           (swap! state assoc-in [:gui :sfsim.gui/menu] nil))
         (if playback
           (let [frame (nth @recording @frame-counter)]
-            (swap! state update :physics physics/load-state (:physics frame) wheels)
+            (swap! state update :physics physics/load-state (:physics frame))
             (swap! state assoc :camera (:camera frame)))
           (do
             (when (not (-> @state :input :sfsim.input/pause))
-              (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) dt wheels
+              (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) dt
                      config/planet-config split-orientations thrust))
             (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
             (swap! state update :audio audio/update-state (:physics @state) (:input @state) (:camera @state))
@@ -260,8 +217,7 @@
               world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
               camera-to-object   (mulm world-to-object camera-to-world)
               object-origin      (get-translation camera-to-object)
-              render-order       (filterv (physics/active-rcs (:physics @state)) (model/bsp-render-order bsp-tree object-origin))
-              plume-transforms   (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
+              plume-transforms   (physics/active-rcs-transforms (:physics @state) (model/bsp-render-order bsp-tree object-origin))
               wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
                                                             (physics/get-wheel-angles (:physics @state)))
                                        gear-animation
@@ -289,8 +245,10 @@
           (onscreen-render window
                            (graphics/render-frame graphics frame (planet/get-current-tree tile-tree))
                            (with-culling :sfsim.render/noculling
-                             (when-let [menu (-> @state :gui :sfsim.gui/menu)]
-                                       (swap! state menu gui window-width window-height))
+                             (let [menu (-> @state :gui :sfsim.gui/menu)]
+                               (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR
+                                                      (if menu GLFW/GLFW_CURSOR_NORMAL GLFW/GLFW_CURSOR_HIDDEN))
+                               (when menu (swap! state menu gui window-width window-height)))
                              (when (not playback)
                                (let [controls (-> @state :input :sfsim.input/controls)]
                                  (gui/flight-controls-display controls gui)

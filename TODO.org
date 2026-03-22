@@ -1,6 +1,9 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2026-03-21 Sa 20:56] \\
+    local pressure C_p = C_p,s sin^2 \theta where C_p,s is stagnation point pressure and \theta is surface inclination angle
+    convective heating at stagnation point: q_c,s = k \rho^N1 V^N2, N1=0.5, N2=3, k=1.83e-4/sqrt(R_n), R_n is nose radius
   - Note taken on [2026-02-06 Fr 22:46] \\
     F-35 cockpit
     [[https://realsimulator.com/f-35-cockpit/]]
@@ -41,49 +44,41 @@
     - [[https://freesound.org/people/craigsmith/sounds/479498/]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
-  - [X] join gui-state, input-state, physics-state to facilitate gui code refactor
-  - [X] create macro ignoring nil values using <> as placeholder?
-  - [X] tabbing is broken
-  - [X] convert gui function to state changing one
-  - [X] move gui code into gui module
-  - [X] aggregate physics code in main module and move
-  - [X] refactor rendering code
-    - [X] put rendering code into methods
-    - [X] create high level rendering methods to simplify main program and integration tests
-  - [-] add some sound effects
-    - [X] seek audio position for landing gear if necessary
-    - [X] add landing gear [[https://pixabay.com/sound-effects/search/landing-gear/]]
-    - [X] adjust thruster volume depending on throttle and play/stop
-    - [X] play/stop individual RCS thrusters
-    - [X] reduce volume when leaving atmosphere
-    - [X] sound of air, air brake and gear friction
-    - [X] wheel sounds when hitting runway
-    - [X] supersonic boom
-    - [X] set gain of listener, save in config file
-    - [X] set position of listener
-    - [ ] enable/disable music
-    - [X] play background music
-  - [ ] move joystick config loading from core into input module
-  - [ ] release new version and post about it
-  - [ ] finish tidying up core
+    - Shuttle Primary Avionics Software System (PASS)
+      [[https://www.ibiblio.org/apollo/Shuttle/PASS%20USER%20GUIDE%20-%20OI32.pdf]]
+      [[https://www.ibiblio.org/apollo/links-shuttle.html#gsc.tab=0]]
+      [[https://news.ycombinator.com/item?id=45145794]]
+    - [[https://www.youtube.com/watch?v=1oyCzT6sB_4][Lockheed Martin F-35 Lightning II Stealth Fighter Cockpit Demonstrator Hands-On]]
+    - nominal angular RCS accelerations according to Gemini: 1 degree for roll and pitch, 2 degrees per second square for yaw
+  - [ ] reentry physics
+    - [-] controlled reentry should be possible
+      - [X] add aerodynamics tests for control authority (pitch rate)
+      - [ ] add pitch up moment at high speed (and positive angle of attack)
+      - [ ] add aerodynamics tests for trajectory (bank angle to control vertical lift component, tolerable g-forces and heat)
+    - [ ] reentry flame
+      - [[https://www.shadertoy.com/view/XX3fDH]]
+      - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
+    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
+  - [X] increase start distance of audio volume falloff
+  - [X] use compact formatting for text
+  - [ ] key to secure main engine
+  - [X] hide mouse cursor
+  - [ ] show radar altitude
   - [ ] schemas for model, planet, and atmosphere geometry renderer
+  - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
+  - [ ] finish tidying up core
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
-  - [ ] add RCS state to physics-state
+  - [ ] thrust vectoring
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
-  - [ ] remove object_direction, object_point, and camera_to_object from shaders where it is not required any more
   - [ ] animate control surfaces and air brake
-  - [ ] reentry physics
-    - [ ] reentry flame
-    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] physics and animation of nose wheel steering (apply difference of two animation time stamps)
   - [ ] post on r/linux_gaming
-  - [X] limit time step to avoid physics problems
   - [ ] use different dead zone for RCS thruster joystick control
   - [ ] yaw stabilisation
   - [ ] kill rotation
-  - [ ] display perihel aphel and time to, Check out poliastro and hapsira
+  - [ ] safe time lapse inside and outside of atmosphere
   - [ ] block gear up when on the ground
   - [ ] Radar altitude
   - [ ] Elevator trim
@@ -255,7 +250,7 @@
 ** TODO introduce variation to cloud height
 * TODO [#C] other improvements
   - Note taken on [2025-10-04 Sa 13:42] \\
-    Press g? to get orgmode help
+    Press leader g? to get orgmode help
   - Note taken on [2025-09-15 Mo 18:52] \\
     https://www.reddit.com/user/bsless/
     Willing to lend a hand with any perf work if you're interested
@@ -267,10 +262,19 @@
     * Visual effects
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
   - [ ] winter daytime is too dark, adjust range?
-  - [ ] limit timestep on startup to prevent numerical problems
-  - [ ] add keyboard mapping help page!
+  - [X] limit timestep to prevent numerical problems
+  - [X] add keyboard mapping help page!
+  - [-] common playtest errors [[https://www.reddit.com/r/gamedev/comments/1rm9lyw/we_playtested_over_400_games_these_are_the_top/]]
+    - [X] audio too loud
+    - [ ] tutorial
+    - [ ] scale UI according to screen resolution
+    - [ ] feedback for player accomplishments
+    - [ ] keyboard bindings customisation
+    - [ ] difficulty spikes
+    - [ ] clear objectives
+    - [ ] camera problems
   - [ ] borderless fullscreen support
-  - [ ] Need to change keyboard bindings for camera because some users don't have a numpad.
+  - [X] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] configurable key controls
   - [ ] joystick hat to control camera
   - [ ] limit dt or pause

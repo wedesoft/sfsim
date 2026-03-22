@@ -7,13 +7,14 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [clojure.math :refer (cos sin atan2 hypot to-radians)]
+    [clojure.math :refer (PI cos sin tan atan2 hypot to-radians sqrt acos log1p sinh)]
     [clojure.set :refer (union)]
-    [fastmath.matrix :refer (mulv inverse)]
-    [fastmath.vector :refer (vec3 mag normalize mult add sub cross)]
+    [fastmath.matrix :refer (mulv mulm inverse)]
+    [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot)]
     [malli.core :as m]
     [sfsim.quaternion :as q]
-    [sfsim.matrix :refer (matrix->quaternion)]
+    [sfsim.matrix :refer (matrix->quaternion get-translation rotation-matrix)]
+    [sfsim.model :as model]
     [sfsim.util :refer (sqr clamp)]
     [sfsim.planet :as planet]
     [sfsim.jolt :as jolt]
@@ -114,6 +115,7 @@
    ::speed (vec3 0 0 0)
    ::domain ::surface
    ::display-speed 0.0
+   ::display-vertical-speed 0.0
    ::throttle 0.0
    ::air-brake 0.0
    ::gear 1.0
@@ -122,6 +124,83 @@
    ::brake 0.0
    ::vehicle nil
    ::local-mesh {::coords nil ::mesh nil}})
+
+
+; m = mass (100t) plus payload (25t), half mass on main gears, one-eighth mass on front wheels
+; stiffness: k = m * v ^ 2 / stroke ^ 2 (kinetic energy conversion, use half the mass for m, v = 3 m/s, stroke is expected travel of spring (here divided by 1.5)
+; damping: c = 2 * dampingratio * sqrt(k * m) (use half mass and dampingratio of 0.6)
+; brake torque: m * a * r (use half mass, a = 1.5 m/s^2)
+(def main-wheel-base {:sfsim.jolt/width 0.4064
+                      :sfsim.jolt/radius (* 0.5 1.1303)
+                      :sfsim.jolt/inertia 16.3690  ; Wheel weight 205 pounds, inertia of cylinder = 0.5 * mass * radius ^ 2
+                      :sfsim.jolt/angular-damping 0.2
+                      :sfsim.jolt/suspension-min-length (+ 0.8)
+                      :sfsim.jolt/suspension-max-length (+ 0.8 0.8128)
+                      :sfsim.jolt/stiffness 1915744.798
+                      :sfsim.jolt/damping 415231.299
+                      :sfsim.jolt/max-brake-torque 100000.0})
+
+(def front-wheel-base {:sfsim.jolt/width 0.22352
+                       :sfsim.jolt/radius (* 0.5 0.8128)
+                       :sfsim.jolt/inertia 2.1839  ; Assuming same density as main wheel
+                       :sfsim.jolt/angular-damping 0.2
+                       :sfsim.jolt/suspension-min-length (+ 0.5)
+                       :sfsim.jolt/suspension-max-length (+ 0.5 0.5419)
+                       :sfsim.jolt/stiffness 1077473.882
+                       :sfsim.jolt/damping 155702.159})
+
+
+(defn initialize-wheels
+  "Get wheel positions from model and set up wheel parameters"
+  [state model]
+  (let [gltf-to-aerodynamic  (rotation-matrix aerodynamics/gltf-to-aerodynamic)
+        main-wheel-left-pos  (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Main Wheel Left")))
+        main-wheel-right-pos (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Main Wheel Right")))
+        front-wheel-pos      (get-translation (mulm gltf-to-aerodynamic (model/get-node-transform model "Wheel Front")))
+        main-wheel-left      (assoc main-wheel-base
+                                    :sfsim.jolt/position
+                                    (sub main-wheel-left-pos
+                                         (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8))))
+        main-wheel-right     (assoc main-wheel-base
+                                    :sfsim.jolt/position
+                                    (sub main-wheel-right-pos
+                                         (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length main-wheel-base) 0.8))))
+        front-wheel          (assoc front-wheel-base
+                                    :sfsim.jolt/position
+                                    (sub front-wheel-pos
+                                         (vec3 0 0 (- ^double (:sfsim.jolt/suspension-max-length front-wheel-base) 0.5))))]
+    (assoc state ::wheels [main-wheel-left main-wheel-right front-wheel])))
+
+
+(defn rcs-set
+  "Get list of names for RCS thruster triplet given a location string"
+  [location]
+  [(str "RCS " location "1") (str "RCS " location "2") (str "RCS " location "3")])
+
+
+(defn rcs-sets
+  "Get set with names for RCS thruster triplets given a list of location strings"
+  [& locations]
+  (set (mapcat rcs-set locations)))
+
+
+(defn all-rcs
+  "Get list of all thruster names"
+  []
+  (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
+
+
+(defn initialize-thrusters
+  "Get thruster transforms from model"
+  [state model]
+  (let [gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic)]
+    (assoc state ::thrusters
+           (into {}
+                 (remove nil?
+                         (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
+                                                      (mulm gltf-to-aerodynamic)
+                                                      (vector rcs-name)))
+                              (all-rcs)))))))
 
 
 (defn get-julian-date-ut
@@ -252,7 +331,7 @@
 (defn get-geographic
   "Get longitude, latitude, and height of space craft"
   [state planet]
-  (let [position  (get-position :sfsim.physics/surface state)
+  (let [position  (get-position ::surface state)
         longitude (atan2 (.y ^Vec3 position) (.x ^Vec3 position))
         latitude  (atan2 (.z ^Vec3 position) (hypot (.x ^Vec3 position) (.y ^Vec3 position)))
         height    (- (mag position) ^double (:sfsim.planet/radius planet))]
@@ -264,7 +343,7 @@
 (defn get-height
   "Get height of space craft"
   [state planet]
-  (let [position  (get-position :sfsim.physics/surface state)]
+  (let [position  (get-position ::surface state)]
     (- (mag position) ^double (:sfsim.planet/radius planet))))
 
 
@@ -415,11 +494,15 @@
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
-    (let [display-speed (mag (jolt/get-linear-velocity body))]
+    (let [speed                  (jolt/get-linear-velocity body)
+          position               (jolt/get-translation body)
+          display-speed          (mag speed)
+          display-vertical-speed (dot speed (normalize position))]
       (jolt/add-impulse body (mult dv2 mass))
       (-> state
           (update ::offset-seconds + dt)
-          (assoc ::display-speed display-speed)))))
+          (assoc ::display-speed display-speed)
+          (assoc ::display-vertical-speed display-vertical-speed)))))
 
 
 (defmethod update-state ::orbit
@@ -439,11 +522,16 @@
           delta-speed    (jolt/get-linear-velocity body)]
       (jolt/set-translation body (vec3 0 0 0))
       (jolt/set-linear-velocity body (vec3 0 0 0))
-      (-> state
-          (update ::offset-seconds + dt)
-          (assoc ::display-speed (mag (add speed delta-speed)))
-          (update ::position add delta-position)
-          (update ::speed add delta-speed)))))
+      (let [position               (add position delta-position)
+            speed                  (add speed delta-speed)
+            display-speed          (mag speed)
+            display-vertical-speed (dot speed (normalize position))]
+        (-> state
+            (update ::offset-seconds + dt)
+            (assoc ::display-speed display-speed)
+            (assoc ::display-vertical-speed display-vertical-speed)
+            (assoc ::position position)
+            (assoc ::speed speed))))))
 
 
 (defmulti add-force
@@ -504,18 +592,6 @@
   (jolt/add-torque (::body state) torque_))
 
 
-(defn rcs-set
-  "Get list of names for RCS thruster triplet given a location string"
-  [location]
-  [(str "RCS " location "1") (str "RCS " location "2") (str "RCS " location "3")])
-
-
-(defn rcs-sets
-  "Get set with names for RCS thruster triplets given a list of location strings"
-  [& locations]
-  (set (mapcat rcs-set locations)))
-
-
 (defn active-rcs
   "Return set of names of active RCS thruster triplets"
   [state]
@@ -529,10 +605,18 @@
       (union (when (pos? ^double ((::rcs-thrust state) 2)) (rcs-sets "R" "LF")))))
 
 
-(defn all-rcs
-  "Get list of all thruster names"
-  []
-  (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
+(defn ordered-rcs-transforms
+  "Get transforms of RCS thrusters for ordered list of names"
+  [transforms rcs-names]
+  (mapv (fn [rcs-name] [rcs-name (transforms rcs-name)]) rcs-names))
+
+
+(defn active-rcs-transforms
+  "Get transforms of active RCS thrusters given ordered list of names"
+  [state ordered-names]
+  (let [transforms   (::thrusters state)
+        active-names (active-rcs state)]
+    (ordered-rcs-transforms transforms (filter active-names ordered-names))))
 
 
 (defn set-thruster-forces
@@ -584,8 +668,9 @@
 
 (defn update-gear-status
   "Create or destroy vehicle constraint depending on whether gear is down or not"
-  [state wheels]
-  (let [gear (::gear state)]
+  [state]
+  (let [wheels (::wheels state)
+        gear   (::gear state)]
     (if (= gear 1.0)
       (create-vehicle-constraint state wheels)
       (destroy-vehicle-constraint state))))
@@ -655,7 +740,7 @@
 
 (defn load-state
   "Load physics state from serializable representation"
-  [state data wheels]
+  [state data]
   (let [domain (::domain data)
         result (-> state
                    (assoc ::start-julian-date (::start-julian-date data))
@@ -665,7 +750,7 @@
                    (assoc ::throttle (::throttle data))
                    (assoc ::gear (::gear data))
                    (assoc ::rcs-thrust (apply vec3 (::rcs-thrust data))))]
-    (update-gear-status result wheels)
+    (update-gear-status result)
     (set-wheel-angles result (::wheel-angles data))
     (set-suspension result (::suspension data))
     result))
@@ -673,16 +758,158 @@
 
 (defn simulation-step
   "Method with all physics updates"
-  [state controls dt wheels planet-config split-orientations thrust]
+  [state controls dt planet-config split-orientations thrust]
   (-> state
       (update-domain planet-config)
       (set-control-inputs controls dt)
-      (update-gear-status wheels)
+      (update-gear-status)
       (update-brakes)
       (update ::local-mesh planet/update-local-mesh split-orientations (get-position ::surface state))
       (set-thruster-forces thrust)
       (set-aerodynamic-forces planet-config)
       (update-state dt (gravitation (vec3 0 0 0) (:sfsim.planet/mass planet-config)))))
+
+
+(defn gravitational-parameter
+  "Get gravitational parameter of planet"
+  ^double [planet]
+  (* ^double (:sfsim.planet/mass planet) ^double gravitational-constant))
+
+
+(defn specific-mechanical-energy
+  "Get specific mechanical energy of orbiting object"
+  ^double [planet state]
+  (let [speed (mag (get-linear-speed ::orbit state))]
+    (- (* 0.5 speed speed)
+       (/ (gravitational-parameter planet) (mag (get-position ::orbit state))))))
+
+
+(defn specific-angular-momentum
+  "Get specific angular momentum of orbiting object"
+  ^Vec3 [state]
+  (let [position (get-position ::orbit state)
+        speed    (get-linear-speed ::orbit state)]
+    (cross position speed)))
+
+
+(defn semi-major-axis
+  "Get semi-major axis of orbit"
+  ^double [planet state]
+  (let [mu      (gravitational-parameter planet)
+        epsilon (specific-mechanical-energy planet state)]
+    (- (/ mu (* 2.0 epsilon)))))
+
+
+(defn semi-minor-axis
+  "Get semi-minor axis of orbit"
+  ^double [planet state]
+  (let [epsilon (specific-mechanical-energy planet state)
+        h       (specific-angular-momentum state)]
+    (/ (mag h) (sqrt (abs (* 2.0 epsilon))))))
+
+
+(defn eccentricity
+  "Get eccentricity of orbit"
+  ^double [planet state]
+  (let [mu      (gravitational-parameter planet)
+        epsilon (specific-mechanical-energy planet state)
+        h       (specific-angular-momentum state)]
+    (sqrt (+ 1.0 (/ (* 2.0 epsilon (dot h h)) (* mu mu))))))
+
+
+(defn periapsis
+  "Get periapsis (lowest radius) of orbit"
+  ^double [planet state]
+  (let [mu (gravitational-parameter planet)
+        h  (specific-angular-momentum state)
+        e  (eccentricity planet state)]
+    (/ (dot h h) (* mu (+ 1.0 e)))))
+
+
+(defn apoapsis
+  "Get apoapsis (highest radius) of orbit"
+  ^double [planet state]
+  (let [a (semi-major-axis planet state)
+        e (eccentricity planet state)]
+    (* a (+ 1.0 e))))
+
+
+(defn true-anomaly
+  "Get angle between periapsis and current position"
+  ^double [planet state]
+  (let [mu     (gravitational-parameter planet)
+        e      (eccentricity planet state)
+        h      (specific-angular-momentum state)
+        r      (get-position ::orbit state)
+        v      (get-linear-speed ::orbit state)
+        sign   (if (>= (dot v r) 0.0) 1.0 -1.0)
+        cos-nu (* (/ 1.0 e) (- (/ (dot h h) (* mu (mag r))) 1.0))]
+    (* sign (acos (clamp cos-nu -1.0 1.0)))))
+
+
+(defn eccentric-anomaly
+  "Get angle between periapsis and current position for elliptical orbit"
+  ^double [planet state]
+  (let [f (true-anomaly planet state)
+        e (eccentricity planet state)]
+    (atan2 (* (sqrt (- 1.0 (* e e))) (sin f)) (+ e (cos f)))))
+
+
+(defn atanh
+  "atanh(x) = 0.5 * log(1 + (2x / 1-x)"
+  ^double [^double x]
+  (* 0.5 (log1p (* 2.0 (/ x (- 1.0 x))))))
+
+
+(defn hyperbolic-anomaly
+  "Get angle between periapsis and current position for hyperbolic orbit"
+  ^double [planet state]
+  (let [f (true-anomaly planet state)
+        e (eccentricity planet state)]
+    (* 2.0 (atanh (* (sqrt (/ (- e 1.0) (+ e 1.0))) (tan (/ f 2.0)))))))
+
+
+(defn mean-motion
+  "Get mean motion of orbit in radians per second"
+  ^double [planet state]
+  (let [mu     (gravitational-parameter planet)
+        a      (abs (semi-major-axis planet state))]
+    (sqrt (/ mu (* a a a)))))
+
+
+(defn orbital-period
+  "Get time to complete one orbit in seconds"
+  ^double [planet state]
+  (/ (* 2.0 PI) (mean-motion planet state)))
+
+
+(defn mean-anomaly
+  "Get mean anomaly of orbit"
+  ^double [planet state]
+  (let [e (eccentricity planet state)]
+    (if (<= e 1.0)
+      (let [E (eccentric-anomaly planet state)]
+        (- E (* e (sin E))))
+      (let [H (hyperbolic-anomaly planet state)]
+        (- (* e (sinh H)) H)))))
+
+
+(defn time-since-periapsis
+  "Get time since periapsis"
+  ^double [planet state]
+  (let [M (mean-anomaly planet state)
+        n (mean-motion planet state)]
+    (/ M n)))
+
+
+(defn time-since-apoapsis
+  "Get time since apoapsis"
+  ^double [planet state]
+  (let [t (time-since-periapsis planet state)
+        T (orbital-period planet state)]
+    (if (>= t 0.0)
+      (- t (* 0.5 T)),
+      (+ (* 0.5 T) t))))
 
 
 (set! *warn-on-reflection* false)
