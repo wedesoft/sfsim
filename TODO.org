@@ -58,6 +58,8 @@
       - [[https://www.shadertoy.com/view/XX3fDH]]
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
     - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
+  - [ ] increase start distance of audio volume falloff
+  - [ ] use compact formatting for text, use transparent background bar?
   - [ ] key to secure main engine
   - [ ] hide mouse cursor
   - [ ] schemas for model, planet, and atmosphere geometry renderer
