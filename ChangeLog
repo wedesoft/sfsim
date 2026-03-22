@@ -1,3 +1,11 @@
+sfsim (0.16-1)
+
+  * Hide mouse cursor when dialogs are not shown
+	* Increase reference distance for audio
+  * make pitch angle controllable for speeds above Mach 5
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 22 Mar 2026 22:43:28 +0000
+
 sfsim (0.15-1)
 
   * play sound track when reaching orbit
