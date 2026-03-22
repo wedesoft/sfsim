@@ -29,7 +29,7 @@
 (defn setup-sample-attenuation
   "Configure distance attenuation model"
   [source]
-  (AL10/alSourcef source AL10/AL_REFERENCE_DISTANCE 50.0)
+  (AL10/alSourcef source AL10/AL_REFERENCE_DISTANCE 100.0)
   (AL10/alSourcef source AL10/AL_MAX_DISTANCE 5000.0)
   (AL10/alSourcef source AL10/AL_ROLLOFF_FACTOR 1.0))
 

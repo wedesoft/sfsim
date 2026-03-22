@@ -58,7 +58,7 @@
       - [[https://www.shadertoy.com/view/XX3fDH]]
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
     - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
-  - [ ] increase start distance of audio volume falloff
+  - [X] increase start distance of audio volume falloff
   - [X] use compact formatting for text
   - [ ] key to secure main engine
   - [X] hide mouse cursor
