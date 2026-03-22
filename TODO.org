@@ -58,6 +58,8 @@
       - [[https://www.shadertoy.com/view/XX3fDH]]
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
     - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
+  - [ ] key to secure main engine
+  - [ ] hide mouse cursor
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
   - [ ] finish tidying up core
