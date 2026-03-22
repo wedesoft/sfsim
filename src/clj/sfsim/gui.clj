@@ -953,8 +953,9 @@
         object-position (physics/get-position :sfsim.physics/surface (:physics state))
         eccentricity    (physics/eccentricity config/planet-config (:physics state))
         controls        (-> state :input :sfsim.input/controls)
-        text1           (format "h = %10.1f m, v = %7.1f m/s, %s%s%s%s, fps = %6.1f"
+        text1           (format "h = %.1f m, vs = %.1f m/s, v = %.1f m/s, %s%s%s%s, fps = %5.1f"
                                 (- (fv/mag object-position) ^double earth-radius)
+                                (:sfsim.physics/display-vertical-speed (:physics state))
                                 (:sfsim.physics/display-speed (:physics state))
                                 (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
                                 (if (:sfsim.input/brake controls) ", brake"
@@ -962,7 +963,7 @@
                                 (if (:sfsim.input/air-brake controls) ", air brake" "")
                                 (if (-> state :input :sfsim.input/pause) ", pause" "")
                                 (/ 1.0 ^double frametime))
-        text2           (format "hp = %10.1f m, ha = %10.1f m, tp = %7.1f s, ta = %7.1f s"
+        text2           (format "hp = %.1f m, ha = %.1f m, tp = %.1f s, ta = %.1f s"
                                 (- (physics/periapsis config/planet-config (:physics state)) ^double earth-radius)
                                 (if (< eccentricity 1.0)
                                   (- (physics/apoapsis config/planet-config (:physics state)) ^double earth-radius)

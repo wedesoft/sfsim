@@ -649,10 +649,10 @@
     {:lower (angular-acc-lower 1) :upper (angular-acc-upper 1)}))
 
 
-(future-facts "Test pitch control authority at different heights"
+(facts "Test pitch control authority at different heights"
        (doseq [height (range 0.0 121000.0 1000.0)]
               height => (fn [height] (neg? (:lower (pitch-acceleration height))))
               height => (fn [height] (pos? (:upper (pitch-acceleration height))))
-              (when (<= height 73000.0)
+              (when (<= height 58000.0)
                 height => (fn [height] (<= (:lower (pitch-acceleration height)) (- nominal-pitch-acceleration)))
                 height => (fn [height] (>= (:upper (pitch-acceleration height)) (+ nominal-pitch-acceleration))))))

@@ -115,6 +115,7 @@
    ::speed (vec3 0 0 0)
    ::domain ::surface
    ::display-speed 0.0
+   ::display-vertical-speed 0.0
    ::throttle 0.0
    ::air-brake 0.0
    ::gear 1.0
@@ -493,11 +494,15 @@
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
-    (let [display-speed (mag (jolt/get-linear-velocity body))]
+    (let [speed                  (jolt/get-linear-velocity body)
+          position               (jolt/get-translation body)
+          display-speed          (mag speed)
+          display-vertical-speed (dot speed (normalize position))]
       (jolt/add-impulse body (mult dv2 mass))
       (-> state
           (update ::offset-seconds + dt)
-          (assoc ::display-speed display-speed)))))
+          (assoc ::display-speed display-speed)
+          (assoc ::display-vertical-speed display-vertical-speed)))))
 
 
 (defmethod update-state ::orbit
@@ -517,11 +522,16 @@
           delta-speed    (jolt/get-linear-velocity body)]
       (jolt/set-translation body (vec3 0 0 0))
       (jolt/set-linear-velocity body (vec3 0 0 0))
-      (-> state
-          (update ::offset-seconds + dt)
-          (assoc ::display-speed (mag (add speed delta-speed)))
-          (update ::position add delta-position)
-          (update ::speed add delta-speed)))))
+      (let [position               (add position delta-position)
+            speed                  (add speed delta-speed)
+            display-speed          (mag speed)
+            display-vertical-speed (dot speed (normalize position))]
+        (-> state
+            (update ::offset-seconds + dt)
+            (assoc ::display-speed display-speed)
+            (assoc ::display-vertical-speed display-vertical-speed)
+            (assoc ::position position)
+            (assoc ::speed speed))))))
 
 
 (defmulti add-force

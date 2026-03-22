@@ -59,9 +59,10 @@
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
     - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [ ] increase start distance of audio volume falloff
-  - [ ] use compact formatting for text, use transparent background bar?
+  - [X] use compact formatting for text
   - [ ] key to secure main engine
-  - [ ] hide mouse cursor
+  - [X] hide mouse cursor
+  - [ ] show radar altitude
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
   - [ ] finish tidying up core

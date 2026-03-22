@@ -243,8 +243,10 @@
           (onscreen-render window
                            (graphics/render-frame graphics frame (planet/get-current-tree tile-tree))
                            (with-culling :sfsim.render/noculling
-                             (when-let [menu (-> @state :gui :sfsim.gui/menu)]
-                                       (swap! state menu gui window-width window-height))
+                             (let [menu (-> @state :gui :sfsim.gui/menu)]
+                               (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR
+                                                      (if menu GLFW/GLFW_CURSOR_NORMAL GLFW/GLFW_CURSOR_HIDDEN))
+                               (when menu (swap! state menu gui window-width window-height)))
                              (when (not playback)
                                (let [controls (-> @state :input :sfsim.input/controls)]
                                  (gui/flight-controls-display controls gui)
