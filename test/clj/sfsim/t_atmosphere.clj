@@ -779,7 +779,6 @@ void main()
 in VS_OUT
 {
   vec3 direction;
-  vec3 object_direction;
 } fs_in;
 out vec3 fragColor;
 void main()

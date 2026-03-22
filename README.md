@@ -138,6 +138,16 @@ The Blender model can be converted to GLB as follows:
 
 # External Links
 
+* Sfsim
+  * [Sfsim homepage](https://wedesoft.github.io/sfsim/)
+  * [Sfsim on Steam](https://store.steampowered.com/app/3687560/sfsim/)
+  * [Sfsim on IndieDB](https://www.indiedb.com/games/sfsim)
+  * [Sfsim on Impress](https://impress.games/press-kit/jan-wedekind/sfsim)
+  * [Sfsim on IndieLoot](https://indieloot.io/games/sfsim)
+  * [Sfsim on Github](https://github.com/wedesoft/sfsim)
+  * [Sfsim on Gitlab](https://gitlab.com/wedesoft/sfsim)
+  * [Sfsim on Bitbucket](https://bitbucket.org/wedesoft/sfsim/)
+  * [Sfsim on Codeberg](https://codeberg.org/wedesoft/sfsim)
 * Simulators
   * [Orbiter 2016](https://github.com/mschweiger/orbiter)
   * [Open Orbiter Sim](https://openorbiter.space/)
@@ -155,6 +165,7 @@ The Blender model can be converted to GLB as follows:
   * [Space Nerds in Space](https://smcameron.github.io/space-nerds-in-space/)
   * [Alliance Space Guard](https://alliancespaceguard.com/)
   * [Pioneer Space Sim](https://pioneerspacesim.net/)
+  * [Cosmorama Space Flight Simulator](https://www.cosmorama.com/space-flight-sim/)
 * Engines
   * [Jolt Physics](https://github.com/jrouwe/JoltPhysics)
   * [Project Chrono physics engine](https://projectchrono.org/)

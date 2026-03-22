@@ -9,6 +9,7 @@
       [clojure.math :refer (signum)]
       [clojure.string :refer (upper-case)]
       [clojure.set :refer (map-invert)]
+      [sfsim.config :as config]
       [sfsim.util :refer (clamp dissoc-in byte-buffer->byte-array float-buffer->float-array)])
     (:import
       [clojure.lang
@@ -369,11 +370,17 @@
      GLFW/GLFW_KEY_PAGE_DOWN ::camera-rotate-z-negative
      GLFW/GLFW_KEY_COMMA     ::camera-distance-change-positive
      GLFW/GLFW_KEY_PERIOD    ::camera-distance-change-negative
-     GLFW/GLFW_KEY_SPACE     ::camera-reset
-     }}
+     GLFW/GLFW_KEY_SPACE     ::camera-reset}}
    ::joysticks
-   {::dead-zone 0.1}
-   })
+   {::dead-zone 0.1}})
+
+
+(defn read-joystick-config
+  "Read joystick configuration and add to input mappings"
+  [state]
+  (assoc-in state
+            [::mappings ::joysticks]
+            (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1})))
 
 
 (defn menu-key

@@ -374,9 +374,9 @@
                          3.0  25.4226
                          4.0  25.2999
                          5.0  25.2361
-                         10.0 50.0000
-                         20.0 50.0000
-                         30.0 50.0000))
+                         10.0 25.0000   ; was 50.0 but not possible to control then
+                         20.0 25.0000   ; was 50.0 but not possible to control then
+                         30.0 25.0000)) ; was 50.0 but not possible to control then
 
 
 (defn coefficient-of-pitch-moment

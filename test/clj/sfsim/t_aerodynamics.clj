@@ -10,11 +10,12 @@
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [clojure.math :refer (PI to-radians sqrt cos)]
-      [fastmath.matrix :refer (eye col)]
-      [fastmath.vector :refer (vec3)]
+      [fastmath.matrix :refer (mat3x3 mulv eye col inverse)]
+      [fastmath.vector :refer (vec3 mag div)]
       [sfsim.conftest :refer (roughly-vector)]
       [sfsim.quaternion :as q]
       [sfsim.util :refer (sqr)]
+      [sfsim.units :refer :all]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.aerodynamics :refer :all :as aerodynamics])
     (:import
@@ -553,3 +554,105 @@
              (:sfsim.aerodynamics/moments (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed
                                                              (vec3 0 1 2) 0.25 0.4))
              => (q/rotate-vector (q/->Quaternion 0.0 1.0 0.0 0.0) (vec3 -0.5 -0.125 -0.25))))))
+
+
+(facts "Test zero aerodynamic forces and moments at rest"
+       (let [{:sfsim.aerodynamics/keys [forces moments]}
+             (aerodynamic-loads 0.0 (q/->Quaternion 1 0 0 0) (vec3 0 0 0) (vec3 0 0 0) (vec3 0 0 0) 0.0 0.0)]
+         forces => (roughly-vector (vec3 0 0 0) 1e-6)
+         moments => (roughly-vector (vec3 0 0 0) 1e-6)))
+
+
+(def reentry-angle (akima-spline
+                     0.0  (to-radians 5)
+                     1.0  (to-radians 5)
+                     5.0  (to-radians 10)
+                     12.0 (to-radians 40)
+                     25.0 (to-radians 40)
+                     30.0 (to-radians 40)))
+
+
+(def optimal-deceleration (* 1.7 gravitation))
+
+
+(defn orientation-pitch
+  [pitch-angle]
+  (q/rotation pitch-angle (vec3 0 1 0)))
+
+
+(defn orientation-for-speed
+  [speed-mach]
+  (orientation-pitch (reentry-angle speed-mach)))
+
+
+(defn speed-of-sound-at-height
+  [height]
+  (atmosphere/speed-of-sound (atmosphere/temperature-at-height height)))
+
+
+(def mass 125000.0)
+
+(def inertia (mat3x3 5016255.0      69.359375  89151.0859375,
+                     69.3671875     8511745.0 -12.953125,
+                     89151.1171875 -12.96875   1.2697381E7))
+
+
+(defn deceleration-at-reentry
+  [height speed]
+  (let [speed-of-sound    (speed-of-sound-at-height height)
+        speed-mach        (/ speed speed-of-sound)
+        orientation       (orientation-for-speed speed-mach)
+        loads             (aerodynamic-loads height orientation (vec3 speed 0 0) (vec3 0 0 0) (vec3 0 0 0) 0.0 0.0)]
+    (div (:sfsim.aerodynamics/forces loads) mass)))
+
+
+(defn deceleration-magnitude-at-reentry
+  [height speed]
+  (mag (deceleration-at-reentry height speed)))
+
+
+(defn bisection-inverse
+  [f y x0 x1 accuracy]
+  (let [xm (/ (+ x0 x1) 2.0)
+        fm (f xm)]
+    (cond
+      (< (- x1 x0) accuracy) xm
+      (< y fm) (recur f y x0 xm accuracy)
+      (> y fm) (recur f y xm x1 accuracy))))
+
+
+(defn optimal-speed-for-height
+  [height]
+  (let [lower-bound 0.0
+        upper-bound (* 30.0 (speed-of-sound-at-height height))]
+    (bisection-inverse (partial deceleration-magnitude-at-reentry height) optimal-deceleration lower-bound upper-bound 1.0)))
+
+
+(def max-pitch-error (to-radians 3.0))
+
+(def nominal-pitch-acceleration (to-radians 1.0))
+
+
+(defn pitch-acceleration
+  [height]
+  (let [speed                (optimal-speed-for-height height)
+        speed-of-sound       (speed-of-sound-at-height height)
+        orientation          (orientation-for-speed (/ speed speed-of-sound))
+        min-flaps            (to-radians -20.0)
+        max-flaps            (to-radians 20.0)
+        moments-lower        (:sfsim.aerodynamics/moments
+                               (aerodynamic-loads height orientation (vec3 speed 0 0) (vec3 0 0 0) (vec3 0 max-flaps 0) 0.0 0.0))
+        moments-upper        (:sfsim.aerodynamics/moments
+                               (aerodynamic-loads height orientation (vec3 speed 0 0) (vec3 0 0 0) (vec3 0 min-flaps 0) 0.0 0.0))
+        angular-acc-lower    (mulv (inverse inertia) moments-lower)
+        angular-acc-upper    (mulv (inverse inertia) moments-upper)]
+    {:lower (angular-acc-lower 1) :upper (angular-acc-upper 1)}))
+
+
+(facts "Test pitch control authority at different heights"
+       (doseq [height (range 0.0 121000.0 1000.0)]
+              height => (fn [height] (neg? (:lower (pitch-acceleration height))))
+              height => (fn [height] (pos? (:upper (pitch-acceleration height))))
+              (when (<= height 58000.0)
+                height => (fn [height] (<= (:lower (pitch-acceleration height)) (- nominal-pitch-acceleration)))
+                height => (fn [height] (>= (:upper (pitch-acceleration height)) (+ nominal-pitch-acceleration))))))

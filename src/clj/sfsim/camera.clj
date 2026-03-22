@@ -140,8 +140,7 @@
 (defn update-camera-pose
   "Update the camera position according to user input"
   [camera-state ^double dt camera-input]
-  (let [weight-previous (pow 0.25 dt)
-        mix             (fn [prev target] (+ (* ^double prev weight-previous) (* ^double target (- 1.0 weight-previous))))]
+  (let [weight-previous (pow 0.25 dt)]
     (-> (if (:sfsim.input/reset camera-input)
           (assoc camera-state
                  ::target-yaw 0.0

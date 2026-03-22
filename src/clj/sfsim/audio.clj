@@ -10,7 +10,7 @@
               [fastmath.matrix :refer (mulm mulv inverse eye)]
               [sfsim.config :as config]
               [sfsim.matrix :refer (transformation-matrix quaternion->matrix get-translation get-rotation)]
-              [sfsim.physics :refer (get-height get-linear-speed get-position get-orientation)]
+              [sfsim.physics :refer (get-height get-linear-speed get-position get-orientation periapsis apoapsis eccentricity)]
               [sfsim.atmosphere :refer (pressure-at-height density-at-height temperature-at-height speed-of-sound)]
               [sfsim.aerodynamics :refer (dynamic-pressure drag-multiplier)]
               [sfsim.camera :as camera]
@@ -29,7 +29,7 @@
 (defn setup-sample-attenuation
   "Configure distance attenuation model"
   [source]
-  (AL10/alSourcef source AL10/AL_REFERENCE_DISTANCE 50.0)
+  (AL10/alSourcef source AL10/AL_REFERENCE_DISTANCE 100.0)
   (AL10/alSourcef source AL10/AL_MAX_DISTANCE 5000.0)
   (AL10/alSourcef source AL10/AL_ROLLOFF_FACTOR 1.0))
 
@@ -297,11 +297,14 @@
   "Method for playing music tracks"
   [state physics _inputs]
   (let [height (get-height physics config/planet-config)
-        music  (if (-> state ::settings ::no-music)
-                 nil
-                 (if (<= ^double height 100000.0)
-                   nil
-                   (-> state ::sources ::edge-of-space)))]
+        radius (:sfsim.planet/radius config/planet-config)
+        music  (when (not (-> state ::settings ::no-music))
+                 (when (>= ^double height 100000.0)
+                   (if (and (>= (periapsis config/planet-config physics) (+ ^double radius 160000.0))
+                            (or (>= (eccentricity config/planet-config physics) 1.0)
+                                (>= (apoapsis config/planet-config physics) (+ ^double radius 160000.0))))
+                     (-> state ::sources ::surrealism-mix)
+                     (-> state ::sources ::edge-of-space))))]
     (when-not (= (::music state) music)
               (when-not (nil? (::music state))
                         (source-stop (::music state)))
