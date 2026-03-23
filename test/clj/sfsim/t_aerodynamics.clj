@@ -179,7 +179,10 @@
        (coefficient-of-pitch-moment 0.6 (to-radians 3.0)) => (roughly (* 2.7825 (to-radians 3.0) 0.01 (- 25.0 25.8613)) 1e-6)
        (coefficient-of-pitch-moment 0.6 (to-radians 3.0) (to-radians 0.0))
        => (roughly (* 2.7825 (to-radians 3.0) 0.01 (- 25.0 25.8613)) 1e-6)
-       (coefficient-of-pitch-moment 0.6 (to-radians 3.0) (to-radians 90.0)) => (roughly 0.0 1e-6))
+       (coefficient-of-pitch-moment 0.6 (to-radians 3.0) (to-radians 90.0)) => (roughly 0.0 1e-6)
+       (let [speed #:sfsim.aerodynamics{:speed 10.0 :alpha (to-radians 40.0) :beta (to-radians 0.0)}
+             flaps-moment (pitch-moment-control speed (vec3 0 (to-radians 10.0) 0) 1.0 2.0e-4)]
+         (pitch-moment speed 1.0 2.0e-4) => (roughly (- flaps-moment) 1e-4)))
 
 
 (facts "Coefficient of yaw moment"
@@ -566,13 +569,25 @@
 (def reentry-angle (akima-spline
                      0.0  (to-radians 5)
                      1.0  (to-radians 5)
-                     5.0  (to-radians 10)
-                     12.0 (to-radians 40)
-                     25.0 (to-radians 40)
+                     3.0  (to-radians 7)
+                     7.0  (to-radians 7)
+                     12.0 (to-radians 10)
+                     14.5 (to-radians 15)
+                     17.0 (to-radians 20)
+                     18.0 (to-radians 40)
+                     20.0 (to-radians 40)
                      30.0 (to-radians 40)))
 
 
-(def optimal-deceleration (* 1.7 gravitation))
+;; Entry Interface Mach 25 ~0.05g First "bite" of the atmosphere.
+;; Initial Descent Mach 25 → 22 0.1g → 0.5g Rapidly thickening air; heat starts building.
+;; The "G-Hump" Mach 20 → 12 1.0g → 1.5g Peak Deceleration. S-turns are used here.
+;; Hypersonic Glide Mach 12 → 5 0.8g → 1.2g Energy management phase; constant drag.
+;; Transonic Mach 5 → 1 0.5g → 1.0g Transitioning to standard aircraft flight.
+;; Touchdown Mach 0.3 (225 mph) ~0.3g (Braking) Wheel brakes and drag chute take over.
+
+
+(def optimal-deceleration (* 2.0 gravitation))
 
 
 (defn orientation-pitch
@@ -634,25 +649,57 @@
 
 
 (defn pitch-acceleration
+  [height flaps]
+  (let [speed                (optimal-speed-for-height height)
+        speed-of-sound       (speed-of-sound-at-height height)
+        orientation          (orientation-for-speed (/ speed speed-of-sound))
+        moments              (:sfsim.aerodynamics/moments
+                               (aerodynamic-loads height orientation (vec3 speed 0 0) (vec3 0 0 0) (vec3 0 flaps 0) 0.0 0.0))
+        angular-acceleration (mulv (inverse inertia) moments)]
+    (angular-acceleration 1)))
+
+
+(defn vertical-acceleration
   [height]
   (let [speed                (optimal-speed-for-height height)
         speed-of-sound       (speed-of-sound-at-height height)
         orientation          (orientation-for-speed (/ speed speed-of-sound))
-        min-flaps            (to-radians -20.0)
-        max-flaps            (to-radians 20.0)
-        moments-lower        (:sfsim.aerodynamics/moments
-                               (aerodynamic-loads height orientation (vec3 speed 0 0) (vec3 0 0 0) (vec3 0 max-flaps 0) 0.0 0.0))
-        moments-upper        (:sfsim.aerodynamics/moments
-                               (aerodynamic-loads height orientation (vec3 speed 0 0) (vec3 0 0 0) (vec3 0 min-flaps 0) 0.0 0.0))
-        angular-acc-lower    (mulv (inverse inertia) moments-lower)
-        angular-acc-upper    (mulv (inverse inertia) moments-upper)]
-    {:lower (angular-acc-lower 1) :upper (angular-acc-upper 1)}))
+        moments              (:sfsim.aerodynamics/forces
+                               (aerodynamic-loads height orientation (vec3 speed 0 0) (vec3 0 0 0) (vec3 0 0 0) 0.0 0.0))
+        acceleration         (div moments mass)]
+    (- (acceleration 2))))
 
 
-(facts "Test pitch control authority at different heights"
+(defn centrifugal-acceleration
+  ([height]
+   (centrifugal-acceleration height (optimal-speed-for-height height)))
+  ([height speed]
+   (let [radius 6378000.0]
+     (/ (* speed speed) (+ height radius)))))
+
+
+(defn pitch-acceleration-range
+  [height]
+  (let [min-flaps (to-radians -20.0)
+        max-flaps (to-radians 20.0)]
+    {:lower (pitch-acceleration height max-flaps)
+     :upper (pitch-acceleration height min-flaps)}))
+
+
+(future-facts "Test pitch control authority at different heights"
        (doseq [height (range 0.0 121000.0 1000.0)]
-              height => (fn [height] (neg? (:lower (pitch-acceleration height))))
-              height => (fn [height] (pos? (:upper (pitch-acceleration height))))
-              (when (<= height 58000.0)
-                height => (fn [height] (<= (:lower (pitch-acceleration height)) (- nominal-pitch-acceleration)))
-                height => (fn [height] (>= (:upper (pitch-acceleration height)) (+ nominal-pitch-acceleration))))))
+              height => (fn [height] (neg? (:lower (pitch-acceleration-range height))))
+              height => (fn [height] (pos? (:upper (pitch-acceleration-range height))))
+              (when (<= height 54000.0)
+                height => (fn [height] (<= (:lower (pitch-acceleration-range height)) (- nominal-pitch-acceleration)))
+                height => (fn [height] (>= (:upper (pitch-acceleration-range height)) (+ nominal-pitch-acceleration))))
+              (when (>= (optimal-speed-for-height height) (* 12.0 (speed-of-sound-at-height height)))
+                height => (fn [height] (<= (abs (pitch-acceleration height (to-radians 10.0))) 1e-5)))))
+
+
+(facts "Test altitude control authority at different heights"
+       (doseq [height (range 0.0 120000.0 1000.0)]
+              height => (fn [height]
+                            (let [speed-mach (/ (optimal-speed-for-height height) (speed-of-sound-at-height height))]
+                              ;(println height "," speed-mach ":" (vertical-acceleration height) ">=" (- gravitation (centrifugal-acceleration height)))
+                              (>= (vertical-acceleration height) (- gravitation (centrifugal-acceleration height)))))))

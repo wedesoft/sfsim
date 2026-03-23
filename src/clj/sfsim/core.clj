@@ -126,16 +126,17 @@
         jd-ut               {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
         longitude           (to-radians -1.3747)
         latitude            (to-radians 50.9672)
+        height              0.0
         input-state         (-> (make-initial-state) read-joystick-config)
         convex-hulls-join   (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25))
         body                (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
         mass                (jolt/get-mass body)
-        thrust              (* ^double mass 25.0)
+        thrust              (* ^double mass 250.0)
         elevation           (:sfsim.model/elevation config/model-config)
         physics-state       (-> (physics/make-physics-state body)
                                 (physics/initialize-wheels model)
                                 (physics/initialize-thrusters model)
-                                (physics/set-geographic surface config/planet-config elevation longitude latitude 0.0)
+                                (physics/set-geographic surface config/planet-config elevation longitude latitude height)
                                 (physics/set-julian-date-ut (astro/julian-date jd-ut)))
         camera-state        (camera/make-camera-state)
         gui-state           {:sfsim.gui/menu nil
