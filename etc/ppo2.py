@@ -10,22 +10,16 @@ import torch.nn.functional as F
 # Environment
 class DiscreteActionWrapper(gym.ActionWrapper):
     "Bin continuous actions into discrete intervals."
-    def __init__(self, env, n_actions=5):
+    def __init__(self, env, n_actions=2):
         super().__init__(env)
         self.n_actions = n_actions
         self.action_space = gym.spaces.Discrete(n_actions)
 
     def action(self, action):
         if action == 0:
-            return np.array([-2])
+            return np.array(0)
         elif action == 1:
-            return np.array([-1])
-        elif action == 2:
-            return np.array([0])
-        elif action == 3:
-            return np.array([1])
-        elif action == 4:
-            return np.array([2])
+            return np.array(1)
 
 class ObservationWrapper(gym.ObservationWrapper):
     "Scale the third value of the observation by 1/8."
@@ -72,7 +66,7 @@ class ValueFunction(nn.Module):
 
 
 # Make an environment
-env = gym.make('Pendulum-v1')
+env = gym.make('CartPole-v1')
 env = RewardScalingWrapper(DiscreteActionWrapper(ObservationWrapper(env)))
 
 # 1. Initialize networks and old policy
@@ -235,7 +229,7 @@ for i in tqdm.tqdm(range(training_steps)):
 
 
 # Create env
-env = gym.make('Pendulum-v1', render_mode='human')
+env = gym.make('CartPole-v1', render_mode='human')
 env = RewardScalingWrapper(DiscreteActionWrapper(ObservationWrapper(env)))
 
 
