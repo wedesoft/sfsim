@@ -61,7 +61,10 @@
     - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [X] increase start distance of audio volume falloff
   - [X] use compact formatting for text
+  - [ ] full testing of saving/loading configs and retrieving values
+  - [ ] scale menu according to screen resolution
   - [ ] add video resolution and fullscreen/borderless/window options using glfwGetVideoModes
+  - [ ] add graphics quality options
   - [ ] key to secure main engine
   - [X] hide mouse cursor
   - [ ] show radar altitude
