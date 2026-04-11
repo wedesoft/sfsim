@@ -287,3 +287,11 @@
        (limit-angle (* 2 PI)) => 0.0
        (limit-angle (* -3 PI)) => (- PI)
        (limit-angle (* 4 PI)) => 0.0)
+
+
+(facts "Recursively merge maps"
+       (deep-merge {} {}) => {}
+       (deep-merge {:a 1} {}) => {:a 1}
+       (deep-merge {} {:b 2}) => {:b 2}
+       (deep-merge {:a 1} {:a 2}) => {:a 2}
+       (deep-merge {:a {:b 1}} {:a {:c 3}}) => {:a {:b 1 :c 3}})
