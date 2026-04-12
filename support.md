@@ -1,7 +1,7 @@
 ---
 title: Support
 layout: page
-permalink: /playtest/
+permalink: /support/
 ---
 
 Currently you can download and try a playtest version of sfsim.
