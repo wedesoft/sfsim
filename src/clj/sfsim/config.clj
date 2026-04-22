@@ -9,7 +9,8 @@
   (:require
     [clojure.java.io :as io]
     [clojure.pprint :refer (pprint)]
-    [immuconf.config :as immuconf]))
+    [immuconf.config :as immuconf]
+    [sfsim.util :refer (deep-merge)]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -39,7 +40,7 @@
   ([sfsim-data separator filename default]
    (let [path (str sfsim-data separator filename)]
      (if (.exists (io/file path))
-       (immuconf/load path)
+       (deep-merge default (immuconf/load path))
        default))))
 
 

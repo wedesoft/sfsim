@@ -769,7 +769,7 @@
                   (when (button-label gui "Close")
                     (-> state
                         (assoc-in [:audio :sfsim.audio/settings]
-                                  (config/read-user-config "sound.edn" {:sfsim.audio/volume 1.0}))
+                                  (config/read-user-config "sound.edn" {:sfsim.audio/volume 1.0 :sfsim.audio/no-music false}))
                         (assoc-in [:gui ::menu] main-dialog))))))
 
 

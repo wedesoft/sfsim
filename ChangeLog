@@ -1,3 +1,9 @@
+sfsim (0.17-1)
+
+  * Improved merging of old configs with new defaults
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 12 Apr 2026 12:21:44 +0100
+
 sfsim (0.16-1)
 
   * Hide mouse cursor when dialogs are not shown

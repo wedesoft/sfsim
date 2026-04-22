@@ -131,7 +131,7 @@
         convex-hulls-join   (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25))
         body                (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
         mass                (jolt/get-mass body)
-        thrust              (* ^double mass 250.0)
+        thrust              (* ^double mass 25.0)
         elevation           (:sfsim.model/elevation config/model-config)
         physics-state       (-> (physics/make-physics-state body)
                                 (physics/initialize-wheels model)
