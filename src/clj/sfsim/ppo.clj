@@ -1,12 +1,14 @@
 (ns sfsim.ppo
     (:require
-      [libpython-clj2.require :refer (require-python)]
-      [libpython-clj2.python :refer (py.) :as py]
-      [sfsim.mlp :refer (tensor logprob-of-action without-gradient mse-loss indeterministic-act entropy-of-distribution
-                         critic-observation)]
+      ; [libpython-clj2.require :refer (require-python)]
+      ; [libpython-clj2.python :refer (py.) :as py]
+      ; [sfsim.mlp :refer (tensor logprob-of-action without-gradient mse-loss indeterministic-act entropy-of-distribution
+      ;                    critic-observation)]
       [sfsim.environment :refer (environment-observation environment-update environment-reward environment-done?
                                  environment-truncate?)]))
 
+
+(comment  ; Disabled under Windows
 
 (require-python '[torch :as torch]
                 '[builtins :as python])
@@ -174,3 +176,5 @@
   (let [criterion (mse-loss)
         loss      (criterion (critic (:observations samples)) (:critic-target samples))]
     loss))
+
+)

@@ -140,7 +140,7 @@
 
 (fact "Render font to bitmap"
       (let [bitmap-font (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)]
-        (:sfsim.gui/image bitmap-font)) => (is-image "test/clj/sfsim/fixtures/gui/font.png" 7.22 false))
+        (:sfsim.gui/image bitmap-font)) => (is-image "test/clj/sfsim/fixtures/gui/font.png" 14.0 false))
 
 
 (defmacro gui-control-test

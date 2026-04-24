@@ -1,9 +1,11 @@
 (ns sfsim.t-mlp
     (:require
       [midje.sweet :refer :all]
-      [libpython-clj2.require :refer (require-python)]
-      [libpython-clj2.python :refer (py.) :as py]
+      ; [libpython-clj2.require :refer (require-python)]
+      ; [libpython-clj2.python :refer (py.) :as py]
       [sfsim.mlp :refer :all]))
+
+(comment  ; Disabled under Windows
 
 (require-python '[torch :as torch])
 
@@ -60,3 +62,5 @@
            (tolist (entropy-of-distribution zero-actor (tensor [[0 0]]))) => [[-0.07745969295501709]]
            (:action ((indeterministic-act zero-actor) [[0 0]])) => some?
            (:logprob ((indeterministic-act zero-actor) [[0 0]])) => some?)))
+
+)

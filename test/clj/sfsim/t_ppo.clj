@@ -1,11 +1,13 @@
 (ns sfsim.t-ppo
     (:require
       [midje.sweet :refer :all]
-      [libpython-clj2.python :refer (py.) :as py]
+      ; [libpython-clj2.python :refer (py.) :as py]
       [sfsim.environment :refer (Environment)]
-      [sfsim.mlp :refer (tensor tolist Actor Critic indeterministic-act adam-optimizer)]
+      ; [sfsim.mlp :refer (tensor tolist Actor Critic indeterministic-act adam-optimizer)]
       [sfsim.ppo :refer :all]))
 
+
+(comment  ; Disabled under Windows
 
 (defrecord TestEnvironment [state]
   Environment
@@ -184,3 +186,5 @@
             _              (py. optimizer step)
             updated-loss   (actor-loss batch actor 0.2 0.0)]
         (tolist updated-loss) => #(< % (tolist loss))))
+
+)

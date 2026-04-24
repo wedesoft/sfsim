@@ -1,6 +1,9 @@
 (ns sfsim.mlp
-    (:require [libpython-clj2.require :refer (require-python)]
-              [libpython-clj2.python :refer (py.) :as py]))
+    ; (:require [libpython-clj2.require :refer (require-python)]
+    ;           [libpython-clj2.python :refer (py.) :as py])
+    )
+
+(comment  ; Disabled under Windows
 
 (require-python '[builtins :as python]
                 '[torch :as torch]
@@ -156,3 +159,5 @@
   [actor observation]
   (let [dist (py. actor get_dist observation)]
     (py. dist entropy)))
+
+)
