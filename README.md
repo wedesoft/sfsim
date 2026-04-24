@@ -13,7 +13,6 @@ See [sfsim homepage][1] for more details.
 * Install [JDK 25 Deb for Linux](https://www.oracle.com/uk/java/technologies/downloads/) or [JDK 25 MSI for Windows](https://adoptium.net/temurin/releases)
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
-* Install [NSIS](https://nsis.sourceforge.io/) for building Windows installer
 
 # Get Code for GNU/Linux
 
