@@ -589,10 +589,10 @@ void main(void)
 
 (def fragment-white
   "#version 450 core
-out vec3 fragColor;
+out vec4 fragColor;
 void main()
 {
-  fragColor = vec3(1.0, 1.0, 1.0);
+  fragColor = vec4(1.0, 1.0, 1.0, 1.0);
 }")
 
 
