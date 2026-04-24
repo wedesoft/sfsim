@@ -14,6 +14,7 @@ See [sfsim homepage][1] for more details.
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
 * Install [Python 3.13](https://www.python.org/)
+* Install [PyTorch](https://pytorch.org/) (CPU version sufficient: `pip install --index-url https://download.pytorch.org/whl/cpu torch numpy`)
 
 # Get Code for GNU/Linux
 
