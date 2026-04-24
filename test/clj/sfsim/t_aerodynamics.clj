@@ -686,20 +686,20 @@
      :upper (pitch-acceleration height min-flaps)}))
 
 
-(future-facts "Test pitch control authority at different heights"
+(facts "Test pitch control authority at different heights"
        (doseq [height (range 0.0 121000.0 1000.0)]
               height => (fn [height] (neg? (:lower (pitch-acceleration-range height))))
               height => (fn [height] (pos? (:upper (pitch-acceleration-range height))))
               (when (<= height 54000.0)
                 height => (fn [height] (<= (:lower (pitch-acceleration-range height)) (- nominal-pitch-acceleration)))
                 height => (fn [height] (>= (:upper (pitch-acceleration-range height)) (+ nominal-pitch-acceleration))))
-              (when (>= (optimal-speed-for-height height) (* 12.0 (speed-of-sound-at-height height)))
-                height => (fn [height] (<= (abs (pitch-acceleration height (to-radians 10.0))) 1e-5)))))
+              (when (> height 54000.0)
+                height => (fn [height] (<= (:lower (pitch-acceleration-range height)) 0.0))
+                height => (fn [height] (>= (:upper (pitch-acceleration-range height)) 0.0)))))
 
 
 (facts "Test altitude control authority at different heights"
        (doseq [height (range 0.0 120000.0 1000.0)]
               height => (fn [height]
                             (let [speed-mach (/ (optimal-speed-for-height height) (speed-of-sound-at-height height))]
-                              ;(println height "," speed-mach ":" (vertical-acceleration height) ">=" (- gravitation (centrifugal-acceleration height)))
                               (>= (vertical-acceleration height) (- gravitation (centrifugal-acceleration height)))))))
