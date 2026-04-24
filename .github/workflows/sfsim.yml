@@ -27,7 +27,7 @@ jobs:
       uses: actions/cache@v5.0.5
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-torch-numpy
+        key: ${{ runner.os }}-pip-torch-2.11.0-numpy-2.4.3
         restore-keys: |
           ${{ runner.os }}-pip-
     - name: Install APT packages
@@ -62,12 +62,12 @@ jobs:
         python-version: '3.13'
     - name: Install PyTorch
       run: |
-        pip install --index-url https://download.pytorch.org/whl/cpu torch numpy
+        pip install --index-url https://download.pytorch.org/whl/cpu torch==2.11.0 numpy==2.4.3
     - name: Install Java
       uses: actions/setup-java@v5
       with:
         distribution: 'oracle'
-        java-version: '25'
+        java-version: '26'
     - name: Install Clojure
       uses: DeLaGuardo/setup-clojure@13.6.0
       with:
