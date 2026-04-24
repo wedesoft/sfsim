@@ -25,7 +25,8 @@
         org.lwjgl/lwjgl-openal {:mvn/version "3.4.1"}
         org.lwjgl/lwjgl-openal$natives-windows {:mvn/version "3.4.1"}
         org.lwjgl/lwjgl-assimp {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-assimp$natives-windows {:mvn/version "3.4.1"}}
+        org.lwjgl/lwjgl-assimp$natives-windows {:mvn/version "3.4.1"}
+        clj-python/libpython-clj {:mvn/version "2.026"}}
  :paths ["src/clj" "resources"]
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED" "-XX:+UseZGC"
                             "-XX:+UseDynamicNumberOfGCThreads" "--sun-misc-unsafe-memory-access=allow"]

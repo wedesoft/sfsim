@@ -379,11 +379,31 @@
                          30.0 25.0000)) ; was 50.0 but not possible to control then
 
 
+
+(def x-shockwave-percent (akima-spline
+                           0.0   0.0
+                           0.6   0.0
+                           0.8   0.0
+                           1.2   0.0
+                           1.4   0.0
+                           1.6   0.0
+                           1.8   0.0
+                           2.0   0.0
+                           3.0   0.0
+                           4.0   0.0
+                           5.0   0.0
+                           10.0 -0.5622
+                           20.0 -0.5622
+                           30.0 -0.5622))
+
+
 (defn coefficient-of-pitch-moment
   (^double [^double speed-mach ^double alpha]
    (coefficient-of-pitch-moment speed-mach alpha 0.0))
-  (^double [^double speed-mach ^double alpha ^double beta]  ; TODO: side force participation with increasing beta
-   (* (coefficient-of-lift speed-mach alpha beta) 0.01 (- ^double x-ref-percent ^double (x-neutral-percent speed-mach)))))
+  (^double [^double speed-mach ^double alpha ^double beta]
+           (let [x-shockwave-percent        (* (cos alpha) ^double (x-shockwave-percent speed-mach))
+                 x-neutral-percent-modified (+ x-shockwave-percent ^double (x-neutral-percent speed-mach))]
+             (* (coefficient-of-lift speed-mach alpha beta) 0.01 (- ^double x-ref-percent x-neutral-percent-modified)))))
 
 
 (def c-n-beta (akima-spline
