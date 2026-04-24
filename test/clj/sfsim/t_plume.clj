@@ -610,14 +610,14 @@ void main()
                                (render-quads vao)
                                (destroy-vertex-array-object vao)
                                (destroy-program program)))
-                             => (is-image "test/clj/sfsim/fixtures/plume/box.png" 0.0))
-         ?alpha ?beta
-           0      0
-         180      0
-           0     90
-           0    -90
-          90      0
-         -90      0)
+                             => (is-image (str "test/clj/sfsim/fixtures/plume/" ?image) 0.0))
+         ?image     ?alpha ?beta
+         "box1.png"   0      0
+         "box2.png" 180      0
+         "box3.png"   0     90
+         "box4.png"   0    -90
+         "box5.png"  90      0
+         "box6.png" -90      0)
 
 
 (GLFW/glfwTerminate)
