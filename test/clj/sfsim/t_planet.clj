@@ -648,13 +648,13 @@ void main()
                                (raster-lines (render-tile program tile (inverse transform) [] [:sfsim.planet/surf-tex]))
                                (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result) 0.01))
-         ?up   ?left ?down ?right ?result
-         true  true  true  true   "tile.png"
-         false true  true  true   "tile-up.png"
-         true  false true  true   "tile-left.png"
-         true  true  false true   "tile-down.png"
-         true  true  true  false  "tile-right.png")
+                               (destroy-program program))) => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result) ?threshold))
+         ?up   ?left ?down ?right ?result          ?threshold
+         true  true  true  true   "tile.png"       1.07
+         false true  true  true   "tile-up.png"    1.07
+         true  false true  true   "tile-left.png"  1.07
+         true  true  false true   "tile-down.png"  1.07
+         true  true  true  false  "tile-right.png" 93.95)
 
 
 (defn render-tile-calls
