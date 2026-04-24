@@ -53,7 +53,9 @@
   - [ ] reentry physics
     - [-] controlled reentry should be possible
       - [X] add aerodynamics tests for control authority (pitch rate)
+      - [ ] get new AoA vs speed profile or optimize AoA as well
       - [ ] add pitch up moment at high speed (and positive angle of attack)
+      - [ ] add moment counteracting roll at higher AoA and high speed
       - [ ] add aerodynamics tests for trajectory (bank angle to control vertical lift component, tolerable g-forces and heat)
     - [ ] reentry flame
       - [[https://www.shadertoy.com/view/XX3fDH]]
@@ -61,6 +63,11 @@
     - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [X] increase start distance of audio volume falloff
   - [X] use compact formatting for text
+  - [ ] use 0.5 threshold for thrusters
+  - [ ] full testing of saving/loading configs and retrieving values
+  - [ ] scale menu according to screen resolution
+  - [ ] add video resolution and fullscreen/borderless/window options using glfwGetVideoModes
+  - [ ] add graphics quality options
   - [ ] key to secure main engine
   - [X] hide mouse cursor
   - [ ] show radar altitude

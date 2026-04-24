@@ -1,0 +1,25 @@
+[project]
+name = "sfsim"
+version = "0.17-1"
+description = "Space flight simulator"
+authors = [{ name="Jan Wedekind", email="jan@wedesoft.de" }]
+requires-python = ">=3.10.0"
+dependencies = [
+  "numpy",
+  "torch",
+]
+
+[tool.uv]
+python-preference = "only-system"
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+numpy = { index = "pytorch" }
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"

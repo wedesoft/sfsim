@@ -74,7 +74,7 @@
   [height]
   (let [lower-bound 0.0
         upper-bound (* 30.0 (speed-of-sound-at-height height))]
-    (bisection-inverse (partial deceleration-magnitude-at-reentry height) optimal-deceleration lower-bound upper-bound 1.0)))
+    (bisection-inverse (partial deceleration-magnitude-at-reentry height) optimal-deceleration lower-bound upper-bound 0.1)))
 
 
 (def max-pitch-error (to-radians 3.0))
@@ -114,9 +114,9 @@ plot ARG1 using 1:2 with lines title ARG4
 ; (sh "display" "/tmp/angle-of-attack.png")
 
 (def height (range 0.0 121000.0 1000.0))
-; (spit "/tmp/speed.dat" (apply str (map (fn [x y] (str x " " y "\n")) height (map (fn [height] (/ (optimal-speed-for-height height) (speed-of-sound-at-height height))) height))))
-; (sh "gnuplot" "-c" "/tmp/curve.gnuplot" "/tmp/speed.dat" "/tmp/speed.png" "height/m" "speed/Ma" "speed vs. height")
-; (sh "display" "/tmp/speed.png")
+(spit "/tmp/speed.dat" (apply str (map (fn [x y] (str x " " y "\n")) height (map (fn [height] (/ (optimal-speed-for-height height) (speed-of-sound-at-height height))) height))))
+(sh "gnuplot" "-c" "/tmp/curve.gnuplot" "/tmp/speed.dat" "/tmp/speed.png" "height/m" "speed/Ma" "speed vs. height")
+(sh "display" "/tmp/speed.png")
 
 (spit "/tmp/area.gnuplot"
 "#!/usr/bin/gnuplot -c
@@ -128,8 +128,15 @@ plot ARG1 using 1:2:3 with filledcurves title ARG4
 ")
 
 (def height (range 0.0 121000.0 1000.0))
-(spit "/tmp/control.dat" (apply str (map (fn [x {:keys [lower upper]}] (str x " " (to-degrees lower) " " (to-degrees upper) "\n")) height (map pitch-acceleration height))))
-(sh "gnuplot" "-c" "/tmp/area.gnuplot" "/tmp/control.dat" "/tmp/control.png" "height/m" "pitch-control/(°/s²)" "height vs. pitch-control range")
+(spit "/tmp/control.dat" (apply str (map (fn [x {:keys [lower upper]}] (str x " " (to-degrees lower) " " (to-degrees upper) "\n")) (map (fn [height] (/ (optimal-speed-for-height height) (speed-of-sound-at-height height))) height) (map pitch-acceleration height))))
+(sh "gnuplot" "-c" "/tmp/area.gnuplot" "/tmp/control.dat" "/tmp/control.png" "speed/Ma" "pitch-control/(°/s²)" "speed vs. pitch-control range")
 (sh "display" "/tmp/control.png")
+
+
+(def speed (range 0.0 30.0 0.125))
+(spit "/tmp/angle-of-attack.dat" (apply str (map (fn [x y] (str x " " y "\n")) speed (map (comp to-degrees reentry-angle) speed))))
+(sh "gnuplot" "-c" "/tmp/curve.gnuplot" "/tmp/angle-of-attack.dat" "/tmp/angle-of-attack.png" "speed/Ma" "AoA/°" "AoA vs. Mach")
+(sh "display" "/tmp/angle-of-attack.png")
+
 
 (System/exit 0)

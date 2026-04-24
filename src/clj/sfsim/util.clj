@@ -539,5 +539,14 @@
   (- ^double (mod (+ angle PI) (* 2.0 PI)) PI))
 
 
+(defn deep-merge
+  "Recursively merge two maps"
+  {:malli/schema [:=> [:cat :any :any] :any]}
+  [map1 map2]
+  (if (and (map? map1) (map? map2))
+    (merge-with deep-merge map1 map2)
+    map2))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
