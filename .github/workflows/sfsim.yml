@@ -23,6 +23,13 @@ jobs:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('deps.edn') }}
         restore-keys: ${{ runner.os }}-m2-
+    - name: Cache Python packages
+      uses: actions/cache@v5.0.5
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-torch-2.11.0-numpy-2.4.3
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: Install APT packages
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -49,11 +56,18 @@ jobs:
         cd ~/JoltPhysics-5.5.0/Build/Linux_Release
         sudo make install
         cd ../../..
+    - name: Set up Python
+      uses: actions/setup-python@v6.2.0
+      with:
+        python-version: '3.13'
+    - name: Install PyTorch
+      run: |
+        pip install --index-url https://download.pytorch.org/whl/cpu torch==2.11.0 numpy==2.4.3
     - name: Install Java
       uses: actions/setup-java@v5
       with:
         distribution: 'oracle'
-        java-version: '25'
+        java-version: '26'
     - name: Install Clojure
       uses: DeLaGuardo/setup-clojure@13.6.0
       with:
