@@ -13,8 +13,10 @@ See [sfsim homepage][1] for more details.
 * Install [JDK 26 Deb for Linux](https://www.oracle.com/uk/java/technologies/downloads/) or [JDK 25 MSI for Windows](https://adoptium.net/temurin/releases)
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
-* Install [Python 3.13](https://www.python.org/)
-* Install [PyTorch](https://pytorch.org/) (CPU version sufficient: `pip install --index-url https://download.pytorch.org/whl/cpu torch numpy`)
+* Install [Python 3.13](https://www.python.org/) or later if you are using GNU/Linux
+* Install [PyTorch](https://pytorch.org/) if you are using GNU/Linux
+  * On the CI it is installed like this: `pip install --index-url https://download.pytorch.org/whl/cpu torch numpy`
+  * I recommend to install [uv](https://docs.astral.sh/uv/) and install PyTorch using `uv sync` (pyproject.toml is provided)
 
 # Get Code for GNU/Linux
 
@@ -120,8 +122,8 @@ cd ..
 
 # Run
 
-* Run tests (recommended to use xvfb-run): `xvfb-run clj -M:test`
-* Run test for specific module (rendering for example): `xvfb-run clj -M:test sfsim.t-render`
+* Run tests (recommended to use xvfb-run): `xvfb-run uv run clj -M:test`
+* Run test for specific module (rendering for example): `xvfb-run uv run clj -M:test sfsim.t-render`
 * Run the global cloud cover prototype: `clj -M etc/cover.clj`
 * Run main program: `clj -M:run`
 
