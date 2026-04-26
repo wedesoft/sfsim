@@ -14,7 +14,7 @@ See [sfsim homepage][1] for more details.
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
 * Install [Python 3.13](https://www.python.org/) or later if you are using GNU/Linux
-* Install [PyTorch](https://pytorch.org/) if you are using GNU/Linux
+* Install [PyTorch](https://pytorch.org/) if you are using GNU/Linux (couldn't get the Pytorch to work with Clojure under Windows)
   * On the CI it is installed like this: `pip install --index-url https://download.pytorch.org/whl/cpu torch numpy`
   * I recommend to install [uv](https://docs.astral.sh/uv/) and install PyTorch using `uv sync` (pyproject.toml is provided)
 
