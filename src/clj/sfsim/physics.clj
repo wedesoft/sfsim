@@ -314,10 +314,16 @@
   (jolt/get-orientation (::body state)))
 
 
+(defn geographic->vector
+  "Convert geographic coordinates to unit vector"
+  [longitude latitude]
+  (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude)))
+
+
 (defn set-geographic
   "Set position by specifying longitude, latitude, and height"
   [state surface planet elevation longitude latitude height]
-  (let [point       (vec3 (* (cos longitude) (cos latitude)) (* (sin longitude) (cos latitude)) (sin latitude))
+  (let [point       (geographic->vector longitude latitude)
         radius      (:sfsim.planet/radius planet)
         max-terrain (:sfsim.planet/max-height planet)
         terrain     (if (>= ^double height (+ ^double max-terrain ^double elevation))

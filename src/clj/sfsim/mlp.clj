@@ -1,4 +1,5 @@
 (ns sfsim.mlp
+    "Multilayer perceptrons for actor and critic of reinforcement learning"
     ; (:require [libpython-clj2.require :refer (require-python)]
     ;           [libpython-clj2.python :refer (py.) :as py])
     )
