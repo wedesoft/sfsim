@@ -61,6 +61,8 @@
       - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
       - [ ] fuel consumption
       - [ ] angle of attack in atmosphere (lift?)
+    - [ ] simulate propellant weight
+  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] reentry physics
     - [ ] Can still use small simulation steps but large control steps
     - [ ] Start state curriculum: start with training runs near the landing site
@@ -86,7 +88,6 @@
   - [ ] key to secure main engine
   - [X] hide mouse cursor
   - [ ] show radar altitude
-  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
   - [ ] finish tidying up core
   - [ ] simplify recording and playback code
