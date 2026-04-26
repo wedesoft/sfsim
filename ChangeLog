@@ -1,3 +1,10 @@
+sfsim (0.18-1)
+
+  * Working on reinforcement learning for guidance instruments
+	* Updated to JDK 26
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 26 Apr 2026 22:41:22 +0100
+
 sfsim (0.17-1)
 
   * Improved merging of old configs with new defaults
