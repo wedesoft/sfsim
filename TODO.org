@@ -97,6 +97,10 @@
     [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,
     [[https://samdriver.xyz/article/decal-render-intro][decal render intro]],
     [[https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/][render roads]]
+  - [ ] Render geometry of planet, use stencil buffer to avoid rendering on spacecraft?
+  - [ ] Transform pixels to 3d box. If inside, render runway or white markers.
+  - [ ] Render one long decal object for dashed line markings
+  - [ ] Use camera centric coordinates in geometry buffer to avoid numerical problems
   - [ ] launchpad
   - [ ] launch complex
   - [ ] lights
