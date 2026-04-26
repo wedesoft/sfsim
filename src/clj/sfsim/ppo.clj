@@ -1,4 +1,5 @@
 (ns sfsim.ppo
+    "Environment sampling and loss functions for Proximal Policy Optimization (PPO)"
     (:require
       [libpython-clj2.require :refer (require-python)]
       [libpython-clj2.python :refer (py.) :as py]

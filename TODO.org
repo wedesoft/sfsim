@@ -50,7 +50,24 @@
       [[https://news.ycombinator.com/item?id=45145794]]
     - [[https://www.youtube.com/watch?v=1oyCzT6sB_4][Lockheed Martin F-35 Lightning II Stealth Fighter Cockpit Demonstrator Hands-On]]
     - nominal angular RCS accelerations according to Gemini: 1 degree for roll and pitch, 2 degrees per second square for yaw
+  - [ ] reinforcement learning launch physics
+    - [ ] terminal rewards
+      - [ ] terminal reward for altitude (160km)
+      - [ ] terminal reward for good velocity vector (circular orbit, correct inclination)
+    - [ ] shaping rewards
+      - [ ] reward for increasing energy
+      - [ ] small reward for inclination alignment early
+    - [ ] penalty
+      - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
+      - [ ] fuel consumption
+      - [ ] angle of attack in atmosphere (lift?)
+    - [ ] simulate propellant weight
+  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] reentry physics
+    - [ ] Can still use small simulation steps but large control steps
+    - [ ] Start state curriculum: start with training runs near the landing site
+    - [ ] Reward agent for following a reference energy profile (potential plus kinetic energy)
+    - [ ] Augmentation using symmetric training data to prevent a preferred side
     - [-] controlled reentry should be possible
       - [X] add aerodynamics tests for control authority (pitch rate)
       - [ ] get new AoA vs speed profile or optimize AoA as well
@@ -71,7 +88,6 @@
   - [ ] key to secure main engine
   - [X] hide mouse cursor
   - [ ] show radar altitude
-  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
   - [ ] finish tidying up core
   - [ ] simplify recording and playback code
@@ -97,12 +113,18 @@
     [[https://aerosavvy.com/airport-lights][airport lights]], spot lights,
     [[https://samdriver.xyz/article/decal-render-intro][decal render intro]],
     [[https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/][render roads]]
+  - [ ] deferred decals for rendering runway
+    - [ ] Render geometry of planet, use stencil buffer to avoid rendering on spacecraft?
+    - [ ] Transform pixels to 3d box. If inside, render runway or white markers.
+    - [ ] Render one long decal object for dashed line markings
+    - [ ] normal map
+    - [ ] Use camera centric coordinates in geometry buffer to avoid numerical problems
+    - [ ] runway lights
   - [ ] launchpad
   - [ ] launch complex
   - [ ] lights
   - [ ] get high-res Florida data (hot spot for map)
   - [ ] render building on top of ground
-  - [ ] deferred decals for rendering runway, runway lights
   - [ ] try one object casting shadow on another (pack object shadow maps into one?)
 * TODO [#B] sound effects                                            :immersion:
   - Note taken on [2025-08-16 Sa 22:05] \\
