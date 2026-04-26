@@ -14,7 +14,8 @@
 
 
 (def test-config
-  {:radius 6378000.0})
+  {:radius 6378000.0
+   :mass 5.9722e+24})
 
 
 (fact "Launch rocket"
