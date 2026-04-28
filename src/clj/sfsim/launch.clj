@@ -1,16 +1,27 @@
 (ns sfsim.launch
     "Optimize launch trajectory"
     (:require
-      [fastmath.vector :refer (vec3 mult add mag)]
-      [sfsim.physics :refer (geographic->vector gravitation state-add state-scale runge-kutta)]))
+      [clojure.math :refer (sqrt)]
+      [fastmath.vector :refer (vec3 mult add mag div)]
+      [sfsim.physics :refer (geographic->vector gravitation state-add state-scale runge-kutta gravitational-constant)]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
 
+(defn orbital-speed
+  "Orbital speed"
+  ^double
+  ([^double radius ^double mass ^double gravitational-constant]
+   (sqrt (/ (* mass gravitational-constant) radius)))
+  ([^double radius ^double mass]
+   (orbital-speed radius mass gravitational-constant)))
+
+
 (def config
   {:radius 6378000.0
+   :orbit 160000.0
    :mass 5.9742e+24
    :dt 1.0
    :max-thrust 25.0})
@@ -50,6 +61,17 @@
         length    (mag direction)
         scale     (if (pos? length) (/ ^double (array 3) (mag direction)) 0.0)]
     {:control (mult direction scale)}))
+
+
+(defn observation
+  "Get observation of state"
+  [{:keys [position speed]} {:keys [radius orbit mass]}]
+  (let [distance          (mag position)
+        normalised-height (/ (- distance ^double radius) ^double orbit)
+        normalised-pos    (mult position (/ (+ 0.5 (* 0.5 normalised-height)) distance))
+        orbital-speed     (orbital-speed (+ ^double radius ^double orbit) mass)
+        normalised-speed  (div speed orbital-speed)]
+    [(normalised-pos 0) (normalised-pos 1) (normalised-pos 2) (normalised-speed 0) (normalised-speed 1) (normalised-speed 2)]))
 
 
 (set! *warn-on-reflection* false)
