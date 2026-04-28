@@ -74,5 +74,19 @@
     [(normalised-pos 0) (normalised-pos 1) (normalised-pos 2) (normalised-speed 0) (normalised-speed 1) (normalised-speed 2)]))
 
 
+(defn done?
+  "An orbit is never finished"
+  ([& _args]
+   false))
+
+
+(defn truncate?
+  "Decide whether a run should be aborted"
+  ([state]
+   (truncate? state config))
+  ([{:keys [t]} {:keys [timeout]}]
+   (>= ^double t ^double timeout)))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

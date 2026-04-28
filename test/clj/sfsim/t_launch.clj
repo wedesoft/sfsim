@@ -26,7 +26,8 @@
    :orbit 160000.0
    :mass 5.9722e+24
    :dt 1.0
-   :max-thrust 20.0})
+   :max-thrust 20.0
+   :timeout 1200.0})
 
 
 (facts "Launch rocket"
@@ -95,3 +96,12 @@
        => (roughly-vector (vec3 1.0 0.0 0.0) 1e-6)
        (speed (observation {:position (vec3 0 0 0) :speed (vec3 0 7808.140 0)} test-config))
        => (roughly-vector (vec3 0.0 1.0 0.0) 1e-6))
+
+
+(fact "An orbit is never finished"
+      (done? {} test-config) => false)
+
+
+(facts "Decide whether a run should be aborted"
+       (truncate? {:t 50.0} test-config) => false
+       (truncate? {:t 1200.0} test-config) => true)
