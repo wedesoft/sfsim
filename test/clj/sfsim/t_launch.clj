@@ -26,7 +26,8 @@
       (:position (setup test-config :latitude (/ PI 2) :longitude 0 :height 0.0)) => (roughly-vector (vec3 0 0 6378000) 1e-6)
       (:position (setup test-config :latitude (/ PI 2) :longitude (/ PI 2) :height 0.0)) => (roughly-vector (vec3 0 0 6378000) 1e-6)
       (:position (setup test-config :latitude 0.0 :longitude 0.0 :height 500.0)) => (roughly-vector (vec3 6378500 0 0) 1e-6)
-      (:speed (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0)) => (roughly-vector (vec3 0 0 0) 1e-6))
+      (:speed (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0)) => (roughly-vector (vec3 0 0 0) 1e-6)
+      (:t (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0)) => 0.0)
 
 
 (fact "Test gravitation"
@@ -36,11 +37,10 @@
       (:position (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
                                (assoc test-config :dt 0.0)))
       => (vec3 6378000.0 0.0 0.0)
-      (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
-                            test-config))
+      (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)} test-config))
       => (roughly-vector (vec3 -9.799 0.0 0.0) 1e-3)
-      (:speed (update-state (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0)
-                                          {:control (vec3 0 0 0)} test-config) {:control (vec3 0 0 0)} test-config))
+      (:speed (update-state (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
+                                          test-config) {:control (vec3 0 0 0)} test-config))
       => (roughly-vector (vec3 -19.598 0.0 0.0) 1e-3)
       (:position (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
                                test-config))
@@ -53,7 +53,9 @@
       => (vec3 0.5 0.25 0.125)
       (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0.5 0.25 0.125)}
                             (assoc test-config :mass 0.0)))
-      => (vec3 10.0 5.0 2.5))
+      => (vec3 10.0 5.0 2.5)
+      (:t (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)} test-config))
+      => 1.0)
 
 
 (fact "Convert array to action with length of direction vector as latent variable"

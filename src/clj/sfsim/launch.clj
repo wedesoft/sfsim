@@ -22,7 +22,8 @@
   (let [radius (:radius config)
         point  (geographic->vector longitude latitude)]
     {:position (mult point (+ ^double radius ^double height))
-     :speed (vec3 0 0 0)}))
+     :speed (vec3 0 0 0)
+     :t 0.0}))
 
 
 (defn state-change
@@ -34,10 +35,12 @@
 
 (defn update-state
   "Perform simulation step for spacecraft"
-  [state {:keys [control]} {:keys [dt mass max-thrust]}]
-  (let [gravitation (gravitation (vec3 0 0 0) mass)
-        acceleration (fn [position speed] (add (gravitation position speed) (mult control max-thrust)))]
-    (runge-kutta state dt (state-change acceleration) state-add state-scale)))
+  [{:keys [t] :as state} {:keys [control]} {:keys [dt mass max-thrust]}]
+  (let [gravitation  (gravitation (vec3 0 0 0) mass)
+        acceleration (fn [position speed] (add (gravitation position speed) (mult control max-thrust)))
+        state        (runge-kutta state dt (state-change acceleration) state-add state-scale)
+        t            (+ ^double t ^double dt)]
+    (assoc state :t t)))
 
 
 (defn action
