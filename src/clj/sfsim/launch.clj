@@ -12,7 +12,8 @@
 (def config
   {:radius 6378000.0
    :mass 5.9742e+24
-   :dt 1.0})
+   :dt 1.0
+   :max-thrust 25.0})
 
 
 (defn setup
@@ -25,6 +26,7 @@
 
 
 (defn state-change
+  "State change function returning derivative of state to be used with Runge-Kutta integration"
   [acceleration]
   (fn [{:keys [position speed]} _dt]
       {:position speed :speed (acceleration position speed)}))
@@ -32,9 +34,9 @@
 
 (defn update-state
   "Perform simulation step for spacecraft"
-  [state {:keys [thrust]} {:keys [dt mass]}]
+  [state {:keys [control]} {:keys [dt mass max-thrust]}]
   (let [gravitation (gravitation (vec3 0 0 0) mass)
-        acceleration (fn [position speed] (add (gravitation position speed) thrust))]
+        acceleration (fn [position speed] (add (gravitation position speed) (mult control max-thrust)))]
     (runge-kutta state dt (state-change acceleration) state-add state-scale)))
 
 
