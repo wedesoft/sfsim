@@ -51,16 +51,21 @@
     - [[https://www.youtube.com/watch?v=1oyCzT6sB_4][Lockheed Martin F-35 Lightning II Stealth Fighter Cockpit Demonstrator Hands-On]]
     - nominal angular RCS accelerations according to Gemini: 1 degree for roll and pitch, 2 degrees per second square for yaw
   - [ ] reinforcement learning launch physics
-    - [ ] terminal rewards
-      - [ ] terminal reward for altitude (160km)
-      - [ ] terminal reward for good velocity vector (circular orbit, correct inclination)
-    - [ ] shaping rewards
-      - [ ] reward for increasing energy
-      - [ ] small reward for inclination alignment early
-    - [ ] penalty
-      - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
-      - [ ] fuel consumption
-      - [ ] angle of attack in atmosphere (lift?)
+    - [ ] sample vector z and scalar u -> direction is d = z/|z|, magnitude is alpha = amax tanh(u)
+    - [ ] logprob a is logprob d + logprob alpha
+    - [ ] logprob alpha = log N(u) - log(amax (1-tanh^2(u)))
+    - [ ] logprob d = log N(z) - log |z|
+    - [ ] rewards
+      - [ ] terminal rewards
+        - [ ] terminal reward for altitude (160km)
+        - [ ] terminal reward for good velocity vector (circular orbit, correct inclination)
+      - [ ] shaping rewards
+        - [ ] reward for increasing energy
+        - [ ] small reward for inclination alignment early
+      - [ ] penalty
+        - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
+        - [ ] fuel consumption
+        - [ ] angle of attack in atmosphere (lift?)
     - [ ] simulate propellant weight
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] reentry physics
