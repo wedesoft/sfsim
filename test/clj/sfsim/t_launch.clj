@@ -54,3 +54,10 @@
       (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0.5 0.25 0.125)}
                             (assoc test-config :mass 0.0)))
       => (vec3 10.0 5.0 2.5))
+
+
+(fact "Convert array to action with length of direction vector as latent variable"
+      (action [0 0 0 0]) => {:control (vec3 0 0 0)}
+      (action [1 0 0 1]) => {:control (vec3 1 0 0)}
+      (action [1 0 0 3]) => {:control (vec3 3 0 0)}
+      (action [2 0 0 3]) => {:control (vec3 3 0 0)})

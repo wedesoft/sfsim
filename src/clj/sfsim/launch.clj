@@ -1,7 +1,7 @@
 (ns sfsim.launch
     "Optimize launch trajectory"
     (:require
-      [fastmath.vector :refer (vec3 mult add)]
+      [fastmath.vector :refer (vec3 mult add mag)]
       [sfsim.physics :refer (geographic->vector gravitation state-add state-scale runge-kutta)]))
 
 
@@ -38,6 +38,15 @@
   (let [gravitation (gravitation (vec3 0 0 0) mass)
         acceleration (fn [position speed] (add (gravitation position speed) (mult control max-thrust)))]
     (runge-kutta state dt (state-change acceleration) state-add state-scale)))
+
+
+(defn action
+  "Convert array to action with length of direction vector as latent variable"
+  [array]
+  (let [direction (vec3 (array 0) (array 1) (array 2))
+        length    (mag direction)
+        scale     (if (pos? length) (/ ^double (array 3) (mag direction)) 0.0)]
+    {:control (mult direction scale)}))
 
 
 (set! *warn-on-reflection* false)
