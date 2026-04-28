@@ -32,9 +32,10 @@
 
 (defn update-state
   "Perform simulation step for spacecraft"
-  [{:keys [position speed] :as state} {:keys []} {:keys [dt mass]}]
-  (let [gravitation (gravitation (vec3 0 0 0) mass)]
-    (runge-kutta state dt (state-change gravitation) state-add state-scale)))
+  [state {:keys [thrust]} {:keys [dt mass]}]
+  (let [gravitation (gravitation (vec3 0 0 0) mass)
+        acceleration (fn [position speed] (add (gravitation position speed) thrust))]
+    (runge-kutta state dt (state-change acceleration) state-add state-scale)))
 
 
 (set! *warn-on-reflection* false)

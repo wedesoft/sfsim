@@ -30,13 +30,24 @@
 
 
 (fact "Test gravitation"
-      (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {} (assoc test-config :dt 0.0)))
+      (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:thrust (vec3 0 0 0)}
+                            (assoc test-config :dt 0.0)))
       => (vec3 0.0 0.0 0.0)
-      (:position (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {} (assoc test-config :dt 0.0)))
+      (:position (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:thrust (vec3 0 0 0)}
+                               (assoc test-config :dt 0.0)))
       => (vec3 6378000.0 0.0 0.0)
-      (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {} test-config))
+      (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:thrust (vec3 0 0 0)}
+                            test-config))
       => (roughly-vector (vec3 -9.799 0.0 0.0) 1e-3)
-      (:speed (update-state (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {} test-config) {} test-config))
+      (:speed (update-state (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0)
+                                          {:thrust (vec3 0 0 0)} test-config) {:thrust (vec3 0 0 0)} test-config))
       => (roughly-vector (vec3 -19.598 0.0 0.0) 1e-3)
-      (:position (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {} test-config))
-      => (roughly-vector (vec3 (- 6378000.0 4.899) 0.0 0.0) 1e-3))
+      (:position (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:thrust (vec3 0 0 0)}
+                               test-config))
+      => (roughly-vector (vec3 (- 6378000.0 4.899) 0.0 0.0) 1e-3)
+      (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:thrust (vec3 0 0 0)}
+                            (assoc test-config :mass 0.0)))
+      => (vec3 0.0 0.0 0.0)
+      (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:thrust (vec3 5 3 2)}
+                            (assoc test-config :mass 0.0)))
+      => (vec3 5.0 3.0 2.0))
