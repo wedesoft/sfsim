@@ -99,7 +99,7 @@
         latitude (atan2 (position 2) l)
         cos-lat  (cos latitude)
         cos-incl (cos inclination-target)
-        z        (if (<= (abs cos-incl) (abs cos-lat)) cos-incl (* (sign cos-incl) (abs cos-lat)))
+        z        (* (sign cos-incl) (min (abs cos-incl) (abs cos-lat)))
         r2       (- 1.0 (sqr z))  ; x^2 + y^2 = r^2
         d        (* z ^double (position 2)) ; a x + b y + d = 0
         k        (- (/ d l2))  ; does not work if position is at a pole (on the z-axis)
