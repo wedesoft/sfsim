@@ -14,18 +14,19 @@
 (defn orbital-speed
   "Orbital speed"
   ^double
-  ([^double radius ^double mass ^double gravitational-constant]
-   (sqrt (/ (* mass gravitational-constant) radius)))
-  ([^double radius ^double mass]
-   (orbital-speed radius mass gravitational-constant)))
+  ([^double radius ^double planet-mass ^double gravitational-constant]
+   (sqrt (/ (* planet-mass gravitational-constant) radius)))
+  ([^double radius ^double planet-mass]
+   (orbital-speed radius planet-mass gravitational-constant)))
 
 
 (def config
   {:radius 6378000.0
    :orbit 160000.0
-   :mass 5.9742e+24
+   :planet-mass 5.9742e+24
+   :mass 100000.0
    :dt 1.0
-   :max-thrust 25.0})
+   :max-thrust 2500000.0})
 
 
 (defn setup
@@ -47,9 +48,9 @@
 
 (defn update-state
   "Perform simulation step for spacecraft"
-  [{:keys [t] :as state} {:keys [control]} {:keys [dt mass max-thrust]}]
-  (let [gravitation  (gravitation (vec3 0 0 0) mass)
-        acceleration (fn [position speed] (add (gravitation position speed) (mult control max-thrust)))
+  [{:keys [t] :as state} {:keys [control]} {:keys [dt planet-mass max-thrust mass]}]
+  (let [gravitation  (gravitation (vec3 0 0 0) planet-mass)
+        acceleration (fn [position speed] (add (gravitation position speed) (mult control (/ ^double max-thrust ^double mass))))
         state        (runge-kutta state dt (state-change acceleration) state-add state-scale)
         t            (+ ^double t ^double dt)]
     (assoc state :t t)))
@@ -66,11 +67,11 @@
 
 (defn observation
   "Get observation of state"
-  [{:keys [position speed]} {:keys [radius orbit mass]}]
+  [{:keys [position speed]} {:keys [radius orbit planet-mass]}]
   (let [distance          (mag position)
         normalised-height (/ (- distance ^double radius) ^double orbit)
         normalised-pos    (mult position (/ (+ 0.5 (* 0.5 normalised-height)) distance))
-        orbital-speed     (orbital-speed (+ ^double radius ^double orbit) mass)
+        orbital-speed     (orbital-speed (+ ^double radius ^double orbit) planet-mass)
         normalised-speed  (div speed orbital-speed)]
     [(normalised-pos 0) (normalised-pos 1) (normalised-pos 2) (normalised-speed 0) (normalised-speed 1) (normalised-speed 2)]))
 

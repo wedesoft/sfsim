@@ -24,9 +24,10 @@
 (def test-config
   {:radius 6378000.0
    :orbit 160000.0
-   :mass 5.9722e+24
+   :planet-mass 5.9722e+24
+   :mass 100000.0
    :dt 1.0
-   :max-thrust 20.0
+   :max-thrust 2000000.0
    :timeout 1200.0})
 
 
@@ -56,13 +57,13 @@
                                 test-config))
        => (roughly-vector (vec3 (- 6378000.0 4.899) 0.0 0.0) 1e-3)
        (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
-                             (assoc test-config :mass 0.0)))
+                             (assoc test-config :planet-mass 0.0)))
        => (vec3 0.0 0.0 0.0)
        (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0.5 0.25 0.125)}
-                             (assoc test-config :mass 0.0 :max-thrust 1.0)))
+                             (assoc test-config :planet-mass 0.0 :max-thrust 100000.0)))
        => (vec3 0.5 0.25 0.125)
        (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0.5 0.25 0.125)}
-                             (assoc test-config :mass 0.0)))
+                             (assoc test-config :planet-mass 0.0)))
        => (vec3 10.0 5.0 2.5)
        (:t (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)} test-config))
        => 1.0)
