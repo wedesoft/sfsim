@@ -1,9 +1,10 @@
 (ns sfsim.launch
     "Optimize launch trajectory"
     (:require
-      [clojure.math :refer (sqrt cos hypot atan2)]
-      [fastmath.vector :refer (vec3 mult add sub mag div cross)]
+      [clojure.math :refer (sqrt cos atan2)]
+      [fastmath.vector :refer (vec3 mult add sub mag div normalize dot)]
       [sfsim.util :refer (sqr sign)]
+      [sfsim.quaternion :refer (orthogonal)]
       [sfsim.physics :refer (geographic->vector gravitation state-add state-scale runge-kutta gravitational-constant)]))
 
 
@@ -111,6 +112,30 @@
         result [(add (vec3 xc yc z) (mult v s))
                 (sub (vec3 xc yc z) (mult v s))]]
     result))
+
+
+(defn forward
+  "Forward vector of space craft depending on speed and thrust vector"
+  [{:keys [speed]} {:keys [control]}]
+  (let [control-mag (mag control)
+        speed-mag   (mag speed)]
+    (cond
+      (pos? control-mag) (div control control-mag)
+      (pos? speed-mag)   (div speed speed-mag)
+      :else              (vec3 0 0 1))))
+
+
+(defn up
+  "Up vector of space craft depending on speed and thrust vector"
+  [{:keys [speed]} {:keys [control]}]
+  (let [control-sqr (dot control control)]
+    (if (pos? control-sqr)
+      (let [projection (/ (dot speed control) control-sqr)]
+        (normalize (sub (mult control projection) speed)))
+      (let [speed-sqr (dot speed speed)]
+        (if (pos? speed-sqr)
+          (orthogonal speed)
+          (vec3 1 0 0))))))
 
 
 (set! *warn-on-reflection* false)

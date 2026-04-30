@@ -131,3 +131,21 @@
          (vec3 5523510       0  3189000) 160.0         150.0
          (vec3 5523510       0 -3189000)  20.0          30.0
          (vec3 5523510       0 -3189000) 160.0         150.0)
+
+
+(facts "Orientation of space craft depending on speed and thrust vector"
+       (forward {:speed (vec3 1 0 0)} {:control (vec3 0 1 0)}) => (roughly-vector (vec3 0 1 0) 1e-6)
+       (forward {:speed (vec3 1 0 0)} {:control (vec3 0 2 0)}) => (roughly-vector (vec3 0 1 0) 1e-6)
+       (forward {:speed (vec3 1 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1 0 0) 1e-6)
+       (forward {:speed (vec3 2 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1 0 0) 1e-6)
+       (forward {:speed (vec3 0 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0 0 1) 1e-6)
+       (up {:speed (vec3  0 -1  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
+       (up {:speed (vec3  0  1  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0 -1 0) 1e-6)
+       (up {:speed (vec3  0 -2  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
+       (up {:speed (vec3  3  0 -1)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (up {:speed (vec3  3  0 -1)} {:control (vec3 2 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (up {:speed (vec3 -1  0  3)} {:control (vec3 0 0 1)}) => (roughly-vector (vec3 1  0 0) 1e-6)
+       (up {:speed (vec3  1  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (up {:speed (vec3  2  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (up {:speed (vec3  0  0  1)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
+       (up {:speed (vec3  0  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1  0 0) 1e-6))
