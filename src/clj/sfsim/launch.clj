@@ -1,9 +1,9 @@
 (ns sfsim.launch
     "Optimize launch trajectory"
     (:require
-      [clojure.math :refer (sqrt cos hypot)]
+      [clojure.math :refer (sqrt cos hypot atan2)]
       [fastmath.vector :refer (vec3 mult add sub mag div cross)]
-      [sfsim.util :refer (sqr)]
+      [sfsim.util :refer (sqr sign)]
       [sfsim.physics :refer (geographic->vector gravitation state-add state-scale runge-kutta gravitational-constant)]))
 
 
@@ -92,18 +92,21 @@
 (defn orbital-vector
   "Get target orbital vector given position and inclination target"
   [{:keys [position]} inclination-target]
-  (let [z  (cos inclination-target)
-        r2 (- 1.0 (sqr z))  ; x^2 + y^2 = r^2
-        a  (position 0)
-        b  (position 1)
-        l2 (+ (sqr a) (sqr b))
-        d  (* z (position 2)) ; a x + b y + d = 0
-        l  (sqrt l2)
-        k  (- (/ d l2))  ; does not work if position is at a pole (on the z-axis)
-        xc (* k a)  ; a xc + b yc + d = 0
-        yc (* k b)  ; and xc^2 + yc^2 minimal
-        s  (sqrt (- r2 (sqr xc) (sqr yc)))
-        v  (div (vec3 (- b) a 0) l)
+  (let [a        (position 0)
+        b        (position 1)
+        l2       (+ (sqr a) (sqr b))
+        l        (sqrt l2)
+        latitude (atan2 (position 2) l)
+        cos-lat  (cos latitude)
+        cos-incl (cos inclination-target)
+        z        (if (<= (abs cos-incl) (abs cos-lat)) cos-incl (* (sign cos-incl) (abs cos-lat)))
+        r2       (- 1.0 (sqr z))  ; x^2 + y^2 = r^2
+        d        (* z ^double (position 2)) ; a x + b y + d = 0
+        k        (- (/ d l2))  ; does not work if position is at a pole (on the z-axis)
+        xc       (* k ^double a)  ; a xc + b yc + d = 0
+        yc       (* k ^double b)  ; and xc^2 + yc^2 minimal
+        s        (sqrt (max 0.0 (- r2 (sqr xc) (sqr yc))))
+        v        (div (vec3 (- ^double b) a 0) l)
         result [(add (vec3 xc yc z) (mult v s))
                 (sub (vec3 xc yc z) (mult v s))]]
     result))

@@ -115,9 +115,13 @@
            (dot ?position v2) => (roughly 0.0 1e-6)
            (atan2 (hypot (v1 0) (v1 1)) (v1 2)) => (roughly (to-radians ?actual-inclination) 1e-6)
            (atan2 (hypot (v2 0) (v2 1)) (v2 2)) => (roughly (to-radians ?actual-inclination) 1e-6))
-         ?position                      ?inclination ?actual-inclination
-         (vec3 6378000       0       0)  0.0          0.0
-         (vec3 6378000       0       0) 90.0         90.0
-         (vec3       0 6378000       0) 90.0         90.0
-         (vec3 6378000       0       0) 45.0         45.0
-         (vec3 5523510       0 3189000) 45.0         45.0)
+         ?position                       ?inclination  ?actual-inclination
+         (vec3 6378000       0        0)   0.0           0.0
+         (vec3 6378000       0        0)  90.0          90.0
+         (vec3       0 6378000        0)  90.0          90.0
+         (vec3 6378000       0        0) 180.0         180.0
+         (vec3 6378000       0        0)  45.0          45.0
+         (vec3 5523510       0  3189000)  45.0          45.0
+         (vec3 5523510       0  3189000) 135.0         135.0
+         (vec3 5523510       0  3189000)  20.0          30.0
+         (vec3 5523510       0 -3189000) 160.0         150.0)

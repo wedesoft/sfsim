@@ -295,3 +295,9 @@
        (deep-merge {} {:b 2}) => {:b 2}
        (deep-merge {:a 1} {:a 2}) => {:a 2}
        (deep-merge {:a {:b 1}} {:a {:c 3}}) => {:a {:b 1 :c 3}})
+
+
+(facts "Signum function"
+       (sign 0.0) => 0.0
+       (sign 0.2) => 1.0
+       (sign -0.2) => -1.0)
