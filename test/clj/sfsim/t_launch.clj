@@ -43,9 +43,14 @@
        (:t (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0)) => 0.0)
 
 
+(defn zero-lift
+  ^double [_linear-speed _rotation ^double _speed-of-sound ^double _density]
+  0.0)
+
+
 (facts "Test gravitation"
        (with-redefs [aerodynamics/drag (fn [_linear-speed _speed-of-sound _density _gear _air-brake] 0.0)
-                     aerodynamics/lift (fn [_linear-speed _rotation ^double _speed-of-sound ^double _density] 0.0)]
+                     aerodynamics/lift zero-lift]
          (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
                                (assoc test-config :dt 0.0)))
          => (vec3 0.0 0.0 0.0)
@@ -72,7 +77,7 @@
          (:t (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)} test-config))
          => 1.0)
        (with-redefs [aerodynamics/drag (fn [_linear-speed _speed-of-sound _density _gear _air-brake] 200000.0)
-                     aerodynamics/lift (fn [_linear-speed _rotation ^double _speed-of-sound ^double _density] 0.0)]
+                     aerodynamics/lift zero-lift]
          (:speed (update-state {:position (vec3 0 0 6378000) :speed (vec3 100 0 0) :t 0.0} {:control (vec3 0 0 0)}
                                (assoc test-config :planet-mass 0.0)))
          => (vec3 98 0 0)))
@@ -162,14 +167,29 @@
        (up {:speed (vec3  0  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1  0 0) 1e-6))
 
 
+(defn lift-mock
+  ^double [{:sfsim.aerodynamics/keys [alpha speed]} rotation ^double speed-of-sound ^double density]
+  (* density (/ speed speed-of-sound) (* 1000000.0 (sin (* 2 alpha)))))
+
+(defn temperature-mock
+  ^double [^double _height]
+  300.0)
+
+(defn speed-of-sound-mock
+  ^double [^double _temperature]
+  400.0)
+
+(defn density-mock
+  ^double [^double _height]
+  1.0)
+
 (facts "Determine drag and lift"
        (with-redefs [aerodynamics/drag (fn [{:sfsim.aerodynamics/keys [alpha speed]} speed-of-sound density _gear _air-brake]
                                            (* density (/ speed speed-of-sound) (+ (* 200000.0 (cos alpha)) (* 400000.0 (sin alpha)))))
-                     aerodynamics/lift (fn [{:sfsim.aerodynamics/keys [alpha speed]} rotation ^double speed-of-sound ^double density]
-                                           (* density (/ speed speed-of-sound) (* 1000000.0 (sin (* 2 alpha)))))
-                     atmosphere/temperature-at-height (fn [^double _height] 300.0)
-                     atmosphere/speed-of-sound (fn [^double _temperature] 400.0)
-                     atmosphere/density-at-height (fn [^double _height] 1.0)]
+                     aerodynamics/lift lift-mock
+                     atmosphere/temperature-at-height temperature-mock
+                     atmosphere/speed-of-sound speed-of-sound-mock
+                     atmosphere/density-at-height density-mock]
          ((drag-and-lift {:control (vec3 1 0 0)} test-config) (vec3 0 0 6378000) (vec3 0 0 0))
          => (roughly-vector(vec3 0 0 0) 1e-6)
          ((drag-and-lift  {:control (vec3 1 0 0)} test-config) (vec3 0 0 6378000) (vec3 100 0 0))
