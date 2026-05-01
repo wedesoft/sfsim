@@ -441,7 +441,7 @@
 
 (defn temperature-at-height
   "Compute atmospheric temperature as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
-  ^double [^double height]
+  [^double height]
   (let [height-in-foot (/ height ^double foot)]
     (condp >= height-in-foot
       36089 (temperature-troposphere height)
@@ -496,7 +496,7 @@
 
 (defn density-at-height
   "Compute atmospheric density as a function of height (Hull: Fundamentals of Airplane Flight Mechanics)"
-  ^double [^double height]
+  [^double height]
   (let [height-in-foot (/ height ^double foot)]
     (condp >= height-in-foot
       36089 (density-troposphere height)
@@ -506,7 +506,7 @@
 
 (defn speed-of-sound
   "Speed of sound in atmosphere as a function of temperature"
-  ^double [^double temperature]
+  [^double temperature]
   (* 331.3 (sqrt (/ temperature 273.15))))
 
 

@@ -1,11 +1,13 @@
 (ns sfsim.t-launch
   (:require
-    [clojure.math :refer (PI atan2 hypot to-radians)]
+    [clojure.math :refer (PI atan2 hypot to-radians cos sin sqrt)]
     [midje.sweet :refer :all]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [fastmath.vector :refer (vec3 mag dot)]
     [sfsim.conftest :refer (roughly-vector)]
+    [sfsim.aerodynamics :as aerodynamics]
+    [sfsim.atmosphere :as atmosphere]
     [sfsim.launch :refer :all]))
 
 
@@ -42,31 +44,38 @@
 
 
 (facts "Test gravitation"
-       (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
-                             (assoc test-config :dt 0.0)))
-       => (vec3 0.0 0.0 0.0)
-       (:position (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
-                                (assoc test-config :dt 0.0)))
-       => (vec3 6378000.0 0.0 0.0)
-       (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)} test-config))
-       => (roughly-vector (vec3 -9.799 0.0 0.0) 1e-3)
-       (:speed (update-state (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
-                                           test-config) {:control (vec3 0 0 0)} test-config))
-       => (roughly-vector (vec3 -19.598 0.0 0.0) 1e-3)
-       (:position (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
-                                test-config))
-       => (roughly-vector (vec3 (- 6378000.0 4.899) 0.0 0.0) 1e-3)
-       (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
-                             (assoc test-config :planet-mass 0.0)))
-       => (vec3 0.0 0.0 0.0)
-       (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0.5 0.25 0.125)}
-                             (assoc test-config :planet-mass 0.0 :max-thrust 100000.0)))
-       => (vec3 0.5 0.25 0.125)
-       (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0.5 0.25 0.125)}
-                             (assoc test-config :planet-mass 0.0)))
-       => (vec3 10.0 5.0 2.5)
-       (:t (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)} test-config))
-       => 1.0)
+       (with-redefs [aerodynamics/drag (fn [_linear-speed _speed-of-sound _density _gear _air-brake] 0.0)
+                     aerodynamics/lift (fn [_linear-speed _rotation ^double _speed-of-sound ^double _density] 0.0)]
+         (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
+                               (assoc test-config :dt 0.0)))
+         => (vec3 0.0 0.0 0.0)
+         (:position (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
+                                  (assoc test-config :dt 0.0)))
+         => (vec3 6378000.0 0.0 0.0)
+         (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)} test-config))
+         => (roughly-vector (vec3 -9.799 0.0 0.0) 1e-3)
+         (:speed (update-state (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
+                                             test-config) {:control (vec3 0 0 0)} test-config))
+         => (roughly-vector (vec3 -19.598 0.0 0.0) 1e-3)
+         (:position (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
+                                  test-config))
+         => (roughly-vector (vec3 (- 6378000.0 4.899) 0.0 0.0) 1e-3)
+         (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
+                               (assoc test-config :planet-mass 0.0)))
+         => (vec3 0.0 0.0 0.0)
+         (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0.5 0.25 0.125)}
+                               (assoc test-config :planet-mass 0.0 :max-thrust 100000.0)))
+         => (vec3 0.5 0.25 0.125)
+         (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0.5 0.25 0.125)}
+                               (assoc test-config :planet-mass 0.0)))
+         => (vec3 10.0 5.0 2.5)
+         (:t (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)} test-config))
+         => 1.0)
+       (with-redefs [aerodynamics/drag (fn [_linear-speed _speed-of-sound _density _gear _air-brake] 200000.0)
+                     aerodynamics/lift (fn [_linear-speed _rotation ^double _speed-of-sound ^double _density] 0.0)]
+         (:speed (update-state {:position (vec3 0 0 6378000) :speed (vec3 100 0 0) :t 0.0} {:control (vec3 0 0 0)}
+                               (assoc test-config :planet-mass 0.0)))
+         => (vec3 98 0 0)))
 
 
 (facts "Convert array to action with length of direction vector as latent variable"
@@ -80,9 +89,11 @@
   [observation]
   (vec3 (observation 0) (observation 1) (observation 2)))
 
+
 (defn speed
   [observation]
   (vec3 (observation 3) (observation 4) (observation 5)))
+
 
 (facts "Observe space craft"
        (position (observation {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)} test-config))
@@ -149,3 +160,25 @@
        (up {:speed (vec3  2  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
        (up {:speed (vec3  0  0  1)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
        (up {:speed (vec3  0  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1  0 0) 1e-6))
+
+
+(facts "Determine drag and lift"
+       (with-redefs [aerodynamics/drag (fn [{:sfsim.aerodynamics/keys [alpha speed]} speed-of-sound density _gear _air-brake]
+                                           (* density (/ speed speed-of-sound) (+ (* 200000.0 (cos alpha)) (* 400000.0 (sin alpha)))))
+                     aerodynamics/lift (fn [{:sfsim.aerodynamics/keys [alpha speed]} rotation ^double speed-of-sound ^double density]
+                                           (* density (/ speed speed-of-sound) (* 1000000.0 (sin (* 2 alpha)))))
+                     atmosphere/temperature-at-height (fn [^double _height] 300.0)
+                     atmosphere/speed-of-sound (fn [^double _temperature] 400.0)
+                     atmosphere/density-at-height (fn [^double _height] 1.0)]
+         ((drag-and-lift {:control (vec3 1 0 0)} test-config) (vec3 0 0 6378000) (vec3 0 0 0))
+         => (roughly-vector(vec3 0 0 0) 1e-6)
+         ((drag-and-lift  {:control (vec3 1 0 0)} test-config) (vec3 0 0 6378000) (vec3 100 0 0))
+         => (roughly-vector (vec3 -0.5 0 0) 1e-6)
+         ((drag-and-lift {:control (vec3 0 0 1)} test-config) (vec3 0 0 6378000) (vec3 -100 0 0))
+         => (roughly-vector (vec3 1.0 0 0) 1e-6)
+         ((drag-and-lift {:control (vec3 -1 0 0)} test-config) (vec3 0 0 6378000) (vec3 -100 0 0))
+         => (roughly-vector (vec3 0.5 0 0) 1e-6)
+         ((drag-and-lift {:control (vec3 1 0 1)} test-config) (vec3 0 0 6378000) (vec3 100 0 0))
+         => (roughly-vector(vec3 (- (sqrt 1.125)) 0 2.5) 1e-6)
+         ((drag-and-lift {:control (vec3 1 1 0)} test-config) (vec3 0 0 6378000) (vec3 100 0 0))
+         => (roughly-vector(vec3 (- (sqrt 1.125)) 2.5 0) 1e-6)))

@@ -5,7 +5,9 @@
       [fastmath.vector :refer (vec3 mult add sub mag div normalize dot)]
       [sfsim.util :refer (sqr sign)]
       [sfsim.quaternion :refer (orthogonal)]
-      [sfsim.physics :refer (geographic->vector gravitation state-add state-scale runge-kutta gravitational-constant)]))
+      [sfsim.physics :refer (geographic->vector state-add state-scale runge-kutta gravitational-constant) :as physics]
+      [sfsim.atmosphere :refer (temperature-at-height speed-of-sound density-at-height)]
+      [sfsim.aerodynamics :refer (lift drag wind-to-body-system)]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -47,14 +49,74 @@
       {:position speed :speed (acceleration position speed)}))
 
 
+(defn gravitation
+  "Return gravitation function using planet mass from specified config"
+  [{:keys [planet-mass]}]
+  (physics/gravitation (vec3 0 0 0) planet-mass))
+
+
+(defn thrust
+  "Return function returning thrust vector"
+  [{:keys [control]} {:keys [mass max-thrust]}]
+  (mult control (/ ^double max-thrust ^double mass)))
+
+
+(defn forward
+  "Forward vector of space craft depending on speed and thrust vector"
+  [{:keys [speed]} {:keys [control]}]
+  (let [control-mag (mag control)
+        speed-mag   (mag speed)]
+    (cond
+      (pos? control-mag) (div control control-mag)
+      (pos? speed-mag)   (div speed speed-mag)
+      :else              (vec3 0 0 1))))
+
+
+(defn up
+  "Up vector of space craft depending on speed and thrust vector"
+  [{:keys [speed]} {:keys [control]}]
+  (let [control-sqr (dot control control)]
+    (if (pos? control-sqr)
+      (let [projection (/ (dot speed control) control-sqr)]
+        (normalize (sub (mult control projection) speed)))
+      (let [speed-sqr (dot speed speed)]
+        (if (pos? speed-sqr)
+          (orthogonal speed)
+          (vec3 1 0 0))))))
+
+
+(defn drag-and-lift
+  "Get acceleration due to drag and lift"
+  [action {:keys [mass radius]}]
+  (fn [position speed]
+      (let [distance       (mag position)
+            height         (- distance ^double radius)
+            state          {:position position :speed speed}
+            forward        (forward state action)
+            up             (up state action)
+            alpha          (atan2 (- (dot up speed)) (dot forward speed))
+            density        (density-at-height height)
+            temperature    (temperature-at-height height)
+            speed-of-sound (speed-of-sound temperature)
+            linear-speed   #:sfsim.aerodynamics{:speed (mag speed) :alpha alpha :beta 0.0}
+            drag           (drag linear-speed speed-of-sound density 0.0 0.0)
+            lift           (lift linear-speed (vec3 0 0 0) speed-of-sound density)
+            wind-acc       (div (vec3 (- ^double drag) 0 (- ^double lift)) mass)
+            body-acc       (wind-to-body-system linear-speed wind-acc)]
+        (sub (mult forward (body-acc 0)) (mult up (body-acc 2))))))
+
+
 (defn update-state
   "Perform simulation step for spacecraft"
-  [{:keys [t] :as state} {:keys [control]} {:keys [dt planet-mass max-thrust mass]}]
-  (let [gravitation  (gravitation (vec3 0 0 0) planet-mass)
-        acceleration (fn [position speed] (add (gravitation position speed) (mult control (/ ^double max-thrust ^double mass))))
-        state        (runge-kutta state dt (state-change acceleration) state-add state-scale)
-        t            (+ ^double t ^double dt)]
-    (assoc state :t t)))
+  [{:keys [t] :as state} action {:keys [dt] :as config}]
+   (let [gravitation   (gravitation config)
+         drag-and-lift (drag-and-lift action config)
+         acceleration  (fn [position speed] (reduce add [(gravitation position speed)
+                                                         (thrust action config)
+                                                         (drag-and-lift position speed)]))
+         state         (runge-kutta state dt (state-change acceleration) state-add state-scale)
+         t             (+ ^double t ^double dt)]
+     (assoc state :t t)))
 
 
 (defn action
@@ -112,30 +174,6 @@
         result [(add (vec3 xc yc z) (mult v s))
                 (sub (vec3 xc yc z) (mult v s))]]
     result))
-
-
-(defn forward
-  "Forward vector of space craft depending on speed and thrust vector"
-  [{:keys [speed]} {:keys [control]}]
-  (let [control-mag (mag control)
-        speed-mag   (mag speed)]
-    (cond
-      (pos? control-mag) (div control control-mag)
-      (pos? speed-mag)   (div speed speed-mag)
-      :else              (vec3 0 0 1))))
-
-
-(defn up
-  "Up vector of space craft depending on speed and thrust vector"
-  [{:keys [speed]} {:keys [control]}]
-  (let [control-sqr (dot control control)]
-    (if (pos? control-sqr)
-      (let [projection (/ (dot speed control) control-sqr)]
-        (normalize (sub (mult control projection) speed)))
-      (let [speed-sqr (dot speed speed)]
-        (if (pos? speed-sqr)
-          (orthogonal speed)
-          (vec3 1 0 0))))))
 
 
 (set! *warn-on-reflection* false)
