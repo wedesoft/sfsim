@@ -202,3 +202,19 @@
          => (roughly-vector(vec3 (- (sqrt 1.125)) 0 2.5) 1e-6)
          ((drag-and-lift {:control (vec3 1 1 0)} test-config) (vec3 0 0 6378000) (vec3 100 0 0))
          => (roughly-vector(vec3 (- (sqrt 1.125)) 2.5 0) 1e-6)))
+
+
+(facts "Penalise height deviations"
+       (reward-height {:position (vec3 6378000 0 0)} test-config) => -1.0
+       (reward-height {:position (vec3 6538000 0 0)} test-config) => 0.0
+       (reward-height {:position (vec3 6698000 0 0)} test-config) => -1.0)
+
+
+(facts "Penalise deviation from desired speed vector"
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 0)} test-config 0.0) => (roughly -1.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0)} test-config 0.0) => (roughly 0.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 -7809.447 0)} test-config 0.0) => (roughly -2.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 -7809.447 0)} test-config PI) => (roughly 0.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0)} test-config PI) => (roughly -2.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 7809.447)} test-config (/ PI 2)) => (roughly 0.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 -7809.447)} test-config (/ PI 2)) => (roughly 0.0 1e-3))

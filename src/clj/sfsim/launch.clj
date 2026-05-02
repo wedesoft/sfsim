@@ -2,7 +2,7 @@
     "Optimize launch trajectory"
     (:require
       [clojure.math :refer (sqrt cos atan2)]
-      [fastmath.vector :refer (vec3 mult add sub mag div normalize dot)]
+      [fastmath.vector :refer (vec3 mult add sub mag div normalize dot cross)]
       [sfsim.util :refer (sqr sign)]
       [sfsim.quaternion :refer (orthogonal)]
       [sfsim.physics :refer (geographic->vector state-add state-scale runge-kutta gravitational-constant) :as physics]
@@ -17,10 +17,10 @@
 (defn orbital-speed
   "Orbital speed"
   ^double
-  ([^double radius ^double planet-mass ^double gravitational-constant]
-   (sqrt (/ (* planet-mass gravitational-constant) radius)))
-  ([^double radius ^double planet-mass]
-   (orbital-speed radius planet-mass gravitational-constant)))
+  ([^double distance ^double planet-mass ^double gravitational-constant]
+   (sqrt (/ (* planet-mass gravitational-constant) distance)))
+  ([^double distance ^double planet-mass]
+   (orbital-speed distance planet-mass gravitational-constant)))
 
 
 (def config
@@ -174,6 +174,21 @@
         result [(add (vec3 xc yc z) (mult v s))
                 (sub (vec3 xc yc z) (mult v s))]]
     result))
+
+
+(defn reward-height
+  "Reward for approaching orbital height"
+  [{:keys [position]} {:keys [radius orbit]}]
+  (-> position mag (- ^double radius) (- ^double orbit) (/ ^double orbit) abs -))
+
+
+(defn reward-speed
+  "Reward for approaching orbital speed"
+  [{:keys [position speed] :as state} {:keys [radius orbit planet-mass]} inclination-target]
+  (let [orbital-speed   (orbital-speed (+ ^double radius ^double orbit) planet-mass)
+        orbital-vectors (orbital-vector state inclination-target)
+        target-speeds   (map #(mult (cross % (normalize position)) orbital-speed) orbital-vectors)]
+    (- ^double (apply min (map #(/ (mag (sub speed %)) ^double orbital-speed) target-speeds)))))
 
 
 (set! *warn-on-reflection* false)
