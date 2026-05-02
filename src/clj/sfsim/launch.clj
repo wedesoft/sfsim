@@ -29,17 +29,18 @@
    :planet-mass 5.9742e+24
    :mass 100000.0
    :dt 1.0
-   :max-thrust 2500000.0})
+   :max-thrust 2500000.0
+   :initial-delta-v 20000.0})
 
 
 (defn setup
   "Setup rocket launch"
-  [config & {:keys [latitude longitude height]}]
-  (let [radius (:radius config)
-        point  (geographic->vector longitude latitude)]
+  [{:keys [radius initial-delta-v]} & {:keys [latitude longitude height]}]
+  (let [point  (geographic->vector longitude latitude)]
     {:position (mult point (+ ^double radius ^double height))
-     :speed (vec3 0 0 0)
-     :t 0.0}))
+     :speed    (vec3 0 0 0)
+     :delta-v  initial-delta-v
+     :t        0.0}))
 
 
 (defn state-change
@@ -108,15 +109,17 @@
 
 (defn update-state
   "Perform simulation step for spacecraft"
-  [{:keys [t] :as state} action {:keys [dt] :as config}]
+  [{:keys [t delta-v] :as state} action {:keys [dt] :as config}]
    (let [gravitation   (gravitation config)
          drag-and-lift (drag-and-lift action config)
+         thrust        (thrust action config)
          acceleration  (fn [position speed] (reduce add [(gravitation position speed)
-                                                         (thrust action config)
-                                                         (drag-and-lift position speed)]))
+                                                         (drag-and-lift position speed)
+                                                         thrust]))
          state         (runge-kutta state dt (state-change acceleration) state-add state-scale)
-         t             (+ ^double t ^double dt)]
-     (assoc state :t t)))
+         t             (+ ^double t ^double dt)
+         delta-v       (- ^double delta-v (mag thrust))]
+     (assoc state :t t :delta-v delta-v)))
 
 
 (defn action
