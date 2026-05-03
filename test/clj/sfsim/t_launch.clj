@@ -226,3 +226,8 @@
        (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0)} test-config PI) => (roughly -2.0 1e-3)
        (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 7809.447)} test-config (/ PI 2)) => (roughly 0.0 1e-3)
        (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 -7809.447)} test-config (/ PI 2)) => (roughly 0.0 1e-3))
+
+
+(facts "Penalise fuel use"
+       (reward-fuel {:delta-v 20000.0} {:initial-delta-v 20000.0}) => 0.0
+       (reward-fuel {:delta-v 10000.0} {:initial-delta-v 20000.0}) => -0.5)

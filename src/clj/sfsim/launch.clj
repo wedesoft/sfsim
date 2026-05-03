@@ -30,7 +30,7 @@
    :mass 100000.0
    :dt 1.0
    :max-thrust 2500000.0
-   :initial-delta-v 20000.0})
+   :initial-delta-v 12000.0})
 
 
 (defn setup
@@ -192,6 +192,12 @@
         orbital-vectors (orbital-vector state inclination-target)
         target-speeds   (map #(mult (cross % (normalize position)) orbital-speed) orbital-vectors)]
     (- ^double (apply min (map #(/ (mag (sub speed %)) ^double orbital-speed) target-speeds)))))
+
+
+(defn reward-fuel
+  "Reward conserving fuel"
+  [{:keys [delta-v]} {:keys [initial-delta-v]}]
+  (/ (- ^double delta-v ^double initial-delta-v) ^double initial-delta-v))
 
 
 (set! *warn-on-reflection* false)
