@@ -1,5 +1,6 @@
 (ns sfsim.launch
     "Optimize launch trajectory"
+    (:gen-class)
     (:require
       [clojure.math :refer (sqrt cos atan2)]
       [fastmath.vector :refer (vec3 mult add sub mag div normalize dot cross)]
@@ -7,7 +8,10 @@
       [sfsim.quaternion :refer (orthogonal)]
       [sfsim.physics :refer (geographic->vector state-add state-scale runge-kutta gravitational-constant) :as physics]
       [sfsim.atmosphere :refer (temperature-at-height speed-of-sound density-at-height)]
-      [sfsim.aerodynamics :refer (lift drag wind-to-body-system)]))
+      [sfsim.aerodynamics :refer (lift drag wind-to-body-system)]
+      [sfsim.environment :refer (Environment)]
+      [sfsim.mlp :refer (Critic Actor adam-optimizer)]
+      ))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -28,13 +32,13 @@
    :orbit 160000.0
    :planet-mass 5.9742e+24
    :mass 100000.0
-   :dt 1.0
+   :dt 5.0
    :max-thrust 2500000.0
    :initial-delta-v 12000.0
    :free-delta-v 5000.0
    :weight-height-reward 1.0
    :weight-speed-reward 1.0
-   :weight-fuel-reward 1.0})
+   :weight-fuel-reward 0.1})
 
 
 (defn setup
@@ -211,6 +215,49 @@
   (+ (* ^double weight-height-reward ^double (reward-height state config))
      (* ^double weight-speed-reward ^double (reward-speed state config 0.0))
      (* ^double weight-fuel-reward ^double (reward-fuel state config))))
+
+
+(defrecord Launch [config state]
+  Environment
+  (environment-update [_this input]
+    (->Launch config (update-state state (action input) config)))
+  (environment-observation [_this]
+    (observation state config))
+  (environment-done? [_this]
+    (done? state config))
+  (environment-truncate? [_this]
+    (truncate? state config))
+  (environment-reward [_this _input]
+    (reward state config)))
+
+
+(defn launch-factory
+  []
+  (->Launch config (setup config :latitude 0.0 :longitude 0.0 :height 0.0)))
+
+
+(defn -main [& _args]
+  (let [factory        (launch-factory)
+        actor          (Actor 6 64 4)
+        critic         (Critic 6 64)
+        n-epochs       100
+        n-updates      10
+        gamma          0.99
+        lambda         1.0
+        epsilon        0.2
+        n-batches      8
+        batch-size     64
+        checkpoint     100
+        entropy-factor (atom 0.1)
+        entropy-decay  0.999
+        lr             5e-5
+        weight-decay   1e-4
+        smooth-actor-loss  (atom 0.0)
+        smooth-critic-loss (atom 0.0)
+        actor-optimizer  (adam-optimizer actor lr weight-decay)
+        critic-optimizer (adam-optimizer critic lr weight-decay)]
+    )
+  )
 
 
 (set! *warn-on-reflection* false)
