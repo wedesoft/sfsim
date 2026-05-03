@@ -32,6 +32,7 @@
    :max-thrust 2000000.0
    :timeout 1200.0
    :initial-delta-v 20000.0
+   :free-delta-v 5000.0
    :weight-height-reward 1.0
    :weight-speed-reward 1.0
    :weight-fuel-reward 1.0})
@@ -232,8 +233,10 @@
 
 
 (facts "Penalise fuel use"
-       (reward-fuel {:delta-v 20000.0} {:initial-delta-v 20000.0}) => 0.0
-       (reward-fuel {:delta-v 10000.0} {:initial-delta-v 20000.0}) => -0.5)
+       (reward-fuel {:delta-v 20000.0} test-config) => 0.0
+       (reward-fuel {:delta-v 15000.0} test-config) => 0.0
+       (reward-fuel {:delta-v     0.0} test-config) => -1.0
+       (reward-fuel {:delta-v  7500.0} test-config) => -0.5)
 
 
 (facts "Overall reward function"

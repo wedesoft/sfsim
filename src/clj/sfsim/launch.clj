@@ -31,6 +31,7 @@
    :dt 1.0
    :max-thrust 2500000.0
    :initial-delta-v 12000.0
+   :free-delta-v 5000.0
    :weight-height-reward 1.0
    :weight-speed-reward 1.0
    :weight-fuel-reward 1.0})
@@ -199,8 +200,9 @@
 
 (defn reward-fuel
   "Reward conserving fuel"
-  [{:keys [delta-v]} {:keys [initial-delta-v]}]
-  (/ (- ^double delta-v ^double initial-delta-v) ^double initial-delta-v))
+  [{:keys [delta-v]} {:keys [initial-delta-v free-delta-v]}]
+  (let [ramp-length (- ^double initial-delta-v ^double free-delta-v)]
+    (min 0.0 (/ (- ^double delta-v ramp-length) ramp-length))))
 
 
 (defn reward
