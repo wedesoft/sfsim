@@ -206,9 +206,9 @@
 (defn reward
   "Overall reward function"
   [state {:keys [weight-height-reward weight-speed-reward weight-fuel-reward] :as config}]
-  (+ (* weight-height-reward (reward-height state config))
-     (* weight-speed-reward (reward-speed state config 0.0))
-     (* weight-fuel-reward (reward-fuel state config))))
+  (+ (* ^double weight-height-reward ^double (reward-height state config))
+     (* ^double weight-speed-reward ^double (reward-speed state config 0.0))
+     (* ^double weight-fuel-reward ^double (reward-fuel state config))))
 
 
 (set! *warn-on-reflection* false)
