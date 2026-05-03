@@ -30,7 +30,10 @@
    :mass 100000.0
    :dt 1.0
    :max-thrust 2500000.0
-   :initial-delta-v 12000.0})
+   :initial-delta-v 12000.0
+   :weight-height-reward 1.0
+   :weight-speed-reward 1.0
+   :weight-fuel-reward 1.0})
 
 
 (defn setup
@@ -198,6 +201,14 @@
   "Reward conserving fuel"
   [{:keys [delta-v]} {:keys [initial-delta-v]}]
   (/ (- ^double delta-v ^double initial-delta-v) ^double initial-delta-v))
+
+
+(defn reward
+  "Overall reward function"
+  [state {:keys [weight-height-reward weight-speed-reward weight-fuel-reward] :as config}]
+  (+ (* weight-height-reward (reward-height state config))
+     (* weight-speed-reward (reward-speed state config 0.0))
+     (* weight-fuel-reward (reward-fuel state config))))
 
 
 (set! *warn-on-reflection* false)

@@ -31,7 +31,10 @@
    :dt 1.0
    :max-thrust 2000000.0
    :timeout 1200.0
-   :initial-delta-v 20000.0})
+   :initial-delta-v 20000.0
+   :weight-height-reward 1.0
+   :weight-speed-reward 1.0
+   :weight-fuel-reward 1.0})
 
 
 (facts "Launch rocket"
@@ -231,3 +234,20 @@
 (facts "Penalise fuel use"
        (reward-fuel {:delta-v 20000.0} {:initial-delta-v 20000.0}) => 0.0
        (reward-fuel {:delta-v 10000.0} {:initial-delta-v 20000.0}) => -0.5)
+
+
+(facts "Overall reward function"
+       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0} test-config)
+       => (roughly -1.0 1e-3)
+       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0}
+               (assoc test-config :weight-height-reward 0.5))
+       => (roughly -0.5 1e-3)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 0 0) :delta-v 20000.0} test-config)
+       => (roughly -1.0 1e-3)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 0 0) :delta-v 20000.0}
+               (assoc test-config :weight-speed-reward 0.5))
+       => (roughly -0.5 1e-3)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 0.0} test-config)
+       => (roughly -1.0 1e-3)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 0.0} (assoc test-config :weight-fuel-reward 0.5))
+       => (roughly -0.5 1e-3))
