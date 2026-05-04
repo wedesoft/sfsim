@@ -4,14 +4,20 @@
     (:require
       [clojure.math :refer (sqrt cos atan2)]
       [fastmath.vector :refer (vec3 mult add sub mag div normalize dot cross)]
+      [libpython-clj2.require :refer (require-python)]
+      [libpython-clj2.python :refer (py. py.-) :as py]
       [sfsim.util :refer (sqr sign)]
       [sfsim.quaternion :refer (orthogonal)]
       [sfsim.physics :refer (geographic->vector state-add state-scale runge-kutta gravitational-constant) :as physics]
       [sfsim.atmosphere :refer (temperature-at-height speed-of-sound density-at-height)]
       [sfsim.aerodynamics :refer (lift drag wind-to-body-system)]
       [sfsim.environment :refer (Environment)]
-      [sfsim.mlp :refer (Critic Actor adam-optimizer)]
-      ))
+      [sfsim.mlp :refer (Critic adam-optimizer)]))
+
+
+(require-python '[torch :as torch]
+                '[torch.linalg :as linalg]
+                '[torch.distributions :refer (Normal)])
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -231,6 +237,25 @@
     (reward state config)))
 
 
+(def ThrustVector
+  (py/create-class
+    "ThrustVector" nil
+    {"__init__"
+     (py/make-instance-fn
+       (fn [self mu sigma]
+           (py/set-attrs!
+             self
+             {"normal" (Normal mu sigma)})
+           nil))
+     "sample"
+     (py/make-instance-fn
+       (fn [self]
+           (let [z     (py. (py.- self normal) sample)
+                 z-mag (linalg/norm z)
+                 s     (torch/div (torch/tanh z-mag) z-mag)]
+             (torch/mul z s))))}))
+
+
 (defn launch-factory
   []
   (->Launch config (setup config :latitude 0.0 :longitude 0.0 :height 0.0)))
@@ -238,7 +263,7 @@
 
 (defn -main [& _args]
   (let [factory        (launch-factory)
-        actor          (Actor 6 64 4)
+        actor          nil
         critic         (Critic 6 64)
         n-epochs       100
         n-updates      10
@@ -255,9 +280,7 @@
         smooth-actor-loss  (atom 0.0)
         smooth-critic-loss (atom 0.0)
         actor-optimizer  (adam-optimizer actor lr weight-decay)
-        critic-optimizer (adam-optimizer critic lr weight-decay)]
-    )
-  )
+        critic-optimizer (adam-optimizer critic lr weight-decay)]))
 
 
 (set! *warn-on-reflection* false)

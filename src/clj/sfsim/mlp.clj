@@ -11,6 +11,10 @@
                 '[torch.distributions :refer (Beta)])
 
 
+(set! *unchecked-math* :warn-on-boxed)
+(set! *warn-on-reflection* true)
+
+
 (defmacro without-gradient
   "Execute body without gradient calculation"
   [& body]
@@ -157,3 +161,7 @@
   [actor observation]
   (let [dist (py. actor get_dist observation)]
     (py. dist entropy)))
+
+
+(set! *warn-on-reflection* false)
+(set! *unchecked-math* false)

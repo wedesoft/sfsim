@@ -1,6 +1,7 @@
 (ns sfsim.t-launch
   (:require
     [clojure.math :refer (PI atan2 hypot to-radians cos sin sqrt)]
+    [libpython-clj2.python :refer (py.) :as py]
     [midje.sweet :refer :all]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -8,6 +9,7 @@
     [sfsim.conftest :refer (roughly-vector)]
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.atmosphere :as atmosphere]
+    [sfsim.mlp :refer (tensor tolist)]
     [sfsim.launch :refer :all]))
 
 
@@ -254,3 +256,10 @@
        => (roughly -1.0 1e-3)
        (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 0.0} (assoc test-config :weight-fuel-reward 0.5))
        => (roughly -0.5 1e-3))
+
+
+(facts "Squashed 3D distribution with limited magnitude vector output"
+       (let [dist (ThrustVector (tensor [5 0 0]) (tensor [0.125 0.125 0.125]))]
+         (mag (apply vec3 (tolist (py. dist sample)))) => #(<= % 1.0)
+         )
+       )
