@@ -245,7 +245,8 @@
        (fn [self mu sigma]
            (py/set-attrs!
              self
-             {"normal" (Normal mu sigma)})
+             {"mu"     mu
+              "normal" (Normal mu sigma)})
            nil))
      "sample"
      (py/make-instance-fn
@@ -253,7 +254,30 @@
            (let [z     (py. (py.- self normal) sample)
                  z-mag (linalg/norm z)
                  s     (torch/div (torch/tanh z-mag) z-mag)]
-             (torch/mul z s))))}))
+             (torch/mul z s))))
+     "correction"
+     (py/make-instance-fn
+       (fn [self a-mag z-mag]
+           (let [sphere-area-correction (torch/mul 2.0 (torch/log (torch/div a-mag z-mag)))
+                 radial-correction      (torch/log (torch/sub 1.0 (torch/square a-mag)))]
+             (torch/add sphere-area-correction radial-correction))))
+     "log_prob"
+     (py/make-instance-fn
+       (fn [self action]
+           (let [a-mag      (linalg/norm action)
+                 z-mag      (torch/atanh a-mag)
+                 z          (torch/mul z-mag action)
+                 log-prob-z (torch/sum (py. (py.- self normal) log_prob z) -1 :keepdim true)
+                 correction (py. self correction a-mag z-mag)]
+             (torch/sub log-prob-z correction))))
+     "entropy"
+     (py/make-instance-fn
+       (fn [self]  ; This only approximates the entropy assuming small sigma
+           (let [normal-entropy (torch/sum (py. (py.- self normal) entropy) -1 :keepdim true)
+                 z-mag          (linalg/norm (py.- self mu))
+                 a-mag          (torch/tanh z-mag)
+                 correction     (py. self correction a-mag z-mag)]
+             (torch/add normal-entropy correction))))}))
 
 
 (defn launch-factory
