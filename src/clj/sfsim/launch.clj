@@ -248,17 +248,21 @@
              {"mu"     mu
               "normal" (Normal mu sigma)})
            nil))
+     "ratio"
+     (py/make-instance-fn
+       (fn [self a-mag z-mag]
+           (torch/where (torch/ne z-mag 0.0) (torch/div a-mag z-mag) 1.0)))
      "sample"
      (py/make-instance-fn
        (fn [self]
            (let [z     (py. (py.- self normal) sample)
                  z-mag (linalg/norm z)
-                 s     (torch/div (torch/tanh z-mag) z-mag)]
+                 s     (py. self ratio (torch/tanh z-mag) z-mag)]
              (torch/mul z s))))
      "correction"
      (py/make-instance-fn
        (fn [self a-mag z-mag]
-           (let [sphere-area-correction (torch/mul 2.0 (torch/log (torch/div a-mag z-mag)))
+           (let [sphere-area-correction (torch/mul 2.0 (torch/log (py. self ratio a-mag z-mag)))
                  radial-correction      (torch/log (torch/sub 1.0 (torch/square a-mag)))]
              (torch/add sphere-area-correction radial-correction))))
      "log_prob"

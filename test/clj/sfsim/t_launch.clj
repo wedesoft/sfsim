@@ -9,7 +9,7 @@
     [sfsim.conftest :refer (roughly-vector)]
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.atmosphere :as atmosphere]
-    [sfsim.mlp :refer (tensor tolist without-gradient)]
+    [sfsim.mlp :refer (tensor tolist toitem without-gradient)]
     [sfsim.launch :refer :all]))
 
 
@@ -263,4 +263,6 @@
          (let [dist (ThrustVector (tensor [3 0 0]) (tensor [0.125 0.125 0.125]))]
            (mag (apply vec3 (tolist (py. dist sample)))) => #(<= % 1.0)
            (first (tolist (py. dist log_prob (tensor [0.995 0 0])))) => (roughly 10.279 1e-3)
-           (first (tolist (py. dist entropy))) => (roughly -8.807 1e-3))))
+           (first (tolist (py. dist entropy))) => (roughly -8.807 1e-3))
+         (let [dist (ThrustVector (tensor [0 0 0]) (tensor [0.125 0.125 0.125]))]
+           (toitem (py. dist correction (tensor 0.0) (tensor 0.0))) => 0.0)))
