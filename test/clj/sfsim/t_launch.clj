@@ -266,3 +266,16 @@
            (first (tolist (py. dist entropy))) => (roughly -8.807 1e-3))
          (let [dist (ThrustVector (tensor [0 0 0]) (tensor [0.125 0.125 0.125]))]
            (toitem (py. dist correction (tensor 0.0) (tensor 0.0))) => 0.0)))
+
+
+(facts "Actor using 6D observation to output distribution of 3D vectors"
+       (without-gradient
+         (let [zero-actor (LaunchActor 6 12 3)]
+           (doseq [param (py. zero-actor parameters)]
+                  (py. param zero_))
+           (py. zero-actor eval)
+           (let [result (zero-actor (tensor [[0.0 0.0 0.0 0.0 0.0 0.0]]))]
+             (tolist (first result)) => [[0.0 0.0 0.0]]
+             (tolist (second result)) => [[0.6931471824645996 0.6931471824645996 0.6931471824645996]]
+             (mag (apply vec3 (tolist (py. (py. zero-actor get_dist (tensor [0.0 0.0 0.0 0.0 0.0 0.0])) sample)))) => #(<= % 1.0))
+           (tolist (py. zero-actor deterministic_act (tensor [[0.0 0.0 0.0 0.0 0.0 0.0]]))) => [[0.0 0.0 0.0]])))

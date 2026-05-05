@@ -17,6 +17,8 @@
 
 (require-python '[torch :as torch]
                 '[torch.linalg :as linalg]
+                '[torch.nn :as nn]
+                '[torch.nn.functional :as F]
                 '[torch.distributions :refer (Normal)])
 
 
@@ -252,13 +254,21 @@
      (py/make-instance-fn
        (fn [self a-mag z-mag]
            (torch/where (torch/ne z-mag 0.0) (torch/div a-mag z-mag) 1.0)))
+     "scale"
+     (py/make-instance-fn
+       (fn [self z]
+           (let [z-mag (linalg/norm z)
+                 s     (py. self ratio (torch/tanh z-mag) z-mag)]
+             (torch/mul z s))))
      "sample"
      (py/make-instance-fn
        (fn [self]
-           (let [z     (py. (py.- self normal) sample)
-                 z-mag (linalg/norm z)
-                 s     (py. self ratio (torch/tanh z-mag) z-mag)]
-             (torch/mul z s))))
+           (let [z     (py. (py.- self normal) sample)]
+             (py. self scale z))))
+     "mean"
+     (py/make-instance-fn
+       (fn [self]
+           (py. self scale (py.- self mu))))
      "correction"
      (py/make-instance-fn
        (fn [self a-mag z-mag]
@@ -282,6 +292,44 @@
                  a-mag          (torch/tanh z-mag)
                  correction     (py. self correction a-mag z-mag)]
              (torch/add normal-entropy correction))))}))
+
+
+(def LaunchActor
+  (py/create-class
+    "Actor" [nn/Module]
+    {"__init__"
+     (py/make-instance-fn
+       (fn [self observation-size hidden-units action-size]
+           (py. nn/Module __init__ self)
+           (py/set-attrs!
+             self
+             {"fc1"     (nn/Linear observation-size hidden-units)
+              "fc2"     (nn/Linear hidden-units hidden-units)
+              "fcmu"    (nn/Linear hidden-units action-size)
+              "fcsigma" (nn/Linear hidden-units action-size)})
+           nil))
+     "forward"
+     (py/make-instance-fn
+       (fn [self x]
+           (let [x     (py. self fc1 x)
+                 x     (torch/tanh x)
+                 x     (py. self fc2 x)
+                 x     (torch/tanh x)
+                 mu    (py. self fcmu x)
+                 sigma (F/softplus (py. self fcsigma x))]
+             [mu sigma])))
+     "deterministic_act"
+     (py/make-instance-fn
+       (fn [self x]
+           (let [dist (py. self get_dist x)]
+             (py. dist mean))))
+     "get_dist"
+     (py/make-instance-fn
+       (fn [self x]
+           (let [[mu sigma] (py. self forward x)]
+             (ThrustVector mu sigma))))}))
+
+
 
 
 (defn launch-factory

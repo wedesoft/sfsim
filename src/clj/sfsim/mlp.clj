@@ -142,8 +142,7 @@
   (fn indeterministic-act-with-actor [observation]
       (without-gradient
         (let [dist    (py. actor get_dist (tensor observation))
-              sample  (py. dist sample)
-              action  (torch/clamp sample 0.0 1.0)
+              action  (py. dist sample)
               logprob (py. dist log_prob action)]
           {:action (tolist action) :logprob (tolist logprob)}))))
 
