@@ -330,8 +330,6 @@
              (ThrustVector mu sigma))))}))
 
 
-
-
 (defn launch-factory
   []
   (->Launch config (setup config :latitude 0.0 :longitude 0.0 :height 0.0)))
@@ -339,7 +337,7 @@
 
 (defn -main [& _args]
   (let [factory        (launch-factory)
-        actor          nil
+        actor          (LaunchActor 6 64 3)
         critic         (Critic 6 64)
         n-epochs       100
         n-updates      10
@@ -356,7 +354,8 @@
         smooth-actor-loss  (atom 0.0)
         smooth-critic-loss (atom 0.0)
         actor-optimizer  (adam-optimizer actor lr weight-decay)
-        critic-optimizer (adam-optimizer critic lr weight-decay)]))
+        critic-optimizer (adam-optimizer critic lr weight-decay)]
+    (System/exit 0)))
 
 
 (set! *warn-on-reflection* false)
