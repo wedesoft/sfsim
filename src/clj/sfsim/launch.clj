@@ -279,7 +279,7 @@
      "log_prob"
      (py/make-instance-fn
        (fn [self action]
-           (let [a-mag      (linalg/norm action :dim -1 :keepdim true)
+           (let [a-mag      (torch/clamp (linalg/norm action :dim -1 :keepdim true) 0.0 0.999)
                  z-mag      (torch/atanh a-mag)
                  z          (torch/mul z-mag action)
                  log-prob-z (torch/sum (py. (py.- self normal) log_prob z) -1 :keepdim true)
