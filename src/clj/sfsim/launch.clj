@@ -340,7 +340,7 @@
   (let [factory        launch-factory
         actor          (LaunchActor 6 64 3)
         critic         (Critic 6 64)
-        n-epochs       100
+        n-epochs       1000
         n-updates      10
         gamma          0.99
         lambda         1.0
@@ -348,7 +348,7 @@
         n-batches      8
         batch-size     64
         checkpoint     100
-        entropy-factor (atom 0.1)
+        entropy-factor (atom 0.01)
         entropy-decay  0.999
         lr             5e-5
         weight-decay   1e-4
@@ -378,7 +378,7 @@
                       "Critic Loss:" @smooth-critic-loss
                       "Entropy Factor:" @entropy-factor))
            (without-gradient
-             (doseq [input [[1 0 0 0 0 0]]]
+             (doseq [input [[0.5 0 0 0 0 0]]]
                     (println input
                              "->" (action (tolist (py. actor deterministic_act (tensor input))))
                              "entropy" (toitem (entropy-of-distribution actor (tensor input))))))
