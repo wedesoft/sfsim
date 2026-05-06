@@ -12,12 +12,14 @@
       [sfsim.atmosphere :refer (temperature-at-height speed-of-sound density-at-height)]
       [sfsim.aerodynamics :refer (lift drag wind-to-body-system)]
       [sfsim.environment :refer (Environment)]
-      [sfsim.mlp :refer (Critic adam-optimizer)]))
+      [sfsim.mlp :refer (Critic adam-optimizer tensor toitem tolist without-gradient entropy-of-distribution)]
+      [sfsim.ppo :refer (sample-with-advantage-and-critic-target actor-loss critic-loss)]))
 
 
 (require-python '[torch :as torch]
                 '[torch.linalg :as linalg]
                 '[torch.nn :as nn]
+                '[torch.nn.utils :as utils]
                 '[torch.nn.functional :as F]
                 '[torch.distributions :refer (Normal)])
 
@@ -42,6 +44,7 @@
    :mass 100000.0
    :dt 5.0
    :max-thrust 2500000.0
+   :timeout 1200.0
    :initial-delta-v 12000.0
    :free-delta-v 5000.0
    :weight-height-reward 1.0
@@ -141,10 +144,8 @@
 (defn action
   "Convert array to action with length of direction vector as latent variable"
   [array]
-  (let [direction (vec3 (array 0) (array 1) (array 2))
-        length    (mag direction)
-        scale     (if (pos? length) (/ ^double (array 3) (mag direction)) 0.0)]
-    {:control (mult direction scale)}))
+  (let [direction (vec3 (array 0) (array 1) (array 2))]
+    {:control direction}))
 
 
 (defn observation
@@ -336,7 +337,7 @@
 
 
 (defn -main [& _args]
-  (let [factory        (launch-factory)
+  (let [factory        launch-factory
         actor          (LaunchActor 6 64 3)
         critic         (Critic 6 64)
         n-epochs       100
@@ -355,6 +356,37 @@
         smooth-critic-loss (atom 0.0)
         actor-optimizer  (adam-optimizer actor lr weight-decay)
         critic-optimizer (adam-optimizer critic lr weight-decay)]
+    (doseq [epoch (range n-epochs)]
+           (let [samples (sample-with-advantage-and-critic-target factory actor critic (* batch-size n-batches)
+                                                                  batch-size gamma lambda)]
+             (doseq [k (range n-updates)]
+                    (doseq [batch samples]
+                           (let [loss (actor-loss batch actor epsilon @entropy-factor)]
+                             (py. actor-optimizer zero_grad)
+                             (py. loss backward)
+                             (utils/clip_grad_norm_(py. actor parameters) 0.5)
+                             (py. actor-optimizer step)
+                             (swap! smooth-actor-loss (fn [x] (+ (* 0.999 ^double x) (* 0.001 ^double (toitem loss))))) ))
+                    (doseq [batch samples]
+                           (let [loss (critic-loss batch critic)]
+                             (py. critic-optimizer zero_grad)
+                             (py. loss backward)
+                             (py. critic-optimizer step)
+                             (swap! smooth-critic-loss (fn [x] (+ (* 0.999 ^double x) (* 0.001 ^double (toitem loss))))))))
+             (println "Epoch:" epoch
+                      "Actor Loss:" @smooth-actor-loss
+                      "Critic Loss:" @smooth-critic-loss
+                      "Entropy Factor:" @entropy-factor))
+           (without-gradient
+             (doseq [input [[1 0 0 0 0 0]]]
+                    (println input
+                             "->" (action (tolist (py. actor deterministic_act (tensor input))))
+                             "entropy" (toitem (entropy-of-distribution actor (tensor input))))))
+           (swap! entropy-factor * entropy-decay)
+           (when (= (mod epoch checkpoint) (dec checkpoint))
+             (println "Saving models")
+             (torch/save (py. actor state_dict) "actor.pt")
+             (torch/save (py. critic state_dict) "critic.pt")))
     (System/exit 0)))
 
 

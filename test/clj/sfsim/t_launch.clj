@@ -97,11 +97,11 @@
          => (vec3 98 0 0)))
 
 
-(facts "Convert array to action with length of direction vector as latent variable"
-       (action [0 0 0 0]) => {:control (vec3 0 0 0)}
-       (action [1 0 0 1]) => {:control (vec3 1 0 0)}
-       (action [1 0 0 3]) => {:control (vec3 3 0 0)}
-       (action [2 0 0 3]) => {:control (vec3 3 0 0)})
+(facts "Convert array to action"
+       (action [0 0 0]) => {:control (vec3 0 0 0)}
+       (action [1 0 0]) => {:control (vec3 1 0 0)}
+       (action [0 1 0]) => {:control (vec3 0 1 0)}
+       (action [0 0 1]) => {:control (vec3 0 0 1)})
 
 
 (defn position
