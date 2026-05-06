@@ -356,6 +356,10 @@
         smooth-critic-loss (atom 0.0)
         actor-optimizer  (adam-optimizer actor lr weight-decay)
         critic-optimizer (adam-optimizer critic lr weight-decay)]
+    (when (.exists (java.io.File. "actor.pt"))
+      (py. actor load_state_dict (torch/load "actor.pt")))
+    (when (.exists (java.io.File. "critic.pt"))
+      (py. critic load_state_dict (torch/load "critic.pt")))
     (doseq [epoch (range n-epochs)]
            (let [samples (sample-with-advantage-and-critic-target factory actor critic (* batch-size n-batches)
                                                                   batch-size gamma lambda)]
