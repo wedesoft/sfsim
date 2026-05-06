@@ -42,7 +42,7 @@
    :orbit 160000.0
    :planet-mass 5.9742e+24
    :mass 100000.0
-   :dt 5.0
+   :dt 0.5
    :max-thrust 2500000.0
    :timeout 1200.0
    :initial-delta-v 12000.0
@@ -279,7 +279,7 @@
      "log_prob"
      (py/make-instance-fn
        (fn [self action]
-           (let [a-mag      (linalg/norm action)
+           (let [a-mag      (linalg/norm action :dim -1 :keepdim true)
                  z-mag      (torch/atanh a-mag)
                  z          (torch/mul z-mag action)
                  log-prob-z (torch/sum (py. (py.- self normal) log_prob z) -1 :keepdim true)
