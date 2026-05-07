@@ -254,8 +254,8 @@
            nil))
      "ratio"
      (py/make-instance-fn
-       (fn [self a-mag z-mag]
-           (torch/where (torch/ne z-mag 0.0) (torch/div a-mag z-mag) 1.0)))
+       (fn [self a b]
+           (torch/where (torch/ne b 0.0) (torch/div a b) 1.0)))
      "scale"
      (py/make-instance-fn
        (fn [self z]
@@ -282,7 +282,7 @@
        (fn [self action]
            (let [a-mag      (torch/clamp (linalg/norm action :dim -1 :keepdim true) 0.0 0.999)
                  z-mag      (torch/atanh a-mag)
-                 z          (torch/mul z-mag action)
+                 z          (torch/mul (py. self ratio z-mag a-mag) action)
                  log-prob-z (torch/sum (py. (py.- self normal) log_prob z) -1 :keepdim true)
                  correction (py. self correction a-mag z-mag)]
              (torch/sub log-prob-z correction))))
