@@ -42,7 +42,8 @@
    :orbit 160000.0
    :planet-mass 5.9742e+24
    :mass 100000.0
-   :dt 0.5
+   :dt 5.0
+   :steps 50
    :max-thrust 2500000.0
    :timeout 1200.0
    :initial-delta-v 12000.0
@@ -128,14 +129,14 @@
 
 (defn update-state
   "Perform simulation step for spacecraft"
-  [{:keys [t delta-v] :as state} action {:keys [dt] :as config}]
+  [{:keys [t delta-v] :as state} action {:keys [dt steps] :as config}]
    (let [gravitation   (gravitation config)
          drag-and-lift (drag-and-lift action config)
          thrust        (thrust action config)
          acceleration  (fn [position speed] (reduce add [(gravitation position speed)
                                                          (drag-and-lift position speed)
                                                          thrust]))
-         state         (runge-kutta state dt (state-change acceleration) state-add state-scale)
+         state         (nth (iterate #(runge-kutta % (/ dt steps) (state-change acceleration) state-add state-scale) state) steps)
          t             (+ ^double t ^double dt)
          delta-v       (- ^double delta-v (mag thrust))]
      (assoc state :t t :delta-v delta-v)))

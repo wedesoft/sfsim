@@ -31,6 +31,7 @@
    :planet-mass 5.9722e+24
    :mass 100000.0
    :dt 1.0
+   :steps 1
    :max-thrust 2000000.0
    :timeout 1200.0
    :initial-delta-v 20000.0
@@ -66,6 +67,9 @@
                                   (assoc test-config :dt 0.0)))
          => (vec3 6378000.0 0.0 0.0)
          (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)} test-config))
+         => (roughly-vector (vec3 -9.799 0.0 0.0) 1e-3)
+         (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
+                               (assoc test-config :steps 10)))
          => (roughly-vector (vec3 -9.799 0.0 0.0) 1e-3)
          (:speed (update-state (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
                                              test-config) {:control (vec3 0 0 0)} test-config))
