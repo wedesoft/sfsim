@@ -51,8 +51,12 @@
     - [[https://www.youtube.com/watch?v=1oyCzT6sB_4][Lockheed Martin F-35 Lightning II Stealth Fighter Cockpit Demonstrator Hands-On]]
     - nominal angular RCS accelerations according to Gemini: 1 degree for roll and pitch, 2 degrees per second square for yaw
   - [ ] reinforcement learning launch physics
-    - [ ] tanh(r)/r ≈ 1 - r^2/3
-    - [ ] ln(tanh(r)/r) ≈ -r^2/3
+    - [-] numerical problems: potential candidates are
+      - [X] tanh(r)/r when actor is at origin
+      - [ ] standard deviation dropping to zero (fix: std = torch.exp(log_std).clamp(min=1e-4, max=1.0))
+      - [ ] 1 - tanh^2(r) going zero (fix: replace ln(1 - tanh^2(r)) with 2.0 * (math.log(2.0) - r - torch.nn.functional.softplus(-2.0 * r)))
+      - [X] missing gradient clipping
+      - [ ] ratio problems with exp(new_log_prob−old_log_prob) (fix: clip difference of logarithms)
     - [-] rewards/penalties
       - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
       - [X] fuel consumption
