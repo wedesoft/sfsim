@@ -249,6 +249,7 @@
            (py/set-attrs!
              self
              {"mu"     mu
+              "sigma"  sigma
               "normal" (Normal mu sigma)})
            nil))
      "ratio"
