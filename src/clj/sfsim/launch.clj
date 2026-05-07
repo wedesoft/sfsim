@@ -385,9 +385,9 @@
                       "Entropy Factor:" @entropy-factor))
            (without-gradient
              (doseq [input [[0.5 0 0 0 0 0]]]
-                    (println input
-                             "->" (action (tolist (py. actor deterministic_act (tensor input))))
-                             "entropy" (toitem (entropy-of-distribution actor (tensor input))))))
+                    (println "input:" input)
+                    (println "deterministic_act:" (action (tolist (py. actor deterministic_act (tensor input)))))
+                    (println "z-distribution:" (map tolist (py. actor forward (tensor input))))))
            (swap! entropy-factor * entropy-decay)
            (when (= (mod epoch checkpoint) (dec checkpoint))
              (println "Saving models")
