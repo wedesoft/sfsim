@@ -1,6 +1,20 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2026-05-07 Do 23:45] \\
+    def stable_log_det(z):
+        r = torch.norm(z, dim=-1, keepdim=True)
+        # 1. Stable ln(1 - tanh^2 r)
+        # This prevents the "huge negative" caused by log(0)
+        log_radial_squash = 2.0 * (math.log(2.0) - r - torch.nn.functional.softplus(-2.0 * r))
+        # 2. Stable ln(tanh(r) / r)
+        # Using Taylor expansion for small r to avoid 0/0
+        log_surface_area = torch.where(
+            r < 1e-3,
+            - (r**2) / 3.0,
+            torch.log(torch.tanh(r) + 1e-8) - torch.log(r + 1e-8)
+        )
+        return 2.0 * log_surface_area + log_radial_squash
   - Note taken on [2026-03-21 Sa 20:56] \\
     local pressure C_p = C_p,s sin^2 \theta where C_p,s is stagnation point pressure and \theta is surface inclination angle
     convective heating at stagnation point: q_c,s = k \rho^N1 V^N2, N1=0.5, N2=3, k=1.83e-4/sqrt(R_n), R_n is nose radius
