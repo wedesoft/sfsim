@@ -2,7 +2,7 @@
     "Optimize launch trajectory"
     (:gen-class)
     (:require
-      [clojure.math :refer (sqrt cos atan2)]
+      [clojure.math :refer (PI sqrt cos atan2 acos)]
       [fastmath.vector :refer (vec3 mult add sub mag div normalize dot cross)]
       [libpython-clj2.require :refer (require-python)]
       [libpython-clj2.python :refer (py. py.-) :as py]
@@ -49,8 +49,9 @@
    :initial-delta-v 12000.0
    :free-delta-v 5000.0
    :weight-height-reward 1.0
-   :weight-speed-reward 1.0
-   :weight-fuel-reward 0.1})
+   :weight-speed-reward 0.25
+   :weight-fuel-reward 0.1
+   :weight-angle-reward 0.1})
 
 
 (defn setup
@@ -200,7 +201,7 @@
 (defn reward-height
   "Reward for approaching orbital height"
   [{:keys [position]} {:keys [radius orbit]}]
-  (-> position mag (- ^double radius) (- ^double orbit) (/ ^double orbit) abs -))
+  (-> position mag (- ^double radius) (- ^double orbit) (/ ^double orbit) sqr -))
 
 
 (defn reward-speed
@@ -219,12 +220,24 @@
     (min 0.0 (/ (- ^double delta-v ramp-length) ramp-length))))
 
 
+(defn reward-angle
+  "Penalise angle of attack"
+  [{:keys [speed]} {:keys [control]}]
+  (let [mag-speed (mag speed)
+        mag-control (mag control)]
+    (if (or (zero? mag-speed) (zero? mag-control))
+      0.0
+      (let [cos-angle (/ (dot speed control) (* mag-speed mag-control))]
+        (- (/ (acos cos-angle) PI))))))
+
+
 (defn reward
   "Overall reward function"
-  [state {:keys [weight-height-reward weight-speed-reward weight-fuel-reward] :as config}]
+  [state action {:keys [weight-height-reward weight-speed-reward weight-fuel-reward weight-angle-reward] :as config}]
   (+ (* ^double weight-height-reward ^double (reward-height state config))
      (* ^double weight-speed-reward ^double (reward-speed state config 0.0))
-     (* ^double weight-fuel-reward ^double (reward-fuel state config))))
+     (* ^double weight-fuel-reward ^double (reward-fuel state config))
+     (* ^double weight-angle-reward ^double (reward-angle state action))))
 
 
 (defrecord Launch [config state]
@@ -237,8 +250,8 @@
     (done? state config))
   (environment-truncate? [_this]
     (truncate? state config))
-  (environment-reward [_this _input]
-    (reward state config)))
+  (environment-reward [_this input]
+    (reward state (action input) config)))
 
 
 (def ThrustVector

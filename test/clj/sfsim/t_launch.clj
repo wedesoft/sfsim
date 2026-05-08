@@ -38,7 +38,8 @@
    :free-delta-v 5000.0
    :weight-height-reward 1.0
    :weight-speed-reward 1.0
-   :weight-fuel-reward 1.0})
+   :weight-fuel-reward 1.0
+   :weight-angle-reward 1.0})
 
 
 (facts "Launch rocket"
@@ -225,7 +226,8 @@
 (facts "Penalise height deviations"
        (reward-height {:position (vec3 6378000 0 0)} test-config) => -1.0
        (reward-height {:position (vec3 6538000 0 0)} test-config) => 0.0
-       (reward-height {:position (vec3 6698000 0 0)} test-config) => -1.0)
+       (reward-height {:position (vec3 6698000 0 0)} test-config) => -1.0
+       (reward-height {:position (vec3 6458000 0 0)} test-config) => -0.25)
 
 
 (facts "Penalise deviation from desired speed vector"
@@ -245,21 +247,34 @@
        (reward-fuel {:delta-v  7500.0} test-config) => -0.5)
 
 
+(facts "Penalise angle of attack"
+       (reward-angle {:speed (vec3 0 0 0)} {:control (vec3 0 0 0)}) => 0.0
+       (reward-angle {:speed (vec3 1 0 0)} {:control (vec3 1 0 0)}) => 0.0
+       (reward-angle {:speed (vec3 1 0 0)} {:control (vec3 -1 0 0)}) => -1.0
+       (reward-angle {:speed (vec3 1 0 0)} {:control (vec3 0 1 0)}) => -0.5
+       (reward-angle {:speed (vec3 1 0 0)} {:control (vec3 (cos (/ PI 4)) (sin (/ PI 4)) 0)}) => -0.25)
+
+
 (facts "Overall reward function"
-       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0} test-config)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
+       => (roughly 0.0 1e-3)
+       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
        => (roughly -1.0 1e-3)
-       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0}
+       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0} {:control (vec3 0 0 0)}
                (assoc test-config :weight-height-reward 0.5))
        => (roughly -0.5 1e-3)
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 0 0) :delta-v 20000.0} test-config)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 0 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
        => (roughly -1.0 1e-3)
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 0 0) :delta-v 20000.0}
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 0 0) :delta-v 20000.0} {:control (vec3 0 0 0)}
                (assoc test-config :weight-speed-reward 0.5))
        => (roughly -0.5 1e-3)
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 0.0} test-config)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 0.0} {:control (vec3 0 0 0)} test-config)
        => (roughly -1.0 1e-3)
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 0.0} (assoc test-config :weight-fuel-reward 0.5))
-       => (roughly -0.5 1e-3))
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 0.0} {:control (vec3 0 0 0)}
+               (assoc test-config :weight-fuel-reward 0.5))
+       => (roughly -0.5 1e-3)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0} {:control (vec3 0 -1 0)} test-config)
+       => (roughly -1.0 1e-3))
 
 
 (facts "Squashed 3D distribution with limited magnitude vector output"

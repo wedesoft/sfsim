@@ -74,6 +74,11 @@
     - [-] rewards/penalties
       - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
       - [X] fuel consumption
+      - [ ] Small angle of attack
+      - [ ] Orbit distance squared
+      - [ ] Dynamic pressure
+      - [ ] Crash
+      - [ ] Fuel use
     - [ ] simulate propellant weight
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] reentry physics
