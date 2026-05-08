@@ -291,7 +291,7 @@
      (py/make-instance-fn
        (fn [self]  ; This only approximates the entropy assuming small sigma
            (let [normal-entropy (torch/sum (py. (py.- self normal) entropy) -1 :keepdim true)
-                 z-mag          (linalg/norm (py.- self mu))
+                 z-mag          (linalg/norm (py.- self mu) :dim -1 :keepdim true)
                  a-mag          (torch/tanh z-mag)
                  correction     (py. self correction a-mag z-mag)]
              (torch/add normal-entropy correction))))}))
