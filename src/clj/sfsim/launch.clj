@@ -222,13 +222,16 @@
 
 (defn reward-angle
   "Penalise angle of attack"
-  [{:keys [speed]} {:keys [control]}]
-  (let [mag-speed (mag speed)
-        mag-control (mag control)]
+  [{:keys [speed position]} {:keys [control]} {:keys [radius]}]
+  (let [mag-speed        (mag speed)
+        mag-control      (mag control)
+        distance         (mag position)
+        height           (- distance ^double radius)
+        relative-density (/ (density-at-height height) (density-at-height 0.0))]
     (if (or (zero? mag-speed) (zero? mag-control))
       0.0
       (let [cos-angle (/ (dot speed control) (* mag-speed mag-control))]
-        (- (/ (acos cos-angle) PI))))))
+        (- (* relative-density (/ (acos cos-angle) PI)))))))
 
 
 (defn reward
@@ -237,7 +240,7 @@
   (+ (* ^double weight-height-reward ^double (reward-height state config))
      (* ^double weight-speed-reward ^double (reward-speed state config 0.0))
      (* ^double weight-fuel-reward ^double (reward-fuel state config))
-     (* ^double weight-angle-reward ^double (reward-angle state action))))
+     (* ^double weight-angle-reward ^double (reward-angle state action config))))
 
 
 (defrecord Launch [config state]
