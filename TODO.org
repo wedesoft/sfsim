@@ -1,5 +1,27 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
+* TODO [#A] mvp game loop
+  - Note taken on [2026-05-09 Sa 21:25] \\
+    focus on launch, orbit and reentry
+  - [ ] runway with lights and glide slope indicator
+  - [ ] launchpad
+  - [ ] fuel consumption
+  - [ ] orbit mfd
+  - [ ] reentry mfd
+  - [ ] final entry window and heading alignment cylinder
+  - [ ] g-meter, wing stress
+  - [ ] map mfd, base mfd
+  - [ ] launch mfd
+  - [ ] heat display
+  - [ ] ILS
+  - [ ] yaw pitch roll rates
+  - [ ] attitude autopilot with roll reversal, angle-of-attack hold
+  - [ ] f-35 style hud for now (3d cockpit later)
+  - [ ] artificial horizon (speed, altitude, radar alt, sink rate)
+  - [ ] ils
+  - [ ] save/load game
+  - [ ] reentry flame
+  - [ ] thrust vectoring
 * TODO [#A] spacecraft simulation                                      :physics:
   - Note taken on [2026-05-07 Do 23:45] \\
     def stable_log_det(z):
