@@ -366,7 +366,7 @@
         n-batches      8
         batch-size     64
         checkpoint     100
-        entropy-factor (atom 0.01)
+        entropy-factor (atom 0.001)
         entropy-decay  0.999
         lr             5e-5
         weight-decay   1e-4
