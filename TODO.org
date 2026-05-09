@@ -6,12 +6,15 @@
   - [ ] runway with lights and glide slope indicator
   - [ ] launchpad
   - [ ] fuel consumption
-  - [ ] orbit mfd
-  - [ ] reentry mfd
+  - [ ] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
+  - [ ] reentry mfd https://gemini.google.com/share/986559318dcb,
+    calculate distance heading in ECEF system and provide airspeed to network?
+  - [ ] time lapse
   - [ ] final entry window and heading alignment cylinder
   - [ ] g-meter, wing stress
-  - [ ] map mfd, base mfd
+  - [ ] map mfd (show cross track error and target loc, vacuum landing site (intersection with surface), base mfd
   - [ ] launch mfd
+  - [ ] deorbit mfd
   - [ ] heat display
   - [ ] ILS
   - [ ] yaw pitch roll rates
