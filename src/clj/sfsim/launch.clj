@@ -1,3 +1,9 @@
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.launch
     "Optimize launch trajectory"
     (:gen-class)
@@ -49,7 +55,7 @@
    :initial-delta-v 12000.0
    :free-delta-v 5000.0
    :weight-height-reward 1.0
-   :weight-speed-reward 0.25
+   :weight-speed-reward 0.5
    :weight-fuel-reward 0.1
    :weight-angle-reward 0.1})
 

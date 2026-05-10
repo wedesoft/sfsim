@@ -3,7 +3,8 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [ ] launch mfd
+  - [-] launch mfd
+  - [X] quil launch visualisation
   - [ ] reentry mfd https://gemini.google.com/share/986559318dcb,
     calculate distance heading in ECEF system and provide airspeed to network?
   - [ ] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle

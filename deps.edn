@@ -12,6 +12,7 @@
         org.clj-commons/gloss {:mvn/version "0.3.6"}
         org.apache.commons/commons-compress {:mvn/version "1.28.0"}
         org.suskalo/coffi {:mvn/version "1.0.615"}
+        quil/quil {:mvn/version "4.3.1563"}
         org.lwjgl/lwjgl {:mvn/version "3.4.1"}
         org.lwjgl/lwjgl$natives-linux {:mvn/version "3.4.1"}
         org.lwjgl/lwjgl-opengl {:mvn/version "3.4.1"}
