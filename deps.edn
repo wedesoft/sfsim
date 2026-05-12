@@ -1,4 +1,4 @@
-{:deps {org.clojure/clojure {:mvn/version "1.12.4"}
+{:deps {org.clojure/clojure {:mvn/version "1.12.5"}
         metosin/malli {:mvn/version "0.20.1"}
         levand/immuconf {:mvn/version "0.1.0"}
         org.clojure/core.memoize {:mvn/version "1.2.281"}

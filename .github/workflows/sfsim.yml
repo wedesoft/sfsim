@@ -71,7 +71,7 @@ jobs:
     - name: Install Clojure
       uses: DeLaGuardo/setup-clojure@13.6.0
       with:
-        cli: 1.12.4.1629
+        cli: 1.12.5.1638
     - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
       name: Build Jolt bindings
       run: make
