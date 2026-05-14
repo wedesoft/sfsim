@@ -51,10 +51,10 @@
    :dt 5.0
    :steps 50
    :max-thrust 2500000.0
-   :timeout 1200.0
+   :timeout 1280.0
    :initial-delta-v 12000.0
    :free-delta-v 5000.0
-   :weight-height-reward 1.0
+   :weight-height-reward 0.1
    :weight-speed-reward 0.5
    :weight-fuel-reward 0.1
    :weight-angle-reward 0.1})
@@ -361,21 +361,21 @@
 
 
 (defn -main [& _args]
-  (let [factory        launch-factory
-        actor          (LaunchActor 6 64 3)
-        critic         (Critic 6 64)
-        n-epochs       1000
-        n-updates      10
-        gamma          0.99
-        lambda         1.0
-        epsilon        0.2
-        n-batches      8
-        batch-size     64
-        checkpoint     100
-        entropy-factor (atom 0.001)
-        entropy-decay  0.999
-        lr             5e-5
-        weight-decay   1e-4
+  (let [factory            launch-factory
+        actor              (LaunchActor 6 64 3)
+        critic             (Critic 6 64)
+        n-epochs           100000
+        n-updates          10
+        gamma              0.995
+        lambda             1.0
+        epsilon            0.2
+        n-batches          16
+        batch-size         64
+        checkpoint         100
+        entropy-factor     (atom 0.001)
+        entropy-decay      0.999
+        lr                 2e-5
+        weight-decay       5e-5
         smooth-actor-loss  (atom 0.0)
         smooth-critic-loss (atom 0.0)
         actor-optimizer  (adam-optimizer actor lr weight-decay)
