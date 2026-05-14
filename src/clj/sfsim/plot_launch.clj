@@ -33,13 +33,11 @@
 (defn setup []
   (let [actor      (actor)
         state      (launch/setup config :latitude 0.0 :longitude 0.0 :height 0.0)
-        t          (* 2 PI (sqrt (/ (cube (+ (:radius config) (:orbit config))) (* gravitational-constant (:planet-mass config)))))
-        n          (round (/ t (:dt config)))
-        trajectory (doall (take n (iterate #(advance actor %) state)))]
+        trajectory (take-while #(not (or (launch/done? % config) (launch/truncate? % config))) (iterate #(advance actor %) state))]
     (q/no-loop)
     (q/smooth)
     (q/background 0)
-    {:trajectory trajectory}))
+    {:trajectory (doall trajectory)}))
 
 
 (defn draw [{:keys [trajectory]}]
