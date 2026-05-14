@@ -28,6 +28,9 @@
 (def test-config
   {:radius 6378000.0
    :orbit 160000.0
+   :orbit-tolerance 100.0
+   :speed-tolerance 5.0
+   :inclination-target 0.0
    :planet-mass 5.9722e+24
    :mass 100000.0
    :dt 1.0
@@ -134,13 +137,17 @@
        => (roughly-vector (vec3 0.0 1.0 0.0) 1e-6))
 
 
-(fact "An orbit is never finished"
-      (done? {} test-config) => false)
-
-
 (facts "Decide whether a run should be aborted"
        (truncate? {:t 50.0} test-config) => false
        (truncate? {:t 1200.0} test-config) => true)
+
+
+(facts "Decide when the orbit was reached"
+       (done? {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)} test-config) => false
+       (done? {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} test-config) => true
+       (done? {:position (vec3 6538000 0 0) :speed (vec3 0 0 0)} test-config) => false
+       (done? {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} test-config) => false
+       (done? {:position (vec3 6778000 0 0) :speed (vec3 0 7808.140 0)} test-config) => false)
 
 
 (tabular "Nominal orbit speed for position"
@@ -231,13 +238,17 @@
 
 
 (facts "Penalise deviation from desired speed vector"
-       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 0)} test-config 0.0) => (roughly -1.0 1e-3)
-       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0)} test-config 0.0) => (roughly 0.0 1e-3)
-       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 -7809.447 0)} test-config 0.0) => (roughly -2.0 1e-3)
-       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 -7809.447 0)} test-config PI) => (roughly 0.0 1e-3)
-       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0)} test-config PI) => (roughly -2.0 1e-3)
-       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 7809.447)} test-config (/ PI 2)) => (roughly 0.0 1e-3)
-       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 -7809.447)} test-config (/ PI 2)) => (roughly 0.0 1e-3))
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 0)} test-config) => (roughly -1.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} test-config) => (roughly 0.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 -7808.140 0)} test-config) => (roughly -2.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 -7808.140 0)} (assoc test-config :inclination-target PI))
+       => (roughly 0.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} (assoc test-config :inclination-target PI))
+       => (roughly -2.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 7808.140)} (assoc test-config :inclination-target (/ PI 2)))
+       => (roughly 0.0 1e-3)
+       (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 -7808.140)} (assoc test-config :inclination-target (/ PI 2)))
+       => (roughly 0.0 1e-3))
 
 
 (facts "Penalise fuel use"
@@ -258,11 +269,11 @@
 
 
 (facts "Overall reward function"
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
        => (roughly 0.0 1e-3)
-       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
+       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
        => (roughly -1.0 1e-3)
-       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0} {:control (vec3 0 0 0)}
+       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0) :delta-v 20000.0} {:control (vec3 0 0 0)}
                (assoc test-config :weight-height-reward 0.5))
        => (roughly -0.5 1e-3)
        (reward {:position (vec3 6538000 0 0) :speed (vec3 0 0 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
@@ -270,12 +281,12 @@
        (reward {:position (vec3 6538000 0 0) :speed (vec3 0 0 0) :delta-v 20000.0} {:control (vec3 0 0 0)}
                (assoc test-config :weight-speed-reward 0.5))
        => (roughly -0.5 1e-3)
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 0.0} {:control (vec3 0 0 0)} test-config)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0) :delta-v 0.0} {:control (vec3 0 0 0)} test-config)
        => (roughly -1.0 1e-3)
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7809.447 0) :delta-v 0.0} {:control (vec3 0 0 0)}
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0) :delta-v 0.0} {:control (vec3 0 0 0)}
                (assoc test-config :weight-fuel-reward 0.5))
        => (roughly -0.5 1e-3)
-       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7809.447 0) :delta-v 20000.0} {:control (vec3 0 -1 0)} test-config)
+       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0) :delta-v 20000.0} {:control (vec3 0 -1 0)} test-config)
        => (roughly -2.0 1e-3))
 
 

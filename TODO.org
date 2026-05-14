@@ -92,6 +92,7 @@
   - [ ] reinforcement learning launch physics
     - [-] numerical problems: potential candidates are
       - [X] tanh(r)/r when actor is at origin
+      - [ ] add terminating condition for launch with fuel reward
       - [ ] standard deviation dropping to zero (fix: std = torch.exp(log_std).clamp(min=1e-4, max=1.0))
       - [ ] 1 - tanh^2(r) going zero (fix: replace ln(1 - tanh^2(r)) with 2.0 * (math.log(2.0) - r - torch.nn.functional.softplus(-2.0 * r)))
       - [X] missing gradient clipping
@@ -321,6 +322,7 @@
 ** TODO improve rendering of sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
    [[https://blog.maximeheckel.com/posts/on-rendering-the-sky-sunsets-and-planets/]]
    [[https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering]]
+   [[https://github.com/takram-design-engineering/three-geospatial/tree/main/packages/atmosphere]]
 ** TODO how to render water, waves, [[https://www.shadertoy.com/view/Ms2SD1][waves]]
 ** TODO increase ambient light (surface radiance)
 ** TODO arycama: limit darkness of cloud shadow (exponential approaching a base level)

@@ -46,6 +46,9 @@
 (def config
   {:radius 6378000.0
    :orbit 160000.0
+   :orbit-tolerance 100.0
+   :speed-tolerance 5.0
+   :inclination-target 0.0
    :planet-mass 5.9742e+24
    :mass 100000.0
    :dt 5.0
@@ -143,7 +146,8 @@
          acceleration  (fn [position speed] (reduce add [(gravitation position speed)
                                                          (drag-and-lift position speed)
                                                          thrust]))
-         state         (nth (iterate #(runge-kutta % (/ dt steps) (state-change acceleration) state-add state-scale) state) steps)
+         dt-frac       (/ ^double dt ^long steps)
+         state         (nth (iterate #(runge-kutta % dt-frac (state-change acceleration) state-add state-scale) state) steps)
          t             (+ ^double t ^double dt)
          delta-v       (- ^double delta-v (mag thrust))]
      (assoc state :t t :delta-v delta-v)))
@@ -165,20 +169,6 @@
         orbital-speed     (orbital-speed (+ ^double radius ^double orbit) planet-mass)
         normalised-speed  (div speed orbital-speed)]
     [(normalised-pos 0) (normalised-pos 1) (normalised-pos 2) (normalised-speed 0) (normalised-speed 1) (normalised-speed 2)]))
-
-
-(defn done?
-  "An orbit is never finished"
-  ([& _args]
-   false))
-
-
-(defn truncate?
-  "Decide whether a run should be aborted"
-  ([state]
-   (truncate? state config))
-  ([{:keys [t]} {:keys [timeout]}]
-   (>= ^double t ^double timeout)))
 
 
 (defn orbital-vector
@@ -204,6 +194,46 @@
     result))
 
 
+(defn target-speeds
+  "Determine two possible speed vectors with desired inclination and orbital speed"
+  [{:keys [position] :as state} {:keys [radius orbit planet-mass inclination-target]}]
+  (let [orbital-speed   (orbital-speed (+ ^double radius ^double orbit) planet-mass)
+        orbital-vectors (orbital-vector state inclination-target)
+        target-speeds   (map #(mult (cross % (normalize position)) orbital-speed) orbital-vectors)]
+    target-speeds))
+
+
+(defn speed-deviation
+  "Determine deviation of speed from nearest speed vector with desired inclination and orbital speed"
+  [{:keys [speed] :as state} config]
+  (let [target-speeds (target-speeds state config)]
+    (apply min (map #(mag (sub speed %)) target-speeds))))
+
+
+(defn orbit-deviation
+  "Determine deviation of position from orbital plane"
+  [{:keys [position]} {:keys [radius orbit]}]
+  (let [distance (mag position)]
+    (abs (- ^double distance ^double radius ^double orbit))))
+
+
+(defn done?
+  "An orbit is never finished"
+  [state {:keys [orbit-tolerance speed-tolerance] :as config}]
+  (let [orbit-deviation (orbit-deviation state config)
+        speed-deviation (speed-deviation state config)]
+    (and (<= ^double orbit-deviation ^double orbit-tolerance)
+         (<= ^double speed-deviation ^double speed-tolerance))))
+
+
+(defn truncate?
+  "Decide whether a run should be aborted"
+  ([state]
+   (truncate? state config))
+  ([{:keys [t]} {:keys [timeout]}]
+   (>= ^double t ^double timeout)))
+
+
 (defn reward-height
   "Reward for approaching orbital height"
   [{:keys [position]} {:keys [radius orbit]}]
@@ -212,11 +242,10 @@
 
 (defn reward-speed
   "Reward for approaching orbital speed"
-  [{:keys [position speed] :as state} {:keys [radius orbit planet-mass]} inclination-target]
+  [state {:keys [radius orbit planet-mass] :as config}]
   (let [orbital-speed   (orbital-speed (+ ^double radius ^double orbit) planet-mass)
-        orbital-vectors (orbital-vector state inclination-target)
-        target-speeds   (map #(mult (cross % (normalize position)) orbital-speed) orbital-vectors)]
-    (- ^double (apply min (map #(/ (mag (sub speed %)) ^double orbital-speed) target-speeds)))))
+        speed-deviation (speed-deviation state config)]
+    (- (/ ^double speed-deviation ^double orbital-speed))))
 
 
 (defn reward-fuel
@@ -244,7 +273,7 @@
   "Overall reward function"
   [state action {:keys [weight-height-reward weight-speed-reward weight-fuel-reward weight-angle-reward] :as config}]
   (+ (* ^double weight-height-reward ^double (reward-height state config))
-     (* ^double weight-speed-reward ^double (reward-speed state config 0.0))
+     (* ^double weight-speed-reward ^double (reward-speed state config))
      (* ^double weight-fuel-reward ^double (reward-fuel state config))
      (* ^double weight-angle-reward ^double (reward-angle state action config))))
 
