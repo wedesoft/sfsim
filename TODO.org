@@ -319,6 +319,8 @@
 ** TODO fix problem with resolution of neighbouring tiles in planetary cubemap
    problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 ** TODO improve rendering of sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
+   [[https://blog.maximeheckel.com/posts/on-rendering-the-sky-sunsets-and-planets/]]
+   [[https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering]]
 ** TODO how to render water, waves, [[https://www.shadertoy.com/view/Ms2SD1][waves]]
 ** TODO increase ambient light (surface radiance)
 ** TODO arycama: limit darkness of cloud shadow (exponential approaching a base level)

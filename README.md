@@ -191,6 +191,8 @@ The Blender model can be converted to GLB as follows:
   * [Hull: Fundamentals of Airplane Flight Mechanics](https://aerostarsolutions.wordpress.com/wp-content/uploads/2011/10/fundmentals_of_airplane_flight_mechanics.pdf)
 * Webpages
   * [NVidia article on atmospheric scattering](https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering)
+  * [M. Heckel: On Rendering the Sky, Sunsets, and Planets](https://blog.maximeheckel.com/posts/on-rendering-the-sky-sunsets-and-planets/)
+  * [Geospatial Rendering in Three.js](https://github.com/takram-design-engineering/three-geospatial/)
   * [Cascaded Shadow Maps](https://web.archive.org/web/20220526080455/https://dev.theomader.com/cascaded-shadow-mapping-1/)
   * [Shadow mapping improvements](http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/)
   * [improved Perlin noise](https://adrianb.io/2014/08/09/perlinnoise.html)
