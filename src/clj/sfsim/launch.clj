@@ -58,7 +58,7 @@
    :initial-delta-v 12000.0
    :free-delta-v 5000.0
    :weight-height-reward 0.1
-   :weight-speed-reward 0.5
+   :weight-speed-reward 1.0
    :weight-fuel-reward 0.1
    :weight-angle-reward 0.1})
 
@@ -393,7 +393,7 @@
   (let [factory            launch-factory
         actor              (LaunchActor 6 64 3)
         critic             (Critic 6 64)
-        n-epochs           100000
+        n-epochs           1000
         n-updates          10
         gamma              0.995
         lambda             1.0
