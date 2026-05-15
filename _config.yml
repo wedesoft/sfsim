@@ -20,9 +20,9 @@ minima:
     - title: "github.com/wedesoft/sfsim"
       icon: github
       url: "https://github.com/wedesoft/sfsim"
-    - title: "@wedesoft"
-      icon: x-twitter
-      url: "https://x.com/wedesoft"
+    - title: "discord.gg/e46fAh3D"
+      icon: discord
+      url: "https://discord.gg/e46fAh3D"
 
 exclude:
   - .sass-cache/
