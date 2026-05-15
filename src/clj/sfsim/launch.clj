@@ -58,7 +58,7 @@
    :initial-delta-v 12000.0
    :weight-height-reward 0.1
    :weight-speed-reward 1.0
-   :weight-fuel-reward 0.1
+   :weight-fuel-reward 200.0
    :weight-angle-reward 0.1})
 
 
@@ -399,7 +399,7 @@
         n-batches          16
         batch-size         64
         checkpoint         100
-        entropy-factor     (atom 0.001)
+        entropy-factor     (atom 0.01)
         entropy-decay      0.999
         lr                 2e-5
         weight-decay       5e-5
