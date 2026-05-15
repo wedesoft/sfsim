@@ -362,6 +362,7 @@
     - [ ] difficulty spikes
     - [ ] clear objectives
     - [ ] camera problems
+  - [ ] use dtype-next instead of aget, aset
   - [ ] borderless fullscreen support
   - [X] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] configurable key controls
