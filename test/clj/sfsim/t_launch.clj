@@ -38,10 +38,9 @@
    :max-thrust 2000000.0
    :timeout 1200.0
    :initial-delta-v 20000.0
-   :free-delta-v 5000.0
    :weight-height-reward 1.0
    :weight-speed-reward 1.0
-   :weight-fuel-reward 1.0
+   :weight-fuel-reward 200.0
    :weight-angle-reward 1.0})
 
 
@@ -251,11 +250,10 @@
        => (roughly 0.0 1e-3))
 
 
-(facts "Penalise fuel use"
-       (reward-fuel {:delta-v 20000.0} test-config) => 0.0
-       (reward-fuel {:delta-v 15000.0} test-config) => 0.0
-       (reward-fuel {:delta-v     0.0} test-config) => -1.0
-       (reward-fuel {:delta-v  7500.0} test-config) => -0.5)
+(facts "Reward remaining fuel"
+       (reward-fuel {:delta-v 20000.0} test-config) => 1.0
+       (reward-fuel {:delta-v 15000.0} test-config) => 0.75
+       (reward-fuel {:delta-v     0.0} test-config) => 0.0)
 
 
 (facts "Penalise angle of attack"
@@ -269,8 +267,10 @@
 
 
 (facts "Overall reward function"
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0) :delta-v 0.0} {:control (vec3 0 0 0)} test-config)
        => (roughly 0.0 1e-3)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
+       => (roughly 1.0 1e-3)
        (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0) :delta-v 20000.0} {:control (vec3 0 0 0)} test-config)
        => (roughly -1.0 1e-3)
        (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0) :delta-v 20000.0} {:control (vec3 0 0 0)}
@@ -280,11 +280,6 @@
        => (roughly -1.0 1e-3)
        (reward {:position (vec3 6538000 0 0) :speed (vec3 0 0 0) :delta-v 20000.0} {:control (vec3 0 0 0)}
                (assoc test-config :weight-speed-reward 0.5))
-       => (roughly -0.5 1e-3)
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0) :delta-v 0.0} {:control (vec3 0 0 0)} test-config)
-       => (roughly -1.0 1e-3)
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0) :delta-v 0.0} {:control (vec3 0 0 0)}
-               (assoc test-config :weight-fuel-reward 0.5))
        => (roughly -0.5 1e-3)
        (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0) :delta-v 20000.0} {:control (vec3 0 -1 0)} test-config)
        => (roughly -2.0 1e-3))

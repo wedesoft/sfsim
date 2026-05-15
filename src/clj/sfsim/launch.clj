@@ -56,7 +56,6 @@
    :max-thrust 2500000.0
    :timeout 1280.0
    :initial-delta-v 12000.0
-   :free-delta-v 5000.0
    :weight-height-reward 0.1
    :weight-speed-reward 1.0
    :weight-fuel-reward 0.1
@@ -250,9 +249,8 @@
 
 (defn reward-fuel
   "Reward conserving fuel"
-  [{:keys [delta-v]} {:keys [initial-delta-v free-delta-v]}]
-  (let [ramp-length (- ^double initial-delta-v ^double free-delta-v)]
-    (min 0.0 (/ (- ^double delta-v ramp-length) ramp-length))))
+  [{:keys [delta-v]} {:keys [initial-delta-v]}]
+  (/ ^double delta-v ^double initial-delta-v))
 
 
 (defn reward-angle
@@ -274,8 +272,8 @@
   [state action {:keys [weight-height-reward weight-speed-reward weight-fuel-reward weight-angle-reward] :as config}]
   (+ (* ^double weight-height-reward ^double (reward-height state config))
      (* ^double weight-speed-reward ^double (reward-speed state config))
-     (* ^double weight-fuel-reward ^double (reward-fuel state config))
-     (* ^double weight-angle-reward ^double (reward-angle state action config))))
+     (* ^double weight-angle-reward ^double (reward-angle state action config))
+     (* ^double weight-fuel-reward (if (done? state config) ^double (reward-fuel state config) 0.0))))
 
 
 (defrecord Launch [config state]
