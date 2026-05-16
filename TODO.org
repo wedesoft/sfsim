@@ -3,11 +3,30 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [-] launch mfd
+  - [ ] launch mfd
+    - [-] reinforcement learning launch physics
+      - [X] numerical problems: potential candidates are
+        - [X] tanh(r)/r when actor is at origin
+        - [X] add terminating condition for launch with fuel reward
+        - [X] standard deviation dropping to zero (fix: std = torch.exp(log_std).clamp(min=1e-4, max=1.0))
+        - [X] 1 - tanh^2(r) going zero (fix: replace ln(1 - tanh^2(r)) with 2.0 * (math.log(2.0) - r - torch.nn.functional.softplus(-2.0 * r)))
+        - [X] missing gradient clipping
+        - [X] ratio problems with exp(new_log_prob−old_log_prob) (fix: clip difference of logarithms)
+      - [-] rewards/penalties
+        - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
+        - [X] fuel consumption
+        - [X] Small angle of attack
+        - [X] Orbit distance squared
+        - [ ] Dynamic pressure
+        - [X] Fuel use
+      - [ ] simulate propellant weight
+      - [ ] simulate Earth rotation
+      - [ ] allow specifying inclination and ascending or descending node
   - [X] quil launch visualisation
   - [ ] reentry mfd https://gemini.google.com/share/986559318dcb,
     calculate distance heading in ECEF system and provide airspeed to network?
-  - [ ] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
+  - [-] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
+    - [ ] gui scaling
   - [ ] runway with lights and glide slope indicator
   - [ ] fuel consumption
   - [ ] time lapse
@@ -89,26 +108,6 @@
       [[https://news.ycombinator.com/item?id=45145794]]
     - [[https://www.youtube.com/watch?v=1oyCzT6sB_4][Lockheed Martin F-35 Lightning II Stealth Fighter Cockpit Demonstrator Hands-On]]
     - nominal angular RCS accelerations according to Gemini: 1 degree for roll and pitch, 2 degrees per second square for yaw
-  - [ ] reinforcement learning launch physics
-    - [-] numerical problems: potential candidates are
-      - [X] tanh(r)/r when actor is at origin
-      - [ ] add terminating condition for launch with fuel reward
-      - [ ] standard deviation dropping to zero (fix: std = torch.exp(log_std).clamp(min=1e-4, max=1.0))
-      - [ ] 1 - tanh^2(r) going zero (fix: replace ln(1 - tanh^2(r)) with 2.0 * (math.log(2.0) - r - torch.nn.functional.softplus(-2.0 * r)))
-      - [X] missing gradient clipping
-      - [ ] ratio problems with exp(new_log_prob−old_log_prob) (fix: clip difference of logarithms)
-    - [-] rewards/penalties
-      - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
-      - [X] fuel consumption
-      - [ ] Small angle of attack
-      - [ ] Orbit distance squared
-      - [ ] Dynamic pressure
-      - [ ] Crash
-        - [ ] bent hulk with scorched textures
-        - [ ] explosion (expands fast in space, fire in atmosphere)
-        - [ ] detach parts if force passes threshold)
-      - [ ] Fuel use
-    - [ ] simulate propellant weight
   - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] reentry physics
     - [ ] Can still use small simulation steps but large control steps
@@ -362,6 +361,10 @@
     - [ ] difficulty spikes
     - [ ] clear objectives
     - [ ] camera problems
+  - [ ] Crash
+    - [ ] bent hulk with scorched textures
+    - [ ] explosion (expands fast in space, fire in atmosphere)
+    - [ ] detach parts if force passes threshold)
   - [ ] use dtype-next instead of aget, aset
   - [ ] borderless fullscreen support
   - [X] Need to change keyboard bindings for camera because some users don't have a numpad.
