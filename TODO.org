@@ -14,6 +14,8 @@
         - [X] ratio problems with exp(new_log_prob−old_log_prob) (fix: clip difference of logarithms)
       - [-] rewards/penalties
         - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
+        - [ ] reward early entry into orbit
+        - [ ] visualise thrust
         - [X] fuel consumption
         - [X] Small angle of attack
         - [X] Orbit distance squared
