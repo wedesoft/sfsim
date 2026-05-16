@@ -51,6 +51,7 @@
       NkTextWidthCallbackI
       NkUserFont
       NkUserFontGlyph
+      NkVec2
       Nuklear)
     (org.lwjgl.opengl
       GL11
@@ -416,10 +417,15 @@
 
 
 (defn nuklear-dark-style
-  [gui]
+  [gui scale]
   (let [stack       (MemoryStack/stackPush)
         rgb         (NkColor/malloc ^MemoryStack stack)
-        style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)]
+        nk-vec2     (NkVec2/malloc ^MemoryStack stack)
+        style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)
+        context     (::context gui)
+        style       (.style context)]
+    ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
+    ;; set color scheme
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TEXT (Nuklear/nk_rgb 210 210 210 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_WINDOW (Nuklear/nk_rgb 57 67 71 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_HEADER (Nuklear/nk_rgb 51 51 56 rgb))
@@ -448,7 +454,15 @@
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
-    (Nuklear/nk_style_from_table (::context gui) style-table)
+    (Nuklear/nk_style_from_table context style-table)
+    ;; scale buttons
+    (let [button (.button style)]
+      (.x nk-vec2 (* 2 scale))
+      (.y nk-vec2 (* 2 scale))
+      (.padding button nk-vec2)
+      (.border button scale)
+      (.rounding button (* 4 scale)))
+    ;; pop stack
     (MemoryStack/stackPop)))
 
 

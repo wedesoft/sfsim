@@ -144,27 +144,33 @@
 
 
 (defmacro gui-control-test
-  [gui & body]
-  `(gui-offscreen-render 160 40
+  [gui width height scale & body]
+  `(gui-offscreen-render ~width ~height
                          (let [buffer-initial-size# (* 4 1024)
-                               bitmap-font#         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
+                               bitmap-font#         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf"
+                                                                                          (* 512 ~scale) (* 512 ~scale) (* 18 ~scale)))
                                ~gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font#) buffer-initial-size#)]
-                           (nuklear-dark-style ~gui)
-                           (nuklear-window ~gui "control test window" 0 0 160 40 :widget
+                           (nuklear-dark-style ~gui ~scale)
+                           (nuklear-window ~gui "control test window" 0 0 ~width ~height :widget
                                            ~@body)
-                           (render-nuklear-gui ~gui 160 40)
+                           (render-nuklear-gui ~gui ~width ~height)
                            (destroy-nuklear-gui ~gui)
                            (destroy-font-texture bitmap-font#))))
 
 
 (facts "Render a slider"
-       (gui-control-test gui (layout-row-dynamic gui 32 1) (slider-int gui 0 50 100 1))
+       (gui-control-test gui 160 40 1 (layout-row-dynamic gui 32 1) (slider-int gui 0 50 100 1))
        => (is-image "test/clj/sfsim/fixtures/gui/slider.png" 0.1))
 
 
 (fact "Use font to render button"
-      (gui-control-test gui (layout-row-dynamic gui 32 1) (button-label gui "Test Button"))
+      (gui-control-test gui 160 40 1 (layout-row-dynamic gui 32 1) (button-label gui "Test Button"))
       => (is-image "test/clj/sfsim/fixtures/gui/button.png" 0.30))
+
+
+(fact "Use font to render large button"
+      (gui-control-test gui 320 80 2 (layout-row-dynamic gui 64 1) (button-label gui "Large Button"))
+      => (is-image "test/clj/sfsim/fixtures/gui/large-button.png" 0.30))
 
 
 (facts "Test rendering with two GUI contexts"
@@ -188,13 +194,13 @@
 
 
 (fact "Render a text label"
-      (gui-control-test gui (layout-row-dynamic gui 32 1) (text-label gui "Test Label"))
+      (gui-control-test gui 160 40 1 (layout-row-dynamic gui 32 1) (text-label gui "Test Label"))
       => (is-image "test/clj/sfsim/fixtures/gui/label.png" 0.17))
 
 
 (fact "Render an edit field"
       (let [data (edit-data "initial" 31 :sfsim.gui/filter-ascii)]
-        (gui-control-test gui (layout-row-dynamic gui 32 1) (edit-field gui data))
+        (gui-control-test gui 160 40 1 (layout-row-dynamic gui 32 1) (edit-field gui data))
         => (is-image "test/clj/sfsim/fixtures/gui/edit.png" 0.21)
         (edit-get data) => "initial"
         (edit-set data "final")
@@ -202,7 +208,7 @@
 
 
 (fact "Dynamic row layout with fractions"
-      (gui-control-test gui
+      (gui-control-test gui 160 40 1
                         (layout-row gui 38 3
                                     (layout-row-push gui 0.2)
                                     (text-label gui "One")
