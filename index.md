@@ -7,7 +7,8 @@ permalink: /
 [![sfsim header image](sfsim.jpg)][1]
 
 [sfsim][1] is a realistic 3D space flight simulator under development.
-It has true celestial positions of Earth and Sun from NASA.
+You can already download the [sfsim playtest build on Steam][3] and try it out.
+*sfsim* uses true celestial positions of Earth and Sun from NASA.
 Use an advanced single-stage-to-orbit space craft to take off, orbit the planet, perform reentry, and land back on Earth.
 sfsim features a true to scale Earth planet using NOAA elevation data and procedurally generated volumetric clouds.
 
@@ -55,3 +56,4 @@ Wishlist it on Steam to get notified when it gets released:
 
 [1]: https://wedesoft.github.io/sfsim/
 [2]: https://freesound.org/people/Andrewkn/
+[3]: https://store.steampowered.com/app/3687560/sfsim/
