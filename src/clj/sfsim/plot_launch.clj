@@ -57,9 +57,12 @@
                    x        (* (position 0) scale)
                    y        (* (position 1) scale)
                    control  (-> sample :action :control)
-                   thrust   (mag control)]
+                   thrust   (mag control)
+                   done     (launch/done? (:state sample) config)]
                (q/stroke (* thrust 255) (* (- 1 thrust) 255) 0)
-               (q/point x y)
+               (if done
+                 (q/ellipse x y 3 3)
+                 (q/point x y))
                (when (zero? (mod i 10))
                  (let [dx    (* (control 0) 10)
                        dy    (* (control 1) 10)]

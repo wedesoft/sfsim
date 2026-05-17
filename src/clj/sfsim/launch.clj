@@ -47,18 +47,18 @@
   {:radius 6378000.0
    :orbit 160000.0
    :orbit-tolerance 100.0
-   :speed-tolerance 5.0
+   :speed-tolerance 20.0
    :inclination-target 0.0
    :planet-mass 5.9742e+24
    :mass 100000.0
    :dt 5.0
    :steps 50
    :max-thrust 2500000.0
-   :timeout 1280.0
+   :timeout 900.0
    :initial-delta-v 12000.0
    :weight-height-reward 0.1
    :weight-speed-reward 1.0
-   :weight-fuel-reward 200.0
+   :weight-fuel-reward 10.0
    :weight-angle-reward 0.1})
 
 
@@ -391,9 +391,9 @@
   (let [factory            launch-factory
         actor              (LaunchActor 6 64 3)
         critic             (Critic 6 64)
-        n-epochs           1000
+        n-epochs           100000
         n-updates          10
-        gamma              0.995
+        gamma              0.95
         lambda             1.0
         epsilon            0.2
         n-batches          16
