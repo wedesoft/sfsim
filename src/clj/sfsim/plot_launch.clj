@@ -12,6 +12,7 @@
       [quil.core :as q]
       [quil.middleware :as m]
       [libpython-clj2.python :refer (py.) :as py]
+      [fastmath.vector :refer (vec3 mag)]
       [sfsim.physics :refer (gravitational-constant)]
       [sfsim.util :refer (cube)]
       [sfsim.mlp :refer (tensor toitem tolist without-gradient)]
@@ -24,16 +25,18 @@
     result))
 
 
-(defn advance [actor state]
+(defn advance [actor {:keys [state]}]
   (let [observation (tensor (launch/observation state config))
-        input       (without-gradient (py. actor deterministic_act observation))]
-    (launch/update-state state (launch/action (tolist input)) config)))
+        input       (without-gradient (py. actor deterministic_act observation))
+        action      (launch/action (tolist input))]
+    {:state (launch/update-state state action config) :action action}))
 
 
 (defn setup []
   (let [actor      (actor)
-        state      (launch/setup config :latitude 0.0 :longitude 0.0 :height 0.0)
-        trajectory (take-while #(not (or (launch/done? % config) (launch/truncate? % config))) (iterate #(advance actor %) state))]
+        sample     {:state (launch/setup config :latitude 0.0 :longitude 0.0 :height 0.0) :action {:control (vec3 0 0 0)}}
+        trajectory (take-while #(not (or (launch/done? (:state %) config) (launch/truncate? (:state %) config)))
+                               (iterate #(advance actor %) sample))]
     (q/no-loop)
     (q/smooth)
     (q/background 0)
@@ -49,10 +52,12 @@
       (q/no-fill)
       (q/stroke 150 150 150)
       (q/ellipse 0 0 (* 2 radius scale) (* 2 radius scale))
-      (q/stroke 0 255 0)
-      (doseq [position (map :position trajectory)]
-             (let [x (* (position 0) scale)
-                   y (* (position 1) scale)]
+      (doseq [sample trajectory]
+             (let [position (-> sample :state :position)
+                   x        (* (position 0) scale)
+                   y        (* (position 1) scale)
+                   thrust   (-> sample :action :control mag)]
+               (q/stroke (* thrust 255) (* (- 1 thrust) 255) 0)
                (q/point x y))))))
 
 

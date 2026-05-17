@@ -8,6 +8,7 @@
       - [ ] reduce reward shaping over time?
       - [ ] dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
       - [ ] visualise thrust
+      - [ ] does "done?" need to check intersection with a sphere in state space?
       - [ ] randomisation at start of episode
         - [ ] thrust variation
         - [ ] wind shear
