@@ -3,29 +3,21 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [ ] launch mfd
-    - [-] reinforcement learning launch physics
-      - [X] numerical problems: potential candidates are
-        - [X] tanh(r)/r when actor is at origin
-        - [X] add terminating condition for launch with fuel reward
-        - [X] standard deviation dropping to zero (fix: std = torch.exp(log_std).clamp(min=1e-4, max=1.0))
-        - [X] 1 - tanh^2(r) going zero (fix: replace ln(1 - tanh^2(r)) with 2.0 * (math.log(2.0) - r - torch.nn.functional.softplus(-2.0 * r)))
-        - [X] missing gradient clipping
-        - [X] ratio problems with exp(new_log_prob−old_log_prob) (fix: clip difference of logarithms)
-      - [-] rewards/penalties
-        - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
-        - [ ] reward early entry into orbit
-        - [ ] visualise thrust
-        - [X] fuel consumption
-        - [X] Small angle of attack
-        - [X] Orbit distance squared
-        - [ ] Dynamic pressure
-        - [X] Fuel use
-      - [ ] simulate propellant weight
-      - [ ] simulate Earth rotation
-      - [ ] allow specifying inclination and ascending or descending node
-  - [X] quil launch visualisation
-  - [ ] reentry mfd https://gemini.google.com/share/986559318dcb,
+  - [ ] launch mfd, reinforcement learning launch physics
+    - [-] rewards/penalties
+      - [ ] reduce reward shaping over time?
+      - [ ] dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
+      - [ ] visualise thrust
+      - [ ] randomisation at start of episode
+        - [ ] thrust variation
+        - [ ] wind shear
+    - [ ] simulate propellant weight
+    - [ ] simulate Earth rotation
+    - [ ] allow specifying inclination and ascending or descending node
+  - [ ] reentry mfd
+    - [ ] PPO agent outputs high level guidance (bank angle and angle of attack)
+    - [ ] use down-range and cross-range, ad coriolis and centrifugal acceleration to observations?
+    - [ ] use velocity, flight path angle, altitude
     calculate distance heading in ECEF system and provide airspeed to network?
   - [-] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
     - [ ] gui scaling
@@ -111,21 +103,13 @@
     - [[https://www.youtube.com/watch?v=1oyCzT6sB_4][Lockheed Martin F-35 Lightning II Stealth Fighter Cockpit Demonstrator Hands-On]]
     - nominal angular RCS accelerations according to Gemini: 1 degree for roll and pitch, 2 degrees per second square for yaw
   - [ ] schemas for model, planet, and atmosphere geometry renderer
-  - [ ] reentry physics
-    - [ ] Can still use small simulation steps but large control steps
+  - [-] reentry physics
+    - [X] Can still use small simulation steps but large control steps
     - [ ] Start state curriculum: start with training runs near the landing site
     - [ ] Reward agent for following a reference energy profile (potential plus kinetic energy)
-    - [ ] Augmentation using symmetric training data to prevent a preferred side
-    - [-] controlled reentry should be possible
-      - [X] add aerodynamics tests for control authority (pitch rate)
-      - [ ] get new AoA vs speed profile or optimize AoA as well
-      - [ ] add pitch up moment at high speed (and positive angle of attack)
-      - [ ] add moment counteracting roll at higher AoA and high speed
-      - [ ] add aerodynamics tests for trajectory (bank angle to control vertical lift component, tolerable g-forces and heat)
     - [ ] reentry flame
       - [[https://www.shadertoy.com/view/XX3fDH]]
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
-    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [X] increase start distance of audio volume falloff
   - [X] use compact formatting for text
   - [ ] use 0.5 threshold for thrusters
