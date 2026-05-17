@@ -52,13 +52,18 @@
       (q/no-fill)
       (q/stroke 150 150 150)
       (q/ellipse 0 0 (* 2 radius scale) (* 2 radius scale))
-      (doseq [sample trajectory]
+      (doseq [[i sample] (map-indexed vector trajectory)]
              (let [position (-> sample :state :position)
                    x        (* (position 0) scale)
                    y        (* (position 1) scale)
-                   thrust   (-> sample :action :control mag)]
+                   control  (-> sample :action :control)
+                   thrust   (mag control)]
                (q/stroke (* thrust 255) (* (- 1 thrust) 255) 0)
-               (q/point x y))))))
+               (q/point x y)
+               (when (zero? (mod i 10))
+                 (let [dx    (* (control 0) 10)
+                       dy    (* (control 1) 10)]
+                   (q/line x y (+ x dx) (+ y dy)))))))))
 
 
 (defn -main [& _args]
