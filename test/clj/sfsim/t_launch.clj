@@ -6,7 +6,8 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [fastmath.vector :refer (vec3 mag dot)]
-    [sfsim.conftest :refer (roughly-vector)]
+    [fastmath.matrix :refer (mat3x3)]
+    [sfsim.conftest :refer (roughly-vector roughly-matrix)]
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.mlp :refer (tensor tolist toitem without-gradient)]
@@ -31,6 +32,7 @@
    :orbit-tolerance 100.0
    :speed-tolerance 5.0
    :inclination-target 0.0
+   :ascending true
    :planet-mass 5.9722e+24
    :mass 100000.0
    :dt 1.0
@@ -175,21 +177,21 @@
 
 
 (facts "Orientation of space craft depending on speed and thrust vector"
-       (forward {:speed (vec3 1 0 0)} {:control (vec3 0 1 0)}) => (roughly-vector (vec3 0 1 0) 1e-6)
-       (forward {:speed (vec3 1 0 0)} {:control (vec3 0 2 0)}) => (roughly-vector (vec3 0 1 0) 1e-6)
-       (forward {:speed (vec3 1 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1 0 0) 1e-6)
-       (forward {:speed (vec3 2 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1 0 0) 1e-6)
-       (forward {:speed (vec3 0 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0 0 1) 1e-6)
-       (up {:speed (vec3  0 -1  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
-       (up {:speed (vec3  0  1  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0 -1 0) 1e-6)
-       (up {:speed (vec3  0 -2  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
-       (up {:speed (vec3  3  0 -1)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
-       (up {:speed (vec3  3  0 -1)} {:control (vec3 2 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
-       (up {:speed (vec3 -1  0  3)} {:control (vec3 0 0 1)}) => (roughly-vector (vec3 1  0 0) 1e-6)
-       (up {:speed (vec3  1  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
-       (up {:speed (vec3  2  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
-       (up {:speed (vec3  0  0  1)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
-       (up {:speed (vec3  0  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1  0 0) 1e-6))
+       (spacecraft-forward {:speed (vec3 1 0 0)} {:control (vec3 0 1 0)}) => (roughly-vector (vec3 0 1 0) 1e-6)
+       (spacecraft-forward {:speed (vec3 1 0 0)} {:control (vec3 0 2 0)}) => (roughly-vector (vec3 0 1 0) 1e-6)
+       (spacecraft-forward {:speed (vec3 1 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1 0 0) 1e-6)
+       (spacecraft-forward {:speed (vec3 2 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1 0 0) 1e-6)
+       (spacecraft-forward {:speed (vec3 0 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0 0 1) 1e-6)
+       (spacecraft-up {:speed (vec3  0 -1  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
+       (spacecraft-up {:speed (vec3  0  1  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0 -1 0) 1e-6)
+       (spacecraft-up {:speed (vec3  0 -2  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
+       (spacecraft-up {:speed (vec3  3  0 -1)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (spacecraft-up {:speed (vec3  3  0 -1)} {:control (vec3 2 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (spacecraft-up {:speed (vec3 -1  0  3)} {:control (vec3 0 0 1)}) => (roughly-vector (vec3 1  0 0) 1e-6)
+       (spacecraft-up {:speed (vec3  1  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (spacecraft-up {:speed (vec3  2  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (spacecraft-up {:speed (vec3  0  0  1)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
+       (spacecraft-up {:speed (vec3  0  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1  0 0) 1e-6))
 
 
 (defn lift-mock
@@ -310,3 +312,20 @@
              (tolist (second result)) => [[0.6931471824645996 0.6931471824645996 0.6931471824645996]]
              (mag (apply vec3 (tolist (py. (py. zero-actor get_dist (tensor [0.0 0.0 0.0 0.0 0.0 0.0])) sample)))) => #(<= % 1.0))
            (tolist (py. zero-actor deterministic_act (tensor [[0.0 0.0 0.0 0.0 0.0 0.0]]))) => [[0.0 0.0 0.0]])))
+
+
+(facts "Get forward vector for orbit"
+       (horizon-forward {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)} test-config)
+       => (vec3 0 1 0)
+       (horizon-forward {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)} (assoc test-config :inclination-target (/ PI 2)))
+       => (roughly-vector (vec3 0 0 1) 1e-6)
+       (horizon-forward {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)}
+                      (assoc test-config :inclination-target (/ PI 2) :ascending false))
+       => (roughly-vector (vec3 0 0 -1) 1e-6))
+
+
+(facts "Horizon matrix for thrust vector space"
+       (horizon-matrix {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)} test-config)
+       => (roughly-matrix (mat3x3 1 0 0, 0 1 0, 0 0 1) 1e-6)
+       (horizon-matrix {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)} (assoc test-config :inclination-target (/ PI 2)))
+       => (roughly-matrix (mat3x3 1 0 0, 0 0 -1, 0 1 0) 1e-6))

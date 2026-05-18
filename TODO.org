@@ -4,6 +4,11 @@
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
   - [ ] launch mfd, reinforcement learning launch physics
+    - [ ] reduce observation
+      - [ ] observation: height, climb speed, forward speed, sideways speed
+      - [ ] state: position, speed, delta-v, t
+      - [ ] action: up, forward, sideways (defined by inclination of nearest speed vector)
+      - [ ] action ambiguity at launch
     - [-] rewards/penalties
       - [ ] reduce reward shaping over time?
       - [ ] dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))

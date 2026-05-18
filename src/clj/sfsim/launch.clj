@@ -10,6 +10,7 @@
     (:require
       [clojure.math :refer (PI sqrt cos atan2 acos)]
       [fastmath.vector :refer (vec3 mult add sub mag div normalize dot cross)]
+      [fastmath.matrix :refer (cols->mat)]
       [libpython-clj2.require :refer (require-python)]
       [libpython-clj2.python :refer (py. py.-) :as py]
       [sfsim.util :refer (sqr sign)]
@@ -49,6 +50,7 @@
    :orbit-tolerance 100.0
    :speed-tolerance 20.0
    :inclination-target 0.0
+   :ascending true
    :planet-mass 5.9742e+24
    :mass 100000.0
    :dt 5.0
@@ -85,13 +87,52 @@
   (physics/gravitation (vec3 0 0 0) planet-mass))
 
 
+(defn orbital-vector
+  "Get target orbital vector given position and inclination target"
+  [{:keys [position]} inclination-target]
+  (let [a        (position 0)
+        b        (position 1)
+        l2       (+ (sqr a) (sqr b))
+        l        (sqrt l2)
+        latitude (atan2 (position 2) l)
+        cos-lat  (cos latitude)
+        cos-incl (cos inclination-target)
+        z        (* (sign cos-incl) (min (abs cos-incl) (abs cos-lat)))
+        r2       (- 1.0 (sqr z))  ; x^2 + y^2 = r^2
+        d        (* z ^double (position 2)) ; a x + b y + d = 0
+        k        (- (/ d l2))  ; does not work if position is at a pole (on the z-axis)
+        xc       (* k ^double a)  ; a xc + b yc + d = 0
+        yc       (* k ^double b)  ; and xc^2 + yc^2 minimal
+        s        (sqrt (max 0.0 (- r2 (sqr xc) (sqr yc))))
+        v        (div (vec3 (- ^double b) a 0) l)
+        result [(sub (vec3 xc yc z) (mult v s))
+                (add (vec3 xc yc z) (mult v s))]]
+    result))
+
+
+(defn horizon-forward
+  "Forward vector of horizon for orbit"
+  [{:keys [position] :as state} {:keys [inclination-target ascending]}]
+  (let [orbital-vectors (orbital-vector state inclination-target)]
+    (normalize (cross ((if ascending first second) orbital-vectors) position))))
+
+
+(defn horizon-matrix
+  "Matrix for horizon of orbit"
+  [{:keys [position] :as state} config]
+  (let [forward (horizon-forward state config)
+        up      (normalize position)
+        left   (cross up forward)]
+    (cols->mat up forward left)))
+
+
 (defn thrust
   "Return function returning thrust vector"
   [{:keys [control]} {:keys [mass max-thrust]}]
   (mult control (/ ^double max-thrust ^double mass)))
 
 
-(defn forward
+(defn spacecraft-forward
   "Forward vector of space craft depending on speed and thrust vector"
   [{:keys [speed]} {:keys [control]}]
   (let [control-mag (mag control)
@@ -102,7 +143,7 @@
       :else              (vec3 0 0 1))))
 
 
-(defn up
+(defn spacecraft-up
   "Up vector of space craft depending on speed and thrust vector"
   [{:keys [speed]} {:keys [control]}]
   (let [control-sqr (dot control control)]
@@ -122,8 +163,8 @@
       (let [distance       (mag position)
             height         (- distance ^double radius)
             state          {:position position :speed speed}
-            forward        (forward state action)
-            up             (up state action)
+            forward        (spacecraft-forward state action)
+            up             (spacecraft-up state action)
             alpha          (atan2 (- (dot up speed)) (dot forward speed))
             density        (density-at-height height)
             temperature    (temperature-at-height height)
@@ -168,29 +209,6 @@
         orbital-speed     (orbital-speed (+ ^double radius ^double orbit) planet-mass)
         normalised-speed  (div speed orbital-speed)]
     [(normalised-pos 0) (normalised-pos 1) (normalised-pos 2) (normalised-speed 0) (normalised-speed 1) (normalised-speed 2)]))
-
-
-(defn orbital-vector
-  "Get target orbital vector given position and inclination target"
-  [{:keys [position]} inclination-target]
-  (let [a        (position 0)
-        b        (position 1)
-        l2       (+ (sqr a) (sqr b))
-        l        (sqrt l2)
-        latitude (atan2 (position 2) l)
-        cos-lat  (cos latitude)
-        cos-incl (cos inclination-target)
-        z        (* (sign cos-incl) (min (abs cos-incl) (abs cos-lat)))
-        r2       (- 1.0 (sqr z))  ; x^2 + y^2 = r^2
-        d        (* z ^double (position 2)) ; a x + b y + d = 0
-        k        (- (/ d l2))  ; does not work if position is at a pole (on the z-axis)
-        xc       (* k ^double a)  ; a xc + b yc + d = 0
-        yc       (* k ^double b)  ; and xc^2 + yc^2 minimal
-        s        (sqrt (max 0.0 (- r2 (sqr xc) (sqr yc))))
-        v        (div (vec3 (- ^double b) a 0) l)
-        result [(add (vec3 xc yc z) (mult v s))
-                (sub (vec3 xc yc z) (mult v s))]]
-    result))
 
 
 (defn target-speeds
