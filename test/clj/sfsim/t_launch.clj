@@ -118,26 +118,32 @@
 
 (defn position
   [observation]
-  (vec3 (observation 0) (observation 1) (observation 2)))
+  (observation 0))
 
 
 (defn speed
   [observation]
-  (vec3 (observation 3) (observation 4) (observation 5)))
+  (vec3 (observation 1) (observation 2) (observation 3)))
 
 
 (facts "Observe space craft"
        (position (observation {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)} test-config))
-       => (vec3 0.5 0.0 0.0)
+       => 0.0
        (position (observation {:position (vec3 (+ 6378000 160000) 0 0) :speed (vec3 0 0 0)} test-config))
-       => (vec3 1.0 0.0 0.0)
+       => 1.0
        (position (observation {:position (vec3 0 6378000 0) :speed (vec3 0 0 0)} test-config))
-       => (vec3 0.0 0.5 0.0)
-       (speed (observation {:position (vec3 0 0 0) :speed (vec3 0 0 0)} test-config))
+       => 0.0
+       (speed (observation {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)} test-config))
        => (vec3 0.0 0.0 0.0)
-       (speed (observation {:position (vec3 0 0 0) :speed (vec3 7808.140 0 0)} test-config))
+       (speed (observation {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} test-config))
+       => (roughly-vector (vec3 0.0 1.0 0.0) 1e-6)
+       (speed (observation {:position (vec3 0 6378000 0) :speed (vec3 7808.140 0 0)} test-config))
+       => (roughly-vector (vec3 0.0 -1.0 0.0) 1e-6)
+       (speed (observation {:position (vec3 0 6378000 0) :speed (vec3 0.0 7808.140 0)} test-config))
        => (roughly-vector (vec3 1.0 0.0 0.0) 1e-6)
-       (speed (observation {:position (vec3 0 0 0) :speed (vec3 0 7808.140 0)} test-config))
+       (speed (observation {:position (vec3 0 6378000 0) :speed (vec3 0.0 0 7808.140)} test-config))
+       => (roughly-vector (vec3 0.0 0.0 1.0) 1e-6)
+       (speed (observation {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} test-config))
        => (roughly-vector (vec3 0.0 1.0 0.0) 1e-6))
 
 

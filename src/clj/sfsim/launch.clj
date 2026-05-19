@@ -10,7 +10,7 @@
     (:require
       [clojure.math :refer (PI sqrt cos atan2 acos)]
       [fastmath.vector :refer (vec3 mult add sub mag div normalize dot cross)]
-      [fastmath.matrix :refer (mulv cols->mat)]
+      [fastmath.matrix :refer (mulv inverse cols->mat)]
       [libpython-clj2.require :refer (require-python)]
       [libpython-clj2.python :refer (py. py.-) :as py]
       [sfsim.util :refer (sqr sign)]
@@ -203,13 +203,13 @@
 
 (defn observation
   "Get observation of state"
-  [{:keys [position speed]} {:keys [radius orbit planet-mass]}]
+  [{:keys [position speed] :as state} {:keys [radius orbit planet-mass] :as config}]
   (let [distance          (mag position)
         normalised-height (/ (- distance ^double radius) ^double orbit)
-        normalised-pos    (mult position (/ (+ 0.5 (* 0.5 normalised-height)) distance))
         orbital-speed     (orbital-speed (+ ^double radius ^double orbit) planet-mass)
-        normalised-speed  (div speed orbital-speed)]
-    [(normalised-pos 0) (normalised-pos 1) (normalised-pos 2) (normalised-speed 0) (normalised-speed 1) (normalised-speed 2)]))
+        horizon           (horizon-matrix state config)
+        normalised-speed  (div (mulv (inverse horizon) speed) orbital-speed)]
+    [normalised-height (normalised-speed 0) (normalised-speed 1) (normalised-speed 2)]))
 
 
 (defn target-speeds
@@ -408,8 +408,8 @@
 
 (defn -main [& _args]
   (let [factory            launch-factory
-        actor              (LaunchActor 6 64 3)
-        critic             (Critic 6 64)
+        actor              (LaunchActor 4 64 3)
+        critic             (Critic 4 64)
         n-epochs           100000
         n-updates          10
         gamma              0.95
@@ -452,7 +452,7 @@
                       "Critic Loss:" @smooth-critic-loss
                       "Entropy Factor:" @entropy-factor))
            (without-gradient
-             (doseq [input [[0.5 0 0 0 0 0]]]
+             (doseq [input [[0 0 0 0]]]
                     (println "input:" input)
                     (println "deterministic_act:" (action (tolist (py. actor deterministic_act (tensor input)))))
                     (println "z-distribution:" (map tolist (py. actor forward (tensor input))))))
