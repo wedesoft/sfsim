@@ -118,6 +118,7 @@
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
   - [X] increase start distance of audio volume falloff
   - [X] use compact formatting for text
+  - [ ] out of bounds exception when exceeding speed of mach 30
   - [ ] use 0.5 threshold for thrusters
   - [ ] full testing of saving/loading configs and retrieving values
   - [ ] scale menu according to screen resolution

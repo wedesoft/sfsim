@@ -20,7 +20,7 @@
 
 
 (defn actor []
-  (let [result (LaunchActor 6 64 3)]
+  (let [result (LaunchActor 4 64 3)]
     (py. result load_state_dict (torch/load "actor.pt"))
     result))
 
@@ -32,11 +32,19 @@
     {:state (launch/update-state state action config) :action action}))
 
 
+(defn take-while-plus-one [pred coll]
+  (let [[matching remaining] (split-with pred coll)]
+    (if (seq remaining)
+      (concat matching [(first remaining)])
+      matching)))
+
+
 (defn setup []
   (let [actor      (actor)
         sample     {:state (launch/setup config :latitude 0.0 :longitude 0.0 :height 0.0) :action {:control (vec3 0 0 0)}}
-        trajectory (take-while #(not (or (launch/done? (:state %) config) (launch/truncate? (:state %) config)))
-                               (iterate #(advance actor %) sample))]
+        trajectory (take-while-plus-one
+                     #(not (or (launch/done? (:state %) config) (launch/truncate? (:state %) config)))
+                     (iterate #(advance actor %) sample))]
     (q/no-loop)
     (q/smooth)
     (q/background 0)
@@ -58,11 +66,13 @@
                    y        (* (position 1) scale)
                    control  (-> sample :action :control)
                    thrust   (mag control)
-                   done     (launch/done? (:state sample) config)]
+                   done     (launch/done? (:state sample) config)
+                   truncate (launch/truncate? (:state sample) config)]
                (q/stroke (* thrust 255) (* (- 1 thrust) 255) 0)
-               (if done
-                 (q/ellipse x y 3 3)
-                 (q/point x y))
+               (cond
+                 done     (q/ellipse x y 5 5)
+                 truncate (do (q/line (- x 2) (- y 2) (+ x 2) (+ y 2)) (q/line (- x 2) (+ y 2) (+ x 2) (- y 2)))
+                 :else (q/point x y))
                (when (zero? (mod i 10))
                  (let [dx    (* (control 0) 10)
                        dy    (* (control 1) 10)]

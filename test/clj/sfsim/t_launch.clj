@@ -39,6 +39,7 @@
    :steps 1
    :max-thrust 2000000.0
    :timeout 1200.0
+   :max-speed 9000.0
    :initial-delta-v 20000.0
    :weight-height-reward 1.0
    :weight-speed-reward 1.0
@@ -148,8 +149,9 @@
 
 
 (facts "Decide whether a run should be aborted"
-       (truncate? {:t 50.0} test-config) => false
-       (truncate? {:t 1200.0} test-config) => true)
+       (truncate? {:t 50.0 :speed (vec3 0 0 0)} test-config) => false
+       (truncate? {:t 1200.0 :speed (vec3 0 0 0)} test-config) => true
+       (truncate? {:t 50.0 :speed (vec3 10000 0 0)} test-config) => true)
 
 
 (facts "Decide when the orbit was reached"

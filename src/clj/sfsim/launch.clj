@@ -57,6 +57,7 @@
    :steps 50
    :max-thrust 2500000.0
    :timeout 900.0
+   :max-speed 9000.0
    :initial-delta-v 12000.0
    :weight-height-reward 0.1
    :weight-speed-reward 1.0
@@ -248,8 +249,8 @@
   "Decide whether a run should be aborted"
   ([state]
    (truncate? state config))
-  ([{:keys [t]} {:keys [timeout]}]
-   (>= ^double t ^double timeout)))
+  ([{:keys [t speed]} {:keys [timeout max-speed]}]
+   (or (>= ^double t ^double timeout) (>= (mag speed) max-speed))))
 
 
 (defn reward-height
@@ -440,7 +441,7 @@
                              (py. loss backward)
                              (utils/clip_grad_norm_(py. actor parameters) 0.5)
                              (py. actor-optimizer step)
-                             (swap! smooth-actor-loss (fn [x] (+ (* 0.999 ^double x) (* 0.001 ^double (toitem loss))))) ))
+                             (swap! smooth-actor-loss (fn [x] (+ (* 0.999 ^double x) (* 0.001 ^double (toitem loss)))))))
                     (doseq [batch samples]
                            (let [loss (critic-loss batch critic)]
                              (py. critic-optimizer zero_grad)
