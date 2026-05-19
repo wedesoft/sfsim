@@ -10,7 +10,7 @@
     (:require
       [clojure.math :refer (PI sqrt cos atan2 acos)]
       [fastmath.vector :refer (vec3 mult add sub mag div normalize dot cross)]
-      [fastmath.matrix :refer (cols->mat)]
+      [fastmath.matrix :refer (mulv cols->mat)]
       [libpython-clj2.require :refer (require-python)]
       [libpython-clj2.python :refer (py. py.-) :as py]
       [sfsim.util :refer (sqr sign)]
@@ -128,8 +128,9 @@
 
 (defn thrust
   "Return function returning thrust vector"
-  [{:keys [control]} {:keys [mass max-thrust]}]
-  (mult control (/ ^double max-thrust ^double mass)))
+  [state {:keys [control]} {:keys [mass max-thrust] :as config}]
+  (let [horizon (horizon-matrix state config)]
+    (mulv horizon (mult control (/ ^double max-thrust ^double mass)))))
 
 
 (defn spacecraft-forward
@@ -182,7 +183,7 @@
   [{:keys [t delta-v] :as state} action {:keys [dt steps] :as config}]
    (let [gravitation   (gravitation config)
          drag-and-lift (drag-and-lift action config)
-         thrust        (thrust action config)
+         thrust        (thrust state action config)
          acceleration  (fn [position speed] (reduce add [(gravitation position speed)
                                                          (drag-and-lift position speed)
                                                          thrust]))

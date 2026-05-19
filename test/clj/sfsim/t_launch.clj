@@ -90,7 +90,10 @@
          => (vec3 0.5 0.25 0.125)
          (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0.5 0.25 0.125)}
                                (assoc test-config :planet-mass 0.0)))
-         => (vec3 10.0 5.0 2.5)
+         => (roughly-vector (vec3 10.0 5.0 2.5) 1e-6)
+         (:speed (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0.5 0.25 0.125)}
+                               (assoc test-config :planet-mass 0.0 :inclination-target (/ PI 2))))
+         => (roughly-vector (vec3 10 -2.5 5) 1e-6)
          (:delta-v (update-state (setup test-config :latitude 0.0 :longitude 0.0 :height 0.0) {:control (vec3 0 0 0)}
                                  test-config))
          => 20000.0
@@ -101,8 +104,8 @@
          => 1.0)
        (with-redefs [aerodynamics/drag (fn [_linear-speed _speed-of-sound _density _gear _air-brake] 200000.0)
                      aerodynamics/lift zero-lift]
-         (:speed (update-state {:position (vec3 0 0 6378000) :speed (vec3 100 0 0) :t 0.0 :delta-v 20000.0} {:control (vec3 0 0 0)}
-                               (assoc test-config :planet-mass 0.0)))
+         (:speed (update-state {:position (vec3 0 6378000 0) :speed (vec3 100 0 0) :t 0.0 :delta-v 20000.0} {:control (vec3 0 0 0)}
+                               (assoc test-config :planet-mass 0.0 :inclination-target (/ PI 2))))
          => (vec3 98 0 0)))
 
 
@@ -321,7 +324,12 @@
        => (roughly-vector (vec3 0 0 1) 1e-6)
        (horizon-forward {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)}
                       (assoc test-config :inclination-target (/ PI 2) :ascending false))
-       => (roughly-vector (vec3 0 0 -1) 1e-6))
+       => (roughly-vector (vec3 0 0 -1) 1e-6)
+       (horizon-forward {:position (vec3 0 6378000 0) :speed (vec3 0 0 0)} test-config)
+       => (roughly-vector (vec3 -1 0 0) 1e-6)
+       ;; Orbit orientation unknown
+       (horizon-forward {:position (vec3 0 0 6378000) :speed (vec3 0 0 0)} test-config)
+       => (fn [v] (every? NaN? v)))
 
 
 (facts "Horizon matrix for thrust vector space"
