@@ -3,6 +3,8 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
+  - [-] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
+    - [ ] gui scaling
   - [ ] launch mfd, reinforcement learning launch physics
     - [ ] reduce observation
       - [ ] observation: height, climb speed, forward speed, sideways speed
@@ -25,8 +27,6 @@
     - [ ] use down-range and cross-range, ad coriolis and centrifugal acceleration to observations?
     - [ ] use velocity, flight path angle, altitude
     calculate distance heading in ECEF system and provide airspeed to network?
-  - [-] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
-    - [ ] gui scaling
   - [ ] runway with lights and glide slope indicator
   - [ ] fuel consumption
   - [ ] time lapse
