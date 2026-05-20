@@ -118,6 +118,12 @@
   (nn/MSELoss))
 
 
+(defn sgd-optimizer
+  "Stochastic Gradient Descent optimizer"
+  [model learning-rate weight-decay]
+  (optim/SGD (py. model parameters) :lr learning-rate :weight_decay weight-decay))
+
+
 (defn adam-optimizer
   "Adam optimizer"
   [model learning-rate weight-decay]

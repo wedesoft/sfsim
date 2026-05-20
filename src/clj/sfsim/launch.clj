@@ -19,7 +19,7 @@
       [sfsim.atmosphere :refer (temperature-at-height speed-of-sound density-at-height)]
       [sfsim.aerodynamics :refer (lift drag wind-to-body-system)]
       [sfsim.environment :refer (Environment)]
-      [sfsim.mlp :refer (Critic adam-optimizer tensor toitem tolist without-gradient entropy-of-distribution)]
+      [sfsim.mlp :refer (Critic sgd-optimizer tensor toitem tolist without-gradient entropy-of-distribution)]
       [sfsim.ppo :refer (sample-with-advantage-and-critic-target actor-loss critic-loss)]))
 
 
@@ -427,8 +427,8 @@
         weight-decay       5e-5
         smooth-actor-loss  (atom 0.0)
         smooth-critic-loss (atom 0.0)
-        actor-optimizer  (adam-optimizer actor lr weight-decay)
-        critic-optimizer (adam-optimizer critic lr weight-decay)]
+        actor-optimizer    (sgd-optimizer actor lr weight-decay)
+        critic-optimizer   (sgd-optimizer critic lr weight-decay)]
     (when (.exists (java.io.File. "actor.pt"))
       (py. actor load_state_dict (torch/load "actor.pt")))
     (when (.exists (java.io.File. "critic.pt"))
