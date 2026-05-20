@@ -136,22 +136,22 @@
 
 (defn spacecraft-forward
   "Forward vector of space craft depending on speed and thrust vector"
-  [{:keys [speed]} {:keys [control]}]
-  (let [control-mag (mag control)
-        speed-mag   (mag speed)]
+  [{:keys [speed]} thrust]
+  (let [thrust-mag (mag thrust)
+        speed-mag  (mag speed)]
     (cond
-      (pos? control-mag) (div control control-mag)
-      (pos? speed-mag)   (div speed speed-mag)
-      :else              (vec3 0 0 1))))
+      (pos? thrust-mag) (div thrust thrust-mag)
+      (pos? speed-mag)  (div speed speed-mag)
+      :else             (vec3 0 0 1))))
 
 
 (defn spacecraft-up
   "Up vector of space craft depending on speed and thrust vector"
-  [{:keys [speed]} {:keys [control]}]
-  (let [control-sqr (dot control control)]
-    (if (pos? control-sqr)
-      (let [projection (/ (dot speed control) control-sqr)]
-        (normalize (sub (mult control projection) speed)))
+  [{:keys [speed]} thrust]
+  (let [thrust-sqr (dot thrust thrust)]
+    (if (pos? thrust-sqr)
+      (let [projection (/ (dot speed thrust) thrust-sqr)]
+        (normalize (sub (mult thrust projection) speed)))
       (let [speed-sqr (dot speed speed)]
         (if (pos? speed-sqr)
           (orthogonal speed)
@@ -160,13 +160,14 @@
 
 (defn drag-and-lift
   "Get acceleration due to drag and lift"
-  [action {:keys [mass radius]}]
+  [action {:keys [mass radius] :as config}]
   (fn [position speed]
       (let [distance       (mag position)
             height         (- distance ^double radius)
             state          {:position position :speed speed}
-            forward        (spacecraft-forward state action)
-            up             (spacecraft-up state action)
+            thrust         (thrust {:position position :speed speed} action config)
+            forward        (spacecraft-forward state thrust)
+            up             (spacecraft-up state thrust)
             alpha          (atan2 (- (dot up speed)) (dot forward speed))
             density        (density-at-height height)
             temperature    (temperature-at-height height)

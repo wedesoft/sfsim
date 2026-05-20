@@ -11,6 +11,7 @@
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.mlp :refer (tensor tolist toitem without-gradient)]
+    [sfsim.util :refer (sqr)]
     [sfsim.launch :refer :all]))
 
 
@@ -188,21 +189,21 @@
 
 
 (facts "Orientation of space craft depending on speed and thrust vector"
-       (spacecraft-forward {:speed (vec3 1 0 0)} {:control (vec3 0 1 0)}) => (roughly-vector (vec3 0 1 0) 1e-6)
-       (spacecraft-forward {:speed (vec3 1 0 0)} {:control (vec3 0 2 0)}) => (roughly-vector (vec3 0 1 0) 1e-6)
-       (spacecraft-forward {:speed (vec3 1 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1 0 0) 1e-6)
-       (spacecraft-forward {:speed (vec3 2 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1 0 0) 1e-6)
-       (spacecraft-forward {:speed (vec3 0 0 0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0 0 1) 1e-6)
-       (spacecraft-up {:speed (vec3  0 -1  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
-       (spacecraft-up {:speed (vec3  0  1  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0 -1 0) 1e-6)
-       (spacecraft-up {:speed (vec3  0 -2  0)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
-       (spacecraft-up {:speed (vec3  3  0 -1)} {:control (vec3 1 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
-       (spacecraft-up {:speed (vec3  3  0 -1)} {:control (vec3 2 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
-       (spacecraft-up {:speed (vec3 -1  0  3)} {:control (vec3 0 0 1)}) => (roughly-vector (vec3 1  0 0) 1e-6)
-       (spacecraft-up {:speed (vec3  1  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
-       (spacecraft-up {:speed (vec3  2  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  0 1) 1e-6)
-       (spacecraft-up {:speed (vec3  0  0  1)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 0  1 0) 1e-6)
-       (spacecraft-up {:speed (vec3  0  0  0)} {:control (vec3 0 0 0)}) => (roughly-vector (vec3 1  0 0) 1e-6))
+       (spacecraft-forward {:speed (vec3 1 0 0)} (vec3 0 1 0)) => (roughly-vector (vec3 0 1 0) 1e-6)
+       (spacecraft-forward {:speed (vec3 1 0 0)} (vec3 0 2 0)) => (roughly-vector (vec3 0 1 0) 1e-6)
+       (spacecraft-forward {:speed (vec3 1 0 0)} (vec3 0 0 0)) => (roughly-vector (vec3 1 0 0) 1e-6)
+       (spacecraft-forward {:speed (vec3 2 0 0)} (vec3 0 0 0)) => (roughly-vector (vec3 1 0 0) 1e-6)
+       (spacecraft-forward {:speed (vec3 0 0 0)} (vec3 0 0 0)) => (roughly-vector (vec3 0 0 1) 1e-6)
+       (spacecraft-up {:speed (vec3  0 -1  0)} (vec3 1 0 0)) => (roughly-vector (vec3 0  1 0) 1e-6)
+       (spacecraft-up {:speed (vec3  0  1  0)} (vec3 1 0 0)) => (roughly-vector (vec3 0 -1 0) 1e-6)
+       (spacecraft-up {:speed (vec3  0 -2  0)} (vec3 1 0 0)) => (roughly-vector (vec3 0  1 0) 1e-6)
+       (spacecraft-up {:speed (vec3  3  0 -1)} (vec3 1 0 0)) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (spacecraft-up {:speed (vec3  3  0 -1)} (vec3 2 0 0)) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (spacecraft-up {:speed (vec3 -1  0  3)} (vec3 0 0 1)) => (roughly-vector (vec3 1  0 0) 1e-6)
+       (spacecraft-up {:speed (vec3  1  0  0)} (vec3 0 0 0)) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (spacecraft-up {:speed (vec3  2  0  0)} (vec3 0 0 0)) => (roughly-vector (vec3 0  0 1) 1e-6)
+       (spacecraft-up {:speed (vec3  0  0  1)} (vec3 0 0 0)) => (roughly-vector (vec3 0  1 0) 1e-6)
+       (spacecraft-up {:speed (vec3  0  0  0)} (vec3 0 0 0)) => (roughly-vector (vec3 1  0 0) 1e-6))
 
 
 (defn lift-mock
@@ -223,23 +224,21 @@
 
 (facts "Determine drag and lift"
        (with-redefs [aerodynamics/drag (fn [{:sfsim.aerodynamics/keys [alpha speed]} speed-of-sound density _gear _air-brake]
-                                           (* density (/ speed speed-of-sound) (+ (* 200000.0 (cos alpha)) (* 400000.0 (sin alpha)))))
+                                           (* density (/ speed speed-of-sound) (+ (* 200000.0 (sqr (cos alpha))) (* 400000.0 (sqr (sin alpha))))))
                      aerodynamics/lift lift-mock
                      atmosphere/temperature-at-height temperature-mock
                      atmosphere/speed-of-sound speed-of-sound-mock
                      atmosphere/density-at-height density-mock]
-         ((drag-and-lift {:control (vec3 1 0 0)} test-config) (vec3 0 0 6378000) (vec3 0 0 0))
+         ((drag-and-lift {:control (vec3 1 0 0)} test-config) (vec3 0 6378000 0) (vec3 0 0 0))
          => (roughly-vector(vec3 0 0 0) 1e-6)
-         ((drag-and-lift  {:control (vec3 1 0 0)} test-config) (vec3 0 0 6378000) (vec3 100 0 0))
+         ((drag-and-lift  {:control (vec3 0 1 0)} test-config) (vec3 0 6378000 0) (vec3 100 0 0))
          => (roughly-vector (vec3 -0.5 0 0) 1e-6)
-         ((drag-and-lift {:control (vec3 0 0 1)} test-config) (vec3 0 0 6378000) (vec3 -100 0 0))
+         ((drag-and-lift {:control (vec3 0 0 1)} test-config) (vec3 0 6378000 0) (vec3 -100 0 0))
          => (roughly-vector (vec3 1.0 0 0) 1e-6)
-         ((drag-and-lift {:control (vec3 -1 0 0)} test-config) (vec3 0 0 6378000) (vec3 -100 0 0))
+         ((drag-and-lift  {:control (vec3 0 1 0)} test-config) (vec3 0 6378000 0) (vec3 -100 0 0))
          => (roughly-vector (vec3 0.5 0 0) 1e-6)
-         ((drag-and-lift {:control (vec3 1 0 1)} test-config) (vec3 0 0 6378000) (vec3 100 0 0))
-         => (roughly-vector(vec3 (- (sqrt 1.125)) 0 2.5) 1e-6)
-         ((drag-and-lift {:control (vec3 1 1 0)} test-config) (vec3 0 0 6378000) (vec3 100 0 0))
-         => (roughly-vector(vec3 (- (sqrt 1.125)) 2.5 0) 1e-6)))
+         ((drag-and-lift {:control (vec3 1 1 0)} test-config) (vec3 0 6378000 0) (vec3 -100 0 0))
+         => (roughly-vector(vec3 0.75 2.5 0) 1e-6)))
 
 
 (facts "Penalise height deviations"
