@@ -276,15 +276,16 @@
 
 (defn reward-angle
   "Penalise angle of attack"
-  [{:keys [speed position]} {:keys [control]} {:keys [radius]}]
-  (let [mag-speed        (mag speed)
-        mag-control      (mag control)
+  [{:keys [speed position] :as state} action {:keys [radius] :as config}]
+  (let [thrust           (thrust state action config)
+        mag-speed        (mag speed)
+        mag-thrust       (mag thrust)
         distance         (mag position)
         height           (- distance ^double radius)
         relative-density (/ (density-at-height height) (density-at-height 0.0))]
-    (if (or (zero? mag-speed) (zero? mag-control))
+    (if (or (zero? mag-speed) (zero? mag-thrust))
       0.0
-      (let [cos-angle (/ (dot speed control) (* mag-speed mag-control))]
+      (let [cos-angle (/ (dot speed thrust) (* mag-speed mag-thrust))]
         (- (* relative-density (/ (acos cos-angle) PI)))))))
 
 

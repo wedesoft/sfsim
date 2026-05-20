@@ -271,6 +271,7 @@
 (facts "Penalise angle of attack"
        (reward-angle {:speed (vec3 0 0 0) :position (vec3 6378000 0 0)} {:control (vec3 0 0 0)} test-config) => 0.0
        (reward-angle {:speed (vec3 1 0 0) :position (vec3 6378000 0 0)} {:control (vec3 1 0 0)} test-config) => 0.0
+       (reward-angle {:speed (vec3 0 1 0) :position (vec3 0 6378000 0)} {:control (vec3 1 0 0)} test-config) => 0.0
        (reward-angle {:speed (vec3 1 0 0) :position (vec3 6378000 0 0)} {:control (vec3 -1 0 0)} test-config) => -1.0
        (reward-angle {:speed (vec3 1 0 0) :position (vec3 6378000 0 0)} {:control (vec3 0 1 0)} test-config) => -0.5
        (reward-angle {:speed (vec3 1 0 0) :position (vec3 6378000 0 0)} {:control (vec3 (cos (/ PI 4)) (sin (/ PI 4)) 0)} test-config)
