@@ -199,7 +199,7 @@
 (defn action
   "Convert array to action with length of direction vector as latent variable"
   [array]
-  (let [direction (vec3 (array 0) (array 1) (array 2))]
+  (let [direction (vec3 (nth array 0) (nth array 1) (nth array 2 0))]
     {:control direction}))
 
 
@@ -411,7 +411,7 @@
 
 (defn -main [& _args]
   (let [factory            launch-factory
-        actor              (LaunchActor 4 64 3)
+        actor              (LaunchActor 4 64 2)
         critic             (Critic 4 64)
         n-epochs           100000
         n-updates          10

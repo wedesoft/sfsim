@@ -115,7 +115,9 @@
        (action [0 0 0]) => {:control (vec3 0 0 0)}
        (action [1 0 0]) => {:control (vec3 1 0 0)}
        (action [0 1 0]) => {:control (vec3 0 1 0)}
-       (action [0 0 1]) => {:control (vec3 0 0 1)})
+       (action [0 0 1]) => {:control (vec3 0 0 1)}
+       (action [1 0]) => {:control (vec3 1 0 0)}
+       (action [0 1]) => {:control (vec3 0 1 0)})
 
 
 (defn position
