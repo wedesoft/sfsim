@@ -20,7 +20,7 @@
 
 
 (defn actor []
-  (let [result (LaunchActor 4 64 3)]
+  (let [result (LaunchActor 4 64 2)]
     (py. result load_state_dict (torch/load "actor.pt"))
     result))
 
