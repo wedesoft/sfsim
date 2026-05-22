@@ -58,20 +58,18 @@
    :max-thrust 2500000.0
    :timeout 900.0
    :max-speed 9000.0
-   :initial-delta-v 12000.0
    :weight-height-reward 0.1
    :weight-speed-reward 1.0
-   :weight-fuel-reward 5.0
+   :weight-fuel-reward 0.001
    :weight-angle-reward 0.1})
 
 
 (defn setup
   "Setup rocket launch"
-  [{:keys [radius initial-delta-v]} & {:keys [latitude longitude height]}]
+  [{:keys [radius]} & {:keys [latitude longitude height]}]
   (let [point  (geographic->vector longitude latitude)]
     {:position (mult point (+ ^double radius ^double height))
      :speed    (vec3 0 0 0)
-     :delta-v  initial-delta-v
      :t        0.0}))
 
 
@@ -182,7 +180,7 @@
 
 (defn update-state
   "Perform simulation step for spacecraft"
-  [{:keys [t delta-v] :as state} action {:keys [dt steps] :as config}]
+  [{:keys [t] :as state} action {:keys [dt steps] :as config}]
    (let [gravitation   (gravitation config)
          drag-and-lift (drag-and-lift action config)
          thrust        (thrust state action config)
@@ -191,9 +189,8 @@
                                                          thrust]))
          dt-frac       (/ ^double dt ^long steps)
          state         (nth (iterate #(runge-kutta % dt-frac (state-change acceleration) state-add state-scale) state) steps)
-         t             (+ ^double t ^double dt)
-         delta-v       (- ^double delta-v (mag thrust))]
-     (assoc state :t t :delta-v delta-v)))
+         t             (+ ^double t ^double dt)]
+     (assoc state :t t)))
 
 
 (defn action
@@ -239,11 +236,8 @@
 
 (defn done?
   "An orbit is never finished"
-  [state {:keys [orbit-tolerance speed-tolerance] :as config}]
-  (let [orbit-deviation (orbit-deviation state config)
-        speed-deviation (speed-deviation state config)]
-    (and (<= ^double orbit-deviation ^double orbit-tolerance)
-         (<= ^double speed-deviation ^double speed-tolerance))))
+  [_state _config]
+  false)
 
 
 (defn truncate?
@@ -269,9 +263,9 @@
 
 
 (defn reward-fuel
-  "Reward conserving fuel"
-  [{:keys [delta-v]} {:keys [initial-delta-v]}]
-  (/ ^double delta-v ^double initial-delta-v))
+  "Penalise using fuel"
+  [{:keys [control]}]
+  (- (mag control)))
 
 
 (defn reward-angle
@@ -295,7 +289,7 @@
   (+ (* ^double weight-height-reward ^double (reward-height state config))
      (* ^double weight-speed-reward ^double (reward-speed state config))
      (* ^double weight-angle-reward ^double (reward-angle state action config))
-     (* ^double weight-fuel-reward (if (done? state config) ^double (reward-fuel state config) 0.0))))
+     (* ^double weight-fuel-reward ^double (reward-fuel action))))
 
 
 (defrecord Launch [config state]
