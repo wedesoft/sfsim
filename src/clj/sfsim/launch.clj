@@ -61,7 +61,7 @@
    :initial-delta-v 12000.0
    :weight-height-reward 0.1
    :weight-speed-reward 1.0
-   :weight-fuel-reward 10.0
+   :weight-fuel-reward 5.0
    :weight-angle-reward 0.1})
 
 
