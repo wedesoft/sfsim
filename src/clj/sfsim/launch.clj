@@ -465,6 +465,8 @@
       (py. actor load_state_dict (torch/load "actor.pt")))
     (when (.exists (java.io.File. "critic.pt"))
       (py. critic load_state_dict (torch/load "critic.pt")))
+    (when (.exists (java.io.File. "entropy.edn"))
+      (reset! entropy-factor (read-string (slurp "entropy.edn"))))
     (doseq [epoch (range n-epochs)]
            (let [samples (sample-with-advantage-and-critic-target factory actor critic (* batch-size n-batches)
                                                                   batch-size gamma lambda)]
@@ -495,7 +497,8 @@
            (when (= (mod epoch checkpoint) (dec checkpoint))
              (println "Saving models")
              (torch/save (py. actor state_dict) "actor.pt")
-             (torch/save (py. critic state_dict) "critic.pt")))
+             (torch/save (py. critic state_dict) "critic.pt")
+             (spit "entropy.edn" (pr-str @entropy-factor))))
     (System/exit 0)))
 
 
