@@ -3,7 +3,7 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [ ] add license dialog
+  - [X] add license dialog
   - [-] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
     - [ ] gui scaling
   - [ ] launch mfd, reinforcement learning launch physics
@@ -14,7 +14,7 @@
       - [ ] action ambiguity at launch
     - [-] rewards/penalties
       - [ ] transition to Gaussian reward for fine tuning
-      - [ ] dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
+      - [ ] penalise dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
       - [X] visualise thrust
       - [X] does "done?" need to check intersection with a sphere in state space?
     - [ ] simulate propellant weight
