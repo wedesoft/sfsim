@@ -153,7 +153,7 @@
   "Probability ratios for a actions using updated policy and old policy"
   [{:keys [observations logprobs actions]} logprob-of-action]
   (let [updated-logprobs (logprob-of-action observations actions)]
-    (torch/exp (py. (torch/sub updated-logprobs logprobs) sum 1))))
+    (torch/exp (py. (torch/clamp (torch/sub updated-logprobs logprobs) -4.0 4.0) sum 1))))
 
 
 (defn clipped-surrogate-loss

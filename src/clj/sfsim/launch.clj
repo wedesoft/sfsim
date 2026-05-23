@@ -8,7 +8,7 @@
     "Optimize launch trajectory"
     (:gen-class)
     (:require
-      [clojure.math :refer (PI sqrt cos atan2 acos)]
+      [clojure.math :refer (PI sqrt cos sin atan2 acos asin)]
       [fastmath.vector :refer (vec3 mult add sub mag div normalize dot cross)]
       [fastmath.matrix :refer (mulv inverse cols->mat)]
       [libpython-clj2.require :refer (require-python)]
@@ -17,9 +17,9 @@
       [sfsim.quaternion :refer (orthogonal)]
       [sfsim.physics :refer (geographic->vector state-add state-scale runge-kutta gravitational-constant) :as physics]
       [sfsim.atmosphere :refer (temperature-at-height speed-of-sound density-at-height)]
-      [sfsim.aerodynamics :refer (lift drag wind-to-body-system)]
+      [sfsim.aerodynamics :refer (lift drag wind-to-body-system coefficient-of-drag reference-area c-d-0)]
       [sfsim.environment :refer (Environment)]
-      [sfsim.mlp :refer (Critic sgd-optimizer tensor toitem tolist without-gradient entropy-of-distribution)]
+      [sfsim.mlp :refer (Critic adam-optimizer tensor toitem tolist without-gradient entropy-of-distribution)]
       [sfsim.ppo :refer (sample-with-advantage-and-critic-target actor-loss critic-loss)]))
 
 
@@ -57,6 +57,7 @@
    :steps 50
    :max-thrust 2500000.0
    :timeout 900.0
+   :max-climb 600.0
    :max-speed 9000.0
    :weight-height-reward 0.1
    :weight-speed-reward 1.0
@@ -245,7 +246,7 @@
   ([state]
    (truncate? state config))
   ([{:keys [t speed]} {:keys [timeout max-speed]}]
-   (or (>= ^double t ^double timeout) (>= (mag speed) max-speed))))
+   (or (>= ^double t ^double timeout) (>= (mag speed) ^double max-speed))))
 
 
 (defn reward-height
@@ -292,6 +293,43 @@
      (* ^double weight-fuel-reward ^double (reward-fuel action))))
 
 
+(defn speed-limit-at-height
+  "Determine maximum speed possible due to drag"
+  [max-thrust height]
+  (let [density        (density-at-height height)
+        coefficient    (c-d-0 0.0)]
+    (sqrt (/ ^double max-thrust ^double coefficient ^double reference-area 0.5 density))))
+
+
+(defn random-position
+  "Create a random position vector"
+  ([config]
+   (random-position config rand))
+  ([{:keys [radius orbit]} rand-fn]
+   (vec3 (+ ^double radius (* ^double orbit ^double (rand-fn))) 0 0)))
+
+
+(defn random-speed
+  "Create a random speed vector"
+  ([config]
+   (random-speed config rand rand))
+  ([{:keys [max-speed max-climb]} rand-fn1 rand-fn2]
+   (let [speed     (* ^double max-speed ^double (rand-fn1))
+         max-angle (if (> speed ^double max-climb) (asin (/ ^double max-climb speed)) (/ PI 2))
+         angle     (* ^double max-angle ^double (rand-fn2))]
+     (vec3 (* (sin angle) speed) (* (cos angle) speed) 0))))
+
+
+(defn random-state
+  "Create random initial state"
+  [{:keys [max-speed max-thrust radius] :as config}]
+  (let [position  (random-position config)
+        height    (- ^double (mag position) ^double radius)
+        max-speed (min ^double max-speed ^double (speed-limit-at-height max-thrust height))
+        speed     (random-speed (assoc config :max-speed max-speed))]
+    {:position position :speed speed :t 0.0}))
+
+
 (defrecord Launch [config state]
   Environment
   (environment-update [_this input]
@@ -304,6 +342,11 @@
     (truncate? state config))
   (environment-reward [_this input]
     (reward state (action input) config)))
+
+
+(defn launch-factory
+  []
+  (->Launch config (random-state config)))
 
 
 (def ThrustVector
@@ -398,11 +441,6 @@
              (ThrustVector mu sigma))))}))
 
 
-(defn launch-factory
-  []
-  (->Launch config (setup config :latitude 0.0 :longitude 0.0 :height 0.0)))
-
-
 (defn -main [& _args]
   (let [factory            launch-factory
         actor              (LaunchActor 4 64 2)
@@ -421,8 +459,8 @@
         weight-decay       5e-5
         smooth-actor-loss  (atom 0.0)
         smooth-critic-loss (atom 0.0)
-        actor-optimizer    (sgd-optimizer actor lr weight-decay)
-        critic-optimizer   (sgd-optimizer critic lr weight-decay)]
+        actor-optimizer    (adam-optimizer actor lr weight-decay)
+        critic-optimizer   (adam-optimizer critic lr weight-decay)]
     (when (.exists (java.io.File. "actor.pt"))
       (py. actor load_state_dict (torch/load "actor.pt")))
     (when (.exists (java.io.File. "critic.pt"))

@@ -40,6 +40,7 @@
    :steps 1
    :max-thrust 2000000.0
    :timeout 1200.0
+   :max-climb 450.0
    :max-speed 9000.0
    :weight-height-reward 1.0
    :weight-speed-reward 1.0
@@ -335,3 +336,29 @@
        => (roughly-matrix (mat3x3 1 0 0, 0 1 0, 0 0 1) 1e-6)
        (horizon-matrix {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)} (assoc test-config :inclination-target (/ PI 2)))
        => (roughly-matrix (mat3x3 1 0 0, 0 0 -1, 0 1 0) 1e-6))
+
+
+(tabular "Speed limit at height"
+         (let [speed          (speed-limit-at-height (/ (:max-thrust test-config) 3.0) ?height)
+               temperature    (atmosphere/temperature-at-height ?height)
+               speed-of-sound (atmosphere/speed-of-sound temperature)
+               density        (atmosphere/density-at-height ?height)
+               linear-speed   #:sfsim.aerodynamics {:speed speed :alpha 0.0 :beta 0.0}
+               drag           (aerodynamics/drag linear-speed speed-of-sound density 0.0 0.0)]
+           (fact drag => (roughly (/ (:max-thrust test-config) 3.0) 1e+4)))
+         ?height
+         0.0
+         1000.0)
+
+
+(facts "Random position"
+       (random-position test-config (constantly 0.0)) => (vec3 6378000 0 0)
+       (random-position test-config (constantly 1.0)) => (vec3 6538000 0 0))
+
+
+(facts "Random speed"
+       (random-speed test-config (constantly 0.0) (constantly 0.0)) => (vec3 0 0 0)
+       (random-speed test-config (constantly 1.0) (constantly 0.0)) => (vec3 0 9000 0)
+       (random-speed test-config (constantly 0.025) (constantly 1.0)) => (roughly-vector (vec3 225 0 0) 1e-6)
+       (nth (random-speed test-config (constantly 0.1) (constantly 1.0)) 0) => 450.0
+       (mag (random-speed test-config (constantly 0.1) (constantly 1.0))) => (roughly 900.0 1e-6))

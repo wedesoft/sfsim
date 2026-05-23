@@ -127,7 +127,11 @@
        (tolist (probability-ratios {:observations (tensor [[0 0]]) :logprobs (tensor [[0 1]]) :actions (tensor [[0 0]])} use-obs))
        => [0.3678794503211975]
        (tolist (probability-ratios {:observations (tensor [[0 0]]) :logprobs (tensor [[0 0]]) :actions (tensor [[0 1]])} use-action))
-       => [2.7182817459106445])
+       => [2.7182817459106445]
+       (tolist (probability-ratios {:observations (tensor [[20]]) :logprobs (tensor [[-20]]) :actions (tensor [[0]])} use-action))
+       => [54.598148345947266]
+       (tolist (probability-ratios {:observations (tensor [[-20]]) :logprobs (tensor [[20]]) :actions (tensor [[0]])} use-action))
+       => [0.018315639346837997])
 
 
 (facts "Clipped surrogate loss (negative objective)"
