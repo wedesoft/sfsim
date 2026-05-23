@@ -143,7 +143,7 @@ The Blender model can be converted to GLB as follows:
 
 * Sfsim
   * [Sfsim homepage](https://wedesoft.github.io/sfsim/)
-  * [Sfsim Discord](https://discord.gg/e46fAh3D)
+  * [Sfsim Discord](https://discord.gg/EJEE6QNHra)
   * [Sfsim on Steam](https://store.steampowered.com/app/3687560/sfsim/)
   * [Sfsim on IndieDB](https://www.indiedb.com/games/sfsim)
   * [Sfsim on Impress](https://impress.games/press-kit/jan-wedekind/sfsim)
