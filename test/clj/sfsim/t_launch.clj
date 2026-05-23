@@ -1,6 +1,6 @@
 (ns sfsim.t-launch
   (:require
-    [clojure.math :refer (PI atan2 hypot to-radians cos sin sqrt)]
+    [clojure.math :refer (PI atan2 hypot to-radians cos sin sqrt exp)]
     [libpython-clj2.python :refer (py.) :as py]
     [midje.sweet :refer :all]
     [malli.dev.pretty :as pretty]
@@ -30,8 +30,6 @@
 (def test-config
   {:radius 6378000.0
    :orbit 160000.0
-   :orbit-tolerance 100.0
-   :speed-tolerance 5.0
    :inclination-target 0.0
    :ascending true
    :planet-mass 5.9722e+24
@@ -42,10 +40,13 @@
    :timeout 1200.0
    :max-climb 450.0
    :max-speed 9000.0
+   :sigma-height 1000.0
+   :sigma-speed 20.0
    :weight-height-reward 1.0
    :weight-speed-reward 1.0
    :weight-fuel-reward 1.0
-   :weight-angle-reward 1.0})
+   :weight-angle-reward 1.0
+   :weight-orbit-reward 1.0})
 
 
 (facts "Launch rocket"
@@ -269,10 +270,21 @@
        (reward-angle {:speed (vec3 1 0 0) :position (vec3 6384662 0 0)} {:control (vec3 -1 0 0)} test-config) => (roughly -0.5 1e-4))
 
 
+(facts "Reward closeness to orbit"
+       (reward-orbit {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} test-config) => (roughly 1.0 1e-6)
+       (reward-orbit {:position (vec3 6537000 0 0) :speed (vec3 0 7808.140 0)} test-config) => (roughly (exp -1.0) 1e-6)
+       (reward-orbit {:position (vec3 6538000 0 0) :speed (vec3 0 7788.140 0)} test-config) => (roughly (exp -1.0) 1e-4)
+       (reward-orbit {:position (vec3 6537000 0 0) :speed (vec3 0 7788.140 0)} test-config) => (roughly (exp -2.0) 1e-5))
+
+
 (facts "Overall reward function"
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)} test-config)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)}
+               (assoc test-config :weight-orbit-reward 0.0))
        => (roughly 0.0 1e-3)
-       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 1 0)} test-config)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)} test-config)
+       => (roughly 1.0 1e-3)
+       (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 1 0)}
+               (assoc test-config :weight-orbit-reward 0.0))
        => (roughly -1.0 1e-3)
        (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)} test-config)
        => (roughly -1.0 1e-3)

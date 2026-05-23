@@ -8,7 +8,7 @@
     "Optimize launch trajectory"
     (:gen-class)
     (:require
-      [clojure.math :refer (PI sqrt cos sin atan2 acos asin)]
+      [clojure.math :refer (PI sqrt cos sin atan2 acos asin exp)]
       [fastmath.vector :refer (vec3 mult add sub mag div normalize dot cross)]
       [fastmath.matrix :refer (mulv inverse cols->mat)]
       [libpython-clj2.require :refer (require-python)]
@@ -47,8 +47,6 @@
 (def config
   {:radius 6378000.0
    :orbit 160000.0
-   :orbit-tolerance 100.0
-   :speed-tolerance 20.0
    :inclination-target 0.0
    :ascending true
    :planet-mass 5.9742e+24
@@ -59,10 +57,13 @@
    :timeout 900.0
    :max-climb 600.0
    :max-speed 9000.0
-   :weight-height-reward 0.1
+   :sigma-height 1000.0
+   :sigma-speed 100.0
+   :weight-height-reward 0.5
    :weight-speed-reward 1.0
    :weight-fuel-reward 0.001
-   :weight-angle-reward 0.1})
+   :weight-angle-reward 0.1
+   :weight-orbit-reward 10.0})
 
 
 (defn setup
@@ -250,9 +251,9 @@
 
 
 (defn reward-height
-  "Reward for approaching orbital height"
-  [{:keys [position]} {:keys [radius orbit]}]
-  (-> position mag (- ^double radius) (- ^double orbit) (/ ^double orbit) sqr -))
+  "Penalty for deviations from orbit height"
+  [state {:keys [orbit] :as config}]
+  (-> ^double (orbit-deviation state config) (/ ^double orbit) sqr -))
 
 
 (defn reward-speed
@@ -284,11 +285,22 @@
         (- (* relative-density (/ (acos cos-angle) PI)))))))
 
 
+
+(defn reward-orbit
+  "Reward closeness to orbit"
+  [state {:keys [sigma-height sigma-speed] :as config}]
+  (let [orbit-deviation (orbit-deviation state config)
+        speed-deviation (speed-deviation state config)]
+    (exp (- (+ (/ (sqr orbit-deviation) (sqr sigma-height)) (/ (sqr speed-deviation) (sqr sigma-speed)))))))
+
+
 (defn reward
   "Overall reward function"
-  [state action {:keys [weight-height-reward weight-speed-reward weight-fuel-reward weight-angle-reward] :as config}]
+  [state action
+   {:keys [weight-height-reward weight-speed-reward weight-fuel-reward weight-angle-reward weight-orbit-reward] :as config}]
   (+ (* ^double weight-height-reward ^double (reward-height state config))
      (* ^double weight-speed-reward ^double (reward-speed state config))
+     (* ^double weight-orbit-reward ^double (reward-orbit state config))
      (* ^double weight-angle-reward ^double (reward-angle state action config))
      (* ^double weight-fuel-reward ^double (reward-fuel action))))
 
