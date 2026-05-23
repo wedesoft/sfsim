@@ -7,6 +7,7 @@
 (ns sfsim.gui
   (:require
     [clojure.math :refer (to-radians to-degrees)]
+    [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.matrix :as fm]
     [fastmath.vector :as fv]
@@ -787,6 +788,21 @@
                         (assoc-in [:gui ::menu] main-dialog))))))
 
 
+(defn license-dialog
+  [state gui ^long window-width ^long window-height]
+  (nuklear-window
+    gui "License" (quot (- window-width 768) 2) (quot (- window-height (+ (* 28 12) (* 37 1))) 2) 768 (+ (* 28 12) (* 37 1)) :dialog
+    (ignore-nil-> state state
+      (layout-row-dynamic gui (* 24 12) 1)
+      (group gui "license" "License"
+             (layout-row-dynamic gui 24 1)
+             (doseq [line (line-seq (io/reader "LICENSE"))]
+                    (text-label gui line)))
+      (layout-row-dynamic gui 32 1)
+      (when (button-label gui "Close")
+        (assoc-in state [:gui ::menu] main-dialog)))))
+
+
 (def position-data
   {:longitude (edit-data "0.0" 32 :sfsim.gui/filter-float)
    :latitude  (edit-data "0.0" 32 :sfsim.gui/filter-float)
@@ -907,7 +923,7 @@
 (defn main-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 8)) 2) 320 (* 37 8) :dialog
+    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 9)) 2) 320 (* 37 9) :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui 32 1)
                   (when (button-label gui "Location")
@@ -924,6 +940,8 @@
                     (assoc-in state [:gui ::menu] sound-dialog))
                   (when (button-label gui "Resume")
                     (assoc-in state [:input :sfsim.input/menu] nil))
+                  (when (button-label gui "License")
+                    (assoc-in state [:gui ::menu] license-dialog))
                   (when (button-label gui "Quit")
                     (GLFW/glfwSetWindowShouldClose (:window state) true)))))
 
