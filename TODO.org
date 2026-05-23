@@ -6,19 +6,16 @@
   - [-] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
     - [ ] gui scaling
   - [ ] launch mfd, reinforcement learning launch physics
-    - [ ] reduce observation
-      - [ ] observation: height, climb speed, forward speed, sideways speed
-      - [ ] state: position, speed, delta-v, t
-      - [ ] action: up, forward, sideways (defined by inclination of nearest speed vector)
+    - [-] reduce observation
+      - [X] observation: height, climb speed, forward speed, sideways speed
+      - [X] state: position, speed, delta-v, t
+      - [X] action: up, forward, sideways (defined by inclination of nearest speed vector)
       - [ ] action ambiguity at launch
     - [-] rewards/penalties
-      - [ ] reduce reward shaping over time?
+      - [ ] transition to Gaussian reward for fine tuning
       - [ ] dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
-      - [ ] visualise thrust
-      - [ ] does "done?" need to check intersection with a sphere in state space?
-      - [ ] randomisation at start of episode
-        - [ ] thrust variation
-        - [ ] wind shear
+      - [X] visualise thrust
+      - [X] does "done?" need to check intersection with a sphere in state space?
     - [ ] simulate propellant weight
     - [ ] simulate Earth rotation
     - [ ] allow specifying inclination and ascending or descending node
