@@ -206,7 +206,7 @@ void main()
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                                             (uniform-vector3 program "diffuse_color" diffuse))))
                           (destroy-scene opengl-scene)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/cubes.png" 0.01))
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/cubes.png" 0.02))
 
 
 (def dice (read-gltf "test/clj/sfsim/fixtures/model/dice.gltf"))

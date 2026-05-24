@@ -548,5 +548,14 @@
     map2))
 
 
+(defn sign
+  "Compute sign of number"
+  ^double [^double x]
+  (cond
+    (pos? x) 1.0
+    (neg? x) -1.0
+    :else 0.0))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

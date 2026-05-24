@@ -7,6 +7,7 @@
 (ns sfsim.gui
   (:require
     [clojure.math :refer (to-radians to-degrees)]
+    [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.matrix :as fm]
     [fastmath.vector :as fv]
@@ -51,6 +52,7 @@
       NkTextWidthCallbackI
       NkUserFont
       NkUserFontGlyph
+      NkVec2
       Nuklear)
     (org.lwjgl.opengl
       GL11
@@ -416,10 +418,15 @@
 
 
 (defn nuklear-dark-style
-  [gui]
+  [gui scale]
   (let [stack       (MemoryStack/stackPush)
         rgb         (NkColor/malloc ^MemoryStack stack)
-        style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)]
+        nk-vec2     (NkVec2/malloc ^MemoryStack stack)
+        style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)
+        context     (::context gui)
+        style       (.style context)]
+    ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
+    ;; set color scheme
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TEXT (Nuklear/nk_rgb 210 210 210 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_WINDOW (Nuklear/nk_rgb 57 67 71 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_HEADER (Nuklear/nk_rgb 51 51 56 rgb))
@@ -448,7 +455,15 @@
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
-    (Nuklear/nk_style_from_table (::context gui) style-table)
+    (Nuklear/nk_style_from_table context style-table)
+    ;; scale buttons
+    (let [button (.button style)]
+      (.x nk-vec2 (* 2 scale))
+      (.y nk-vec2 (* 2 scale))
+      (.padding button nk-vec2)
+      (.border button scale)
+      (.rounding button (* 4 scale)))
+    ;; pop stack
     (MemoryStack/stackPop)))
 
 
@@ -773,6 +788,21 @@
                         (assoc-in [:gui ::menu] main-dialog))))))
 
 
+(defn license-dialog
+  [state gui ^long window-width ^long window-height]
+  (nuklear-window
+    gui "License" (quot (- window-width 768) 2) (quot (- window-height (+ (* 28 12) (* 37 1))) 2) 768 (+ (* 28 12) (* 37 1)) :dialog
+    (ignore-nil-> state state
+      (layout-row-dynamic gui (* 24 12) 1)
+      (group gui "license" "License"
+             (layout-row-dynamic gui 24 1)
+             (doseq [line (line-seq (io/reader "LICENSE"))]
+                    (text-label gui line)))
+      (layout-row-dynamic gui 32 1)
+      (when (button-label gui "Close")
+        (assoc-in state [:gui ::menu] main-dialog)))))
+
+
 (def position-data
   {:longitude (edit-data "0.0" 32 :sfsim.gui/filter-float)
    :latitude  (edit-data "0.0" 32 :sfsim.gui/filter-float)
@@ -893,7 +923,7 @@
 (defn main-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 8)) 2) 320 (* 37 8) :dialog
+    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 9)) 2) 320 (* 37 9) :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui 32 1)
                   (when (button-label gui "Location")
@@ -910,6 +940,8 @@
                     (assoc-in state [:gui ::menu] sound-dialog))
                   (when (button-label gui "Resume")
                     (assoc-in state [:input :sfsim.input/menu] nil))
+                  (when (button-label gui "License")
+                    (assoc-in state [:gui ::menu] license-dialog))
                   (when (button-label gui "Quit")
                     (GLFW/glfwSetWindowShouldClose (:window state) true)))))
 

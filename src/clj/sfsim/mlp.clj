@@ -1,3 +1,9 @@
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.mlp
     "Multilayer perceptrons for actor and critic of reinforcement learning"
     ; (:require [libpython-clj2.require :refer (require-python)]
@@ -12,6 +18,10 @@
                 '[torch.nn.functional :as F]
                 '[torch.optim :as optim]
                 '[torch.distributions :refer (Beta)])
+
+
+(set! *unchecked-math* :warn-on-boxed)
+(set! *warn-on-reflection* true)
 
 
 (defmacro without-gradient
@@ -111,6 +121,12 @@
   (nn/MSELoss))
 
 
+(defn sgd-optimizer
+  "Stochastic Gradient Descent optimizer"
+  [model learning-rate weight-decay]
+  (optim/SGD (py. model parameters) :lr learning-rate :weight_decay weight-decay))
+
+
 (defn adam-optimizer
   "Adam optimizer"
   [model learning-rate weight-decay]
@@ -141,8 +157,7 @@
   (fn indeterministic-act-with-actor [observation]
       (without-gradient
         (let [dist    (py. actor get_dist (tensor observation))
-              sample  (py. dist sample)
-              action  (torch/clamp sample 0.0 1.0)
+              action  (py. dist sample)
               logprob (py. dist log_prob action)]
           {:action (tolist action) :logprob (tolist logprob)}))))
 
@@ -160,5 +175,8 @@
   [actor observation]
   (let [dist (py. actor get_dist observation)]
     (py. dist entropy)))
+
+(set! *warn-on-reflection* false)
+(set! *unchecked-math* false)
 
 )

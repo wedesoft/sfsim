@@ -491,21 +491,21 @@
 
 
 (defn lift
-  "Compute lift for given speed in body system"
+  "Compute lift for given speed in wind system"
   ^double [{::keys [^double alpha ^double beta ^double speed]} ^Vec3 rotation ^double speed-of-sound ^double density]
   (* (+ (coefficient-of-lift (/ speed speed-of-sound) alpha beta) (* ^double C-l-q ^double (rotation 1) (cos alpha) (cos beta)))
      (dynamic-pressure density speed) ^double reference-area))
 
 
 (defn drag
-  "Compute drag for given speed in body system"
+  "Compute drag for given speed in wind system"
   [{::keys [^double alpha ^double beta ^double speed]} speed-of-sound density gear air-brake]
   (* ^double (coefficient-of-drag (/ speed ^double speed-of-sound) alpha beta gear air-brake)
      (dynamic-pressure density speed) ^double reference-area))
 
 
 (defn side-force
-  "Compute side-force for given speed in body system"
+  "Compute side-force for given speed wind body system"
   (^double [{::keys [^double alpha ^double beta ^double speed]} ^double _speed-of-sound ^double density]
    (* (coefficient-of-side-force alpha beta) (dynamic-pressure density speed) ^double reference-area))
   (^double [{::keys [^double alpha ^double beta ^double speed]} ^Vec3 control ^double speed-of-sound ^double density]

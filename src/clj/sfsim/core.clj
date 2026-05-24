@@ -160,7 +160,7 @@
     (jolt/set-friction body 0.8)
     (jolt/set-restitution body 0.25)
     (jolt/optimize-broad-phase)
-    (gui/nuklear-dark-style gui)
+    (gui/nuklear-dark-style gui 1)
     (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @frame-counter (count @recording))))
       (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @state :gui :sfsim.gui/fullscreen))
         (let [fullscreen     (-> @state :input :sfsim.input/fullscreen)

@@ -104,6 +104,8 @@
 (facts "Coefficient of drag"
        (coefficient-of-drag 0.6 (to-radians 0.0))
        => 0.04741
+       (coefficient-of-drag 0.6 (to-radians 180.0))
+       => 0.04741
        (coefficient-of-drag 0.6 (to-radians 3.0))
        => (roughly (+ 0.04741 (/ (sqr (* 2.7825 (to-radians 3.0))) PI 0.9859 aspect-ratio)) 1e-2)
        (coefficient-of-drag 0.6 (to-radians 90.0)) => (roughly 1.1 1e-6)
@@ -247,9 +249,9 @@
 
 (facts "Compute drag for given speed in body system"
        (with-redefs [aerodynamics/coefficient-of-drag coefficient-of-drag-mock]
-         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.225 0.25 0.4)
+         (drag {:sfsim.aerodynamics/alpha 0.0 :sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/speed 160} 320.0 1.225 0.25 0.4)
          => (roughly (* 0.047475 0.5 1.225 (* 160 160) reference-area) 1e-6)
-         (drag (linear-speed-in-body-system (q/->Quaternion 1 0 0 0) (vec3 160 0 0)) 320.0 1.0 0.25 0.4)
+         (drag {:sfsim.aerodynamics/alpha 0.0 :sfsim.aerodynamics/beta 0.0 :sfsim.aerodynamics/speed 160} 320.0 1.0 0.25 0.4)
          => (roughly (* 0.047475 0.5 1.0 (* 160 160) reference-area) 1e-6)))
 
 

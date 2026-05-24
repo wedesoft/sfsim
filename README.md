@@ -13,7 +13,7 @@ See [sfsim homepage][1] for more details.
 * Install [JDK 26 Deb for Linux](https://www.oracle.com/uk/java/technologies/downloads/) or [JDK 25 MSI for Windows](https://adoptium.net/temurin/releases)
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
-* Install [Python 3.13](https://www.python.org/) or later if you are using GNU/Linux
+* Install [Python 3.13](https://www.python.org/) if you are using GNU/Linux
 * Install [PyTorch](https://pytorch.org/) if you are using GNU/Linux (couldn't get the Pytorch to work with Clojure under Windows)
   * On the CI it is installed like this: `pip install --index-url https://download.pytorch.org/whl/cpu torch numpy`
   * I recommend to install [uv](https://docs.astral.sh/uv/) and install PyTorch using `uv sync` (pyproject.toml is provided)
@@ -143,10 +143,10 @@ The Blender model can be converted to GLB as follows:
 
 * Sfsim
   * [Sfsim homepage](https://wedesoft.github.io/sfsim/)
+  * [Sfsim Discord](https://discord.gg/EJEE6QNHra)
   * [Sfsim on Steam](https://store.steampowered.com/app/3687560/sfsim/)
   * [Sfsim on IndieDB](https://www.indiedb.com/games/sfsim)
   * [Sfsim on Impress](https://impress.games/press-kit/jan-wedekind/sfsim)
-  * [Sfsim on IndieLoot](https://indieloot.io/games/sfsim)
   * [Sfsim on Github](https://github.com/wedesoft/sfsim)
   * [Sfsim on Gitlab](https://gitlab.com/wedesoft/sfsim)
   * [Sfsim on Bitbucket](https://bitbucket.org/wedesoft/sfsim/)
@@ -169,6 +169,7 @@ The Blender model can be converted to GLB as follows:
   * [Alliance Space Guard](https://alliancespaceguard.com/)
   * [Pioneer Space Sim](https://pioneerspacesim.net/)
   * [Cosmorama Space Flight Simulator](https://www.cosmorama.com/space-flight-sim/)
+  * [Another Space Simulator](https://nojasm.itch.io/another-space-simulator)
 * Engines
   * [Jolt Physics](https://github.com/jrouwe/JoltPhysics)
   * [Project Chrono physics engine](https://projectchrono.org/)
@@ -190,6 +191,8 @@ The Blender model can be converted to GLB as follows:
   * [Hull: Fundamentals of Airplane Flight Mechanics](https://aerostarsolutions.wordpress.com/wp-content/uploads/2011/10/fundmentals_of_airplane_flight_mechanics.pdf)
 * Webpages
   * [NVidia article on atmospheric scattering](https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering)
+  * [M. Heckel: On Rendering the Sky, Sunsets, and Planets](https://blog.maximeheckel.com/posts/on-rendering-the-sky-sunsets-and-planets/)
+  * [Geospatial Rendering in Three.js](https://github.com/takram-design-engineering/three-geospatial/)
   * [Cascaded Shadow Maps](https://web.archive.org/web/20220526080455/https://dev.theomader.com/cascaded-shadow-mapping-1/)
   * [Shadow mapping improvements](http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/)
   * [improved Perlin noise](https://adrianb.io/2014/08/09/perlinnoise.html)

@@ -1,3 +1,9 @@
+;; Copyright (C) 2026 Jan Wedekind <jan@wedesoft.de>
+;; SPDX-License-Identifier: LGPL-3.0-or-later OR EPL-1.0+
+;;
+;; This source code is licensed under the Eclipse Public License v1.0
+;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
+
 (ns sfsim.ppo
     "Environment sampling and loss functions for Proximal Policy Optimization (PPO)"
     (:require
@@ -149,7 +155,7 @@
   "Probability ratios for a actions using updated policy and old policy"
   [{:keys [observations logprobs actions]} logprob-of-action]
   (let [updated-logprobs (logprob-of-action observations actions)]
-    (torch/exp (py. (torch/sub updated-logprobs logprobs) sum 1))))
+    (torch/exp (py. (torch/clamp (torch/sub updated-logprobs logprobs) -4.0 4.0) sum 1))))
 
 
 (defn clipped-surrogate-loss

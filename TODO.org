@@ -1,6 +1,61 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
+* TODO [#A] mvp game loop
+  - Note taken on [2026-05-09 Sa 21:25] \\
+    focus on launch, orbit and reentry
+  - [-] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
+    - [ ] gui scaling
+  - [ ] launch mfd, reinforcement learning launch physics
+    - [-] reduce observation
+      - [X] observation: height, climb speed, forward speed, sideways speed
+      - [X] state: position, speed, delta-v, t
+      - [X] action: up, forward, sideways (defined by inclination of nearest speed vector)
+      - [ ] action ambiguity at launch
+    - [-] rewards/penalties
+      - [ ] transition to Gaussian reward for fine tuning
+      - [ ] penalise dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
+      - [X] visualise thrust
+      - [X] does "done?" need to check intersection with a sphere in state space?
+    - [ ] simulate propellant weight
+    - [ ] simulate Earth rotation
+    - [ ] allow specifying inclination and ascending or descending node
+  - [ ] reentry mfd
+    - [ ] PPO agent outputs high level guidance (bank angle and angle of attack)
+    - [ ] use down-range and cross-range, ad coriolis and centrifugal acceleration to observations?
+    - [ ] use velocity, flight path angle, altitude
+    calculate distance heading in ECEF system and provide airspeed to network?
+  - [ ] runway with lights and glide slope indicator
+  - [ ] fuel consumption
+  - [ ] time lapse
+  - [ ] final entry window and heading alignment cylinder
+  - [ ] g-meter, wing stress
+  - [ ] map mfd (show cross track error and target loc, vacuum landing site (intersection with surface), base mfd
+  - [ ] deorbit mfd
+  - [ ] heat display
+  - [ ] ILS
+  - [ ] yaw pitch roll rates
+  - [ ] attitude autopilot with roll reversal, angle-of-attack hold
+  - [ ] f-35 style hud for now (3d cockpit later)
+  - [ ] artificial horizon (speed, altitude, radar alt, sink rate)
+  - [ ] ils
+  - [ ] save/load game
+  - [ ] reentry flame
+  - [ ] thrust vectoring
 * TODO [#A] spacecraft simulation                                      :physics:
+  - Note taken on [2026-05-07 Do 23:45] \\
+    def stable_log_det(z):
+        r = torch.norm(z, dim=-1, keepdim=True)
+        # 1. Stable ln(1 - tanh^2 r)
+        # This prevents the "huge negative" caused by log(0)
+        log_radial_squash = 2.0 * (math.log(2.0) - r - torch.nn.functional.softplus(-2.0 * r))
+        # 2. Stable ln(tanh(r) / r)
+        # Using Taylor expansion for small r to avoid 0/0
+        log_surface_area = torch.where(
+            r < 1e-3,
+            - (r**2) / 3.0,
+            torch.log(torch.tanh(r) + 1e-8) - torch.log(r + 1e-8)
+        )
+        return 2.0 * log_surface_area + log_radial_squash
   - Note taken on [2026-03-21 Sa 20:56] \\
     local pressure C_p = C_p,s sin^2 \theta where C_p,s is stagnation point pressure and \theta is surface inclination angle
     convective heating at stagnation point: q_c,s = k \rho^N1 V^N2, N1=0.5, N2=3, k=1.83e-4/sqrt(R_n), R_n is nose radius
@@ -50,42 +105,25 @@
       [[https://news.ycombinator.com/item?id=45145794]]
     - [[https://www.youtube.com/watch?v=1oyCzT6sB_4][Lockheed Martin F-35 Lightning II Stealth Fighter Cockpit Demonstrator Hands-On]]
     - nominal angular RCS accelerations according to Gemini: 1 degree for roll and pitch, 2 degrees per second square for yaw
-  - [ ] reinforcement learning launch physics
-    - [ ] terminal rewards
-      - [ ] terminal reward for altitude (160km)
-      - [ ] terminal reward for good velocity vector (circular orbit, correct inclination)
-    - [ ] shaping rewards
-      - [ ] reward for increasing energy
-      - [ ] small reward for inclination alignment early
-    - [ ] penalty
-      - [ ] exceeding maxq (lambda * (max(0, q - qlimit)))
-      - [ ] fuel consumption
-      - [ ] angle of attack in atmosphere (lift?)
-    - [ ] simulate propellant weight
   - [ ] schemas for model, planet, and atmosphere geometry renderer
-  - [ ] reentry physics
-    - [ ] Can still use small simulation steps but large control steps
+  - [-] reentry physics
+    - [X] Can still use small simulation steps but large control steps
     - [ ] Start state curriculum: start with training runs near the landing site
     - [ ] Reward agent for following a reference energy profile (potential plus kinetic energy)
-    - [ ] Augmentation using symmetric training data to prevent a preferred side
-    - [-] controlled reentry should be possible
-      - [X] add aerodynamics tests for control authority (pitch rate)
-      - [ ] get new AoA vs speed profile or optimize AoA as well
-      - [ ] add pitch up moment at high speed (and positive angle of attack)
-      - [ ] add moment counteracting roll at higher AoA and high speed
-      - [ ] add aerodynamics tests for trajectory (bank angle to control vertical lift component, tolerable g-forces and heat)
     - [ ] reentry flame
       - [[https://www.shadertoy.com/view/XX3fDH]]
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
-    - [ ] look at instruments of X-Plane space shuttle and Orbiter 2024
   - [X] increase start distance of audio volume falloff
   - [X] use compact formatting for text
+  - [ ] out of bounds exception when exceeding speed of mach 30
   - [ ] use 0.5 threshold for thrusters
   - [ ] full testing of saving/loading configs and retrieving values
   - [ ] scale menu according to screen resolution
   - [ ] add video resolution and fullscreen/borderless/window options using glfwGetVideoModes
   - [ ] add graphics quality options
   - [ ] key to secure main engine
+  - [ ] cockpit warnings for heat
+  - [ ] cockpit warning for wing stress
   - [X] hide mouse cursor
   - [ ] show radar altitude
   - [ ] the camera is sometimes stuck in the wrong direction when the shuttle returns to Earth
@@ -143,7 +181,9 @@
     [[https://pixabay.com/sound-effects/film-special-effects-car-brake-325519/]]
     [[https://pixabay.com/sound-effects/film-special-effects-breaking-the-sound-barrier-77353/]]
   - [ ] beep-beep sound, paraglider audio?
-  - [ ] play different game music depending on situation
+  - [ ] ambient sounds (ventilation unit, hum of fan)
+  - [ ] thrusters sounds, gear sounds when inside space craft
+  - [X] play different game music depending on situation
   - [ ] event-based radio (triggers as in Operation Flashpoint)
 * TODO [#C] 3D cockpit                                               :interface:
   - Note taken on [2025-11-19 Mi 19:49] \\
@@ -217,12 +257,19 @@
 * TODO [#C] add moon                                                   :scenery:
   - [ ] moon base, lights
   - [ ] rotating Moon coordinate system, handle ground collisions
+  - [ ] dust on Moon behaves differently
   - [ ] how to switch speed display (Moon orbit, Moon surface)
   - [ ] accelerated coordinate system with sun gravitation?
 * TODO [#C] add space station                                          :scenery:
 ** TODO space station model, station lights
 ** TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
 * TODO [#C] marketing/progressing project                            :marketing:
+  - Note taken on [2026-04-30 Do 21:42] \\
+    [[https://www.gdcvault.com/play/1027731/Game-Demos-Done][Game demos done right]]
+  - Note taken on [2026-04-30 Do 21:41] \\
+    [[https://glitch.fun/publishers/release_dates][best release time]]
+  - Note taken on [2026-04-30 Do 21:37] \\
+    [[https://www.reddit.com/r/gamedev/comments/1s6x2m7/what_ive_learned_from_playtesting_22_indie_games/][What I've learned from playtesting 22+ indie games]]
 ** TODO contact gamespress
 ** TODO release demo
 ** TODO targeted game description:
@@ -264,12 +311,18 @@
 ** TODO fix problem with resolution of neighbouring tiles in planetary cubemap
    problem with neighbouring resolution levels being to different (maybe use more than two possibilities for edge tessellation?)
 ** TODO improve rendering of sun (see s2016-pbs-frostbite-sky-clouds-new.pdf)
+   [[https://blog.maximeheckel.com/posts/on-rendering-the-sky-sunsets-and-planets/]]
+   [[https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering]]
+   [[https://github.com/takram-design-engineering/three-geospatial/tree/main/packages/atmosphere]]
 ** TODO how to render water, waves, [[https://www.shadertoy.com/view/Ms2SD1][waves]]
 ** TODO increase ambient light (surface radiance)
 ** TODO arycama: limit darkness of cloud shadow (exponential approaching a base level)
 ** TODO add earth light
 ** TODO add moon light
-** TODO stars, [[https://www.shadertoy.com/view/ttcSD8][volumetric clouds]]
+** TODO stars
+** TODO [[https://www.shadertoy.com/view/ttcSD8][volumetric clouds]]
+   - [[https://www.reddit.com/r/opengl/comments/1jqiwkl/comment/mlbr45o/]]
+   - [[https://gist.github.com/pixelsnafu/e3904c49cbd8ff52cb53d95ceda3980e]]
 ** TODO uniform random offsets for Worley noises to generate different cloud cover for each game
 *** TODO point sprites for stars, atmospheric flicker using sprite arrays
 *** TODO Skydome: counter-clockwise front face (GL11/glFrontFace GL11/GL\_CCW) (configuration object)
@@ -302,6 +355,11 @@
     - [ ] difficulty spikes
     - [ ] clear objectives
     - [ ] camera problems
+  - [ ] Crash
+    - [ ] bent hulk with scorched textures
+    - [ ] explosion (expands fast in space, fire in atmosphere)
+    - [ ] detach parts if force passes threshold)
+  - [ ] use dtype-next instead of aget, aset
   - [ ] borderless fullscreen support
   - [X] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] configurable key controls
@@ -332,3 +390,5 @@
     - [ ] burning up
     - [ ] wing stress
   - [ ] free camera (move around camera freely)
+  - [ ] eclipse
+  - [ ] weather
