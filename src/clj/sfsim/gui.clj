@@ -1019,9 +1019,10 @@
 (defn location-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) :dialog
+    gui "Location" (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ title-height (* widget-height 4)))) 2)
+    (scale gui 320) (scale gui (+ title-height (* widget-height 4))) :dialog
     (ignore-nil-> state state
-                  (layout-row-dynamic gui 32 2)
+                  (layout-row-dynamic gui (scale gui row-height) 2)
                   (text-label gui "Longitude (East)")
                   (tabbing gui state (edit-field gui (:longitude position-data)) 0 3)
                   (text-label gui "Latitude (North)")
