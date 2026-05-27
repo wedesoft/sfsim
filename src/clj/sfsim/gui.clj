@@ -210,8 +210,8 @@
 
 (defn make-nuklear-gui
   "Create a hashmap with required GUI objects"
-  {:malli/schema [:=> [:cat :some :int] :some]}
-  [font buffer-initial-size]
+  {:malli/schema [:=> [:cat :some :int :double] :some]}
+  [font buffer-initial-size scale]
   (let [max-vertex-buffer (* 512 1024)
         max-index-buffer  (* 128 1024)
         allocator         (make-allocator)
@@ -225,12 +225,20 @@
     (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
     {::allocator     allocator
      ::context       context
+     ::scale         scale
      ::program       program
      ::vao           vao
      ::vertex-layout vertex-layout
      ::null-tex      null-texture
      ::config        config
      ::cmds          cmds}))
+
+
+(defn scale
+  "Scale a value"
+  {:malli/schema [:=> [:cat :some :int] :double]}
+  [{::keys [scale]} value]
+  (* ^long value ^double scale))
 
 
 (defn render-nuklear-gui
@@ -420,7 +428,7 @@
 
 
 (defn nuklear-dark-style
-  [gui scale]
+  [gui]
   (let [stack       (MemoryStack/stackPush)
         rgb         (NkColor/malloc ^MemoryStack stack)
         nk-vec2     (NkVec2/malloc ^MemoryStack stack)
@@ -463,65 +471,65 @@
     ;;
     ;; default buttons
     (let [button (.button style)]
-      (.x nk-vec2 (* 2 ^double scale))
-      (.y nk-vec2 (* 2 ^double scale))
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
       (.padding button nk-vec2)
-      (.border button scale)
-      (.rounding button (* 4 ^double scale)))
+      (.border button (scale gui 1))
+      (.rounding button (scale gui 4)))
     ;; contextual button
     (let [button (.contextual_button style)]
-      (.x nk-vec2 (* 2 ^double scale))
-      (.y nk-vec2 (* 2 ^double scale))
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
       (.padding button nk-vec2))
     ;; menu button
     (let [button (.menu_button style)]
-      (.x nk-vec2 (* 2 ^double scale))
-      (.y nk-vec2 (* 2 ^double scale))
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
       (.padding button nk-vec2)
-      (.rounding button scale))
+      (.rounding button(scale gui 1)))
     ;; checkbox toggle
     (let [toggle (.checkbox style)]
-      (.x nk-vec2 (* 2 ^double scale))
-      (.y nk-vec2 (* 2 ^double scale))
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
       (.padding toggle nk-vec2)
-      (.spacing toggle (* 4 ^double scale)))
+      (.spacing toggle (scale gui 4)))
     ;; option toggle
     (let [toggle (.option style)]
-      (.x nk-vec2 (* 3 ^double scale))
-      (.y nk-vec2 (* 3 ^double scale))
+      (.x nk-vec2 (scale gui 3))
+      (.y nk-vec2 (scale gui 3))
       (.padding toggle nk-vec2)
-      (.spacing toggle (* 4 ^double scale)))
+      (.spacing toggle (scale gui 4)))
     ;; selectable
     (let [select (.selectable style)]
-      (.x nk-vec2 (* 2 ^double scale))
-      (.y nk-vec2 (* 2 ^double scale))
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
       (.padding select nk-vec2)
       (.image_padding select nk-vec2))
     ;; slider
     (let [slider (.slider style)]
-      (.x nk-vec2 (* 16 ^double scale))
-      (.y nk-vec2 (* 16 ^double scale))
+      (.x nk-vec2 (scale gui 16))
+      (.y nk-vec2 (scale gui 16))
       (.cursor_size slider nk-vec2)
-      (.x nk-vec2 (* 2 ^double scale))
-      (.y nk-vec2 (* 2 ^double scale))
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
       (.padding slider nk-vec2)
       (.spacing slider nk-vec2)
-      (.bar_height slider (* 4 ^double scale)))
+      (.bar_height slider (scale gui 4)))
     ;; slider buttons
     (doseq [button [(.inc_button (.slider style))
                     (.dec_button (.slider style))]]
-           (.border ^NkStyleButton button scale))
+           (.border ^NkStyleButton button(scale gui 1)))
     ;; knob
     (let [knob (.knob style)]
-      (.knob_border knob scale)
-      (.x nk-vec2 (* 2 ^double scale))
-      (.y nk-vec2 (* 2 ^double scale))
+      (.knob_border knob(scale gui 1))
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
       (.padding knob nk-vec2)
-      (.cursor_width knob (* 2 ^double scale)))
+      (.cursor_width knob (scale gui 2)))
     ;; progress
     (let [prog (.progress style)]
-      (.x nk-vec2 (* 4 ^double scale))
-      (.y nk-vec2 (* 4 ^double scale))
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
       (.padding prog nk-vec2))
     ;; scrollbars
     (doseq [_scroll [(.scrollh style) (.scrollv style)]])
@@ -529,78 +537,78 @@
     (doseq [scroll [(.scrollh style) (.scrollv style)]]
            (doseq [button [(.inc_button ^NkStyleScrollbar scroll)
                            (.dec_button ^NkStyleScrollbar scroll)]]
-                  (.border ^NkStyleButton button scale)))
+                  (.border ^NkStyleButton button(scale gui 1))))
     ;; edit
     (let [edit (.edit style)]
-      (.x nk-vec2 (* 10 ^double scale))
-      (.y nk-vec2 (* 10 ^double scale))
+      (.x nk-vec2 (scale gui 10))
+      (.y nk-vec2 (scale gui 10))
       (.scrollbar_size edit nk-vec2)
       (let [_scroll (.scrollbar edit)])
-      (.x nk-vec2 (* 4 ^double scale))
-      (.y nk-vec2 (* 4 ^double scale))
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
       (.padding edit nk-vec2)
-      (.row_padding edit (* 2 ^double scale))
-      (.cursor_size edit (* 4 ^double scale))
-      (.border edit scale))
+      (.row_padding edit (scale gui 2))
+      (.cursor_size edit (scale gui 4))
+      (.border edit(scale gui 1)))
     ;; property
     (let [property (.property style)]
-      (.x nk-vec2 (* 4 ^double scale))
-      (.y nk-vec2 (* 4 ^double scale))
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
       (.padding property nk-vec2)
-      (.border property scale)
-      (.rounding property (* 10 ^double scale)))
+      (.border property(scale gui 1))
+      (.rounding property (scale gui 10)))
     ;; property buttons
     (doseq [_button [(.inc_button (.property style))
                      (.dec_button (.property style))]])
     ;; property edit
     (let [edit (.edit (.property style))]
-      (.cursor_size edit (* 8 ^double scale)))
+      (.cursor_size edit (scale gui 8)))
     ;; chart
     (let [chart (.chart style)]
-      (.x nk-vec2 (* 4 ^double scale))
-      (.y nk-vec2 (* 4 ^double scale))
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
       (.padding chart nk-vec2))
     ;; combo
     (let [combo (.combo style)]
-      (.x nk-vec2 (* 4 ^double scale))
-      (.y nk-vec2 (* 4 ^double scale))
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
       (.content_padding combo nk-vec2)
-      (.x nk-vec2 (* 0 ^double scale))
-      (.y nk-vec2 (* 4 ^double scale))
+      (.x nk-vec2 (scale gui 0))
+      (.y nk-vec2 (scale gui 4))
       (.button_padding combo nk-vec2)
-      (.x nk-vec2 (* 4 ^double scale))
-      (.y nk-vec2 (* 0 ^double scale))
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 0))
       (.spacing combo nk-vec2)
-      (.border combo scale))
+      (.border combo(scale gui 1)))
     ;; combo button
     (let [button (.button (.combo style))]
-      (.x nk-vec2 (* 2 ^double scale))
-      (.y nk-vec2 (* 2 ^double scale))
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
       (.padding button nk-vec2))
     ;; tab
     (let [tab (.tab style)]
-      (.x nk-vec2 (* 4 ^double scale))
-      (.y nk-vec2 (* 4 ^double scale))
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
       (.padding tab nk-vec2)
       (.spacing tab nk-vec2)
-      (.indent tab (* 10 ^double scale))
-      (.border tab scale))
+      (.indent tab (scale gui 10))
+      (.border tab(scale gui 1)))
     ;; tab button
     (doseq [button [(.tab_minimize_button (.tab style))
                     (.tab_maximize_button (.tab style))]]
-           (.x nk-vec2 (* 2 ^double scale))
-           (.y nk-vec2 (* 2 ^double scale))
+           (.x nk-vec2 (scale gui 2))
+           (.y nk-vec2 (scale gui 2))
            (.padding ^NkStyleButton button nk-vec2))
     ;; node button
     (doseq [button [(.node_minimize_button (.tab style))
                     (.node_maximize_button (.tab style))]]
-           (.x nk-vec2 (* 2 ^double scale))
-           (.y nk-vec2 (* 2 ^double scale))
+           (.x nk-vec2 (scale gui 2))
+           (.y nk-vec2 (scale gui 2))
            (.padding ^NkStyleButton button nk-vec2))
     ;; window header
     (let [header (.header (.window style))]
-           (.x nk-vec2 (* 4 ^double scale))
-           (.y nk-vec2 (* 4 ^double scale))
+           (.x nk-vec2 (scale gui 4))
+           (.y nk-vec2 (scale gui 4))
            (.label_padding header nk-vec2)
            (.padding header nk-vec2))
     ;; window header close button
@@ -609,25 +617,25 @@
     (let [_button (.minimize_button (.header (.window style)))])
     ;; window
     (let [win (.window style)]
-      (.x nk-vec2 (* 4 ^double scale))
-      (.y nk-vec2 (* 4 ^double scale))
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
       (.spacing win nk-vec2)
-      (.x nk-vec2 (* 10 ^double scale))
-      (.y nk-vec2 (* 10 ^double scale))
+      (.x nk-vec2 (scale gui 10))
+      (.y nk-vec2 (scale gui 10))
       (.scrollbar_size win nk-vec2)
-      (.x nk-vec2 (* 64 ^double scale))
-      (.y nk-vec2 (* 64 ^double scale))
+      (.x nk-vec2 (scale gui 64))
+      (.y nk-vec2 (scale gui 64))
       (.min_size win nk-vec2)
-      (.combo_border win scale)
-      (.contextual_border win scale)
-      (.menu_border win scale)
-      (.group_border win scale)
-      (.tooltip_border win scale)
-      (.popup_border win scale)
-      (.border win (* 2 ^double scale))
-      (.min_row_height_padding win (* 8 ^double scale))
-      (.x nk-vec2 (* 4 ^double scale))
-      (.y nk-vec2 (* 4 ^double scale))
+      (.combo_border win(scale gui 1))
+      (.contextual_border win(scale gui 1))
+      (.menu_border win(scale gui 1))
+      (.group_border win(scale gui 1))
+      (.tooltip_border win(scale gui 1))
+      (.popup_border win(scale gui 1))
+      (.border win (scale gui 2))
+      (.min_row_height_padding win (scale gui 8))
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
       (.padding win nk-vec2)
       (.group_padding win nk-vec2)
       (.popup_padding win nk-vec2)
