@@ -918,13 +918,15 @@
   [state gui ^long window-width ^long window-height]
   (let [mappings (invert-map (get-in state [:input :sfsim.input/mappings :sfsim.input/keyboard]))]
     (nuklear-window
-      gui "Keyboard" (quot (- window-width 480) 2) (quot (- window-height (* 37 11)) 2) 480 (* 37 11) :dialog
+      gui "Keyboard"
+      (quot (- window-width (scale gui 480)) 2) (quot (- window-height (scale gui (+ title-height (* text-height 10) widget-height padding))) 2)
+      (scale gui 480) (scale gui (+ title-height (* text-height 10) widget-height padding)) :dialog
       (ignore-nil-> state state
-                    (layout-row-dynamic gui (* 32 10) 1)
+                    (layout-row-dynamic gui (scale gui (* text-height 10)) 1)
                     (group gui "keyboard" "Keyboard"
-                           (layout-row-dynamic gui 32 1)
+                           (layout-row-dynamic gui (scale gui text-row-height) 1)
                            (text-label gui "Note that joystick overrides keyboard commands!")
-                           (layout-row-dynamic gui 32 2)
+                           (layout-row-dynamic gui (scale gui text-row-height) 2)
                            (doseq [[control-key control-name]
                                    [[:sfsim.input/menu                            "Toggle menu"             ]
                                     ["Alt-Return"                                 "Toggle fullscreen"       ]
@@ -955,7 +957,7 @@
                                     [:sfsim.input/camera-reset                    "Reset camera"]]]
                                   (text-label gui control-name)
                                   (text-label gui (if (keyword? control-key) (get-key-name (control-key mappings)) control-key))))
-                    (layout-row-dynamic gui 32 1)
+                    (layout-row-dynamic gui (scale gui row-height) 1)
                     (when (button-label gui "Close")
                       (assoc-in state [:gui ::menu] main-dialog))))))
 
@@ -991,7 +993,7 @@
     (ignore-nil-> state state
       (layout-row-dynamic gui (scale gui (* text-height 12)) 1)
       (group gui "license" "License"
-             (layout-row-dynamic gui (scale gui text-height) 1)
+             (layout-row-dynamic gui (scale gui text-row-height) 1)
              (doseq [line (line-seq (io/reader "LICENSE"))]
                     (text-label gui line)))
       (layout-row-dynamic gui (scale gui row-height) 1)
