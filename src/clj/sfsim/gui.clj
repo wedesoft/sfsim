@@ -1109,9 +1109,12 @@
 (defn main-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 9)) 2) 320 (* 37 9) :dialog
+    gui (format "sfsim %s" version)
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (* (scale gui 37) 9)) 2)
+    (scale gui 320) (* (scale gui 37) 9)
+    :dialog
     (ignore-nil-> state state
-                  (layout-row-dynamic gui 32 1)
+                  (layout-row-dynamic gui (scale gui 32) 1)
                   (when (button-label gui "Location")
                     (location-dialog-set position-data state)
                     (assoc-in state [:gui ::menu] location-dialog))
