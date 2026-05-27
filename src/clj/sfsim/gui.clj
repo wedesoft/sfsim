@@ -160,9 +160,9 @@
 (def title-height 42)
 (def widget-height 38)
 (def padding 4)
-(def row-height (- widget-height padding))
+(def row-height (- ^long widget-height ^long padding))
 (def text-height 24)
-(def text-row-height (- text-height padding))
+(def text-row-height (- ^long text-height ^long padding))
 
 
 (defn make-gui-config
@@ -244,9 +244,8 @@
 
 (defn scale
   "Scale a value"
-  {:malli/schema [:=> [:cat :some :int] :double]}
-  [{::keys [scale]} value]
-  (* ^long value ^double scale))
+  ^double [{::keys [scale]} ^long value]
+  (* value ^double scale))
 
 
 (defn render-nuklear-gui
@@ -822,7 +821,7 @@
   [state gui sensor-type last-event text control sensor-name prompt]
   (let [[device sensor] (get-joystick-sensor-for-mapping (-> state :input :sfsim.input/mappings) sensor-type control)]
     (layout-row
-      gui 32 4
+      gui (scale gui row-height) 4
       (ignore-nil-> state state
                     (layout-row-push gui 0.2)
                     (text-label gui text)
@@ -864,9 +863,10 @@
 (defn joystick-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 11)) 2) 640 (* 37 11) :dialog
+    gui "Joystick" (quot (- window-width (scale gui 640)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 11) ^long padding))) 2)
+    (scale gui 640) (scale gui (+ ^long title-height (* ^long widget-height 11) ^long padding)) :dialog
     (ignore-nil-> state state
-                  (layout-row-dynamic gui (* 32 10) 1)
+                  (layout-row-dynamic gui (scale gui (* ^long widget-height 10)) 1)
                   (group gui "joystick" "Joystick"
                          (ignore-nil->
                            state state
@@ -875,7 +875,7 @@
                            (joystick-dialog-axis-item state gui "Rudder" :sfsim.input/rudder)
                            (joystick-dialog-axis-item state gui "Throttle" :sfsim.input/throttle)
                            (joystick-dialog-axis-item state gui "Throttle increment" :sfsim.input/throttle-increment)
-                           (layout-row gui 32 2
+                           (layout-row gui (scale gui row-height) 2
                                        (ignore-nil-> state state
                                                      (layout-row-push gui 0.2)
                                                      (text-label gui "Dead zone")
@@ -903,7 +903,7 @@
                            (joystick-dialog-button-item state gui "Camera roll left" :sfsim.input/camera-rotate-z-positive)
                            (joystick-dialog-button-item state gui "Camera roll right" :sfsim.input/camera-rotate-z-negative)
                            (joystick-dialog-button-item state gui "Camera reset" :sfsim.input/camera-reset)))
-                  (layout-row-dynamic gui 32 2)
+                  (layout-row-dynamic gui (scale gui row-height) 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "joysticks.edn" (get-in state [:input :sfsim.input/mappings :sfsim.input/joysticks]))
                     (assoc-in state [:gui ::menu] main-dialog))
@@ -919,10 +919,10 @@
   (let [mappings (invert-map (get-in state [:input :sfsim.input/mappings :sfsim.input/keyboard]))]
     (nuklear-window
       gui "Keyboard"
-      (quot (- window-width (scale gui 480)) 2) (quot (- window-height (scale gui (+ title-height (* text-height 10) widget-height padding))) 2)
-      (scale gui 480) (scale gui (+ title-height (* text-height 10) widget-height padding)) :dialog
+      (quot (- window-width (scale gui 480)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 10) ^long widget-height ^long padding))) 2)
+      (scale gui 480) (scale gui (+ ^long title-height (* ^long text-height 10) ^long widget-height ^long padding)) :dialog
       (ignore-nil-> state state
-                    (layout-row-dynamic gui (scale gui (* text-height 10)) 1)
+                    (layout-row-dynamic gui (scale gui (* ^long text-height 10)) 1)
                     (group gui "keyboard" "Keyboard"
                            (layout-row-dynamic gui (scale gui text-row-height) 1)
                            (text-label gui "Note that joystick overrides keyboard commands!")
@@ -965,8 +965,8 @@
 (defn sound-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Sound" (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ title-height (* widget-height 3)))) 2)
-    (scale gui 320) (scale gui (+ title-height (* widget-height 3))) :dialog
+    gui "Sound" (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 3)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 3))) :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui (scale gui row-height) 2)
                   (text-label gui "Volume")
@@ -988,10 +988,10 @@
   [state gui ^long window-width ^long window-height]
   (nuklear-window
     gui "License"
-    (quot (- window-width (scale gui 768)) 2) (quot (- window-height (scale gui (+ title-height (* text-height 12) padding widget-height))) 2)
-    (scale gui 768) (scale gui (+ title-height (* text-height 12) padding widget-height)) :dialog
+    (quot (- window-width (scale gui 768)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 12) ^long padding ^long widget-height))) 2)
+    (scale gui 768) (scale gui (+ ^long title-height (* ^long text-height 12) ^long padding ^long widget-height)) :dialog
     (ignore-nil-> state state
-      (layout-row-dynamic gui (scale gui (* text-height 12)) 1)
+      (layout-row-dynamic gui (scale gui (* ^long text-height 12)) 1)
       (group gui "license" "License"
              (layout-row-dynamic gui (scale gui text-row-height) 1)
              (doseq [line (line-seq (io/reader "LICENSE"))]
@@ -1026,8 +1026,8 @@
 (defn location-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Location" (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ title-height (* widget-height 4)))) 2)
-    (scale gui 320) (scale gui (+ title-height (* widget-height 4))) :dialog
+    gui "Location" (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 4)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 4))) :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui (scale gui row-height) 2)
                   (text-label gui "Longitude (East)")
@@ -1085,8 +1085,8 @@
   [state gui ^long window-width ^long window-height]
   (nuklear-window
     gui "Date and Time"
-    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ title-height (* widget-height 3)))) 2)
-    (scale gui 320) (scale gui (+ title-height (* widget-height 3))) :dialog
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 3)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 3))) :dialog
     (ignore-nil-> state state
                   (layout-row gui (scale gui row-height) 6
                               (layout-row-push gui 0.4)
@@ -1125,8 +1125,8 @@
   [state gui ^long window-width ^long window-height]
   (nuklear-window
     gui (format "sfsim %s" version)
-    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ title-height (* widget-height 8)))) 2)
-    (scale gui 320) (scale gui (+ title-height (* widget-height 8)))
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 8)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 8)))
     :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui (scale gui row-height) 1)
@@ -1208,8 +1208,9 @@
                                 (if (< eccentricity 1.0)
                                   (- (physics/time-since-apoapsis config/planet-config (:physics state)))
                                   ##NaN))]
-    (nuklear-window gui "Information" 10 (- h 64) 640 64 :widget
-                    (layout-row-dynamic gui 26 1)
+    (nuklear-window gui "Information" (scale gui 10) (- h (scale gui (+ 10 (* text-height 2))))
+                    (scale gui 640) (scale gui (* text-height 2)) :widget
+                    (layout-row-dynamic gui (scale gui text-row-height) 1)
                     (text-label gui text1)
                     (text-label gui text2))))
 
