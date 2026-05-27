@@ -963,15 +963,15 @@
 (defn sound-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Sound" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) :dialog
+    gui "Sound" (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ title-height (* widget-height 3)))) 2)
+    (scale gui 320) (scale gui (+ title-height (* widget-height 3))) :dialog
     (ignore-nil-> state state
-                  (layout-row-dynamic gui 32 2)
+                  (layout-row-dynamic gui (scale gui row-height) 2)
                   (text-label gui "Volume")
                   (update-in state [:audio :sfsim.audio/settings :sfsim.audio/volume] #(property-float gui "volume" 0.0 % 1.0 0.1 0.0025))
                   (text-label gui "Music")
                   (update-in state [:audio :sfsim.audio/settings :sfsim.audio/no-music]
                              (fn [off] (not (check-label gui "enable" (not off)))))
-                  (layout-row-dynamic gui 32 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "sound.edn" (get-in state [:audio :sfsim.audio/settings]))
                     (assoc-in state [:gui ::menu] main-dialog))
