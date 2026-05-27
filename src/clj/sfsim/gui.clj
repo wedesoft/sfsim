@@ -49,6 +49,8 @@
       NkPluginFreeI
       NkQueryFontGlyphCallbackI
       NkRect
+      NkStyleButton
+      NkStyleScrollbar
       NkTextWidthCallbackI
       NkUserFont
       NkUserFontGlyph
@@ -424,9 +426,10 @@
         nk-vec2     (NkVec2/malloc ^MemoryStack stack)
         style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)
         context     (::context gui)
-        style       (.style context)]
+        style       (.style ^NkContext context)]
+    ;; Set color scheme
+    ;;
     ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
-    ;; set color scheme
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TEXT (Nuklear/nk_rgb 210 210 210 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_WINDOW (Nuklear/nk_rgb 57 67 71 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_HEADER (Nuklear/nk_rgb 51 51 56 rgb))
@@ -456,13 +459,182 @@
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
     (Nuklear/nk_style_from_table context style-table)
-    ;; scale buttons
+    ;; Scale widget dimensions
+    ;;
+    ;; default buttons
     (let [button (.button style)]
-      (.x nk-vec2 (* 2 scale))
-      (.y nk-vec2 (* 2 scale))
+      (.x nk-vec2 (* 2 ^double scale))
+      (.y nk-vec2 (* 2 ^double scale))
       (.padding button nk-vec2)
       (.border button scale)
-      (.rounding button (* 4 scale)))
+      (.rounding button (* 4 ^double scale)))
+    ;; contextual button
+    (let [button (.contextual_button style)]
+      (.x nk-vec2 (* 2 ^double scale))
+      (.y nk-vec2 (* 2 ^double scale))
+      (.padding button nk-vec2))
+    ;; menu button
+    (let [button (.menu_button style)]
+      (.x nk-vec2 (* 2 ^double scale))
+      (.y nk-vec2 (* 2 ^double scale))
+      (.padding button nk-vec2)
+      (.rounding button scale))
+    ;; checkbox toggle
+    (let [toggle (.checkbox style)]
+      (.x nk-vec2 (* 2 ^double scale))
+      (.y nk-vec2 (* 2 ^double scale))
+      (.padding toggle nk-vec2)
+      (.spacing toggle (* 4 ^double scale)))
+    ;; option toggle
+    (let [toggle (.option style)]
+      (.x nk-vec2 (* 3 ^double scale))
+      (.y nk-vec2 (* 3 ^double scale))
+      (.padding toggle nk-vec2)
+      (.spacing toggle (* 4 ^double scale)))
+    ;; selectable
+    (let [select (.selectable style)]
+      (.x nk-vec2 (* 2 ^double scale))
+      (.y nk-vec2 (* 2 ^double scale))
+      (.padding select nk-vec2)
+      (.image_padding select nk-vec2))
+    ;; slider
+    (let [slider (.slider style)]
+      (.x nk-vec2 (* 16 ^double scale))
+      (.y nk-vec2 (* 16 ^double scale))
+      (.cursor_size slider nk-vec2)
+      (.x nk-vec2 (* 2 ^double scale))
+      (.y nk-vec2 (* 2 ^double scale))
+      (.padding slider nk-vec2)
+      (.spacing slider nk-vec2)
+      (.bar_height slider (* 4 ^double scale)))
+    ;; slider buttons
+    (doseq [button [(.inc_button (.slider style))
+                    (.dec_button (.slider style))]]
+           (.border ^NkStyleButton button scale))
+    ;; knob
+    (let [knob (.knob style)]
+      (.knob_border knob scale)
+      (.x nk-vec2 (* 2 ^double scale))
+      (.y nk-vec2 (* 2 ^double scale))
+      (.padding knob nk-vec2)
+      (.cursor_width knob (* 2 ^double scale)))
+    ;; progress
+    (let [prog (.progress style)]
+      (.x nk-vec2 (* 4 ^double scale))
+      (.y nk-vec2 (* 4 ^double scale))
+      (.padding prog nk-vec2))
+    ;; scrollbars
+    (doseq [_scroll [(.scrollh style) (.scrollv style)]])
+    ;; scrollbars buttons
+    (doseq [scroll [(.scrollh style) (.scrollv style)]]
+           (doseq [button [(.inc_button ^NkStyleScrollbar scroll)
+                           (.dec_button ^NkStyleScrollbar scroll)]]
+                  (.border ^NkStyleButton button scale)))
+    ;; edit
+    (let [edit (.edit style)]
+      (.x nk-vec2 (* 10 ^double scale))
+      (.y nk-vec2 (* 10 ^double scale))
+      (.scrollbar_size edit nk-vec2)
+      (let [_scroll (.scrollbar edit)])
+      (.x nk-vec2 (* 4 ^double scale))
+      (.y nk-vec2 (* 4 ^double scale))
+      (.padding edit nk-vec2)
+      (.row_padding edit (* 2 ^double scale))
+      (.cursor_size edit (* 4 ^double scale))
+      (.border edit scale))
+    ;; property
+    (let [property (.property style)]
+      (.x nk-vec2 (* 4 ^double scale))
+      (.y nk-vec2 (* 4 ^double scale))
+      (.padding property nk-vec2)
+      (.border property scale)
+      (.rounding property (* 10 ^double scale)))
+    ;; property buttons
+    (doseq [_button [(.inc_button (.property style))
+                     (.dec_button (.property style))]])
+    ;; property edit
+    (let [edit (.edit (.property style))]
+      (.cursor_size edit (* 8 ^double scale)))
+    ;; chart
+    (let [chart (.chart style)]
+      (.x nk-vec2 (* 4 ^double scale))
+      (.y nk-vec2 (* 4 ^double scale))
+      (.padding chart nk-vec2))
+    ;; combo
+    (let [combo (.combo style)]
+      (.x nk-vec2 (* 4 ^double scale))
+      (.y nk-vec2 (* 4 ^double scale))
+      (.content_padding combo nk-vec2)
+      (.x nk-vec2 (* 0 ^double scale))
+      (.y nk-vec2 (* 4 ^double scale))
+      (.button_padding combo nk-vec2)
+      (.x nk-vec2 (* 4 ^double scale))
+      (.y nk-vec2 (* 0 ^double scale))
+      (.spacing combo nk-vec2)
+      (.border combo scale))
+    ;; combo button
+    (let [button (.button (.combo style))]
+      (.x nk-vec2 (* 2 ^double scale))
+      (.y nk-vec2 (* 2 ^double scale))
+      (.padding button nk-vec2))
+    ;; tab
+    (let [tab (.tab style)]
+      (.x nk-vec2 (* 4 ^double scale))
+      (.y nk-vec2 (* 4 ^double scale))
+      (.padding tab nk-vec2)
+      (.spacing tab nk-vec2)
+      (.indent tab (* 10 ^double scale))
+      (.border tab scale))
+    ;; tab button
+    (doseq [button [(.tab_minimize_button (.tab style))
+                    (.tab_maximize_button (.tab style))]]
+           (.x nk-vec2 (* 2 ^double scale))
+           (.y nk-vec2 (* 2 ^double scale))
+           (.padding ^NkStyleButton button nk-vec2))
+    ;; node button
+    (doseq [button [(.node_minimize_button (.tab style))
+                    (.node_maximize_button (.tab style))]]
+           (.x nk-vec2 (* 2 ^double scale))
+           (.y nk-vec2 (* 2 ^double scale))
+           (.padding ^NkStyleButton button nk-vec2))
+    ;; window header
+    (let [header (.header (.window style))]
+           (.x nk-vec2 (* 4 ^double scale))
+           (.y nk-vec2 (* 4 ^double scale))
+           (.label_padding header nk-vec2)
+           (.padding header nk-vec2))
+    ;; window header close button
+    (let [_button (.close_button (.header (.window style)))])
+    ;; window header minimize button
+    (let [_button (.minimize_button (.header (.window style)))])
+    ;; window
+    (let [win (.window style)]
+      (.x nk-vec2 (* 4 ^double scale))
+      (.y nk-vec2 (* 4 ^double scale))
+      (.spacing win nk-vec2)
+      (.x nk-vec2 (* 10 ^double scale))
+      (.y nk-vec2 (* 10 ^double scale))
+      (.scrollbar_size win nk-vec2)
+      (.x nk-vec2 (* 64 ^double scale))
+      (.y nk-vec2 (* 64 ^double scale))
+      (.min_size win nk-vec2)
+      (.combo_border win scale)
+      (.contextual_border win scale)
+      (.menu_border win scale)
+      (.group_border win scale)
+      (.tooltip_border win scale)
+      (.popup_border win scale)
+      (.border win (* 2 ^double scale))
+      (.min_row_height_padding win (* 8 ^double scale))
+      (.x nk-vec2 (* 4 ^double scale))
+      (.y nk-vec2 (* 4 ^double scale))
+      (.padding win nk-vec2)
+      (.group_padding win nk-vec2)
+      (.popup_padding win nk-vec2)
+      (.combo_padding win nk-vec2)
+      (.contextual_padding win nk-vec2)
+      (.menu_padding win nk-vec2)
+      (.tooltip_padding win nk-vec2))
     ;; pop stack
     (MemoryStack/stackPop)))
 
@@ -518,6 +690,12 @@
   "Create a check box with text"
   [gui text on]
   (Nuklear/nk_check_label ^NkContext (::context gui) ^String text ^boolean on))
+
+
+(defn option-label
+  "Create a radio button with text"
+  [gui text on]
+  (Nuklear/nk_option_label ^NkContext (::context gui) ^String text ^boolean on))
 
 
 (defn text-label

@@ -218,4 +218,14 @@
                                     (text-label gui "Three"))) => (is-image "test/clj/sfsim/fixtures/gui/dynamic-layout.png" 0.10))
 
 
+(fact "Render check box"
+      (gui-control-test gui 160 40 1 (layout-row-dynamic gui 32 1) (check-label gui "Check box" true))
+      => (is-image "test/clj/sfsim/fixtures/gui/checkbox.png" 0.17))
+
+
+(fact "Render radio button"
+      (gui-control-test gui 160 40 1 (layout-row-dynamic gui 32 1) (option-label gui "Radio button" true))
+      => (is-image "test/clj/sfsim/fixtures/gui/radio.png" 0.17))
+
+
 (GLFW/glfwTerminate)
