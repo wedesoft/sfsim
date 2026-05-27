@@ -157,6 +157,11 @@
 (set! *warn-on-reflection* true)
 
 
+(def title-height 42)
+(def widget-height 38)
+(def row-height 34)
+
+
 (defn make-gui-config
   "Create and initialise Nuklear configuration"
   {:malli/schema [:=> [:cat :some :some] :some]}
@@ -1071,9 +1076,11 @@
 (defn datetime-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Date and Time" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) :dialog
+    gui "Date and Time"
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ title-height (* widget-height 3)))) 2)
+    (scale gui 320) (scale gui (+ title-height (* widget-height 3))) :dialog
     (ignore-nil-> state state
-                  (layout-row gui 32 6
+                  (layout-row gui (scale gui row-height) 6
                               (layout-row-push gui 0.4)
                               (text-label gui "Date")
                               (layout-row-push gui 0.15)
@@ -1086,7 +1093,7 @@
                               (text-label gui "/")
                               (layout-row-push gui 0.2)
                               (tabbing gui state (edit-field gui (:year time-data)) 2 6))
-                  (layout-row gui 32 6
+                  (layout-row gui (scale gui row-height) 6
                               (layout-row-push gui 0.45)
                               (text-label gui "Time")
                               (layout-row-push gui 0.15)
@@ -1099,7 +1106,7 @@
                               (text-label gui ":")
                               (layout-row-push gui 0.14999)
                               (tabbing gui state (edit-field gui (:second time-data)) 5 6))
-                  (layout-row-dynamic gui 32 2)
+                  (layout-row-dynamic gui (scale gui row-height) 2)
                   (when (button-label gui "Set")
                     (update state :physics physics/set-julian-date-ut (datetime-dialog-get time-data)))
                   (when (button-label gui "Close")
@@ -1110,11 +1117,11 @@
   [state gui ^long window-width ^long window-height]
   (nuklear-window
     gui (format "sfsim %s" version)
-    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (* (scale gui 37) 9)) 2)
-    (scale gui 320) (* (scale gui 37) 9)
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ title-height (* widget-height 8)))) 2)
+    (scale gui 320) (scale gui (+ title-height (* widget-height 8)))
     :dialog
     (ignore-nil-> state state
-                  (layout-row-dynamic gui (scale gui 32) 1)
+                  (layout-row-dynamic gui (scale gui row-height) 1)
                   (when (button-label gui "Location")
                     (location-dialog-set position-data state)
                     (assoc-in state [:gui ::menu] location-dialog))
