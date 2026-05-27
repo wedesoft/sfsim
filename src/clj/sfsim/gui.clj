@@ -159,7 +159,10 @@
 
 (def title-height 42)
 (def widget-height 38)
-(def row-height 34)
+(def padding 4)
+(def row-height (- widget-height padding))
+(def text-height 24)
+(def text-row-height (- text-height padding))
 
 
 (defn make-gui-config
@@ -982,14 +985,16 @@
 (defn license-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "License" (quot (- window-width 768) 2) (quot (- window-height (+ (* 28 12) (* 37 1))) 2) 768 (+ (* 28 12) (* 37 1)) :dialog
+    gui "License"
+    (quot (- window-width (scale gui 768)) 2) (quot (- window-height (scale gui (+ title-height (* text-height 12) padding widget-height))) 2)
+    (scale gui 768) (scale gui (+ title-height (* text-height 12) padding widget-height)) :dialog
     (ignore-nil-> state state
-      (layout-row-dynamic gui (* 24 12) 1)
+      (layout-row-dynamic gui (scale gui (* text-height 12)) 1)
       (group gui "license" "License"
-             (layout-row-dynamic gui 24 1)
+             (layout-row-dynamic gui (scale gui text-height) 1)
              (doseq [line (line-seq (io/reader "LICENSE"))]
                     (text-label gui line)))
-      (layout-row-dynamic gui 32 1)
+      (layout-row-dynamic gui (scale gui row-height) 1)
       (when (button-label gui "Close")
         (assoc-in state [:gui ::menu] main-dialog)))))
 
