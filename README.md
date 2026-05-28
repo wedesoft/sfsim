@@ -95,7 +95,8 @@ cd ..
 
 ## Further Build Steps under Windows
 
-* Update version number in `src/clj/sfsim/version.clj` and update ChangeLog
+* Update version number in `src/clj/sfsim/version.clj`
+* Update ChangeLog
 * make sure Jolt wrapper library was built: `make jolt`
 * Delete target and out-windows directories (do not omit this step otherwise it can generate a broken build)
 * Build JAR file: `clj -T:build uber`
@@ -104,7 +105,8 @@ cd ..
 
 ## Further Build Steps under GNU/Linux
 
-* Update version number in `src/clj/sfsim/version.clj` and update ChangeLog
+* Update version number in `src/clj/sfsim/version.clj`
+* Update ChangeLog
 * make sure Jolt wrapper library was built: `make jolt`
 * Delete target and out-linux directories (do not omit this step, otherwise it can generate a broken build)
 * Build JAR file: `clj -T:build uber`

@@ -343,6 +343,11 @@
     * Voice over
     * Visual effects
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
+  - [ ] replikativ/raster (Christian Weilbach) defvalue erzeugt Vallhalla Valuetypes, die sind Stack alloziert.
+    Auf älteren JDKs ist es ein defrecord.
+    [[https://github.com/replikativ/raster/tree/main/examples/valley]]
+    Nutze Panama direkt, aber coffi ist auch ok. Ich mache das über Struct of Arrays um Memorylocality für ganze Kollektionen zu haben.
+    [[https://replikativ.github.io/raster/raster.ga_ode_rotors.html]]
   - [ ] winter daytime is too dark, adjust range?
   - [X] limit timestep to prevent numerical problems
   - [X] add keyboard mapping help page!

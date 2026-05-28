@@ -49,6 +49,8 @@
       NkPluginFreeI
       NkQueryFontGlyphCallbackI
       NkRect
+      NkStyleButton
+      NkStyleScrollbar
       NkTextWidthCallbackI
       NkUserFont
       NkUserFontGlyph
@@ -155,6 +157,14 @@
 (set! *warn-on-reflection* true)
 
 
+(def title-height 42)
+(def widget-height 38)
+(def padding 4)
+(def row-height (- ^long widget-height ^long padding))
+(def text-height 24)
+(def text-row-height (- ^long text-height ^long padding))
+
+
 (defn make-gui-config
   "Create and initialise Nuklear configuration"
   {:malli/schema [:=> [:cat :some :some] :some]}
@@ -208,27 +218,35 @@
 
 (defn make-nuklear-gui
   "Create a hashmap with required GUI objects"
-  {:malli/schema [:=> [:cat :some :int] :some]}
-  [font buffer-initial-size]
-  (let [max-vertex-buffer (* 512 1024)
-        max-index-buffer  (* 128 1024)
-        allocator         (make-allocator)
-        program           (make-gui-program)
-        vao               (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
-        vertex-layout     (make-vertex-layout)
-        null-texture      (make-null-texture)
-        config            (make-gui-config null-texture vertex-layout)
-        context           (make-gui-context allocator font)
-        cmds              (make-gui-buffer allocator buffer-initial-size)]
+  {:malli/schema [:=> [:cat :some :double] :some]}
+  [font scale]
+  (let [max-vertex-buffer   (* 512 1024)
+        max-index-buffer    (* 128 1024)
+        buffer-initial-size (* 4 1024)
+        allocator           (make-allocator)
+        program             (make-gui-program)
+        vao                 (make-vertex-array-stream program max-index-buffer max-vertex-buffer)
+        vertex-layout       (make-vertex-layout)
+        null-texture        (make-null-texture)
+        config              (make-gui-config null-texture vertex-layout)
+        context             (make-gui-context allocator font)
+        cmds                (make-gui-buffer allocator buffer-initial-size)]
     (setup-vertex-attrib-pointers program [GL11/GL_FLOAT "position" 2 GL11/GL_FLOAT "texcoord" 2 GL11/GL_UNSIGNED_BYTE "color" 4])
     {::allocator     allocator
      ::context       context
+     ::scale         scale
      ::program       program
      ::vao           vao
      ::vertex-layout vertex-layout
      ::null-tex      null-texture
      ::config        config
      ::cmds          cmds}))
+
+
+(defn scale
+  "Scale a value"
+  ^double [{::keys [scale]} ^long value]
+  (* value ^double scale))
 
 
 (defn render-nuklear-gui
@@ -281,7 +299,8 @@
      (try
        (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
                                ~(case decoration
-                                  :dialog `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE Nuklear/NK_WINDOW_NO_SCROLLBAR)
+                                  :dialog `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE
+                                                   Nuklear/NK_WINDOW_NO_SCROLLBAR)
                                   :window `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE)
                                   :widget `Nuklear/NK_WINDOW_NO_SCROLLBAR))
          (let [result# (do ~@body)]
@@ -293,7 +312,7 @@
 
 (defn layout-row-dynamic
   "Create dynamic layout with specified height and number of columns"
-  {:malli/schema [:=> [:cat :some :int :int] :nil]}
+  {:malli/schema [:=> [:cat :some :double :int] :nil]}
   [gui height cols]
   (Nuklear/nk_layout_row_dynamic (::context gui) height cols))
 
@@ -417,16 +436,35 @@
   (destroy-texture (::texture bitmap-font)))
 
 
+(defn make-nuklear-gui-with-font
+  "Render glyphs to texture and initialise GUI"
+  {:malli/schema [:=> [:cat :double] :some]}
+  [scale]
+  (let [bitmap-font (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf"
+                                                          (* 512 ^double scale) (* 512 ^double scale)
+                                                          (* 18 ^double scale)))]
+    (assoc (make-nuklear-gui (::font bitmap-font) scale) ::bitmap-font bitmap-font)))
+
+
+(defn destroy-nuklear-gui-with-font
+  "Destroy Nuklear GUI and bitmap font"
+  {:malli/schema [:=> [:cat :some] :nil]}
+  [{::keys [bitmap-font] :as gui} ]
+  (destroy-nuklear-gui gui)
+  (destroy-font-texture bitmap-font))
+
+
 (defn nuklear-dark-style
-  [gui scale]
+  [gui]
   (let [stack       (MemoryStack/stackPush)
         rgb         (NkColor/malloc ^MemoryStack stack)
         nk-vec2     (NkVec2/malloc ^MemoryStack stack)
         style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)
         context     (::context gui)
-        style       (.style context)]
+        style       (.style ^NkContext context)]
+    ;; Set color scheme
+    ;;
     ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
-    ;; set color scheme
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TEXT (Nuklear/nk_rgb 210 210 210 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_WINDOW (Nuklear/nk_rgb 57 67 71 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_HEADER (Nuklear/nk_rgb 51 51 56 rgb))
@@ -456,13 +494,182 @@
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
     (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
     (Nuklear/nk_style_from_table context style-table)
-    ;; scale buttons
+    ;; Scale widget dimensions
+    ;;
+    ;; default buttons
     (let [button (.button style)]
-      (.x nk-vec2 (* 2 scale))
-      (.y nk-vec2 (* 2 scale))
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
       (.padding button nk-vec2)
-      (.border button scale)
-      (.rounding button (* 4 scale)))
+      (.border button (scale gui 1))
+      (.rounding button (scale gui 4)))
+    ;; contextual button
+    (let [button (.contextual_button style)]
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
+      (.padding button nk-vec2))
+    ;; menu button
+    (let [button (.menu_button style)]
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
+      (.padding button nk-vec2)
+      (.rounding button(scale gui 1)))
+    ;; checkbox toggle
+    (let [toggle (.checkbox style)]
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
+      (.padding toggle nk-vec2)
+      (.spacing toggle (scale gui 4)))
+    ;; option toggle
+    (let [toggle (.option style)]
+      (.x nk-vec2 (scale gui 3))
+      (.y nk-vec2 (scale gui 3))
+      (.padding toggle nk-vec2)
+      (.spacing toggle (scale gui 4)))
+    ;; selectable
+    (let [select (.selectable style)]
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
+      (.padding select nk-vec2)
+      (.image_padding select nk-vec2))
+    ;; slider
+    (let [slider (.slider style)]
+      (.x nk-vec2 (scale gui 16))
+      (.y nk-vec2 (scale gui 16))
+      (.cursor_size slider nk-vec2)
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
+      (.padding slider nk-vec2)
+      (.spacing slider nk-vec2)
+      (.bar_height slider (scale gui 4)))
+    ;; slider buttons
+    (doseq [button [(.inc_button (.slider style))
+                    (.dec_button (.slider style))]]
+           (.border ^NkStyleButton button(scale gui 1)))
+    ;; knob
+    (let [knob (.knob style)]
+      (.knob_border knob(scale gui 1))
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
+      (.padding knob nk-vec2)
+      (.cursor_width knob (scale gui 2)))
+    ;; progress
+    (let [prog (.progress style)]
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
+      (.padding prog nk-vec2))
+    ;; scrollbars
+    (doseq [_scroll [(.scrollh style) (.scrollv style)]])
+    ;; scrollbars buttons
+    (doseq [scroll [(.scrollh style) (.scrollv style)]]
+           (doseq [button [(.inc_button ^NkStyleScrollbar scroll)
+                           (.dec_button ^NkStyleScrollbar scroll)]]
+                  (.border ^NkStyleButton button(scale gui 1))))
+    ;; edit
+    (let [edit (.edit style)]
+      (.x nk-vec2 (scale gui 10))
+      (.y nk-vec2 (scale gui 10))
+      (.scrollbar_size edit nk-vec2)
+      (let [_scroll (.scrollbar edit)])
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
+      (.padding edit nk-vec2)
+      (.row_padding edit (scale gui 2))
+      (.cursor_size edit (scale gui 4))
+      (.border edit(scale gui 1)))
+    ;; property
+    (let [property (.property style)]
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
+      (.padding property nk-vec2)
+      (.border property(scale gui 1))
+      (.rounding property (scale gui 10)))
+    ;; property buttons
+    (doseq [_button [(.inc_button (.property style))
+                     (.dec_button (.property style))]])
+    ;; property edit
+    (let [edit (.edit (.property style))]
+      (.cursor_size edit (scale gui 8)))
+    ;; chart
+    (let [chart (.chart style)]
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
+      (.padding chart nk-vec2))
+    ;; combo
+    (let [combo (.combo style)]
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
+      (.content_padding combo nk-vec2)
+      (.x nk-vec2 (scale gui 0))
+      (.y nk-vec2 (scale gui 4))
+      (.button_padding combo nk-vec2)
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 0))
+      (.spacing combo nk-vec2)
+      (.border combo(scale gui 1)))
+    ;; combo button
+    (let [button (.button (.combo style))]
+      (.x nk-vec2 (scale gui 2))
+      (.y nk-vec2 (scale gui 2))
+      (.padding button nk-vec2))
+    ;; tab
+    (let [tab (.tab style)]
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
+      (.padding tab nk-vec2)
+      (.spacing tab nk-vec2)
+      (.indent tab (scale gui 10))
+      (.border tab(scale gui 1)))
+    ;; tab button
+    (doseq [button [(.tab_minimize_button (.tab style))
+                    (.tab_maximize_button (.tab style))]]
+           (.x nk-vec2 (scale gui 2))
+           (.y nk-vec2 (scale gui 2))
+           (.padding ^NkStyleButton button nk-vec2))
+    ;; node button
+    (doseq [button [(.node_minimize_button (.tab style))
+                    (.node_maximize_button (.tab style))]]
+           (.x nk-vec2 (scale gui 2))
+           (.y nk-vec2 (scale gui 2))
+           (.padding ^NkStyleButton button nk-vec2))
+    ;; window header
+    (let [header (.header (.window style))]
+           (.x nk-vec2 (scale gui 4))
+           (.y nk-vec2 (scale gui 4))
+           (.label_padding header nk-vec2)
+           (.padding header nk-vec2))
+    ;; window header close button
+    (let [_button (.close_button (.header (.window style)))])
+    ;; window header minimize button
+    (let [_button (.minimize_button (.header (.window style)))])
+    ;; window
+    (let [win (.window style)]
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
+      (.spacing win nk-vec2)
+      (.x nk-vec2 (scale gui 10))
+      (.y nk-vec2 (scale gui 10))
+      (.scrollbar_size win nk-vec2)
+      (.x nk-vec2 (scale gui 64))
+      (.y nk-vec2 (scale gui 64))
+      (.min_size win nk-vec2)
+      (.combo_border win(scale gui 1))
+      (.contextual_border win(scale gui 1))
+      (.menu_border win(scale gui 1))
+      (.group_border win(scale gui 1))
+      (.tooltip_border win(scale gui 1))
+      (.popup_border win(scale gui 1))
+      (.border win (scale gui 2))
+      (.min_row_height_padding win (scale gui 8))
+      (.x nk-vec2 (scale gui 4))
+      (.y nk-vec2 (scale gui 4))
+      (.padding win nk-vec2)
+      (.group_padding win nk-vec2)
+      (.popup_padding win nk-vec2)
+      (.combo_padding win nk-vec2)
+      (.contextual_padding win nk-vec2)
+      (.menu_padding win nk-vec2)
+      (.tooltip_padding win nk-vec2))
     ;; pop stack
     (MemoryStack/stackPop)))
 
@@ -518,6 +725,12 @@
   "Create a check box with text"
   [gui text on]
   (Nuklear/nk_check_label ^NkContext (::context gui) ^String text ^boolean on))
+
+
+(defn option-label
+  "Create a radio button with text"
+  [gui text on]
+  (Nuklear/nk_option_label ^NkContext (::context gui) ^String text ^boolean on))
 
 
 (defn text-label
@@ -628,7 +841,7 @@
   [state gui sensor-type last-event text control sensor-name prompt]
   (let [[device sensor] (get-joystick-sensor-for-mapping (-> state :input :sfsim.input/mappings) sensor-type control)]
     (layout-row
-      gui 32 4
+      gui (scale gui row-height) 4
       (ignore-nil-> state state
                     (layout-row-push gui 0.2)
                     (text-label gui text)
@@ -670,9 +883,10 @@
 (defn joystick-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Joystick" (quot (- window-width 640) 2) (quot (- window-height (* 37 11)) 2) 640 (* 37 11) :dialog
+    gui "Joystick" (quot (- window-width (scale gui 640)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 11) ^long padding))) 2)
+    (scale gui 640) (scale gui (+ ^long title-height (* ^long widget-height 11) ^long padding)) :dialog
     (ignore-nil-> state state
-                  (layout-row-dynamic gui (* 32 10) 1)
+                  (layout-row-dynamic gui (scale gui (* ^long widget-height 10)) 1)
                   (group gui "joystick" "Joystick"
                          (ignore-nil->
                            state state
@@ -681,7 +895,7 @@
                            (joystick-dialog-axis-item state gui "Rudder" :sfsim.input/rudder)
                            (joystick-dialog-axis-item state gui "Throttle" :sfsim.input/throttle)
                            (joystick-dialog-axis-item state gui "Throttle increment" :sfsim.input/throttle-increment)
-                           (layout-row gui 32 2
+                           (layout-row gui (scale gui row-height) 2
                                        (ignore-nil-> state state
                                                      (layout-row-push gui 0.2)
                                                      (text-label gui "Dead zone")
@@ -709,7 +923,7 @@
                            (joystick-dialog-button-item state gui "Camera roll left" :sfsim.input/camera-rotate-z-positive)
                            (joystick-dialog-button-item state gui "Camera roll right" :sfsim.input/camera-rotate-z-negative)
                            (joystick-dialog-button-item state gui "Camera reset" :sfsim.input/camera-reset)))
-                  (layout-row-dynamic gui 32 2)
+                  (layout-row-dynamic gui (scale gui row-height) 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "joysticks.edn" (get-in state [:input :sfsim.input/mappings :sfsim.input/joysticks]))
                     (assoc-in state [:gui ::menu] main-dialog))
@@ -724,13 +938,15 @@
   [state gui ^long window-width ^long window-height]
   (let [mappings (invert-map (get-in state [:input :sfsim.input/mappings :sfsim.input/keyboard]))]
     (nuklear-window
-      gui "Keyboard" (quot (- window-width 480) 2) (quot (- window-height (* 37 11)) 2) 480 (* 37 11) :dialog
+      gui "Keyboard"
+      (quot (- window-width (scale gui 480)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 10) ^long widget-height ^long padding))) 2)
+      (scale gui 480) (scale gui (+ ^long title-height (* ^long text-height 10) ^long widget-height ^long padding)) :dialog
       (ignore-nil-> state state
-                    (layout-row-dynamic gui (* 32 10) 1)
+                    (layout-row-dynamic gui (scale gui (* ^long text-height 10)) 1)
                     (group gui "keyboard" "Keyboard"
-                           (layout-row-dynamic gui 32 1)
+                           (layout-row-dynamic gui (scale gui text-row-height) 1)
                            (text-label gui "Note that joystick overrides keyboard commands!")
-                           (layout-row-dynamic gui 32 2)
+                           (layout-row-dynamic gui (scale gui text-row-height) 2)
                            (doseq [[control-key control-name]
                                    [[:sfsim.input/menu                            "Toggle menu"             ]
                                     ["Alt-Return"                                 "Toggle fullscreen"       ]
@@ -761,7 +977,7 @@
                                     [:sfsim.input/camera-reset                    "Reset camera"]]]
                                   (text-label gui control-name)
                                   (text-label gui (if (keyword? control-key) (get-key-name (control-key mappings)) control-key))))
-                    (layout-row-dynamic gui 32 1)
+                    (layout-row-dynamic gui (scale gui row-height) 1)
                     (when (button-label gui "Close")
                       (assoc-in state [:gui ::menu] main-dialog))))))
 
@@ -769,15 +985,15 @@
 (defn sound-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Sound" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) :dialog
+    gui "Sound" (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 3)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 3))) :dialog
     (ignore-nil-> state state
-                  (layout-row-dynamic gui 32 2)
+                  (layout-row-dynamic gui (scale gui row-height) 2)
                   (text-label gui "Volume")
                   (update-in state [:audio :sfsim.audio/settings :sfsim.audio/volume] #(property-float gui "volume" 0.0 % 1.0 0.1 0.0025))
                   (text-label gui "Music")
                   (update-in state [:audio :sfsim.audio/settings :sfsim.audio/no-music]
                              (fn [off] (not (check-label gui "enable" (not off)))))
-                  (layout-row-dynamic gui 32 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "sound.edn" (get-in state [:audio :sfsim.audio/settings]))
                     (assoc-in state [:gui ::menu] main-dialog))
@@ -791,14 +1007,16 @@
 (defn license-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "License" (quot (- window-width 768) 2) (quot (- window-height (+ (* 28 12) (* 37 1))) 2) 768 (+ (* 28 12) (* 37 1)) :dialog
+    gui "License"
+    (quot (- window-width (scale gui 768)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 12) ^long padding ^long widget-height))) 2)
+    (scale gui 768) (scale gui (+ ^long title-height (* ^long text-height 12) ^long padding ^long widget-height)) :dialog
     (ignore-nil-> state state
-      (layout-row-dynamic gui (* 24 12) 1)
+      (layout-row-dynamic gui (scale gui (* ^long text-height 12)) 1)
       (group gui "license" "License"
-             (layout-row-dynamic gui 24 1)
+             (layout-row-dynamic gui (scale gui text-row-height) 1)
              (doseq [line (line-seq (io/reader "LICENSE"))]
                     (text-label gui line)))
-      (layout-row-dynamic gui 32 1)
+      (layout-row-dynamic gui (scale gui row-height) 1)
       (when (button-label gui "Close")
         (assoc-in state [:gui ::menu] main-dialog)))))
 
@@ -828,9 +1046,10 @@
 (defn location-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Location" (quot (- window-width 320) 2) (quot (- window-height (* 37 5)) 2) 320 (* 37 5) :dialog
+    gui "Location" (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 4)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 4))) :dialog
     (ignore-nil-> state state
-                  (layout-row-dynamic gui 32 2)
+                  (layout-row-dynamic gui (scale gui row-height) 2)
                   (text-label gui "Longitude (East)")
                   (tabbing gui state (edit-field gui (:longitude position-data)) 0 3)
                   (text-label gui "Latitude (North)")
@@ -885,9 +1104,11 @@
 (defn datetime-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui "Date and Time" (quot (- window-width 320) 2) (quot (- window-height (* 37 4)) 2) 320 (* 37 4) :dialog
+    gui "Date and Time"
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 3)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 3))) :dialog
     (ignore-nil-> state state
-                  (layout-row gui 32 6
+                  (layout-row gui (scale gui row-height) 6
                               (layout-row-push gui 0.4)
                               (text-label gui "Date")
                               (layout-row-push gui 0.15)
@@ -900,7 +1121,7 @@
                               (text-label gui "/")
                               (layout-row-push gui 0.2)
                               (tabbing gui state (edit-field gui (:year time-data)) 2 6))
-                  (layout-row gui 32 6
+                  (layout-row gui (scale gui row-height) 6
                               (layout-row-push gui 0.45)
                               (text-label gui "Time")
                               (layout-row-push gui 0.15)
@@ -913,7 +1134,7 @@
                               (text-label gui ":")
                               (layout-row-push gui 0.14999)
                               (tabbing gui state (edit-field gui (:second time-data)) 5 6))
-                  (layout-row-dynamic gui 32 2)
+                  (layout-row-dynamic gui (scale gui row-height) 2)
                   (when (button-label gui "Set")
                     (update state :physics physics/set-julian-date-ut (datetime-dialog-get time-data)))
                   (when (button-label gui "Close")
@@ -923,9 +1144,12 @@
 (defn main-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
-    gui (format "sfsim %s" version) (quot (- window-width 320) 2) (quot (- window-height (* 37 9)) 2) 320 (* 37 9) :dialog
+    gui (format "sfsim %s" version)
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 8)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 8)))
+    :dialog
     (ignore-nil-> state state
-                  (layout-row-dynamic gui 32 1)
+                  (layout-row-dynamic gui (scale gui row-height) 1)
                   (when (button-label gui "Location")
                     (location-dialog-set position-data state)
                     (assoc-in state [:gui ::menu] location-dialog))
@@ -955,26 +1179,35 @@
         aileron  (:sfsim.input/aileron input-controls)
         elevator (:sfsim.input/elevator input-controls)
         rudder   (:sfsim.input/rudder input-controls)]
-    (nuklear-window gui "Yoke" 10 10 80 80 :widget
+    (nuklear-window gui "Yoke" (scale gui 10) (scale gui 10) (scale gui 80) (scale gui 80) :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui 80 1)
+                      (layout-row-dynamic gui (scale gui 80) 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
-                                              (Nuklear/nk_rect (- 45 (* ^double aileron 30)) (- 45 (* ^double elevator 30)) 10 10 rect)
+                                              (Nuklear/nk_rect (scale gui (- 45 (* ^double aileron 30)))
+                                                               (scale gui (- 45 (* ^double elevator 30)))
+                                                               (scale gui 10) (scale gui 10)
+                                                               rect)
                                               (Nuklear/nk_rgb 255 0 0 rgb))))
-    (nuklear-window gui "Rudder" 10 95 80 20 :widget
+    (nuklear-window gui "Rudder" (scale gui 10) (scale gui 95) (scale gui 80) (scale gui 20) :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui 20 1)
+                      (layout-row-dynamic gui (scale gui 20) 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
-                                              (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
+                                              (Nuklear/nk_rect (scale gui (- 45 (* ^double rudder 30)))
+                                                               (scale gui 100)
+                                                               (scale gui 10) (scale gui 10)
+                                                               rect)
                                               (Nuklear/nk_rgb 255 0 255 rgb))))
-    (nuklear-window gui "Throttle" 95 10 20 80 :widget
+    (nuklear-window gui "Throttle" (scale gui 95) (scale gui 10) (scale gui 20) (scale gui 80) :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui 80 1)
+                      (layout-row-dynamic gui (scale gui 80) 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
-                                              (Nuklear/nk_rect 100 (- 75 (* 60 ^double throttle)) 10 10 rect)
+                                              (Nuklear/nk_rect (scale gui 100)
+                                                               (scale gui (- 75 (* 60 ^double throttle)))
+                                                               (scale gui 10) (scale gui 10)
+                                                               rect)
                                               (Nuklear/nk_rgb 255 255 255 rgb)))))
   (MemoryStack/stackPop))
 
@@ -1004,8 +1237,9 @@
                                 (if (< eccentricity 1.0)
                                   (- (physics/time-since-apoapsis config/planet-config (:physics state)))
                                   ##NaN))]
-    (nuklear-window gui "Information" 10 (- h 64) 640 64 :widget
-                    (layout-row-dynamic gui 26 1)
+    (nuklear-window gui "Information" (scale gui 10) (- h (scale gui (+ 10 (* ^long text-height 2))))
+                    (scale gui 640) (scale gui (* ^long text-height 2)) :widget
+                    (layout-row-dynamic gui (scale gui text-row-height) 1)
                     (text-label gui text1)
                     (text-label gui text2))))
 
