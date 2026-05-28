@@ -146,15 +146,12 @@
 (defmacro gui-control-test
   [gui width height scale & body]
   `(gui-offscreen-render ~width ~height
-                         (let [bitmap-font#         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf"
-                                                                                          (* 512 ~scale) (* 512 ~scale) (* 18 ~scale)))
-                               ~gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font#) ~scale)]
+                         (let [~gui (make-nuklear-gui-with-font ~scale)]
                            (nuklear-dark-style ~gui)
                            (nuklear-window ~gui "control test window" 0 0 ~width ~height :widget
                                            ~@body)
                            (render-nuklear-gui ~gui ~width ~height)
-                           (destroy-nuklear-gui ~gui)
-                           (destroy-font-texture bitmap-font#))))
+                           (destroy-nuklear-gui-with-font ~gui))))
 
 
 (facts "Render a slider"

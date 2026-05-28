@@ -299,7 +299,8 @@
      (try
        (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
                                ~(case decoration
-                                  :dialog `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE Nuklear/NK_WINDOW_NO_SCROLLBAR)
+                                  :dialog `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE
+                                                   Nuklear/NK_WINDOW_NO_SCROLLBAR)
                                   :window `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE)
                                   :widget `Nuklear/NK_WINDOW_NO_SCROLLBAR))
          (let [result# (do ~@body)]
@@ -433,6 +434,24 @@
 (defn destroy-font-texture
   [bitmap-font]
   (destroy-texture (::texture bitmap-font)))
+
+
+(defn make-nuklear-gui-with-font
+  "Render glyphs to texture and initialise GUI"
+  {:malli/schema [:=> [:cat :double] :some]}
+  [scale]
+  (let [bitmap-font (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf"
+                                                          (* 512 ^double scale) (* 512 ^double scale)
+                                                          (* 18 ^double scale)))]
+    (assoc (make-nuklear-gui (::font bitmap-font) scale) ::bitmap-font bitmap-font)))
+
+
+(defn destroy-nuklear-gui-with-font
+  "Destroy Nuklear GUI and bitmap font"
+  {:malli/schema [:=> [:cat :some] :nil]}
+  [{::keys [bitmap-font] :as gui} ]
+  (destroy-nuklear-gui gui)
+  (destroy-font-texture bitmap-font))
 
 
 (defn nuklear-dark-style

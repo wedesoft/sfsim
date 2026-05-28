@@ -121,10 +121,8 @@
                                  :sfsim.gui/window-width window-width
                                  :sfsim.gui/window-height window-height
                                  :sfsim.gui/fullscreen false}
-            gui-scale           1.5
-            bitmap-font         (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf"
-                                                                              (* 512 gui-scale) (* 512 gui-scale) (* gui-scale 18)))
-            gui                 (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) gui-scale)
+            gui-scale           1.0
+            gui                 (gui/make-nuklear-gui-with-font gui-scale)
             audio-state         (audio/make-audio-state)
             state               (atom {:gui gui-state
                                        :input input-state
@@ -255,8 +253,7 @@
         (planet/destroy-tile-tree tile-tree)
         (graphics/destroy-graphics graphics)
         (audio/destroy-audio-state audio-state)
-        (gui/destroy-nuklear-gui gui)
-        (gui/destroy-font-texture bitmap-font)
+        (gui/destroy-nuklear-gui-with-font gui)
         (destroy-window window)
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
