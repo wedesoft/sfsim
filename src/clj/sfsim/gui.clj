@@ -1159,26 +1159,35 @@
         aileron  (:sfsim.input/aileron input-controls)
         elevator (:sfsim.input/elevator input-controls)
         rudder   (:sfsim.input/rudder input-controls)]
-    (nuklear-window gui "Yoke" 10 10 80 80 :widget
+    (nuklear-window gui "Yoke" (scale gui 10) (scale gui 10) (scale gui 80) (scale gui 80) :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui 80.0 1)
+                      (layout-row-dynamic gui (scale gui 80) 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
-                                              (Nuklear/nk_rect (- 45 (* ^double aileron 30)) (- 45 (* ^double elevator 30)) 10 10 rect)
+                                              (Nuklear/nk_rect (scale gui (- 45 (* ^double aileron 30)))
+                                                               (scale gui (- 45 (* ^double elevator 30)))
+                                                               (scale gui 10) (scale gui 10)
+                                                               rect)
                                               (Nuklear/nk_rgb 255 0 0 rgb))))
-    (nuklear-window gui "Rudder" 10 95 80 20 :widget
+    (nuklear-window gui "Rudder" (scale gui 10) (scale gui 95) (scale gui 80) (scale gui 20) :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui 20.0 1)
+                      (layout-row-dynamic gui (scale gui 20) 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
-                                              (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
+                                              (Nuklear/nk_rect (scale gui (- 45 (* ^double rudder 30)))
+                                                               (scale gui 100)
+                                                               (scale gui 10) (scale gui 10)
+                                                               rect)
                                               (Nuklear/nk_rgb 255 0 255 rgb))))
-    (nuklear-window gui "Throttle" 95 10 20 80 :widget
+    (nuklear-window gui "Throttle" (scale gui 95) (scale gui 10) (scale gui 20) (scale gui 80) :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui 80.0 1)
+                      (layout-row-dynamic gui (scale gui 80) 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
-                                              (Nuklear/nk_rect 100 (- 75 (* 60 ^double throttle)) 10 10 rect)
+                                              (Nuklear/nk_rect (scale gui 100)
+                                                               (scale gui (- 75 (* 60 ^double throttle)))
+                                                               (scale gui 10) (scale gui 10)
+                                                               rect)
                                               (Nuklear/nk_rgb 255 255 255 rgb)))))
   (MemoryStack/stackPop))
 
