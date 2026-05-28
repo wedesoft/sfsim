@@ -121,8 +121,7 @@
                                  :sfsim.gui/window-width window-width
                                  :sfsim.gui/window-height window-height
                                  :sfsim.gui/fullscreen false}
-            gui-scale           1.0
-            gui                 (gui/make-nuklear-gui-with-font gui-scale)
+            gui                 (atom (gui/make-nuklear-gui-with-font 1.0))
             audio-state         (audio/make-audio-state)
             state               (atom {:gui gui-state
                                        :input input-state
@@ -137,7 +136,7 @@
         (jolt/set-friction body 0.8)
         (jolt/set-restitution body 0.25)
         (jolt/optimize-broad-phase)
-        (gui/nuklear-dark-style gui)
+        (gui/nuklear-dark-style @gui)
         (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @frame-counter (count @recording))))
                (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @state :gui :sfsim.gui/fullscreen))
                  (let [fullscreen     (-> @state :input :sfsim.input/fullscreen)
@@ -145,10 +144,16 @@
                        mode           (GLFW/glfwGetVideoMode monitor)
                        desktop-width  (.width ^GLFWVidMode mode)
                        desktop-height (.height ^GLFWVidMode mode)]
+                   (gui/destroy-nuklear-gui-with-font @gui)
                    (if fullscreen
-                     (GLFW/glfwSetWindowMonitor window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
-                     (GLFW/glfwSetWindowMonitor window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2)
-                                                window-width window-height GLFW/GLFW_DONT_CARE))
+                     (do
+                       (GLFW/glfwSetWindowMonitor window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
+                       (reset! gui (gui/make-nuklear-gui-with-font (double (/ desktop-height window-height)))))
+                     (do
+                       (GLFW/glfwSetWindowMonitor window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2)
+                                                  window-width window-height GLFW/GLFW_DONT_CARE)
+                       (reset! gui (gui/make-nuklear-gui-with-font 1.0))))
+                   (gui/nuklear-dark-style @gui)
                    (swap! state assoc-in [:gui :sfsim.gui/fullscreen] fullscreen)))
                (let [w (int-array 1)
                      h (int-array 1)]
@@ -224,12 +229,12 @@
                                       (let [menu (-> @state :gui :sfsim.gui/menu)]
                                         (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR
                                                                (if menu GLFW/GLFW_CURSOR_NORMAL GLFW/GLFW_CURSOR_HIDDEN))
-                                        (when menu (swap! state menu gui window-width window-height)))
+                                        (when menu (swap! state menu @gui window-width window-height)))
                                       (when (not playback)
                                         (let [controls (-> @state :input :sfsim.input/controls)]
-                                          (gui/flight-controls-display controls gui)
-                                          (gui/information-display gui window-height @state @frametime)))
-                                      (gui/render-nuklear-gui gui window-width window-height)))
+                                          (gui/flight-controls-display controls @gui)
+                                          (gui/information-display @gui window-height @state @frametime)))
+                                      (gui/render-nuklear-gui @gui window-width window-height)))
                    (graphics/finalise-frame frame)
                    (when playback
                      (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 ^long window-width ^long window-height))
@@ -242,18 +247,18 @@
                                                                           :sfsim.image/width window-width
                                                                           :sfsim.image/height window-height
                                                                           :sfsim.image/channels 4} true))))
-                 (Nuklear/nk_input_begin (:sfsim.gui/context gui))
+                 (Nuklear/nk_input_begin (:sfsim.gui/context @gui))
                  (GLFW/glfwPollEvents)
                  (swap! event-buffer joysticks-poll)
-                 (Nuklear/nk_input_end (:sfsim.gui/context gui))
-                 (swap! state update :input process-events @event-buffer (->InputHandler gui))
+                 (Nuklear/nk_input_end (:sfsim.gui/context @gui))
+                 (swap! state update :input process-events @event-buffer (->InputHandler @gui))
                  (reset! event-buffer (make-event-buffer))
                  (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                  (swap! frame-counter inc)))
         (planet/destroy-tile-tree tile-tree)
         (graphics/destroy-graphics graphics)
         (audio/destroy-audio-state audio-state)
-        (gui/destroy-nuklear-gui-with-font gui)
+        (gui/destroy-nuklear-gui-with-font @gui)
         (destroy-window window)
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
