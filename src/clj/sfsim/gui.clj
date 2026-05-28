@@ -310,7 +310,7 @@
 
 (defn layout-row-dynamic
   "Create dynamic layout with specified height and number of columns"
-  {:malli/schema [:=> [:cat :some :int :int] :nil]}
+  {:malli/schema [:=> [:cat :some :double :int] :nil]}
   [gui height cols]
   (Nuklear/nk_layout_row_dynamic (::context gui) height cols))
 
@@ -1161,21 +1161,21 @@
         rudder   (:sfsim.input/rudder input-controls)]
     (nuklear-window gui "Yoke" 10 10 80 80 :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui 80 1)
+                      (layout-row-dynamic gui 80.0 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
                                               (Nuklear/nk_rect (- 45 (* ^double aileron 30)) (- 45 (* ^double elevator 30)) 10 10 rect)
                                               (Nuklear/nk_rgb 255 0 0 rgb))))
     (nuklear-window gui "Rudder" 10 95 80 20 :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui 20 1)
+                      (layout-row-dynamic gui 20.0 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
                                               (Nuklear/nk_rect (- 45 (* ^double rudder 30)) 100 10 10 rect)
                                               (Nuklear/nk_rgb 255 0 255 rgb))))
     (nuklear-window gui "Throttle" 95 10 20 80 :widget
                     (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui 80 1)
+                      (layout-row-dynamic gui 80.0 1)
                       (Nuklear/nk_widget rect (::context gui))
                       (Nuklear/nk_fill_circle canvas
                                               (Nuklear/nk_rect 100 (- 75 (* 60 ^double throttle)) 10 10 rect)
@@ -1208,8 +1208,8 @@
                                 (if (< eccentricity 1.0)
                                   (- (physics/time-since-apoapsis config/planet-config (:physics state)))
                                   ##NaN))]
-    (nuklear-window gui "Information" (scale gui 10) (- h (scale gui (+ 10 (* text-height 2))))
-                    (scale gui 640) (scale gui (* text-height 2)) :widget
+    (nuklear-window gui "Information" (scale gui 10) (- h (scale gui (+ 10 (* ^long text-height 2))))
+                    (scale gui 640) (scale gui (* ^long text-height 2)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)
                     (text-label gui text1)
                     (text-label gui text2))))

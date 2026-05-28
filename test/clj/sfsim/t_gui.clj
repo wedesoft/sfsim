@@ -159,17 +159,17 @@
 
 
 (facts "Render a slider"
-       (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32 1) (slider-int gui 0 50 100 1))
+       (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32.0 1) (slider-int gui 0 50 100 1))
        => (is-image "test/clj/sfsim/fixtures/gui/slider.png" 0.1))
 
 
 (fact "Use font to render button"
-      (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32 1) (button-label gui "Test Button"))
+      (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32.0 1) (button-label gui "Test Button"))
       => (is-image "test/clj/sfsim/fixtures/gui/button.png" 0.30))
 
 
 (fact "Use font to render large button"
-      (gui-control-test gui 320 80 2.0 (layout-row-dynamic gui 64 1) (button-label gui "Large Button"))
+      (gui-control-test gui 320 80 2.0 (layout-row-dynamic gui 64.0 1) (button-label gui "Large Button"))
       => (is-image "test/clj/sfsim/fixtures/gui/large-button.png" 0.30))
 
 
@@ -181,10 +181,10 @@
                gui2                (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size 1.0)]
            (gui-framebuffer-render 320 40
                                    (nuklear-window gui1 "window-1" 0 0 160 40 :widget
-                                                   (layout-row-dynamic gui1 32 1)
+                                                   (layout-row-dynamic gui1 32.0 1)
                                                    (button-label gui1 "Button A"))
                                    (nuklear-window gui2 "window-2" 160 0 160 40 :widget
-                                                   (layout-row-dynamic gui2 32 1)
+                                                   (layout-row-dynamic gui2 32.0 1)
                                                    (button-label gui2 "Button B"))
                                    (render-nuklear-gui gui1 320 40)
                                    (render-nuklear-gui gui2 320 40)) => (is-image "test/clj/sfsim/fixtures/gui/guis.png" 0.10)
@@ -194,13 +194,13 @@
 
 
 (fact "Render a text label"
-      (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32 1) (text-label gui "Test Label"))
+      (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32.0 1) (text-label gui "Test Label"))
       => (is-image "test/clj/sfsim/fixtures/gui/label.png" 0.17))
 
 
 (fact "Render an edit field"
       (let [data (edit-data "initial" 31 :sfsim.gui/filter-ascii)]
-        (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32 1) (edit-field gui data))
+        (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32.0 1) (edit-field gui data))
         => (is-image "test/clj/sfsim/fixtures/gui/edit.png" 0.21)
         (edit-get data) => "initial"
         (edit-set data "final")
@@ -219,12 +219,12 @@
 
 
 (fact "Render check box"
-      (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32 1) (check-label gui "Check box" true))
+      (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32.0 1) (check-label gui "Check box" true))
       => (is-image "test/clj/sfsim/fixtures/gui/checkbox.png" 0.17))
 
 
 (fact "Render radio button"
-      (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32 1) (option-label gui "Radio button" true))
+      (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32.0 1) (option-label gui "Radio button" true))
       => (is-image "test/clj/sfsim/fixtures/gui/radio.png" 0.17))
 
 
