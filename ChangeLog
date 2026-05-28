@@ -1,3 +1,10 @@
+sfsim (0.19-1)
+
+	* User interface scaling
+	* Work on launch optimisation
+
+-- Jan Wedekind <jan@wedesoft.de>  Thu, 28 May 2026 22:24:56 +0100
+
 sfsim (0.18-1)
 
 	* Working on reinforcement learning for guidance instruments
