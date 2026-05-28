@@ -11,16 +11,17 @@
       [clojure.math :refer (PI sqrt round)]
       [quil.core :as q]
       [quil.middleware :as m]
-      [libpython-clj2.python :refer (py.) :as py]
+      ; [libpython-clj2.python :refer (py.) :as py]
       [fastmath.vector :refer (vec3 mag)]
       [sfsim.physics :refer (gravitational-constant)]
-      [sfsim.util :refer (cube)]
-      [sfsim.mlp :refer (tensor toitem tolist without-gradient)]
-      [sfsim.launch :refer (LaunchActor config) :as launch]))
+      ; [sfsim.mlp :refer (tensor toitem tolist without-gradient)]
+      ; [sfsim.launch :refer (LaunchActor config) :as launch]
+      [sfsim.util :refer (cube)]))
 
+
+(comment  ; Disabled under Windows
 
 (def plot-config (assoc config :timeout 3600.0))
-
 
 (defn actor []
   (let [result (LaunchActor 4 64 2)]
@@ -89,3 +90,5 @@
     :draw draw
     :middleware [m/fun-mode]
     :on-close (fn [& _] (System/exit 0))))
+
+)
