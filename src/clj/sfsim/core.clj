@@ -121,11 +121,10 @@
                                  :sfsim.gui/window-width window-width
                                  :sfsim.gui/window-height window-height
                                  :sfsim.gui/fullscreen false}
-            buffer-initial-size (* 4 1024)
-            gui-scale           1.0
+            gui-scale           1.5
             bitmap-font         (gui/setup-font-texture (gui/make-bitmap-font "resources/fonts/b612.ttf"
                                                                               (* 512 gui-scale) (* 512 gui-scale) (* gui-scale 18)))
-            gui                 (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size gui-scale)
+            gui                 (gui/make-nuklear-gui (:sfsim.gui/font bitmap-font) gui-scale)
             audio-state         (audio/make-audio-state)
             state               (atom {:gui gui-state
                                        :input input-state

@@ -146,10 +146,9 @@
 (defmacro gui-control-test
   [gui width height scale & body]
   `(gui-offscreen-render ~width ~height
-                         (let [buffer-initial-size# (* 4 1024)
-                               bitmap-font#         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf"
+                         (let [bitmap-font#         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf"
                                                                                           (* 512 ~scale) (* 512 ~scale) (* 18 ~scale)))
-                               ~gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font#) buffer-initial-size# ~scale)]
+                               ~gui                 (make-nuklear-gui (:sfsim.gui/font bitmap-font#) ~scale)]
                            (nuklear-dark-style ~gui)
                            (nuklear-window ~gui "control test window" 0 0 ~width ~height :widget
                                            ~@body)
@@ -175,10 +174,9 @@
 
 (facts "Test rendering with two GUI contexts"
        (with-invisible-window
-         (let [buffer-initial-size (* 4 1024)
-               bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
-               gui1                (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size 1.0)
-               gui2                (make-nuklear-gui (:sfsim.gui/font bitmap-font) buffer-initial-size 1.0)]
+         (let [bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
+               gui1                (make-nuklear-gui (:sfsim.gui/font bitmap-font) 1.0)
+               gui2                (make-nuklear-gui (:sfsim.gui/font bitmap-font) 1.0)]
            (gui-framebuffer-render 320 40
                                    (nuklear-window gui1 "window-1" 0 0 160 40 :widget
                                                    (layout-row-dynamic gui1 32.0 1)
