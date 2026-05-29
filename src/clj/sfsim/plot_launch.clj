@@ -64,6 +64,8 @@
       (q/no-fill)
       (q/stroke 150 150 150)
       (q/ellipse 0 0 (* 2 radius scale) (* 2 radius scale))
+      ; set line width
+      (q/stroke-weight 2)
       (doseq [[i sample] (map-indexed vector trajectory)]
              (let [position (-> sample :state :position)
                    x        (* (position 0) scale)
@@ -84,7 +86,7 @@
 (defn -main [& _args]
   (q/defsketch launch-view
     :title "Orbital launch attempt"
-    :size [1024 1024]
+    :size [512 512]
     :setup setup
     :draw draw
     :middleware [m/fun-mode]

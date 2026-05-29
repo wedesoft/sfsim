@@ -6,6 +6,8 @@
 
 (ns sfsim.t-gui
   (:require
+    [clojure.math :refer (PI)]
+    [clojure.java.shell :as shell]
     [fastmath.matrix :refer (eye)]
     [fastmath.vector :refer (vec3 vec4)]
     [malli.dev.pretty :as pretty]
@@ -24,7 +26,14 @@
       GLFW)
     (org.lwjgl.opengl
       GL11
-      GL12)))
+      GL12)
+    (org.lwjgl.system
+      MemoryStack)
+    (org.lwjgl.nuklear
+      NkColor
+      NkRect
+      NkVec2
+      Nuklear)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -221,6 +230,100 @@
 (fact "Render radio button"
       (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32.0 1) (option-label gui "Radio button" true))
       => (is-image "test/clj/sfsim/fixtures/gui/radio.png" 0.17))
+
+
+(facts "Convert number to formatted string"
+       (java.util.Locale/setDefault java.util.Locale/US)
+       (float-str 0.0) => "  0.00"
+       (float-str PI) => "  3.14"
+       (float-str 123.456) => "123.46"
+       (float-str 7733.0) => "7.733k"
+       (float-str 12345.6) => "12.35k"
+       (float-str 123456.7) => "123.5k"
+       (float-str 6378000.0) => "6.378M"
+       (float-str 1e+7) => "10.00M"
+       (float-str 1e+8) => "100.0M"
+       (float-str 1e+9) => "1.000G"
+       (float-str 1e+10) => "10.00G"
+       (float-str 1e+11) => "100.0G"
+       (float-str 1e+12) => "1.000T"
+       (float-str 1e+13) => "10.00T"
+       (float-str 1e+14) => "100.0T"
+       (float-str 1e+15) => " 1e+15")
+
+
+(fact "Render orbit MFD"
+      (spit-png "/tmp/orbit.png"
+                (gui-offscreen-render 256 256
+                         (let [gui (make-nuklear-gui-with-font 1.0)]
+                           (nuklear-dark-style gui)
+                           (let [stack (MemoryStack/stackPush)
+                                 nk-vec2 (NkVec2/malloc stack)
+                                 style (.style (:sfsim.gui/context gui))
+                                 win   (.window style)]
+                             (.x nk-vec2 (scale gui 0))
+                             (.y nk-vec2 (scale gui 0))
+                             (.padding win nk-vec2)
+                             (nuklear-window gui "control test window" 0 0 256 256 :widget
+                                             (let [fg      (NkColor/malloc stack)
+                                                   bg      (NkColor/malloc stack)
+                                                   rect    (NkRect/malloc stack)
+                                                   context (:sfsim.gui/context gui)]
+                                               (let [canvas (Nuklear/nk_window_get_canvas context)]
+                                                 (layout-row-dynamic gui 256.0 1)
+                                                 (Nuklear/nk_widget rect context)
+                                                 (Nuklear/nk_rect 0 0 256 256 rect)
+                                                 (Nuklear/nk_rgb 0 0 0 bg)
+                                                 (Nuklear/nk_fill_rect canvas rect 0.0 bg)
+                                                 (Nuklear/nk_rgb 0 0 0 bg)
+                                                 (Nuklear/nk_rgb 0 255 0 fg)
+                                                 (Nuklear/nk_rect 5 5 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "PeA" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 5 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 160000) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 5 25 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "ApA" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 25 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 240000) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 5 45 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "Alt" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 45 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 183253) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 5 65 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "Ecc" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 65 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (format "%6.4f" 0.02134) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 5 85 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "T" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 85 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 5421.2) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 5 105 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "PeT" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 105 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 5368.1) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 5 125 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "ApT" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 125 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 2657.8) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 5 145 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "Vel" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 145 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 7733.2) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 5 165 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "Inc" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 165 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (format "%6.2f°" 3.5) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 5 185 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "LAN" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 185 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (format "%6.2f°" 359.96) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 )))
+                             (MemoryStack/stackPop))
+                           (render-nuklear-gui gui 256 256)
+                           (destroy-nuklear-gui-with-font gui)))
+                true)
+      ; (println (shell/sh "/usr/bin/display" "-display" ":0.0" "/tmp/orbit.png"))
+      )
 
 
 (GLFW/glfwTerminate)

@@ -320,11 +320,12 @@
 (defn make-bitmap-font
   "Create a bitmap font with character packing data"
   [^String ttf-filename ^long bitmap-width ^long bitmap-height ^long font-height]
-  (let [font         (NkUserFont/create)
+  (let [num-chars    145
+        font         (NkUserFont/create)
         fontinfo     (STBTTFontinfo/create)
         ttf          (slurp-byte-buffer ttf-filename)
         orig-descent (int-array 1)
-        cdata        (STBTTPackedchar/calloc 95)
+        cdata        (STBTTPackedchar/calloc num-chars)
         pc           (STBTTPackContext/calloc)
         bitmap       (MemoryUtil/memAlloc (* bitmap-width bitmap-height))]
     (STBTruetype/stbtt_InitFont fontinfo ttf)
@@ -454,47 +455,15 @@
   (destroy-font-texture bitmap-font))
 
 
-(defn nuklear-dark-style
+(defn nuklear-global-scale
   [gui]
   (let [stack       (MemoryStack/stackPush)
-        rgb         (NkColor/malloc ^MemoryStack stack)
         nk-vec2     (NkVec2/malloc ^MemoryStack stack)
-        style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)
         context     (::context gui)
         style       (.style ^NkContext context)]
-    ;; Set color scheme
+    ;; Scale widget dimensions
     ;;
     ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TEXT (Nuklear/nk_rgb 210 210 210 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_WINDOW (Nuklear/nk_rgb 57 67 71 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_HEADER (Nuklear/nk_rgb 51 51 56 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BORDER (Nuklear/nk_rgb 46 46 46 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_HOVER (Nuklear/nk_rgb 58 93 121 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_ACTIVE (Nuklear/nk_rgb 63 98 126 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_HOVER (Nuklear/nk_rgb 45 53 56 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT (Nuklear/nk_rgb 57 67 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT_ACTIVE (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_PROPERTY (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT_CURSOR (Nuklear/nk_rgb 210 210 210 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_COMBO (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR_HIGHLIGHT (Nuklear/nk_rgb 255 0 0 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
-    (Nuklear/nk_style_from_table context style-table)
-    ;; Scale widget dimensions
     ;;
     ;; default buttons
     (let [button (.button style)]
@@ -670,8 +639,50 @@
       (.contextual_padding win nk-vec2)
       (.menu_padding win nk-vec2)
       (.tooltip_padding win nk-vec2))
-    ;; pop stack
     (MemoryStack/stackPop)))
+
+
+(defn nuklear-dark-style
+  [gui]
+  (let [stack       (MemoryStack/stackPush)
+        rgb         (NkColor/malloc ^MemoryStack stack)
+        style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)
+        context     (::context gui)]
+    ;; Set color scheme
+    ;;
+    ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TEXT (Nuklear/nk_rgb 210 210 210 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_WINDOW (Nuklear/nk_rgb 57 67 71 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_HEADER (Nuklear/nk_rgb 51 51 56 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BORDER (Nuklear/nk_rgb 46 46 46 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_HOVER (Nuklear/nk_rgb 58 93 121 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_ACTIVE (Nuklear/nk_rgb 63 98 126 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_HOVER (Nuklear/nk_rgb 45 53 56 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT (Nuklear/nk_rgb 57 67 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT_ACTIVE (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_PROPERTY (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT_CURSOR (Nuklear/nk_rgb 210 210 210 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_COMBO (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR_HIGHLIGHT (Nuklear/nk_rgb 255 0 0 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
+    (Nuklear/nk_style_from_table context style-table)
+    ;; pop stack
+    (MemoryStack/stackPop)
+    (nuklear-global-scale gui)))
 
 
 (defn slider-int
@@ -1210,6 +1221,27 @@
                                                                rect)
                                               (Nuklear/nk_rgb 255 255 255 rgb)))))
   (MemoryStack/stackPop))
+
+
+(defn float-str
+  "Create formatted string from distance value"
+  ^String [^double number]
+  ;; Also see https://github.com/orbitersim/orbiter/blob/main/Src/Orbiter/Astro.cpp
+  (cond
+    (< number 1e+3 ) (format "%6.2f" number)
+    (< number 1e+4 ) (format "%5.3fk" (* number 1e-3 ))
+    (< number 1e+5 ) (format "%5.2fk" (* number 1e-3 ))
+    (< number 1e+6 ) (format "%5.1fk" (* number 1e-3 ))
+    (< number 1e+7 ) (format "%5.3fM" (* number 1e-6 ))
+    (< number 1e+8 ) (format "%5.2fM" (* number 1e-6 ))
+    (< number 1e+9 ) (format "%5.1fM" (* number 1e-6 ))
+    (< number 1e+10) (format "%5.3fG" (* number 1e-9 ))
+    (< number 1e+11) (format "%5.2fG" (* number 1e-9 ))
+    (< number 1e+12) (format "%5.1fG" (* number 1e-9 ))
+    (< number 1e+13) (format "%5.3fT" (* number 1e-12))
+    (< number 1e+14) (format "%5.2fT" (* number 1e-12))
+    (< number 1e+15) (format "%5.1fT" (* number 1e-12))
+    :else (format "%6.0g" number)))
 
 
 (defn information-display
