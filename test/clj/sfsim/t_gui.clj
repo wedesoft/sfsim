@@ -252,6 +252,14 @@
        (float-str 1e+15) => " 1e+15")
 
 
+(fact "Text width"
+      (gui-offscreen-render
+        256 256
+        (let [gui (make-nuklear-gui-with-font 1.0)]
+          (text-width gui "Test") => (roughly 29.630 1e-3)
+          (destroy-nuklear-gui-with-font gui))))
+
+
 (fact "Render orbit MFD"
       (spit-png "/tmp/orbit.png"
                 (gui-offscreen-render 256 256

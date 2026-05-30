@@ -338,6 +338,7 @@
           data  (byte-buffer->array bitmap)
           alpha #:sfsim.image{:width bitmap-width :height bitmap-height :data data :channels 1}
           image (white-image-with-alpha alpha)]
+      (MemoryUtil/memFree bitmap)
       {::font font
        ::fontinfo fontinfo
        ::ttf ttf  ; keep alive after passing buffer to stbtt_InitFont
@@ -357,6 +358,42 @@
     (.texture ^NkUserFont font handle)))
 
 
+(defn text-width-callback
+  "Determine width of text in pixels"
+  [fontinfo scale text len]
+  (let [stack     (MemoryStack/stackPush)
+        unicode   (.mallocInt stack 1)
+        advance   (.mallocInt stack 1)
+        glyph-len (Nuklear/nnk_utf_decode ^long text (MemoryUtil/memAddress unicode) ^long len)
+        result
+        (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
+              (if (or (> ^long text-len ^long len)
+                      (zero? glyph-len)
+                      (= (.get unicode 0) Nuklear/NK_UTF_INVALID))
+                text-width
+                (do
+                  (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
+                  (let [text-width (+ text-width (* (.get advance 0) ^double scale))
+                        glyph-len  (Nuklear/nnk_utf_decode (+ ^long text text-len)
+                                                           (MemoryUtil/memAddress unicode) (- ^long len text-len))]
+                    (recur (+ text-len glyph-len) glyph-len text-width)))))]
+    (MemoryStack/stackPop)
+    result))
+
+
+(defn text-width
+  "Determine width of text in pixels"
+  [{::keys [bitmap-font]} text]
+  (let [fontinfo (::fontinfo bitmap-font)
+        scale    (::scale bitmap-font)
+        buffer   (MemoryUtil/memUTF8 ^String text)
+        address  (MemoryUtil/memAddress ^DirectByteBuffer buffer)
+        size     (.remaining buffer)
+        result   (text-width-callback fontinfo scale address size)]
+    (MemoryUtil/memFree buffer)
+    result))
+
+
 (defn set-width-callback
   "Set callback function for computing width of text"
   {:malli/schema [:=> [:cat :some :some] :any]}
@@ -365,24 +402,7 @@
           (reify NkTextWidthCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
             (invoke
               [_this _handle _h text len]
-              (let [stack     (MemoryStack/stackPush)
-                    unicode   (.mallocInt stack 1)
-                    advance   (.mallocInt stack 1)
-                    glyph-len (Nuklear/nnk_utf_decode text (MemoryUtil/memAddress unicode) len)
-                    result
-                    (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
-                      (if (or (> text-len len)
-                              (zero? glyph-len)
-                              (= (.get unicode 0) Nuklear/NK_UTF_INVALID))
-                        text-width
-                        (do
-                          (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
-                          (let [text-width (+ text-width (* (.get advance 0) ^double scale))
-                                glyph-len  (Nuklear/nnk_utf_decode (+ text text-len)
-                                                                   (MemoryUtil/memAddress unicode) (- len text-len))]
-                            (recur (+ text-len glyph-len) glyph-len text-width)))))]
-                (MemoryStack/stackPop)
-                result)))))
+              (text-width-callback fontinfo scale text len)))))
 
 
 (defn set-height-callback
