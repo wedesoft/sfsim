@@ -6,7 +6,7 @@
 
 (ns sfsim.t-gui
   (:require
-    [clojure.math :refer (PI)]
+    [clojure.math :refer (PI to-radians cos sin)]
     [clojure.java.shell :as shell]
     [fastmath.matrix :refer (eye)]
     [fastmath.vector :refer (vec3 vec4)]
@@ -276,7 +276,17 @@
                                              (let [fg      (NkColor/malloc stack)
                                                    bg      (NkColor/malloc stack)
                                                    rect    (NkRect/malloc stack)
-                                                   context (:sfsim.gui/context gui)]
+                                                   context (:sfsim.gui/context gui)
+                                                   agp     (to-radians 30.0)
+                                                   tra     (to-radians 45.0)
+                                                   r       6378000.0
+                                                   per     6658000.0
+                                                   apr     13922246.555
+                                                   pea     (- per r)
+                                                   apa     (- apr r)
+                                                   s-major 1.0290123277258096E7
+                                                   s-minor 9627788.819867665
+                                                   ecc     0.35297179435015597]
                                                (let [canvas (Nuklear/nk_window_get_canvas context)]
                                                  (layout-row-dynamic gui 256.0 1)
                                                  (Nuklear/nk_widget rect context)
@@ -285,49 +295,83 @@
                                                  (Nuklear/nk_rgb 82 185 142 fg)
                                                  (Nuklear/nk_fill_rect canvas rect 0.0 bg)
                                                  (Nuklear/nk_stroke_rect canvas rect 0.0 3.0 fg)
+                                                 (let [scale  (/ 120 apr)
+                                                       earth  (* scale r)
+                                                       n      44]
+                                                   (Nuklear/nk_rect (- 128 earth) (- 128 earth) (* 2 earth) (* 2 earth) rect)
+                                                   (Nuklear/nk_rgb 202 213 197 fg)
+                                                   (Nuklear/nk_stroke_circle canvas rect 2.0 fg)
+                                                   (Nuklear/nk_rgb 64 211 71 fg)
+                                                   (let [f (fn [a] [(* scale (+ (* s-major (cos a)) (- per s-major)))
+                                                                    (* scale s-minor (sin a))])
+                                                         g (fn [a] (let [[x y] (f a)]
+                                                                     [(+ 128 (- (* (cos agp) x) (* (sin agp) y)))
+                                                                      (- 128 (+ (* (sin agp) x) (* (cos agp) y)))]))]
+                                                     (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos agp))))
+                                                           [x y] [(+ 128 (* scale r)) 128]]
+                                                       (Nuklear/nk_rect (- x 2) (- y 2) 5 5 rect)
+                                                       (Nuklear/nk_fill_rect canvas rect 0.0 fg))
+                                                     (doseq [i (range n)]
+                                                            (let [a (to-radians (/ (* 360 i) n))
+                                                                  b (to-radians (/ (* 360 (inc i)) n))
+                                                                  [x0 y0] (g a)
+                                                                  [x1 y1] (g b)]
+                                                              (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 2.0 fg)))
+                                                     (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos agp))))
+                                                           [x y] [(+ 128 (* scale r)) 128]]
+                                                       (Nuklear/nk_rect (- x 2) (- y 2) 5 5 rect)
+                                                       (Nuklear/nk_fill_rect canvas rect 0.0 fg))
+                                                     (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos (+ PI agp)))))
+                                                           [x y] [(- 128 (* scale r)) 128]]
+                                                       (Nuklear/nk_rect (- x 2) (- y 2) 5 5 rect)
+                                                       (Nuklear/nk_fill_rect canvas rect 0.0 bg)
+                                                       (Nuklear/nk_stroke_rect canvas rect 0.0 2.0 fg))))
                                                  (Nuklear/nk_rgb 0 0 0 bg)
-                                                 (Nuklear/nk_rgb 64 211 71 fg)
+                                                 (Nuklear/nk_rgb 129 226 207 fg)
                                                  (Nuklear/nk_rect 5 5 40 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect "PeA" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
-                                                 (Nuklear/nk_rect 45 5 55 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect (float-str 160000) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect "Earth" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rgb 64 211 71 fg)
                                                  (Nuklear/nk_rect 5 25 40 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect "ApA" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect "PeA" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 45 25 55 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect (float-str 240000) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str pea) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 5 45 40 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect "Alt" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect "ApA" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 45 45 55 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect (float-str 183253) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str apa) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 5 65 40 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect "Ecc" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect "Alt" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 45 65 55 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect (format "%6.4f" 0.02134) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 280000.0) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 5 85 40 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect "T" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect "Ecc" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 45 85 55 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect (float-str 5421.2) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect (format "%6.4f" ecc) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 5 105 40 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect "PeT" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect "T" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 45 105 55 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect (float-str 5368.1) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 5421.2) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 5 125 40 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect "ApT" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect "PeT" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 45 125 55 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect (float-str 2657.8) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 5368.1) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 5 145 40 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect "Vel" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect "ApT" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 45 145 55 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect (float-str 7733.2) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 2657.8) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 5 165 40 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect "Vel" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 45 165 55 20 rect)
+                                                 (Nuklear/nk_draw_text canvas rect (float-str 9000.0) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_rect 5 185 40 20 rect)
                                                  (Nuklear/nk_draw_text canvas rect "Inc" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (let [text (format "%6.2f°" 3.5)]
-                                                   (Nuklear/nk_rect (- 100 (text-width gui text)) 165 (text-width gui text) 20 rect)
+                                                   (Nuklear/nk_rect (- 100 (text-width gui text)) 185 (text-width gui text) 20 rect)
                                                    (Nuklear/nk_draw_text canvas rect text (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg))
-                                                 (Nuklear/nk_rect 5 185 40 20 rect)
+                                                 (Nuklear/nk_rect 5 205 40 20 rect)
                                                  (Nuklear/nk_draw_text canvas rect "LAN" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (let [text (format "%6.2f°" 359.96)]
-                                                   (Nuklear/nk_rect (- 100 (text-width gui text)) 185 (text-width gui text) 20 rect)
+                                                   (Nuklear/nk_rect (- 100 (text-width gui text)) 205 (text-width gui text) 20 rect)
                                                    (Nuklear/nk_draw_text canvas rect text (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg))
                                                  )))
                              (MemoryStack/stackPop))

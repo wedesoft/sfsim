@@ -175,7 +175,7 @@
       (.vertex_size 20)
       (.vertex_alignment 4)
       (.tex_null ^NkDrawNullTexture null-texture)
-      (.circle_segment_count 22)
+      (.circle_segment_count 44)
       (.curve_segment_count 22)
       (.arc_segment_count 22)
       (.global_alpha 1.0)

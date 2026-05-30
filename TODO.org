@@ -40,7 +40,8 @@
   - [ ] ils
   - [ ] save/load game
   - [ ] reentry flame
-  - [ ] thrust vectoring
+  - [ ] thrust vectoringa
+  - [ ] Gabe Newell on realism: https://www.youtube.com/watch?v=MGpFEv1-mAo
 * TODO [#A] spacecraft simulation                                      :physics:
   - Note taken on [2026-05-07 Do 23:45] \\
     def stable_log_det(z):
