@@ -286,7 +286,7 @@
                                                  (Nuklear/nk_fill_rect canvas rect 0.0 bg)
                                                  (Nuklear/nk_stroke_rect canvas rect 0.0 3.0 fg)
                                                  (Nuklear/nk_rgb 0 0 0 bg)
-                                                 (Nuklear/nk_rgb 0 255 0 fg)
+                                                 (Nuklear/nk_rgb 64 211 71 fg)
                                                  (Nuklear/nk_rect 5 5 40 20 rect)
                                                  (Nuklear/nk_draw_text canvas rect "PeA" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 45 5 55 20 rect)
