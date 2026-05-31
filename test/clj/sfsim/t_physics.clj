@@ -511,7 +511,7 @@
 
 
 (facts "Get orbital parameters"
-       (let [planet {:sfsim.planet/mass 5.9722e+24}]
+       (let [planet {:sfsim.planet/mass 5.9722e+24 :sfsim.planet/radius 6378000.0 :sfsim.planet/max-height 8000.0}]
          ; Stationary position
          (gravitational-parameter {:sfsim.planet/mass 5.9722e+24}) => (* 5.9722e+24 6.67430e-11)
          (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion 1 0 0 0))
@@ -602,7 +602,12 @@
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 9000) (vec3 0 0 0))
          (inclination @state) => (roughly (/ PI 2) 1e-6)
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 -9000 0) (vec3 0 0 0))
-         (inclination @state) => (roughly PI 1e-6)))
+         (inclination @state) => (roughly PI 1e-6)
+         (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion 1 0 0 0))
+         (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 9000) (vec3 0 0 0))
+         (longitude-ascending-node @state) => (roughly 0.0 1e-6)
+         (swap! state set-pose :sfsim.physics/orbit (vec3 0 6658000 0) (q/->Quaternion 1 0 0 0))
+         (longitude-ascending-node @state) => (roughly (to-radians 90.0) 1e-6)))
 
 
 (jolt/remove-and-destroy-body sphere)

@@ -925,5 +925,14 @@
     (- (/ PI 2) (atan2 (.z ^Vec3 momentum) (hypot (.x ^Vec3 momentum) (.y ^Vec3 momentum))))))
 
 
+(defn longitude-ascending-node
+  "Get longitude of ascending node of orbit"
+  ^double [state]
+  (let [pole           (vec3 0 0 1)
+        momentum       (specific-angular-momentum state)
+        ascending-node (cross pole momentum)]
+    (atan2 (.y ^Vec3 ascending-node) (.x ^Vec3 ascending-node))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
