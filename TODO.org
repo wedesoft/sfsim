@@ -4,17 +4,17 @@
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
   - [-] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
-    - [ ] PeA
-    - [ ] ApA
-    - [ ] Alt
-    - [ ] Ecc
-    - [ ] T
-    - [ ] PeT
-    - [ ] ApT
-    - [ ] Vel
-    - [ ] Inc
+    - [X] PeA
+    - [X] ApA
+    - [X] Alt
+    - [X] Ecc
+    - [X] T
+    - [X] PeT
+    - [X] ApT
+    - [X] Vel
+    - [X] Inc
     - [ ] LAN
-    - [ ] true anomaly
+    - [X] true anomaly
   - [ ] launch mfd, reinforcement learning launch physics
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed

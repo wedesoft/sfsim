@@ -595,7 +595,14 @@
            (specific-mechanical-energy planet @state) => (roughly 0.0 1e-6)
            (eccentricity planet @state) => (roughly 1.0 1e-6)
            (periapsis planet @state) => (roughly 6658000.0 1e-3)
-           (time-since-periapsis planet @state) => (roughly 0.0 1e-3))))
+           (time-since-periapsis planet @state) => (roughly 0.0 1e-3))
+         (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion 1 0 0 0))
+         (swap! state set-speed :sfsim.physics/orbit (vec3 0 9000 0) (vec3 0 0 0))
+         (inclination @state) => (roughly 0.0 1e-6)
+         (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 9000) (vec3 0 0 0))
+         (inclination @state) => (roughly (/ PI 2) 1e-6)
+         (swap! state set-speed :sfsim.physics/orbit (vec3 0 -9000 0) (vec3 0 0 0))
+         (inclination @state) => (roughly PI 1e-6)))
 
 
 (jolt/remove-and-destroy-body sphere)

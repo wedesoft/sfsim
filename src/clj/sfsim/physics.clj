@@ -918,5 +918,12 @@
       (+ (* 0.5 T) t))))
 
 
+(defn inclination
+  "Get inclination of orbit"
+  ^double [state]
+  (let [momentum (specific-angular-momentum state)]
+    (- (/ PI 2) (atan2 (.z ^Vec3 momentum) (hypot (.x ^Vec3 momentum) (.y ^Vec3 momentum))))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
