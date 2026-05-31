@@ -234,22 +234,24 @@
 
 (facts "Convert number to formatted string"
        (java.util.Locale/setDefault java.util.Locale/US)
-       (float-str 0.0) => "  0.00"
-       (float-str PI) => "  3.14"
-       (float-str 123.456) => "123.46"
-       (float-str 7733.0) => "7.733k"
-       (float-str 12345.6) => "12.35k"
-       (float-str 123456.7) => "123.5k"
-       (float-str 6378000.0) => "6.378M"
-       (float-str 1e+7) => "10.00M"
-       (float-str 1e+8) => "100.0M"
-       (float-str 1e+9) => "1.000G"
-       (float-str 1e+10) => "10.00G"
-       (float-str 1e+11) => "100.0G"
-       (float-str 1e+12) => "1.000T"
-       (float-str 1e+13) => "10.00T"
-       (float-str 1e+14) => "100.0T"
-       (float-str 1e+15) => " 1e+15")
+       (float-str 0.0) => "   0.00"
+       (float-str PI) => "   3.14"
+       (float-str (- PI)) => "  -3.14"
+       (float-str 123.456) => " 123.46"
+       (float-str -123.456) => "-123.46"
+       (float-str 7733.0) => " 7.733k"
+       (float-str 12345.6) => " 12.35k"
+       (float-str 123456.7) => " 123.5k"
+       (float-str 6378000.0) => " 6.378M"
+       (float-str 1e+7) => " 10.00M"
+       (float-str 1e+8) => " 100.0M"
+       (float-str 1e+9) => " 1.000G"
+       (float-str 1e+10) => " 10.00G"
+       (float-str 1e+11) => " 100.0G"
+       (float-str 1e+12) => " 1.000T"
+       (float-str 1e+13) => " 10.00T"
+       (float-str 1e+14) => " 100.0T"
+       (float-str 1e+15) => "  1e+15")
 
 
 (fact "Text width"
@@ -295,7 +297,7 @@
                                                  (Nuklear/nk_rgb 82 185 142 fg)
                                                  (Nuklear/nk_fill_rect canvas rect 0.0 bg)
                                                  (Nuklear/nk_stroke_rect canvas rect 0.0 3.0 fg)
-                                                 (let [scale  (/ 120 apr)
+                                                 (let [scale  (/ 120 (max apr r))
                                                        earth  (* scale r)
                                                        n      44]
                                                    (Nuklear/nk_rect (- 128 earth) (- 128 earth) (* 2 earth) (* 2 earth) rect)
@@ -321,6 +323,10 @@
                                                            [x y] [(+ 128 (* scale r)) 128]]
                                                        (Nuklear/nk_rect (- x 2) (- y 2) 5 5 rect)
                                                        (Nuklear/nk_fill_rect canvas rect 0.0 fg))
+                                                     (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos tra))))
+                                                           [x y] [(+ 128 (* scale r (cos (+ agp tra))))
+                                                                  (- 128 (* scale r (sin (+ agp tra))))]]
+                                                       (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg))
                                                      (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos (+ PI agp)))))
                                                            [x y] [(- 128 (* scale r)) 128]]
                                                        (Nuklear/nk_rect (- x 2) (- y 2) 5 5 rect)
@@ -346,7 +352,7 @@
                                                  (Nuklear/nk_rect 5 85 40 20 rect)
                                                  (Nuklear/nk_draw_text canvas rect "Ecc" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 45 85 55 20 rect)
-                                                 (Nuklear/nk_draw_text canvas rect (format "%6.4f" ecc) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                                                 (Nuklear/nk_draw_text canvas rect (format "%7.4f" ecc) (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 5 105 40 20 rect)
                                                  (Nuklear/nk_draw_text canvas rect "T" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
                                                  (Nuklear/nk_rect 45 105 55 20 rect)

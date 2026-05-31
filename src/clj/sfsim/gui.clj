@@ -1248,20 +1248,20 @@
   ^String [^double number]
   ;; Also see https://github.com/orbitersim/orbiter/blob/main/Src/Orbiter/Astro.cpp
   (cond
-    (< number 1e+3 ) (format "%6.2f" number)
-    (< number 1e+4 ) (format "%5.3fk" (* number 1e-3 ))
-    (< number 1e+5 ) (format "%5.2fk" (* number 1e-3 ))
-    (< number 1e+6 ) (format "%5.1fk" (* number 1e-3 ))
-    (< number 1e+7 ) (format "%5.3fM" (* number 1e-6 ))
-    (< number 1e+8 ) (format "%5.2fM" (* number 1e-6 ))
-    (< number 1e+9 ) (format "%5.1fM" (* number 1e-6 ))
-    (< number 1e+10) (format "%5.3fG" (* number 1e-9 ))
-    (< number 1e+11) (format "%5.2fG" (* number 1e-9 ))
-    (< number 1e+12) (format "%5.1fG" (* number 1e-9 ))
-    (< number 1e+13) (format "%5.3fT" (* number 1e-12))
-    (< number 1e+14) (format "%5.2fT" (* number 1e-12))
-    (< number 1e+15) (format "%5.1fT" (* number 1e-12))
-    :else (format "%6.0g" number)))
+    (< (abs number) 1e+3 ) (format "%7.2f" number)
+    (< (abs number) 1e+4 ) (format "%6.3fk" (* number 1e-3 ))
+    (< (abs number) 1e+5 ) (format "%6.2fk" (* number 1e-3 ))
+    (< (abs number) 1e+6 ) (format "%6.1fk" (* number 1e-3 ))
+    (< (abs number) 1e+7 ) (format "%6.3fM" (* number 1e-6 ))
+    (< (abs number) 1e+8 ) (format "%6.2fM" (* number 1e-6 ))
+    (< (abs number) 1e+9 ) (format "%6.1fM" (* number 1e-6 ))
+    (< (abs number) 1e+10) (format "%6.3fG" (* number 1e-9 ))
+    (< (abs number) 1e+11) (format "%6.2fG" (* number 1e-9 ))
+    (< (abs number) 1e+12) (format "%6.1fG" (* number 1e-9 ))
+    (< (abs number) 1e+13) (format "%6.3fT" (* number 1e-12))
+    (< (abs number) 1e+14) (format "%6.2fT" (* number 1e-12))
+    (< (abs number) 1e+15) (format "%6.1fT" (* number 1e-12))
+    :else (format "%7.0g" number)))
 
 
 (defn information-display
