@@ -305,13 +305,12 @@
                                                    s-major 1.0290123277258096E7
                                                    s-minor 9627788.819867665
                                                    ecc     0.35297179435015597]
-                                               (let [canvas (Nuklear/nk_window_get_canvas context)]
-                                                 (layout-row-dynamic gui 256.0 1)
-                                                 (Nuklear/nk_widget rect context)
+                                               (layout-row-dynamic gui 256.0 1)
+                                               (widget gui canvas canvas-rect
                                                  (Nuklear/nk_rgb 0 0 0 bg)
                                                  (Nuklear/nk_rgb 82 185 142 fg)
-                                                 (Nuklear/nk_fill_rect canvas rect 0.0 bg)
-                                                 (Nuklear/nk_stroke_rect canvas rect 0.0 3.0 fg)
+                                                 (Nuklear/nk_fill_rect canvas canvas-rect 0.0 bg)
+                                                 (Nuklear/nk_stroke_rect canvas canvas-rect 0.0 3.0 fg)
                                                  (let [scale  (/ 120 (max apr r))
                                                        earth  (* scale r)
                                                        n      44]
@@ -326,7 +325,7 @@
                                                                       (- 128 (+ (* (sin agp) x) (* (cos agp) y)))]))]
                                                      (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos agp))))
                                                            [x y] [(+ 128 (* scale r)) 128]]
-                                                       (Nuklear/nk_rect (- x 2) (- y 2) 5 5 rect)
+                                                       (Nuklear/nk_rect (- x 2) (- y 2) 7 7 rect)
                                                        (Nuklear/nk_fill_rect canvas rect 0.0 fg))
                                                      (doseq [i (range n)]
                                                             (let [a (to-radians (/ (* 360 i) n))
@@ -341,7 +340,9 @@
                                                      (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos tra))))
                                                            [x y] [(+ 128 (* scale r (cos (+ agp tra))))
                                                                   (- 128 (* scale r (sin (+ agp tra))))]]
-                                                       (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg))
+                                                       (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg)
+                                                       (Nuklear/nk_rect (- x 2) (- y 2) 5 5 rect)
+                                                       (Nuklear/nk_fill_circle canvas rect fg))
                                                      (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos (+ PI agp)))))
                                                            [x y] [(- 128 (* scale r)) 128]]
                                                        (Nuklear/nk_rect (- x 2) (- y 2) 5 5 rect)
