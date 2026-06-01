@@ -38,6 +38,7 @@
       NkBuffer
       NkColor
       NkColor$Buffer
+      NkCommandBuffer
       NkContext
       NkConvertConfig
       NkDrawNullTexture
@@ -868,6 +869,28 @@
      (Nuklear/nk_widget ~rect context#)
      ~@body
      (MemoryStack/stackPop)))
+
+
+(defn draw-text
+  "Draw left-aligned text on a canvas"
+  [gui canvas x y w h text r g b]
+  (let [stack (MemoryStack/stackPush)
+        rect  (NkRect/malloc stack)
+        bg    (NkColor/malloc stack)
+        fg    (NkColor/malloc stack)
+        font  (::font (::bitmap-font gui))]
+    (Nuklear/nk_rect x y w h rect)
+    (Nuklear/nk_rgb 0 0 0 bg)
+    (Nuklear/nk_rgb r g b fg)
+    (Nuklear/nk_draw_text ^NkCommandBuffer canvas rect ^String text ^NkUserFont font bg fg)
+    (MemoryStack/stackPop)))
+
+
+(defn draw-text-right
+  "Draw right-aligned text on a canvas"
+  [gui canvas x y w h text r g b]
+  (let [text-width (text-width gui text)]
+    (draw-text gui canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text r g b)))
 
 
 (declare main-dialog)
