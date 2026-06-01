@@ -858,6 +858,18 @@
        (Nuklear/nk_group_end ^NkContext (::context ~gui)))))
 
 
+(defmacro widget
+  "Macro to set up rendering of a custom widget"
+  [gui canvas rect & body]
+  `(let [context# (::context ~gui)
+         ~canvas  (Nuklear/nk_window_get_canvas context#)
+         stack#   (MemoryStack/stackPush)
+         ~rect    (NkRect/malloc stack#)]
+     (Nuklear/nk_widget ~rect context#)
+     ~@body
+     (MemoryStack/stackPop)))
+
+
 (declare main-dialog)
 
 

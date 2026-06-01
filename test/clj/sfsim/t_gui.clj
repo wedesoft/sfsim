@@ -262,6 +262,21 @@
           (destroy-nuklear-gui-with-font gui))))
 
 
+
+(fact "Dynamic row layout with fractions"
+      (gui-control-test
+        gui 160 24 1.0
+        (layout-row-dynamic gui 24.0 1)
+        (widget gui canvas rect
+                (let [stack   (MemoryStack/stackPush)
+                      fg      (NkColor/malloc stack)
+                      bg      (NkColor/malloc stack)]
+                  (Nuklear/nk_rgb 0 0 0 bg)
+                  (Nuklear/nk_rgb 255 0 0 fg)
+                  (Nuklear/nk_draw_text canvas rect "Some red text" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
+                  (MemoryStack/stackPop)))) => (is-image "test/clj/sfsim/fixtures/gui/text.png" 0.10))
+
+
 (fact "Render orbit MFD"
       (spit-png "/tmp/orbit.png"
                 (gui-offscreen-render 256 256
@@ -292,7 +307,6 @@
                                                (let [canvas (Nuklear/nk_window_get_canvas context)]
                                                  (layout-row-dynamic gui 256.0 1)
                                                  (Nuklear/nk_widget rect context)
-                                                 (Nuklear/nk_rect 0 0 256 256 rect)
                                                  (Nuklear/nk_rgb 0 0 0 bg)
                                                  (Nuklear/nk_rgb 82 185 142 fg)
                                                  (Nuklear/nk_fill_rect canvas rect 0.0 bg)
