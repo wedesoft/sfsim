@@ -893,13 +893,13 @@
 
 (defn fill-rect
   "Draw filled rectangle"
-  [canvas x y w h r g b]
+  [canvas x y w h rounding r g b]
   (let [stack (MemoryStack/stackPush)
         rect  (NkRect/malloc stack)
         rgb   (NkColor/malloc stack)]
     (Nuklear/nk_rect x y w h rect)
     (Nuklear/nk_rgb r g b rgb)
-    (Nuklear/nk_fill_rect canvas rect 0.0 rgb)
+    (Nuklear/nk_fill_rect canvas rect rounding rgb)
     (MemoryStack/stackPop)))
 
 
@@ -912,6 +912,18 @@
     (Nuklear/nk_rect x y w h rect)
     (Nuklear/nk_rgb r g b rgb)
     (Nuklear/nk_stroke_rect canvas rect rounding thickness rgb)
+    (MemoryStack/stackPop)))
+
+
+(defn stroke-circle
+  "Draw circle outline"
+  [canvas x y w h thickness r g b]
+  (let [stack (MemoryStack/stackPush)
+        rect  (NkRect/malloc stack)
+        rgb   (NkColor/malloc stack)]
+    (Nuklear/nk_rect x y w h rect)
+    (Nuklear/nk_rgb r g b rgb)
+    (Nuklear/nk_stroke_circle canvas rect thickness rgb)
     (MemoryStack/stackPop)))
 
 
