@@ -8,14 +8,11 @@
     "Plot launch trajectory using current policy/actor"
     (:gen-class)
     (:require
-      [clojure.math :refer (PI sqrt round)]
       [quil.core :as q]
       [quil.middleware :as m]
       [libpython-clj2.python :refer (py.) :as py]
       [fastmath.vector :refer (vec3 mag)]
-      [sfsim.physics :refer (gravitational-constant)]
-      [sfsim.util :refer (cube)]
-      [sfsim.mlp :refer (tensor toitem tolist without-gradient)]
+      [sfsim.mlp :refer (tensor tolist without-gradient)]
       [sfsim.launch :refer (LaunchActor config) :as launch]))
 
 
