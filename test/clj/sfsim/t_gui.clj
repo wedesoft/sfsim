@@ -262,13 +262,25 @@
           (destroy-nuklear-gui-with-font gui))))
 
 
+(fact "Define rectangle"
+      (with-rect rect 5 3 20 10 [(.x rect) (.y rect) (.w rect) (.h rect)]) => [5.0 3.0 20.0 10.0])
+
+(fact "Define colour"
+      (with-color fg 63 127 255 [(.r fg) (.g fg) (.b fg)]) => [63 127 -1])
+
+
+(fact "Define colours"
+      (with-colors [] 42) => 42
+      (with-colors [fg 63 127 255] [(.r fg) (.g fg) (.b fg)]) => [63 127 -1])
+
 
 (fact "Dynamic row layout with fractions"
       (gui-control-test
         gui 160 24 1.0
         (layout-row-dynamic gui 24.0 1)
         (widget gui canvas rect
-                (draw-text gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" 255 0 0)))
+                (with-color red 255 0 0
+                  (draw-text gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" red))))
       => (is-image "test/clj/sfsim/fixtures/gui/text.png" 0.10))
 
 
@@ -280,8 +292,6 @@
                            (without-window-padding gui
                              (nuklear-window gui "control test window" 0 0 256 256 :widget
                                              (let [stack   (MemoryStack/stackPush)
-                                                   fg      (NkColor/malloc stack)
-                                                   bg      (NkColor/malloc stack)
                                                    rect    (NkRect/malloc stack)
                                                    context (:sfsim.gui/context gui)
                                                    agp     (to-radians 30.0)
@@ -295,19 +305,23 @@
                                                    s-major 1.0290123277258096E7
                                                    s-minor 9627788.819867665
                                                    ecc     0.35297179435015597]
+                                               ; (layout-row-dynamic gui 32.0 1)
+                                               ; (button-label gui "Test")
                                                (layout-row-dynamic gui 256.0 1)
-                                               (widget gui canvas canvas-rect
-                                                       (fill-rect canvas (.x canvas-rect) (.y canvas-rect)
-                                                                  (.w canvas-rect) (.h canvas-rect) 0.0 0 0 0)
-                                                       (stroke-rect canvas (.x canvas-rect) (.y canvas-rect)
-                                                                    (.w canvas-rect) (.h canvas-rect) 0.0 3.0
-                                                                    82 185 142)
+                                               (with-colors
+                                                 [bg       0   0   0
+                                                  fg      64 211  71
+                                                  border  82 185 142
+                                                  bright 202 213 197
+                                                  title  129 226 207]
+                                                 (widget gui canvas canvas-rect
+                                                       (fill-rect canvas canvas-rect 0.0 bg)
+                                                       (stroke-rect canvas canvas-rect 0.0 3.0 border)
                                                        (let [scale  (/ 120 (max apr r))
                                                              earth  (* scale r)
                                                              n      44]
-                                                         (stroke-circle canvas (- 128 earth) (- 128 earth) (* 2 earth) (* 2 earth) 2.0
-                                                                        202 213 197)
-                                                         (Nuklear/nk_rgb 64 211 71 fg)
+                                                         (with-rect rect (- 128 earth) (- 128 earth) (* 2 earth) (* 2 earth)
+                                                           (stroke-circle canvas rect 2.0 bright))
                                                          (let [f (fn [a] [(* scale (+ (* s-major (cos a)) (- per s-major)))
                                                                           (* scale s-minor (sin a))])
                                                                g (fn [a] (let [[x y] (f a)]
@@ -315,7 +329,8 @@
                                                                             (- 128 (+ (* (sin agp) x) (* (cos agp) y)))]))]
                                                            (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos agp))))
                                                                  [x y] [(+ 128 (* scale r)) 128]]
-                                                             (fill-rect canvas (- x 3) (- y 3) 7 7 0.0 64 211 71))
+                                                             (with-rect rect (- x 3) (- y 3) 7 7
+                                                               (fill-rect canvas rect 0.0 fg)))
                                                            (doseq [i (range n)]
                                                                   (let [a (to-radians (/ (* 360 i) n))
                                                                         b (to-radians (/ (* 360 (inc i)) n))
@@ -324,39 +339,41 @@
                                                                     (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 2.0 fg)))
                                                            (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos agp))))
                                                                  [x y] [(+ 128 (* scale r)) 128]]
-                                                             (fill-rect canvas (- x 2) (- y 2) 5 5 0.0 64 211 71))
+                                                             (with-rect rect (- x 2) (- y 2) 5 5
+                                                               (fill-rect canvas rect 0.0 fg)))
                                                            (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos tra))))
                                                                  [x y] [(+ 128 (* scale r (cos (+ agp tra))))
                                                                         (- 128 (* scale r (sin (+ agp tra))))]]
                                                              (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg)
-                                                             (Nuklear/nk_rect (- x 2) (- y 2) 5 5 rect)
-                                                             (Nuklear/nk_fill_circle canvas rect fg))
+                                                             (with-rect rect (- x 2) (- y 2) 5 5
+                                                               (fill-circle canvas rect fg)))
                                                            (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos (+ PI agp)))))
                                                                  [x y] [(- 128 (* scale r)) 128]]
-                                                             (fill-rect canvas (- x 2) (- y 2) 5 5 0.0 0 0 0)
-                                                             (stroke-rect canvas (- x 2) (- y 2) 5 5 0.0 2.0 64 211 71))))
-                                                       (draw-text gui canvas 5 5 40 20 "Earth" 129 226 207)
-                                                       (draw-text gui canvas 5 25 40 20 "PeA" 64 211 71)
-                                                       (draw-text gui canvas 45 25 55 20 (float-str pea) 64 211 71)
-                                                       (draw-text gui canvas 5 45 40 20 "ApA" 64 211 71)
-                                                       (draw-text gui canvas 45 45 55 20 (float-str apa) 64 211 71)
-                                                       (draw-text gui canvas 5 65 40 20 "Alt" 64 211 71)
-                                                       (draw-text gui canvas 45 65 55 20 (float-str alt) 64 211 71)
-                                                       (draw-text gui canvas 5 85 40 20 "Ecc" 64 211 71)
-                                                       (draw-text gui canvas 45 85 55 20 (format "%7.4f" ecc) 64 211 71)
-                                                       (draw-text gui canvas 5 105 40 20 "T" 64 211 71)
-                                                       (draw-text gui canvas 45 105 55 20 (float-str 5421.2) 64 211 71)
-                                                       (draw-text gui canvas 5 125 40 20 "PeT" 64 211 71)
-                                                       (draw-text gui canvas 45 125 55 20 (float-str -1253.2) 64 211 71)
-                                                       (draw-text gui canvas 5 145 40 20 "ApT" 64 211 71)
-                                                       (draw-text gui canvas 45 145 55 20 (float-str 3242.0) 64 211 71)
-                                                       (draw-text gui canvas 5 165 40 20 "Vel" 64 211 71)
-                                                       (draw-text gui canvas 45 165 55 20 (float-str 9000.0) 64 211 71)
-                                                       (draw-text gui canvas 5 185 40 20 "Inc" 64 211 71)
-                                                       (draw-text-right gui canvas 45 185 55 20 (format "%6.2f°" 3.5) 64 211 71)
-                                                       (draw-text gui canvas 5 205 40 20 "LAN" 64 211 71)
-                                                       (draw-text-right gui canvas 45 205 55 20 (format "%6.2f°" 359.96) 64 211 71)
-                                                       (MemoryStack/stackPop)))))
+                                                             (with-rect rect (- x 2) (- y 2) 5 5
+                                                               (fill-rect canvas rect 0.0 bg))
+                                                             (stroke-rect canvas rect 0.0 2.0 fg))))
+                                                       (draw-text gui canvas 5 5 40 20 "Earth" title)
+                                                       (draw-text gui canvas 5 25 40 20 "PeA" fg)
+                                                       (draw-text gui canvas 45 25 55 20 (float-str pea) fg)
+                                                       (draw-text gui canvas 5 45 40 20 "ApA" fg)
+                                                       (draw-text gui canvas 45 45 55 20 (float-str apa) fg)
+                                                       (draw-text gui canvas 5 65 40 20 "Alt" fg)
+                                                       (draw-text gui canvas 45 65 55 20 (float-str alt) fg)
+                                                       (draw-text gui canvas 5 85 40 20 "Ecc" fg)
+                                                       (draw-text gui canvas 45 85 55 20 (format "%7.4f" ecc) fg)
+                                                       (draw-text gui canvas 5 105 40 20 "T" fg)
+                                                       (draw-text gui canvas 45 105 55 20 (float-str 5421.2) fg)
+                                                       (draw-text gui canvas 5 125 40 20 "PeT" fg)
+                                                       (draw-text gui canvas 45 125 55 20 (float-str -1253.2) fg)
+                                                       (draw-text gui canvas 5 145 40 20 "ApT" fg)
+                                                       (draw-text gui canvas 45 145 55 20 (float-str 3242.0) fg)
+                                                       (draw-text gui canvas 5 165 40 20 "Vel" fg)
+                                                       (draw-text gui canvas 45 165 55 20 (float-str 9000.0) fg)
+                                                       (draw-text gui canvas 5 185 40 20 "Inc" fg)
+                                                       (draw-text-right gui canvas 45 185 55 20 (format "%6.2f°" 3.5) fg)
+                                                       (draw-text gui canvas 5 205 40 20 "LAN" fg)
+                                                       (draw-text-right gui canvas 45 205 55 20 (format "%6.2f°" 359.96) fg)
+                                                       (MemoryStack/stackPop))))))
                            (render-nuklear-gui gui 256 256)
                            (destroy-nuklear-gui-with-font gui)))
                 true)

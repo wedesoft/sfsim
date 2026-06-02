@@ -891,62 +891,77 @@
      (MemoryStack/stackPop)))
 
 
+(defmacro with-rect
+  "Define a temporary rectangle"
+  [rect x y w h & body]
+  `(let [stack# (MemoryStack/stackPush)
+         ~rect  (NkRect/malloc stack#)]
+     (Nuklear/nk_rect ~x ~y ~w ~h ~rect)
+     (try
+       ~@body
+       (finally
+         (MemoryStack/stackPop)))))
+
+
+(defmacro with-color
+  "Define a colour"
+  [color r g b & body]
+  `(let [stack# (MemoryStack/stackPush)
+         ~color (NkColor/malloc stack#)]
+     (Nuklear/nk_rgb ~r ~g ~b ~color)
+     (try
+       ~@body
+       (finally
+         (MemoryStack/stackPop)))))
+
+
+(defmacro with-colors
+  "Define a few colours"
+  [colors & body]
+  (if (seq colors)
+    `(with-color ~(nth colors 0) ~(nth colors 1) ~(nth colors 2) ~(nth colors 3)
+       (with-colors ~(drop 4 colors) ~@body))
+    `(do ~@body)))
+
+
 (defn fill-rect
   "Draw filled rectangle"
-  [canvas x y w h rounding r g b]
-  (let [stack (MemoryStack/stackPush)
-        rect  (NkRect/malloc stack)
-        rgb   (NkColor/malloc stack)]
-    (Nuklear/nk_rect x y w h rect)
-    (Nuklear/nk_rgb r g b rgb)
-    (Nuklear/nk_fill_rect canvas rect rounding rgb)
-    (MemoryStack/stackPop)))
+  [canvas rect rounding color]
+  (Nuklear/nk_fill_rect canvas rect rounding color))
 
 
 (defn stroke-rect
   "Draw outlines of rectangle"
-  [canvas x y w h rounding thickness r g b]
-  (let [stack (MemoryStack/stackPush)
-        rect  (NkRect/malloc stack)
-        rgb   (NkColor/malloc stack)]
-    (Nuklear/nk_rect x y w h rect)
-    (Nuklear/nk_rgb r g b rgb)
-    (Nuklear/nk_stroke_rect canvas rect rounding thickness rgb)
-    (MemoryStack/stackPop)))
+  [canvas rect rounding thickness color]
+  (Nuklear/nk_stroke_rect canvas rect rounding thickness color))
 
 
 (defn stroke-circle
   "Draw circle outline"
-  [canvas x y w h thickness r g b]
-  (let [stack (MemoryStack/stackPush)
-        rect  (NkRect/malloc stack)
-        rgb   (NkColor/malloc stack)]
-    (Nuklear/nk_rect x y w h rect)
-    (Nuklear/nk_rgb r g b rgb)
-    (Nuklear/nk_stroke_circle canvas rect thickness rgb)
-    (MemoryStack/stackPop)))
+  [canvas rect thickness color]
+  (Nuklear/nk_stroke_circle canvas rect thickness color))
+
+
+(defn fill-circle
+  "Draw filled circle"
+  [canvas rect color]
+  (Nuklear/nk_fill_circle canvas rect color))
 
 
 (defn draw-text
   "Draw left-aligned text on a canvas"
-  [gui canvas x y w h text r g b]
-  (let [stack (MemoryStack/stackPush)
-        rect  (NkRect/malloc stack)
-        bg    (NkColor/malloc stack)
-        fg    (NkColor/malloc stack)
-        font  (::font (::bitmap-font gui))]
-    (Nuklear/nk_rect x y w h rect)
-    (Nuklear/nk_rgb 0 0 0 bg)
-    (Nuklear/nk_rgb r g b fg)
-    (Nuklear/nk_draw_text ^NkCommandBuffer canvas rect ^String text ^NkUserFont font bg fg)
-    (MemoryStack/stackPop)))
+  [gui canvas x y w h text color]
+  (with-rect rect x y w h
+    (with-color bg 0 0 0
+      (let [font  (::font (::bitmap-font gui))]
+        (Nuklear/nk_draw_text ^NkCommandBuffer canvas rect ^String text ^NkUserFont font bg ^NkColor color)))))
 
 
 (defn draw-text-right
   "Draw right-aligned text on a canvas"
-  [gui canvas x y w h text r g b]
+  [gui canvas x y w h text color]
   (let [text-width (text-width gui text)]
-    (draw-text gui canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text r g b)))
+    (draw-text gui canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text color)))
 
 
 (declare main-dialog)
