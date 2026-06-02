@@ -311,6 +311,21 @@
          (MemoryStack/stackPop)))))
 
 
+(defmacro without-window-padding
+  [gui & body]
+  `(let [stack#   (MemoryStack/stackPush)
+         nk-vec2# (NkVec2/malloc stack#)
+         win#     (.window (.style (::context ~gui)))]
+     (.x nk-vec2# 0)
+     (.y nk-vec2# 0)
+     (.padding win# nk-vec2#)
+     ~@body
+      (.x nk-vec2# (scale ~gui 4))
+      (.y nk-vec2# (scale ~gui 4))
+     (.padding win# nk-vec2#)
+     (MemoryStack/stackPop)))
+
+
 (defn layout-row-dynamic
   "Create dynamic layout with specified height and number of columns"
   {:malli/schema [:=> [:cat :some :double :int] :nil]}
