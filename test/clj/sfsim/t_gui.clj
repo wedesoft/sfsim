@@ -268,13 +268,8 @@
         gui 160 24 1.0
         (layout-row-dynamic gui 24.0 1)
         (widget gui canvas rect
-                (let [stack   (MemoryStack/stackPush)
-                      fg      (NkColor/malloc stack)
-                      bg      (NkColor/malloc stack)]
-                  (Nuklear/nk_rgb 0 0 0 bg)
-                  (Nuklear/nk_rgb 255 0 0 fg)
-                  (Nuklear/nk_draw_text canvas rect "Some red text" (:sfsim.gui/font (:sfsim.gui/bitmap-font gui)) bg fg)
-                  (MemoryStack/stackPop)))) => (is-image "test/clj/sfsim/fixtures/gui/text.png" 0.10))
+                (draw-text gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" 255 0 0)))
+      => (is-image "test/clj/sfsim/fixtures/gui/text.png" 0.10))
 
 
 (fact "Render orbit MFD"
@@ -346,9 +341,9 @@
                                                      (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos (+ PI agp)))))
                                                            [x y] [(- 128 (* scale r)) 128]]
                                                        (Nuklear/nk_rect (- x 2) (- y 2) 5 5 rect)
+                                                       (Nuklear/nk_rgb 0 0 0 bg)
                                                        (Nuklear/nk_fill_rect canvas rect 0.0 bg)
                                                        (Nuklear/nk_stroke_rect canvas rect 0.0 2.0 fg))))
-                                                 (Nuklear/nk_rgb 0 0 0 bg)
                                                  (draw-text gui canvas 5 5 40 20 "Earth" 129 226 207)
                                                  (draw-text gui canvas 5 25 40 20 "PeA" 64 211 71)
                                                  (draw-text gui canvas 45 25 55 20 (float-str pea) 64 211 71)
