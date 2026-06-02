@@ -936,16 +936,16 @@
   (Nuklear/nk_stroke_rect canvas rect rounding thickness color))
 
 
-(defn stroke-circle
-  "Draw circle outline"
-  [canvas rect thickness color]
-  (Nuklear/nk_stroke_circle canvas rect thickness color))
-
-
 (defn fill-circle
   "Draw filled circle"
   [canvas rect color]
   (Nuklear/nk_fill_circle canvas rect color))
+
+
+(defn stroke-circle
+  "Draw circle outline"
+  [canvas rect thickness color]
+  (Nuklear/nk_stroke_circle canvas rect thickness color))
 
 
 (defn draw-text

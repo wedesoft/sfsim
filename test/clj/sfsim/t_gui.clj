@@ -274,14 +274,60 @@
       (with-colors [fg 63 127 255] [(.r fg) (.g fg) (.b fg)]) => [63 127 -1])
 
 
-(fact "Dynamic row layout with fractions"
-      (gui-control-test
-        gui 160 24 1.0
-        (layout-row-dynamic gui 24.0 1)
-        (widget gui canvas rect
-                (with-color red 255 0 0
-                  (draw-text gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" red))))
+(defmacro widget-test
+  [gui canvas rect w h & body]
+  `(gui-control-test
+     ~gui ~w ~h 1.0
+     (layout-row-dynamic ~gui (- ~h 8.0) 1)
+     (widget ~gui ~canvas ~rect ~@body)))
+
+
+(fact "Test filled rect"
+      (widget-test
+        gui canvas rect 160 24
+        (with-color red 255 0 0
+          (fill-rect canvas rect 0.0 red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/filled-rect.png" 0.10))
+
+
+(fact "Test stroke rect"
+      (widget-test
+        gui canvas rect 160 24
+        (with-color red 255 0 0
+          (stroke-rect canvas rect 0.0 3.0 red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/stroke-rect.png" 0.10))
+
+
+(fact "Test filled circle"
+      (widget-test
+        gui canvas rect 160 160
+        (with-color red 255 0 0
+          (fill-circle canvas rect red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/filled-circle.png" 0.10))
+
+
+(fact "Test stroke circle"
+      (widget-test
+        gui canvas rect 160 160
+        (with-color red 255 0 0
+          (stroke-circle canvas rect 3.0 red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/stroke-circle.png" 0.10))
+
+
+(fact "Test drawing of text"
+      (widget-test
+        gui canvas rect 160 24
+        (with-color red 255 0 0
+          (draw-text gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" red)))
       => (is-image "test/clj/sfsim/fixtures/gui/text.png" 0.10))
+
+
+(fact "Test drawing of text right"
+      (widget-test
+        gui canvas rect 160 24
+        (with-color red 255 0 0
+          (draw-text-right gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/text-right.png" 0.10))
 
 
 (fact "Render orbit MFD"
