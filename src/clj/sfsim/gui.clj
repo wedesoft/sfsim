@@ -293,6 +293,7 @@
 
 
 (defmacro nuklear-window
+  "Create window using specified title, size, and set of instructions"
   [gui title x y width height decoration & body]
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
@@ -312,6 +313,7 @@
 
 
 (defmacro without-window-padding
+  "Temporarily disable window padding"
   [gui & body]
   `(let [stack#   (MemoryStack/stackPush)
          nk-vec2# (NkVec2/malloc stack#)
@@ -840,6 +842,7 @@
 
 
 (defmacro layout-row
+  "Layout widgets using specified height and specified number of widgets in a row"
   [gui height cnt & body]
   `(do
      (Nuklear/nk_layout_row_begin (:sfsim.gui/context ~gui) Nuklear/NK_DYNAMIC ~height ~cnt)
@@ -849,11 +852,13 @@
 
 
 (defn layout-row-push
+  "Set fraction of space next widget takes up in this layout row"
   [gui frac]
   (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) frac))
 
 
 (defmacro tabbing
+  "Use and update keyboard tab focus for specified edit field"
   [gui state edit idx cnt]
   `(ignore-nil->
      ~'state ~state
