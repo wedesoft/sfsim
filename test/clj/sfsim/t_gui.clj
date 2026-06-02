@@ -297,10 +297,11 @@
                                                    ecc     0.35297179435015597]
                                                (layout-row-dynamic gui 256.0 1)
                                                (widget gui canvas canvas-rect
-                                                       (Nuklear/nk_rgb 0 0 0 bg)
-                                                       (Nuklear/nk_rgb 82 185 142 fg)
-                                                       (Nuklear/nk_fill_rect canvas canvas-rect 0.0 bg)
-                                                       (Nuklear/nk_stroke_rect canvas canvas-rect 0.0 3.0 fg)
+                                                       (fill-rect canvas (.x canvas-rect) (.y canvas-rect)
+                                                                  (.w canvas-rect) (.h canvas-rect) 0 0 0)
+                                                       (stroke-rect canvas (.x canvas-rect) (.y canvas-rect)
+                                                                    (.w canvas-rect) (.h canvas-rect) 0.0 3.0
+                                                                    82 185 142)
                                                        (let [scale  (/ 120 (max apr r))
                                                              earth  (* scale r)
                                                              n      44]

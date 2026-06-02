@@ -891,6 +891,30 @@
      (MemoryStack/stackPop)))
 
 
+(defn fill-rect
+  "Draw filled rectangle"
+  [canvas x y w h r g b]
+  (let [stack (MemoryStack/stackPush)
+        rect  (NkRect/malloc stack)
+        rgb   (NkColor/malloc stack)]
+    (Nuklear/nk_rect x y w h rect)
+    (Nuklear/nk_rgb r g b rgb)
+    (Nuklear/nk_fill_rect canvas rect 0.0 rgb)
+    (MemoryStack/stackPop)))
+
+
+(defn stroke-rect
+  "Draw outlines of rectangle"
+  [canvas x y w h rounding thickness r g b]
+  (let [stack (MemoryStack/stackPush)
+        rect  (NkRect/malloc stack)
+        rgb   (NkColor/malloc stack)]
+    (Nuklear/nk_rect x y w h rect)
+    (Nuklear/nk_rgb r g b rgb)
+    (Nuklear/nk_stroke_rect canvas rect rounding thickness rgb)
+    (MemoryStack/stackPop)))
+
+
 (defn draw-text
   "Draw left-aligned text on a canvas"
   [gui canvas x y w h text r g b]
