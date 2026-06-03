@@ -331,100 +331,98 @@
 
 
 (fact "Render orbit MFD"
-      (spit-png "/tmp/orbit.png"
-                (gui-offscreen-render 256 256
-                         (let [gui (make-nuklear-gui-with-font 1.0)]
-                           (nuklear-dark-style gui)
-                           (without-window-padding gui
-                             (nuklear-window gui "control test window" 0 0 256 256 :widget
-                                             (let [stack   (MemoryStack/stackPush)
-                                                   rect    (NkRect/malloc stack)
-                                                   context (:sfsim.gui/context gui)
-                                                   agp     (to-radians 30.0)
-                                                   tra     (to-radians 45.0)
-                                                   r       6378000.0
-                                                   per     6658000.0
-                                                   apr     13922246.555
-                                                   alt     280000.0
-                                                   pea     (- per r)
-                                                   apa     (- apr r)
-                                                   s-major 1.0290123277258096E7
-                                                   s-minor 9627788.819867665
-                                                   ecc     0.35297179435015597]
-                                               ; (layout-row-dynamic gui 32.0 1)
-                                               ; (button-label gui "Test")
-                                               (layout-row-dynamic gui 256.0 1)
-                                               (with-colors
-                                                 [bg       0   0   0
-                                                  fg      64 211  71
-                                                  border  82 185 142
-                                                  bright 202 213 197
-                                                  title  129 226 207]
-                                                 (widget gui canvas canvas-rect
-                                                       (fill-rect canvas canvas-rect 0.0 bg)
-                                                       (stroke-rect canvas canvas-rect 0.0 3.0 border)
-                                                       (let [scale  (/ 120 (max apr r))
-                                                             earth  (* scale r)
-                                                             n      44]
-                                                         (with-rect rect (- 128 earth) (- 128 earth) (* 2 earth) (* 2 earth)
-                                                           (stroke-circle canvas rect 2.0 bright))
-                                                         (let [f (fn [a] [(* scale (+ (* s-major (cos a)) (- per s-major)))
-                                                                          (* scale s-minor (sin a))])
-                                                               g (fn [a] (let [[x y] (f a)]
-                                                                           [(+ 128 (- (* (cos agp) x) (* (sin agp) y)))
-                                                                            (- 128 (+ (* (sin agp) x) (* (cos agp) y)))]))]
-                                                           (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos agp))))
-                                                                 [x y] [(+ 128 (* scale r)) 128]]
-                                                             (with-rect rect (- x 3) (- y 3) 7 7
-                                                               (fill-rect canvas rect 0.0 fg)))
-                                                           (doseq [i (range n)]
-                                                                  (let [a (to-radians (/ (* 360 i) n))
-                                                                        b (to-radians (/ (* 360 (inc i)) n))
-                                                                        [x0 y0] (g a)
-                                                                        [x1 y1] (g b)]
-                                                                    (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 2.0 fg)))
-                                                           (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos agp))))
-                                                                 [x y] [(+ 128 (* scale r)) 128]]
-                                                             (with-rect rect (- x 2) (- y 2) 5 5
-                                                               (fill-rect canvas rect 0.0 fg)))
-                                                           (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos tra))))
-                                                                 [x y] [(+ 128 (* scale r (cos (+ agp tra))))
-                                                                        (- 128 (* scale r (sin (+ agp tra))))]]
-                                                             (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg)
-                                                             (with-rect rect (- x 2) (- y 2) 5 5
-                                                               (fill-circle canvas rect fg)))
-                                                           (let [r (/ (* s-major (- 1 (* ecc ecc))) (+ 1 (* ecc (cos (+ PI agp)))))
-                                                                 [x y] [(- 128 (* scale r)) 128]]
-                                                             (with-rect rect (- x 2) (- y 2) 5 5
-                                                               (fill-rect canvas rect 0.0 bg))
-                                                             (stroke-rect canvas rect 0.0 2.0 fg))))
-                                                       (draw-text gui canvas 5 5 40 20 "Earth" title)
-                                                       (draw-text gui canvas 5 25 40 20 "PeA" fg)
-                                                       (draw-text gui canvas 45 25 55 20 (float-str pea) fg)
-                                                       (draw-text gui canvas 5 45 40 20 "ApA" fg)
-                                                       (draw-text gui canvas 45 45 55 20 (float-str apa) fg)
-                                                       (draw-text gui canvas 5 65 40 20 "Alt" fg)
-                                                       (draw-text gui canvas 45 65 55 20 (float-str alt) fg)
-                                                       (draw-text gui canvas 5 85 40 20 "Ecc" fg)
-                                                       (draw-text gui canvas 45 85 55 20 (format "%7.4f" ecc) fg)
-                                                       (draw-text gui canvas 5 105 40 20 "T" fg)
-                                                       (draw-text gui canvas 45 105 55 20 (float-str 5421.2) fg)
-                                                       (draw-text gui canvas 5 125 40 20 "PeT" fg)
-                                                       (draw-text gui canvas 45 125 55 20 (float-str -1253.2) fg)
-                                                       (draw-text gui canvas 5 145 40 20 "ApT" fg)
-                                                       (draw-text gui canvas 45 145 55 20 (float-str 3242.0) fg)
-                                                       (draw-text gui canvas 5 165 40 20 "Vel" fg)
-                                                       (draw-text gui canvas 45 165 55 20 (float-str 9000.0) fg)
-                                                       (draw-text gui canvas 5 185 40 20 "Inc" fg)
-                                                       (draw-text-right gui canvas 45 185 55 20 (format "%6.2f°" 3.5) fg)
-                                                       (draw-text gui canvas 5 205 40 20 "LAN" fg)
-                                                       (draw-text-right gui canvas 45 205 55 20 (format "%6.2f°" 359.96) fg)
-                                                       (MemoryStack/stackPop))))))
-                           (render-nuklear-gui gui 256 256)
-                           (destroy-nuklear-gui-with-font gui)))
-                true)
-      ; (println (shell/sh "/usr/bin/display" "-display" ":0.0" "/tmp/orbit.png"))
-      )
+      (gui-offscreen-render
+        256 256
+        (let [gui (make-nuklear-gui-with-font 1.0)]
+          (nuklear-dark-style gui)
+          (without-window-padding gui
+            (nuklear-window gui "control test window" 0 0 256 256 :widget
+                            (let [stack              (MemoryStack/stackPush)
+                                  rect               (NkRect/malloc stack)
+                                  context            (:sfsim.gui/context gui)
+                                  agp                (to-radians 30.0)
+                                  true-anomaly       (to-radians 45.0)
+                                  radius             6378000.0
+                                  periapsis          6658000.0
+                                  apoapsis           13922246.555
+                                  altitude           280000.0
+                                  periapsis-altitude (- periapsis radius)
+                                  apoapsis-altitude  (- apoapsis radius)
+                                  semi-major-axis    1.0290123277258096E7
+                                  semi-minor-axis    9627788.819867665
+                                  eccentricity                0.35297179435015597]
+                              ; (layout-row-dynamic gui 32.0 1)
+                              ; (button-label gui "Test")
+                              (layout-row-dynamic gui 256.0 1)
+                              (with-colors
+                                [bg       0   0   0
+                                 fg      64 211  71
+                                 border  82 185 142
+                                 bright 202 213 197
+                                 title  129 226 207]
+                                (widget gui canvas canvas-rect
+                                        (fill-rect canvas canvas-rect 0.0 bg)
+                                        (stroke-rect canvas canvas-rect 0.0 3.0 border)
+                                        (let [scale  (/ 120 (max apoapsis radius))
+                                              earth  (* scale radius)
+                                              n      44]
+                                          (with-rect rect (- 128 earth) (- 128 earth) (* 2 earth) (* 2 earth)
+                                            (stroke-circle canvas rect 2.0 bright))
+                                          (let [f (fn [a] [(* scale (+ (* semi-major-axis (cos a)) (- periapsis semi-major-axis)))
+                                                           (* scale semi-minor-axis (sin a))])
+                                                g (fn [a] (let [[x y] (f a)]
+                                                            [(+ 128 (- (* (cos agp) x) (* (sin agp) y)))
+                                                             (- 128 (+ (* (sin agp) x) (* (cos agp) y)))]))]
+                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos agp))))
+                                                  [x y] [(+ 128 (* scale radius)) 128]]
+                                              (with-rect rect (- x 3) (- y 3) 7 7
+                                                (fill-rect canvas rect 0.0 fg)))
+                                            (doseq [i (range n)]
+                                                   (let [a (to-radians (/ (* 360 i) n))
+                                                         b (to-radians (/ (* 360 (inc i)) n))
+                                                         [x0 y0] (g a)
+                                                         [x1 y1] (g b)]
+                                                     (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 2.0 fg)))
+                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos agp))))
+                                                  [x y] [(+ 128 (* scale r)) 128]]
+                                              (with-rect rect (- x 2) (- y 2) 5 5
+                                                (fill-rect canvas rect 0.0 fg)))
+                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos true-anomaly))))
+                                                  [x y] [(+ 128 (* scale r (cos (+ agp true-anomaly))))
+                                                         (- 128 (* scale r (sin (+ agp true-anomaly))))]]
+                                              (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg)
+                                              (with-rect rect (- x 2) (- y 2) 5 5
+                                                (fill-circle canvas rect fg)))
+                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos (+ PI agp)))))
+                                                  [x y] [(- 128 (* scale r)) 128]]
+                                              (with-rect rect (- x 2) (- y 2) 5 5
+                                                (fill-rect canvas rect 0.0 bg))
+                                              (stroke-rect canvas rect 0.0 2.0 fg))))
+                                        (draw-text gui canvas 5 5 40 20 "Earth" title)
+                                        (draw-text gui canvas 5 25 40 20 "PeA" fg)
+                                        (draw-text gui canvas 45 25 55 20 (float-str periapsis-altitude) fg)
+                                        (draw-text gui canvas 5 45 40 20 "ApA" fg)
+                                        (draw-text gui canvas 45 45 55 20 (float-str apoapsis-altitude) fg)
+                                        (draw-text gui canvas 5 65 40 20 "Alt" fg)
+                                        (draw-text gui canvas 45 65 55 20 (float-str altitude) fg)
+                                        (draw-text gui canvas 5 85 40 20 "Ecc" fg)
+                                        (draw-text gui canvas 45 85 55 20 (format "%7.4f" eccentricity) fg)
+                                        (draw-text gui canvas 5 105 40 20 "T" fg)
+                                        (draw-text gui canvas 45 105 55 20 (float-str 5421.2) fg)
+                                        (draw-text gui canvas 5 125 40 20 "PeT" fg)
+                                        (draw-text gui canvas 45 125 55 20 (float-str -1253.2) fg)
+                                        (draw-text gui canvas 5 145 40 20 "ApT" fg)
+                                        (draw-text gui canvas 45 145 55 20 (float-str 3242.0) fg)
+                                        (draw-text gui canvas 5 165 40 20 "Vel" fg)
+                                        (draw-text gui canvas 45 165 55 20 (float-str 9000.0) fg)
+                                        (draw-text gui canvas 5 185 40 20 "Inc" fg)
+                                        (draw-text-right gui canvas 45 185 55 20 (format "%6.2f°" 3.5) fg)
+                                        (draw-text gui canvas 5 205 40 20 "LAN" fg)
+                                        (draw-text-right gui canvas 45 205 55 20 (format "%6.2f°" 359.96) fg)
+                                        (MemoryStack/stackPop))))))
+          (render-nuklear-gui gui 256 256)
+          (destroy-nuklear-gui-with-font gui)))
+      => (is-image "test/clj/sfsim/fixtures/gui/orbit.png" 0.10))
 
 
 (GLFW/glfwTerminate)
