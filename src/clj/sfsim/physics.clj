@@ -942,6 +942,8 @@
         velocity (mag (get-linear-speed ::orbit state))]
     {::periapsis (periapsis planet state)
      ::apoapsis (apoapsis planet state)
+     ::semi-major-axis (semi-major-axis planet state)
+     ::semi-minor-axis (semi-minor-axis planet state)
      ::altitude height
      ::eccentricity (eccentricity planet state)
      ::orbital-period (orbital-period planet state)
