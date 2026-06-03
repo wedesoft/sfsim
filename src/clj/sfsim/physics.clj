@@ -934,5 +934,24 @@
     (atan2 (.y ^Vec3 ascending-node) (.x ^Vec3 ascending-node))))
 
 
+(defn orbital-parameters
+  "Get hash-map of orbital parameters"
+  [planet state]
+  (let [position (get-position ::orbit state)
+        height   (- (mag position) ^double (:sfsim.planet/radius planet))
+        velocity (mag (get-linear-speed ::orbit state))]
+    {::periapsis (periapsis planet state)
+     ::apoapsis (apoapsis planet state)
+     ::altitude height
+     ::eccentricity (eccentricity planet state)
+     ::orbital-period (orbital-period planet state)
+     ::time-since-periapsis (time-since-periapsis planet state)
+     ::time-since-apoapsis (time-since-apoapsis planet state)
+     ::velocity velocity
+     ::inclination (inclination state)
+     ::longitude-ascending-node (longitude-ascending-node state)
+     ::true-anomaly (true-anomaly planet state)}))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

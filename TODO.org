@@ -3,7 +3,7 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [-] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
+  - [X] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
     - [X] PeA
     - [X] ApA
     - [X] Alt
@@ -13,7 +13,7 @@
     - [X] ApT
     - [X] Vel
     - [X] Inc
-    - [ ] LAN
+    - [X] LAN
     - [X] true anomaly
   - [ ] launch mfd, reinforcement learning launch physics
     - [-] reduce observation
