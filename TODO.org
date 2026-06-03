@@ -15,6 +15,7 @@
     - [X] Inc
     - [X] LAN
     - [X] true anomaly
+    - [X] argument of perihel
   - [ ] launch mfd, reinforcement learning launch physics
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed

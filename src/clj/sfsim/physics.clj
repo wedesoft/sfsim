@@ -10,7 +10,7 @@
     [clojure.math :refer (PI cos sin tan atan2 hypot to-radians sqrt acos log1p sinh)]
     [clojure.set :refer (union)]
     [fastmath.matrix :refer (mulv mulm inverse)]
-    [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot)]
+    [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot div)]
     [malli.core :as m]
     [sfsim.quaternion :as q]
     [sfsim.matrix :refer (matrix->quaternion get-translation rotation-matrix)]
@@ -814,13 +814,20 @@
     (/ (mag h) (sqrt (abs (* 2.0 epsilon))))))
 
 
+(defn eccentricity-vector
+  "Get eccentricity vector of orbit"
+  ^Vec3 [planet state]
+  (let [position (get-position ::orbit state)
+        speed    (get-linear-speed ::orbit state)
+        mu       (gravitational-parameter planet)
+        h        (cross position speed)]
+    (sub (div (cross speed h) mu) (normalize position))))
+
+
 (defn eccentricity
   "Get eccentricity of orbit"
   ^double [planet state]
-  (let [mu      (gravitational-parameter planet)
-        epsilon (specific-mechanical-energy planet state)
-        h       (specific-angular-momentum state)]
-    (sqrt (+ 1.0 (/ (* 2.0 epsilon (dot h h)) (* mu mu))))))
+  (mag (eccentricity-vector planet state)))
 
 
 (defn periapsis
@@ -925,13 +932,38 @@
     (- (/ PI 2) (atan2 (.z ^Vec3 momentum) (hypot (.x ^Vec3 momentum) (.y ^Vec3 momentum))))))
 
 
+(defn ascending-node
+  "Compute vector pointing to ascending node"
+  ^Vec3 [state]
+  (let [pole (vec3 0 0 1)
+        h    (specific-angular-momentum state)]
+    (cross pole h)))
+
+
 (defn longitude-ascending-node
   "Get longitude of ascending node of orbit"
   ^double [state]
-  (let [pole           (vec3 0 0 1)
-        momentum       (specific-angular-momentum state)
-        ascending-node (cross pole momentum)]
-    (atan2 (.y ^Vec3 ascending-node) (.x ^Vec3 ascending-node))))
+  (let [ascending-node   (ascending-node state)
+        signed-longitude (atan2 (.y ascending-node) (.x ascending-node))]
+    (if (neg? signed-longitude)
+      (+ signed-longitude (* 2.0 PI))
+      signed-longitude)))
+
+
+(defn argument-of-periapsis
+  "Get argument of periapsis of orbit"
+  ^double [planet state]
+  (let [h   (specific-angular-momentum state)
+        n   (ascending-node state)
+        e   (eccentricity-vector planet state)
+        ux  n
+        uy  (cross h n)
+        ex  (* (dot e ux) (mag uy))
+        ey  (* (dot e uy) (mag ux))
+        arg (atan2 ey ex)]
+    (if (neg? arg)
+      (+ arg (* 2.0 PI))
+      arg)))
 
 
 (defn orbital-parameters
@@ -952,6 +984,7 @@
      ::velocity velocity
      ::inclination (inclination state)
      ::longitude-ascending-node (longitude-ascending-node state)
+     ::argument-of-periapsis (argument-of-periapsis planet state)
      ::true-anomaly (true-anomaly planet state)}))
 
 

@@ -337,20 +337,20 @@
           (nuklear-dark-style gui)
           (without-window-padding gui
             (nuklear-window gui "control test window" 0 0 256 256 :widget
-                            (let [stack              (MemoryStack/stackPush)
-                                  rect               (NkRect/malloc stack)
-                                  context            (:sfsim.gui/context gui)
-                                  agp                (to-radians 30.0)
-                                  true-anomaly       (to-radians 45.0)
-                                  radius             6378000.0
-                                  periapsis          6658000.0
-                                  apoapsis           13922246.555
-                                  altitude           280000.0
-                                  periapsis-altitude (- periapsis radius)
-                                  apoapsis-altitude  (- apoapsis radius)
-                                  semi-major-axis    1.0290123277258096E7
-                                  semi-minor-axis    9627788.819867665
-                                  eccentricity                0.35297179435015597]
+                            (let [stack                 (MemoryStack/stackPush)
+                                  rect                  (NkRect/malloc stack)
+                                  context               (:sfsim.gui/context gui)
+                                  argument-of-periapsis (to-radians 30.0)
+                                  true-anomaly          (to-radians 45.0)
+                                  radius                6378000.0
+                                  periapsis             6658000.0
+                                  apoapsis              13922246.555
+                                  altitude              280000.0
+                                  periapsis-altitude    (- periapsis radius)
+                                  apoapsis-altitude     (- apoapsis radius)
+                                  semi-major-axis       1.0290123277258096E7
+                                  semi-minor-axis       9627788.819867665
+                                  eccentricity          0.35297179435015597]
                               ; (layout-row-dynamic gui 32.0 1)
                               ; (button-label gui "Test")
                               (layout-row-dynamic gui 256.0 1)
@@ -371,9 +371,9 @@
                                           (let [f (fn [a] [(* scale (+ (* semi-major-axis (cos a)) (- periapsis semi-major-axis)))
                                                            (* scale semi-minor-axis (sin a))])
                                                 g (fn [a] (let [[x y] (f a)]
-                                                            [(+ 128 (- (* (cos agp) x) (* (sin agp) y)))
-                                                             (- 128 (+ (* (sin agp) x) (* (cos agp) y)))]))]
-                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos agp))))
+                                                            [(+ 128 (- (* (cos argument-of-periapsis) x) (* (sin argument-of-periapsis) y)))
+                                                             (- 128 (+ (* (sin argument-of-periapsis) x) (* (cos argument-of-periapsis) y)))]))]
+                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos argument-of-periapsis))))
                                                   [x y] [(+ 128 (* scale radius)) 128]]
                                               (with-rect rect (- x 3) (- y 3) 7 7
                                                 (fill-rect canvas rect 0.0 fg)))
@@ -383,17 +383,17 @@
                                                          [x0 y0] (g a)
                                                          [x1 y1] (g b)]
                                                      (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 2.0 fg)))
-                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos agp))))
+                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos argument-of-periapsis))))
                                                   [x y] [(+ 128 (* scale r)) 128]]
                                               (with-rect rect (- x 2) (- y 2) 5 5
                                                 (fill-rect canvas rect 0.0 fg)))
                                             (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos true-anomaly))))
-                                                  [x y] [(+ 128 (* scale r (cos (+ agp true-anomaly))))
-                                                         (- 128 (* scale r (sin (+ agp true-anomaly))))]]
+                                                  [x y] [(+ 128 (* scale r (cos (+ argument-of-periapsis true-anomaly))))
+                                                         (- 128 (* scale r (sin (+ argument-of-periapsis true-anomaly))))]]
                                               (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg)
                                               (with-rect rect (- x 2) (- y 2) 5 5
                                                 (fill-circle canvas rect fg)))
-                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos (+ PI agp)))))
+                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos (+ PI argument-of-periapsis)))))
                                                   [x y] [(- 128 (* scale r)) 128]]
                                               (with-rect rect (- x 2) (- y 2) 5 5
                                                 (fill-rect canvas rect 0.0 bg))
