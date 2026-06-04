@@ -396,21 +396,17 @@
                                             (doseq [i (range n)]
                                                    (let [a (to-radians (/ (* 360 i) n))
                                                          b (to-radians (/ (* 360 (inc i)) n))
-                                                         [x0 y0] (g a)
-                                                         [x1 y1] (g b)]
-                                                     (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 2.0 fg)))
-                                            (let [r     (distance-for-anomaly orbital-params true-anomaly)
-                                                  [x y] [(+ 128 (* scale r (cos (+ argument-of-periapsis true-anomaly))))
-                                                         (- 128 (* scale r (sin (+ argument-of-periapsis true-anomaly))))]]
+                                                         [x0 y0] (orbit-point orbital-params 128 128 scale a)
+                                                         [x1 y1] (orbit-point orbital-params 128 128 scale b)]
+                                                     (stroke-line canvas x0 y0 x1 y1 2.0 fg)))
+                                            (let [[x y] (orbit-point orbital-params 128 128 scale true-anomaly)]
                                               (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg)
                                               (with-rect rect (- x 2) (- y 2) 5 5
                                                 (fill-circle canvas rect fg)))
-                                            (let [r     (distance-for-anomaly orbital-params argument-of-periapsis)
-                                                  [x y] [(+ 128 (* scale r)) 128]]
+                                            (let [[x y] (orbit-point orbital-params 128 128 scale (- argument-of-periapsis))]
                                               (with-rect rect (- x 3) (- y 3) 7 7
                                                 (fill-rect canvas rect 0.0 fg)))
-                                            (let [r     (distance-for-anomaly orbital-params (+ PI argument-of-periapsis))
-                                                  [x y] [(- 128 (* scale r)) 128]]
+                                            (let [[x y] (orbit-point orbital-params 128 128 scale (- PI argument-of-periapsis))]
                                               (with-rect rect (- x 2) (- y 2) 5 5
                                                 (fill-rect canvas rect 0.0 bg)
                                                 (stroke-rect canvas rect 0.0 2.0 fg)))))

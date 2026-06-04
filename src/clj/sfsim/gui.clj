@@ -6,7 +6,7 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (to-radians to-degrees cos)]
+    [clojure.math :refer (to-radians to-degrees cos sin)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.matrix :as fm]
@@ -948,6 +948,12 @@
   (Nuklear/nk_stroke_circle canvas rect thickness color))
 
 
+(defn stroke-line
+  "Draw a line"
+  [canvas x0 y0 x1 y1 thickness color]
+  (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 thickness color))
+
+
 (defn draw-text
   "Draw left-aligned text on a canvas"
   [gui canvas x y w h text color]
@@ -1372,8 +1378,18 @@
 
 (defn distance-for-anomaly
   "Compute orbit distance to planet center for given true anomaly"
-  [{:sfsim.physics/keys [semi-major-axis eccentricity]} anomaly]
+  ^double [{:sfsim.physics/keys [semi-major-axis eccentricity]} ^double anomaly]
   (/ (* ^double semi-major-axis (- 1.0 (sqr eccentricity))) (+ 1.0 (* ^double eccentricity (cos anomaly)))))
+
+
+(defn orbit-point
+  "Sample a point from the orbit displayed in the orbit MFD"
+  [{:sfsim.physics/keys [argument-of-periapsis] :as orbit-params} center-x center-y scale anomaly]
+  (let [dist (distance-for-anomaly orbit-params anomaly)
+        ra   (* ^double scale dist (cos anomaly))
+        rb   (* ^double scale dist (sin anomaly))]
+    [(+ ^double center-x (- (* (cos argument-of-periapsis) ra) (* (sin argument-of-periapsis) rb)))
+     (- ^double center-y (+ (* (sin argument-of-periapsis) ra) (* (cos argument-of-periapsis) rb)))]))
 
 
 (defn information-display
