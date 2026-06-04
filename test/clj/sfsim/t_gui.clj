@@ -314,6 +314,14 @@
       => (is-image "test/clj/sfsim/fixtures/gui/stroke-circle.png" 0.10))
 
 
+(fact "Test stroke line"
+      (widget-test
+        gui canvas rect 160 80
+        (with-color red 255 0 0
+          (stroke-line canvas 10 10 150 70 3.0 red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/stroke-line.png" 0.10))
+
+
 (fact "Test drawing of text"
       (widget-test
         gui canvas rect 160 24
@@ -332,102 +340,112 @@
 
 (fact "Render orbit MFD"
       (gui-offscreen-render
-        256 256
+        264 264
         (let [gui (make-nuklear-gui-with-font 1.0)]
           (nuklear-dark-style gui)
-          (without-window-padding gui
-            (nuklear-window gui "control test window" 0 0 256 256 :widget
-                            (let [stack                    (MemoryStack/stackPush)
-                                  rect                     (NkRect/malloc stack)
-                                  context                  (:sfsim.gui/context gui)
-                                  argument-of-periapsis    (to-radians 30.0)
-                                  true-anomaly             (to-radians 45.0)
-                                  radius                   6378000.0
-                                  periapsis                6658000.0
-                                  apoapsis                 13922246.555
-                                  altitude                 280000.0
-                                  periapsis-altitude       (- periapsis radius)
-                                  apoapsis-altitude        (- apoapsis radius)
-                                  semi-major-axis          1.0290123277258096E7
-                                  semi-minor-axis          9627788.819867665
-                                  eccentricity             0.35297179435015597
-                                  orbital-period           5421.2
-                                  time-since-periapsis     -1253.2
-                                  time-since-apoapsis      3242.0
-                                  velocity                 9000.0
-                                  inclination              3.5
-                                  longitude-ascending-node 359.96
-                                  orbital-params           #:sfsim.physics{:periapsis periapsis
-                                                                           :apoapsis apoapsis
-                                                                           :semi-major-axis semi-major-axis
-                                                                           :semi-minor-axis semi-minor-axis
-                                                                           :altitude altitude
-                                                                           :eccentricity eccentricity
-                                                                           :orbital-period orbital-period
-                                                                           :time-since-periapsis time-since-periapsis
-                                                                           :time-since-apoapsis time-since-apoapsis
-                                                                           :velocity velocity
-                                                                           :inclination inclination
-                                                                           :longitude-ascending-node longitude-ascending-node
-                                                                           :argument-of-periapsis argument-of-periapsis
-                                                                           :true-anomaly true-anomaly}]
-                              ; (layout-row-dynamic gui 32.0 1)
-                              ; (button-label gui "Test")
-                              (layout-row-dynamic gui 256.0 1)
-                              (with-colors
-                                [bg       0   0   0
-                                 fg      64 211  71
-                                 border  82 185 142
-                                 bright 202 213 197
-                                 title  129 226 207]
-                                (widget gui canvas canvas-rect
+          (nuklear-window gui "control test window" 0 0 264 264 :widget
+                          (let [stack                    (MemoryStack/stackPush)
+                                rect                     (NkRect/malloc stack)
+                                context                  (:sfsim.gui/context gui)
+                                argument-of-periapsis    (to-radians 30.0)
+                                true-anomaly             (to-radians 45.0)
+                                radius                   6378000.0
+                                periapsis                6658000.0
+                                apoapsis                 13922246.555
+                                altitude                 280000.0
+                                periapsis-altitude       (- periapsis radius)
+                                apoapsis-altitude        (- apoapsis radius)
+                                semi-major-axis          1.0290123277258096E7
+                                semi-minor-axis          9627788.819867665
+                                eccentricity             0.35297179435015597
+                                orbital-period           5421.2
+                                time-since-periapsis     -1253.2
+                                time-since-apoapsis      3242.0
+                                velocity                 9000.0
+                                inclination              3.5
+                                longitude-ascending-node 359.96
+                                orbital-params           #:sfsim.physics{:periapsis periapsis
+                                                                         :apoapsis apoapsis
+                                                                         :semi-major-axis semi-major-axis
+                                                                         :semi-minor-axis semi-minor-axis
+                                                                         :altitude altitude
+                                                                         :eccentricity eccentricity
+                                                                         :orbital-period orbital-period
+                                                                         :time-since-periapsis time-since-periapsis
+                                                                         :time-since-apoapsis time-since-apoapsis
+                                                                         :velocity velocity
+                                                                         :inclination inclination
+                                                                         :longitude-ascending-node longitude-ascending-node
+                                                                         :argument-of-periapsis argument-of-periapsis
+                                                                         :true-anomaly true-anomaly}]
+                            (layout-row-dynamic gui 256.0 1)
+                            (with-colors
+                              [bg       0   0   0
+                               fg      64 211  71
+                               border  82 185 142
+                               bright 202 213 197
+                               title  129 226 207]
+                              (widget gui canvas canvas-rect
+                                      (let [x0     (.x canvas-rect)
+                                            y0     (.y canvas-rect)
+                                            w      (.w canvas-rect)
+                                            h      (.h canvas-rect)
+                                            cx     (+ x0 (/ w 2))
+                                            cy     (+ y0 (/ h 2))
+                                            scale  (/ 120 (max apoapsis radius))
+                                            earth  (* scale radius)
+                                            n      44]
                                         (fill-rect canvas canvas-rect 0.0 bg)
-                                        (stroke-rect canvas canvas-rect 0.0 3.0 border)
-                                        (let [scale  (/ 120 (max apoapsis radius))
-                                              earth  (* scale radius)
-                                              n      44]
-                                          (with-rect rect (- 128 earth) (- 128 earth) (* 2 earth) (* 2 earth)
-                                            (stroke-circle canvas rect 2.0 bright))
-                                          (doseq [i (range n)]
-                                                 (let [a (to-radians (/ (* 360 i) n))
-                                                       b (to-radians (/ (* 360 (inc i)) n))
-                                                       [x0 y0] (orbit-point orbital-params 128 128 scale a)
-                                                       [x1 y1] (orbit-point orbital-params 128 128 scale b)]
-                                                   (stroke-line canvas x0 y0 x1 y1 2.0 fg)))
-                                          (let [[x y] (orbit-point orbital-params 128 128 scale true-anomaly)]
-                                            (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg)
-                                            (with-rect rect (- x 2) (- y 2) 5 5
-                                              (fill-circle canvas rect fg)))
-                                          (let [[x y] (orbit-point orbital-params 128 128 scale (- argument-of-periapsis))]
-                                            (with-rect rect (- x 3) (- y 3) 7 7
-                                              (fill-rect canvas rect 0.0 fg)))
-                                          (let [[x y] (orbit-point orbital-params 128 128 scale (- PI argument-of-periapsis))]
-                                            (with-rect rect (- x 2) (- y 2) 5 5
-                                              (fill-rect canvas rect 0.0 bg)
-                                              (stroke-rect canvas rect 0.0 2.0 fg))))
-                                        (draw-text gui canvas 5 5 40 20 "Earth" title)
-                                        (draw-text gui canvas 5 25 40 20 "PeA" fg)
-                                        (draw-text gui canvas 45 25 55 20 (float-str periapsis-altitude) fg)
-                                        (draw-text gui canvas 5 45 40 20 "ApA" fg)
-                                        (draw-text gui canvas 45 45 55 20 (float-str apoapsis-altitude) fg)
-                                        (draw-text gui canvas 5 65 40 20 "Alt" fg)
-                                        (draw-text gui canvas 45 65 55 20 (float-str altitude) fg)
-                                        (draw-text gui canvas 5 85 40 20 "Ecc" fg)
-                                        (draw-text gui canvas 45 85 55 20 (format "%7.4f" eccentricity) fg)
-                                        (draw-text gui canvas 5 105 40 20 "T" fg)
-                                        (draw-text gui canvas 45 105 55 20 (float-str orbital-period) fg)
-                                        (draw-text gui canvas 5 125 40 20 "PeT" fg)
-                                        (draw-text gui canvas 45 125 55 20 (float-str time-since-periapsis) fg)
-                                        (draw-text gui canvas 5 145 40 20 "ApT" fg)
-                                        (draw-text gui canvas 45 145 55 20 (float-str time-since-apoapsis) fg)
-                                        (draw-text gui canvas 5 165 40 20 "Vel" fg)
-                                        (draw-text gui canvas 45 165 55 20 (float-str velocity) fg)
-                                        (draw-text gui canvas 5 185 40 20 "Inc" fg)
-                                        (draw-text-right gui canvas 45 185 55 20 (format "%6.2f°" inclination) fg)
-                                        (draw-text gui canvas 5 205 40 20 "LAN" fg)
-                                        (draw-text-right gui canvas 45 205 55 20 (format "%6.2f°" longitude-ascending-node) fg)
-                                        (MemoryStack/stackPop))))))
-          (render-nuklear-gui gui 256 256)
+                                        (with-rect rect (+ x0 1) (+ y0 1) (- w 2) (- h 2)
+                                          (stroke-rect canvas rect 0.0 3.0 border))
+                                        (with-rect rect (- cx earth) (- cy earth) (* 2 earth) (* 2 earth)
+                                          (stroke-circle canvas rect 2.0 bright))
+                                        (doseq [i (range n)]
+                                               (let [a (to-radians (/ (* 360 i) n))
+                                                     b (to-radians (/ (* 360 (inc i)) n))
+                                                     [x0 y0] (orbit-point orbital-params cx cy scale a)
+                                                     [x1 y1] (orbit-point orbital-params cx cy scale b)]
+                                                 (stroke-line canvas x0 y0 x1 y1 2.0 fg)))
+                                        (let [[x y] (orbit-point orbital-params cx cy scale true-anomaly)]
+                                          (stroke-line canvas cx cy x y 2.0 fg)
+                                          (with-rect rect (- x 2) (- y 2) 5 5
+                                            (fill-circle canvas rect fg)))
+                                        (let [[x y] (orbit-point orbital-params cx cy scale (- argument-of-periapsis))]
+                                          (with-rect rect (- x 3) (- y 3) 7 7
+                                            (fill-rect canvas rect 0.0 fg)))
+                                        (let [[x y] (orbit-point orbital-params cx cy scale (- PI argument-of-periapsis))]
+                                          (with-rect rect (- x 2) (- y 2) 5 5
+                                            (fill-rect canvas rect 0.0 bg)
+                                            (stroke-rect canvas rect 0.0 2.0 fg)))
+                                        (let [x1 (+ x0 5)
+                                              x2 (+ x0 45)
+                                              y1 (+ y0 5)
+                                              w1 40
+                                              w2 55
+                                              h 20]
+                                          (draw-text gui canvas x1 (+ y1 (* h 0)) w1 h "Earth" title)
+                                          (draw-text gui canvas x1 (+ y1 (* h 1)) w1 h "PeA" fg)
+                                          (draw-text gui canvas x2 (+ y1 (* h 1)) w2 h (float-str periapsis-altitude) fg)
+                                          (draw-text gui canvas x1 (+ y1 (* h 2)) w1 h "ApA" fg)
+                                          (draw-text gui canvas x2 (+ y1 (* h 2)) w2 h (float-str apoapsis-altitude) fg)
+                                          (draw-text gui canvas x1 (+ y1 (* h 3)) w1 h "Alt" fg)
+                                          (draw-text gui canvas x2 (+ y1 (* h 3)) w2 h (float-str altitude) fg)
+                                          (draw-text gui canvas x1 (+ y1 (* h 4)) w1 h "Ecc" fg)
+                                          (draw-text gui canvas x2 (+ y1 (* h 4)) w2 h (format "%7.4f" eccentricity) fg)
+                                          (draw-text gui canvas x1 (+ y1 (* h 5)) w1 h "T" fg)
+                                          (draw-text gui canvas x2 (+ y1 (* h 5)) w2 h (float-str orbital-period) fg)
+                                          (draw-text gui canvas x1 (+ y1 (* h 6)) w1 h "PeT" fg)
+                                          (draw-text gui canvas x2 (+ y1 (* h 6)) w2 h (float-str time-since-periapsis) fg)
+                                          (draw-text gui canvas x1 (+ y1 (* h 7)) w1 h "ApT" fg)
+                                          (draw-text gui canvas x2 (+ y1 (* h 7)) w2 h (float-str time-since-apoapsis) fg)
+                                          (draw-text gui canvas x1 (+ y1 (* h 8)) w1 h "Vel" fg)
+                                          (draw-text gui canvas x2 (+ y1 (* h 8)) w2 h (float-str velocity) fg)
+                                          (draw-text gui canvas x1 (+ y1 (* h 9)) w1 h "Inc" fg)
+                                          (draw-text-right gui canvas x2 (+ y1 (* h 9)) w2 h (format "%6.2f°" inclination) fg)
+                                          (draw-text gui canvas x1 (+ y1 (* h 10)) w1 h "LAN" fg)
+                                          (draw-text-right gui canvas x2 (+ y1 (* h 10)) w2 h (format "%6.2f°" longitude-ascending-node) fg)))
+                                      (MemoryStack/stackPop)))))
+          (render-nuklear-gui gui 264 264)
           (destroy-nuklear-gui-with-font gui)))
       => (is-image "test/clj/sfsim/fixtures/gui/orbit.png" 0.10))
 
