@@ -1371,6 +1371,7 @@
 
 
 (defn distance-for-anomaly
+  "Compute orbit distance to planet center for given true anomaly"
   [{:sfsim.physics/keys [semi-major-axis eccentricity]} anomaly]
   (/ (* ^double semi-major-axis (- 1.0 (sqr eccentricity))) (+ 1.0 (* ^double eccentricity (cos anomaly)))))
 
