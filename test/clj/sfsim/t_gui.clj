@@ -337,20 +337,40 @@
           (nuklear-dark-style gui)
           (without-window-padding gui
             (nuklear-window gui "control test window" 0 0 256 256 :widget
-                            (let [stack                 (MemoryStack/stackPush)
-                                  rect                  (NkRect/malloc stack)
-                                  context               (:sfsim.gui/context gui)
-                                  argument-of-periapsis (to-radians 30.0)
-                                  true-anomaly          (to-radians 45.0)
-                                  radius                6378000.0
-                                  periapsis             6658000.0
-                                  apoapsis              13922246.555
-                                  altitude              280000.0
-                                  periapsis-altitude    (- periapsis radius)
-                                  apoapsis-altitude     (- apoapsis radius)
-                                  semi-major-axis       1.0290123277258096E7
-                                  semi-minor-axis       9627788.819867665
-                                  eccentricity          0.35297179435015597]
+                            (let [stack                    (MemoryStack/stackPush)
+                                  rect                     (NkRect/malloc stack)
+                                  context                  (:sfsim.gui/context gui)
+                                  argument-of-periapsis    (to-radians 30.0)
+                                  true-anomaly             (to-radians 45.0)
+                                  radius                   6378000.0
+                                  periapsis                6658000.0
+                                  apoapsis                 13922246.555
+                                  altitude                 280000.0
+                                  periapsis-altitude       (- periapsis radius)
+                                  apoapsis-altitude        (- apoapsis radius)
+                                  semi-major-axis          1.0290123277258096E7
+                                  semi-minor-axis          9627788.819867665
+                                  eccentricity             0.35297179435015597
+                                  orbital-period           5421.2
+                                  time-since-periapsis     -1253.2
+                                  time-since-apoapsis      3242.0
+                                  velocity                 9000.0
+                                  inclination              3.5
+                                  longitude-ascending-node 359.96
+                                  orbital-params           #:sfsim.physics{:periapsis periapsis
+                                                                           :apoapsis apoapsis
+                                                                           :semi-major-axis semi-major-axis
+                                                                           :semi-minor-axis semi-minor-axis
+                                                                           :altitude altitude
+                                                                           :eccentricity eccentricity
+                                                                           :orbital-period orbital-period
+                                                                           :time-since-periapsis time-since-periapsis
+                                                                           :time-since-apoapsis time-since-apoapsis
+                                                                           :velocity velocity
+                                                                           :inclination inclination
+                                                                           :longitude-ascending-node longitude-ascending-node
+                                                                           :argument-of-periapsis argument-of-periapsis
+                                                                           :true-anomaly true-anomaly}]
                               ; (layout-row-dynamic gui 32.0 1)
                               ; (button-label gui "Test")
                               (layout-row-dynamic gui 256.0 1)
@@ -408,17 +428,17 @@
                                         (draw-text gui canvas 5 85 40 20 "Ecc" fg)
                                         (draw-text gui canvas 45 85 55 20 (format "%7.4f" eccentricity) fg)
                                         (draw-text gui canvas 5 105 40 20 "T" fg)
-                                        (draw-text gui canvas 45 105 55 20 (float-str 5421.2) fg)
+                                        (draw-text gui canvas 45 105 55 20 (float-str orbital-period) fg)
                                         (draw-text gui canvas 5 125 40 20 "PeT" fg)
-                                        (draw-text gui canvas 45 125 55 20 (float-str -1253.2) fg)
+                                        (draw-text gui canvas 45 125 55 20 (float-str time-since-periapsis) fg)
                                         (draw-text gui canvas 5 145 40 20 "ApT" fg)
-                                        (draw-text gui canvas 45 145 55 20 (float-str 3242.0) fg)
+                                        (draw-text gui canvas 45 145 55 20 (float-str time-since-apoapsis) fg)
                                         (draw-text gui canvas 5 165 40 20 "Vel" fg)
-                                        (draw-text gui canvas 45 165 55 20 (float-str 9000.0) fg)
+                                        (draw-text gui canvas 45 165 55 20 (float-str velocity) fg)
                                         (draw-text gui canvas 5 185 40 20 "Inc" fg)
-                                        (draw-text-right gui canvas 45 185 55 20 (format "%6.2f°" 3.5) fg)
+                                        (draw-text-right gui canvas 45 185 55 20 (format "%6.2f°" inclination) fg)
                                         (draw-text gui canvas 5 205 40 20 "LAN" fg)
-                                        (draw-text-right gui canvas 45 205 55 20 (format "%6.2f°" 359.96) fg)
+                                        (draw-text-right gui canvas 45 205 55 20 (format "%6.2f°" longitude-ascending-node) fg)
                                         (MemoryStack/stackPop))))))
           (render-nuklear-gui gui 256 256)
           (destroy-nuklear-gui-with-font gui)))
