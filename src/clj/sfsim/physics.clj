@@ -969,13 +969,15 @@
 (defn orbital-parameters
   "Get hash-map of orbital parameters"
   [planet state]
-  (let [position (get-position ::orbit state)
-        height   (- (mag position) ^double (:sfsim.planet/radius planet))
+  (let [radius   (:sfsim.planet/radius planet)
+        position (get-position ::orbit state)
+        height   (- (mag position) ^double radius)
         velocity (mag (get-linear-speed ::orbit state))]
-    {::periapsis (periapsis planet state)
-     ::apoapsis (apoapsis planet state)
+    {::periapsis-altitude (- (periapsis planet state) ^double radius)
+     ::apoapsis-altitude (- (apoapsis planet state) ^double radius)
      ::semi-major-axis (semi-major-axis planet state)
      ::semi-minor-axis (semi-minor-axis planet state)
+     ::radius radius
      ::altitude height
      ::eccentricity (eccentricity planet state)
      ::orbital-period (orbital-period planet state)

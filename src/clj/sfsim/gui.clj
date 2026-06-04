@@ -6,7 +6,7 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (to-radians to-degrees cos sin)]
+    [clojure.math :refer (PI to-radians to-degrees cos sin)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.matrix :as fm]
@@ -1390,6 +1390,79 @@
         rb   (* ^double scale dist (sin anomaly))]
     [(+ ^double center-x (- (* (cos argument-of-periapsis) ra) (* (sin argument-of-periapsis) rb)))
      (- ^double center-y (+ (* (sin argument-of-periapsis) ra) (* (cos argument-of-periapsis) rb)))]))
+
+
+(defn orbit-mfd
+  "Visualize orbit and display parameters"
+  [gui {:sfsim.physics/keys [periapsis-altitude apoapsis-altitude altitude eccentricity orbital-period time-since-periapsis
+                             time-since-apoapsis velocity inclination longitude-ascending-node argument-of-periapsis
+                             true-anomaly radius] :as orbital-params}]
+  (widget gui canvas canvas-rect
+          (let
+            [x0    (.x canvas-rect)
+             y0    (.y canvas-rect)
+             w     (.w canvas-rect)
+             h     (.h canvas-rect)
+             cx    (+ x0 (/ w 2))
+             cy    (+ y0 (/ h 2))
+             s     (/ (* w 120) 256 (+ (max ^double apoapsis-altitude 0.0) ^double radius))
+             earth (* s ^double radius)
+             n     44]
+            (with-colors
+              [bg       0   0   0
+               fg      64 211  71
+               border  82 185 142
+               bright 202 213 197
+               title  129 226 207]
+              (fill-rect canvas canvas-rect 0.0 bg)
+              (with-rect rect (+ x0 1) (+ y0 1) (- w 2) (- h 2)
+                (stroke-rect canvas rect 0.0 3.0 border))
+              (with-rect rect (- cx earth) (- cy earth) (* 2 earth) (* 2 earth)
+                (stroke-circle canvas rect 2.0 bright))
+              (doseq [i (range n)]
+                     (let [a (to-radians (/ (* 360 ^long i) n))
+                           b (to-radians (/ (* 360 (inc ^long i)) n))
+                           [x0 y0] (orbit-point orbital-params cx cy s a)
+                           [x1 y1] (orbit-point orbital-params cx cy s b)]
+                       (stroke-line canvas x0 y0 x1 y1 2.0 fg)))
+              (let [[x y] (orbit-point orbital-params cx cy s true-anomaly)]
+                (stroke-line canvas cx cy x y 2.0 fg)
+                (with-rect rect (- ^double x 2) (- ^double y 2) 5 5
+                  (fill-circle canvas rect fg)))
+              (let [[x y] (orbit-point orbital-params cx cy s (- ^double argument-of-periapsis))]
+                (with-rect rect (- ^double x 3) (- ^double y 3) 7 7
+                  (fill-rect canvas rect 0.0 fg)))
+              (let [[x y] (orbit-point orbital-params cx cy s (- PI ^double argument-of-periapsis))]
+                (with-rect rect (- ^double x 2) (- ^double y 2) 5 5
+                  (fill-rect canvas rect 0.0 bg)
+                  (stroke-rect canvas rect 0.0 2.0 fg)))
+              (let [x1 (+ x0 5)
+                    x2 (+ x0 45)
+                    y1 (+ y0 5)
+                    w1 40
+                    w2 55
+                    h 20]
+                (draw-text gui canvas x1 (+ y1 (* h 0)) w1 h "Earth" title)
+                (draw-text gui canvas x1 (+ y1 (* h 1)) w1 h "PeA" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 1)) w2 h (float-str periapsis-altitude) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 2)) w1 h "ApA" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 2)) w2 h (float-str apoapsis-altitude) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 3)) w1 h "Alt" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 3)) w2 h (float-str altitude) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 4)) w1 h "Ecc" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 4)) w2 h (format "%7.4f" eccentricity) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 5)) w1 h "T" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 5)) w2 h (float-str orbital-period) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 6)) w1 h "PeT" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 6)) w2 h (float-str time-since-periapsis) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 7)) w1 h "ApT" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 7)) w2 h (float-str time-since-apoapsis) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 8)) w1 h "Vel" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 8)) w2 h (float-str velocity) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 9)) w1 h "Inc" fg)
+                (draw-text-right gui canvas x2 (+ y1 (* h 9)) w2 h (format "%6.2f°" (to-degrees inclination)) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 10)) w1 h "LAN" fg)
+                (draw-text-right gui canvas x2 (+ y1 (* h 10)) w2 h (format "%6.2f°" (to-degrees longitude-ascending-node)) fg))))))
 
 
 (defn information-display

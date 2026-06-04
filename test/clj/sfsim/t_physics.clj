@@ -516,6 +516,7 @@
          (gravitational-parameter {:sfsim.planet/mass 5.9722e+24}) => (* 5.9722e+24 6.67430e-11)
          (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion 1 0 0 0))
          (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (vec3 0 0 0))
+         (:sfsim.physics/radius (orbital-parameters planet @state)) => 6378000.0
          (:sfsim.physics/altitude (orbital-parameters planet @state)) => (roughly 280000.0 1e-3)
          (specific-mechanical-energy planet @state) => (- (/ (gravitational-parameter planet) 6658000.0))
          ; At periapsis of elliptical orbit
@@ -531,9 +532,9 @@
          (eccentricity planet @state) => (roughly 0.352972 1e-6)
          (eccentricity-vector planet @state) => (roughly-vector (vec3 0.352972 0 0) 1e-6)
          (periapsis planet @state) => (roughly 6658000.0 1e-3)
-         (:sfsim.physics/periapsis (orbital-parameters planet @state)) => (roughly 6658000.0 1e-3)
+         (:sfsim.physics/periapsis-altitude (orbital-parameters planet @state)) => (roughly 280000.0 1e-3)
          (apoapsis planet @state) => (roughly 13922246.555 1e-3)
-         (:sfsim.physics/apoapsis (orbital-parameters planet @state)) => (roughly 13922246.555 1e-3)
+         (:sfsim.physics/apoapsis-altitude (orbital-parameters planet @state)) => (roughly (- 13922246.555 6378000.0) 1e-3)
          (/ (* 2.0 PI) (mean-motion planet @state)) => (roughly 10388.210 1e-3)
          (orbital-period planet @state) => (roughly 10388.210 1e-3)
          (:sfsim.physics/orbital-period (orbital-parameters planet @state)) => (roughly 10388.210 1e-3)
