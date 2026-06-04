@@ -1415,33 +1415,33 @@
                bright 202 213 197
                title  129 226 207]
               (fill-rect canvas canvas-rect 0.0 bg)
-              (with-rect rect (+ x0 1) (+ y0 1) (- w 2) (- h 2)
-                (stroke-rect canvas rect 0.0 3.0 border))
+              (with-rect rect (+ x0 (scale gui 1)) (+ y0 (scale gui 1)) (- w (scale gui 2)) (- h (scale gui 2))
+                (stroke-rect canvas rect 0.0 (scale gui 3.0) border))
               (with-rect rect (- cx earth) (- cy earth) (* 2 earth) (* 2 earth)
-                (stroke-circle canvas rect 2.0 bright))
+                (stroke-circle canvas rect (scale gui 2.0) bright))
               (doseq [i (range n)]
                      (let [a (to-radians (/ (* 360 ^long i) n))
                            b (to-radians (/ (* 360 (inc ^long i)) n))
                            [x0 y0] (orbit-point orbital-params cx cy s a)
                            [x1 y1] (orbit-point orbital-params cx cy s b)]
-                       (stroke-line canvas x0 y0 x1 y1 2.0 fg)))
+                       (stroke-line canvas x0 y0 x1 y1 (scale gui 2.0) fg)))
               (let [[x y] (orbit-point orbital-params cx cy s true-anomaly)]
-                (stroke-line canvas cx cy x y 2.0 fg)
-                (with-rect rect (- ^double x 2) (- ^double y 2) 5 5
+                (stroke-line canvas cx cy x y (scale gui 2.0) fg)
+                (with-rect rect (- ^double x (scale gui 2)) (- ^double y (scale gui 2)) (scale gui 5) (scale gui 5)
                   (fill-circle canvas rect fg)))
               (let [[x y] (orbit-point orbital-params cx cy s (- ^double argument-of-periapsis))]
-                (with-rect rect (- ^double x 3) (- ^double y 3) 7 7
+                (with-rect rect (- ^double x (scale gui 3)) (- ^double y (scale gui 3)) (scale gui 7) (scale gui 7)
                   (fill-rect canvas rect 0.0 fg)))
               (let [[x y] (orbit-point orbital-params cx cy s (- PI ^double argument-of-periapsis))]
-                (with-rect rect (- ^double x 2) (- ^double y 2) 5 5
+                (with-rect rect (- ^double x (scale gui 2)) (- ^double y (scale gui 2)) (scale gui 5) (scale gui 5)
                   (fill-rect canvas rect 0.0 bg)
-                  (stroke-rect canvas rect 0.0 2.0 fg)))
-              (let [x1 (+ x0 5)
-                    x2 (+ x0 45)
-                    y1 (+ y0 5)
-                    w1 40
-                    w2 55
-                    h 20]
+                  (stroke-rect canvas rect 0.0 (scale gui 2.0) fg)))
+              (let [x1 (+ x0 (scale gui 5))
+                    x2 (+ x0 (scale gui 45))
+                    y1 (+ y0 (scale gui 5))
+                    w1 (scale gui 40)
+                    w2 (scale gui 55)
+                    h (scale gui 20)]
                 (draw-text gui canvas x1 (+ y1 (* h 0)) w1 h "Earth" title)
                 (draw-text gui canvas x1 (+ y1 (* h 1)) w1 h "PeA" fg)
                 (draw-text gui canvas x2 (+ y1 (* h 1)) w2 h (float-str periapsis-altitude) fg)

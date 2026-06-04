@@ -338,33 +338,35 @@
       => (is-image "test/clj/sfsim/fixtures/gui/text-right.png" 0.10))
 
 
+(def orbital-params #:sfsim.physics{:periapsis-altitude 280000.0
+                                    :apoapsis-altitude 7544246.555
+                                    :radius 6378000.0
+                                    :semi-major-axis 1.0290123277258096E7
+                                    :semi-minor-axis 9627788.819867665
+                                    :altitude 280000.0
+                                    :eccentricity 0.35297179435015597
+                                    :orbital-period 5421.2
+                                    :time-since-periapsis -1253.2
+                                    :time-since-apoapsis 3242.0
+                                    :velocity 9000.0
+                                    :inclination (to-radians 3.5)
+                                    :longitude-ascending-node (to-radians 359.96)
+                                    :argument-of-periapsis (to-radians 30.0)
+                                    :true-anomaly (to-radians 45.0)})
+
+
 (fact "Render orbit MFD"
-      (gui-offscreen-render
-        264 264
-        (let [gui (make-nuklear-gui-with-font 1.0)]
-          (nuklear-dark-style gui)
-          (nuklear-window gui "control test window" 0 0 264 264 :widget
-                          (let [orbital-params
-                                #:sfsim.physics{:periapsis-altitude 280000.0
-                                                :apoapsis-altitude 7544246.555
-                                                :radius 6378000.0
-                                                :semi-major-axis 1.0290123277258096E7
-                                                :semi-minor-axis 9627788.819867665
-                                                :altitude 280000.0
-                                                :eccentricity 0.35297179435015597
-                                                :orbital-period 5421.2
-                                                :time-since-periapsis -1253.2
-                                                :time-since-apoapsis 3242.0
-                                                :velocity 9000.0
-                                                :inclination (to-radians 3.5)
-                                                :longitude-ascending-node (to-radians 359.96)
-                                                :argument-of-periapsis (to-radians 30.0)
-                                                :true-anomaly (to-radians 45.0)}]
-                            (layout-row-dynamic gui 256.0 1)
-                            (orbit-mfd gui orbital-params)))
-          (render-nuklear-gui gui 264 264)
-          (destroy-nuklear-gui-with-font gui)))
-      => (is-image "test/clj/sfsim/fixtures/gui/orbit.png" 0.10))
+      (doseq [s [1 2]]
+             (gui-offscreen-render
+               (quot 264 s) (quot 264 s)
+               (let [gui (make-nuklear-gui-with-font (/ 1.0 s))]
+                 (nuklear-dark-style gui)
+                 (nuklear-window gui "control test window" 0 0 (quot 264 s) (quot 264 s) :widget
+                                 (layout-row-dynamic gui (/ 256.0 s) 1)
+                                 (orbit-mfd gui orbital-params))
+                 (render-nuklear-gui gui (quot 264 s) (quot 264 s))
+                 (destroy-nuklear-gui-with-font gui)))
+             => (is-image (format "test/clj/sfsim/fixtures/gui/orbit-%d.png" s) 0.10)))
 
 
 (GLFW/glfwTerminate)
