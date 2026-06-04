@@ -79,7 +79,7 @@
   ([tar path flip]
    (STBImage/stbi_set_flip_vertically_on_load flip)
    (let [bytes_ (slurp-bytes-tar tar path)
-         mem (MemoryUtil/memAlloc (count bytes_))]
+         mem    (MemoryUtil/memAlloc (count bytes_))]
      (.put mem bytes_)
      (.flip mem)
      (let [width    (int-array 1)
@@ -87,6 +87,7 @@
            channels (int-array 1)
            buffer   (STBImage/stbi_load_from_memory mem width height channels 4)
            data     (byte-array (.limit buffer))]
+       (MemoryUtil/memFree mem)
        (.get ^DirectByteBuffer buffer ^bytes data)
        (.flip ^DirectByteBuffer buffer)
        (STBImage/stbi_image_free ^DirectByteBuffer buffer)
@@ -172,6 +173,7 @@
           buffer    (STBImage/stbi_load_from_memory mem width height channels 3)
           byte-data (byte-array (.limit buffer))
           data      (float-array (.limit buffer))]
+      (MemoryUtil/memFree mem)
       (.get ^DirectByteBuffer buffer ^bytes byte-data)
       (.flip ^DirectByteBuffer buffer)
       (STBImage/stbi_image_free ^DirectByteBuffer buffer)

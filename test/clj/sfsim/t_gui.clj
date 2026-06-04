@@ -6,6 +6,8 @@
 
 (ns sfsim.t-gui
   (:require
+    [clojure.math :refer (PI to-radians cos sin)]
+    [clojure.java.shell :as shell]
     [fastmath.matrix :refer (eye)]
     [fastmath.vector :refer (vec3 vec4)]
     [malli.dev.pretty :as pretty]
@@ -24,7 +26,14 @@
       GLFW)
     (org.lwjgl.opengl
       GL11
-      GL12)))
+      GL12)
+    (org.lwjgl.system
+      MemoryStack)
+    (org.lwjgl.nuklear
+      NkColor
+      NkRect
+      NkVec2
+      Nuklear)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -221,6 +230,143 @@
 (fact "Render radio button"
       (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32.0 1) (option-label gui "Radio button" true))
       => (is-image "test/clj/sfsim/fixtures/gui/radio.png" 0.17))
+
+
+(facts "Convert number to formatted string"
+       (java.util.Locale/setDefault java.util.Locale/US)
+       (float-str 0.0) => "   0.00"
+       (float-str PI) => "   3.14"
+       (float-str (- PI)) => "  -3.14"
+       (float-str 123.456) => " 123.46"
+       (float-str -123.456) => "-123.46"
+       (float-str 7733.0) => " 7.733k"
+       (float-str 12345.6) => " 12.35k"
+       (float-str 123456.7) => " 123.5k"
+       (float-str 6378000.0) => " 6.378M"
+       (float-str 1e+7) => " 10.00M"
+       (float-str 1e+8) => " 100.0M"
+       (float-str 1e+9) => " 1.000G"
+       (float-str 1e+10) => " 10.00G"
+       (float-str 1e+11) => " 100.0G"
+       (float-str 1e+12) => " 1.000T"
+       (float-str 1e+13) => " 10.00T"
+       (float-str 1e+14) => " 100.0T"
+       (float-str 1e+15) => "  1e+15")
+
+
+(fact "Text width"
+      (gui-offscreen-render
+        256 256
+        (let [gui (make-nuklear-gui-with-font 1.0)]
+          (text-width gui "Test") => (roughly 29.630 1e-3)
+          (destroy-nuklear-gui-with-font gui))))
+
+
+(fact "Define rectangle"
+      (with-rect rect 5 3 20 10 [(.x rect) (.y rect) (.w rect) (.h rect)]) => [5.0 3.0 20.0 10.0])
+
+(fact "Define colour"
+      (with-color fg 63 127 255 [(.r fg) (.g fg) (.b fg)]) => [63 127 -1])
+
+
+(fact "Define colours"
+      (with-colors [] 42) => 42
+      (with-colors [fg 63 127 255] [(.r fg) (.g fg) (.b fg)]) => [63 127 -1])
+
+
+(defmacro widget-test
+  [gui canvas rect w h & body]
+  `(gui-control-test
+     ~gui ~w ~h 1.0
+     (layout-row-dynamic ~gui (- ~h 8.0) 1)
+     (widget ~gui ~canvas ~rect ~@body)))
+
+
+(fact "Test filled rect"
+      (widget-test
+        gui canvas rect 160 24
+        (with-color red 255 0 0
+          (fill-rect canvas rect 0.0 red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/filled-rect.png" 0.10))
+
+
+(fact "Test stroke rect"
+      (widget-test
+        gui canvas rect 160 24
+        (with-color red 255 0 0
+          (stroke-rect canvas rect 0.0 3.0 red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/stroke-rect.png" 0.10))
+
+
+(fact "Test filled circle"
+      (widget-test
+        gui canvas rect 160 160
+        (with-color red 255 0 0
+          (fill-circle canvas rect red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/filled-circle.png" 0.10))
+
+
+(fact "Test stroke circle"
+      (widget-test
+        gui canvas rect 160 160
+        (with-color red 255 0 0
+          (stroke-circle canvas rect 3.0 red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/stroke-circle.png" 0.10))
+
+
+(fact "Test stroke line"
+      (widget-test
+        gui canvas rect 160 80
+        (with-color red 255 0 0
+          (stroke-line canvas 10 10 150 70 3.0 red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/stroke-line.png" 0.10))
+
+
+(fact "Test drawing of text"
+      (widget-test
+        gui canvas rect 160 24
+        (with-color red 255 0 0
+          (draw-text gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/text.png" 0.10))
+
+
+(fact "Test drawing of text right"
+      (widget-test
+        gui canvas rect 160 24
+        (with-color red 255 0 0
+          (draw-text-right gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" red)))
+      => (is-image "test/clj/sfsim/fixtures/gui/text-right.png" 0.10))
+
+
+(def orbital-params #:sfsim.physics{:periapsis-altitude 280000.0
+                                    :apoapsis-altitude 7544246.555
+                                    :radius 6378000.0
+                                    :semi-major-axis 1.0290123277258096E7
+                                    :semi-minor-axis 9627788.819867665
+                                    :altitude 280000.0
+                                    :eccentricity 0.35297179435015597
+                                    :orbital-period 5421.2
+                                    :time-since-periapsis 1253.2
+                                    :time-since-apoapsis -3242.0
+                                    :velocity 9000.0
+                                    :inclination (to-radians 3.5)
+                                    :longitude-ascending-node (to-radians 359.96)
+                                    :argument-of-periapsis (to-radians 30.0)
+                                    :true-anomaly (to-radians 45.0)})
+
+
+(fact "Render orbit MFD"
+      (doseq [s [1 2]]
+             (gui-offscreen-render
+               (quot 264 s) (quot 264 s)
+               (let [gui (make-nuklear-gui-with-font (/ 1.0 s))]
+                 (nuklear-dark-style gui)
+                 (nuklear-window gui "control test window" 0 0 (quot 264 s) (quot 264 s) :widget
+                                 (layout-row-dynamic gui (/ 256.0 s) 1)
+                                 (orbit-mfd gui orbital-params))
+                 (render-nuklear-gui gui (quot 264 s) (quot 264 s))
+                 (destroy-nuklear-gui-with-font gui)))
+             => (is-image (format "test/clj/sfsim/fixtures/gui/orbit-%d.png" s) 0.10)))
 
 
 (GLFW/glfwTerminate)

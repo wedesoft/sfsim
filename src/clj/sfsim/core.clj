@@ -148,9 +148,11 @@
                    (if fullscreen
                      (do
                        (GLFW/glfwSetWindowMonitor window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
-                       (reset! gui (gui/make-nuklear-gui-with-font (double (/ desktop-height window-height)))))
+                       (reset! gui (gui/make-nuklear-gui-with-font (double (/ desktop-height ^long window-height)))))
                      (do
-                       (GLFW/glfwSetWindowMonitor window 0 (quot (- desktop-width 854) 2) (quot (- desktop-height 480) 2)
+                       (GLFW/glfwSetWindowMonitor window 0
+                                                  (quot (- desktop-width window-width) 2)
+                                                  (quot (- desktop-height window-height) 2)
                                                   window-width window-height GLFW/GLFW_DONT_CARE)
                        (reset! gui (gui/make-nuklear-gui-with-font 1.0))))
                    (gui/nuklear-dark-style @gui)

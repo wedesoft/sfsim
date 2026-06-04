@@ -17,10 +17,11 @@
       [sfsim.quaternion :refer (orthogonal)]
       [sfsim.physics :refer (geographic->vector state-add state-scale runge-kutta gravitational-constant) :as physics]
       [sfsim.atmosphere :refer (temperature-at-height speed-of-sound density-at-height)]
-      [sfsim.aerodynamics :refer (lift drag wind-to-body-system coefficient-of-drag reference-area c-d-0)]
-      ; [sfsim.mlp :refer (Critic adam-optimizer tensor toitem tolist without-gradient entropy-of-distribution)]
+      [sfsim.aerodynamics :refer (lift drag wind-to-body-system reference-area c-d-0)]
+      ; [sfsim.environment :refer (Environment)]
+      ; [sfsim.mlp :refer (Critic adam-optimizer tensor toitem tolist without-gradient)]
       ; [sfsim.ppo :refer (sample-with-advantage-and-critic-target actor-loss critic-loss)]
-      [sfsim.environment :refer (Environment)]))
+      ))
 
 
 (comment  ; Disabled under Windows
@@ -377,7 +378,7 @@
            nil))
      "ratio"
      (py/make-instance-fn
-       (fn [self a b]
+       (fn [_self a b]
            (torch/where (torch/ne b 0.0) (torch/div a b) 1.0)))
      "scale"
      (py/make-instance-fn
@@ -484,7 +485,7 @@
     (doseq [epoch (range n-epochs)]
            (let [samples (sample-with-advantage-and-critic-target factory actor critic (* batch-size n-batches)
                                                                   batch-size gamma lambda)]
-             (doseq [k (range n-updates)]
+             (doseq [_k (range n-updates)]
                     (doseq [batch samples]
                            (let [loss (actor-loss batch actor epsilon @entropy-factor)]
                              (py. actor-optimizer zero_grad)

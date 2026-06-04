@@ -6,7 +6,7 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (to-radians to-degrees)]
+    [clojure.math :refer (PI to-radians to-degrees cos sin)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.matrix :as fm]
@@ -16,7 +16,7 @@
     [sfsim.version :refer (version)]
     [sfsim.physics :as physics]
     [sfsim.astro :as astro]
-    [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map)]
+    [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map sqr)]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers
                           make-vertex-array-stream destroy-vertex-array-object)]
@@ -38,6 +38,7 @@
       NkBuffer
       NkColor
       NkColor$Buffer
+      NkCommandBuffer
       NkContext
       NkConvertConfig
       NkDrawNullTexture
@@ -175,7 +176,7 @@
       (.vertex_size 20)
       (.vertex_alignment 4)
       (.tex_null ^NkDrawNullTexture null-texture)
-      (.circle_segment_count 22)
+      (.circle_segment_count 44)
       (.curve_segment_count 22)
       (.arc_segment_count 22)
       (.global_alpha 1.0)
@@ -292,6 +293,7 @@
 
 
 (defmacro nuklear-window
+  "Create window using specified title, size, and set of instructions"
   [gui title x y width height decoration & body]
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
@@ -310,6 +312,22 @@
          (MemoryStack/stackPop)))))
 
 
+(defmacro without-window-padding
+  "Temporarily disable window padding"
+  [gui & body]
+  `(let [stack#   (MemoryStack/stackPush)
+         nk-vec2# (NkVec2/malloc stack#)
+         win#     (.window (.style (::context ~gui)))]
+     (.x nk-vec2# 0)
+     (.y nk-vec2# 0)
+     (.padding win# nk-vec2#)
+     ~@body
+      (.x nk-vec2# (scale ~gui 4))
+      (.y nk-vec2# (scale ~gui 4))
+     (.padding win# nk-vec2#)
+     (MemoryStack/stackPop)))
+
+
 (defn layout-row-dynamic
   "Create dynamic layout with specified height and number of columns"
   {:malli/schema [:=> [:cat :some :double :int] :nil]}
@@ -320,11 +338,12 @@
 (defn make-bitmap-font
   "Create a bitmap font with character packing data"
   [^String ttf-filename ^long bitmap-width ^long bitmap-height ^long font-height]
-  (let [font         (NkUserFont/create)
+  (let [num-chars    145
+        font         (NkUserFont/create)
         fontinfo     (STBTTFontinfo/create)
         ttf          (slurp-byte-buffer ttf-filename)
         orig-descent (int-array 1)
-        cdata        (STBTTPackedchar/calloc 95)
+        cdata        (STBTTPackedchar/calloc num-chars)
         pc           (STBTTPackContext/calloc)
         bitmap       (MemoryUtil/memAlloc (* bitmap-width bitmap-height))]
     (STBTruetype/stbtt_InitFont fontinfo ttf)
@@ -337,6 +356,7 @@
           data  (byte-buffer->array bitmap)
           alpha #:sfsim.image{:width bitmap-width :height bitmap-height :data data :channels 1}
           image (white-image-with-alpha alpha)]
+      (MemoryUtil/memFree bitmap)
       {::font font
        ::fontinfo fontinfo
        ::ttf ttf  ; keep alive after passing buffer to stbtt_InitFont
@@ -356,6 +376,42 @@
     (.texture ^NkUserFont font handle)))
 
 
+(defn text-width-callback
+  "Determine width of text in pixels"
+  [fontinfo scale text len]
+  (let [stack     (MemoryStack/stackPush)
+        unicode   (.mallocInt stack 1)
+        advance   (.mallocInt stack 1)
+        glyph-len (Nuklear/nnk_utf_decode ^long text (MemoryUtil/memAddress unicode) ^long len)
+        result
+        (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
+              (if (or (> ^long text-len ^long len)
+                      (zero? glyph-len)
+                      (= (.get unicode 0) Nuklear/NK_UTF_INVALID))
+                text-width
+                (do
+                  (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
+                  (let [text-width (+ text-width (* (.get advance 0) ^double scale))
+                        glyph-len  (Nuklear/nnk_utf_decode (+ ^long text text-len)
+                                                           (MemoryUtil/memAddress unicode) (- ^long len text-len))]
+                    (recur (+ text-len glyph-len) glyph-len text-width)))))]
+    (MemoryStack/stackPop)
+    result))
+
+
+(defn text-width
+  "Determine width of text in pixels"
+  [{::keys [bitmap-font]} text]
+  (let [fontinfo (::fontinfo bitmap-font)
+        scale    (::scale bitmap-font)
+        buffer   (MemoryUtil/memUTF8 ^String text)
+        address  (MemoryUtil/memAddress ^DirectByteBuffer buffer)
+        size     (.remaining buffer)
+        result   (text-width-callback fontinfo scale address size)]
+    (MemoryUtil/memFree buffer)
+    result))
+
+
 (defn set-width-callback
   "Set callback function for computing width of text"
   {:malli/schema [:=> [:cat :some :some] :any]}
@@ -364,24 +420,7 @@
           (reify NkTextWidthCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
             (invoke
               [_this _handle _h text len]
-              (let [stack     (MemoryStack/stackPush)
-                    unicode   (.mallocInt stack 1)
-                    advance   (.mallocInt stack 1)
-                    glyph-len (Nuklear/nnk_utf_decode text (MemoryUtil/memAddress unicode) len)
-                    result
-                    (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
-                      (if (or (> text-len len)
-                              (zero? glyph-len)
-                              (= (.get unicode 0) Nuklear/NK_UTF_INVALID))
-                        text-width
-                        (do
-                          (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
-                          (let [text-width (+ text-width (* (.get advance 0) ^double scale))
-                                glyph-len  (Nuklear/nnk_utf_decode (+ text text-len)
-                                                                   (MemoryUtil/memAddress unicode) (- len text-len))]
-                            (recur (+ text-len glyph-len) glyph-len text-width)))))]
-                (MemoryStack/stackPop)
-                result)))))
+              (text-width-callback fontinfo scale text len)))))
 
 
 (defn set-height-callback
@@ -454,47 +493,15 @@
   (destroy-font-texture bitmap-font))
 
 
-(defn nuklear-dark-style
+(defn nuklear-global-scale
   [gui]
   (let [stack       (MemoryStack/stackPush)
-        rgb         (NkColor/malloc ^MemoryStack stack)
         nk-vec2     (NkVec2/malloc ^MemoryStack stack)
-        style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)
         context     (::context gui)
         style       (.style ^NkContext context)]
-    ;; Set color scheme
+    ;; Scale widget dimensions
     ;;
     ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TEXT (Nuklear/nk_rgb 210 210 210 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_WINDOW (Nuklear/nk_rgb 57 67 71 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_HEADER (Nuklear/nk_rgb 51 51 56 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BORDER (Nuklear/nk_rgb 46 46 46 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_HOVER (Nuklear/nk_rgb 58 93 121 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_ACTIVE (Nuklear/nk_rgb 63 98 126 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_HOVER (Nuklear/nk_rgb 45 53 56 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT (Nuklear/nk_rgb 57 67 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT_ACTIVE (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_PROPERTY (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT_CURSOR (Nuklear/nk_rgb 210 210 210 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_COMBO (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR_HIGHLIGHT (Nuklear/nk_rgb 255 0 0 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
-    (Nuklear/nk_style_from_table context style-table)
-    ;; Scale widget dimensions
     ;;
     ;; default buttons
     (let [button (.button style)]
@@ -670,8 +677,50 @@
       (.contextual_padding win nk-vec2)
       (.menu_padding win nk-vec2)
       (.tooltip_padding win nk-vec2))
-    ;; pop stack
     (MemoryStack/stackPop)))
+
+
+(defn nuklear-dark-style
+  [gui]
+  (let [stack       (MemoryStack/stackPush)
+        rgb         (NkColor/malloc ^MemoryStack stack)
+        style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)
+        context     (::context gui)]
+    ;; Set color scheme
+    ;;
+    ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TEXT (Nuklear/nk_rgb 210 210 210 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_WINDOW (Nuklear/nk_rgb 57 67 71 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_HEADER (Nuklear/nk_rgb 51 51 56 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BORDER (Nuklear/nk_rgb 46 46 46 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_HOVER (Nuklear/nk_rgb 58 93 121 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_ACTIVE (Nuklear/nk_rgb 63 98 126 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_HOVER (Nuklear/nk_rgb 45 53 56 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT (Nuklear/nk_rgb 57 67 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT_ACTIVE (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_PROPERTY (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT_CURSOR (Nuklear/nk_rgb 210 210 210 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_COMBO (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR_HIGHLIGHT (Nuklear/nk_rgb 255 0 0 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR (Nuklear/nk_rgb 50 58 61 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
+    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
+    (Nuklear/nk_style_from_table context style-table)
+    ;; pop stack
+    (MemoryStack/stackPop)
+    (nuklear-global-scale gui)))
 
 
 (defn slider-int
@@ -793,6 +842,7 @@
 
 
 (defmacro layout-row
+  "Layout widgets using specified height and specified number of widgets in a row"
   [gui height cnt & body]
   `(do
      (Nuklear/nk_layout_row_begin (:sfsim.gui/context ~gui) Nuklear/NK_DYNAMIC ~height ~cnt)
@@ -802,11 +852,13 @@
 
 
 (defn layout-row-push
+  "Set fraction of space next widget takes up in this layout row"
   [gui frac]
   (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) frac))
 
 
 (defmacro tabbing
+  "Use and update keyboard tab focus for specified edit field"
   [gui state edit idx cnt]
   `(ignore-nil->
      ~'state ~state
@@ -825,6 +877,97 @@
      ~@body
      (finally
        (Nuklear/nk_group_end ^NkContext (::context ~gui)))))
+
+
+(defmacro widget
+  "Macro to set up rendering of a custom widget"
+  [gui canvas rect & body]
+  `(let [context# (::context ~gui)
+         ~canvas  (Nuklear/nk_window_get_canvas context#)
+         stack#   (MemoryStack/stackPush)
+         ~rect    (NkRect/malloc stack#)]
+     (Nuklear/nk_widget ~rect context#)
+     ~@body
+     (MemoryStack/stackPop)))
+
+
+(defmacro with-rect
+  "Define a temporary rectangle"
+  [rect x y w h & body]
+  `(let [stack# (MemoryStack/stackPush)
+         ~rect  (NkRect/malloc stack#)]
+     (Nuklear/nk_rect ~x ~y ~w ~h ~rect)
+     (try
+       ~@body
+       (finally
+         (MemoryStack/stackPop)))))
+
+
+(defmacro with-color
+  "Define a colour"
+  [color r g b & body]
+  `(let [stack# (MemoryStack/stackPush)
+         ~color (NkColor/malloc stack#)]
+     (Nuklear/nk_rgb ~r ~g ~b ~color)
+     (try
+       ~@body
+       (finally
+         (MemoryStack/stackPop)))))
+
+
+(defmacro with-colors
+  "Define a few colours"
+  [colors & body]
+  (if (seq colors)
+    `(with-color ~(nth colors 0) ~(nth colors 1) ~(nth colors 2) ~(nth colors 3)
+       (with-colors ~(drop 4 colors) ~@body))
+    `(do ~@body)))
+
+
+(defn fill-rect
+  "Draw filled rectangle"
+  [canvas rect rounding color]
+  (Nuklear/nk_fill_rect canvas rect rounding color))
+
+
+(defn stroke-rect
+  "Draw outlines of rectangle"
+  [canvas rect rounding thickness color]
+  (Nuklear/nk_stroke_rect canvas rect rounding thickness color))
+
+
+(defn fill-circle
+  "Draw filled circle"
+  [canvas rect color]
+  (Nuklear/nk_fill_circle canvas rect color))
+
+
+(defn stroke-circle
+  "Draw circle outline"
+  [canvas rect thickness color]
+  (Nuklear/nk_stroke_circle canvas rect thickness color))
+
+
+(defn stroke-line
+  "Draw a line"
+  [canvas x0 y0 x1 y1 thickness color]
+  (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 thickness color))
+
+
+(defn draw-text
+  "Draw left-aligned text on a canvas"
+  [gui canvas x y w h text color]
+  (with-rect rect x y w h
+    (with-color bg 0 0 0
+      (let [font  (::font (::bitmap-font gui))]
+        (Nuklear/nk_draw_text ^NkCommandBuffer canvas rect ^String text ^NkUserFont font bg ^NkColor color)))))
+
+
+(defn draw-text-right
+  "Draw right-aligned text on a canvas"
+  [gui canvas x y w h text color]
+  (let [text-width (text-width gui text)]
+    (draw-text gui canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text color)))
 
 
 (declare main-dialog)
@@ -1212,14 +1355,123 @@
   (MemoryStack/stackPop))
 
 
+(defn float-str
+  "Create formatted string from distance value"
+  ^String [^double number]
+  ;; Also see https://github.com/orbitersim/orbiter/blob/main/Src/Orbiter/Astro.cpp
+  (cond
+    (< (abs number) 1e+3 ) (format "%7.2f" number)
+    (< (abs number) 1e+4 ) (format "%6.3fk" (* number 1e-3 ))
+    (< (abs number) 1e+5 ) (format "%6.2fk" (* number 1e-3 ))
+    (< (abs number) 1e+6 ) (format "%6.1fk" (* number 1e-3 ))
+    (< (abs number) 1e+7 ) (format "%6.3fM" (* number 1e-6 ))
+    (< (abs number) 1e+8 ) (format "%6.2fM" (* number 1e-6 ))
+    (< (abs number) 1e+9 ) (format "%6.1fM" (* number 1e-6 ))
+    (< (abs number) 1e+10) (format "%6.3fG" (* number 1e-9 ))
+    (< (abs number) 1e+11) (format "%6.2fG" (* number 1e-9 ))
+    (< (abs number) 1e+12) (format "%6.1fG" (* number 1e-9 ))
+    (< (abs number) 1e+13) (format "%6.3fT" (* number 1e-12))
+    (< (abs number) 1e+14) (format "%6.2fT" (* number 1e-12))
+    (< (abs number) 1e+15) (format "%6.1fT" (* number 1e-12))
+    :else (format "%7.0g" number)))
+
+
+(defn distance-for-anomaly
+  "Compute orbit distance to planet center for given true anomaly"
+  ^double [{:sfsim.physics/keys [semi-major-axis eccentricity]} ^double anomaly]
+  (/ (* ^double semi-major-axis (- 1.0 (sqr eccentricity))) (+ 1.0 (* ^double eccentricity (cos anomaly)))))
+
+
+(defn orbit-point
+  "Sample a point from the orbit displayed in the orbit MFD"
+  [{:sfsim.physics/keys [argument-of-periapsis] :as orbit-params} center-x center-y scale anomaly]
+  (let [dist (distance-for-anomaly orbit-params anomaly)
+        ra   (* ^double scale dist (cos anomaly))
+        rb   (* ^double scale dist (sin anomaly))]
+    [(+ ^double center-x (- (* (cos argument-of-periapsis) ra) (* (sin argument-of-periapsis) rb)))
+     (- ^double center-y (+ (* (sin argument-of-periapsis) ra) (* (cos argument-of-periapsis) rb)))]))
+
+
+(defn orbit-mfd
+  "Visualize orbit and display parameters"
+  [gui {:sfsim.physics/keys [periapsis-altitude apoapsis-altitude altitude eccentricity orbital-period time-since-periapsis
+                             time-since-apoapsis velocity inclination longitude-ascending-node argument-of-periapsis
+                             true-anomaly radius] :as orbital-params}]
+  (widget gui canvas canvas-rect
+          (let
+            [x0    (.x canvas-rect)
+             y0    (.y canvas-rect)
+             w     (.w canvas-rect)
+             h     (.h canvas-rect)
+             cx    (+ x0 (/ w 2))
+             cy    (+ y0 (/ h 2))
+             s     (/ (* w 120) 256 (+ (max ^double apoapsis-altitude 0.0) ^double radius))
+             earth (* s ^double radius)
+             n     256]
+            (with-colors
+              [bg       0   0   0
+               fg      64 211  71
+               border  82 185 142
+               bright 202 213 197
+               title  129 226 207]
+              (fill-rect canvas canvas-rect 0.0 bg)
+              (with-rect rect (+ x0 (scale gui 1)) (+ y0 (scale gui 1)) (- w (scale gui 2)) (- h (scale gui 2))
+                (stroke-rect canvas rect 0.0 (scale gui 3.0) border))
+              (with-rect rect (- cx earth) (- cy earth) (* 2 earth) (* 2 earth)
+                (stroke-circle canvas rect (scale gui 2.0) bright))
+              (doseq [i (range n)]
+                     (let [a (to-radians (/ (* 360 ^long i) n))
+                           b (to-radians (/ (* 360 (inc ^long i)) n))
+                           [x0 y0] (orbit-point orbital-params cx cy s a)
+                           [x1 y1] (orbit-point orbital-params cx cy s b)]
+                       (stroke-line canvas x0 y0 x1 y1 (scale gui 2.0) fg)))
+              (let [[x y] (orbit-point orbital-params cx cy s true-anomaly)]
+                (stroke-line canvas cx cy x y (scale gui 2.0) fg)
+                (with-rect rect (- ^double x (scale gui 2)) (- ^double y (scale gui 2)) (scale gui 5) (scale gui 5)
+                  (fill-circle canvas rect fg)))
+              (let [[x y] (orbit-point orbital-params cx cy s (- ^double argument-of-periapsis))]
+                (with-rect rect (- ^double x (scale gui 3)) (- ^double y (scale gui 3)) (scale gui 7) (scale gui 7)
+                  (fill-rect canvas rect 0.0 fg)))
+              (let [[x y] (orbit-point orbital-params cx cy s (- PI ^double argument-of-periapsis))]
+                (with-rect rect (- ^double x (scale gui 2)) (- ^double y (scale gui 2)) (scale gui 5) (scale gui 5)
+                  (fill-rect canvas rect 0.0 bg)
+                  (stroke-rect canvas rect 0.0 (scale gui 2.0) fg)))
+              (let [x1 (+ x0 (scale gui 5))
+                    x2 (+ x0 (scale gui 45))
+                    y1 (+ y0 (scale gui 5))
+                    w1 (scale gui 40)
+                    w2 (scale gui 55)
+                    h (scale gui 20)]
+                (draw-text gui canvas x1 (+ y1 (* h 0)) w1 h "Earth" title)
+                (draw-text gui canvas x1 (+ y1 (* h 1)) w1 h "PeA" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 1)) w2 h (float-str periapsis-altitude) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 2)) w1 h "ApA" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 2)) w2 h (float-str apoapsis-altitude) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 3)) w1 h "Alt" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 3)) w2 h (float-str altitude) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 4)) w1 h "Ecc" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 4)) w2 h (format "%7.4f" eccentricity) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 5)) w1 h "T" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 5)) w2 h (float-str orbital-period) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 6)) w1 h "PeT" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 6)) w2 h (float-str (- time-since-periapsis)) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 7)) w1 h "ApT" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 7)) w2 h (float-str (- time-since-apoapsis)) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 8)) w1 h "Vel" fg)
+                (draw-text gui canvas x2 (+ y1 (* h 8)) w2 h (float-str velocity) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 9)) w1 h "Inc" fg)
+                (draw-text-right gui canvas x2 (+ y1 (* h 9)) w2 h (format "%6.2f°" (to-degrees inclination)) fg)
+                (draw-text gui canvas x1 (+ y1 (* h 10)) w1 h "LAN" fg)
+                (draw-text-right gui canvas x2 (+ y1 (* h 10)) w2 h (format "%6.2f°" (to-degrees longitude-ascending-node)) fg))))))
+
+
 (defn information-display
   [gui ^long h state frametime]
   (let [earth-radius    (:sfsim.planet/radius config/planet-config)
         object-position (physics/get-position :sfsim.physics/surface (:physics state))
         eccentricity    (physics/eccentricity config/planet-config (:physics state))
         controls        (-> state :input :sfsim.input/controls)
-        text1           (format "h = %.1f m, vs = %.1f m/s, v = %.1f m/s, %s%s%s%s, fps = %5.1f"
-                                (- (fv/mag object-position) ^double earth-radius)
+        text1           (format "vs = %.1f m/s, v = %.1f m/s, %s%s%s%s, fps = %5.1f"
                                 (:sfsim.physics/display-vertical-speed (:physics state))
                                 (:sfsim.physics/display-speed (:physics state))
                                 (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
@@ -1227,21 +1479,16 @@
                                   (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
                                 (if (:sfsim.input/air-brake controls) ", air brake" "")
                                 (if (-> state :input :sfsim.input/pause) ", pause" "")
-                                (/ 1.0 ^double frametime))
-        text2           (format "hp = %.1f m, ha = %.1f m, tp = %.1f s, ta = %.1f s"
-                                (- (physics/periapsis config/planet-config (:physics state)) ^double earth-radius)
-                                (if (< eccentricity 1.0)
-                                  (- (physics/apoapsis config/planet-config (:physics state)) ^double earth-radius)
-                                  ##NaN)
-                                (- (physics/time-since-periapsis config/planet-config (:physics state)))
-                                (if (< eccentricity 1.0)
-                                  (- (physics/time-since-apoapsis config/planet-config (:physics state)))
-                                  ##NaN))]
-    (nuklear-window gui "Information" (scale gui 10) (- h (scale gui (+ 10 (* ^long text-height 2))))
-                    (scale gui 640) (scale gui (* ^long text-height 2)) :widget
+                                (/ 1.0 ^double frametime))]
+    (without-window-padding gui
+      (nuklear-window gui "Orbit" (scale gui 10) (- h (scale gui (+ 10 256)))
+                      (scale gui 256) (scale gui 256) :widget
+                      (layout-row-dynamic gui (scale gui 256) 1)
+                      (orbit-mfd gui (physics/orbital-parameters config/planet-config (:physics state)))))
+    (nuklear-window gui "Information" (scale gui (+ 20 256)) (- h (scale gui (+ 10 (* ^long text-height 1))))
+                    (scale gui 640) (scale gui (* ^long text-height 1)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)
-                    (text-label gui text1)
-                    (text-label gui text2))))
+                    (text-label gui text1))))
 
 
 (set! *warn-on-reflection* false)

@@ -4,7 +4,7 @@
         org.clojure/core.memoize {:mvn/version "1.2.281"}
         comb/comb {:mvn/version "1.0.0"}
         org.clojure/tools.logging {:mvn/version "1.3.1"}
-        ch.qos.logback/logback-classic {:mvn/version "1.5.33"}
+        ch.qos.logback/logback-classic {:mvn/version "1.5.34"}
         progrock/progrock {:mvn/version "1.0.0"}
         org.clj-commons/claypoole {:mvn/version "1.2.2"}
         generateme/fastmath {:mvn/version "2.4.0" :exclusions [com.github.haifengl/smile-mkl org.bytedeco/openblas]}
@@ -32,7 +32,7 @@
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED" "-XX:+UseZGC"
                             "-XX:+UseDynamicNumberOfGCThreads" "--sun-misc-unsafe-memory-access=allow"]
                  :main-opts ["-m" "sfsim.core"]}
-           :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.13"}
+           :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.14"}
                           sfsim/sfsim {:local/root "."}}
                    :ns-default build
                    :exec-fn all

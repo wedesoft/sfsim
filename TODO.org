@@ -3,8 +3,19 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [-] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
-    - [ ] gui scaling
+  - [X] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
+    - [X] PeA
+    - [X] ApA
+    - [X] Alt
+    - [X] Ecc
+    - [X] T
+    - [X] PeT
+    - [X] ApT
+    - [X] Vel
+    - [X] Inc
+    - [X] LAN
+    - [X] true anomaly
+    - [X] argument of perihel
   - [ ] launch mfd, reinforcement learning launch physics
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed
@@ -40,7 +51,8 @@
   - [ ] ils
   - [ ] save/load game
   - [ ] reentry flame
-  - [ ] thrust vectoring
+  - [ ] thrust vectoringa
+  - [ ] Gabe Newell on realism: https://www.youtube.com/watch?v=MGpFEv1-mAo
 * TODO [#A] spacecraft simulation                                      :physics:
   - Note taken on [2026-05-07 Do 23:45] \\
     def stable_log_det(z):
@@ -348,6 +360,7 @@
     [[https://github.com/replikativ/raster/tree/main/examples/valley]]
     Nutze Panama direkt, aber coffi ist auch ok. Ich mache das über Struct of Arrays um Memorylocality für ganze Kollektionen zu haben.
     [[https://replikativ.github.io/raster/raster.ga_ode_rotors.html]]
+  - openai api tokens: [[https://platform.openai.com/home]]
   - [ ] winter daytime is too dark, adjust range?
   - [X] limit timestep to prevent numerical problems
   - [X] add keyboard mapping help page!
