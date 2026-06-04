@@ -346,8 +346,8 @@
                                     :altitude 280000.0
                                     :eccentricity 0.35297179435015597
                                     :orbital-period 5421.2
-                                    :time-since-periapsis -1253.2
-                                    :time-since-apoapsis 3242.0
+                                    :time-since-periapsis 1253.2
+                                    :time-since-apoapsis -3242.0
                                     :velocity 9000.0
                                     :inclination (to-radians 3.5)
                                     :longitude-ascending-node (to-radians 359.96)
