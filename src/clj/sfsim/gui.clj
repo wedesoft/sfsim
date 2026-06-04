@@ -6,7 +6,7 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (to-radians to-degrees)]
+    [clojure.math :refer (to-radians to-degrees cos)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.matrix :as fm]
@@ -16,7 +16,7 @@
     [sfsim.version :refer (version)]
     [sfsim.physics :as physics]
     [sfsim.astro :as astro]
-    [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map)]
+    [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map sqr)]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers
                           make-vertex-array-stream destroy-vertex-array-object)]
@@ -1368,6 +1368,11 @@
     (< (abs number) 1e+14) (format "%6.2fT" (* number 1e-12))
     (< (abs number) 1e+15) (format "%6.1fT" (* number 1e-12))
     :else (format "%7.0g" number)))
+
+
+(defn distance-for-anomaly
+  [{:sfsim.physics/keys [semi-major-axis eccentricity]} anomaly]
+  (/ (* ^double semi-major-axis (- 1.0 (sqr eccentricity))) (+ 1.0 (* ^double eccentricity (cos anomaly)))))
 
 
 (defn information-display

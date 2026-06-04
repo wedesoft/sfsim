@@ -407,7 +407,7 @@
                                                   [x y] [(+ 128 (* scale r)) 128]]
                                               (with-rect rect (- x 2) (- y 2) 5 5
                                                 (fill-rect canvas rect 0.0 fg)))
-                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos true-anomaly))))
+                                            (let [r (distance-for-anomaly orbital-params true-anomaly)
                                                   [x y] [(+ 128 (* scale r (cos (+ argument-of-periapsis true-anomaly))))
                                                          (- 128 (* scale r (sin (+ argument-of-periapsis true-anomaly))))]]
                                               (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg)
