@@ -388,36 +388,32 @@
                                               n      44]
                                           (with-rect rect (- 128 earth) (- 128 earth) (* 2 earth) (* 2 earth)
                                             (stroke-circle canvas rect 2.0 bright))
-                                          (let [f (fn [a] [(* scale (+ (* semi-major-axis (cos a)) (- periapsis semi-major-axis)))
-                                                           (* scale semi-minor-axis (sin a))])
+                                          (let [f (fn [a] (let [r (distance-for-anomaly orbital-params a)]
+                                                           [(* scale r (cos a)) (* scale r (sin a))]))
                                                 g (fn [a] (let [[x y] (f a)]
                                                             [(+ 128 (- (* (cos argument-of-periapsis) x) (* (sin argument-of-periapsis) y)))
                                                              (- 128 (+ (* (sin argument-of-periapsis) x) (* (cos argument-of-periapsis) y)))]))]
-                                            (let [r     (distance-for-anomaly orbital-params argument-of-periapsis)
-                                                  [x y] [(+ 128 (* scale radius)) 128]]
-                                              (with-rect rect (- x 3) (- y 3) 7 7
-                                                (fill-rect canvas rect 0.0 fg)))
                                             (doseq [i (range n)]
                                                    (let [a (to-radians (/ (* 360 i) n))
                                                          b (to-radians (/ (* 360 (inc i)) n))
                                                          [x0 y0] (g a)
                                                          [x1 y1] (g b)]
                                                      (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 2.0 fg)))
-                                            (let [r     (distance-for-anomaly orbital-params argument-of-periapsis)
-                                                  [x y] [(+ 128 (* scale r)) 128]]
-                                              (with-rect rect (- x 2) (- y 2) 5 5
-                                                (fill-rect canvas rect 0.0 fg)))
                                             (let [r     (distance-for-anomaly orbital-params true-anomaly)
                                                   [x y] [(+ 128 (* scale r (cos (+ argument-of-periapsis true-anomaly))))
                                                          (- 128 (* scale r (sin (+ argument-of-periapsis true-anomaly))))]]
                                               (Nuklear/nk_stroke_line canvas 128 128 x y 2.0 fg)
                                               (with-rect rect (- x 2) (- y 2) 5 5
                                                 (fill-circle canvas rect fg)))
-                                            (let [r (/ (* semi-major-axis (- 1 (* eccentricity eccentricity))) (+ 1 (* eccentricity (cos (+ PI argument-of-periapsis)))))
+                                            (let [r     (distance-for-anomaly orbital-params argument-of-periapsis)
+                                                  [x y] [(+ 128 (* scale r)) 128]]
+                                              (with-rect rect (- x 3) (- y 3) 7 7
+                                                (fill-rect canvas rect 0.0 fg)))
+                                            (let [r     (distance-for-anomaly orbital-params (+ PI argument-of-periapsis))
                                                   [x y] [(- 128 (* scale r)) 128]]
                                               (with-rect rect (- x 2) (- y 2) 5 5
-                                                (fill-rect canvas rect 0.0 bg))
-                                              (stroke-rect canvas rect 0.0 2.0 fg))))
+                                                (fill-rect canvas rect 0.0 bg)
+                                                (stroke-rect canvas rect 0.0 2.0 fg)))))
                                         (draw-text gui canvas 5 5 40 20 "Earth" title)
                                         (draw-text gui canvas 5 25 40 20 "PeA" fg)
                                         (draw-text gui canvas 45 25 55 20 (float-str periapsis-altitude) fg)
