@@ -317,7 +317,7 @@
   [gui & body]
   `(let [stack#   (MemoryStack/stackPush)
          nk-vec2# (NkVec2/malloc stack#)
-         win#     (.window (.style (::context ~gui)))]
+         win#     (.window (.style ^NkContext (::context ~gui)))]
      (.x nk-vec2# 0)
      (.y nk-vec2# 0)
      (.padding win# nk-vec2#)
@@ -1454,9 +1454,9 @@
                 (draw-text gui canvas x1 (+ y1 (* h 5)) w1 h "T" fg)
                 (draw-text gui canvas x2 (+ y1 (* h 5)) w2 h (float-str orbital-period) fg)
                 (draw-text gui canvas x1 (+ y1 (* h 6)) w1 h "PeT" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 6)) w2 h (float-str (- time-since-periapsis)) fg)
+                (draw-text gui canvas x2 (+ y1 (* h 6)) w2 h (float-str (- ^double time-since-periapsis)) fg)
                 (draw-text gui canvas x1 (+ y1 (* h 7)) w1 h "ApT" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 7)) w2 h (float-str (- time-since-apoapsis)) fg)
+                (draw-text gui canvas x2 (+ y1 (* h 7)) w2 h (float-str (- ^double time-since-apoapsis)) fg)
                 (draw-text gui canvas x1 (+ y1 (* h 8)) w1 h "Vel" fg)
                 (draw-text gui canvas x2 (+ y1 (* h 8)) w2 h (float-str velocity) fg)
                 (draw-text gui canvas x1 (+ y1 (* h 9)) w1 h "Inc" fg)
