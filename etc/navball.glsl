@@ -6,6 +6,7 @@ uniform vec2 iResolution;
 uniform float iTime;
 uniform vec2 iMouse;
 
+// https://spacedock.info/mod/3738/KSP2%20Pre-Alpha%20Style%20NavBall
 uniform sampler2D navball;
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)

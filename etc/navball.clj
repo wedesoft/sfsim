@@ -11,6 +11,7 @@
 (GLFW/glfwInit)
 
 (GLFW/glfwDefaultWindowHints)
+(def playback true)
 (def width 512)
 (def height 512)
 (def window (GLFW/glfwCreateWindow width height "Shadertoy" 0 0))
@@ -140,6 +141,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
 (uniform-sampler program "navball" 0)
 (use-textures {0 navball})
+(def frame-counter (atom 0))
 
 (while (not (GLFW/glfwWindowShouldClose window))
   (GL20/glUniform1f (GL20/glGetUniformLocation program "iTime") (GLFW/glfwGetTime))
@@ -147,6 +149,18 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     (GL20/glUniform2f (GL20/glGetUniformLocation program "iMouse") (@mouse-pos 0) (@mouse-pos 1))
     (GL20/glUniform1f (GL20/glGetUniformLocation program "pressure") (pow 0.001 (/ (@mouse-pos 1) height))))
   (GL11/glDrawElements GL11/GL_QUADS 4 GL11/GL_UNSIGNED_INT 0)
+  (when playback
+    (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 ^long width ^long height))
+          data   (byte-array (* 4 ^long width ^long height))]
+      (GL11/glFlush)
+      (GL11/glFinish)
+      (GL11/glReadPixels 0 0 ^long width ^long height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
+      (.get buffer data)
+      (spit-png (format "frame%06d.png" @frame-counter) {:sfsim.image/data data
+                                                         :sfsim.image/width width
+                                                         :sfsim.image/height height
+                                                         :sfsim.image/channels 4} true)
+      (swap! frame-counter inc)))
   (GLFW/glfwSwapBuffers window)
   (GLFW/glfwPollEvents))
 
