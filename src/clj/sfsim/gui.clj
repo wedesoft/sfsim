@@ -1082,10 +1082,10 @@
   (let [mappings (invert-map (get-in state [:input :sfsim.input/mappings :sfsim.input/keyboard]))]
     (nuklear-window
       gui "Keyboard"
-      (quot (- window-width (scale gui 480)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 10) ^long widget-height ^long padding))) 2)
-      (scale gui 480) (scale gui (+ ^long title-height (* ^long text-height 10) ^long widget-height ^long padding)) :dialog
+      (quot (- window-width (scale gui 480)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 20) ^long widget-height ^long padding))) 2)
+      (scale gui 480) (scale gui (+ ^long title-height (* ^long text-height 20) ^long widget-height ^long padding)) :dialog
       (ignore-nil-> state state
-                    (layout-row-dynamic gui (scale gui (* ^long text-height 10)) 1)
+                    (layout-row-dynamic gui (scale gui (* ^long text-height 20)) 1)
                     (group gui "keyboard" "Keyboard"
                            (layout-row-dynamic gui (scale gui text-row-height) 1)
                            (text-label gui "Note that joystick overrides keyboard commands!")
