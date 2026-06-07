@@ -204,6 +204,7 @@ The Blender model can be converted to GLB as follows:
   * [Java native interface example](https://www.baeldung.com/jni)
   * [Earth explorer data](https://earthexplorer.usgs.gov/)
   * [Simple Physics-based Flight Simulation with C++](https://www.jakobmaier.at/posts/flight-simulation/)
+  * [Spacecraft Guide](https://spacecraftguide.com/)
   * [Wedesoft blog](https://www.wedesoft.de/)
 * Videos
   * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)

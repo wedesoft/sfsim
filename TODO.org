@@ -16,6 +16,10 @@
     - [X] LAN
     - [X] true anomaly
     - [X] argument of perihel
+  - [ ] navball
+    - [ ] generate sphere texture [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
+    - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw)
+    - [ ] green triangle rate indicators (top: roll, right: pitch, bottom: yaw)
   - [ ] launch mfd, reinforcement learning launch physics
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed
@@ -51,7 +55,11 @@
   - [ ] ils
   - [ ] save/load game
   - [ ] reentry flame
-  - [ ] thrust vectoringa
+  - [ ] thrust vectoring
+  - [ ] docs
+  - [ ] auto rudder
+  - [ ] controller button to get to menu and trackpad to select menu items?
+  - [ ] simulate crash
   - [ ] Gabe Newell on realism: https://www.youtube.com/watch?v=MGpFEv1-mAo
 * TODO [#A] spacecraft simulation                                      :physics:
   - Note taken on [2026-05-07 Do 23:45] \\

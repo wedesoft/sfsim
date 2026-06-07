@@ -338,6 +338,25 @@
       => (is-image "test/clj/sfsim/fixtures/gui/text-right.png" 0.10))
 
 
+(fact "Test drawing with larger font"
+      (gui-offscreen-render
+        320 48
+        (let [gui         (make-nuklear-gui-with-font 1.0)
+              font        (make-bitmap-font "resources/fonts/b612.ttf" 1024 1024 36)
+              bitmap-font (setup-font-texture font)]
+          (nuklear-dark-style gui)
+          (nuklear-window gui "control test window" 0 0 320 48 :widget
+                          (layout-row-dynamic gui 40.0 1)
+                          (widget gui canvas rect
+                                  (with-colors [bg 0 0 0
+                                                red 255 0 0]
+                                    (Nuklear/nk_draw_text canvas rect "Some red text" (:sfsim.gui/font bitmap-font) bg red))))
+                          (render-nuklear-gui gui 320 48)
+                          (destroy-font-texture bitmap-font)
+                          (destroy-nuklear-gui-with-font gui)))
+      => (is-image "test/clj/sfsim/fixtures/gui/text-large.png" 0.10))
+
+
 (def orbital-params #:sfsim.physics{:periapsis-altitude 280000.0
                                     :apoapsis-altitude 7544246.555
                                     :radius 6378000.0
