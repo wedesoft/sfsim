@@ -6,7 +6,7 @@
 
 (ns sfsim.t-gui
   (:require
-    [clojure.math :refer (PI to-radians cos sin)]
+    [clojure.math :refer (PI to-radians cos sin floor ceil)]
     [clojure.java.shell :as shell]
     [fastmath.matrix :refer (eye)]
     [fastmath.vector :refer (vec3 vec4)]
@@ -55,6 +55,25 @@
   [width height & body]
   `(with-invisible-window
      (gui-framebuffer-render ~width ~height ~@body)))
+
+
+(defmacro gui-control-test
+  [gui width height scale & body]
+  `(gui-offscreen-render ~width ~height
+                         (let [~gui (make-nuklear-gui-with-font ~scale)]
+                           (nuklear-dark-style ~gui)
+                           (nuklear-window ~gui "control test window" 0 0 ~width ~height :widget
+                                           ~@body)
+                           (render-nuklear-gui ~gui ~width ~height)
+                           (destroy-nuklear-gui-with-font ~gui))))
+
+
+(defmacro widget-test
+  [gui canvas rect w h & body]
+  `(gui-control-test
+     ~gui ~w ~h 1.0
+     (layout-row-dynamic ~gui (- ~h 8.0) 1)
+     (widget ~gui ~canvas ~rect ~@body)))
 
 
 (tabular "Instantiate GUI program"
@@ -150,17 +169,6 @@
 (fact "Render font to bitmap"
       (let [bitmap-font (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)]
         (:sfsim.gui/image bitmap-font)) => (is-image "test/clj/sfsim/fixtures/gui/font.png" 7.22 false))
-
-
-(defmacro gui-control-test
-  [gui width height scale & body]
-  `(gui-offscreen-render ~width ~height
-                         (let [~gui (make-nuklear-gui-with-font ~scale)]
-                           (nuklear-dark-style ~gui)
-                           (nuklear-window ~gui "control test window" 0 0 ~width ~height :widget
-                                           ~@body)
-                           (render-nuklear-gui ~gui ~width ~height)
-                           (destroy-nuklear-gui-with-font ~gui))))
 
 
 (facts "Render a slider"
@@ -274,14 +282,6 @@
       (with-colors [fg 63 127 255] [(.r fg) (.g fg) (.b fg)]) => [63 127 -1])
 
 
-(defmacro widget-test
-  [gui canvas rect w h & body]
-  `(gui-control-test
-     ~gui ~w ~h 1.0
-     (layout-row-dynamic ~gui (- ~h 8.0) 1)
-     (widget ~gui ~canvas ~rect ~@body)))
-
-
 (fact "Test filled rect"
       (widget-test
         gui canvas rect 160 24
@@ -386,6 +386,54 @@
                  (render-nuklear-gui gui (quot 264 s) (quot 264 s))
                  (destroy-nuklear-gui-with-font gui)))
              => (is-image (format "test/clj/sfsim/fixtures/gui/orbit-%d.png" s) 0.10)))
+
+
+(fact "Render navball texture"
+      (spit-png
+        "/tmp/navball.png"
+        (let [w 512 h 1024]
+          (gui-offscreen-render
+            w h
+            (let [gui (make-nuklear-gui-with-font 1.0)]
+              (nuklear-dark-style gui)
+              (without-window-padding gui
+                (nuklear-window
+                  gui "navball rendering" 0 0 w h :widget
+                  (layout-row-dynamic gui (double w) 1)
+                  (widget
+                    gui canvas canvas-rect
+                    (with-colors
+                      [white 255 255 255
+                       black   0   0   0
+                       red   255   0   0
+                       green   0 255   0
+                       blue    0   0 255]
+                      (with-rect rect 0 0 w w (fill-rect canvas rect 0.0 white))
+                      (with-rect rect 0 w w w (fill-rect canvas rect 0.0 black))
+                      (with-rect rect 0 0 (/ w 12) h (fill-rect canvas rect 0.0 red))
+                      (with-rect rect (ceil (/ (* w 11) 12)) 0 (/ w 12) h (fill-rect canvas rect 0.0 red))
+                      (stroke-line canvas (/ (* w 5) 180) 0 (/ (* w 5) 180) h 1.0 black)
+                      (stroke-line canvas (/ (* w 175) 180) 0 (/ (* w 175) 180) h 1.0 black)
+                      (let [yaw   (vec (range 5 180 5))
+                            pitch (vec (range 0 390 30))
+                            x     (mapv #(/ (* % 512) 180) yaw)
+                            y     (mapv #(/ (* % 1024) 360) pitch)
+                            dy    (mapv #(/ 1 (sin (to-radians %))) yaw)]
+                        (doseq [j (range (count y))]
+                               (doseq [i (range (dec (count x)))]
+                                      (let [x1 (x i)
+                                            x2 (x (inc i))
+                                            yc (y j)
+                                            dy1 (dy i)
+                                            dy2 (dy (inc i))
+                                            color (if (or (<= (pitch j) 180) (>= (pitch j) 360)
+                                                          (<= (yaw (inc i)) 15) (>= (yaw i) 165)) black white)]
+                                        (fill-polygon canvas [[x1 (- yc dy1)] [x2 (- yc dy2)] [x2 (+ yc dy2)] [x1 (+ yc dy1)]] color)))))))))
+              (render-nuklear-gui gui w h)
+              (destroy-nuklear-gui-with-font gui))
+            w h)) true)
+      ; (shell/sh "display" "-display" ":0.0" "/tmp/navball.png")
+      )
 
 
 (GLFW/glfwTerminate)

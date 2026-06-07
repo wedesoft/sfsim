@@ -11,7 +11,7 @@
 (GLFW/glfwInit)
 
 (GLFW/glfwDefaultWindowHints)
-(def playback true)
+(def playback false)
 (def width 512)
 (def height 512)
 (def window (GLFW/glfwCreateWindow width height "Shadertoy" 0 0))

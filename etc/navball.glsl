@@ -22,7 +22,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     p = rotz * roty * p;
     float lon = atan(p.y, p.x);
     float lat = atan(p.z, length(p.xy));
-    vec2 uv = vec2(lon / PI + 0.5, lat / PI + 0.5);
+    vec2 uv = vec2(lon / (2 * PI) + 0.5, lat / PI + 0.5);
     fragColor = texture(navball, uv);
   } else {
     fragColor = vec4(0, 0, 0, 1);

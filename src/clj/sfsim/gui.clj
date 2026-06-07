@@ -954,6 +954,18 @@
   (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 thickness color))
 
 
+(defn fill-polygon
+  "Draw filled polygon"
+  [canvas points color]
+  (Nuklear/nk_fill_polygon ^NkCommandBuffer canvas (float-array (flatten points)) ^NkColor color))
+
+
+(defn stroke-polygon
+  "Draw polygon"
+  [canvas points thickness color]
+  (Nuklear/nk_stroke_polygon ^NkCommandBuffer canvas (float-array (flatten points)) ^double thickness ^NkColor color))
+
+
 (defn draw-text
   "Draw left-aligned text on a canvas"
   [gui canvas x y w h text color]
