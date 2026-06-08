@@ -414,6 +414,9 @@
                       (with-rect rect (ceil (/ (* w 11) 12)) 0 (/ w 12) h (fill-rect canvas rect 0.0 red))
                       (stroke-line canvas (/ (* w 5) 180) 0 (/ (* w 5) 180) h 1.0 black)
                       (stroke-line canvas (/ (* w 175) 180) 0 (/ (* w 175) 180) h 1.0 black)
+                      (doseq [yaw [30 60 120 150]]
+                             (stroke-line canvas (/ (* w yaw) 180) 0 (/ (* w yaw) 180) w 2.0 black)
+                             (stroke-line canvas (/ (* w yaw) 180) w (/ (* w yaw) 180) h 2.0 white))
                       (let [yaw   (vec (range 5 180 5))
                             pitch (vec (range 0 390 30))
                             x     (mapv #(/ (* % 512) 180) yaw)
@@ -428,7 +431,9 @@
                                             dy2 (dy (inc i))
                                             color (if (or (<= (pitch j) 180) (>= (pitch j) 360)
                                                           (<= (yaw (inc i)) 15) (>= (yaw i) 165)) black white)]
-                                        (fill-polygon canvas [[x1 (- yc dy1)] [x2 (- yc dy2)] [x2 (+ yc dy2)] [x1 (+ yc dy1)]] color)))))))))
+                                        (fill-polygon canvas [[x1 (- yc dy1)] [x2 (- yc dy2)] [x2 (+ yc dy2)] [x1 (+ yc dy1)]] color)))))
+                      (doseq [[i x] (map-indexed vector (range -5 5 2))]
+                             (with-rect rect (+ (/ w 2) x) 0 2 h (fill-rect canvas rect 0.0 (if (even? i) black white))))))))
               (render-nuklear-gui gui w h)
               (destroy-nuklear-gui-with-font gui))
             w h)) true)
