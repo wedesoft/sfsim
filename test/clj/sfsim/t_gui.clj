@@ -453,7 +453,30 @@
                                    y  (/ (* pitch h) 360)
                                    color (if (<= pitch 180) black white)]
                                (with-rect rect x1 (- y 3) 7 7 (fill-rect canvas rect 0.0 color))
-                               (with-rect rect (- x2 6) (- y 3) 7 7 (fill-rect canvas rect 0.0 color))))))))
+                               (with-rect rect (- x2 6) (- y 3) 7 7 (fill-rect canvas rect 0.0 color))))
+                      (doseq [yaw [45 75 105 135]
+                              pitch (range 0 390 30)]
+                             (let [x    (/ (* yaw w) 180)
+                                   y    (+ (/ (* pitch h) 360) (if (#{75 105} yaw) (case pitch 0 -9 180 9 360 -9 0) 0))
+                                   fg   (if (or (<= pitch 180) (>= pitch 360)) black white)
+                                   bg   (if (or (<= pitch 180) (>= pitch 360)) white black)
+                                   text (str (/ (mod (+ pitch 180) 360) 10))
+                                   tw   (text-width gui text)
+                                   pad  4]
+                               (with-rect rect (- x (/ tw 2) pad) (- y 9) (+ tw (* 2 pad)) 18 (fill-rect canvas rect 3.0 bg))
+                               (draw-text gui canvas (- x (/ tw 2)) (- y 9) tw 18 text fg)))
+                      (doseq [yaw  [30 60 120 150]
+                              pitch (range 15 375 30)]
+                             (let [x    (/ (* yaw w) 180)
+                                   y    (/ (* pitch h) 360)
+                                   fg   (if (<= pitch 180) black white)
+                                   bg   (if (<= pitch 180) white black)
+                                   text (str (/ (- yaw 90) 10))
+                                   tw   (text-width gui text)
+                                   pad  4]
+                               (when (or (zero? (mod (+ pitch 15) 60)) (#{60 120} yaw))
+                                 (with-rect rect (- x (/ tw 2) pad) (- y 9) (+ tw (* 2 pad)) 18 (fill-rect canvas rect 3.0 bg))
+                                 (draw-text gui canvas (- x (/ tw 2)) (- y 9) tw 18 text fg))))))))
               (render-nuklear-gui gui w h)
               (destroy-nuklear-gui-with-font gui))
             w h)) true)
