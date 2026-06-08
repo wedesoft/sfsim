@@ -446,7 +446,14 @@
                                    y     (/ (* pitch h) 360)
                                    color (if (or (<= pitch 180) (<= yaw 15) (>= yaw 165)) black white)
                                    dy    (/ 3.0 (sin (to-radians yaw)))]
-                               (stroke-line canvas x (- y dy) x (+ y dy) 2.0 color)))))))
+                               (stroke-line canvas x (- y dy) x (+ y dy) 2.0 color)))
+                      (doseq [pitch (remove #(zero? (mod % 30)) (range 10 360 10))]
+                             (let [x1 (/ (* 15 w) 180)
+                                   x2 (/ (* 165 w) 180)
+                                   y  (/ (* pitch h) 360)
+                                   color (if (<= pitch 180) black white)]
+                               (with-rect rect x1 (- y 3) 7 7 (fill-rect canvas rect 0.0 color))
+                               (with-rect rect (- x2 6) (- y 3) 7 7 (fill-rect canvas rect 0.0 color))))))))
               (render-nuklear-gui gui w h)
               (destroy-nuklear-gui-with-font gui))
             w h)) true)
