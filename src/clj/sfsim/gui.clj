@@ -337,34 +337,37 @@
 
 (defn make-bitmap-font
   "Create a bitmap font with character packing data"
-  [^String ttf-filename ^long bitmap-width ^long bitmap-height ^long font-height]
-  (let [num-chars    145
-        font         (NkUserFont/create)
-        fontinfo     (STBTTFontinfo/create)
-        ttf          (slurp-byte-buffer ttf-filename)
-        orig-descent (int-array 1)
-        cdata        (STBTTPackedchar/calloc num-chars)
-        pc           (STBTTPackContext/calloc)
-        bitmap       (MemoryUtil/memAlloc (* bitmap-width bitmap-height))]
-    (STBTruetype/stbtt_InitFont fontinfo ttf)
-    (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
-    (STBTruetype/stbtt_PackBegin pc bitmap bitmap-width bitmap-height 0 1 0)
-    (STBTruetype/stbtt_PackSetOversampling pc 4 4)
-    (STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
-    (STBTruetype/stbtt_PackEnd pc)
-    (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)
-          data  (byte-buffer->array bitmap)
-          alpha #:sfsim.image{:width bitmap-width :height bitmap-height :data data :channels 1}
-          image (white-image-with-alpha alpha)]
-      (MemoryUtil/memFree bitmap)
-      {::font font
-       ::fontinfo fontinfo
-       ::ttf ttf  ; keep alive after passing buffer to stbtt_InitFont
-       ::font-height font-height
-       ::scale scale
-       ::descent (* (aget orig-descent 0) scale)
-       ::cdata cdata
-       ::image image})))
+  {:malli/schema [:=> [:cat :string :int :int :int [:? [:cat :int :int]]] :some]}
+  ([ttf-filename bitmap-width bitmap-height font-height]
+   (make-bitmap-font ttf-filename bitmap-width bitmap-height font-height 4 4))
+  ([ttf-filename bitmap-width bitmap-height font-height h-oversample v-oversample]
+   (let [num-chars    145
+         font         (NkUserFont/create)
+         fontinfo     (STBTTFontinfo/create)
+         ttf          (slurp-byte-buffer ttf-filename)
+         orig-descent (int-array 1)
+         cdata        (STBTTPackedchar/calloc num-chars)
+         pc           (STBTTPackContext/calloc)
+         bitmap       (MemoryUtil/memAlloc (* ^long bitmap-width ^long bitmap-height))]
+     (STBTruetype/stbtt_InitFont fontinfo ttf)
+     (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
+     (STBTruetype/stbtt_PackBegin pc bitmap bitmap-width bitmap-height 0 1 0)
+     (STBTruetype/stbtt_PackSetOversampling pc h-oversample v-oversample)
+     (STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
+     (STBTruetype/stbtt_PackEnd pc)
+     (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)
+           data  (byte-buffer->array bitmap)
+           alpha #:sfsim.image{:width bitmap-width :height bitmap-height :data data :channels 1}
+           image (white-image-with-alpha alpha)]
+       (MemoryUtil/memFree bitmap)
+       {::font font
+        ::fontinfo fontinfo
+        ::ttf ttf  ; keep alive after passing buffer to stbtt_InitFont
+        ::font-height font-height
+        ::scale scale
+        ::descent (* (aget orig-descent 0) scale)
+        ::cdata cdata
+        ::image image}))))
 
 
 (defn set-font-texture-id
@@ -480,8 +483,8 @@
   {:malli/schema [:=> [:cat :double] :some]}
   [scale]
   (let [bitmap-font (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf"
-                                                          (* 512 ^double scale) (* 512 ^double scale)
-                                                          (* 18 ^double scale)))]
+                                                          (long (* 512 ^double scale)) (long (* 512 ^double scale))
+                                                          (long (* 18 ^double scale))))]
     (assoc (make-nuklear-gui (::font bitmap-font) scale) ::bitmap-font bitmap-font)))
 
 
