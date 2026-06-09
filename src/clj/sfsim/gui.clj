@@ -451,10 +451,12 @@
                   (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo codepoint advance nil)
                   (let [ufg (NkUserFontGlyph/create glyph)
                         w   (- (.x1 q) (.x0 q))
-                        h   (- (.y1 q) (.y0 q))]
+                        h   (- (.y1 q) (.y0 q))
+                        ox  (* ^double scale-x (.x0 q))
+                        oy  (+ (* scale-y (.y0 q)) font-height ^double descent)]
                     (.width ufg (* ^double scale-x w))
                     (.height ufg (* ^double scale-y h))
-                    (.set (.offset ufg) (* ^double scale-x (.x0 q)) (* ^double scale-y (+ (.y0 q) font-height ^double descent)))
+                    (.set (.offset ufg) ox oy)
                     (.xadvance ufg (* (.get advance 0) ^double scale ^double scale-x))
                     (.set (.uv ufg 0) (.s0 q) (.t0 q))
                     (.set (.uv ufg 1) (.s1 q) (.t1 q)))

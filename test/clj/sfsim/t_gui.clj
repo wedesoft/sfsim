@@ -395,7 +395,10 @@
         (let [w 512 h 1024]
           (gui-offscreen-render
             w h
-            (let [gui (make-nuklear-gui-with-font 1.0)]
+            (let [gui   (make-nuklear-gui-with-font 1.0)
+                  yaw   [30 45 60 75 105 120 135 150]
+                  fonts (zipmap yaw (map (fn [x] (make-font (:sfsim.gui/bitmap-font gui) 1.0 (/ 1.0 (sin (to-radians x))))) yaw))
+                  fonts (zipmap yaw (map (fn [x] (make-font (:sfsim.gui/bitmap-font gui) 1.0 1.0)) yaw))]
               (nuklear-dark-style gui)
               (without-window-padding gui
                 (nuklear-window
@@ -473,11 +476,14 @@
                                    fg   (if (<= pitch 180) black white)
                                    bg   (if (<= pitch 180) white black)
                                    text (str (/ (- yaw 90) 10))
-                                   tw   (text-width text (:sfsim.gui/bitmap-font gui))
+                                   tw   (text-width text (fonts yaw))
+                                   th   (* 18 (:sfsim.gui/scale-y (fonts yaw)))
+                                   _  (println tw th)
                                    pad  4]
                                (when (or (zero? (mod (+ pitch 15) 60)) (#{60 120} yaw))
-                                 (with-rect rect (- x (/ tw 2) pad) (- y 9) (+ tw (* 2 pad)) 18 (fill-rect canvas rect 3.0 bg))
-                                 (draw-text canvas (- x (/ tw 2)) (- y 9) tw 18 text (:sfsim.gui/bitmap-font gui) fg))))))))
+                                 (with-rect rect (- x (/ tw 2) pad) (- y (/ th 2)) (+ tw (* 2 pad)) th
+                                   (fill-rect canvas rect 3.0 green))
+                                 (draw-text canvas (- x (/ tw 2)) (- y (/ th 2)) tw th text (fonts yaw) fg))))))))
               (render-nuklear-gui gui w h)
               (destroy-nuklear-gui-with-font gui))
             w h)) true)
