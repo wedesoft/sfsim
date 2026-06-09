@@ -188,7 +188,9 @@
 
 (facts "Test rendering with two GUI contexts"
        (with-invisible-window
-         (let [bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
+         (let [bitmap-font         (setup-font-callbacks
+                                     (setup-font-texture
+                                       (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)))
                gui1                (make-nuklear-gui (:sfsim.gui/font bitmap-font) 1.0)
                gui2                (make-nuklear-gui (:sfsim.gui/font bitmap-font) 1.0)]
            (gui-framebuffer-render 320 40
@@ -343,7 +345,7 @@
         320 48
         (let [gui         (make-nuklear-gui-with-font 1.0)
               font        (make-bitmap-font "resources/fonts/b612.ttf" 1024 1024 36)
-              bitmap-font (setup-font-texture font)]
+              bitmap-font (setup-font-callbacks (setup-font-texture font))]
           (nuklear-dark-style gui)
           (nuklear-window gui "control test window" 0 0 320 48 :widget
                           (layout-row-dynamic gui 40.0 1)

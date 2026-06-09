@@ -385,6 +385,7 @@
   (let [stack     (MemoryStack/stackPush)
         unicode   (.mallocInt stack 1)
         advance   (.mallocInt stack 1)
+        sx        1.0
         glyph-len (Nuklear/nnk_utf_decode ^long text (MemoryUtil/memAddress unicode) ^long len)
         result
         (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
@@ -394,7 +395,7 @@
                 text-width
                 (do
                   (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
-                  (let [text-width (+ text-width (* (.get advance 0) ^double scale))
+                  (let [text-width (+ text-width (* (.get advance 0) ^double scale sx))
                         glyph-len  (Nuklear/nnk_utf_decode (+ ^long text text-len)
                                                            (MemoryUtil/memAddress unicode) (- ^long len text-len))]
                     (recur (+ text-len glyph-len) glyph-len text-width)))))]
@@ -430,7 +431,8 @@
   "Set callback function for returning height of text"
   {:malli/schema [:=> [:cat :some :some] :any]}
   [{::keys [font-height]} font]
-  (.height ^NkUserFont font font-height))
+  (let [sy 1.0]
+    (.height ^NkUserFont font (* ^double sy ^long font-height))))
 
 
 (defn set-glyph-callback
@@ -451,14 +453,28 @@
                   (STBTruetype/stbtt_GetPackedQuad ^STBTTPackedchar$Buffer cdata ^long bitmap-width ^long bitmap-height
                                                    (- codepoint 32) x y q false)
                   (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo codepoint advance nil)
-                  (let [ufg (NkUserFontGlyph/create glyph)]
-                    (.width ufg (- (.x1 q) (.x0 q)))
-                    (.height ufg (- (.y1 q) (.y0 q)))
-                    (.set (.offset ufg) (.x0 q) (+ (.y0 q) font-height ^double descent))
-                    (.xadvance ufg (* (.get advance 0) ^double scale))
+                  (let [ufg (NkUserFontGlyph/create glyph)
+                        w   (- (.x1 q) (.x0 q))
+                        h   (- (.y1 q) (.y0 q))
+                        sx  1.0
+                        sy  1.0]
+                    (.width ufg (* sx w))
+                    (.height ufg (* sy h))
+                    (.set (.offset ufg) (* sx (.x0 q)) (* sy (+ (.y0 q) font-height ^double descent)))
+                    (.xadvance ufg (* (.get advance 0) ^double scale sx))
                     (.set (.uv ufg 0) (.s0 q) (.t0 q))
                     (.set (.uv ufg 1) (.s1 q) (.t1 q)))
                   (MemoryStack/stackPop)))))))
+
+
+(defn setup-font-callbacks
+  "Create font texture and callbacks for text size and glyph information"
+  {:malli/schema [:=> [:cat :some] :some]}
+  [{::keys [image font] :as bitmap-font}]
+  (set-width-callback bitmap-font font)
+  (set-height-callback bitmap-font font)
+  (set-glyph-callback bitmap-font font)
+  bitmap-font)
 
 
 (defn setup-font-texture
@@ -467,9 +483,6 @@
   [{::keys [image font] :as bitmap-font}]
   (let [font-texture  (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp image)]
     (set-font-texture-id font font-texture)
-    (set-width-callback bitmap-font font)
-    (set-height-callback bitmap-font font)
-    (set-glyph-callback bitmap-font font)
     (assoc bitmap-font ::texture font-texture)))
 
 
@@ -482,9 +495,11 @@
   "Render glyphs to texture and initialise GUI"
   {:malli/schema [:=> [:cat :double] :some]}
   [scale]
-  (let [bitmap-font (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf"
-                                                          (long (* 512 ^double scale)) (long (* 512 ^double scale))
-                                                          (long (* 18 ^double scale))))]
+  (let [bitmap-font (setup-font-callbacks
+                      (setup-font-texture
+                        (make-bitmap-font "resources/fonts/b612.ttf"
+                                          (long (* 512 ^double scale)) (long (* 512 ^double scale))
+                                          (long (* 18 ^double scale)))))]
     (assoc (make-nuklear-gui (::font bitmap-font) scale) ::bitmap-font bitmap-font)))
 
 
