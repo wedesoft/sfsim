@@ -189,7 +189,7 @@
 (facts "Test rendering with two GUI contexts"
        (with-invisible-window
          (let [bitmap-font         (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)
-               font                (make-font bitmap-font)
+               font                (make-font bitmap-font 1.0 1.0)
                gui1                (make-nuklear-gui (:sfsim.gui/font font) 1.0)
                gui2                (make-nuklear-gui (:sfsim.gui/font font) 1.0)]
            (gui-framebuffer-render 320 40
@@ -267,7 +267,7 @@
       (gui-offscreen-render
         256 256
         (let [gui (make-nuklear-gui-with-font 1.0)]
-          (text-width gui "Test") => (roughly 29.630 1e-3)
+          (text-width gui "Test" 1.0) => (roughly 29.630 1e-3)
           (destroy-nuklear-gui-with-font gui))))
 
 
@@ -344,7 +344,7 @@
         320 48
         (let [gui         (make-nuklear-gui-with-font 1.0)
               bitmap-font (make-bitmap-font "resources/fonts/b612.ttf" 1024 1024 36)
-              font        (make-font bitmap-font)]
+              font        (make-font bitmap-font 1.0 1.0)]
           (nuklear-dark-style gui)
           (nuklear-window gui "control test window" 0 0 320 48 :widget
                           (layout-row-dynamic gui 40.0 1)
@@ -462,7 +462,7 @@
                                    fg   (if (or (<= pitch 180) (>= pitch 360)) black white)
                                    bg   (if (or (<= pitch 180) (>= pitch 360)) white black)
                                    text (str (/ (mod (+ pitch 180) 360) 10))
-                                   tw   (text-width gui text)
+                                   tw   (text-width gui text 1.0)
                                    pad  4]
                                (with-rect rect (- x (/ tw 2) pad) (- y 9) (+ tw (* 2 pad)) 18 (fill-rect canvas rect 3.0 bg))
                                (draw-text gui canvas (- x (/ tw 2)) (- y 9) tw 18 text fg)))
@@ -473,7 +473,7 @@
                                    fg   (if (<= pitch 180) black white)
                                    bg   (if (<= pitch 180) white black)
                                    text (str (/ (- yaw 90) 10))
-                                   tw   (text-width gui text)
+                                   tw   (text-width gui text 1.0)
                                    pad  4]
                                (when (or (zero? (mod (+ pitch 15) 60)) (#{60 120} yaw))
                                  (with-rect rect (- x (/ tw 2) pad) (- y 9) (+ tw (* 2 pad)) 18 (fill-rect canvas rect 3.0 bg))

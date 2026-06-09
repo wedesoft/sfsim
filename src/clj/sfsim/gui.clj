@@ -381,11 +381,10 @@
 
 (defn text-width-callback
   "Determine width of text in pixels"
-  [fontinfo scale text len]
+  [fontinfo scale text len scale-x]
   (let [stack     (MemoryStack/stackPush)
         unicode   (.mallocInt stack 1)
         advance   (.mallocInt stack 1)
-        sx        1.0
         glyph-len (Nuklear/nnk_utf_decode ^long text (MemoryUtil/memAddress unicode) ^long len)
         result
         (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
@@ -395,7 +394,7 @@
                 text-width
                 (do
                   (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
-                  (let [text-width (+ text-width (* (.get advance 0) ^double scale sx))
+                  (let [text-width (+ text-width (* (.get advance 0) ^double scale ^double scale-x))
                         glyph-len  (Nuklear/nnk_utf_decode (+ ^long text text-len)
                                                            (MemoryUtil/memAddress unicode) (- ^long len text-len))]
                     (recur (+ text-len glyph-len) glyph-len text-width)))))]
@@ -405,40 +404,39 @@
 
 (defn text-width
   "Determine width of text in pixels"
-  [{::keys [bitmap-font]} text]
+  [{::keys [bitmap-font]} text scale-x]
   (let [fontinfo (::fontinfo bitmap-font)
         scale    (::scale bitmap-font)
         buffer   (MemoryUtil/memUTF8 ^String text)
         address  (MemoryUtil/memAddress ^DirectByteBuffer buffer)
         size     (.remaining buffer)
-        result   (text-width-callback fontinfo scale address size)]
+        result   (text-width-callback fontinfo scale address size scale-x)]
     (MemoryUtil/memFree buffer)
     result))
 
 
 (defn set-width-callback
   "Set callback function for computing width of text"
-  {:malli/schema [:=> [:cat :some :some] :any]}
-  [{::keys [fontinfo scale]} font]
+  {:malli/schema [:=> [:cat :some :some :double] :any]}
+  [{::keys [fontinfo scale]} font scale-x]
   (.width ^NkUserFont font
           (reify NkTextWidthCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
             (invoke
               [_this _handle _h text len]
-              (text-width-callback fontinfo scale text len)))))
+              (text-width-callback fontinfo scale text len scale-x)))))
 
 
 (defn set-height-callback
   "Set callback function for returning height of text"
-  {:malli/schema [:=> [:cat :some :some] :any]}
-  [{::keys [font-height]} font]
-  (let [sy 1.0]
-    (.height ^NkUserFont font (* ^double sy ^long font-height))))
+  {:malli/schema [:=> [:cat :some :some :double] :any]}
+  [{::keys [font-height]} font scale-y]
+  (.height ^NkUserFont font (* ^double scale-y ^long font-height)))
 
 
 (defn set-glyph-callback
   "Set callback function for getting rectangle of glyph"
-  {:malli/schema [:=> [:cat :some :some] :any]}
-  [{::keys [fontinfo image cdata scale descent]} font]
+  {:malli/schema [:=> [:cat :some :some :double :double] :any]}
+  [{::keys [fontinfo image cdata scale descent]} font scale-x scale-y]
   (let [bitmap-width  (:sfsim.image/width image)
         bitmap-height (:sfsim.image/height image)]
     (.query ^NkUserFont font
@@ -455,13 +453,11 @@
                   (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo codepoint advance nil)
                   (let [ufg (NkUserFontGlyph/create glyph)
                         w   (- (.x1 q) (.x0 q))
-                        h   (- (.y1 q) (.y0 q))
-                        sx  1.0
-                        sy  1.0]
-                    (.width ufg (* sx w))
-                    (.height ufg (* sy h))
-                    (.set (.offset ufg) (* sx (.x0 q)) (* sy (+ (.y0 q) font-height ^double descent)))
-                    (.xadvance ufg (* (.get advance 0) ^double scale sx))
+                        h   (- (.y1 q) (.y0 q))]
+                    (.width ufg (* ^double scale-x w))
+                    (.height ufg (* ^double scale-y h))
+                    (.set (.offset ufg) (* ^double scale-x (.x0 q)) (* ^double scale-y (+ (.y0 q) font-height ^double descent)))
+                    (.xadvance ufg (* (.get advance 0) ^double scale ^double scale-x))
                     (.set (.uv ufg 0) (.s0 q) (.t0 q))
                     (.set (.uv ufg 1) (.s1 q) (.t1 q)))
                   (MemoryStack/stackPop)))))))
@@ -469,13 +465,13 @@
 
 (defn make-font
   "Set font texture, callbacks for text size, and glyph information"
-  {:malli/schema [:=> [:cat :some] :some]}
-  [{::keys [image texture] :as bitmap-font}]
+  {:malli/schema [:=> [:cat :some :double :double] :some]}
+  [{::keys [image texture] :as bitmap-font} scale-x scale-y]
   (let [font (NkUserFont/create)]
     (set-font-texture-id font texture)
-    (set-width-callback bitmap-font font)
-    (set-height-callback bitmap-font font)
-    (set-glyph-callback bitmap-font font)
+    (set-width-callback bitmap-font font scale-x)
+    (set-height-callback bitmap-font font scale-y)
+    (set-glyph-callback bitmap-font font scale-x scale-y)
     (assoc bitmap-font ::font font)))
 
 
@@ -491,7 +487,8 @@
   (let [bitmap-font (make-font
                       (make-bitmap-font "resources/fonts/b612.ttf"
                                         (long (* 512 ^double scale)) (long (* 512 ^double scale))
-                                        (long (* 18 ^double scale))))]
+                                        (long (* 18 ^double scale)))
+                      1.0 1.0)]
     (assoc (make-nuklear-gui (::font bitmap-font) scale) ::bitmap-font bitmap-font)))
 
 
@@ -988,7 +985,7 @@
 (defn draw-text-right
   "Draw right-aligned text on a canvas"
   [gui canvas x y w h text color]
-  (let [text-width (text-width gui text)]
+  (let [text-width (text-width gui text 1.0)]
     (draw-text gui canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text color)))
 
 
