@@ -354,6 +354,7 @@
      (STBTruetype/stbtt_PackSetOversampling pc h-oversample v-oversample)
      (STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
      (STBTruetype/stbtt_PackEnd pc)
+     (.free pc)
      (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)
            data  (byte-buffer->array bitmap)
            alpha #:sfsim.image{:width bitmap-width :height bitmap-height :data data :channels 1}
@@ -453,7 +454,7 @@
                         w   (- (.x1 q) (.x0 q))
                         h   (- (.y1 q) (.y0 q))
                         ox  (* ^double scale-x (.x0 q))
-                        oy  (+ (* scale-y (.y0 q)) font-height ^double descent)]
+                        oy  (+ (* ^double scale-y (.y0 q)) font-height (* ^double scale-y ^double descent))]
                     (.width ufg (* ^double scale-x w))
                     (.height ufg (* ^double scale-y h))
                     (.set (.offset ufg) ox oy)
@@ -475,9 +476,11 @@
     (assoc bitmap-font ::font font ::scale-x scale-x ::scale-y scale-y)))
 
 
-(defn destroy-font-texture
+(defn destroy-bitmap-font
   [bitmap-font]
-  (destroy-texture (::texture bitmap-font)))
+  (destroy-texture (::texture bitmap-font))
+  (.free ^STBTTPackedchar$Buffer (::cdata bitmap-font))
+  (.free ^STBTTFontinfo (::fontinfo bitmap-font)))
 
 
 (defn make-nuklear-gui-with-font
@@ -497,7 +500,7 @@
   {:malli/schema [:=> [:cat :some] :nil]}
   [{::keys [bitmap-font] :as gui} ]
   (destroy-nuklear-gui gui)
-  (destroy-font-texture bitmap-font))
+  (destroy-bitmap-font bitmap-font))
 
 
 (defn nuklear-global-scale
