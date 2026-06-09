@@ -342,7 +342,6 @@
    (make-bitmap-font ttf-filename bitmap-width bitmap-height font-height 4 4))
   ([ttf-filename bitmap-width bitmap-height font-height h-oversample v-oversample]
    (let [num-chars    145
-         font         (NkUserFont/create)
          fontinfo     (STBTTFontinfo/create)
          ttf          (slurp-byte-buffer ttf-filename)
          orig-descent (int-array 1)
@@ -358,16 +357,17 @@
      (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)
            data  (byte-buffer->array bitmap)
            alpha #:sfsim.image{:width bitmap-width :height bitmap-height :data data :channels 1}
-           image (white-image-with-alpha alpha)]
+           image (white-image-with-alpha alpha)
+           texture (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp image)]
        (MemoryUtil/memFree bitmap)
-       {::font font
-        ::fontinfo fontinfo
+       {::fontinfo fontinfo
         ::ttf ttf  ; keep alive after passing buffer to stbtt_InitFont
         ::font-height font-height
         ::scale scale
         ::descent (* (aget orig-descent 0) scale)
         ::cdata cdata
-        ::image image}))))
+        ::image image
+        ::texture texture}))))
 
 
 (defn set-font-texture-id
@@ -467,23 +467,16 @@
                   (MemoryStack/stackPop)))))))
 
 
-(defn setup-font-callbacks
-  "Create font texture and callbacks for text size and glyph information"
+(defn make-font
+  "Set font texture, callbacks for text size, and glyph information"
   {:malli/schema [:=> [:cat :some] :some]}
-  [{::keys [image font] :as bitmap-font}]
-  (set-width-callback bitmap-font font)
-  (set-height-callback bitmap-font font)
-  (set-glyph-callback bitmap-font font)
-  bitmap-font)
-
-
-(defn setup-font-texture
-  "Create font texture and callbacks for text size and glyph information"
-  {:malli/schema [:=> [:cat :some] :some]}
-  [{::keys [image font] :as bitmap-font}]
-  (let [font-texture  (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp image)]
-    (set-font-texture-id font font-texture)
-    (assoc bitmap-font ::texture font-texture)))
+  [{::keys [image texture] :as bitmap-font}]
+  (let [font (NkUserFont/create)]
+    (set-font-texture-id font texture)
+    (set-width-callback bitmap-font font)
+    (set-height-callback bitmap-font font)
+    (set-glyph-callback bitmap-font font)
+    (assoc bitmap-font ::font font)))
 
 
 (defn destroy-font-texture
@@ -495,11 +488,10 @@
   "Render glyphs to texture and initialise GUI"
   {:malli/schema [:=> [:cat :double] :some]}
   [scale]
-  (let [bitmap-font (setup-font-callbacks
-                      (setup-font-texture
-                        (make-bitmap-font "resources/fonts/b612.ttf"
-                                          (long (* 512 ^double scale)) (long (* 512 ^double scale))
-                                          (long (* 18 ^double scale)))))]
+  (let [bitmap-font (make-font
+                      (make-bitmap-font "resources/fonts/b612.ttf"
+                                        (long (* 512 ^double scale)) (long (* 512 ^double scale))
+                                        (long (* 18 ^double scale))))]
     (assoc (make-nuklear-gui (::font bitmap-font) scale) ::bitmap-font bitmap-font)))
 
 

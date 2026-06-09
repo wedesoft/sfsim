@@ -188,11 +188,10 @@
 
 (facts "Test rendering with two GUI contexts"
        (with-invisible-window
-         (let [bitmap-font         (setup-font-callbacks
-                                     (setup-font-texture
-                                       (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)))
-               gui1                (make-nuklear-gui (:sfsim.gui/font bitmap-font) 1.0)
-               gui2                (make-nuklear-gui (:sfsim.gui/font bitmap-font) 1.0)]
+         (let [bitmap-font         (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)
+               font                (make-font bitmap-font)
+               gui1                (make-nuklear-gui (:sfsim.gui/font font) 1.0)
+               gui2                (make-nuklear-gui (:sfsim.gui/font font) 1.0)]
            (gui-framebuffer-render 320 40
                                    (nuklear-window gui1 "window-1" 0 0 160 40 :widget
                                                    (layout-row-dynamic gui1 32.0 1)
@@ -344,15 +343,15 @@
       (gui-offscreen-render
         320 48
         (let [gui         (make-nuklear-gui-with-font 1.0)
-              font        (make-bitmap-font "resources/fonts/b612.ttf" 1024 1024 36)
-              bitmap-font (setup-font-callbacks (setup-font-texture font))]
+              bitmap-font (make-bitmap-font "resources/fonts/b612.ttf" 1024 1024 36)
+              font        (make-font bitmap-font)]
           (nuklear-dark-style gui)
           (nuklear-window gui "control test window" 0 0 320 48 :widget
                           (layout-row-dynamic gui 40.0 1)
                           (widget gui canvas rect
                                   (with-colors [bg 0 0 0
                                                 red 255 0 0]
-                                    (Nuklear/nk_draw_text canvas rect "Some red text" (:sfsim.gui/font bitmap-font) bg red))))
+                                    (Nuklear/nk_draw_text canvas rect "Some red text"  (:sfsim.gui/font font) bg red))))
                           (render-nuklear-gui gui 320 48)
                           (destroy-font-texture bitmap-font)
                           (destroy-nuklear-gui-with-font gui)))
