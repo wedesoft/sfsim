@@ -267,7 +267,7 @@
       (gui-offscreen-render
         256 256
         (let [gui (make-nuklear-gui-with-font 1.0)]
-          (text-width gui "Test" 1.0) => (roughly 29.630 1e-3)
+          (text-width "Test" (:sfsim.gui/bitmap-font gui)) => (roughly 29.630 1e-3)
           (destroy-nuklear-gui-with-font gui))))
 
 
@@ -327,7 +327,7 @@
       (widget-test
         gui canvas rect 160 24
         (with-color red 255 0 0
-          (draw-text gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" red)))
+          (draw-text canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" (:sfsim.gui/bitmap-font gui) red)))
       => (is-image "test/clj/sfsim/fixtures/gui/text.png" 0.10))
 
 
@@ -335,7 +335,7 @@
       (widget-test
         gui canvas rect 160 24
         (with-color red 255 0 0
-          (draw-text-right gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" red)))
+          (draw-text-right canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" (:sfsim.gui/bitmap-font gui) red)))
       => (is-image "test/clj/sfsim/fixtures/gui/text-right.png" 0.10))
 
 
@@ -462,10 +462,10 @@
                                    fg   (if (or (<= pitch 180) (>= pitch 360)) black white)
                                    bg   (if (or (<= pitch 180) (>= pitch 360)) white black)
                                    text (str (/ (mod (+ pitch 180) 360) 10))
-                                   tw   (text-width gui text 1.0)
+                                   tw   (text-width text (:sfsim.gui/bitmap-font gui))
                                    pad  4]
                                (with-rect rect (- x (/ tw 2) pad) (- y 9) (+ tw (* 2 pad)) 18 (fill-rect canvas rect 3.0 bg))
-                               (draw-text gui canvas (- x (/ tw 2)) (- y 9) tw 18 text fg)))
+                               (draw-text canvas (- x (/ tw 2)) (- y 9) tw 18 text (:sfsim.gui/bitmap-font gui) fg)))
                       (doseq [yaw  [30 60 120 150]
                               pitch (range 15 375 30)]
                              (let [x    (/ (* yaw w) 180)
@@ -473,11 +473,11 @@
                                    fg   (if (<= pitch 180) black white)
                                    bg   (if (<= pitch 180) white black)
                                    text (str (/ (- yaw 90) 10))
-                                   tw   (text-width gui text 1.0)
+                                   tw   (text-width text (:sfsim.gui/bitmap-font gui))
                                    pad  4]
                                (when (or (zero? (mod (+ pitch 15) 60)) (#{60 120} yaw))
                                  (with-rect rect (- x (/ tw 2) pad) (- y 9) (+ tw (* 2 pad)) 18 (fill-rect canvas rect 3.0 bg))
-                                 (draw-text gui canvas (- x (/ tw 2)) (- y 9) tw 18 text fg))))))))
+                                 (draw-text canvas (- x (/ tw 2)) (- y 9) tw 18 text (:sfsim.gui/bitmap-font gui) fg))))))))
               (render-nuklear-gui gui w h)
               (destroy-nuklear-gui-with-font gui))
             w h)) true)

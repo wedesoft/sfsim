@@ -404,10 +404,8 @@
 
 (defn text-width
   "Determine width of text in pixels"
-  [{::keys [bitmap-font]} text scale-x]
-  (let [fontinfo (::fontinfo bitmap-font)
-        scale    (::scale bitmap-font)
-        buffer   (MemoryUtil/memUTF8 ^String text)
+  [text {::keys [fontinfo scale scale-x]}]
+  (let [buffer   (MemoryUtil/memUTF8 ^String text)
         address  (MemoryUtil/memAddress ^DirectByteBuffer buffer)
         size     (.remaining buffer)
         result   (text-width-callback fontinfo scale address size scale-x)]
@@ -472,7 +470,7 @@
     (set-width-callback bitmap-font font scale-x)
     (set-height-callback bitmap-font font scale-y)
     (set-glyph-callback bitmap-font font scale-x scale-y)
-    (assoc bitmap-font ::font font)))
+    (assoc bitmap-font ::font font ::scale-x scale-x ::scale-y scale-y)))
 
 
 (defn destroy-font-texture
@@ -975,18 +973,17 @@
 
 (defn draw-text
   "Draw left-aligned text on a canvas"
-  [gui canvas x y w h text color]
+  [canvas x y w h text font color]
   (with-rect rect x y w h
     (with-color bg 0 0 0
-      (let [font  (::font (::bitmap-font gui))]
-        (Nuklear/nk_draw_text ^NkCommandBuffer canvas rect ^String text ^NkUserFont font bg ^NkColor color)))))
+      (Nuklear/nk_draw_text ^NkCommandBuffer canvas rect ^String text ^NkUserFont (::font font) bg ^NkColor color))))
 
 
 (defn draw-text-right
   "Draw right-aligned text on a canvas"
-  [gui canvas x y w h text color]
-  (let [text-width (text-width gui text 1.0)]
-    (draw-text gui canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text color)))
+  [canvas x y w h text font color]
+  (let [text-width (text-width text font)]
+    (draw-text canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text font color)))
 
 
 (declare main-dialog)
@@ -1418,7 +1415,8 @@
                              true-anomaly radius] :as orbital-params}]
   (widget gui canvas canvas-rect
           (let
-            [x0    (.x canvas-rect)
+            [font  (::bitmap-font gui)
+             x0    (.x canvas-rect)
              y0    (.y canvas-rect)
              w     (.w canvas-rect)
              h     (.h canvas-rect)
@@ -1461,27 +1459,27 @@
                     w1 (scale gui 40)
                     w2 (scale gui 55)
                     h (scale gui 20)]
-                (draw-text gui canvas x1 (+ y1 (* h 0)) w1 h "Earth" title)
-                (draw-text gui canvas x1 (+ y1 (* h 1)) w1 h "PeA" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 1)) w2 h (float-str periapsis-altitude) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 2)) w1 h "ApA" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 2)) w2 h (float-str apoapsis-altitude) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 3)) w1 h "Alt" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 3)) w2 h (float-str altitude) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 4)) w1 h "Ecc" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 4)) w2 h (format "%7.4f" eccentricity) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 5)) w1 h "T" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 5)) w2 h (float-str orbital-period) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 6)) w1 h "PeT" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 6)) w2 h (float-str (- ^double time-since-periapsis)) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 7)) w1 h "ApT" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 7)) w2 h (float-str (- ^double time-since-apoapsis)) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 8)) w1 h "Vel" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 8)) w2 h (float-str velocity) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 9)) w1 h "Inc" fg)
-                (draw-text-right gui canvas x2 (+ y1 (* h 9)) w2 h (format "%6.2f°" (to-degrees inclination)) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 10)) w1 h "LAN" fg)
-                (draw-text-right gui canvas x2 (+ y1 (* h 10)) w2 h (format "%6.2f°" (to-degrees longitude-ascending-node)) fg))))))
+                (draw-text canvas x1 (+ y1 (* h 0)) w1 h "Earth" font title)
+                (draw-text canvas x1 (+ y1 (* h 1)) w1 h "PeA" font fg)
+                (draw-text canvas x2 (+ y1 (* h 1)) w2 h (float-str periapsis-altitude) font fg)
+                (draw-text canvas x1 (+ y1 (* h 2)) w1 h "ApA" font fg)
+                (draw-text canvas x2 (+ y1 (* h 2)) w2 h (float-str apoapsis-altitude) font fg)
+                (draw-text canvas x1 (+ y1 (* h 3)) w1 h "Alt" font fg)
+                (draw-text canvas x2 (+ y1 (* h 3)) w2 h (float-str altitude) font fg)
+                (draw-text canvas x1 (+ y1 (* h 4)) w1 h "Ecc" font fg)
+                (draw-text canvas x2 (+ y1 (* h 4)) w2 h (format "%7.4f" eccentricity) font fg)
+                (draw-text canvas x1 (+ y1 (* h 5)) w1 h "T" font fg)
+                (draw-text canvas x2 (+ y1 (* h 5)) w2 h (float-str orbital-period) font fg)
+                (draw-text canvas x1 (+ y1 (* h 6)) w1 h "PeT" font fg)
+                (draw-text canvas x2 (+ y1 (* h 6)) w2 h (float-str (- ^double time-since-periapsis)) font fg)
+                (draw-text canvas x1 (+ y1 (* h 7)) w1 h "ApT" font fg)
+                (draw-text canvas x2 (+ y1 (* h 7)) w2 h (float-str (- ^double time-since-apoapsis)) font fg)
+                (draw-text canvas x1 (+ y1 (* h 8)) w1 h "Vel" font fg)
+                (draw-text canvas x2 (+ y1 (* h 8)) w2 h (float-str velocity) font fg)
+                (draw-text canvas x1 (+ y1 (* h 9)) w1 h "Inc" font fg)
+                (draw-text-right canvas x2 (+ y1 (* h 9)) w2 h (format "%6.2f°" (to-degrees inclination)) font fg)
+                (draw-text canvas x1 (+ y1 (* h 10)) w1 h "LAN" font fg)
+                (draw-text-right canvas x2 (+ y1 (* h 10)) w2 h (format "%6.2f°" (to-degrees longitude-ascending-node)) font fg))))))
 
 
 (defn information-display
