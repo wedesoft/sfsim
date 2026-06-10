@@ -151,8 +151,8 @@
                        (reset! gui (gui/make-nuklear-gui-with-font (double (/ desktop-height ^long window-height)))))
                      (do
                        (GLFW/glfwSetWindowMonitor window 0
-                                                  (quot (- desktop-width window-width) 2)
-                                                  (quot (- desktop-height window-height) 2)
+                                                  (quot (- desktop-width ^long window-width) 2)
+                                                  (quot (- desktop-height ^long window-height) 2)
                                                   window-width window-height GLFW/GLFW_DONT_CARE)
                        (reset! gui (gui/make-nuklear-gui-with-font 1.0))))
                    (gui/nuklear-dark-style @gui)

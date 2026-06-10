@@ -13,6 +13,7 @@
     (org.lwjgl
       BufferUtils)
     (org.lwjgl.opengl
+      GL
       GL11
       GL12
       GL13
@@ -85,10 +86,12 @@
     (with-texture target (::texture texture)
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
       (GL30/glGenerateMipmap target)
-      (let [max-anisotropic (GL11/glGetFloat EXTTextureFilterAnisotropic/GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)]
-        (GL11/glTexParameterf target
-                              EXTTextureFilterAnisotropic/GL_TEXTURE_MAX_ANISOTROPY_EXT
-                              (min 4.0 max-anisotropic))))
+      (let [caps (GL/getCapabilities)]
+        (when (.GL_EXT_texture_filter_anisotropic caps)
+          (let [max-anisotropic (GL11/glGetFloat EXTTextureFilterAnisotropic/GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)]
+            (GL11/glTexParameterf target
+                                  EXTTextureFilterAnisotropic/GL_TEXTURE_MAX_ANISOTROPY_EXT
+                                  (min 4.0 max-anisotropic))))))
     texture))
 
 
