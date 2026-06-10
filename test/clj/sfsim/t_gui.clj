@@ -28,7 +28,8 @@
       GLFW)
     (org.lwjgl.opengl
       GL11
-      GL12)
+      GL12
+      GL30)
     (org.lwjgl.nuklear
       NkHandle
       NkImage
@@ -388,23 +389,66 @@
              => (is-image (format "test/clj/sfsim/fixtures/gui/orbit-%d.png" s) 0.10)))
 
 
+(def vertex-source "#version 130
+in vec3 point;
+void main()
+{
+  gl_Position = vec4(point, 1);
+}")
+
+(def fragment-source "#version 130
+#define PI 3.1415926535897932384626433832795
+out vec4 fragColor;
+uniform sampler2D navball;
+void main()
+{
+  vec2 coords = (gl_FragCoord.xy - vec2(128, 128)) / vec2(128, 128);
+  if (length(coords) <= 1.0) {
+    float x = sqrt(1.0 - length(coords) * length(coords));
+    vec3 p = vec3(x, coords.x, -coords.y);
+    float lon = atan(p.y, p.x);
+    float lat = atan(p.z, length(p.xy));
+    vec2 uv = vec2(lon / (2 * PI) + 0.5, lat / PI + 0.5);
+    fragColor = texture(navball, uv);
+  } else
+    fragColor = vec4(0, 0, 0, 1);
+}")
+
+
 (when (.exists (io/file ".integration"))
   (fact "Render orbit navball"
-        (gui-offscreen-render
+        (with-invisible-window
           264 264
-          (let [gui    (make-nuklear-gui-with-font 1.0)
-                tex    (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat (slurp-image "data/texture/navball-orbit.png"))
-                img    (NkImage/create)
-                handle (NkHandle/create)]
+          (let [gui      (make-nuklear-gui-with-font 1.0)
+                navball  (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat (slurp-image "data/texture/navball-orbit.png"))
+                tex      (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F 256 256)
+                program  (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
+                indices  [0 1 2 3]
+                vertices [1.0 1.0 0.5, -1.0 1.0 0.5, -1.0 -1.0 0.5, 1.0 -1.0 0.5]
+                vao      (make-vertex-array-object program indices vertices ["point" 3])
+                img      (NkImage/create)
+                handle   (NkHandle/create)]
+            (generate-mipmap navball)
             (.id handle (:sfsim.texture/texture tex))
             (.handle img handle)
             (nuklear-dark-style gui)
+            (framebuffer-render 256 256 :sfsim.render/cullback nil [tex]
+                                (use-program program)
+                                (uniform-sampler program "navball" 0)
+                                (use-textures {0 navball})
+                                (clear (vec3 0.0 1.0 0.0))
+                                (render-quads vao))
             (nuklear-window gui "control test window" 0 0 264 264 :widget
                             (layout-row-dynamic gui 256.0 1)
-                            (navball-mfd gui img (q/->Quaternion 1 0 0 0)))
-            (render-nuklear-gui gui 264 264)
-            (destroy-nuklear-gui-with-font gui)
-            (destroy-texture tex)))
+                            (navball-mfd gui img tex (q/->Quaternion 1 0 0 0)))
+            (gui-framebuffer-render
+              264 264
+              (render-nuklear-gui gui 264 264)
+              (destroy-nuklear-gui-with-font gui)
+              (destroy-texture navball)
+              (destroy-texture tex)
+              (destroy-vertex-array-object vao)
+              (destroy-program program))))
         => (is-image "test/clj/sfsim/fixtures/gui/orbit-navball-aligned.png" 0.1)))
 
 

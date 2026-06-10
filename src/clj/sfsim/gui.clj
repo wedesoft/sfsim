@@ -1592,7 +1592,7 @@
 
 
 (defn navball-mfd
-  [gui navball-image uvw]
+  [gui navball-image tex uvw]
   (widget gui canvas canvas-rect
           (with-color white 255 255 255
             (Nuklear/nk_draw_image canvas canvas-rect navball-image white))))

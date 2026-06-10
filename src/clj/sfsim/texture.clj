@@ -19,7 +19,8 @@
       GL14
       GL30
       GL31
-      GL42)))
+      GL42
+      EXTTextureFilterAnisotropic)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -83,7 +84,11 @@
   (let [target (::target texture)]
     (with-texture target (::texture texture)
       (GL11/glTexParameteri target GL11/GL_TEXTURE_MIN_FILTER GL11/GL_LINEAR_MIPMAP_LINEAR)
-      (GL30/glGenerateMipmap target))
+      (GL30/glGenerateMipmap target)
+      (let [max-anisotropic (GL11/glGetFloat EXTTextureFilterAnisotropic/GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)]
+        (GL11/glTexParameterf target
+                              EXTTextureFilterAnisotropic/GL_TEXTURE_MAX_ANISOTROPY_EXT
+                              (min 4.0 max-anisotropic))))
     texture))
 
 
