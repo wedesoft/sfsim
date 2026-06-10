@@ -17,6 +17,7 @@
     [sfsim.conftest :refer (is-image roughly-vector)]
     [sfsim.gui :refer :all]
     [sfsim.image :refer :all]
+    [sfsim.quaternion :as q]
     [sfsim.render :refer :all]
     [sfsim.texture :refer :all]
     [sfsim.util :refer :all])
@@ -28,12 +29,9 @@
     (org.lwjgl.opengl
       GL11
       GL12)
-    (org.lwjgl.system
-      MemoryStack)
     (org.lwjgl.nuklear
-      NkColor
-      NkRect
-      NkVec2
+      NkHandle
+      NkImage
       Nuklear)))
 
 
@@ -388,6 +386,26 @@
                  (render-nuklear-gui gui (quot 264 s) (quot 264 s))
                  (destroy-nuklear-gui-with-font gui)))
              => (is-image (format "test/clj/sfsim/fixtures/gui/orbit-%d.png" s) 0.10)))
+
+
+(when (.exists (io/file ".integration"))
+  (fact "Render orbit navball"
+        (gui-offscreen-render
+          264 264
+          (let [gui    (make-nuklear-gui-with-font 1.0)
+                tex    (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat (slurp-image "data/texture/navball-orbit.png"))
+                img    (NkImage/create)
+                handle (NkHandle/create)]
+            (.id handle (:sfsim.texture/texture tex))
+            (.handle img handle)
+            (nuklear-dark-style gui)
+            (nuklear-window gui "control test window" 0 0 264 264 :widget
+                            (layout-row-dynamic gui 256.0 1)
+                            (navball-mfd gui img (q/->Quaternion 1 0 0 0)))
+            (render-nuklear-gui gui 264 264)
+            (destroy-nuklear-gui-with-font gui)
+            (destroy-texture tex)))
+        => (is-image "test/clj/sfsim/fixtures/gui/orbit-navball-aligned.png" 0.1)))
 
 
 (GLFW/glfwTerminate)

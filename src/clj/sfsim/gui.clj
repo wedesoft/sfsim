@@ -1590,6 +1590,14 @@
           (destroy-texture tex)
           img)))))
 
+
+(defn navball-mfd
+  [gui navball-image uvw]
+  (widget gui canvas canvas-rect
+          (with-color white 255 255 255
+            (Nuklear/nk_draw_image canvas canvas-rect navball-image white))))
+
+
 (set! *unchecked-math* :warn-on-boxed)
 
 (defn information-display
