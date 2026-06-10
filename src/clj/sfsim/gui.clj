@@ -6,11 +6,10 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (PI to-radians to-degrees cos sin)]
+    [clojure.math :refer (PI to-radians to-degrees cos sin ceil)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.matrix :as fm]
-    [fastmath.vector :as fv]
     [sfsim.image :refer (white-image-with-alpha)]
     [sfsim.config :as config]
     [sfsim.version :refer (version)]
@@ -19,8 +18,10 @@
     [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map sqr)]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers
-                          make-vertex-array-stream destroy-vertex-array-object)]
-    [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)]
+                          make-vertex-array-stream destroy-vertex-array-object with-invisible-window
+                          framebuffer-render)]
+    [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
+                           texture->image)]
     [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name)])
   (:import
     (java.nio
@@ -297,7 +298,7 @@
   [gui title x y width height decoration & body]
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
-         context# (:sfsim.gui/context ~gui)]
+         context# (::context ~gui)]
      (try
        (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
                                ~(case decoration
@@ -467,7 +468,7 @@
 (defn make-font
   "Set font texture, callbacks for text size, and glyph information"
   {:malli/schema [:=> [:cat :some :double :double] :some]}
-  [{::keys [image texture] :as bitmap-font} scale-x scale-y]
+  [{::keys [texture] :as bitmap-font} scale-x scale-y]
   (let [font (NkUserFont/create)]
     (set-font-texture-id font texture)
     (set-width-callback bitmap-font font scale-x)
@@ -855,16 +856,16 @@
   "Layout widgets using specified height and specified number of widgets in a row"
   [gui height cnt & body]
   `(do
-     (Nuklear/nk_layout_row_begin (:sfsim.gui/context ~gui) Nuklear/NK_DYNAMIC ~height ~cnt)
+     (Nuklear/nk_layout_row_begin (::context ~gui) Nuklear/NK_DYNAMIC ~height ~cnt)
      (let [result# (do ~@body)]
-       (Nuklear/nk_layout_row_end (:sfsim.gui/context ~gui))
+       (Nuklear/nk_layout_row_end (::context ~gui))
        result#)))
 
 
 (defn layout-row-push
   "Set fraction of space next widget takes up in this layout row"
   [gui frac]
-  (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) frac))
+  (Nuklear/nk_layout_row_push (::context gui) frac))
 
 
 (defmacro tabbing
@@ -873,7 +874,7 @@
   `(ignore-nil->
      ~'state ~state
      (when (and (-> ~'state :input :sfsim.input/focus-new) (= (mod (-> ~'state :input :sfsim.input/focus-new) ~cnt) ~idx))
-       (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE)
+       (Nuklear/nk_edit_focus (::context ~gui) Nuklear/NK_EDIT_ACTIVE)
        (dissoc-in ~'state [:input :sfsim.input/focus-new]))
      (when (= Nuklear/NK_EDIT_ACTIVE ~edit)
        (assoc-in ~'state [:input :sfsim.input/focus] ~idx))))
@@ -1186,9 +1187,9 @@
 
 
 (def position-data
-  {:longitude (edit-data "0.0" 32 :sfsim.gui/filter-float)
-   :latitude  (edit-data "0.0" 32 :sfsim.gui/filter-float)
-   :height    (edit-data "0.0" 32 :sfsim.gui/filter-float)})
+  {:longitude (edit-data "0.0" 32 ::filter-float)
+   :latitude  (edit-data "0.0" 32 ::filter-float)
+   :height    (edit-data "0.0" 32 ::filter-float)})
 
 
 (defn location-dialog-get
@@ -1231,12 +1232,12 @@
 
 
 (def time-data
-  {:day    (edit-data    "1" 3 :sfsim.gui/filter-decimal)
-   :month  (edit-data    "1" 3 :sfsim.gui/filter-decimal)
-   :year   (edit-data "2000" 5 :sfsim.gui/filter-decimal)
-   :hour   (edit-data   "12" 3 :sfsim.gui/filter-decimal)
-   :minute (edit-data    "0" 3 :sfsim.gui/filter-decimal)
-   :second (edit-data    "0" 3 :sfsim.gui/filter-decimal)})
+  {:day    (edit-data    "1" 3 ::filter-decimal)
+   :month  (edit-data    "1" 3 ::filter-decimal)
+   :year   (edit-data "2000" 5 ::filter-decimal)
+   :hour   (edit-data   "12" 3 ::filter-decimal)
+   :minute (edit-data    "0" 3 ::filter-decimal)
+   :second (edit-data    "0" 3 ::filter-decimal)})
 
 
 (defn datetime-dialog-get
@@ -1486,22 +1487,123 @@
                 (draw-text canvas x1 (+ y1 (* h 10)) w1 h "LAN" font fg)
                 (draw-text-right canvas x2 (+ y1 (* h 10)) w2 h (format "%6.2f°" (to-degrees longitude-ascending-node)) font fg))))))
 
+(set! *unchecked-math* false)
+
+(defn navball-orbit
+  []
+  (let [w 512 h 1024]
+    (with-invisible-window
+      (let [tex (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGB8 w h)]
+        (framebuffer-render w h :sfsim.render/noculling nil [tex]
+                            (let [gui   (make-nuklear-gui-with-font 1.0)
+                                  yaw   [30 45 60 75 105 120 135 150]
+                                  fonts (zipmap yaw (map (fn [x] (make-font (::bitmap-font gui) 1.0 (/ 1.0 (sin (to-radians x))))) yaw))]
+                              (nuklear-dark-style gui)
+                              (without-window-padding gui
+                                (nuklear-window
+                                  gui "navball rendering" 0 0 w h :widget
+                                  (layout-row-dynamic gui (double w) 1)
+                                  (widget
+                                    gui canvas canvas-rect
+                                    (with-colors
+                                      [white 255 255 255
+                                       black   0   0   0
+                                       red   255   0   0
+                                       green   0 255   0
+                                       blue    0   0 255]
+                                      (with-rect rect 0 0 w w (fill-rect canvas rect 0.0 white))
+                                      (with-rect rect 0 w w w (fill-rect canvas rect 0.0 black))
+                                      (with-rect rect 0 0 (/ w 12) h (fill-rect canvas rect 0.0 red))
+                                      (with-rect rect (ceil (/ (* w 11) 12)) 0 (/ w 12) h (fill-rect canvas rect 0.0 red))
+                                      (stroke-line canvas (/ (* w 5) 180) 0 (/ (* w 5) 180) h 1.0 black)
+                                      (stroke-line canvas (/ (* w 175) 180) 0 (/ (* w 175) 180) h 1.0 black)
+                                      (doseq [yaw [15 30 60 120 150 165]]
+                                             (stroke-line canvas (/ (* w yaw) 180) 0 (/ (* w yaw) 180) w 2.0 black)
+                                             (stroke-line canvas (/ (* w yaw) 180) w (/ (* w yaw) 180) h 2.0 white))
+                                      (let [yaw      (vec (range 5 180 5))
+                                            pitch    (vec (range 0 390 30))
+                                            x-coords (mapv #(/ (* % 512) 180) yaw)
+                                            y-coords (mapv #(/ (* % 1024) 360) pitch)
+                                            dy       (mapv #(/ 1 (sin (to-radians %))) yaw)]
+                                        (doseq [j (range (count y-coords))]
+                                               (doseq [i (range (dec (count x-coords)))]
+                                                      (let [x1 (x-coords i)
+                                                            x2 (x-coords (inc i))
+                                                            yc (y-coords j)
+                                                            dy1 (dy i)
+                                                            dy2 (dy (inc i))
+                                                            color (if (or (<= (pitch j) 180) (>= (pitch j) 360)
+                                                                          (<= (yaw (inc i)) 15) (>= (yaw i) 165)) black white)]
+                                                        (fill-polygon canvas [[x1 (- yc dy1)] [x2 (- yc dy2)] [x2 (+ yc dy2)] [x1 (+ yc dy1)]] color)))))
+                                      (doseq [[i x] (map-indexed vector (range -5 5 2))]
+                                             (with-rect rect (+ (/ w 2) x) 0 2 h (fill-rect canvas rect 0.0 (if (even? i) black white))))
+                                      (doseq [yaw   [45 75 105 135]
+                                              pitch (range 0 365 5)]
+                                             (let [x     (/ (* yaw w) 180)
+                                                   y     (/ (* pitch h) 360)
+                                                   color (if (> pitch 180) white black)]
+                                               (stroke-line canvas (- x 3) y (+ x 3) y (/ 2.0 (sin (to-radians yaw))) color)))
+                                      (doseq [yaw   (remove #{15 90 165} (range 10 175 5))
+                                              pitch (range 15 375 30)]
+                                             (let [x     (/ (* yaw w) 180)
+                                                   y     (/ (* pitch h) 360)
+                                                   color (if (or (<= pitch 180) (<= yaw 15) (>= yaw 165)) black white)
+                                                   dy    (/ 3.0 (sin (to-radians yaw)))]
+                                               (stroke-line canvas x (- y dy) x (+ y dy) 2.0 color)))
+                                      (doseq [pitch (remove #(zero? (mod % 30)) (range 10 360 10))]
+                                             (let [x1 (/ (* 15 w) 180)
+                                                   x2 (/ (* 165 w) 180)
+                                                   y  (/ (* pitch h) 360)
+                                                   color (if (<= pitch 180) black white)]
+                                               (with-rect rect x1 (- y 3) 7 7 (fill-rect canvas rect 0.0 color))
+                                               (with-rect rect (- x2 6) (- y 3) 7 7 (fill-rect canvas rect 0.0 color))))
+                                      (doseq [yaw [45 75 105 135]
+                                              pitch (range 0 390 30)]
+                                             (let [x    (/ (* yaw w) 180)
+                                                   y    (+ (/ (* pitch h) 360) (if (#{75 105} yaw)
+                                                                                 (case (long pitch) 0 -9 180 9 360 -9 0) 0))
+                                                   fg   (if (or (<= pitch 180) (>= pitch 360)) black white)
+                                                   bg   (if (or (<= pitch 180) (>= pitch 360)) white black)
+                                                   text (str (/ (mod (+ pitch 180) 360) 10))
+                                                   tw   (text-width text (fonts yaw))
+                                                   th   (* 18 (::scale-y (fonts yaw)))
+                                                   pad  4]
+                                               (with-rect rect (- x (/ tw 2) pad) (- y (/ th 2)) (+ tw (* 2 pad)) th (fill-rect canvas rect 3.0 bg))
+                                               (draw-text canvas (- x (/ tw 2)) (- y (/ th 2)) tw th text (fonts yaw) fg)))
+                                      (doseq [yaw  [30 60 120 150]
+                                              pitch (range 15 375 30)]
+                                             (let [x    (/ (* yaw w) 180)
+                                                   y    (/ (* pitch h) 360)
+                                                   fg   (if (<= pitch 180) black white)
+                                                   bg   (if (<= pitch 180) white black)
+                                                   text (str (/ (- yaw 90) 10))
+                                                   tw   (text-width text (fonts yaw))
+                                                   th   (* 18 (::scale-y (fonts yaw)))
+                                                   pad  4]
+                                               (when (or (zero? (mod (+ pitch 15) 60)) (#{60 120} yaw))
+                                                 (with-rect rect (- x (/ tw 2) pad) (- y (/ th 2)) (+ tw (* 2 pad)) th
+                                                   (fill-rect canvas rect 3.0 bg))
+                                                 (draw-text canvas (- x (/ tw 2)) (- y (/ th 2)) tw th text (fonts yaw) fg))))))))
+                              (render-nuklear-gui gui w h)
+                              (destroy-nuklear-gui-with-font gui)))
+        (let [img (texture->image tex)]
+          (destroy-texture tex)
+          img)))))
+
+(set! *unchecked-math* :warn-on-boxed)
 
 (defn information-display
   [gui ^long h state frametime]
-  (let [earth-radius    (:sfsim.planet/radius config/planet-config)
-        object-position (physics/get-position :sfsim.physics/surface (:physics state))
-        eccentricity    (physics/eccentricity config/planet-config (:physics state))
-        controls        (-> state :input :sfsim.input/controls)
-        text1           (format "vs = %.1f m/s, v = %.1f m/s, %s%s%s%s, fps = %5.1f"
-                                (:sfsim.physics/display-vertical-speed (:physics state))
-                                (:sfsim.physics/display-speed (:physics state))
-                                (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
-                                (if (:sfsim.input/brake controls) ", brake"
-                                  (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
-                                (if (:sfsim.input/air-brake controls) ", air brake" "")
-                                (if (-> state :input :sfsim.input/pause) ", pause" "")
-                                (/ 1.0 ^double frametime))]
+  (let [controls (-> state :input :sfsim.input/controls)
+        text1    (format "vs = %.1f m/s, v = %.1f m/s, %s%s%s%s, fps = %5.1f"
+                         (:sfsim.physics/display-vertical-speed (:physics state))
+                         (:sfsim.physics/display-speed (:physics state))
+                         (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
+                         (if (:sfsim.input/brake controls) ", brake"
+                           (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
+                         (if (:sfsim.input/air-brake controls) ", air brake" "")
+                         (if (-> state :input :sfsim.input/pause) ", pause" "")
+                         (/ 1.0 ^double frametime))]
     (without-window-padding gui
       (nuklear-window gui "Orbit" (scale gui 10) (- h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget

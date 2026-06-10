@@ -91,6 +91,7 @@ cd ..
   * Atmospheric lookup tables (this takes hours to compute)
     * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
     * Perform all build steps above: `clj -T:build all`
+  * Make navball texture: `clj -T:build navball-orbit`
 * Enable integration tests (requiring results of above build steps): `touch .integration`
 
 ## Further Build Steps under Windows
