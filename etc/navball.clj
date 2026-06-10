@@ -132,7 +132,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 (GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   ) 3 GL11/GL_FLOAT false (* 3 Float/BYTES) (* 0 Float/BYTES))
 (GL20/glEnableVertexAttribArray 0)
 
-(def navball (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat (slurp-image "etc/navball.png")))
+(def navball (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat (slurp-image "data/texture/navball-orbit.png")))
 
 (GL20/glUseProgram program)
 
