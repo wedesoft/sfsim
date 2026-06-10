@@ -6,6 +6,7 @@
 
 (ns sfsim.t-gui
   (:require
+    [clojure.java.io :as io]
     [clojure.math :refer (PI to-radians cos sin floor ceil)]
     [clojure.java.shell :as shell]
     [fastmath.matrix :refer (eye)]

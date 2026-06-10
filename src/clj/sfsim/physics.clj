@@ -9,7 +9,7 @@
   (:require
     [clojure.math :refer (PI cos sin tan atan2 hypot to-radians sqrt acos log1p sinh)]
     [clojure.set :refer (union)]
-    [fastmath.matrix :refer (mulv mulm inverse)]
+    [fastmath.matrix :refer (mulv mulm inverse mat3x3)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot div)]
     [malli.core :as m]
     [sfsim.quaternion :as q]
@@ -988,6 +988,21 @@
      ::longitude-ascending-node (longitude-ascending-node state)
      ::argument-of-periapsis (argument-of-periapsis planet state)
      ::true-anomaly (true-anomaly planet state)}))
+
+
+(defn orbit-orientation
+  "Get orientation of orbit relative to space craft (x: radial, y: along-track, z: cross-track)"
+  [state]
+  (let [position     (get-position ::orbit state)
+        orientation  (get-orientation ::orbit state)
+        h            (specific-angular-momentum state)
+        radial       (normalize position)
+        cross-track  (normalize h)
+        along-track  (cross cross-track radial)
+        uvw          (mat3x3 (radial 0) (along-track 0) (cross-track 0)
+                             (radial 1) (along-track 1) (cross-track 1)
+                             (radial 2) (along-track 2) (cross-track 2))]
+    (q/* (q/* (q/->Quaternion -0.5 0.5 0.5 -0.5) (q/inverse orientation)) (matrix->quaternion uvw))))
 
 
 (set! *warn-on-reflection* false)
