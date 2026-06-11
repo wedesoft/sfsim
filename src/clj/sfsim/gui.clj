@@ -1594,8 +1594,20 @@
 (defn navball-mfd
   [gui navball-image tex uvw]
   (widget gui canvas canvas-rect
-          (with-color white 255 255 255
-            (Nuklear/nk_draw_image canvas canvas-rect navball-image white))))
+          (let
+            [x0 (.x canvas-rect)
+             y0 (.y canvas-rect)
+             w  (.w canvas-rect)
+             h  (.h canvas-rect)]
+            (with-colors
+              [bg       0   0   0
+               border  82 185 142
+               white  255 255 255]
+              (fill-rect canvas canvas-rect 0.0 bg)
+              (with-rect rect (+ x0 1) (+ y0 1) (- w 2) (- h 2)
+                (stroke-rect canvas rect 0.0 3.0 border))
+              (with-rect rect (+ x0 2) (+ y0 2) (- w 4) (- h 4)
+                (Nuklear/nk_draw_image canvas rect navball-image white))))))
 
 
 (set! *unchecked-math* :warn-on-boxed)

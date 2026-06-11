@@ -421,7 +421,7 @@ void main()
           264 264
           (let [gui      (make-nuklear-gui-with-font 1.0)
                 navball  (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat (slurp-image "data/texture/navball-orbit.png"))
-                tex      (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F 256 256)
+                tex      (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F 252 252)
                 program  (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
                 indices  [0 1 2 3]
                 vertices [1.0 1.0 0.5, -1.0 1.0 0.5, -1.0 -1.0 0.5, 1.0 -1.0 0.5]
@@ -432,7 +432,7 @@ void main()
             (.id handle (:sfsim.texture/texture tex))
             (.handle img handle)
             (nuklear-dark-style gui)
-            (framebuffer-render 256 256 :sfsim.render/cullback nil [tex]
+            (framebuffer-render 252 252 :sfsim.render/cullback nil [tex]
                                 (use-program program)
                                 (uniform-sampler program "navball" 0)
                                 (use-textures {0 navball})
