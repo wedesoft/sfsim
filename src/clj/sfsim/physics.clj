@@ -1002,7 +1002,7 @@
         uvw          (mat3x3 (radial 0) (along-track 0) (cross-track 0)
                              (radial 1) (along-track 1) (cross-track 1)
                              (radial 2) (along-track 2) (cross-track 2))]
-    (q/* (q/* (q/->Quaternion -0.5 0.5 0.5 -0.5) (q/inverse orientation)) (matrix->quaternion uvw))))
+    (q/inverse (q/* (q/* (q/->Quaternion -0.5 0.5 0.5 -0.5) (q/inverse orientation)) (matrix->quaternion uvw)))))
 
 
 (set! *warn-on-reflection* false)
