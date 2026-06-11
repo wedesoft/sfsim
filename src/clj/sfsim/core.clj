@@ -236,7 +236,7 @@
                                       (when (not playback)
                                         (let [controls (-> @state :input :sfsim.input/controls)]
                                           (gui/flight-controls-display controls @gui)
-                                          (gui/information-display @gui window-height @state @frametime)))
+                                          (gui/information-display @gui window-width window-height @state @frametime)))
                                       (gui/render-nuklear-gui @gui window-width window-height)))
                    (graphics/finalise-frame frame)
                    (when playback

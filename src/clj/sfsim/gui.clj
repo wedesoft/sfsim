@@ -1672,7 +1672,7 @@
 (set! *unchecked-math* :warn-on-boxed)
 
 (defn information-display
-  [gui ^long h state frametime]
+  [gui w h state frametime]
   (let [controls (-> state :input :sfsim.input/controls)
         text1    (format "vs = %.1f m/s, v = %.1f m/s, %s%s%s%s, fps = %5.1f"
                          (:sfsim.physics/display-vertical-speed (:physics state))
@@ -1684,16 +1684,16 @@
                          (if (-> state :input :sfsim.input/pause) ", pause" "")
                          (/ 1.0 ^double frametime))]
     (without-window-padding gui
-      (nuklear-window gui "Orbit" (scale gui 10) (- h (scale gui (+ 10 256)))
+      (nuklear-window gui "Orbit" (scale gui 10) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
                       (orbit-mfd gui (physics/orbital-parameters config/planet-config (:physics state))))
-      (nuklear-window gui "Navball" (scale gui (+ 20 256)) (- h (scale gui (+ 10 256)))
+      (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
                       (navball-prepare gui (physics/orbit-orientation (:physics state)))
                       (navball-mfd gui)))
-    (nuklear-window gui "Information" (scale gui (+ 30 256 256)) (- h (scale gui (+ 10 (* ^long text-height 1))))
+    (nuklear-window gui "Information" (scale gui (+ 20 256)) (- ^long h (scale gui (+ 10 (* ^long text-height 1))))
                     (scale gui 640) (scale gui (* ^long text-height 1)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)
                     (text-label gui text1))))
