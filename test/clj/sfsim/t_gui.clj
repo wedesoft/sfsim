@@ -422,9 +422,8 @@ void main()
            (fact
              (with-invisible-window
                264 264
-               (let [gui      (make-nuklear-gui-with-font 1.0)
-                     image    (slurp-image "data/texture/navball-orbit.png" true)
-                     navball  (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat image)
+               (let [gui      (make-navball (make-nuklear-gui-with-font 1.0))
+                     navball  (:sfsim.gui/navball-texture gui)
                      tex      (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F 252 252)
                      program  (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
                      indices  [0 1 2 3]
@@ -445,7 +444,7 @@ void main()
                                      (render-quads vao))
                  (nuklear-window gui "control test window" 0 0 264 264 :widget
                                  (layout-row-dynamic gui 256.0 1)
-                                 (navball-mfd gui img tex ?orientation))
+                                 (navball-mfd gui img tex))
                  (gui-framebuffer-render
                    264 264
                    (render-nuklear-gui gui 264 264)

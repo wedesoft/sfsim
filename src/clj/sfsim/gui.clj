@@ -10,7 +10,7 @@
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.matrix :as fm]
-    [sfsim.image :refer (white-image-with-alpha)]
+    [sfsim.image :refer (white-image-with-alpha slurp-image)]
     [sfsim.config :as config]
     [sfsim.version :refer (version)]
     [sfsim.physics :as physics]
@@ -20,7 +20,7 @@
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers
                           make-vertex-array-stream destroy-vertex-array-object with-invisible-window
                           framebuffer-render)]
-    [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
+    [sfsim.texture :refer (make-rgba-texture make-rgb-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
                            texture->image)]
     [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name)])
   (:import
@@ -1591,8 +1591,17 @@
           img)))))
 
 
+(defn make-navball
+  "Initialise navball textures"
+  [gui]
+  (let [image           (slurp-image "data/texture/navball-orbit.png" true)
+        navball-texture (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat image)]
+    (assoc gui ::navball-texture navball-texture)))
+
+
 (defn navball-mfd
-  [gui navball-image tex uvw]
+  "Display navball widget"
+  [gui navball-image tex]
   (widget gui canvas canvas-rect
           (let
             [x0 (.x canvas-rect)
