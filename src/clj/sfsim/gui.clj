@@ -9,17 +9,19 @@
     [clojure.math :refer (PI to-radians to-degrees cos sin ceil)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
+    [fastmath.vector :refer (vec3)]
     [fastmath.matrix :as fm]
     [sfsim.image :refer (white-image-with-alpha slurp-image)]
     [sfsim.config :as config]
     [sfsim.version :refer (version)]
     [sfsim.physics :as physics]
+    [sfsim.matrix :refer (quaternion->matrix)]
     [sfsim.astro :as astro]
     [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map sqr)]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                           destroy-vertex-array-object with-invisible-window framebuffer-render make-vertex-array-object
-                          destroy-vertex-array-object)]
+                          destroy-vertex-array-object uniform-sampler uniform-matrix3 use-textures clear render-quads)]
     [sfsim.texture :refer (make-rgba-texture make-rgb-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
                            texture->image generate-mipmap)]
     [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name)])
@@ -1625,6 +1627,22 @@
   (destroy-program (::navball-program gui))
   (destroy-texture (::navball-framebuffer gui))
   (destroy-texture (::navball-texture gui)))
+
+
+(defn navball-prepare
+  "Render navball to framebuffer"
+  [gui orientation]
+  (let [navball  (::navball-texture gui)
+        tex      (::navball-framebuffer gui)
+        program  (::navball-program gui)
+        vao      (::navball-vao gui)]
+    (framebuffer-render 252 252 :sfsim.render/cullback nil [tex]
+                        (use-program program)
+                        (uniform-sampler program "navball" 0)
+                        (uniform-matrix3 program "orientation" (quaternion->matrix orientation))
+                        (use-textures {0 navball})
+                        (clear (vec3 0.0 1.0 0.0))
+                        (render-quads vao))))
 
 
 (defn navball-mfd

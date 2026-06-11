@@ -392,19 +392,9 @@
            (fact
              (with-invisible-window
                264 264
-               (let [gui      (make-navball (make-nuklear-gui-with-font 1.0))
-                     navball  (:sfsim.gui/navball-texture gui)
-                     tex      (:sfsim.gui/navball-framebuffer gui)
-                     program  (:sfsim.gui/navball-program gui)
-                     vao      (:sfsim.gui/navball-vao gui)]
+               (let [gui (make-navball (make-nuklear-gui-with-font 1.0))]
+                 (navball-prepare gui ?orientation)
                  (nuklear-dark-style gui)
-                 (framebuffer-render 252 252 :sfsim.render/cullback nil [tex]
-                                     (use-program program)
-                                     (uniform-sampler program "navball" 0)
-                                     (uniform-matrix3 program "orientation" (quaternion->matrix ?orientation))
-                                     (use-textures {0 navball})
-                                     (clear (vec3 0.0 1.0 0.0))
-                                     (render-quads vao))
                  (nuklear-window gui "control test window" 0 0 264 264 :widget
                                  (layout-row-dynamic gui 256.0 1)
                                  (navball-mfd gui))
