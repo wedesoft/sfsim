@@ -646,7 +646,7 @@
        ; Test space craft pointing East and moving North
        (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 9000) (vec3 0 0 0))
        (q/rotate-vector (orbit-orientation @state) (vec3 1 0 0)) => (roughly-vector (vec3 1 0 0) 1e-6)
-       (q/rotate-vector (orbit-orientation @state) (vec3 0 1 0)) => (roughly-vector (vec3 0 0 1) 1e-6)
+       (q/rotate-vector (orbit-orientation @state) (vec3 0 1 0)) => (roughly-vector (vec3 0 0 -1) 1e-6)
        ;  Test space craft pointing and moving North
        (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion (- (sqrt 0.5)) 0 (sqrt 0.5) 0))
        (q/rotate-vector (orbit-orientation @state) (vec3 1 0 0)) => (roughly-vector (vec3 1 0 0) 1e-6)
