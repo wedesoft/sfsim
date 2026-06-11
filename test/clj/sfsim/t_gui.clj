@@ -405,9 +405,9 @@ void main()
   vec2 coords = (gl_FragCoord.xy - vec2(128, 128)) / vec2(128, 128);
   if (length(coords) <= 1.0) {
     float x = sqrt(1.0 - length(coords) * length(coords));
-    vec3 p = vec3(x, coords.x, -coords.y);
-    float lon = atan(p.y, p.x);
-    float lat = atan(p.z, length(p.xy));
+    vec3 p = vec3(x, coords.x, coords.y);
+    float lon = atan(p.z, p.x);
+    float lat = atan(p.y, length(p.xz));
     vec2 uv = vec2(lon / (2 * PI) + 0.5, lat / PI + 0.5);
     fragColor = texture(navball, uv);
   } else
@@ -420,7 +420,7 @@ void main()
         (with-invisible-window
           264 264
           (let [gui      (make-nuklear-gui-with-font 1.0)
-                navball  (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat (slurp-image "data/texture/navball-orbit.png"))
+                navball  (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat (slurp-image "data/texture/navball-orbit.png" true))
                 tex      (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F 252 252)
                 program  (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
                 indices  [0 1 2 3]
@@ -449,7 +449,7 @@ void main()
               (destroy-texture tex)
               (destroy-vertex-array-object vao)
               (destroy-program program))))
-        => (is-image "test/clj/sfsim/fixtures/gui/orbit-navball-aligned.png" 0.1)))
+        => (is-image "test/clj/sfsim/fixtures/gui/orbit-navball-neutral.png" 0.1)))
 
 
 (GLFW/glfwTerminate)
