@@ -1588,7 +1588,14 @@
                                                (when (or (zero? (mod (+ pitch 15) 60)) (#{60 120} yaw))
                                                  (with-rect rect (- x (/ tw 2) pad) (- y (/ th 2)) (+ tw (* 2 pad)) th
                                                    (fill-rect canvas rect 3.0 bg))
-                                                 (draw-text canvas (- x (/ tw 2)) (- y (/ th 2)) tw th text (fonts yaw) fg))))))))
+                                                 (draw-text canvas (- x (/ tw 2)) (- y (/ th 2)) tw th text (fonts yaw) fg))))
+                                      (doseq [pitch (range 0 361 1)]
+                                             (let [x     (/ w 2)
+                                                   y     (/ (* pitch h) 360)
+                                                   color (if (<= pitch 180) black white)
+                                                   five  (zero? (mod pitch 5))]
+                                               (stroke-line canvas (- x (if five 15 10)) y (- x 3) y (if five 1.0 0.3) color)
+                                               (stroke-line canvas (+ x (if five 15 10)) y (+ x 3) y (if five 1.0 0.3) color)))))))
                               (render-nuklear-gui gui w h)
                               (destroy-nuklear-gui-with-font gui)))
         (let [img (texture->image tex)]
