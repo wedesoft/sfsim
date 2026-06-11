@@ -60,7 +60,8 @@
       Nuklear)
     (org.lwjgl.opengl
       GL11
-      GL13)
+      GL13
+      GL30)
     (org.lwjgl.stb
       STBTTAlignedQuad
       STBTTFontinfo
@@ -1592,11 +1593,23 @@
 
 
 (defn make-navball
-  "Initialise navball textures"
+  "Initialise navball textures and program"
   [gui]
   (let [image           (slurp-image "data/texture/navball-orbit.png" true)
-        navball-texture (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat image)]
-    (assoc gui ::navball-texture navball-texture)))
+        texture         (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat image)
+        framebuffer     (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F 252 252)
+        vertex-source   (slurp "resources/shaders/gui/vertex-navball.glsl")
+        fragment-source (slurp "resources/shaders/gui/fragment-navball.glsl")
+        program         (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])]
+    (assoc gui ::navball-texture texture ::navball-framebuffer framebuffer ::navball-program program)))
+
+
+(defn destroy-navball
+  "Destroy navball textures and program"
+  [gui]
+  (destroy-program (::navball-program gui))
+  (destroy-texture (::navball-framebuffer gui))
+  (destroy-texture (::navball-texture gui)))
 
 
 (defn navball-mfd

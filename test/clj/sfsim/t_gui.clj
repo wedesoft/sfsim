@@ -390,33 +390,6 @@
              => (is-image (format "test/clj/sfsim/fixtures/gui/orbit-%d.png" s) 0.10)))
 
 
-(def vertex-source "#version 130
-in vec3 point;
-void main()
-{
-  gl_Position = vec4(point, 1);
-}")
-
-(def fragment-source "#version 130
-#define PI 3.1415926535897932384626433832795
-out vec4 fragColor;
-uniform sampler2D navball;
-uniform mat3 orientation;
-void main()
-{
-  vec2 coords = (gl_FragCoord.xy - vec2(128, 128)) / vec2(128, 128);
-  if (length(coords) <= 1.0) {
-    float z = sqrt(1.0 - length(coords) * length(coords));
-    vec3 p = orientation * vec3(coords.y, z, coords.x);
-    float lon = atan(p.x, p.y);
-    float lat = atan(p.z, length(p.yx));
-    vec2 uv = vec2(lon / (2 * PI) + 0.5, lat / PI + 0.5);
-    fragColor = texture(navball, uv);
-  } else
-    fragColor = vec4(0, 0, 0, 1);
-}")
-
-
 (when (.exists (io/file ".integration"))
   (tabular "Render orbit navball"
            (fact
@@ -424,8 +397,8 @@ void main()
                264 264
                (let [gui      (make-navball (make-nuklear-gui-with-font 1.0))
                      navball  (:sfsim.gui/navball-texture gui)
-                     tex      (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F 252 252)
-                     program  (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
+                     tex      (:sfsim.gui/navball-framebuffer gui)
+                     program  (:sfsim.gui/navball-program gui)
                      indices  [0 1 2 3]
                      vertices [1.0 1.0 0.5, -1.0 1.0 0.5, -1.0 -1.0 0.5, 1.0 -1.0 0.5]
                      vao      (make-vertex-array-object program indices vertices ["point" 3])
@@ -448,11 +421,9 @@ void main()
                  (gui-framebuffer-render
                    264 264
                    (render-nuklear-gui gui 264 264)
+                   (destroy-navball gui)
                    (destroy-nuklear-gui-with-font gui)
-                   (destroy-texture navball)
-                   (destroy-texture tex)
-                   (destroy-vertex-array-object vao)
-                   (destroy-program program))))
+                   (destroy-vertex-array-object vao))))
              => (is-image (str "test/clj/sfsim/fixtures/gui/" ?image) 0.1))
            ?orientation                                ?image
            (q/->Quaternion 1 0 0 0)                    "orbit-navball-neutral.png"
