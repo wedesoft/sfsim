@@ -17,11 +17,11 @@
     [sfsim.astro :as astro]
     [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map sqr)]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
-                          with-scissor set-scissor destroy-program setup-vertex-attrib-pointers
-                          make-vertex-array-stream destroy-vertex-array-object with-invisible-window
-                          framebuffer-render make-vertex-array-object destroy-vertex-array-object)]
+                          with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
+                          destroy-vertex-array-object with-invisible-window framebuffer-render make-vertex-array-object
+                          destroy-vertex-array-object)]
     [sfsim.texture :refer (make-rgba-texture make-rgb-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
-                           texture->image)]
+                           texture->image generate-mipmap)]
     [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name)])
   (:import
     (java.nio
@@ -1604,6 +1604,7 @@
         indices         [0 1 2 3]
         vertices        [1.0 1.0 0.5, -1.0 1.0 0.5, -1.0 -1.0 0.5, 1.0 -1.0 0.5]
         vao             (make-vertex-array-object program indices vertices ["point" 3])]
+    (generate-mipmap texture)
     (assoc gui ::navball-texture texture ::navball-framebuffer framebuffer ::navball-program program ::navball-vao vao)))
 
 

@@ -402,7 +402,6 @@
                      vao      (:sfsim.gui/navball-vao gui)
                      img      (NkImage/create)
                      handle   (NkHandle/create)]
-                 (generate-mipmap navball)
                  (.id handle (:sfsim.texture/texture tex))
                  (.handle img handle)
                  (nuklear-dark-style gui)
