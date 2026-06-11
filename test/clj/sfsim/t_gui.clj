@@ -399,9 +399,7 @@
                      navball  (:sfsim.gui/navball-texture gui)
                      tex      (:sfsim.gui/navball-framebuffer gui)
                      program  (:sfsim.gui/navball-program gui)
-                     indices  [0 1 2 3]
-                     vertices [1.0 1.0 0.5, -1.0 1.0 0.5, -1.0 -1.0 0.5, 1.0 -1.0 0.5]
-                     vao      (make-vertex-array-object program indices vertices ["point" 3])
+                     vao      (:sfsim.gui/navball-vao gui)
                      img      (NkImage/create)
                      handle   (NkHandle/create)]
                  (generate-mipmap navball)
@@ -422,8 +420,7 @@
                    264 264
                    (render-nuklear-gui gui 264 264)
                    (destroy-navball gui)
-                   (destroy-nuklear-gui-with-font gui)
-                   (destroy-vertex-array-object vao))))
+                   (destroy-nuklear-gui-with-font gui))))
              => (is-image (str "test/clj/sfsim/fixtures/gui/" ?image) 0.1))
            ?orientation                                ?image
            (q/->Quaternion 1 0 0 0)                    "orbit-navball-neutral.png"

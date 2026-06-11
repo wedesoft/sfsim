@@ -19,7 +19,7 @@
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers
                           make-vertex-array-stream destroy-vertex-array-object with-invisible-window
-                          framebuffer-render)]
+                          framebuffer-render make-vertex-array-object destroy-vertex-array-object)]
     [sfsim.texture :refer (make-rgba-texture make-rgb-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
                            texture->image)]
     [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name)])
@@ -1600,13 +1600,17 @@
         framebuffer     (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F 252 252)
         vertex-source   (slurp "resources/shaders/gui/vertex-navball.glsl")
         fragment-source (slurp "resources/shaders/gui/fragment-navball.glsl")
-        program         (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])]
-    (assoc gui ::navball-texture texture ::navball-framebuffer framebuffer ::navball-program program)))
+        program         (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
+        indices         [0 1 2 3]
+        vertices        [1.0 1.0 0.5, -1.0 1.0 0.5, -1.0 -1.0 0.5, 1.0 -1.0 0.5]
+        vao             (make-vertex-array-object program indices vertices ["point" 3])]
+    (assoc gui ::navball-texture texture ::navball-framebuffer framebuffer ::navball-program program ::navball-vao vao)))
 
 
 (defn destroy-navball
   "Destroy navball textures and program"
   [gui]
+  (destroy-vertex-array-object (::navball-vao gui))
   (destroy-program (::navball-program gui))
   (destroy-texture (::navball-framebuffer gui))
   (destroy-texture (::navball-texture gui)))
