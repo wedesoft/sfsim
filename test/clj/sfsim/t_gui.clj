@@ -391,22 +391,23 @@
   (tabular "Render orbit navball"
            (fact
              (with-invisible-window
-               264 264
+               (quot 264 ?scale) (quot 264 ?scale)
                (let [gui (make-navball (make-nuklear-gui-with-font 1.0))]
                  (navball-prepare gui ?orientation)
                  (nuklear-dark-style gui)
-                 (nuklear-window gui "control test window" 0 0 264 264 :widget
-                                 (layout-row-dynamic gui 256.0 1)
+                 (nuklear-window gui "control test window" 0 0 (quot 264 ?scale) (quot 264 ?scale) :widget
+                                 (layout-row-dynamic gui (/ 256.0 ?scale) 1)
                                  (navball-mfd gui))
                  (gui-framebuffer-render
-                   264 264
-                   (render-nuklear-gui gui 264 264)
+                   (quot 264 ?scale) (quot 264 ?scale)
+                   (render-nuklear-gui gui (quot 264 ?scale) (quot 264 ?scale))
                    (destroy-navball gui)
                    (destroy-nuklear-gui-with-font gui))))
-             => (is-image (str "test/clj/sfsim/fixtures/gui/" ?image) 0.1))
-           ?orientation                                ?image
-           (q/->Quaternion 1 0 0 0)                    "orbit-navball-neutral.png"
-           (q/rotation (to-radians 45.0) (vec3 0 1 0)) "orbit-navball-roll.png"))
+             => (is-image (str "test/clj/sfsim/fixtures/integration/" ?image) 0.1))
+           ?orientation                                ?scale ?image
+           (q/->Quaternion 1 0 0 0)                    1      "orbit-navball-neutral.png"
+           (q/rotation (to-radians 45.0) (vec3 0 1 0)) 1      "orbit-navball-roll.png"
+           (q/->Quaternion 1 0 0 0)                    2      "orbit-navball-small.png"))
 
 
 (GLFW/glfwTerminate)

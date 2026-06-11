@@ -1600,7 +1600,8 @@
   [gui]
   (let [image           (slurp-image "data/texture/navball-orbit.png" true)
         texture         (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat image)
-        framebuffer     (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F 252 252)
+        framebuffer     (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F
+                                               (long (scale gui 252)) (long (scale gui 252)))
         vertex-source   (slurp "resources/shaders/gui/vertex-navball.glsl")
         fragment-source (slurp "resources/shaders/gui/fragment-navball.glsl")
         program         (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
@@ -1636,7 +1637,7 @@
         tex      (::navball-framebuffer gui)
         program  (::navball-program gui)
         vao      (::navball-vao gui)]
-    (framebuffer-render 252 252 :sfsim.render/cullback nil [tex]
+    (framebuffer-render (scale gui 252) (scale gui 252) :sfsim.render/cullback nil [tex]
                         (use-program program)
                         (uniform-sampler program "navball" 0)
                         (uniform-matrix3 program "orientation" (quaternion->matrix orientation))
@@ -1660,9 +1661,9 @@
                border  82 185 142
                white  255 255 255]
               (fill-rect canvas canvas-rect 0.0 bg)
-              (with-rect rect (+ x0 1) (+ y0 1) (- w 2) (- h 2)
-                (stroke-rect canvas rect 0.0 3.0 border))
-              (with-rect rect (+ x0 2) (+ y0 2) (- w 4) (- h 4)
+              (with-rect rect (+ x0 (scale gui 1)) (+ y0 (scale gui 1)) (- w (scale gui 2)) (- h (scale gui 2))
+                (stroke-rect canvas rect 0.0 (scale gui 3.0) border))
+              (with-rect rect (+ x0 (scale gui 2)) (+ y0 (scale gui 2)) (- w (scale gui 4)) (- h (scale gui 4))
                 (Nuklear/nk_draw_image canvas rect img white))))))
 
 
