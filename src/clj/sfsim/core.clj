@@ -121,7 +121,7 @@
                                  :sfsim.gui/window-width window-width
                                  :sfsim.gui/window-height window-height
                                  :sfsim.gui/fullscreen false}
-            gui                 (atom (gui/make-nuklear-gui-with-font 1.0))
+            gui                 (atom (gui/make-navball (gui/make-nuklear-gui-with-font 1.0)))
             audio-state         (audio/make-audio-state)
             state               (atom {:gui gui-state
                                        :input input-state
@@ -144,17 +144,18 @@
                        mode           (GLFW/glfwGetVideoMode monitor)
                        desktop-width  (.width ^GLFWVidMode mode)
                        desktop-height (.height ^GLFWVidMode mode)]
+                   (gui/destroy-navball @gui)
                    (gui/destroy-nuklear-gui-with-font @gui)
                    (if fullscreen
-                     (do
+                     (let [scale (double (/ desktop-height ^long window-height))]
                        (GLFW/glfwSetWindowMonitor window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
-                       (reset! gui (gui/make-nuklear-gui-with-font (double (/ desktop-height ^long window-height)))))
+                       (reset! gui (gui/make-navball (gui/make-nuklear-gui-with-font scale))))
                      (do
                        (GLFW/glfwSetWindowMonitor window 0
                                                   (quot (- desktop-width ^long window-width) 2)
                                                   (quot (- desktop-height ^long window-height) 2)
                                                   window-width window-height GLFW/GLFW_DONT_CARE)
-                       (reset! gui (gui/make-nuklear-gui-with-font 1.0))))
+                       (reset! gui (gui/make-navball (gui/make-nuklear-gui-with-font 1.0)))))
                    (gui/nuklear-dark-style @gui)
                    (swap! state assoc-in [:gui :sfsim.gui/fullscreen] fullscreen)))
                (let [w (int-array 1)
@@ -260,6 +261,7 @@
         (planet/destroy-tile-tree tile-tree)
         (graphics/destroy-graphics graphics)
         (audio/destroy-audio-state audio-state)
+        (gui/destroy-navball @gui)
         (gui/destroy-nuklear-gui-with-font @gui)
         (destroy-window window)
         (jolt/jolt-destroy)

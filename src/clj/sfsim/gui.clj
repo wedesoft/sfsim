@@ -9,7 +9,7 @@
     [clojure.math :refer (PI to-radians to-degrees cos sin ceil)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
-    [fastmath.vector :refer (vec3)]
+    [fastmath.vector :refer (vec2 vec3)]
     [fastmath.matrix :as fm]
     [sfsim.image :refer (white-image-with-alpha slurp-image)]
     [sfsim.config :as config]
@@ -21,7 +21,8 @@
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                           destroy-vertex-array-object with-invisible-window framebuffer-render make-vertex-array-object
-                          destroy-vertex-array-object uniform-sampler uniform-matrix3 use-textures clear render-quads)]
+                          destroy-vertex-array-object uniform-sampler uniform-matrix3 use-textures clear render-quads
+                          uniform-vector2)]
     [sfsim.texture :refer (make-rgba-texture make-rgb-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
                            texture->image generate-mipmap)]
     [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name)])
@@ -1640,6 +1641,7 @@
     (framebuffer-render (scale gui 252) (scale gui 252) :sfsim.render/cullback nil [tex]
                         (use-program program)
                         (uniform-sampler program "navball" 0)
+                        (uniform-vector2 program "resolution" (vec2 (scale gui 252) (scale gui 252)))
                         (uniform-matrix3 program "orientation" (quaternion->matrix orientation))
                         (use-textures {0 navball})
                         (clear (vec3 0.0 1.0 0.0))
@@ -1685,8 +1687,13 @@
       (nuklear-window gui "Orbit" (scale gui 10) (- h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
-                      (orbit-mfd gui (physics/orbital-parameters config/planet-config (:physics state)))))
-    (nuklear-window gui "Information" (scale gui (+ 20 256)) (- h (scale gui (+ 10 (* ^long text-height 1))))
+                      (orbit-mfd gui (physics/orbital-parameters config/planet-config (:physics state))))
+      (nuklear-window gui "Navball" (scale gui (+ 20 256)) (- h (scale gui (+ 10 256)))
+                      (scale gui 256) (scale gui 256) :widget
+                      (layout-row-dynamic gui (scale gui 256) 1)
+                      (navball-prepare gui (physics/orbit-orientation (:physics state)))
+                      (navball-mfd gui)))
+    (nuklear-window gui "Information" (scale gui (+ 30 256 256)) (- h (scale gui (+ 10 (* ^long text-height 1))))
                     (scale gui 640) (scale gui (* ^long text-height 1)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)
                     (text-label gui text1))))

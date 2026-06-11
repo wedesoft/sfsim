@@ -5,10 +5,11 @@
 out vec4 fragColor;
 uniform sampler2D navball;
 uniform mat3 orientation;
+uniform vec2 resolution;
 
 void main()
 {
-  vec2 coords = (gl_FragCoord.xy - vec2(128, 128)) / vec2(128, 128);
+  vec2 coords = (gl_FragCoord.xy - resolution / 2.0) / (resolution / 2.0);
   if (length(coords) <= 1.0) {
     float z = sqrt(1.0 - length(coords) * length(coords));
     vec3 p = orientation * vec3(coords.y, z, coords.x);
