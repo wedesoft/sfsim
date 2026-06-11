@@ -46,6 +46,7 @@
       NkDrawVertexLayoutElement
       NkDrawVertexLayoutElement$Buffer
       NkHandle
+      NkImage
       NkPluginAllocI
       NkPluginFilterI
       NkPluginFreeI
@@ -1603,9 +1604,18 @@
         program         (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
         indices         [0 1 2 3]
         vertices        [1.0 1.0 0.5, -1.0 1.0 0.5, -1.0 -1.0 0.5, 1.0 -1.0 0.5]
-        vao             (make-vertex-array-object program indices vertices ["point" 3])]
+        vao             (make-vertex-array-object program indices vertices ["point" 3])
+        image           (NkImage/create)
+        handle          (NkHandle/create)]
     (generate-mipmap texture)
-    (assoc gui ::navball-texture texture ::navball-framebuffer framebuffer ::navball-program program ::navball-vao vao)))
+    (.id handle (:sfsim.texture/texture framebuffer))
+    (.handle image handle)
+    (assoc gui
+           ::navball-texture texture
+           ::navball-framebuffer framebuffer
+           ::navball-program program
+           ::navball-vao vao
+           ::navball-image image)))
 
 
 (defn destroy-navball
@@ -1619,13 +1629,14 @@
 
 (defn navball-mfd
   "Display navball widget"
-  [gui navball-image tex]
+  [gui]
   (widget gui canvas canvas-rect
           (let
-            [x0 (.x canvas-rect)
-             y0 (.y canvas-rect)
-             w  (.w canvas-rect)
-             h  (.h canvas-rect)]
+            [img (::navball-image gui)
+             x0  (.x canvas-rect)
+             y0  (.y canvas-rect)
+             w   (.w canvas-rect)
+             h   (.h canvas-rect)]
             (with-colors
               [bg       0   0   0
                border  82 185 142
@@ -1634,7 +1645,7 @@
               (with-rect rect (+ x0 1) (+ y0 1) (- w 2) (- h 2)
                 (stroke-rect canvas rect 0.0 3.0 border))
               (with-rect rect (+ x0 2) (+ y0 2) (- w 4) (- h 4)
-                (Nuklear/nk_draw_image canvas rect navball-image white))))))
+                (Nuklear/nk_draw_image canvas rect img white))))))
 
 
 (set! *unchecked-math* :warn-on-boxed)

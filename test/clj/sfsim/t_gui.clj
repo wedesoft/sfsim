@@ -29,11 +29,8 @@
       GLFW)
     (org.lwjgl.opengl
       GL11
-      GL12
-      GL30)
+      GL12)
     (org.lwjgl.nuklear
-      NkHandle
-      NkImage
       Nuklear)))
 
 
@@ -399,11 +396,7 @@
                      navball  (:sfsim.gui/navball-texture gui)
                      tex      (:sfsim.gui/navball-framebuffer gui)
                      program  (:sfsim.gui/navball-program gui)
-                     vao      (:sfsim.gui/navball-vao gui)
-                     img      (NkImage/create)
-                     handle   (NkHandle/create)]
-                 (.id handle (:sfsim.texture/texture tex))
-                 (.handle img handle)
+                     vao      (:sfsim.gui/navball-vao gui)]
                  (nuklear-dark-style gui)
                  (framebuffer-render 252 252 :sfsim.render/cullback nil [tex]
                                      (use-program program)
@@ -414,7 +407,7 @@
                                      (render-quads vao))
                  (nuklear-window gui "control test window" 0 0 264 264 :widget
                                  (layout-row-dynamic gui 256.0 1)
-                                 (navball-mfd gui img tex))
+                                 (navball-mfd gui))
                  (gui-framebuffer-render
                    264 264
                    (render-nuklear-gui gui 264 264)
