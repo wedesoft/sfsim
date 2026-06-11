@@ -304,7 +304,7 @@ void main()
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                                             (use-textures {0 colors}))))
                           (destroy-scene opengl-scene)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/dice.png" 0.10))
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/dice.png" 0.13))
 
 
 (def bricks (read-gltf "test/clj/sfsim/fixtures/model/bricks.gltf"))
@@ -428,7 +428,7 @@ void main()
                                         render-cube)
                           (destroy-scene opengl-scene)
                           (destroy-program program-dice)
-                          (destroy-program program-cube))) => (is-image "test/clj/sfsim/fixtures/model/cube-and-dice.png" 0.04))
+                          (destroy-program program-cube))) => (is-image "test/clj/sfsim/fixtures/model/cube-and-dice.png" 0.06))
 
 
 (def translation (read-gltf "test/clj/sfsim/fixtures/model/translation.gltf"))

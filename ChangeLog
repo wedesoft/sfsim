@@ -1,3 +1,15 @@
+sfsim (0.21-1)
+
+	* Implemented Apollo-style orbit navball
+
+-- Jan Wedekind <jan@wedesoft.de>  Thu, 11 May 2026 23:31:00 +0100
+
+sfsim (0.20-1)
+
+	* Add Orbit display
+
+-- Jan Wedekind <jan@wedesoft.de>  Thu,  4 May 2026 22:58:00 +0100
+
 sfsim (0.19-1)
 
 	* User interface scaling

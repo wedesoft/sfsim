@@ -6,21 +6,25 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (PI to-radians to-degrees cos sin)]
+    [clojure.math :refer (PI to-radians to-degrees cos sin ceil)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
+    [fastmath.vector :refer (vec2 vec3)]
     [fastmath.matrix :as fm]
-    [fastmath.vector :as fv]
-    [sfsim.image :refer (white-image-with-alpha)]
+    [sfsim.image :refer (white-image-with-alpha slurp-image)]
     [sfsim.config :as config]
     [sfsim.version :refer (version)]
     [sfsim.physics :as physics]
+    [sfsim.matrix :refer (quaternion->matrix)]
     [sfsim.astro :as astro]
     [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map sqr)]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
-                          with-scissor set-scissor destroy-program setup-vertex-attrib-pointers
-                          make-vertex-array-stream destroy-vertex-array-object)]
-    [sfsim.texture :refer (make-rgba-texture byte-buffer->array destroy-texture texture-2d)]
+                          with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
+                          destroy-vertex-array-object with-invisible-window framebuffer-render make-vertex-array-object
+                          destroy-vertex-array-object uniform-sampler uniform-matrix3 use-textures clear render-quads
+                          uniform-vector2)]
+    [sfsim.texture :refer (make-rgba-texture make-rgb-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
+                           texture->image generate-mipmap)]
     [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name)])
   (:import
     (java.nio
@@ -45,6 +49,7 @@
       NkDrawVertexLayoutElement
       NkDrawVertexLayoutElement$Buffer
       NkHandle
+      NkImage
       NkPluginAllocI
       NkPluginFilterI
       NkPluginFreeI
@@ -59,7 +64,8 @@
       Nuklear)
     (org.lwjgl.opengl
       GL11
-      GL13)
+      GL13
+      GL30)
     (org.lwjgl.stb
       STBTTAlignedQuad
       STBTTFontinfo
@@ -297,7 +303,7 @@
   [gui title x y width height decoration & body]
   `(let [stack#   (MemoryStack/stackPush)
          rect#    (NkRect/malloc stack#)
-         context# (:sfsim.gui/context ~gui)]
+         context# (::context ~gui)]
      (try
        (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
                                ~(case decoration
@@ -317,7 +323,7 @@
   [gui & body]
   `(let [stack#   (MemoryStack/stackPush)
          nk-vec2# (NkVec2/malloc stack#)
-         win#     (.window (.style (::context ~gui)))]
+         win#     (.window (.style ^NkContext (::context ~gui)))]
      (.x nk-vec2# 0)
      (.y nk-vec2# 0)
      (.padding win# nk-vec2#)
@@ -337,34 +343,38 @@
 
 (defn make-bitmap-font
   "Create a bitmap font with character packing data"
-  [^String ttf-filename ^long bitmap-width ^long bitmap-height ^long font-height]
-  (let [num-chars    145
-        font         (NkUserFont/create)
-        fontinfo     (STBTTFontinfo/create)
-        ttf          (slurp-byte-buffer ttf-filename)
-        orig-descent (int-array 1)
-        cdata        (STBTTPackedchar/calloc num-chars)
-        pc           (STBTTPackContext/calloc)
-        bitmap       (MemoryUtil/memAlloc (* bitmap-width bitmap-height))]
-    (STBTruetype/stbtt_InitFont fontinfo ttf)
-    (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
-    (STBTruetype/stbtt_PackBegin pc bitmap bitmap-width bitmap-height 0 1 0)
-    (STBTruetype/stbtt_PackSetOversampling pc 4 4)
-    (STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
-    (STBTruetype/stbtt_PackEnd pc)
-    (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)
-          data  (byte-buffer->array bitmap)
-          alpha #:sfsim.image{:width bitmap-width :height bitmap-height :data data :channels 1}
-          image (white-image-with-alpha alpha)]
-      (MemoryUtil/memFree bitmap)
-      {::font font
-       ::fontinfo fontinfo
-       ::ttf ttf  ; keep alive after passing buffer to stbtt_InitFont
-       ::font-height font-height
-       ::scale scale
-       ::descent (* (aget orig-descent 0) scale)
-       ::cdata cdata
-       ::image image})))
+  {:malli/schema [:=> [:cat :string :int :int :int [:? [:cat :int :int]]] :some]}
+  ([ttf-filename bitmap-width bitmap-height font-height]
+   (make-bitmap-font ttf-filename bitmap-width bitmap-height font-height 4 4))
+  ([ttf-filename bitmap-width bitmap-height font-height h-oversample v-oversample]
+   (let [num-chars    145
+         fontinfo     (STBTTFontinfo/create)
+         ttf          (slurp-byte-buffer ttf-filename)
+         orig-descent (int-array 1)
+         cdata        (STBTTPackedchar/calloc num-chars)
+         pc           (STBTTPackContext/calloc)
+         bitmap       (MemoryUtil/memAlloc (* ^long bitmap-width ^long bitmap-height))]
+     (STBTruetype/stbtt_InitFont fontinfo ttf)
+     (STBTruetype/stbtt_GetFontVMetrics fontinfo nil orig-descent nil)
+     (STBTruetype/stbtt_PackBegin pc bitmap bitmap-width bitmap-height 0 1 0)
+     (STBTruetype/stbtt_PackSetOversampling pc h-oversample v-oversample)
+     (STBTruetype/stbtt_PackFontRange pc ttf 0 font-height 32 cdata)
+     (STBTruetype/stbtt_PackEnd pc)
+     (.free pc)
+     (let [scale (STBTruetype/stbtt_ScaleForPixelHeight fontinfo font-height)
+           data  (byte-buffer->array bitmap)
+           alpha #:sfsim.image{:width bitmap-width :height bitmap-height :data data :channels 1}
+           image (white-image-with-alpha alpha)
+           texture (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp image)]
+       (MemoryUtil/memFree bitmap)
+       {::fontinfo fontinfo
+        ::ttf ttf  ; keep alive after passing buffer to stbtt_InitFont
+        ::font-height font-height
+        ::scale scale
+        ::descent (* (aget orig-descent 0) scale)
+        ::cdata cdata
+        ::image image
+        ::texture texture}))))
 
 
 (defn set-font-texture-id
@@ -378,7 +388,7 @@
 
 (defn text-width-callback
   "Determine width of text in pixels"
-  [fontinfo scale text len]
+  [fontinfo scale text len scale-x]
   (let [stack     (MemoryStack/stackPush)
         unicode   (.mallocInt stack 1)
         advance   (.mallocInt stack 1)
@@ -391,7 +401,7 @@
                 text-width
                 (do
                   (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
-                  (let [text-width (+ text-width (* (.get advance 0) ^double scale))
+                  (let [text-width (+ text-width (* (.get advance 0) ^double scale ^double scale-x))
                         glyph-len  (Nuklear/nnk_utf_decode (+ ^long text text-len)
                                                            (MemoryUtil/memAddress unicode) (- ^long len text-len))]
                     (recur (+ text-len glyph-len) glyph-len text-width)))))]
@@ -401,39 +411,37 @@
 
 (defn text-width
   "Determine width of text in pixels"
-  [{::keys [bitmap-font]} text]
-  (let [fontinfo (::fontinfo bitmap-font)
-        scale    (::scale bitmap-font)
-        buffer   (MemoryUtil/memUTF8 ^String text)
+  [text {::keys [fontinfo scale scale-x]}]
+  (let [buffer   (MemoryUtil/memUTF8 ^String text)
         address  (MemoryUtil/memAddress ^DirectByteBuffer buffer)
         size     (.remaining buffer)
-        result   (text-width-callback fontinfo scale address size)]
+        result   (text-width-callback fontinfo scale address size scale-x)]
     (MemoryUtil/memFree buffer)
     result))
 
 
 (defn set-width-callback
   "Set callback function for computing width of text"
-  {:malli/schema [:=> [:cat :some :some] :any]}
-  [{::keys [fontinfo scale]} font]
+  {:malli/schema [:=> [:cat :some :some :double] :any]}
+  [{::keys [fontinfo scale]} font scale-x]
   (.width ^NkUserFont font
           (reify NkTextWidthCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
             (invoke
               [_this _handle _h text len]
-              (text-width-callback fontinfo scale text len)))))
+              (text-width-callback fontinfo scale text len scale-x)))))
 
 
 (defn set-height-callback
   "Set callback function for returning height of text"
-  {:malli/schema [:=> [:cat :some :some] :any]}
-  [{::keys [font-height]} font]
-  (.height ^NkUserFont font font-height))
+  {:malli/schema [:=> [:cat :some :some :double] :any]}
+  [{::keys [font-height]} font scale-y]
+  (.height ^NkUserFont font (* ^double scale-y ^long font-height)))
 
 
 (defn set-glyph-callback
   "Set callback function for getting rectangle of glyph"
-  {:malli/schema [:=> [:cat :some :some] :any]}
-  [{::keys [fontinfo image cdata scale descent]} font]
+  {:malli/schema [:=> [:cat :some :some :double :double] :any]}
+  [{::keys [fontinfo image cdata scale descent]} font scale-x scale-y]
   (let [bitmap-width  (:sfsim.image/width image)
         bitmap-height (:sfsim.image/height image)]
     (.query ^NkUserFont font
@@ -448,40 +456,48 @@
                   (STBTruetype/stbtt_GetPackedQuad ^STBTTPackedchar$Buffer cdata ^long bitmap-width ^long bitmap-height
                                                    (- codepoint 32) x y q false)
                   (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo codepoint advance nil)
-                  (let [ufg (NkUserFontGlyph/create glyph)]
-                    (.width ufg (- (.x1 q) (.x0 q)))
-                    (.height ufg (- (.y1 q) (.y0 q)))
-                    (.set (.offset ufg) (.x0 q) (+ (.y0 q) font-height ^double descent))
-                    (.xadvance ufg (* (.get advance 0) ^double scale))
+                  (let [ufg (NkUserFontGlyph/create glyph)
+                        w   (- (.x1 q) (.x0 q))
+                        h   (- (.y1 q) (.y0 q))
+                        ox  (* ^double scale-x (.x0 q))
+                        oy  (+ (* ^double scale-y (.y0 q)) font-height (* ^double scale-y ^double descent))]
+                    (.width ufg (* ^double scale-x w))
+                    (.height ufg (* ^double scale-y h))
+                    (.set (.offset ufg) ox oy)
+                    (.xadvance ufg (* (.get advance 0) ^double scale ^double scale-x))
                     (.set (.uv ufg 0) (.s0 q) (.t0 q))
                     (.set (.uv ufg 1) (.s1 q) (.t1 q)))
                   (MemoryStack/stackPop)))))))
 
 
-(defn setup-font-texture
-  "Create font texture and callbacks for text size and glyph information"
-  {:malli/schema [:=> [:cat :some] :some]}
-  [{::keys [image font] :as bitmap-font}]
-  (let [font-texture  (make-rgba-texture :sfsim.texture/linear :sfsim.texture/clamp image)]
-    (set-font-texture-id font font-texture)
-    (set-width-callback bitmap-font font)
-    (set-height-callback bitmap-font font)
-    (set-glyph-callback bitmap-font font)
-    (assoc bitmap-font ::texture font-texture)))
+(defn make-font
+  "Set font texture, callbacks for text size, and glyph information"
+  {:malli/schema [:=> [:cat :some :double :double] :some]}
+  [{::keys [texture] :as bitmap-font} scale-x scale-y]
+  (let [font (NkUserFont/create)]
+    (set-font-texture-id font texture)
+    (set-width-callback bitmap-font font scale-x)
+    (set-height-callback bitmap-font font scale-y)
+    (set-glyph-callback bitmap-font font scale-x scale-y)
+    (assoc bitmap-font ::font font ::scale-x scale-x ::scale-y scale-y)))
 
 
-(defn destroy-font-texture
+(defn destroy-bitmap-font
   [bitmap-font]
-  (destroy-texture (::texture bitmap-font)))
+  (destroy-texture (::texture bitmap-font))
+  (.free ^STBTTPackedchar$Buffer (::cdata bitmap-font))
+  (.free ^STBTTFontinfo (::fontinfo bitmap-font)))
 
 
 (defn make-nuklear-gui-with-font
   "Render glyphs to texture and initialise GUI"
   {:malli/schema [:=> [:cat :double] :some]}
   [scale]
-  (let [bitmap-font (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf"
-                                                          (* 512 ^double scale) (* 512 ^double scale)
-                                                          (* 18 ^double scale)))]
+  (let [bitmap-font (make-font
+                      (make-bitmap-font "resources/fonts/b612.ttf"
+                                        (long (* 512 ^double scale)) (long (* 512 ^double scale))
+                                        (long (* 18 ^double scale)))
+                      1.0 1.0)]
     (assoc (make-nuklear-gui (::font bitmap-font) scale) ::bitmap-font bitmap-font)))
 
 
@@ -490,7 +506,7 @@
   {:malli/schema [:=> [:cat :some] :nil]}
   [{::keys [bitmap-font] :as gui} ]
   (destroy-nuklear-gui gui)
-  (destroy-font-texture bitmap-font))
+  (destroy-bitmap-font bitmap-font))
 
 
 (defn nuklear-global-scale
@@ -845,16 +861,16 @@
   "Layout widgets using specified height and specified number of widgets in a row"
   [gui height cnt & body]
   `(do
-     (Nuklear/nk_layout_row_begin (:sfsim.gui/context ~gui) Nuklear/NK_DYNAMIC ~height ~cnt)
+     (Nuklear/nk_layout_row_begin (::context ~gui) Nuklear/NK_DYNAMIC ~height ~cnt)
      (let [result# (do ~@body)]
-       (Nuklear/nk_layout_row_end (:sfsim.gui/context ~gui))
+       (Nuklear/nk_layout_row_end (::context ~gui))
        result#)))
 
 
 (defn layout-row-push
   "Set fraction of space next widget takes up in this layout row"
   [gui frac]
-  (Nuklear/nk_layout_row_push (:sfsim.gui/context gui) frac))
+  (Nuklear/nk_layout_row_push (::context gui) frac))
 
 
 (defmacro tabbing
@@ -863,7 +879,7 @@
   `(ignore-nil->
      ~'state ~state
      (when (and (-> ~'state :input :sfsim.input/focus-new) (= (mod (-> ~'state :input :sfsim.input/focus-new) ~cnt) ~idx))
-       (Nuklear/nk_edit_focus (:sfsim.gui/context ~gui) Nuklear/NK_EDIT_ACTIVE)
+       (Nuklear/nk_edit_focus (::context ~gui) Nuklear/NK_EDIT_ACTIVE)
        (dissoc-in ~'state [:input :sfsim.input/focus-new]))
      (when (= Nuklear/NK_EDIT_ACTIVE ~edit)
        (assoc-in ~'state [:input :sfsim.input/focus] ~idx))))
@@ -954,20 +970,31 @@
   (Nuklear/nk_stroke_line canvas x0 y0 x1 y1 thickness color))
 
 
+(defn fill-polygon
+  "Draw filled polygon"
+  [canvas points color]
+  (Nuklear/nk_fill_polygon ^NkCommandBuffer canvas (float-array (flatten points)) ^NkColor color))
+
+
+(defn stroke-polygon
+  "Draw polygon"
+  [canvas points thickness color]
+  (Nuklear/nk_stroke_polygon ^NkCommandBuffer canvas (float-array (flatten points)) ^double thickness ^NkColor color))
+
+
 (defn draw-text
   "Draw left-aligned text on a canvas"
-  [gui canvas x y w h text color]
+  [canvas x y w h text font color]
   (with-rect rect x y w h
     (with-color bg 0 0 0
-      (let [font  (::font (::bitmap-font gui))]
-        (Nuklear/nk_draw_text ^NkCommandBuffer canvas rect ^String text ^NkUserFont font bg ^NkColor color)))))
+      (Nuklear/nk_draw_text ^NkCommandBuffer canvas rect ^String text ^NkUserFont (::font font) bg ^NkColor color))))
 
 
 (defn draw-text-right
   "Draw right-aligned text on a canvas"
-  [gui canvas x y w h text color]
-  (let [text-width (text-width gui text)]
-    (draw-text gui canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text color)))
+  [canvas x y w h text font color]
+  (let [text-width (text-width text font)]
+    (draw-text canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text font color)))
 
 
 (declare main-dialog)
@@ -1082,10 +1109,10 @@
   (let [mappings (invert-map (get-in state [:input :sfsim.input/mappings :sfsim.input/keyboard]))]
     (nuklear-window
       gui "Keyboard"
-      (quot (- window-width (scale gui 480)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 10) ^long widget-height ^long padding))) 2)
-      (scale gui 480) (scale gui (+ ^long title-height (* ^long text-height 10) ^long widget-height ^long padding)) :dialog
+      (quot (- window-width (scale gui 480)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 20) ^long widget-height ^long padding))) 2)
+      (scale gui 480) (scale gui (+ ^long title-height (* ^long text-height 20) ^long widget-height ^long padding)) :dialog
       (ignore-nil-> state state
-                    (layout-row-dynamic gui (scale gui (* ^long text-height 10)) 1)
+                    (layout-row-dynamic gui (scale gui (* ^long text-height 20)) 1)
                     (group gui "keyboard" "Keyboard"
                            (layout-row-dynamic gui (scale gui text-row-height) 1)
                            (text-label gui "Note that joystick overrides keyboard commands!")
@@ -1165,9 +1192,9 @@
 
 
 (def position-data
-  {:longitude (edit-data "0.0" 32 :sfsim.gui/filter-float)
-   :latitude  (edit-data "0.0" 32 :sfsim.gui/filter-float)
-   :height    (edit-data "0.0" 32 :sfsim.gui/filter-float)})
+  {:longitude (edit-data "0.0" 32 ::filter-float)
+   :latitude  (edit-data "0.0" 32 ::filter-float)
+   :height    (edit-data "0.0" 32 ::filter-float)})
 
 
 (defn location-dialog-get
@@ -1210,12 +1237,12 @@
 
 
 (def time-data
-  {:day    (edit-data    "1" 3 :sfsim.gui/filter-decimal)
-   :month  (edit-data    "1" 3 :sfsim.gui/filter-decimal)
-   :year   (edit-data "2000" 5 :sfsim.gui/filter-decimal)
-   :hour   (edit-data   "12" 3 :sfsim.gui/filter-decimal)
-   :minute (edit-data    "0" 3 :sfsim.gui/filter-decimal)
-   :second (edit-data    "0" 3 :sfsim.gui/filter-decimal)})
+  {:day    (edit-data    "1" 3 ::filter-decimal)
+   :month  (edit-data    "1" 3 ::filter-decimal)
+   :year   (edit-data "2000" 5 ::filter-decimal)
+   :hour   (edit-data   "12" 3 ::filter-decimal)
+   :minute (edit-data    "0" 3 ::filter-decimal)
+   :second (edit-data    "0" 3 ::filter-decimal)})
 
 
 (defn datetime-dialog-get
@@ -1399,7 +1426,8 @@
                              true-anomaly radius] :as orbital-params}]
   (widget gui canvas canvas-rect
           (let
-            [x0    (.x canvas-rect)
+            [font  (::bitmap-font gui)
+             x0    (.x canvas-rect)
              y0    (.y canvas-rect)
              w     (.w canvas-rect)
              h     (.h canvas-rect)
@@ -1442,50 +1470,237 @@
                     w1 (scale gui 40)
                     w2 (scale gui 55)
                     h (scale gui 20)]
-                (draw-text gui canvas x1 (+ y1 (* h 0)) w1 h "Earth" title)
-                (draw-text gui canvas x1 (+ y1 (* h 1)) w1 h "PeA" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 1)) w2 h (float-str periapsis-altitude) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 2)) w1 h "ApA" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 2)) w2 h (float-str apoapsis-altitude) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 3)) w1 h "Alt" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 3)) w2 h (float-str altitude) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 4)) w1 h "Ecc" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 4)) w2 h (format "%7.4f" eccentricity) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 5)) w1 h "T" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 5)) w2 h (float-str orbital-period) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 6)) w1 h "PeT" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 6)) w2 h (float-str (- time-since-periapsis)) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 7)) w1 h "ApT" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 7)) w2 h (float-str (- time-since-apoapsis)) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 8)) w1 h "Vel" fg)
-                (draw-text gui canvas x2 (+ y1 (* h 8)) w2 h (float-str velocity) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 9)) w1 h "Inc" fg)
-                (draw-text-right gui canvas x2 (+ y1 (* h 9)) w2 h (format "%6.2f°" (to-degrees inclination)) fg)
-                (draw-text gui canvas x1 (+ y1 (* h 10)) w1 h "LAN" fg)
-                (draw-text-right gui canvas x2 (+ y1 (* h 10)) w2 h (format "%6.2f°" (to-degrees longitude-ascending-node)) fg))))))
+                (draw-text canvas x1 (+ y1 (* h 0)) w1 h "Earth" font title)
+                (draw-text canvas x1 (+ y1 (* h 1)) w1 h "PeA" font fg)
+                (draw-text canvas x2 (+ y1 (* h 1)) w2 h (float-str periapsis-altitude) font fg)
+                (draw-text canvas x1 (+ y1 (* h 2)) w1 h "ApA" font fg)
+                (draw-text canvas x2 (+ y1 (* h 2)) w2 h (float-str apoapsis-altitude) font fg)
+                (draw-text canvas x1 (+ y1 (* h 3)) w1 h "Alt" font fg)
+                (draw-text canvas x2 (+ y1 (* h 3)) w2 h (float-str altitude) font fg)
+                (draw-text canvas x1 (+ y1 (* h 4)) w1 h "Ecc" font fg)
+                (draw-text canvas x2 (+ y1 (* h 4)) w2 h (format "%7.4f" eccentricity) font fg)
+                (draw-text canvas x1 (+ y1 (* h 5)) w1 h "T" font fg)
+                (draw-text canvas x2 (+ y1 (* h 5)) w2 h (float-str orbital-period) font fg)
+                (draw-text canvas x1 (+ y1 (* h 6)) w1 h "PeT" font fg)
+                (draw-text canvas x2 (+ y1 (* h 6)) w2 h (float-str (- ^double time-since-periapsis)) font fg)
+                (draw-text canvas x1 (+ y1 (* h 7)) w1 h "ApT" font fg)
+                (draw-text canvas x2 (+ y1 (* h 7)) w2 h (float-str (- ^double time-since-apoapsis)) font fg)
+                (draw-text canvas x1 (+ y1 (* h 8)) w1 h "Vel" font fg)
+                (draw-text canvas x2 (+ y1 (* h 8)) w2 h (float-str velocity) font fg)
+                (draw-text canvas x1 (+ y1 (* h 9)) w1 h "Inc" font fg)
+                (draw-text-right canvas x2 (+ y1 (* h 9)) w2 h (format "%6.2f°" (to-degrees inclination)) font fg)
+                (draw-text canvas x1 (+ y1 (* h 10)) w1 h "LAN" font fg)
+                (draw-text-right canvas x2 (+ y1 (* h 10)) w2 h (format "%6.2f°" (to-degrees longitude-ascending-node)) font fg))))))
 
+(set! *unchecked-math* false)
+
+(defn navball-orbit
+  []
+  (let [w 512 h 1024]
+    (with-invisible-window
+      (let [tex (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGB8 w h)]
+        (framebuffer-render w h :sfsim.render/noculling nil [tex]
+                            (let [gui   (make-nuklear-gui-with-font 1.0)
+                                  yaw   [30 45 60 75 105 120 135 150]
+                                  fonts (zipmap yaw (map (fn [x] (make-font (::bitmap-font gui) 1.0 (/ 1.0 (sin (to-radians x))))) yaw))]
+                              (nuklear-dark-style gui)
+                              (without-window-padding gui
+                                (nuklear-window
+                                  gui "navball rendering" 0 0 w h :widget
+                                  (layout-row-dynamic gui (double w) 1)
+                                  (widget
+                                    gui canvas canvas-rect
+                                    (with-colors
+                                      [white 255 255 255
+                                       black   0   0   0
+                                       red   255   0   0
+                                       green   0 255   0
+                                       blue    0   0 255]
+                                      (with-rect rect 0 0 w w (fill-rect canvas rect 0.0 white))
+                                      (with-rect rect 0 w w w (fill-rect canvas rect 0.0 black))
+                                      (with-rect rect 0 0 (/ w 12) h (fill-rect canvas rect 0.0 red))
+                                      (with-rect rect (ceil (/ (* w 11) 12)) 0 (/ w 12) h (fill-rect canvas rect 0.0 red))
+                                      (stroke-line canvas (/ (* w 5) 180) 0 (/ (* w 5) 180) h 1.0 black)
+                                      (stroke-line canvas (/ (* w 175) 180) 0 (/ (* w 175) 180) h 1.0 black)
+                                      (doseq [yaw [15 30 60 120 150 165]]
+                                             (stroke-line canvas (/ (* w yaw) 180) 0 (/ (* w yaw) 180) w 2.0 black)
+                                             (stroke-line canvas (/ (* w yaw) 180) w (/ (* w yaw) 180) h 2.0 white))
+                                      (let [yaw      (vec (range 5 180 5))
+                                            pitch    (vec (range 0 390 30))
+                                            x-coords (mapv #(/ (* % 512) 180) yaw)
+                                            y-coords (mapv #(/ (* % 1024) 360) pitch)
+                                            dy       (mapv #(/ 1 (sin (to-radians %))) yaw)]
+                                        (doseq [j (range (count y-coords))]
+                                               (doseq [i (range (dec (count x-coords)))]
+                                                      (let [x1 (x-coords i)
+                                                            x2 (x-coords (inc i))
+                                                            yc (y-coords j)
+                                                            dy1 (dy i)
+                                                            dy2 (dy (inc i))
+                                                            color (if (or (<= (pitch j) 180) (>= (pitch j) 360)
+                                                                          (<= (yaw (inc i)) 15) (>= (yaw i) 165)) black white)]
+                                                        (fill-polygon canvas [[x1 (- yc dy1)] [x2 (- yc dy2)] [x2 (+ yc dy2)] [x1 (+ yc dy1)]] color)))))
+                                      (doseq [[i x] (map-indexed vector (range -5 5 2))]
+                                             (with-rect rect (+ (/ w 2) x) 0 2 h (fill-rect canvas rect 0.0 (if (even? i) black white))))
+                                      (doseq [yaw   [45 75 105 135]
+                                              pitch (range 0 365 5)]
+                                             (let [x     (/ (* yaw w) 180)
+                                                   y     (/ (* pitch h) 360)
+                                                   color (if (> pitch 180) white black)]
+                                               (stroke-line canvas (- x 3) y (+ x 3) y (/ 2.0 (sin (to-radians yaw))) color)))
+                                      (doseq [yaw   (remove #{15 90 165} (range 10 175 5))
+                                              pitch (range 15 375 30)]
+                                             (let [x     (/ (* yaw w) 180)
+                                                   y     (/ (* pitch h) 360)
+                                                   color (if (or (<= pitch 180) (<= yaw 15) (>= yaw 165)) black white)
+                                                   dy    (/ 3.0 (sin (to-radians yaw)))]
+                                               (stroke-line canvas x (- y dy) x (+ y dy) 2.0 color)))
+                                      (doseq [pitch (remove #(zero? (mod % 30)) (range 10 360 10))]
+                                             (let [x1 (/ (* 15 w) 180)
+                                                   x2 (/ (* 165 w) 180)
+                                                   y  (/ (* pitch h) 360)
+                                                   color (if (<= pitch 180) black white)]
+                                               (with-rect rect x1 (- y 3) 7 7 (fill-rect canvas rect 0.0 color))
+                                               (with-rect rect (- x2 6) (- y 3) 7 7 (fill-rect canvas rect 0.0 color))))
+                                      (doseq [yaw [45 75 105 135]
+                                              pitch (range 0 390 30)]
+                                             (let [x    (/ (* yaw w) 180)
+                                                   y    (+ (/ (* pitch h) 360) (if (#{75 105} yaw)
+                                                                                 (case (long pitch) 0 -9 180 9 360 -9 0) 0))
+                                                   fg   (if (or (<= pitch 180) (>= pitch 360)) black white)
+                                                   bg   (if (or (<= pitch 180) (>= pitch 360)) white black)
+                                                   text (str (/ (mod (+ pitch 180) 360) 10))
+                                                   tw   (text-width text (fonts yaw))
+                                                   th   (* 18 (::scale-y (fonts yaw)))
+                                                   pad  4]
+                                               (with-rect rect (- x (/ tw 2) pad) (- y (/ th 2)) (+ tw (* 2 pad)) th (fill-rect canvas rect 3.0 bg))
+                                               (draw-text canvas (- x (/ tw 2)) (- y (/ th 2)) tw th text (fonts yaw) fg)))
+                                      (doseq [yaw  [30 60 120 150]
+                                              pitch (range 15 375 30)]
+                                             (let [x    (/ (* yaw w) 180)
+                                                   y    (/ (* pitch h) 360)
+                                                   fg   (if (<= pitch 180) black white)
+                                                   bg   (if (<= pitch 180) white black)
+                                                   text (str (/ (- yaw 90) 10))
+                                                   tw   (text-width text (fonts yaw))
+                                                   th   (* 18 (::scale-y (fonts yaw)))
+                                                   pad  4]
+                                               (when (or (zero? (mod (+ pitch 15) 60)) (#{60 120} yaw))
+                                                 (with-rect rect (- x (/ tw 2) pad) (- y (/ th 2)) (+ tw (* 2 pad)) th
+                                                   (fill-rect canvas rect 3.0 bg))
+                                                 (draw-text canvas (- x (/ tw 2)) (- y (/ th 2)) tw th text (fonts yaw) fg))))
+                                      (doseq [pitch (range 0 361 1)]
+                                             (let [x     (/ w 2)
+                                                   y     (/ (* pitch h) 360)
+                                                   color (if (<= pitch 180) black white)
+                                                   five  (zero? (mod pitch 5))]
+                                               (stroke-line canvas (- x (if five 15 10)) y (- x 3) y (if five 1.0 0.3) color)
+                                               (stroke-line canvas (+ x (if five 15 10)) y (+ x 3) y (if five 1.0 0.3) color)))))))
+                              (render-nuklear-gui gui w h)
+                              (destroy-nuklear-gui-with-font gui)))
+        (let [img (texture->image tex)]
+          (destroy-texture tex)
+          img)))))
+
+
+(defn make-navball
+  "Initialise navball textures and program"
+  [gui]
+  (let [image           (slurp-image "data/texture/navball-orbit.png" true)
+        texture         (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat image)
+        framebuffer     (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F
+                                               (long (scale gui 252)) (long (scale gui 252)))
+        vertex-source   (slurp "resources/shaders/gui/vertex-navball.glsl")
+        fragment-source (slurp "resources/shaders/gui/fragment-navball.glsl")
+        program         (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
+        indices         [0 1 2 3]
+        vertices        [1.0 1.0 0.5, -1.0 1.0 0.5, -1.0 -1.0 0.5, 1.0 -1.0 0.5]
+        vao             (make-vertex-array-object program indices vertices ["point" 3])
+        image           (NkImage/create)
+        handle          (NkHandle/create)]
+    (generate-mipmap texture)
+    (.id handle (:sfsim.texture/texture framebuffer))
+    (.handle image handle)
+    (assoc gui
+           ::navball-texture texture
+           ::navball-framebuffer framebuffer
+           ::navball-program program
+           ::navball-vao vao
+           ::navball-image image)))
+
+
+(defn destroy-navball
+  "Destroy navball textures and program"
+  [gui]
+  (destroy-vertex-array-object (::navball-vao gui))
+  (destroy-program (::navball-program gui))
+  (destroy-texture (::navball-framebuffer gui))
+  (destroy-texture (::navball-texture gui)))
+
+
+(defn navball-prepare
+  "Render navball to framebuffer"
+  [gui orientation]
+  (let [navball  (::navball-texture gui)
+        tex      (::navball-framebuffer gui)
+        program  (::navball-program gui)
+        vao      (::navball-vao gui)]
+    (framebuffer-render (scale gui 252) (scale gui 252) :sfsim.render/cullback nil [tex]
+                        (use-program program)
+                        (uniform-sampler program "navball" 0)
+                        (uniform-vector2 program "resolution" (vec2 (scale gui 252) (scale gui 252)))
+                        (uniform-matrix3 program "orientation" (quaternion->matrix orientation))
+                        (use-textures {0 navball})
+                        (clear (vec3 0.0 1.0 0.0))
+                        (render-quads vao))))
+
+
+(defn navball-mfd
+  "Display navball widget"
+  [gui]
+  (widget gui canvas canvas-rect
+          (let
+            [img (::navball-image gui)
+             x0  (.x canvas-rect)
+             y0  (.y canvas-rect)
+             w   (.w canvas-rect)
+             h   (.h canvas-rect)]
+            (with-colors
+              [bg       0   0   0
+               border  82 185 142
+               white  255 255 255]
+              (fill-rect canvas canvas-rect 0.0 bg)
+              (with-rect rect (+ x0 (scale gui 1)) (+ y0 (scale gui 1)) (- w (scale gui 2)) (- h (scale gui 2))
+                (stroke-rect canvas rect 0.0 (scale gui 3.0) border))
+              (with-rect rect (+ x0 (scale gui 2)) (+ y0 (scale gui 2)) (- w (scale gui 4)) (- h (scale gui 4))
+                (Nuklear/nk_draw_image canvas rect img white))))))
+
+
+(set! *unchecked-math* :warn-on-boxed)
 
 (defn information-display
-  [gui ^long h state frametime]
-  (let [earth-radius    (:sfsim.planet/radius config/planet-config)
-        object-position (physics/get-position :sfsim.physics/surface (:physics state))
-        eccentricity    (physics/eccentricity config/planet-config (:physics state))
-        controls        (-> state :input :sfsim.input/controls)
-        text1           (format "vs = %.1f m/s, v = %.1f m/s, %s%s%s%s, fps = %5.1f"
-                                (:sfsim.physics/display-vertical-speed (:physics state))
-                                (:sfsim.physics/display-speed (:physics state))
-                                (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
-                                (if (:sfsim.input/brake controls) ", brake"
-                                  (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
-                                (if (:sfsim.input/air-brake controls) ", air brake" "")
-                                (if (-> state :input :sfsim.input/pause) ", pause" "")
-                                (/ 1.0 ^double frametime))]
+  [gui w h state frametime]
+  (let [controls (-> state :input :sfsim.input/controls)
+        text1    (format "vs = %.1f m/s, v = %.1f m/s, %s%s%s%s, fps = %5.1f"
+                         (:sfsim.physics/display-vertical-speed (:physics state))
+                         (:sfsim.physics/display-speed (:physics state))
+                         (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
+                         (if (:sfsim.input/brake controls) ", brake"
+                           (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
+                         (if (:sfsim.input/air-brake controls) ", air brake" "")
+                         (if (-> state :input :sfsim.input/pause) ", pause" "")
+                         (/ 1.0 ^double frametime))]
     (without-window-padding gui
-      (nuklear-window gui "Orbit" (scale gui 10) (- h (scale gui (+ 10 256)))
+      (nuklear-window gui "Orbit" (scale gui 10) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
-                      (orbit-mfd gui (physics/orbital-parameters config/planet-config (:physics state)))))
-    (nuklear-window gui "Information" (scale gui (+ 20 256)) (- h (scale gui (+ 10 (* ^long text-height 1))))
+                      (orbit-mfd gui (physics/orbital-parameters config/planet-config (:physics state))))
+      (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
+                      (scale gui 256) (scale gui 256) :widget
+                      (layout-row-dynamic gui (scale gui 256) 1)
+                      (navball-prepare gui (physics/orbit-orientation (:physics state)))
+                      (navball-mfd gui)))
+    (nuklear-window gui "Information" (scale gui (+ 20 256)) (- ^long h (scale gui (+ 10 (* ^long text-height 1))))
                     (scale gui 640) (scale gui (* ^long text-height 1)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)
                     (text-label gui text1))))

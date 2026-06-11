@@ -10,11 +10,13 @@
               [clojure.java.io :as io]
               [clojure.java.shell :refer (sh)]
               [sfsim.worley :as w]
+              [sfsim.gui :as gui]
               [sfsim.perlin :as p]
               [sfsim.scale-image :as si]
               [sfsim.scale-elevation :as se]
               [sfsim.bluenoise :as bn]
               [sfsim.texture :as t]
+              [sfsim.image :as img]
               [sfsim.render :as rn]
               [sfsim.clouds :as cl]
               [sfsim.atmosphere-lut :as al]
@@ -400,6 +402,13 @@
       (io/input-stream url)
       (io/file (str "data/astro/" filename)))))
 
+(defn navball-orbit
+  [& _]
+  (GLFW/glfwInit)
+  (img/spit-png "tmp/navball-orbit.png" (gui/navball-orbit) true)
+  (sh "convert" "tmp/navball-orbit.png" "-rotate" "270" "data/texture/navball-orbit.png")
+  (GLFW/glfwTerminate))
+
 (defn quit
   "Fast quit"
   [& _]
@@ -426,4 +435,5 @@
   (elevation-sectors)
   (cube-maps)
   (atmosphere-lut)
+  (navball-orbit)
   (quit))

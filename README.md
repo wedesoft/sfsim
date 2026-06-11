@@ -91,6 +91,7 @@ cd ..
   * Atmospheric lookup tables (this takes hours to compute)
     * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
     * Perform all build steps above: `clj -T:build all`
+  * Make navball texture: `clj -T:build navball-orbit`
 * Enable integration tests (requiring results of above build steps): `touch .integration`
 
 ## Further Build Steps under Windows
@@ -204,6 +205,7 @@ The Blender model can be converted to GLB as follows:
   * [Java native interface example](https://www.baeldung.com/jni)
   * [Earth explorer data](https://earthexplorer.usgs.gov/)
   * [Simple Physics-based Flight Simulation with C++](https://www.jakobmaier.at/posts/flight-simulation/)
+  * [Spacecraft Guide](https://spacecraftguide.com/)
   * [Wedesoft blog](https://www.wedesoft.de/)
 * Videos
   * [Coding Adventure: Atmosphere](https://www.youtube.com/watch?v=DxfEbulyFcY)

@@ -6,7 +6,8 @@
 
 (ns sfsim.t-gui
   (:require
-    [clojure.math :refer (PI to-radians cos sin)]
+    [clojure.java.io :as io]
+    [clojure.math :refer (PI to-radians cos sin floor ceil)]
     [clojure.java.shell :as shell]
     [fastmath.matrix :refer (eye)]
     [fastmath.vector :refer (vec3 vec4)]
@@ -16,6 +17,8 @@
     [sfsim.conftest :refer (is-image roughly-vector)]
     [sfsim.gui :refer :all]
     [sfsim.image :refer :all]
+    [sfsim.matrix :refer (quaternion->matrix)]
+    [sfsim.quaternion :as q]
     [sfsim.render :refer :all]
     [sfsim.texture :refer :all]
     [sfsim.util :refer :all])
@@ -27,12 +30,7 @@
     (org.lwjgl.opengl
       GL11
       GL12)
-    (org.lwjgl.system
-      MemoryStack)
     (org.lwjgl.nuklear
-      NkColor
-      NkRect
-      NkVec2
       Nuklear)))
 
 
@@ -55,6 +53,25 @@
   [width height & body]
   `(with-invisible-window
      (gui-framebuffer-render ~width ~height ~@body)))
+
+
+(defmacro gui-control-test
+  [gui width height scale & body]
+  `(gui-offscreen-render ~width ~height
+                         (let [~gui (make-nuklear-gui-with-font ~scale)]
+                           (nuklear-dark-style ~gui)
+                           (nuklear-window ~gui "control test window" 0 0 ~width ~height :widget
+                                           ~@body)
+                           (render-nuklear-gui ~gui ~width ~height)
+                           (destroy-nuklear-gui-with-font ~gui))))
+
+
+(defmacro widget-test
+  [gui canvas rect w h & body]
+  `(gui-control-test
+     ~gui ~w ~h 1.0
+     (layout-row-dynamic ~gui (- ~h 8.0) 1)
+     (widget ~gui ~canvas ~rect ~@body)))
 
 
 (tabular "Instantiate GUI program"
@@ -152,17 +169,6 @@
         (:sfsim.gui/image bitmap-font)) => (is-image "test/clj/sfsim/fixtures/gui/font.png" 14.0 false))
 
 
-(defmacro gui-control-test
-  [gui width height scale & body]
-  `(gui-offscreen-render ~width ~height
-                         (let [~gui (make-nuklear-gui-with-font ~scale)]
-                           (nuklear-dark-style ~gui)
-                           (nuklear-window ~gui "control test window" 0 0 ~width ~height :widget
-                                           ~@body)
-                           (render-nuklear-gui ~gui ~width ~height)
-                           (destroy-nuklear-gui-with-font ~gui))))
-
-
 (facts "Render a slider"
        (gui-control-test gui 160 40 1.0 (layout-row-dynamic gui 32.0 1) (slider-int gui 0 50 100 1))
        => (is-image "test/clj/sfsim/fixtures/gui/slider.png" 0.1))
@@ -180,9 +186,10 @@
 
 (facts "Test rendering with two GUI contexts"
        (with-invisible-window
-         (let [bitmap-font         (setup-font-texture (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18))
-               gui1                (make-nuklear-gui (:sfsim.gui/font bitmap-font) 1.0)
-               gui2                (make-nuklear-gui (:sfsim.gui/font bitmap-font) 1.0)]
+         (let [bitmap-font         (make-bitmap-font "resources/fonts/b612.ttf" 512 512 18)
+               font                (make-font bitmap-font 1.0 1.0)
+               gui1                (make-nuklear-gui (:sfsim.gui/font font) 1.0)
+               gui2                (make-nuklear-gui (:sfsim.gui/font font) 1.0)]
            (gui-framebuffer-render 320 40
                                    (nuklear-window gui1 "window-1" 0 0 160 40 :widget
                                                    (layout-row-dynamic gui1 32.0 1)
@@ -194,7 +201,7 @@
                                    (render-nuklear-gui gui2 320 40)) => (is-image "test/clj/sfsim/fixtures/gui/guis.png" 0.10)
            (destroy-nuklear-gui gui2)
            (destroy-nuklear-gui gui1)
-           (destroy-font-texture bitmap-font))))
+           (destroy-bitmap-font bitmap-font))))
 
 
 (fact "Render a text label"
@@ -258,7 +265,7 @@
       (gui-offscreen-render
         256 256
         (let [gui (make-nuklear-gui-with-font 1.0)]
-          (text-width gui "Test") => (roughly 29.630 1e-3)
+          (text-width "Test" (:sfsim.gui/bitmap-font gui)) => (roughly 29.630 1e-3)
           (destroy-nuklear-gui-with-font gui))))
 
 
@@ -272,14 +279,6 @@
 (fact "Define colours"
       (with-colors [] 42) => 42
       (with-colors [fg 63 127 255] [(.r fg) (.g fg) (.b fg)]) => [63 127 -1])
-
-
-(defmacro widget-test
-  [gui canvas rect w h & body]
-  `(gui-control-test
-     ~gui ~w ~h 1.0
-     (layout-row-dynamic ~gui (- ~h 8.0) 1)
-     (widget ~gui ~canvas ~rect ~@body)))
 
 
 (fact "Test filled rect"
@@ -326,7 +325,7 @@
       (widget-test
         gui canvas rect 160 24
         (with-color red 255 0 0
-          (draw-text gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" red)))
+          (draw-text canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" (:sfsim.gui/bitmap-font gui) red)))
       => (is-image "test/clj/sfsim/fixtures/gui/text.png" 0.10))
 
 
@@ -334,8 +333,27 @@
       (widget-test
         gui canvas rect 160 24
         (with-color red 255 0 0
-          (draw-text-right gui canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" red)))
+          (draw-text-right canvas (.x rect) (.y rect) (.w rect) (.h rect) "Some red text" (:sfsim.gui/bitmap-font gui) red)))
       => (is-image "test/clj/sfsim/fixtures/gui/text-right.png" 0.10))
+
+
+(fact "Test drawing with larger font"
+      (gui-offscreen-render
+        320 48
+        (let [gui         (make-nuklear-gui-with-font 1.0)
+              bitmap-font (make-bitmap-font "resources/fonts/b612.ttf" 1024 1024 36)
+              font        (make-font bitmap-font 1.0 1.0)]
+          (nuklear-dark-style gui)
+          (nuklear-window gui "control test window" 0 0 320 48 :widget
+                          (layout-row-dynamic gui 40.0 1)
+                          (widget gui canvas rect
+                                  (with-colors [bg 0 0 0
+                                                red 255 0 0]
+                                    (Nuklear/nk_draw_text canvas rect "Some red text"  (:sfsim.gui/font font) bg red))))
+                          (render-nuklear-gui gui 320 48)
+                          (destroy-bitmap-font bitmap-font)
+                          (destroy-nuklear-gui-with-font gui)))
+      => (is-image "test/clj/sfsim/fixtures/gui/text-large.png" 0.10))
 
 
 (def orbital-params #:sfsim.physics{:periapsis-altitude 280000.0
@@ -367,6 +385,29 @@
                  (render-nuklear-gui gui (quot 264 s) (quot 264 s))
                  (destroy-nuklear-gui-with-font gui)))
              => (is-image (format "test/clj/sfsim/fixtures/gui/orbit-%d.png" s) 0.10)))
+
+
+(when (.exists (io/file ".integration"))
+  (tabular "Render orbit navball"
+           (fact
+             (with-invisible-window
+               (quot 264 ?scale) (quot 264 ?scale)
+               (let [gui (make-navball (make-nuklear-gui-with-font 1.0))]
+                 (navball-prepare gui ?orientation)
+                 (nuklear-dark-style gui)
+                 (nuklear-window gui "control test window" 0 0 (quot 264 ?scale) (quot 264 ?scale) :widget
+                                 (layout-row-dynamic gui (/ 256.0 ?scale) 1)
+                                 (navball-mfd gui))
+                 (gui-framebuffer-render
+                   (quot 264 ?scale) (quot 264 ?scale)
+                   (render-nuklear-gui gui (quot 264 ?scale) (quot 264 ?scale))
+                   (destroy-navball gui)
+                   (destroy-nuklear-gui-with-font gui))))
+             => (is-image (str "test/clj/sfsim/fixtures/integration/" ?image) 0.1))
+           ?orientation                                ?scale ?image
+           (q/->Quaternion 1 0 0 0)                    1      "orbit-navball-neutral.png"
+           (q/rotation (to-radians 45.0) (vec3 0 1 0)) 1      "orbit-navball-roll.png"
+           (q/->Quaternion 1 0 0 0)                    2      "orbit-navball-small.png"))
 
 
 (GLFW/glfwTerminate)
