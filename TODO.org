@@ -1,6 +1,9 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] mvp game loop
+
+  hello VERY COOL game you got here, heres some ideas you could add a runway then maybe make the game a bit less laggy then make a re entry where the rockets burns up in earth atmosphere and make the water acually water because whne i land on water its just a solid not a liquid
+
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
   - [X] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
@@ -16,10 +19,13 @@
     - [X] LAN
     - [X] true anomaly
     - [X] argument of perihel
-  - [ ] navball
-    - [ ] generate sphere texture [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
+  - [-] navball
+    - [X] generate sphere texture [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
     - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw)
     - [ ] green triangle rate indicators (top: roll, right: pitch, bottom: yaw)
+  - [ ] move flight control display to bottom middle (moveable windows?)
+  - [ ] tutorial explaining ApA, ...
+  - [ ] modes for Orbit MFD (hide/show orbit, text)
   - [ ] launch mfd, reinforcement learning launch physics
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed
@@ -54,7 +60,7 @@
   - [ ] artificial horizon (speed, altitude, radar alt, sink rate)
   - [ ] ils
   - [ ] save/load game
-  - [ ] reentry flame
+  - [ ] reentry flame, burning up
   - [ ] thrust vectoring
   - [ ] docs
   - [ ] auto rudder
@@ -412,7 +418,8 @@
   - [ ] keyboard shortcut customisation
   - [ ] crashes
     - [ ] crashes on ground
-    - [ ] crashes in water
+    - [ ] water waves
+    - [ ] splash or crashes in water
     - [ ] burning up
     - [ ] wing stress
   - [ ] free camera (move around camera freely)
