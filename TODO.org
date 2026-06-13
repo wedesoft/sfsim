@@ -1,9 +1,6 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] mvp game loop
-
-  hello VERY COOL game you got here, heres some ideas you could add a runway then maybe make the game a bit less laggy then make a re entry where the rockets burns up in earth atmosphere and make the water acually water because whne i land on water its just a solid not a liquid
-
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
   - [X] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
