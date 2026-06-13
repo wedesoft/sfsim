@@ -1678,32 +1678,80 @@
 
 (set! *unchecked-math* :warn-on-boxed)
 
-(defn roll-rate
-  "Display roll rate scale"
-  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
-  [gui canvas canvas-rect minimum maximum step current]
-  (let
-    [font (::bitmap-font gui)
-     x0   (.x ^NkRect canvas-rect)
-     y0   (.y ^NkRect canvas-rect)
-     w    (.w ^NkRect canvas-rect)
-     h    (.h ^NkRect canvas-rect)
-     xs   (+ x0 (/ w 10.0))
-     ws   (/ (* w 8) 10.0)]
+
+(defn- rate->x
+  [xs ws minimum maximum rate]
+  (+ ^double xs (/ (* (- ^double rate ^long minimum) ^double ws)
+                   (- ^long maximum ^long minimum))))
+
+
+(defn- indicator-points
+  [orientation x y0 h midy]
+  (case orientation
+    :top-indicator
+    [[(- ^double x (/ ^double h 4.0)) y0]
+     [(+ ^double x (/ ^double h 4.0)) y0]
+     [x midy]]
+
+    :bottom-indicator
+    [[(- ^double x (/ ^double h 4.0)) (+ ^double y0 ^double h)]
+     [(+ ^double x (/ ^double h 4.0)) (+ ^double y0 ^double h)]
+     [x midy]]))
+
+
+(defn- tick-line
+  [orientation x y0 h midy major-tick?]
+  (case orientation
+    :top-indicator    [x midy x (+ ^double y0 (double (if major-tick? h (* ^double h 0.75))))]
+    :bottom-indicator [x midy x (+ ^double y0 (double (if major-tick? 0.0 (* ^double h 0.25))))]))
+
+
+(defn rate-scale
+  "Display rate scale."
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double keyword?] :any]}
+  [gui canvas canvas-rect minimum maximum step current orientation]
+  (let [font            (::bitmap-font gui)
+        x0              (.x ^NkRect canvas-rect)
+        y0              (.y ^NkRect canvas-rect)
+        w               (.w ^NkRect canvas-rect)
+        h               (.h ^NkRect canvas-rect)
+        xs              (+ x0 (/ w 10.0))
+        ws              (/ (* w 8) 10.0)
+        midy            (+ y0 (/ h 2.0))
+        clamped-current (min ^double (max ^double current (double minimum)) (double maximum))
+        current-x       (rate->x xs ws minimum maximum clamped-current)]
     (with-colors
       [bg       0   0   0
        green    0 255   0
        bright 202 213 197]
       (draw-text canvas x0 y0 (/ w 10) h (str (abs ^long minimum)) font bright)
       (draw-text-right canvas (+ x0 (/ (* w 9) 10)) y0 (/ w 10) h (str (abs ^long maximum)) font bright)
-      (stroke-line canvas xs (+ y0 (/ h 2)) (+ xs ws) (+ y0 (/ h 2)) (scale gui 2.0) bright)
+
+      (stroke-line canvas xs midy (+ xs ws) midy (scale gui 2.0) bright)
+
       (doseq [rate (range minimum (+ ^long maximum ^long step) step)]
-             (let [x    (+ xs (/ (* (- ^long rate ^long minimum) ws) (- ^long maximum ^long minimum)))
-                   tick (#{minimum 0 maximum} rate)]
-               (stroke-line canvas x (+ y0 (/ h 2.0)) x (+ y0 (double (if tick h (/ (* h 3) 4)))) (scale gui 2.0) bright)))
-      (let [x (+ xs (/ (* (- (min (max ^double current minimum) maximum) ^long minimum) ws) (- ^long maximum ^long minimum)))]
-        (fill-polygon canvas [[(- x (/ h 4.0)) y0] [(+ x (/ h 4.0)) y0] [x (+ y0 (/ h 2.0))]]
-                      green)))))
+        (let [x           (rate->x xs ws minimum maximum rate)
+              major-tick? (#{minimum 0 maximum} rate)
+              [x1 y1 x2 y2] (tick-line orientation x y0 h midy major-tick?)]
+          (stroke-line canvas x1 y1 x2 y2 (scale gui 2.0) bright)))
+
+      (fill-polygon canvas
+                    (indicator-points orientation current-x y0 h midy)
+                    green))))
+
+
+(defn roll-rate
+  "Display roll rate scale"
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
+  [gui canvas canvas-rect minimum maximum step current]
+  (rate-scale gui canvas canvas-rect minimum maximum step current :top-indicator))
+
+
+(defn yaw-rate
+  "Display yaw rate scale"
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
+  [gui canvas canvas-rect minimum maximum step current]
+  (rate-scale gui canvas canvas-rect minimum maximum step current :bottom-indicator))
 
 
 (defn information-display

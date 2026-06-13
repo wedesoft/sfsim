@@ -422,4 +422,16 @@
           8.0   "roll-max.png")
 
 
+(tabular "Display yaw rate scale"
+         (fact
+           (widget-test gui canvas rect 160 24 (yaw-rate gui canvas rect -5 5 1 ?rate))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?rate ?result
+          0.0   "yaw-zero.png"
+         -5.0   "yaw-min.png"
+         -8.0   "yaw-min.png"
+          5.0   "yaw-max.png"
+          8.0   "yaw-max.png")
+
+
 (GLFW/glfwTerminate)
