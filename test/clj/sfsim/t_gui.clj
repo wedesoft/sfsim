@@ -410,4 +410,16 @@
            (q/->Quaternion 1 0 0 0)                    2      "orbit-navball-small.png"))
 
 
+(tabular "Display roll rate scale"
+         (fact
+           (widget-test gui canvas rect 160 24 (roll-rate gui canvas rect -5 5 1 ?rate))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?rate ?result
+          0.0   "roll-zero.png"
+         -5.0   "roll-min.png"
+         -8.0   "roll-min.png"
+          5.0   "roll-max.png"
+          8.0   "roll-max.png")
+
+
 (GLFW/glfwTerminate)

@@ -1678,6 +1678,34 @@
 
 (set! *unchecked-math* :warn-on-boxed)
 
+(defn roll-rate
+  "Display roll rate scale"
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
+  [gui canvas canvas-rect minimum maximum step current]
+  (let
+    [font (::bitmap-font gui)
+     x0   (.x ^NkRect canvas-rect)
+     y0   (.y ^NkRect canvas-rect)
+     w    (.w ^NkRect canvas-rect)
+     h    (.h ^NkRect canvas-rect)
+     xs   (+ x0 (/ w 10.0))
+     ws   (/ (* w 8) 10.0)]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0
+       bright 202 213 197]
+      (draw-text canvas x0 y0 (/ w 10) h (str (abs ^long minimum)) font bright)
+      (draw-text-right canvas (+ x0 (/ (* w 9) 10)) y0 (/ w 10) h (str (abs ^long maximum)) font bright)
+      (stroke-line canvas xs (+ y0 (/ h 2)) (+ xs ws) (+ y0 (/ h 2)) (scale gui 2.0) bright)
+      (doseq [rate (range minimum (+ ^long maximum ^long step) step)]
+             (let [x    (+ xs (/ (* (- ^long rate ^long minimum) ws) (- ^long maximum ^long minimum)))
+                   tick (#{minimum 0 maximum} rate)]
+               (stroke-line canvas x (+ y0 (/ h 2.0)) x (+ y0 (double (if tick h (/ (* h 3) 4)))) (scale gui 2.0) bright)))
+      (let [x (+ xs (/ (* (- (min (max ^double current minimum) maximum) ^long minimum) ws) (- ^long maximum ^long minimum)))]
+        (fill-polygon canvas [[(- x (/ h 4.0)) y0] [(+ x (/ h 4.0)) y0] [x (+ y0 (/ h 2.0))]]
+                      green)))))
+
+
 (defn information-display
   [gui w h state frametime]
   (let [controls (-> state :input :sfsim.input/controls)

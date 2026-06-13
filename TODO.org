@@ -3,23 +3,10 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [X] orbit mfd, mark perihel and aphel, show spacecraft and radius vector, dashed atmosphere circle
-    - [X] PeA
-    - [X] ApA
-    - [X] Alt
-    - [X] Ecc
-    - [X] T
-    - [X] PeT
-    - [X] ApT
-    - [X] Vel
-    - [X] Inc
-    - [X] LAN
-    - [X] true anomaly
-    - [X] argument of perihel
   - [-] navball
     - [X] generate sphere texture [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
-    - [ ] green triangle rate indicators (top: roll, right: pitch, bottom: yaw)
-    - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw)
+    - [ ] green triangle rate indicators (top: roll, right: pitch, bottom: yaw) [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
+    - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw) [[https://gemini.google.com/share/dddf04ae5ff2]]
   - [ ] launch mfd, reinforcement learning launch physics
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed
@@ -54,6 +41,7 @@
   - [ ] yaw pitch roll rates
   - [ ] attitude autopilot with roll reversal, angle-of-attack hold
   - [ ] f-35 style hud for now (3d cockpit later)
+    - [[https://my.storageshare.cloud/s/5XozrsEY8xHLN3t][A400M cockpit]]
   - [ ] artificial horizon (speed, altitude, radar alt, sink rate)
   - [ ] ils
   - [ ] save/load game
@@ -63,6 +51,11 @@
   - [ ] auto rudder
   - [ ] controller button to get to menu and trackpad to select menu items?
   - [ ] simulate crash
+  - [ ] steam achievements
+    - [[https://gemini.google.com/share/b5bbad86f07c]]
+    - [[https://partner.steamgames.com/doc/features/achievements]]
+    - [[https://code-disaster.github.io/steamworks4j/build-instructions.html]]
+    - [[https://partner.steamgames.com/doc/sdk/api#thirdparty]]
   - [ ] Gabe Newell on realism: https://www.youtube.com/watch?v=MGpFEv1-mAo
 * TODO [#A] spacecraft simulation                                      :physics:
   - Note taken on [2026-05-07 Do 23:45] \\
