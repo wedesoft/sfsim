@@ -1,4 +1,4 @@
-#+TITLE: TODO
+ki#+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
@@ -18,8 +18,8 @@
     - [X] argument of perihel
   - [-] navball
     - [X] generate sphere texture [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
-    - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw)
     - [ ] green triangle rate indicators (top: roll, right: pitch, bottom: yaw)
+    - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw)
   - [ ] move flight control display to bottom middle (moveable windows?)
   - [ ] tutorial explaining ApA, ...
   - [ ] modes for Orbit MFD (hide/show orbit, text)
