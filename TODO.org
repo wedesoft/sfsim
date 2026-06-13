@@ -20,9 +20,6 @@
     - [X] generate sphere texture [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
     - [ ] green triangle rate indicators (top: roll, right: pitch, bottom: yaw)
     - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw)
-  - [ ] move flight control display to bottom middle (moveable windows?)
-  - [ ] tutorial explaining ApA, ...
-  - [ ] modes for Orbit MFD (hide/show orbit, text)
   - [ ] launch mfd, reinforcement learning launch physics
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed
@@ -37,6 +34,9 @@
     - [ ] simulate propellant weight
     - [ ] simulate Earth rotation
     - [ ] allow specifying inclination and ascending or descending node
+  - [ ] move flight control display to bottom middle (moveable windows?)
+  - [ ] tutorial explaining ApA, ...
+  - [ ] modes for Orbit MFD (hide/show orbit, text)
   - [ ] reentry mfd
     - [ ] PPO agent outputs high level guidance (bank angle and angle of attack)
     - [ ] use down-range and cross-range, ad coriolis and centrifugal acceleration to observations?
