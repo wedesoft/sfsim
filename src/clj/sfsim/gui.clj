@@ -1685,28 +1685,39 @@
                    (- ^long maximum ^long minimum))))
 
 
-(defn- indicator-points
+(defn- indicator-vertical
   [orientation x y0 h midy]
   (case orientation
     :top-indicator
     [[(- ^double x (/ ^double h 4.0)) y0]
      [(+ ^double x (/ ^double h 4.0)) y0]
      [x midy]]
-
     :bottom-indicator
     [[(- ^double x (/ ^double h 4.0)) (+ ^double y0 ^double h)]
      [(+ ^double x (/ ^double h 4.0)) (+ ^double y0 ^double h)]
      [x midy]]))
 
 
-(defn- tick-line
+(defn- indicator-horizontal
+  [x0 y w midx]
+  [[midx y]
+   [(+ ^double x0 ^double w) (- ^double y (/ ^double w 4.0))]
+   [(+ ^double x0 ^double w) (+ ^double y (/ ^double w 4.0))]])
+
+
+(defn- tick-line-vertical
   [orientation x y0 h midy major-tick?]
   (case orientation
     :top-indicator    [x midy x (+ ^double y0 (double (if major-tick? h (* ^double h 0.75))))]
     :bottom-indicator [x midy x (+ ^double y0 (double (if major-tick? 0.0 (* ^double h 0.25))))]))
 
 
-(defn rate-scale
+(defn- tick-line-horizontal
+  [x0 y w midx major-tick?]
+  [(+ ^double x0 (if major-tick? 0.0 (* ^double w 0.25))) y midx y])
+
+
+(defn horizontal-scale
   "Display rate scale."
   {:malli/schema [:=> [:cat :some :some :some :int :int :int :double keyword?] :any]}
   [gui canvas canvas-rect minimum maximum step current orientation]
@@ -1726,17 +1737,45 @@
        bright 202 213 197]
       (draw-text canvas x0 y0 (/ w 10) h (str (abs ^long minimum)) font bright)
       (draw-text-right canvas (+ x0 (/ (* w 9) 10)) y0 (/ w 10) h (str (abs ^long maximum)) font bright)
-
       (stroke-line canvas xs midy (+ xs ws) midy (scale gui 2.0) bright)
-
       (doseq [rate (range minimum (+ ^long maximum ^long step) step)]
-        (let [x           (rate->x xs ws minimum maximum rate)
-              major-tick? (#{minimum 0 maximum} rate)
-              [x1 y1 x2 y2] (tick-line orientation x y0 h midy major-tick?)]
+        (let [x             (rate->x xs ws minimum maximum rate)
+              major-tick?   (#{minimum 0 maximum} rate)
+              [x1 y1 x2 y2] (tick-line-vertical orientation x y0 h midy major-tick?)]
           (stroke-line canvas x1 y1 x2 y2 (scale gui 2.0) bright)))
-
       (fill-polygon canvas
-                    (indicator-points orientation current-x y0 h midy)
+                    (indicator-vertical orientation current-x y0 h midy)
+                    green))))
+
+
+(defn vertical-scale
+  "Display rate scale vertically."
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
+  [gui canvas canvas-rect minimum maximum step current]
+  (let [font            (::bitmap-font gui)
+        x0              (.x ^NkRect canvas-rect)
+        y0              (.y ^NkRect canvas-rect)
+        w               (.w ^NkRect canvas-rect)
+        h               (.h ^NkRect canvas-rect)
+        ys              (+ y0 (/ h 10.0))
+        hs              (/ (* h 8) 10.0)
+        midx            (+ x0 (/ w 2.0))
+        clamped-current (min ^double (max ^double current (double minimum)) (double maximum))
+        current-y       (rate->x ys hs minimum maximum clamped-current)]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0
+       bright 202 213 197]
+      (draw-text canvas x0 y0 w (/ h 10) (str (abs ^long minimum)) font bright)
+      (draw-text canvas x0 (+ y0 (/ (* h 9) 10)) w (/ h 10) (str (abs ^long maximum)) font bright)
+      (stroke-line canvas midx ys midx (+ ys hs) (scale gui 2.0) bright)
+      (doseq [rate (range minimum (+ ^long maximum ^long step) step)]
+        (let [y             (rate->x ys hs minimum maximum rate)
+              major-tick?   (#{minimum 0 maximum} rate)
+              [x1 y1 x2 y2] (tick-line-horizontal x0 y w midx major-tick?)]
+          (stroke-line canvas x1 y1 x2 y2 (scale gui 2.0) bright)))
+      (fill-polygon canvas
+                    (indicator-horizontal x0 current-y w midx)
                     green))))
 
 
@@ -1744,14 +1783,21 @@
   "Display roll rate scale"
   {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
   [gui canvas canvas-rect minimum maximum step current]
-  (rate-scale gui canvas canvas-rect minimum maximum step current :top-indicator))
+  (horizontal-scale gui canvas canvas-rect minimum maximum step current :top-indicator))
 
 
 (defn yaw-rate
   "Display yaw rate scale"
   {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
   [gui canvas canvas-rect minimum maximum step current]
-  (rate-scale gui canvas canvas-rect minimum maximum step current :bottom-indicator))
+  (horizontal-scale gui canvas canvas-rect minimum maximum step current :bottom-indicator))
+
+
+(defn pitch-rate
+  "Display pitch rate scale"
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
+  [gui canvas canvas-rect minimum maximum step current]
+  (vertical-scale gui canvas canvas-rect minimum maximum step current))
 
 
 (defn information-display

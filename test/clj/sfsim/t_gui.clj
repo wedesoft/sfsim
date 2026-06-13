@@ -434,4 +434,16 @@
           8.0   "yaw-max.png")
 
 
+(tabular "Display pitch rate scale"
+         (fact
+           (widget-test gui canvas rect 24 160 (pitch-rate gui canvas rect -5 5 1 ?rate))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?rate ?result
+          0.0   "pitch-zero.png"
+         -5.0   "pitch-min.png"
+         -8.0   "pitch-min.png"
+          5.0   "pitch-max.png"
+          8.0   "pitch-max.png")
+
+
 (GLFW/glfwTerminate)
