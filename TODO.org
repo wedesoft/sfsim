@@ -1,4 +1,4 @@
-ki#+TITLE: TODO
+#+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
