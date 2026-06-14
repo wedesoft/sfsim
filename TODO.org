@@ -20,7 +20,7 @@
       - [X] does "done?" need to check intersection with a sphere in state space?
     - [ ] simulate propellant weight
     - [ ] simulate Earth rotation
-    - [ ] allow specifying inclination and ascending or descending node
+    - [ ] allow specifying inclination and boolean for ascending or descending node (use 360 degrees takeoff heading?)
   - [ ] move flight control display to bottom middle (moveable windows?)
   - [ ] tutorial explaining ApA, ...
   - [ ] modes for Orbit MFD (hide/show orbit, text)
@@ -277,8 +277,9 @@
   - [ ] how to switch speed display (Moon orbit, Moon surface)
   - [ ] accelerated coordinate system with sun gravitation?
 * TODO [#C] add space station                                          :scenery:
-** TODO space station model, station lights
-** TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
+ - [ ] space station model, station lights
+ - [ ] [[https://science.nasa.gov/resource/international-space-station-3d-model/]]
+ - [ ] NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
 * TODO [#C] marketing/progressing project                            :marketing:
   - Note taken on [2026-04-30 Do 21:42] \\
     [[https://www.gdcvault.com/play/1027731/Game-Demos-Done][Game demos done right]]
