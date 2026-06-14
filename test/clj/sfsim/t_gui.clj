@@ -397,17 +397,56 @@
                  (nuklear-dark-style gui)
                  (nuklear-window gui "control test window" 0 0 (quot 264 ?scale) (quot 264 ?scale) :widget
                                  (layout-row-dynamic gui (/ 256.0 ?scale) 1)
-                                 (navball-mfd gui))
+                                 (navball-mfd gui {:sfsim.physics/roll-rate ?roll
+                                                   :sfsim.physics/pitch-rate ?pitch
+                                                   :sfsim.physics/yaw-rate ?yaw}))
                  (gui-framebuffer-render
                    (quot 264 ?scale) (quot 264 ?scale)
                    (render-nuklear-gui gui (quot 264 ?scale) (quot 264 ?scale))
                    (destroy-navball gui)
                    (destroy-nuklear-gui-with-font gui))))
              => (is-image (str "test/clj/sfsim/fixtures/integration/" ?image) 0.1))
-           ?orientation                                ?scale ?image
-           (q/->Quaternion 1 0 0 0)                    1      "orbit-navball-neutral.png"
-           (q/rotation (to-radians 45.0) (vec3 0 1 0)) 1      "orbit-navball-roll.png"
-           (q/->Quaternion 1 0 0 0)                    2      "orbit-navball-small.png"))
+           ?orientation                                ?roll ?pitch ?yaw ?scale ?image
+           (q/->Quaternion 1 0 0 0)                    0     0      0    1      "orbit-navball-neutral.png"
+           (q/rotation (to-radians 45.0) (vec3 0 1 0)) 0     0      0    1      "orbit-navball-roll.png"
+           (q/->Quaternion 1 0 0 0)                    0     0      0    2      "orbit-navball-small.png"
+           (q/->Quaternion 1 0 0 0)                    0.03  0.05   0.09 1      "orbit-navball-rotating.png"))
+
+
+(tabular "Display roll rate scale"
+         (fact
+           (widget-test gui canvas rect 160 24 (draw-roll-rate gui canvas rect -5 5 1 ?rate))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?rate ?result
+          0.0   "roll-zero.png"
+         -5.0   "roll-min.png"
+         -8.0   "roll-min.png"
+          5.0   "roll-max.png"
+          8.0   "roll-max.png")
+
+
+(tabular "Display yaw rate scale"
+         (fact
+           (widget-test gui canvas rect 160 24 (draw-yaw-rate gui canvas rect -5 5 1 ?rate))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?rate ?result
+          0.0   "yaw-zero.png"
+         -5.0   "yaw-min.png"
+         -8.0   "yaw-min.png"
+          5.0   "yaw-max.png"
+          8.0   "yaw-max.png")
+
+
+(tabular "Display pitch rate scale"
+         (fact
+           (widget-test gui canvas rect 24 160 (draw-pitch-rate gui canvas rect -5 5 1 ?rate))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?rate ?result
+          0.0   "pitch-zero.png"
+         -5.0   "pitch-min.png"
+         -8.0   "pitch-min.png"
+          5.0   "pitch-max.png"
+          8.0   "pitch-max.png")
 
 
 (GLFW/glfwTerminate)

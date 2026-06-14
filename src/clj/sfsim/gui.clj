@@ -1609,7 +1609,7 @@
   (let [image           (slurp-image "data/texture/navball-orbit.png" true)
         texture         (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat image)
         framebuffer     (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F
-                                               (long (scale gui 252)) (long (scale gui 252)))
+                                               (long (scale gui 200)) (long (scale gui 200)))
         vertex-source   (slurp "resources/shaders/gui/vertex-navball.glsl")
         fragment-source (slurp "resources/shaders/gui/fragment-navball.glsl")
         program         (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
@@ -1645,38 +1645,185 @@
         tex      (::navball-framebuffer gui)
         program  (::navball-program gui)
         vao      (::navball-vao gui)]
-    (framebuffer-render (scale gui 252) (scale gui 252) :sfsim.render/cullback nil [tex]
+    (framebuffer-render (scale gui 200) (scale gui 200) :sfsim.render/cullback nil [tex]
                         (use-program program)
                         (uniform-sampler program "navball" 0)
-                        (uniform-vector2 program "resolution" (vec2 (scale gui 252) (scale gui 252)))
+                        (uniform-vector2 program "resolution" (vec2 (scale gui 200) (scale gui 200)))
                         (uniform-matrix3 program "orientation" (quaternion->matrix orientation))
                         (use-textures {0 navball})
                         (clear (vec3 0.0 1.0 0.0))
                         (render-quads vao))))
 
 
-(defn navball-mfd
-  "Display navball widget"
-  [gui]
-  (widget gui canvas canvas-rect
-          (let
-            [img (::navball-image gui)
-             x0  (.x canvas-rect)
-             y0  (.y canvas-rect)
-             w   (.w canvas-rect)
-             h   (.h canvas-rect)]
-            (with-colors
-              [bg       0   0   0
-               border  82 185 142
-               white  255 255 255]
-              (fill-rect canvas canvas-rect 0.0 bg)
-              (with-rect rect (+ x0 (scale gui 1)) (+ y0 (scale gui 1)) (- w (scale gui 2)) (- h (scale gui 2))
-                (stroke-rect canvas rect 0.0 (scale gui 3.0) border))
-              (with-rect rect (+ x0 (scale gui 2)) (+ y0 (scale gui 2)) (- w (scale gui 4)) (- h (scale gui 4))
-                (Nuklear/nk_draw_image canvas rect img white))))))
+(defn draw-navball
+  "Draw navball texture"
+  [gui canvas canvas-rect]
+  (let
+    [img (::navball-image gui)
+     x0  (.x ^NkRect canvas-rect)
+     y0  (.y ^NkRect canvas-rect)
+     w   (.w ^NkRect canvas-rect)
+     h   (.h ^NkRect canvas-rect)]
+    (with-color
+      white 255 255 255
+      (with-rect rect (+ x0 (scale gui 2)) (+ y0 (scale gui 2)) (- w (scale gui 4)) (- h (scale gui 4))
+        (Nuklear/nk_draw_image canvas rect img white)))))
 
 
 (set! *unchecked-math* :warn-on-boxed)
+
+
+(defn- rate->x
+  [xs ws minimum maximum rate]
+  (+ ^double xs (/ (* (- ^double rate ^long minimum) ^double ws)
+                   (- ^long maximum ^long minimum))))
+
+
+(defn- indicator-vertical
+  [orientation x y0 h midy]
+  (case orientation
+    :top-indicator
+    [[(- ^double x (/ ^double h 4.0)) y0]
+     [(+ ^double x (/ ^double h 4.0)) y0]
+     [x midy]]
+    :bottom-indicator
+    [[(- ^double x (/ ^double h 4.0)) (+ ^double y0 ^double h)]
+     [(+ ^double x (/ ^double h 4.0)) (+ ^double y0 ^double h)]
+     [x midy]]))
+
+
+(defn- indicator-horizontal
+  [x0 y w midx]
+  [[midx y]
+   [(+ ^double x0 ^double w) (- ^double y (/ ^double w 4.0))]
+   [(+ ^double x0 ^double w) (+ ^double y (/ ^double w 4.0))]])
+
+
+(defn- tick-line-vertical
+  [orientation x y0 h midy major-tick?]
+  (case orientation
+    :top-indicator    [x midy x (+ ^double y0 (double (if major-tick? h (* ^double h 0.75))))]
+    :bottom-indicator [x midy x (+ ^double y0 (double (if major-tick? 0.0 (* ^double h 0.25))))]))
+
+
+(defn- tick-line-horizontal
+  [x0 y w midx major-tick?]
+  [(+ ^double x0 (if major-tick? 0.0 (* ^double w 0.25))) y midx y])
+
+
+(defn horizontal-scale
+  "Display rate scale."
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double keyword?] :any]}
+  [gui canvas canvas-rect minimum maximum step current orientation]
+  (let [font            (::bitmap-font gui)
+        x0              (.x ^NkRect canvas-rect)
+        y0              (.y ^NkRect canvas-rect)
+        w               (.w ^NkRect canvas-rect)
+        h               (.h ^NkRect canvas-rect)
+        xs              (+ x0 (/ w 10.0))
+        ws              (/ (* w 8) 10.0)
+        midy            (+ y0 (/ h 2.0))
+        clamped-current (min ^double (max ^double current (double minimum)) (double maximum))
+        current-x       (rate->x xs ws minimum maximum clamped-current)]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0
+       bright 202 213 197]
+      (draw-text canvas x0 y0 (/ w 10) h (str (abs ^long minimum)) font bright)
+      (draw-text-right canvas (+ x0 (/ (* w 9) 10)) y0 (/ w 10) h (str (abs ^long maximum)) font bright)
+      (stroke-line canvas xs midy (+ xs ws) midy (scale gui 2.0) bright)
+      (doseq [rate (range minimum (+ ^long maximum ^long step) step)]
+        (let [x             (rate->x xs ws minimum maximum rate)
+              major-tick?   (#{minimum 0 maximum} rate)
+              [x1 y1 x2 y2] (tick-line-vertical orientation x y0 h midy major-tick?)]
+          (stroke-line canvas x1 y1 x2 y2 (scale gui 2.0) bright)))
+      (fill-polygon canvas
+                    (indicator-vertical orientation current-x y0 h midy)
+                    green))))
+
+
+(defn vertical-scale
+  "Display rate scale vertically."
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
+  [gui canvas canvas-rect minimum maximum step current]
+  (let [font            (::bitmap-font gui)
+        x0              (.x ^NkRect canvas-rect)
+        y0              (.y ^NkRect canvas-rect)
+        w               (.w ^NkRect canvas-rect)
+        h               (.h ^NkRect canvas-rect)
+        ys              (+ y0 (/ h 10.0))
+        hs              (/ (* h 8) 10.0)
+        midx            (+ x0 (/ w 2.0))
+        clamped-current (min ^double (max ^double current (double minimum)) (double maximum))
+        current-y       (rate->x ys hs minimum maximum clamped-current)]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0
+       bright 202 213 197]
+      (draw-text canvas x0 y0 w (/ h 10) (str (abs ^long minimum)) font bright)
+      (draw-text canvas x0 (+ y0 (/ (* h 9) 10)) w (/ h 10) (str (abs ^long maximum)) font bright)
+      (stroke-line canvas midx ys midx (+ ys hs) (scale gui 2.0) bright)
+      (doseq [rate (range minimum (+ ^long maximum ^long step) step)]
+        (let [y             (rate->x ys hs minimum maximum rate)
+              major-tick?   (#{minimum 0 maximum} rate)
+              [x1 y1 x2 y2] (tick-line-horizontal x0 y w midx major-tick?)]
+          (stroke-line canvas x1 y1 x2 y2 (scale gui 2.0) bright)))
+      (fill-polygon canvas
+                    (indicator-horizontal x0 current-y w midx)
+                    green))))
+
+
+(defn draw-roll-rate
+  "Display roll rate scale"
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
+  [gui canvas canvas-rect minimum maximum step current]
+  (horizontal-scale gui canvas canvas-rect minimum maximum step current :top-indicator))
+
+
+(defn draw-yaw-rate
+  "Display yaw rate scale"
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
+  [gui canvas canvas-rect minimum maximum step current]
+  (horizontal-scale gui canvas canvas-rect minimum maximum step current :bottom-indicator))
+
+
+(defn draw-pitch-rate
+  "Display pitch rate scale"
+  {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
+  [gui canvas canvas-rect minimum maximum step current]
+  (vertical-scale gui canvas canvas-rect minimum maximum step current))
+
+
+(defn navball-mfd
+  "Display navball widget"
+  [gui rotation-rates]
+  (widget gui canvas canvas-rect
+          (let [x0         (.x ^NkRect canvas-rect)
+                y0         (.y ^NkRect canvas-rect)
+                w          (.w ^NkRect canvas-rect)
+                h          (.h ^NkRect canvas-rect)
+                roll-rate  (to-degrees (:sfsim.physics/roll-rate rotation-rates))
+                pitch-rate (to-degrees (:sfsim.physics/pitch-rate rotation-rates))
+                yaw-rate   (to-degrees (:sfsim.physics/yaw-rate rotation-rates))]
+            (with-colors
+              [bg       0   0   0
+               border  82 185 142]
+              (fill-rect canvas canvas-rect 0.0 bg)
+              (with-rect rect (+ x0 (scale gui 1)) (+ y0 (scale gui 1)) (- w (scale gui 2)) (- h (scale gui 2))
+                (stroke-rect canvas rect 0.0 (scale gui 3.0) border))
+              (let [x0 (+ x0 (scale gui 3))
+                    y0 (+ y0 (scale gui 3))
+                    w  (- w (scale gui 6))
+                    h  (- h (scale gui 6))]
+                (with-rect rect (+ x0 (* w 0.1)) y0 (* w 0.8) (* h 0.1)
+                  (draw-roll-rate gui canvas rect -5 5 1 roll-rate))
+                (with-rect rect (+ x0 (* w 0.9)) (+ y0 (* h 0.1)) (* w 0.1) (* h 0.8)
+                  (draw-pitch-rate gui canvas rect -5 5 1 pitch-rate))
+                (with-rect rect (+ x0 (* w 0.1)) (+ y0 (* h 0.9)) (* w 0.8) (* h 0.1)
+                  (draw-yaw-rate gui canvas rect -5 5 1 yaw-rate))
+                (with-rect rect (+ x0 (* w 0.1)) (+ y0 (* w 0.1)) (* w 0.8) (* h 0.8)
+                  (draw-navball gui canvas rect)))))))
+
 
 (defn information-display
   [gui w h state frametime]
@@ -1699,7 +1846,7 @@
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
                       (navball-prepare gui (physics/orbit-orientation (:physics state)))
-                      (navball-mfd gui)))
+                      (navball-mfd gui (physics/rotation-rates (:physics state)))))
     (nuklear-window gui "Information" (scale gui (+ 20 256)) (- ^long h (scale gui (+ 10 (* ^long text-height 1))))
                     (scale gui 640) (scale gui (* ^long text-height 1)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)

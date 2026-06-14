@@ -652,6 +652,16 @@
        (q/rotate-vector (orbit-orientation @state) (vec3 1 0 0)) => (roughly-vector (vec3 1 0 0) 1e-6)
        (q/rotate-vector (orbit-orientation @state) (vec3 0 1 0)) => (roughly-vector (vec3 0 1 0) 1e-6))
 
+
+(facts "Get roll, pitch, yaw rates in body system"
+       ; Test space craft pointing East and rolling
+       (swap! state set-pose :sfsim.physics/orbit (vec3 6658000 0 0) (q/->Quaternion -0.5 0.5 0.5 -0.5))
+       (swap! state set-speed :sfsim.physics/orbit (vec3 0 0 0) (q/rotate-vector (q/->Quaternion -0.5 0.5 0.5 -0.5) (vec3 2 3 5)))
+       (:sfsim.physics/roll-rate (rotation-rates @state)) => (roughly 2.0 1e-6)
+       (:sfsim.physics/pitch-rate (rotation-rates @state)) => (roughly 3.0 1e-6)
+       (:sfsim.physics/yaw-rate (rotation-rates @state)) => (roughly 5.0 1e-6))
+
+
 (jolt/remove-and-destroy-body sphere)
 
 

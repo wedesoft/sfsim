@@ -1005,5 +1005,16 @@
     (q/* (q/inverse (matrix->quaternion uvw)) (q/* orientation (q/inverse (q/->Quaternion -0.5 0.5 0.5 -0.5))))))
 
 
+(defn rotation-rates
+  "Get roll, pitch, yaw rates in body system"
+  [state]
+  (let [orientation           (get-orientation ::orbit state)
+        angular-speed         (get-angular-speed ::orbit state)
+        body-angular-velocity (aerodynamics/angular-speed-in-body-system orientation angular-speed)]
+    {::roll-rate (nth body-angular-velocity 0)
+     ::pitch-rate (nth body-angular-velocity 1)
+     ::yaw-rate (nth body-angular-velocity 2)}))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
