@@ -1655,25 +1655,19 @@
                         (render-quads vao))))
 
 
-(defn navball-mfd
-  "Display navball widget"
-  [gui]
-  (widget gui canvas canvas-rect
-          (let
-            [img (::navball-image gui)
-             x0  (.x canvas-rect)
-             y0  (.y canvas-rect)
-             w   (.w canvas-rect)
-             h   (.h canvas-rect)]
-            (with-colors
-              [bg       0   0   0
-               border  82 185 142
-               white  255 255 255]
-              (fill-rect canvas canvas-rect 0.0 bg)
-              (with-rect rect (+ x0 (scale gui 1)) (+ y0 (scale gui 1)) (- w (scale gui 2)) (- h (scale gui 2))
-                (stroke-rect canvas rect 0.0 (scale gui 3.0) border))
-              (with-rect rect (+ x0 (scale gui 2)) (+ y0 (scale gui 2)) (- w (scale gui 4)) (- h (scale gui 4))
-                (Nuklear/nk_draw_image canvas rect img white))))))
+(defn draw-navball
+  "Draw navball texture"
+  [gui canvas canvas-rect]
+  (let
+    [img (::navball-image gui)
+     x0  (.x ^NkRect canvas-rect)
+     y0  (.y ^NkRect canvas-rect)
+     w   (.w ^NkRect canvas-rect)
+     h   (.h ^NkRect canvas-rect)]
+    (with-color
+      white 255 255 255
+      (with-rect rect (+ x0 (scale gui 2)) (+ y0 (scale gui 2)) (- w (scale gui 4)) (- h (scale gui 4))
+        (Nuklear/nk_draw_image canvas rect img white)))))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -1798,6 +1792,24 @@
   {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
   [gui canvas canvas-rect minimum maximum step current]
   (vertical-scale gui canvas canvas-rect minimum maximum step current))
+
+
+(defn navball-mfd
+  "Display navball widget"
+  [gui angular-velocity]
+  (widget gui canvas canvas-rect
+          (let [x0  (.x ^NkRect canvas-rect)
+                y0  (.y ^NkRect canvas-rect)
+                w   (.w ^NkRect canvas-rect)
+                h   (.h ^NkRect canvas-rect)]
+            (with-colors
+              [bg       0   0   0
+               border  82 185 142]
+              (fill-rect canvas canvas-rect 0.0 bg)
+              (with-rect rect (+ x0 (scale gui 1)) (+ y0 (scale gui 1)) (- w (scale gui 2)) (- h (scale gui 2))
+                (stroke-rect canvas rect 0.0 (scale gui 3.0) border))
+              (with-rect rect (+ x0 (* w 0.1)) (+ y0 (* w 0.1)) (* w 0.8) (* h 0.8)
+                (draw-navball gui canvas rect))))))
 
 
 (defn information-display

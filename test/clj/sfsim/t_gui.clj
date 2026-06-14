@@ -397,17 +397,18 @@
                  (nuklear-dark-style gui)
                  (nuklear-window gui "control test window" 0 0 (quot 264 ?scale) (quot 264 ?scale) :widget
                                  (layout-row-dynamic gui (/ 256.0 ?scale) 1)
-                                 (navball-mfd gui))
+                                 (navball-mfd gui ?angular-velocity))
                  (gui-framebuffer-render
                    (quot 264 ?scale) (quot 264 ?scale)
                    (render-nuklear-gui gui (quot 264 ?scale) (quot 264 ?scale))
                    (destroy-navball gui)
                    (destroy-nuklear-gui-with-font gui))))
              => (is-image (str "test/clj/sfsim/fixtures/integration/" ?image) 0.1))
-           ?orientation                                ?scale ?image
-           (q/->Quaternion 1 0 0 0)                    1      "orbit-navball-neutral.png"
-           (q/rotation (to-radians 45.0) (vec3 0 1 0)) 1      "orbit-navball-roll.png"
-           (q/->Quaternion 1 0 0 0)                    2      "orbit-navball-small.png"))
+           ?orientation                                ?angular-velocity ?scale ?image
+           (q/->Quaternion 1 0 0 0)                    (vec3 0 0 0)      1      "orbit-navball-neutral.png"
+           (q/rotation (to-radians 45.0) (vec3 0 1 0)) (vec3 0 0 0)      1      "orbit-navball-roll.png"
+           (q/->Quaternion 1 0 0 0)                    (vec3 0 0 0)      2      "orbit-navball-small.png"
+           (q/->Quaternion 1 0 0 0)                    (vec3 0 0 0)      1      "orbit-navball-rotating.png"))
 
 
 (tabular "Display roll rate scale"
