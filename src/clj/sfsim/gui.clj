@@ -1609,7 +1609,7 @@
   (let [image           (slurp-image "data/texture/navball-orbit.png" true)
         texture         (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat image)
         framebuffer     (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL30/GL_RGB32F
-                                               (long (scale gui 252)) (long (scale gui 252)))
+                                               (long (scale gui 200)) (long (scale gui 200)))
         vertex-source   (slurp "resources/shaders/gui/vertex-navball.glsl")
         fragment-source (slurp "resources/shaders/gui/fragment-navball.glsl")
         program         (make-program :sfsim.render/vertex [vertex-source] :sfsim.render/fragment [fragment-source])
@@ -1645,10 +1645,10 @@
         tex      (::navball-framebuffer gui)
         program  (::navball-program gui)
         vao      (::navball-vao gui)]
-    (framebuffer-render (scale gui 252) (scale gui 252) :sfsim.render/cullback nil [tex]
+    (framebuffer-render (scale gui 200) (scale gui 200) :sfsim.render/cullback nil [tex]
                         (use-program program)
                         (uniform-sampler program "navball" 0)
-                        (uniform-vector2 program "resolution" (vec2 (scale gui 252) (scale gui 252)))
+                        (uniform-vector2 program "resolution" (vec2 (scale gui 200) (scale gui 200)))
                         (uniform-matrix3 program "orientation" (quaternion->matrix orientation))
                         (use-textures {0 navball})
                         (clear (vec3 0.0 1.0 0.0))
@@ -1773,21 +1773,21 @@
                     green))))
 
 
-(defn roll-rate
+(defn draw-roll-rate
   "Display roll rate scale"
   {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
   [gui canvas canvas-rect minimum maximum step current]
   (horizontal-scale gui canvas canvas-rect minimum maximum step current :top-indicator))
 
 
-(defn yaw-rate
+(defn draw-yaw-rate
   "Display yaw rate scale"
   {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
   [gui canvas canvas-rect minimum maximum step current]
   (horizontal-scale gui canvas canvas-rect minimum maximum step current :bottom-indicator))
 
 
-(defn pitch-rate
+(defn draw-pitch-rate
   "Display pitch rate scale"
   {:malli/schema [:=> [:cat :some :some :some :int :int :int :double] :any]}
   [gui canvas canvas-rect minimum maximum step current]
@@ -1796,20 +1796,33 @@
 
 (defn navball-mfd
   "Display navball widget"
-  [gui angular-velocity]
+  [gui rotation-rates]
   (widget gui canvas canvas-rect
-          (let [x0  (.x ^NkRect canvas-rect)
-                y0  (.y ^NkRect canvas-rect)
-                w   (.w ^NkRect canvas-rect)
-                h   (.h ^NkRect canvas-rect)]
+          (let [x0         (.x ^NkRect canvas-rect)
+                y0         (.y ^NkRect canvas-rect)
+                w          (.w ^NkRect canvas-rect)
+                h          (.h ^NkRect canvas-rect)
+                roll-rate  (to-degrees (:sfsim.physics/roll-rate rotation-rates))
+                pitch-rate (to-degrees (:sfsim.physics/pitch-rate rotation-rates))
+                yaw-rate   (to-degrees (:sfsim.physics/yaw-rate rotation-rates))]
             (with-colors
               [bg       0   0   0
                border  82 185 142]
               (fill-rect canvas canvas-rect 0.0 bg)
               (with-rect rect (+ x0 (scale gui 1)) (+ y0 (scale gui 1)) (- w (scale gui 2)) (- h (scale gui 2))
                 (stroke-rect canvas rect 0.0 (scale gui 3.0) border))
-              (with-rect rect (+ x0 (* w 0.1)) (+ y0 (* w 0.1)) (* w 0.8) (* h 0.8)
-                (draw-navball gui canvas rect))))))
+              (let [x0 (+ x0 (scale gui 3))
+                    y0 (+ y0 (scale gui 3))
+                    w  (- w (scale gui 6))
+                    h  (- h (scale gui 6))]
+                (with-rect rect (+ x0 (* w 0.1)) y0 (* w 0.8) (* h 0.1)
+                  (draw-roll-rate gui canvas rect -5 5 1 roll-rate))
+                (with-rect rect (+ x0 (* w 0.9)) (+ y0 (* h 0.1)) (* w 0.1) (* h 0.8)
+                  (draw-pitch-rate gui canvas rect -5 5 1 pitch-rate))
+                (with-rect rect (+ x0 (* w 0.1)) (+ y0 (* h 0.9)) (* w 0.8) (* h 0.1)
+                  (draw-yaw-rate gui canvas rect -5 5 1 yaw-rate))
+                (with-rect rect (+ x0 (* w 0.1)) (+ y0 (* w 0.1)) (* w 0.8) (* h 0.8)
+                  (draw-navball gui canvas rect)))))))
 
 
 (defn information-display
@@ -1833,7 +1846,7 @@
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
                       (navball-prepare gui (physics/orbit-orientation (:physics state)))
-                      (navball-mfd gui)))
+                      (navball-mfd gui (physics/rotation-rates (:physics state)))))
     (nuklear-window gui "Information" (scale gui (+ 20 256)) (- ^long h (scale gui (+ 10 (* ^long text-height 1))))
                     (scale gui 640) (scale gui (* ^long text-height 1)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)
