@@ -1569,7 +1569,7 @@
                                                                                  (case (long pitch) 0 -9 180 9 360 -9 0) 0))
                                                    fg   (if (or (<= pitch 180) (>= pitch 360)) black white)
                                                    bg   (if (or (<= pitch 180) (>= pitch 360)) white black)
-                                                   text (str (/ (mod (+ pitch 180) 360) 10))
+                                                   text (str (/ (mod (- 180 pitch) 360) 10))
                                                    tw   (text-width text (fonts yaw))
                                                    th   (* 18 (::scale-y (fonts yaw)))
                                                    pad  4]
