@@ -6,6 +6,7 @@
   - [-] navball
     - [X] generate sphere texture [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
     - [X] green triangle rate indicators (top: roll, right: pitch, bottom: yaw) [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
+    - [X] green center indicator
     - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw) [[https://gemini.google.com/share/dddf04ae5ff2]]
   - [ ] launch mfd, reinforcement learning launch physics
     - [-] reduce observation
