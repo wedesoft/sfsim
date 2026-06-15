@@ -38,6 +38,7 @@
   - [ ] heat display
   - [ ] ILS
   - [X] yaw pitch roll rates
+  - [ ] add key to lock main thruster
   - [ ] attitude autopilot with roll reversal, angle-of-attack hold
   - [ ] f-35 style hud for now (3d cockpit later)
     - [[https://my.storageshare.cloud/s/5XozrsEY8xHLN3t][A400M cockpit]]
