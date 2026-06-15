@@ -7,21 +7,19 @@
     - [X] generate sphere texture [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
     - [X] green triangle rate indicators (top: roll, right: pitch, bottom: yaw) [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
     - [X] green center indicator
-    - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw) [[https://gemini.google.com/share/dddf04ae5ff2]]
   - [ ] launch mfd, reinforcement learning launch physics
+    - [-] rewards/penalties
+      - [ ] transition to Gaussian reward for fine tuning
+      - [ ] penalise dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed
       - [X] state: position, speed, delta-v, t
       - [X] action: up, forward, sideways (defined by inclination of nearest speed vector)
+      - [ ] allow specifying inclination and boolean for ascending or descending node (use 360 degrees takeoff heading?)
       - [ ] action ambiguity at launch
-    - [-] rewards/penalties
-      - [ ] transition to Gaussian reward for fine tuning
-      - [ ] penalise dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
-      - [X] visualise thrust
-      - [X] does "done?" need to check intersection with a sphere in state space?
+    - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw) [[https://gemini.google.com/share/dddf04ae5ff2]]
     - [ ] simulate propellant weight
     - [ ] simulate Earth rotation
-    - [ ] allow specifying inclination and boolean for ascending or descending node (use 360 degrees takeoff heading?)
   - [ ] move flight control display to bottom middle (moveable windows?)
   - [ ] tutorial explaining ApA, ...
   - [ ] modes for Orbit MFD (hide/show orbit, text)
