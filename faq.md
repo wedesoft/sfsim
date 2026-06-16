@@ -35,6 +35,7 @@ The source code is [available on Github][2].
 It makes use of [Clojure][4], [LWJGL][6], [Fastmath][5], [Jolt Physics][9], and other libraries.
 The celestical positions are implemented according to [Skyfield][8].
 Note that building the project assets takes several days on a modern computer.
+However you can get the data folder from the latest Steam install instead.
 
 ### Can I use the source code in my own project?
 
