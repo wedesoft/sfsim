@@ -48,7 +48,28 @@ The beautiful ambient music used in the trailer was made by [Andrewkn][2]!
 
 Wishlist it on Steam to get notified when it gets released:
 
-<div style="text-align: center; margin: 20px 0;">
+<style type="text/css">
+.iframe-container {
+  position: relative;
+  width: 100%;
+  max-width: 646px;         /* Caps the maximum width on desktop */
+  margin: 20px auto;        /* The 'auto' left/right centers the container */
+  padding-bottom: 30%;   /* 16:9 Aspect Ratio (9 / 16 = 0.5625) */
+  height: 0;
+  overflow: hidden;
+}
+
+.iframe-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+</style>
+
+<div class="iframe-container">
 <iframe src="https://store.steampowered.com/widget/3687560/" frameborder="0" width="646" height="190"></iframe>
 </div>
 
