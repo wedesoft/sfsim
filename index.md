@@ -49,7 +49,7 @@ The beautiful ambient music used in the trailer was made by [Andrewkn][2]!
 Wishlist it on Steam to get notified when it gets released:
 
 <div class="iframe-container">
-<iframe src="https://store.steampowered.com/widget/3687560/" frameborder="0" width="646" height="190"></iframe>
+<iframe src="https://store.steampowered.com/widget/3687560/" frameborder="0"></iframe>
 </div>
 
 # News
