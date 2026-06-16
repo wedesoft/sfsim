@@ -219,5 +219,6 @@ The Blender model can be converted to GLB as follows:
   * [rebel-readline](https://github.com/bhauman/rebel-readline) REPL with colors :)
 * Data
   * [NASA CGI moon toolkit](https://svs.gsfc.nasa.gov/4720/)
+  * [International Space Station 3D Model](https://science.nasa.gov/resource/international-space-station-3d-model/)
 
 [1]: https://wedesoft.github.io/sfsim/

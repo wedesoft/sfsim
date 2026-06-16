@@ -9,8 +9,8 @@
     - [X] green center indicator
   - [ ] launch mfd, reinforcement learning launch physics
     - [-] rewards/penalties
-      - [ ] transition to Gaussian reward for fine tuning
       - [ ] penalise dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
+      - [ ] transition to Gaussian reward for fine tuning
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed
       - [X] state: position, speed, delta-v, t
