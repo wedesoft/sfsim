@@ -487,6 +487,12 @@
   (* 0.5 density (sqr speed)))
 
 
+(def max-q
+  "Maximum dynamic pressure data point from space shuttle (height 11000m, speed 1.3 Ma)"
+  (let [h 11000]
+    (dynamic-pressure (atmosphere/density-at-height h) (* 1.3 (atmosphere/speed-of-sound (atmosphere/temperature-at-height h))))))
+
+
 (def C-l-q 4.2624)
 
 

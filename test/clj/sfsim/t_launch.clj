@@ -46,7 +46,8 @@
    :weight-speed-reward 1.0
    :weight-fuel-reward 1.0
    :weight-angle-reward 1.0
-   :weight-orbit-reward 1.0})
+   :weight-orbit-reward 1.0
+   :weight-dynamic-pressure-reward 1.0})
 
 
 (facts "Launch rocket"
@@ -277,6 +278,12 @@
        (reward-orbit {:position (vec3 6537000 0 0) :speed (vec3 0 7788.140 0)} test-config) => (roughly (exp -2.0) 1e-5))
 
 
+(facts "Penalise exceeding Max Q"
+       (reward-dynamic-pressure {:position (vec3 6378000 0 0) :speed (vec3 0 0 0)} test-config) => (roughly 0.0 1e-3)
+       (reward-dynamic-pressure {:position (vec3 6389000 0 0) :speed (vec3 383.579 0 0)} test-config) => (roughly 0.0 1e-3)
+       (reward-dynamic-pressure {:position (vec3 6389000 0 0) :speed (vec3 542.462 0 0)} test-config) => (roughly -1.0 1e-3))
+
+
 (facts "Overall reward function"
        (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)}
                (assoc test-config :weight-orbit-reward 0.0))
@@ -286,10 +293,11 @@
        (reward {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 1 0)}
                (assoc test-config :weight-orbit-reward 0.0))
        => (roughly -1.0 1e-3)
-       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)} test-config)
+       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)}
+               (assoc test-config :weight-dynamic-pressure-reward 0.0))
        => (roughly -1.0 1e-3)
        (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)}
-               (assoc test-config :weight-height-reward 0.5))
+               (assoc test-config :weight-height-reward 0.5 :weight-dynamic-pressure-reward 0.0))
        => (roughly -0.5 1e-3)
        (reward {:position (vec3 6538000 0 0) :speed (vec3 0 0 0)} {:control (vec3 0 0 0)} test-config)
        => (roughly -1.0 1e-3)
@@ -297,8 +305,11 @@
                (assoc test-config :weight-speed-reward 0.5))
        => (roughly -0.5 1e-3)
        (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 -1 0)}
-               (assoc test-config :weight-fuel-reward 0.0))
-       => (roughly -2.0 1e-3))
+               (assoc test-config :weight-fuel-reward 0.0 :weight-dynamic-pressure-reward 0.0))
+       => (roughly -2.0 1e-3)
+       (reward {:position (vec3 6389000 0 0) :speed (vec3 542.462 0 0)} {:control (vec3 0 0 0)}
+                                (assoc test-config :weight-height-reward 0.0 :weight-speed-reward 0.0))
+       => (roughly -1.0 1e-3))
 
 
 (facts "Squashed 3D distribution with limited magnitude vector output"
