@@ -4,7 +4,7 @@ title: News
 permalink: /news/
 ---
 
-Check out our latest updates and news stories below:
+Check out the latest news below:
 
 <ul style="list-style: none; padding-left: 0;">
   {% for post in site.posts %}
