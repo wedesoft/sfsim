@@ -1,20 +1,28 @@
+sfsim (0.23-1)
+
+	* Add some Steam achievements
+	* Green center indicator for navball
+	* Add penalty for exceeding Max Q to launch trajectory optimization
+
+-- Jan Wedekind <jan@wedesoft.de>  Thu, 18 Jun 2026 00:27:00 +0100
+
 sfsim (0.22-1)
 
 	* Display angular rates
 
--- Jan Wedekind <jan@wedesoft.de>  Sun, 14 May 2026 17:26:00 +0100
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 14 Jun 2026 17:26:00 +0100
 
 sfsim (0.21-1)
 
 	* Implemented Apollo-style orbit navball
 
--- Jan Wedekind <jan@wedesoft.de>  Thu, 11 May 2026 23:31:00 +0100
+-- Jan Wedekind <jan@wedesoft.de>  Thu, 11 Jun 2026 23:31:00 +0100
 
 sfsim (0.20-1)
 
 	* Add Orbit display
 
--- Jan Wedekind <jan@wedesoft.de>  Thu,  4 May 2026 22:58:00 +0100
+-- Jan Wedekind <jan@wedesoft.de>  Thu,  4 Jun 2026 22:58:00 +0100
 
 sfsim (0.19-1)
 
