@@ -87,13 +87,13 @@
                   handler)
            (:sfsim.input/gear-down (:sfsim.input/controls @state)) => false
            ; Test fullscreen
-           (:sfsim.input/fullscreen @state) => false
+           (:sfsim.input/fullscreen @state) => true
            (swap! state process-events
                   (-> event-buffer
                       (add-key-event GLFW/GLFW_KEY_ENTER GLFW/GLFW_PRESS GLFW/GLFW_MOD_ALT)
                       (add-key-event GLFW/GLFW_KEY_ENTER GLFW/GLFW_RELEASE GLFW/GLFW_MOD_ALT))
                       handler)
-           (:sfsim.input/fullscreen @state) => true
+           (:sfsim.input/fullscreen @state) => false
            ; Test menu toggle
            (:sfsim.input/menu @state) => false
            (swap! state process-events
@@ -118,13 +118,13 @@
                   handler)
            (:sfsim.input/gear-down (:sfsim.input/controls @state)) => false
            ; Test no fullscreen toggle when menu is shown
-           (:sfsim.input/fullscreen @state) => true
+           (:sfsim.input/fullscreen @state) => false
            (swap! state process-events
                   (-> event-buffer
                       (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_PRESS 0)
                       (add-key-event GLFW/GLFW_KEY_F GLFW/GLFW_RELEASE 0))
                   handler)
-           (:sfsim.input/fullscreen @state) => true
+           (:sfsim.input/fullscreen @state) => false
            ; Use alternate method for handling keys when menu is shown
            @gui-key => GLFW/GLFW_KEY_F)))
 
