@@ -45,11 +45,53 @@
     (org.lwjgl.opengl
       GL11)
     (org.lwjgl.nuklear
-      Nuklear)))
+      Nuklear)
+    (com.codedisaster.steamworks
+      SteamLibraryLoaderLwjgl3
+      SteamAPI
+      SteamUserStats
+      SteamUserStatsCallback)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
+
+
+(def stats-callback
+  (reify SteamUserStatsCallback
+    (onUserStatsReceived [_this _gameId steamIDUser _result]
+      (log/info "Stats received for user:" steamIDUser))
+    (onUserStatsStored [_this _gameId result]
+      (log/info "Stats stored! Result code:" result))
+    (onUserAchievementStored [_this _gameId _isGroup achievementName _currentProgress _maxProgress]
+      (log/info "Achievement saved to server:" achievementName))))
+
+
+(defn get-user-stats []
+  (let [result (SteamUserStats. stats-callback)]
+    (.requestGlobalStats result 0)
+    result))
+
+
+(defn achievement-unlocked? [^SteamUserStats user-stats achievement-id]
+  (.isAchieved user-stats achievement-id false))
+
+
+(defn safe-unlock-achievement! [^SteamUserStats user-stats achievement-id]
+  (try
+    (when-not (achievement-unlocked? user-stats achievement-id)
+              (if (.setAchievement user-stats achievement-id)
+                (.storeStats user-stats)
+                (log/warn "Failed to set achievement" achievement-id)))
+    (catch Exception e
+      (log/error "Error updating achievements:" (.getMessage e)))))
+
+
+(defn debug-reset-all-achievements! [^SteamUserStats user-stats]
+  (.resetAllStats user-stats true)
+  (.storeStats user-stats)
+  (.requestGlobalStats user-stats 0))
+
 
 (defn -main
   "Space flight simulator main function"
@@ -86,7 +128,17 @@
           tile-tree           (planet/make-tile-tree)
           split-orientations  (quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8)
           surface             (quadtree/distance-to-surface config/planet-config split-orientations)
-          event-buffer        (atom (make-event-buffer))]
+          event-buffer        (atom (make-event-buffer))
+          steam-lib-loader    (SteamLibraryLoaderLwjgl3.)
+          steam-libs-loaded   (SteamAPI/loadLibraries steam-lib-loader)
+          steam-api-ready     (if steam-libs-loaded (SteamAPI/init) false)
+          user-stats          (if steam-api-ready (get-user-stats) nil)]
+
+      (log/info "Steam libraries" (if steam-libs-loaded "loaded successfully" "failed to load"))
+      (log/info "Steam API" (if steam-api-ready "initialised" "not available"))
+
+      ; (when user-stats
+      ;   (debug-reset-all-achievements! user-stats))
 
       ;; Register GLFW callbacks
       (GLFW/glfwSetCharCallback window (char-callback event-buffer))
@@ -187,6 +239,8 @@
                  (let [object-position    (physics/get-position :sfsim.physics/surface (:physics @state))
                        earth-radius       (:sfsim.planet/radius config/planet-config)
                        height             (- (mag object-position) ^double earth-radius)
+                       speed-of-sound     (atmosphere/speed-of-sound (atmosphere/temperature-at-height height))
+                       speed              (mag (physics/get-linear-speed :sfsim.physics/surface (:physics @state)))
                        pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
                        object-orientation (physics/get-orientation :sfsim.physics/surface (:physics @state))
                        [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
@@ -249,13 +303,17 @@
                        (spit-png (format "frame%06d.png" @frame-counter) {:sfsim.image/data data
                                                                           :sfsim.image/width window-width
                                                                           :sfsim.image/height window-height
-                                                                          :sfsim.image/channels 4} true))))
+                                                                          :sfsim.image/channels 4} true)))
+                   (when (and user-stats (> speed speed-of-sound))
+                     (safe-unlock-achievement! user-stats "SUPERSONIC")))
                  (Nuklear/nk_input_begin (:sfsim.gui/context @gui))
                  (GLFW/glfwPollEvents)
                  (swap! event-buffer joysticks-poll)
                  (Nuklear/nk_input_end (:sfsim.gui/context @gui))
                  (swap! state update :input process-events @event-buffer (->InputHandler @gui))
                  (reset! event-buffer (make-event-buffer))
+                 (when steam-api-ready
+                   (SteamAPI/runCallbacks))
                  (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                  (swap! frame-counter inc)))
         (planet/destroy-tile-tree tile-tree)
@@ -266,6 +324,9 @@
         (destroy-window window)
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
+        (when steam-api-ready
+          (log/info "shutting down Steam API")
+          (SteamAPI/shutdown))
         (when (and (not playback) @recording)
           (spit "recording.edn" (with-out-str (pprint @recording))))))
   (catch Exception e

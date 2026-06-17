@@ -13,6 +13,8 @@
         org.apache.commons/commons-compress {:mvn/version "1.28.0"}
         org.suskalo/coffi {:mvn/version "1.0.615"}
         quil/quil {:mvn/version "4.3.1563"}
+        com.code-disaster.steamworks4j/steamworks4j {:mvn/version "1.10.0"}
+        com.code-disaster.steamworks4j/steamworks4j-lwjgl3 {:mvn/version "1.10.0"}
         org.lwjgl/lwjgl {:mvn/version "3.4.1"}
         org.lwjgl/lwjgl$natives-linux {:mvn/version "3.4.1"}
         org.lwjgl/lwjgl-opengl {:mvn/version "3.4.1"}
