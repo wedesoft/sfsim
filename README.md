@@ -64,8 +64,8 @@ cd ..
 
 * Build Jolt wrapper library (tested with Linux and Windows/MinGW): `make jolt`
 * Download space ship model: `clj -T:build download-spaceship`
-* Download audio files: `clj -T:build download-audio`
 * Create content of data folder (Note that building everything takes days! You can take the data folder of a Steam playtest build instead unless latest software requires a future data release on Steam):
+  * Download audio files: `clj -T:build download-audio`
   * Volumetric clouds
     * Build Worley noise: `clj -T:build worley`
     * Build Perlin noise: `clj -T:build perlin`
@@ -219,5 +219,6 @@ The Blender model can be converted to GLB as follows:
   * [rebel-readline](https://github.com/bhauman/rebel-readline) REPL with colors :)
 * Data
   * [NASA CGI moon toolkit](https://svs.gsfc.nasa.gov/4720/)
+  * [International Space Station 3D Model](https://science.nasa.gov/resource/international-space-station-3d-model/)
 
 [1]: https://wedesoft.github.io/sfsim/

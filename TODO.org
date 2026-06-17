@@ -5,22 +5,21 @@
     focus on launch, orbit and reentry
   - [-] navball
     - [X] generate sphere texture [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
-    - [ ] green triangle rate indicators (top: roll, right: pitch, bottom: yaw) [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
-    - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw) [[https://gemini.google.com/share/dddf04ae5ff2]]
+    - [X] green triangle rate indicators (top: roll, right: pitch, bottom: yaw) [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
+    - [X] green center indicator
   - [ ] launch mfd, reinforcement learning launch physics
+    - [-] rewards/penalties
+      - [ ] penalise dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
+      - [ ] transition to Gaussian reward for fine tuning
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed
       - [X] state: position, speed, delta-v, t
       - [X] action: up, forward, sideways (defined by inclination of nearest speed vector)
+      - [ ] allow specifying inclination and boolean for ascending or descending node (use 360 degrees takeoff heading?)
       - [ ] action ambiguity at launch
-    - [-] rewards/penalties
-      - [ ] transition to Gaussian reward for fine tuning
-      - [ ] penalise dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
-      - [X] visualise thrust
-      - [X] does "done?" need to check intersection with a sphere in state space?
+    - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw) [[https://gemini.google.com/share/dddf04ae5ff2]]
     - [ ] simulate propellant weight
     - [ ] simulate Earth rotation
-    - [ ] allow specifying inclination and ascending or descending node
   - [ ] move flight control display to bottom middle (moveable windows?)
   - [ ] tutorial explaining ApA, ...
   - [ ] modes for Orbit MFD (hide/show orbit, text)
@@ -39,6 +38,7 @@
   - [ ] heat display
   - [ ] ILS
   - [X] yaw pitch roll rates
+  - [ ] add key to lock main thruster
   - [ ] attitude autopilot with roll reversal, angle-of-attack hold
   - [ ] f-35 style hud for now (3d cockpit later)
     - [[https://my.storageshare.cloud/s/5XozrsEY8xHLN3t][A400M cockpit]]
@@ -277,8 +277,9 @@
   - [ ] how to switch speed display (Moon orbit, Moon surface)
   - [ ] accelerated coordinate system with sun gravitation?
 * TODO [#C] add space station                                          :scenery:
-** TODO space station model, station lights
-** TODO NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
+ - [ ] space station model, station lights
+ - [ ] [[https://science.nasa.gov/resource/international-space-station-3d-model/]]
+ - [ ] NASA docking system, soft-dock, hard-dock, [[https://www.youtube.com/watch?v=dWYpVfhvsak][docking sytem]]
 * TODO [#C] marketing/progressing project                            :marketing:
   - Note taken on [2026-04-30 Do 21:42] \\
     [[https://www.gdcvault.com/play/1027731/Game-Demos-Done][Game demos done right]]

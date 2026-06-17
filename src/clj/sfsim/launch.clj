@@ -17,7 +17,7 @@
       [sfsim.quaternion :refer (orthogonal)]
       [sfsim.physics :refer (geographic->vector state-add state-scale runge-kutta gravitational-constant) :as physics]
       [sfsim.atmosphere :refer (temperature-at-height speed-of-sound density-at-height)]
-      [sfsim.aerodynamics :refer (lift drag wind-to-body-system reference-area c-d-0)]
+      [sfsim.aerodynamics :refer (lift drag wind-to-body-system reference-area c-d-0 max-q dynamic-pressure)]
       ; [sfsim.environment :refer (Environment)]
       ; [sfsim.mlp :refer (Critic adam-optimizer tensor toitem tolist without-gradient)]
       ; [sfsim.ppo :refer (sample-with-advantage-and-critic-target actor-loss critic-loss)]
@@ -66,7 +66,8 @@
    :weight-speed-reward 1.0
    :weight-fuel-reward 0.001
    :weight-angle-reward 0.1
-   :weight-orbit-reward 10.0})
+   :weight-orbit-reward 10.0
+   :weight-dynamic-pressure-reward 10.0})
 
 
 (defn setup
@@ -297,15 +298,26 @@
     (exp (- (+ (/ (sqr orbit-deviation) (sqr sigma-height)) (/ (sqr speed-deviation) (sqr sigma-speed)))))))
 
 
+(defn reward-dynamic-pressure
+  "Penalise exceeding Max Q"
+  [{:keys [speed position] :as state} {:keys [radius] :as config}]
+  (let [height           (- (mag position) ^double radius)
+        density          (density-at-height height)
+        dynamic-pressure (dynamic-pressure density (mag speed))]
+    (min 0.0 (/ (- max-q dynamic-pressure ) max-q))))
+
+
 (defn reward
   "Overall reward function"
   [state action
-   {:keys [weight-height-reward weight-speed-reward weight-fuel-reward weight-angle-reward weight-orbit-reward] :as config}]
+   {:keys [weight-height-reward weight-speed-reward weight-fuel-reward weight-angle-reward weight-orbit-reward
+           weight-dynamic-pressure-reward] :as config}]
   (+ (* ^double weight-height-reward ^double (reward-height state config))
      (* ^double weight-speed-reward ^double (reward-speed state config))
      (* ^double weight-orbit-reward ^double (reward-orbit state config))
      (* ^double weight-angle-reward ^double (reward-angle state action config))
-     (* ^double weight-fuel-reward ^double (reward-fuel action))))
+     (* ^double weight-fuel-reward ^double (reward-fuel action))
+     (* ^double weight-dynamic-pressure-reward ^double (reward-dynamic-pressure state config))))
 
 
 (defn speed-limit-at-height

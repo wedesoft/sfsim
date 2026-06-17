@@ -964,6 +964,12 @@
   (Nuklear/nk_stroke_circle canvas rect thickness color))
 
 
+(defn stroke-arc
+  "Draw arc outline"
+  [canvas cx cy radius a-min a-max thickness color]
+  (Nuklear/nk_stroke_arc canvas cx cy radius a-min a-max thickness color))
+
+
 (defn stroke-line
   "Draw a line"
   [canvas x0 y0 x1 y1 thickness color]
@@ -980,6 +986,12 @@
   "Draw polygon"
   [canvas points thickness color]
   (Nuklear/nk_stroke_polygon ^NkCommandBuffer canvas (float-array (flatten points)) ^double thickness ^NkColor color))
+
+
+(defn stroke-polyline
+  "Draw polygon"
+  [canvas points thickness color]
+  (Nuklear/nk_stroke_polyline ^NkCommandBuffer canvas (float-array (flatten points)) ^double thickness ^NkColor color))
 
 
 (defn draw-text
@@ -1569,7 +1581,7 @@
                                                                                  (case (long pitch) 0 -9 180 9 360 -9 0) 0))
                                                    fg   (if (or (<= pitch 180) (>= pitch 360)) black white)
                                                    bg   (if (or (<= pitch 180) (>= pitch 360)) white black)
-                                                   text (str (/ (mod (+ pitch 180) 360) 10))
+                                                   text (str (/ (mod (- 180 pitch) 360) 10))
                                                    tw   (text-width text (fonts yaw))
                                                    th   (* 18 (::scale-y (fonts yaw)))
                                                    pad  4]
@@ -1664,10 +1676,16 @@
      y0  (.y ^NkRect canvas-rect)
      w   (.w ^NkRect canvas-rect)
      h   (.h ^NkRect canvas-rect)]
-    (with-color
-      white 255 255 255
+    (with-colors
+      [white 255 255 255
+       green   0 255   0]
       (with-rect rect (+ x0 (scale gui 2)) (+ y0 (scale gui 2)) (- w (scale gui 4)) (- h (scale gui 4))
-        (Nuklear/nk_draw_image canvas rect img white)))))
+        (Nuklear/nk_draw_image canvas rect img white))
+      (stroke-polyline canvas [(+ x0 (/ w 2)) (+ y0 (/ h 3)) (+ x0 (/ w 2)) (+ y0 (/ (* 2 h) 3))]
+                       (scale gui 2) green)
+      (stroke-polyline canvas [[(+ x0 (/ w 3)) (+ y0 (/ h 2))] [(+ x0 (/ (* 2 w) 3)) (+ y0 (/ h 2))]]
+                       (scale gui 2) green)
+      (stroke-arc canvas (+ x0 (/ w 2)) (+ y0 (/ h 2)) (/ w 18) 0.0 Math/PI (scale gui 2) green))))
 
 
 (set! *unchecked-math* :warn-on-boxed)
