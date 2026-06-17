@@ -103,8 +103,10 @@
         height          (- (mag object-position) ^double earth-radius)
         speed-of-sound  (atmosphere/speed-of-sound (atmosphere/temperature-at-height height))
         speed           (mag (physics/get-linear-speed :sfsim.physics/surface physics-state))]
-    (when (and user-stats (> speed speed-of-sound))
-      (safe-unlock-achievement! user-stats "SUPERSONIC"))))
+    (when (> speed speed-of-sound)
+      (safe-unlock-achievement! user-stats "SUPERSONIC"))
+    (when (> height (:sfsim.planet/karman-line config/planet-config))
+      (safe-unlock-achievement! user-stats "EDGEOFSPACE"))))
 
 
 (set! *warn-on-reflection* false)

@@ -91,8 +91,8 @@
           event-buffer        (atom (make-event-buffer))
           user-stats          (steam/initialize)]
 
-      (when user-stats
-        (steam/debug-reset-all-achievements! user-stats))
+      ; (when user-stats
+      ;   (steam/debug-reset-all-achievements! user-stats))
 
       ;; Register GLFW callbacks
       (GLFW/glfwSetCharCallback window (char-callback event-buffer))
