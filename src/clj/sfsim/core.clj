@@ -25,6 +25,7 @@
     [sfsim.config :as config]
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
+    [sfsim.steam :as steam]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation get-translation)]
     [sfsim.model :as model]
     [sfsim.planet :as planet]
@@ -50,6 +51,7 @@
 
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
+
 
 (defn -main
   "Space flight simulator main function"
@@ -77,7 +79,7 @@
           opacity-base        100.0
           window-width        (:sfsim.render/window-width config/render-config)
           window-height       (:sfsim.render/window-height config/render-config)
-          window              (make-window "sfsim" window-width window-height true)
+          window              (make-window "sfsim" window-width window-height false)
           graphics            (graphics/make-graphics ["venturestar.glb"] (:sfsim.model/object-radius config/model-config))
           gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic)
           model               (first (:sfsim.graphics/models graphics))
@@ -86,7 +88,11 @@
           tile-tree           (planet/make-tile-tree)
           split-orientations  (quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8)
           surface             (quadtree/distance-to-surface config/planet-config split-orientations)
-          event-buffer        (atom (make-event-buffer))]
+          event-buffer        (atom (make-event-buffer))
+          user-stats          (steam/initialize)]
+
+      (when user-stats
+        (steam/debug-reset-all-achievements! user-stats))
 
       ;; Register GLFW callbacks
       (GLFW/glfwSetCharCallback window (char-callback event-buffer))
@@ -148,7 +154,7 @@
                    (gui/destroy-nuklear-gui-with-font @gui)
                    (if fullscreen
                      (let [scale (double (/ desktop-height ^long window-height))]
-                       (GLFW/glfwSetWindowMonitor window monitor 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
+                       (GLFW/glfwSetWindowMonitor window 0 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
                        (reset! gui (gui/make-navball (gui/make-nuklear-gui-with-font scale))))
                      (do
                        (GLFW/glfwSetWindowMonitor window 0
@@ -256,6 +262,9 @@
                  (Nuklear/nk_input_end (:sfsim.gui/context @gui))
                  (swap! state update :input process-events @event-buffer (->InputHandler @gui))
                  (reset! event-buffer (make-event-buffer))
+                 (when user-stats
+                   (steam/detect-achievements user-stats (:physics @state))
+                   (steam/run-callbacks))
                  (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                  (swap! frame-counter inc)))
         (planet/destroy-tile-tree tile-tree)
@@ -266,6 +275,7 @@
         (destroy-window window)
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
+        (when user-stats (steam/destroy))
         (when (and (not playback) @recording)
           (spit "recording.edn" (with-out-str (pprint @recording))))))
   (catch Exception e
@@ -274,3 +284,7 @@
          (System/exit 1)))
   (log/info "terminating sfsim" version)
   (System/exit 0))
+
+
+(set! *warn-on-reflection* false)
+(set! *unchecked-math* false)

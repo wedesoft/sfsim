@@ -57,16 +57,16 @@
    :dt 5.0
    :steps 50
    :max-thrust 2500000.0
-   :timeout 900.0
+   :timeout 820.0
    :max-climb 600.0
    :max-speed 9000.0
    :sigma-height 1000.0
    :sigma-speed 100.0
-   :weight-height-reward 0.5
+   :weight-height-reward 1.0
    :weight-speed-reward 1.0
    :weight-fuel-reward 0.001
    :weight-angle-reward 0.1
-   :weight-orbit-reward 10.0
+   :weight-orbit-reward 1.0
    :weight-dynamic-pressure-reward 10.0})
 
 

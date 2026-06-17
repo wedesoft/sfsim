@@ -324,7 +324,7 @@
   []
   {::menu       false
    ::focus      0
-   ::fullscreen false
+   ::fullscreen true
    ::pause      true
    ::controls
    {::brake         false
