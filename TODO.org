@@ -3,60 +3,34 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [-] navball
-    - [X] generate sphere texture [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
-    - [X] green triangle rate indicators (top: roll, right: pitch, bottom: yaw) [[https://wiki.flightgear.org/Space_Shuttle_Avionics]]
-    - [X] green center indicator
-  - [ ] launch mfd, reinforcement learning launch physics
+  - [ ] scales: airspeed, angle of attack (alpha), altitude (H) (and radar altitude), climb speed (Hdot)
+  - [ ] clock display: g-meter for acceleration
+  - [ ] switch orbit horizon to compass horizon
+  - [ ] modes for Orbit MFD (hide/show orbit, text)
+  - [ ] add key to lock main thruster
+  - [ ] launch guidance indicators, reinforcement learning launch physics
     - [-] rewards/penalties
-      - [ ] penalise dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
+      - [X] penalise dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
+      - [ ] fix not-a-number problems
       - [ ] transition to Gaussian reward for fine tuning
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed
       - [X] state: position, speed, delta-v, t
       - [X] action: up, forward, sideways (defined by inclination of nearest speed vector)
-      - [ ] allow specifying inclination and boolean for ascending or descending node (use 360 degrees takeoff heading?)
-      - [ ] action ambiguity at launch
+      - [ ] allow selection of inclination and boolean for ascending or descending node (use 360 degrees takeoff heading?)
     - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw) [[https://gemini.google.com/share/dddf04ae5ff2]]
     - [ ] simulate propellant weight
     - [ ] simulate Earth rotation
   - [ ] move flight control display to bottom middle (moveable windows?)
-  - [ ] tutorial explaining ApA, ...
-  - [ ] modes for Orbit MFD (hide/show orbit, text)
   - [ ] reentry mfd
     - [ ] PPO agent outputs high level guidance (bank angle and angle of attack)
     - [ ] use down-range and cross-range, ad coriolis and centrifugal acceleration to observations?
     - [ ] use velocity, flight path angle, altitude
-    calculate distance heading in ECEF system and provide airspeed to network?
+    - [ ] final entry window and heading alignment cylinder
   - [ ] runway with lights and glide slope indicator
   - [ ] fuel consumption
   - [ ] time lapse
-  - [ ] final entry window and heading alignment cylinder
-  - [ ] g-meter, wing stress
-  - [ ] map mfd (show cross track error and target loc, vacuum landing site (intersection with surface), base mfd
-  - [ ] deorbit mfd
-  - [ ] heat display
-  - [ ] ILS
-  - [X] yaw pitch roll rates
-  - [ ] add key to lock main thruster
-  - [ ] attitude autopilot with roll reversal, angle-of-attack hold
-  - [ ] f-35 style hud for now (3d cockpit later)
-    - [[https://my.storageshare.cloud/s/5XozrsEY8xHLN3t][A400M cockpit]]
-  - [ ] artificial horizon (speed, altitude, radar alt, sink rate)
-  - [ ] ils
-  - [ ] save/load game
-  - [ ] reentry flame, burning up
-  - [ ] thrust vectoring
-  - [ ] docs
-  - [ ] auto rudder
-  - [ ] controller button to get to menu and trackpad to select menu items?
-  - [ ] simulate crash
-  - [ ] steam achievements
-    - [[https://gemini.google.com/share/b5bbad86f07c]]
-    - [[https://partner.steamgames.com/doc/features/achievements]]
-    - [[https://code-disaster.github.io/steamworks4j/build-instructions.html]]
-    - [[https://partner.steamgames.com/doc/sdk/api#thirdparty]]
-  - [ ] Gabe Newell on realism: https://www.youtube.com/watch?v=MGpFEv1-mAo
+  - [ ] f-35 style glass cockpit [[https://my.storageshare.cloud/s/5XozrsEY8xHLN3t][A400M cockpit]]
 * TODO [#A] spacecraft simulation                                      :physics:
   - Note taken on [2026-05-07 Do 23:45] \\
     def stable_log_det(z):
@@ -126,7 +100,7 @@
     - [X] Can still use small simulation steps but large control steps
     - [ ] Start state curriculum: start with training runs near the landing site
     - [ ] Reward agent for following a reference energy profile (potential plus kinetic energy)
-    - [ ] reentry flame
+    - [ ] reentry flame, burning up
       - [[https://www.shadertoy.com/view/XX3fDH]]
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
   - [X] increase start distance of audio volume falloff
@@ -206,7 +180,6 @@
     [[https://uxdesign.cc/how-i-recreated-crew-dragons-ui-15877eddf3ed]]
     [[https://github.com/Neel-Dandiwala/SpaceX-Dragon2-UI?tab=readme-ov-file]]
 ** TODO cockpit, flight assistance tools, render cockpit and stencil/mask, then render planet, [[https://open.gl/depthstencils][depth stencils]]
-** TODO update controls in background thread
 ** TODO ground slope warning
 ** TODO frontal and side view of moon lander, altitude visualisation?
 ** TODO cockpit and scene rendering looking downward so that horizon is in upper half of screen
@@ -228,6 +201,8 @@
 ** TODO how to switch speed display (Earth surface, Earth orbit), display speed before applying second corrective impulse
 ** TODO top:
    - [ ] warnings (status display)
+   - [ ] attitude autopilot with roll reversal, angle-of-attack hold
+   - [ ] auto rudder
    - [ ] autopilot on/off, autothrottle (autopilot speed), angle of attack and bank hold (including reverse), roll reversal button
    - [ ] autopilot kill rotation, prograde, retrograde, orbit normal +/-, radial in/out
    - [ ] rcs mode (off, rotation, translation)
@@ -254,6 +229,10 @@
    - [ ] nav frequencies, dock, vtol freq
    - [ ] dock (angles, offset to path, distance, approach speed, x/y speed)
    - [ ] cameras (greyscale?)
+   - [ ] heat display
+   - [ ] deorbit mfd
+   - [ ] ILS
+   - [ ] map mfd (show cross track error and target loc, vacuum landing site (intersection with surface), base mfd
    - [ ] map of earth/moon
    - [ ] hull temperature
    - [ ] align orbit plane
@@ -360,12 +339,17 @@
     * Voice over
     * Visual effects
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
+  - [ ] thrust vectoring
+  - [ ] tutorial explaining ApA, ...
   - [ ] replikativ/raster (Christian Weilbach) defvalue erzeugt Vallhalla Valuetypes, die sind Stack alloziert.
     Auf älteren JDKs ist es ein defrecord.
     [[https://github.com/replikativ/raster/tree/main/examples/valley]]
     Nutze Panama direkt, aber coffi ist auch ok. Ich mache das über Struct of Arrays um Memorylocality für ganze Kollektionen zu haben.
     [[https://replikativ.github.io/raster/raster.ga_ode_rotors.html]]
   - openai api tokens: [[https://platform.openai.com/home]]
+  - [ ] controller button to get to menu and trackpad to select menu items?
+  - [ ] simulate crash
+  - [ ] save/load game
   - [ ] winter daytime is too dark, adjust range?
   - [X] limit timestep to prevent numerical problems
   - [X] add keyboard mapping help page!
