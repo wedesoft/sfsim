@@ -300,7 +300,7 @@
         radius (:sfsim.planet/radius config/planet-config)
         leo    (:sfsim.planet/low-orbit config/planet-config)
         music  (when (not (-> state ::settings ::no-music))
-                 (when (>= ^double height (:sfsim.planet/karman-line config/planet-config))
+                 (when (>= ^double height ^double (:sfsim.planet/karman-line config/planet-config))
                    (if (and (>= (periapsis config/planet-config physics) (+ ^double radius ^double leo))
                             (or (>= (eccentricity config/planet-config physics) 1.0)
                                 (>= (apoapsis config/planet-config physics) (+ ^double radius ^double leo))))

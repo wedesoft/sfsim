@@ -109,7 +109,7 @@
         eccentricity    (physics/eccentricity config/planet-config physics-state)]
     (when (> speed speed-of-sound)
       (safe-unlock-achievement! user-stats "SUPERSONIC"))
-    (when (> height (:sfsim.planet/karman-line config/planet-config))
+    (when (> height ^double (:sfsim.planet/karman-line config/planet-config))
       (safe-unlock-achievement! user-stats "EDGEOFSPACE"))
     (when (and (>= periapsis (+ ^double earth-radius ^double leo))
                (>= apoapsis (+ ^double earth-radius ^double leo)))
