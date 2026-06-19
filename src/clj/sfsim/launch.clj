@@ -63,7 +63,7 @@
    :sigma-height 1000.0
    :sigma-speed 100.0
    :weight-height-reward 1.0
-   :weight-speed-reward 1.0
+   :weight-speed-reward 0.5
    :weight-fuel-reward 0.001
    :weight-angle-reward 0.1
    :weight-orbit-reward 1.0
@@ -289,7 +289,6 @@
         (- (* relative-density (/ (acos cos-angle) PI)))))))
 
 
-
 (defn reward-orbit
   "Reward closeness to orbit"
   [state {:keys [sigma-height sigma-speed] :as config}]
@@ -304,7 +303,7 @@
   (let [height           (- (mag position) ^double radius)
         density          (density-at-height height)
         dynamic-pressure (dynamic-pressure density (mag speed))]
-    (min 0.0 (/ (- max-q dynamic-pressure ) max-q))))
+    (min 0.0 (/ (- ^double max-q dynamic-pressure ) ^double max-q))))
 
 
 (defn reward
@@ -411,7 +410,8 @@
      (py/make-instance-fn
        (fn [self a-mag z-mag]
            (let [sphere-area-correction (torch/mul 2.0 (torch/log (py. self ratio a-mag z-mag)))
-                 radial-correction      (torch/log (torch/sub 1.0 (torch/square a-mag)))]
+                 safe-one-minus-sq      (torch/clamp (torch/sub 1.0 (torch/square a-mag)) :min 1.0e-6)
+                 radial-correction      (torch/log safe-one-minus-sq)]
              (torch/add sphere-area-correction radial-correction))))
      "log_prob"
      (py/make-instance-fn
@@ -474,7 +474,7 @@
         critic             (Critic 4 64)
         n-epochs           100000
         n-updates          10
-        gamma              0.95
+        gamma              0.99
         lambda             1.0
         epsilon            0.2
         n-batches          16

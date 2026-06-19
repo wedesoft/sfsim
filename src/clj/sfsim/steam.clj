@@ -103,15 +103,19 @@
         leo             (:sfsim.planet/low-orbit config/planet-config)
         height          (- (mag object-position) ^double earth-radius)
         speed-of-sound  (atmosphere/speed-of-sound (atmosphere/temperature-at-height height))
-        speed           (mag (physics/get-linear-speed :sfsim.physics/surface physics-state))]
+        speed           (mag (physics/get-linear-speed :sfsim.physics/surface physics-state))
+        periapsis       (physics/periapsis config/planet-config physics-state)
+        apoapsis        (physics/apoapsis config/planet-config physics-state)
+        eccentricity    (physics/eccentricity config/planet-config physics-state)]
     (when (> speed speed-of-sound)
       (safe-unlock-achievement! user-stats "SUPERSONIC"))
     (when (> height (:sfsim.planet/karman-line config/planet-config))
       (safe-unlock-achievement! user-stats "EDGEOFSPACE"))
-   (when (and (>= (physics/periapsis config/planet-config physics-state) (+ ^double earth-radius ^double leo))
-                            (or (>= (physics/eccentricity config/planet-config physics-state) 1.0)
-                                (>= (physics/apoapsis config/planet-config physics-state) (+ ^double earth-radius ^double leo))))
-      (safe-unlock-achievement! user-stats "EARTHORBIT"))))
+    (when (and (>= periapsis (+ ^double earth-radius ^double leo))
+               (>= apoapsis (+ ^double earth-radius ^double leo)))
+      (safe-unlock-achievement! user-stats "EARTHORBIT")
+      (when (<= eccentricity 0.0025)
+        (safe-unlock-achievement! user-stats "CIRCULARORBIT")))))
 
 
 (set! *warn-on-reflection* false)
