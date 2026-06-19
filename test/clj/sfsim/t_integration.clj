@@ -148,7 +148,7 @@
                 level                     5
                 opacity-base              250.0
                 object-radius             (:sfsim.model/object-radius config/model-config)
-                graphics                  (graphics/make-graphics ["venturestar.glb"] object-radius)
+                graphics                  (graphics/make-graphics ["data/models/venturestar.glb"] object-radius)
                 planet-renderer           (:sfsim.graphics/planet-renderer graphics)
                 position                  (vec3 (+ 100.0 6378000.0) 0 0)
                 orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
@@ -232,7 +232,7 @@ void main()
                 object-orientation        (matrix->quaternion (reduce mulm [(rotation-matrix-3d-x (* 0.8 PI))
                                                                             (rotation-matrix-3d-y (* -0.4 PI))]))
                 object-radius             (:sfsim.model/object-radius config/model-config)
-                graphics                  (graphics/make-graphics ["venturestar.glb"] object-radius)
+                graphics                  (graphics/make-graphics ["data/models/venturestar.glb"] object-radius)
                 planet-renderer           (:sfsim.graphics/planet-renderer graphics)
                 light-direction           (vec3 1 0 0)
                 model                     (first (:sfsim.graphics/models graphics))

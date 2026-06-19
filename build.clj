@@ -351,7 +351,7 @@
     (.println *err* (str "Downloading " url " ..."))
     (io/copy
       (io/input-stream url)
-      (io/file filename))))
+      (io/file (str "data/models/" filename)))))
 
 (defn download-audio
   "Download Spaceship model"

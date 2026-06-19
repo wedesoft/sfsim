@@ -80,7 +80,7 @@
           window-width        (:sfsim.render/window-width config/render-config)
           window-height       (:sfsim.render/window-height config/render-config)
           window              (make-window "sfsim" window-width window-height false)
-          graphics            (graphics/make-graphics ["venturestar.glb"] (:sfsim.model/object-radius config/model-config))
+          graphics            (graphics/make-graphics ["data/models/venturestar.glb"] (:sfsim.model/object-radius config/model-config))
           gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic)
           model               (first (:sfsim.graphics/models graphics))
           convex-hulls        (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
