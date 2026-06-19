@@ -1,3 +1,10 @@
+sfsim (0.24-1)
+
+	* Add circular orbit Steam achievement
+	* Working on launch trajectory optimization
+
+-- Jan Wedekind <jan@wedesoft.de>  Sat, 20 Jun 2026 00:21:00 +0100
+
 sfsim (0.23-1)
 
 	* Add some Steam achievements
