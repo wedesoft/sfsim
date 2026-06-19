@@ -10,8 +10,7 @@
   - [ ] add key to lock main thruster
   - [ ] launch guidance indicators, reinforcement learning launch physics
     - [-] rewards/penalties
-      - [X] penalise dynamic pressure exceeding maxq (lambda * (max(0, q - qlimit)))
-      - [ ] fix not-a-number problems
+      - [-] fix not-a-number problems
       - [ ] transition to Gaussian reward for fine tuning
     - [-] reduce observation
       - [X] observation: height, climb speed, forward speed, sideways speed
