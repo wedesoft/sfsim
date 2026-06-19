@@ -59,9 +59,9 @@
    :max-speed 9000.0
    :sigma-height 1000.0
    :sigma-speed 100.0
-   :weight-height-reward 1.0
-   :weight-speed-reward 0.5
-   :weight-fuel-reward 0.001
+   :weight-height-reward 0.5
+   :weight-speed-reward 1.0
+   :weight-fuel-reward 0.01
    :weight-angle-reward 0.1
    :weight-orbit-reward 1.0
    :weight-dynamic-pressure-reward 10.0})
