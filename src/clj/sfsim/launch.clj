@@ -62,7 +62,7 @@
    :weight-height-reward 0.0
    :weight-apoapsis-reward 1.0
    :weight-speed-reward 1.0
-   :weight-fuel-reward 0.01
+   :weight-fuel-reward 0.001
    :weight-angle-reward 0.1
    :weight-orbit-reward 1.0
    :weight-dynamic-pressure-reward 10.0})
@@ -232,7 +232,7 @@
 
 
 (defn orbit-deviation
-  "Determine deviation of position from orbital plane"
+  "Determine deviation of position target height"
   [{:keys [position]} {:keys [radius orbit]}]
   (let [distance (mag position)]
     (abs (- ^double distance ^double radius ^double orbit))))
@@ -263,7 +263,7 @@
   [{:keys [position speed]} {:keys [planet-mass radius orbit]}]
   (let [physics-state {:sfsim.physics/domain :sfsim.physics/orbit :sfsim.physics/position position :sfsim.physics/speed speed}
         planet        {:sfsim.planet/mass planet-mass :sfsim.planet/radius radius}]
-    (- (abs (/ (- (physics/apoapsis planet physics-state) ^double radius ^double orbit) ^double orbit)))))
+    (- (sqr (/ (- (physics/apoapsis planet physics-state) ^double radius ^double orbit) ^double orbit)))))
 
 
 (defn reward-speed
