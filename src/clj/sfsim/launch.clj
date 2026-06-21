@@ -59,10 +59,10 @@
    :max-speed 9000.0
    :sigma-height 1000.0
    :sigma-speed 100.0
-   :weight-height-reward 0.1
-   :weight-orbit-range-reward 1.0
+   :weight-height-reward 0.0
+   :weight-apoapsis-or-height-reward 1.0
    :weight-speed-reward 1.0
-   :weight-fuel-reward 0.001
+   :weight-fuel-reward 0.000
    :weight-angle-reward 0.1
    :weight-orbit-reward 1.0
    :weight-dynamic-pressure-reward 1.0})
@@ -263,21 +263,16 @@
   [{:keys [position speed]} {:keys [planet-mass radius orbit]}]
   (let [physics-state {:sfsim.physics/domain :sfsim.physics/orbit :sfsim.physics/position position :sfsim.physics/speed speed}
         planet        {:sfsim.planet/mass planet-mass :sfsim.planet/radius radius}]
-    (- (sqr (/ (- (physics/apoapsis planet physics-state) ^double radius ^double orbit) ^double orbit)))))
+    (-> (physics/apoapsis planet physics-state) (- ^double radius ^double orbit) (/ ^double orbit) sqr -)))
 
 
-(defn reward-periapsis
-  "Penalty for deviations of periapsis height"
-  [{:keys [position speed]} {:keys [planet-mass radius orbit]}]
-  (let [physics-state {:sfsim.physics/domain :sfsim.physics/orbit :sfsim.physics/position position :sfsim.physics/speed speed}
-        planet        {:sfsim.planet/mass planet-mass :sfsim.planet/radius radius}]
-    (- (sqr (/ (- (physics/periapsis planet physics-state) ^double radius ^double orbit) ^double orbit)))))
-
-
-(defn reward-orbit-range
+(defn reward-apoapsis-or-height
   "Penalty for smallest deviation from orbit height"
-  [state config]
-  (max ^double (reward-apoapsis state config) ^double (reward-periapsis state config)))
+  [{:keys [position speed] :as state} config]
+  (let [vertical-speed (dot speed (normalize position))]
+    (if (pos? vertical-speed)
+      (reward-apoapsis state config)
+      (reward-height state config))))
 
 
 (defn reward-speed
@@ -330,14 +325,14 @@
   "Overall reward function"
   [state action
    {:keys [weight-height-reward weight-speed-reward weight-fuel-reward weight-angle-reward weight-orbit-reward
-           weight-dynamic-pressure-reward weight-orbit-range-reward] :as config}]
+           weight-dynamic-pressure-reward weight-apoapsis-or-height-reward] :as config}]
   (+ (* ^double weight-height-reward ^double (reward-height state config))
      (* ^double weight-speed-reward ^double (reward-speed state config))
      (* ^double weight-orbit-reward ^double (reward-orbit state config))
      (* ^double weight-angle-reward ^double (reward-angle state action config))
      (* ^double weight-fuel-reward ^double (reward-fuel action))
      (* ^double weight-dynamic-pressure-reward ^double (reward-dynamic-pressure state config))
-     (* ^double weight-orbit-range-reward ^double (reward-orbit-range state config))))
+     (* ^double weight-apoapsis-or-height-reward ^double (reward-apoapsis-or-height state config))))
 
 
 (defn speed-limit-at-height

@@ -48,7 +48,7 @@
    :weight-angle-reward 1.0
    :weight-orbit-reward 1.0
    :weight-dynamic-pressure-reward 1.0
-   :weight-orbit-range-reward 0.0})
+   :weight-apoapsis-or-height-reward 0.0})
 
 
 (facts "Launch rocket"
@@ -248,17 +248,12 @@
        (reward-apoapsis {:position (vec3 6698000 0 0) :speed (vec3 0 6000.0 0)} test-config) => (roughly -1.0 1e-3))
 
 
-(facts "Reward correct periapsis height"
-       (reward-periapsis {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} test-config) => (roughly 0.0 1e-3)
-       (reward-periapsis {:position (vec3 6378000 0 0) :speed (vec3 0 8000.0 0)} test-config) => (roughly -1.0 1e-3)
-       (reward-periapsis {:position (vec3 6698000 0 0) :speed (vec3 0 7808.0 0)} test-config) => (roughly -1.0 1e-3))
-
-
 (facts "Reward closest point of orbit"
-       (reward-orbit-range {:position (vec3 6538000 0 0) :speed (vec3 0 6000.0 0)} test-config) => (roughly 0.0 1e-3)
-       (reward-orbit-range {:position (vec3 6538000 0 0) :speed (vec3 0 9000.0 0)} test-config) => (roughly 0.0 1e-3)
-       (reward-orbit-range {:position (vec3 6698000 0 0) :speed (vec3 0 9000.0 0)} test-config) => (roughly -1.0 1e-3)
-       (reward-orbit-range {:position (vec3 6378000 0 0) :speed (vec3 0 6000.0 0)} test-config) => (roughly -1.0 1e-3))
+       (reward-apoapsis-or-height {:position (vec3 6538000 0 0) :speed (vec3 0 6000.0 0)} test-config) => (roughly 0.0 1e-3)
+       (reward-apoapsis-or-height {:position (vec3 6538000 0 0) :speed (vec3 0 9000.0 0)} test-config) => (roughly 0.0 1e-3)
+       (reward-apoapsis-or-height {:position (vec3 6698000 0 0) :speed (vec3 0 9000.0 0)} test-config) => (roughly -1.0 1e-3)
+       (reward-apoapsis-or-height {:position (vec3 6378000 0 0) :speed (vec3 0 6000.0 0)} test-config) => (roughly -1.0 1e-3)
+       (reward-apoapsis-or-height {:position (vec3 6378000 0 0) :speed (vec3 -100 7900.0 0)} test-config) => (roughly -1.0 1e-3))
 
 
 (facts "Penalise deviation from desired speed vector"
@@ -331,7 +326,7 @@
                                 (assoc test-config :weight-height-reward 0.0 :weight-speed-reward 0.0))
        => (roughly -1.0 1e-3)
        (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)}
-               (assoc test-config :weight-dynamic-pressure-reward 0.0 :weight-height-reward 0.0 :weight-orbit-range-reward 1.0))
+               (assoc test-config :weight-dynamic-pressure-reward 0.0 :weight-height-reward 0.0 :weight-apoapsis-or-height-reward 1.0))
        => (roughly -1.0 1e-3))
 
 
