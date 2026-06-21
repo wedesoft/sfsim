@@ -61,9 +61,9 @@
    :sigma-speed 100.0
    :weight-height-reward 0.0
    :weight-apoapsis-or-height-reward 1.0
-   :weight-speed-reward 1.0
-   :weight-fuel-reward 0.000
-   :weight-angle-reward 0.1
+   :weight-speed-reward 0.1
+   :weight-fuel-reward 0.0
+   :weight-angle-reward 0.01
    :weight-orbit-reward 1.0
    :weight-dynamic-pressure-reward 1.0})
 
@@ -490,13 +490,13 @@
         critic             (Critic 4 64)
         n-epochs           100000
         n-updates          10
-        gamma              0.99
+        gamma              0.95
         lambda             1.0
         epsilon            0.2
         n-batches          16
         batch-size         64
         checkpoint         100
-        entropy-factor     (atom 0.01)
+        entropy-factor     (atom 0.02)
         entropy-decay      0.9995
         lr                 1e-5
         weight-decay       2e-6
