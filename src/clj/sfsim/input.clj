@@ -326,6 +326,7 @@
    ::focus      0
    ::fullscreen true
    ::pause      true
+   ::time-lapse  1
    ::controls
    {::brake         false
     ::parking-brake false
@@ -350,6 +351,9 @@
     {GLFW/GLFW_KEY_ESCAPE    ::menu
      GLFW/GLFW_KEY_ENTER     ::fullscreen
      GLFW/GLFW_KEY_P         ::pause
+     GLFW/GLFW_KEY_J         ::time-lapse-slow-down
+     GLFW/GLFW_KEY_K         ::time-lapse-reset
+     GLFW/GLFW_KEY_L         ::time-lapse-speed-up
      GLFW/GLFW_KEY_G         ::gear
      GLFW/GLFW_KEY_B         ::brake
      GLFW/GLFW_KEY_F         ::throttle-decrease
@@ -435,7 +439,28 @@
 (defmethod simulator-key ::pause
   [state _id action _mods]
   (if (= action GLFW/GLFW_PRESS)
-    (update state ::pause not)
+    (assoc (update state ::pause not) ::time-lapse 1)
+    state))
+
+
+(defmethod simulator-key ::time-lapse-speed-up
+  [state _id action _mods]
+  (if (= action GLFW/GLFW_PRESS)
+    (update state ::time-lapse #(* ^long % 2))
+    state))
+
+
+(defmethod simulator-key ::time-lapse-slow-down
+  [state _id action _mods]
+  (if (= action GLFW/GLFW_PRESS)
+    (update state ::time-lapse (fn [x] (/ (max ^long x 2) 2)))
+    state))
+
+
+(defmethod simulator-key ::time-lapse-reset
+  [state _id action _mods]
+  (if (= action GLFW/GLFW_PRESS)
+    (assoc state ::time-lapse 1)
     state))
 
 
