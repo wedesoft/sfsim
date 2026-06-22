@@ -5,6 +5,8 @@ Aim is to simulate take off, space station docking, and moon landing with a futu
 Requires OpenGL 4.5 (glClipControl for reversed-z rendering)
 See [sfsim homepage][1] for more details.
 
+**[Warning: Only download sfsim binary releases via Steam and not from other sources!][2]**
+
 [![Aerodynamic prototype](https://i.ytimg.com/vi/38FGT7SWVh0/hqdefault.jpg)](https://www.youtube.com/watch?v=38FGT7SWVh0)
 
 # Installation
@@ -226,3 +228,4 @@ The Blender model can be converted to GLB as follows:
   * [International Space Station 3D Model](https://science.nasa.gov/resource/international-space-station-3d-model/)
 
 [1]: https://wedesoft.github.io/sfsim/
+[2]: https://store.steampowered.com/app/3687560/sfsim/
