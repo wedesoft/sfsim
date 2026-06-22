@@ -3,11 +3,11 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [ ] scales: airspeed, angle of attack (alpha), altitude (H) (and radar altitude), climb speed (Hdot)
-  - [ ] clock display: g-meter for acceleration
-  - [ ] switch orbit horizon to compass horizon
-  - [ ] modes for Orbit MFD (hide/show orbit, text)
-  - [ ] add key to lock main thruster
+  - [-] time lapse J, K, L, P?
+    - [ ] Execution error (StackOverflowError) at sfsim.quadtree/build-neighbour (quadtree.clj:497).
+    - [ ] Orbit display true anomaly wrong
+          physics-state       (physics/set-pose physics-state :sfsim.physics/orbit (vec3 6670000 0 200000) (q/->Quaternion 1 0 0 0))
+          physics-state       (physics/set-speed physics-state :sfsim.physics/orbit (vec3 0 7000 4000) (vec3 0 0 0))
   - [ ] launch guidance indicators, reinforcement learning launch physics
     - [-] rewards/penalties
       - [-] fix not-a-number problems
@@ -20,7 +20,14 @@
     - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw) [[https://gemini.google.com/share/dddf04ae5ff2]]
     - [ ] simulate propellant weight
     - [ ] simulate Earth rotation
-  - [ ] move flight control display to bottom middle (moveable windows?)
+  - [ ] scales: airspeed, angle of attack (alpha), altitude (H) (and radar altitude), climb speed (Hdot)
+  - [ ] clock display: g-meter for acceleration
+  - [ ] switching between orbit horizon and compass horizon
+  - [ ] modes for Orbit MFD (hide/show orbit, text)
+  - [ ] add key to lock main thruster
+  - [ ] flight control display
+    - [ ] nicer graphics
+    - [ ] move to bottom middle (moveable windows?)
   - [ ] reentry mfd
     - [ ] PPO agent outputs high level guidance (bank angle and angle of attack)
     - [ ] use down-range and cross-range, ad coriolis and centrifugal acceleration to observations?
@@ -28,7 +35,6 @@
     - [ ] final entry window and heading alignment cylinder
   - [ ] runway with lights and glide slope indicator
   - [ ] fuel consumption
-  - [ ] time lapse
   - [ ] f-35 style glass cockpit [[https://my.storageshare.cloud/s/5XozrsEY8xHLN3t][A400M cockpit]]
 * TODO [#A] spacecraft simulation                                      :physics:
   - Note taken on [2026-05-07 Do 23:45] \\

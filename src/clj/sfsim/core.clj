@@ -169,8 +169,9 @@
                  (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
                  (swap! state assoc-in [:gui :sfsim.gui/window-width] (aget w 0))
                  (swap! state assoc-in [:gui :sfsim.gui/window-height] (aget h 0)))
-               (let [dt (if fix-fps (elapsed-time (/ 1.0 ^double fix-fps) (/ 1.0 ^double fix-fps)) (elapsed-time))
-                     window-width (-> @state :gui :sfsim.gui/window-width)
+               (let [dt            (if fix-fps (elapsed-time (/ 1.0 ^double fix-fps) (/ 1.0 ^double fix-fps)) (elapsed-time))
+                     time-lapse    (-> @state :input :sfsim.input/time-lapse)
+                     window-width  (-> @state :gui :sfsim.gui/window-width)
                      window-height (-> @state :gui :sfsim.gui/window-height)]
                  (planet/update-tile-tree (:sfsim.graphics/planet-renderer graphics) tile-tree window-width
                                           (physics/get-position :sfsim.physics/surface (:physics @state)))
@@ -183,7 +184,7 @@
                      (swap! state assoc :camera (:camera frame)))
                    (do
                      (when (not (-> @state :input :sfsim.input/pause))
-                       (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) dt
+                       (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) (* dt time-lapse)
                               config/planet-config split-orientations thrust))
                      (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
                      (swap! state update :audio audio/update-state (:physics @state) (:input @state) (:camera @state))
@@ -242,7 +243,7 @@
                                       (when (not playback)
                                         (let [controls (-> @state :input :sfsim.input/controls)]
                                           (gui/flight-controls-display controls @gui)
-                                          (gui/information-display @gui window-width window-height @state @frametime)))
+                                          (gui/information-display @gui window-width window-height @state @frametime time-lapse)))
                                       (gui/render-nuklear-gui @gui window-width window-height)))
                    (graphics/finalise-frame frame)
                    (when playback

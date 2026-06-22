@@ -62,12 +62,13 @@
    :max-speed 9000.0
    :sigma-height 1000.0
    :sigma-speed 100.0
-   :weight-height-reward 0.5
-   :weight-speed-reward 1.0
-   :weight-fuel-reward 0.01
-   :weight-angle-reward 0.1
+   :weight-height-reward 0.0
+   :weight-apoapsis-or-height-reward 1.0
+   :weight-speed-reward 0.1
+   :weight-fuel-reward 0.0
+   :weight-angle-reward 0.01
    :weight-orbit-reward 1.0
-   :weight-dynamic-pressure-reward 10.0})
+   :weight-dynamic-pressure-reward 1.0})
 
 
 (defn setup
@@ -234,7 +235,7 @@
 
 
 (defn orbit-deviation
-  "Determine deviation of position from orbital plane"
+  "Determine deviation of position target height"
   [{:keys [position]} {:keys [radius orbit]}]
   (let [distance (mag position)]
     (abs (- ^double distance ^double radius ^double orbit))))
@@ -258,6 +259,23 @@
   "Penalty for deviations from orbit height"
   [state {:keys [orbit] :as config}]
   (-> ^double (orbit-deviation state config) (/ ^double orbit) sqr -))
+
+
+(defn reward-apoapsis
+  "Penalty for deviations of apoapsis height"
+  [{:keys [position speed]} {:keys [planet-mass radius orbit]}]
+  (let [physics-state {:sfsim.physics/domain :sfsim.physics/orbit :sfsim.physics/position position :sfsim.physics/speed speed}
+        planet        {:sfsim.planet/mass planet-mass :sfsim.planet/radius radius}]
+    (-> (physics/apoapsis planet physics-state) (- ^double radius ^double orbit) (/ ^double orbit) sqr -)))
+
+
+(defn reward-apoapsis-or-height
+  "Penalty for smallest deviation from orbit height"
+  [{:keys [position speed] :as state} config]
+  (let [vertical-speed (dot speed (normalize position))]
+    (if (pos? vertical-speed)
+      (reward-apoapsis state config)
+      (reward-height state config))))
 
 
 (defn reward-speed
@@ -299,24 +317,25 @@
 
 (defn reward-dynamic-pressure
   "Penalise exceeding Max Q"
-  [{:keys [speed position] :as state} {:keys [radius] :as config}]
+  [{:keys [speed position]} {:keys [radius]}]
   (let [height           (- (mag position) ^double radius)
         density          (density-at-height height)
         dynamic-pressure (dynamic-pressure density (mag speed))]
-    (min 0.0 (/ (- ^double max-q dynamic-pressure ) ^double max-q))))
+    (min 0.0 (/ (- ^double max-q dynamic-pressure) ^double max-q))))
 
 
 (defn reward
   "Overall reward function"
   [state action
    {:keys [weight-height-reward weight-speed-reward weight-fuel-reward weight-angle-reward weight-orbit-reward
-           weight-dynamic-pressure-reward] :as config}]
+           weight-dynamic-pressure-reward weight-apoapsis-or-height-reward] :as config}]
   (+ (* ^double weight-height-reward ^double (reward-height state config))
      (* ^double weight-speed-reward ^double (reward-speed state config))
      (* ^double weight-orbit-reward ^double (reward-orbit state config))
      (* ^double weight-angle-reward ^double (reward-angle state action config))
      (* ^double weight-fuel-reward ^double (reward-fuel action))
-     (* ^double weight-dynamic-pressure-reward ^double (reward-dynamic-pressure state config))))
+     (* ^double weight-dynamic-pressure-reward ^double (reward-dynamic-pressure state config))
+     (* ^double weight-apoapsis-or-height-reward ^double (reward-apoapsis-or-height state config))))
 
 
 (defn speed-limit-at-height
@@ -474,16 +493,16 @@
         critic             (Critic 4 64)
         n-epochs           100000
         n-updates          10
-        gamma              0.99
+        gamma              0.95
         lambda             1.0
         epsilon            0.2
         n-batches          16
         batch-size         64
         checkpoint         100
-        entropy-factor     (atom 0.01)
-        entropy-decay      0.999
-        lr                 2e-5
-        weight-decay       5e-5
+        entropy-factor     (atom 0.02)
+        entropy-decay      0.9995
+        lr                 1e-5
+        weight-decay       2e-6
         smooth-actor-loss  (atom 0.0)
         smooth-critic-loss (atom 0.0)
         actor-optimizer    (adam-optimizer actor lr weight-decay)

@@ -618,6 +618,36 @@
          (@state :sfsim.input/last-joystick-axis) => ["Gamepad" 0]))
 
 
+(facts "Time controls for time lapse"
+       (let [state    (atom (make-initial-state))
+             mappings (get-in @state [:sfsim.input/mappings :sfsim.input/keyboard])]
+         (:sfsim.input/time-lapse @state) => 1
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_J) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_J) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/time-lapse @state) => 1
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_L) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_L) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/time-lapse @state) => 2
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_L) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_L) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/time-lapse @state) => 4
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_J) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_J) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/time-lapse @state) => 2
+         (swap! state assoc :sfsim.input/time-lapse 4)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_K) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_K) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/time-lapse @state) => 1
+         (swap! state assoc :sfsim.input/time-lapse 4)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_P) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_P) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/time-lapse @state) => 1
+         (swap! state assoc :sfsim.input/time-lapse 64)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_L) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_L) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/time-lapse @state) => 64))
+
+
 (facts "Get human readable key name"
        (get-key-name GLFW/GLFW_KEY_P) => "P"
        (get-key-name GLFW/GLFW_KEY_BACKSLASH) => "\\"

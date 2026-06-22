@@ -5,6 +5,8 @@ Aim is to simulate take off, space station docking, and moon landing with a futu
 Requires OpenGL 4.5 (glClipControl for reversed-z rendering)
 See [sfsim homepage][1] for more details.
 
+**[Warning: Only download sfsim binary releases via Steam and not from other sources!][2]**
+
 [![Aerodynamic prototype](https://i.ytimg.com/vi/38FGT7SWVh0/hqdefault.jpg)](https://www.youtube.com/watch?v=38FGT7SWVh0)
 
 # Installation
@@ -62,37 +64,41 @@ cd ..
 
 # Build
 
-* Build Jolt wrapper library (tested with Linux and Windows/MinGW): `make jolt`
+You need to build the Jolt wrapper library (tested with Linux and Windows/MinGW): `make jolt`
+
+Furthermore you need to create content of data folder as shown in the bullet points below.
+Note that building everything takes days!
+You can take the data folder of a Steam playtest build instead.
 * Download space ship model: `clj -T:build download-spaceship`
-* Create content of data folder (Note that building everything takes days! You can take the data folder of a Steam playtest build instead unless latest software requires a future data release on Steam):
-  * Download audio files: `clj -T:build download-audio`
-  * Volumetric clouds
-    * Build Worley noise: `clj -T:build worley`
-    * Build Perlin noise: `clj -T:build perlin`
-    * Build blue noise: `clj -T:build bluenoise`
-    * Build cloud cover: `clj -T:build cloud-cover`
-  * Celestial motion data
-    * Planetary motions: `clj -T:build download-ephemeris`
-    * Lunar reference frame: `clj -T:build download-reference-frames`
-    * Lunar motion: `clj -T:build download-lunar-pck-file`
-  * Earth cube map tiles (this takes days to build)
-    * Download NASA Bluemarble data: `clj -T:build download-bluemarble`
-    * Download NASA Blackmarble data: `clj -T:build download-Blackmarble`
-    * Download NOAA elevation data: `clj -T:build download-elevation`
-    * Download NASA JPL ephemeris data: `clj -T:build download-ephemeris`
-    * Extract elevation data: `clj -T:build extract-elevation`
-    * Convert day map sectors into pyramid of tiles: `clj -T:build map-sectors-day`
-    * Convert night map sectors into pyramid of tiles: `clj -T:build map-sectors-night`
-    * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
-    * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
-  * Lunar data (not used yet)
-    * Download Moon color images: `clj -T:build download-lunar-color`
-    * Download Moon elevation: `clj -T:build download-lunar-elevation`
-  * Atmospheric lookup tables (this takes hours to compute)
-    * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
-    * Perform all build steps above: `clj -T:build all`
-  * Make navball texture: `clj -T:build navball-orbit`
-* Enable integration tests (requiring results of above build steps): `touch .integration`
+* Download audio files: `clj -T:build download-audio`
+* Volumetric clouds
+  * Build Worley noise: `clj -T:build worley`
+  * Build Perlin noise: `clj -T:build perlin`
+  * Build blue noise: `clj -T:build bluenoise`
+  * Build cloud cover: `clj -T:build cloud-cover`
+* Celestial motion data
+  * Planetary motions: `clj -T:build download-ephemeris`
+  * Lunar reference frame: `clj -T:build download-reference-frames`
+  * Lunar motion: `clj -T:build download-lunar-pck-file`
+* Earth cube map tiles (this takes days to build)
+  * Download NASA Bluemarble data: `clj -T:build download-bluemarble`
+  * Download NASA Blackmarble data: `clj -T:build download-Blackmarble`
+  * Download NOAA elevation data: `clj -T:build download-elevation`
+  * Download NASA JPL ephemeris data: `clj -T:build download-ephemeris`
+  * Extract elevation data: `clj -T:build extract-elevation`
+  * Convert day map sectors into pyramid of tiles: `clj -T:build map-sectors-day`
+  * Convert night map sectors into pyramid of tiles: `clj -T:build map-sectors-night`
+  * Convert elevation sectors into pyramid of tiles: `clj -T:build elevation-sectors`
+  * Convert tile pyramids into pyramid of cube maps: `clj -T:build cube-maps`
+* Lunar data (not used yet)
+  * Download Moon color images: `clj -T:build download-lunar-color`
+  * Download Moon elevation: `clj -T:build download-lunar-elevation`
+* Atmospheric lookup tables (this takes hours to compute)
+  * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
+  * Perform all build steps above: `clj -T:build all`
+* Make navball texture: `clj -T:build navball-orbit`
+
+You can enable the integration tests as follows (requires results of above build steps): `touch .integration`
 
 ## Further Build Steps under Windows
 
@@ -222,3 +228,4 @@ The Blender model can be converted to GLB as follows:
   * [International Space Station 3D Model](https://science.nasa.gov/resource/international-space-station-3d-model/)
 
 [1]: https://wedesoft.github.io/sfsim/
+[2]: https://store.steampowered.com/app/3687560/sfsim/
