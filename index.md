@@ -12,6 +12,8 @@ You can already download the [sfsim playtest build on Steam][3] and try it out.
 Use an advanced single-stage-to-orbit space craft to take off, orbit the planet, perform reentry, and land back on Earth.
 sfsim features a true to scale Earth planet using NOAA elevation data and procedurally generated volumetric clouds.
 
+**[Note: Only download sfsim binary releases via Steam and not from other sources!][3]**
+
 ### Take off
 Blast off from the launch pad and slowly tilt your spacecraft to start building up horizontal speed and climb to orbital height.
 Make sure you don't loose to much energy to air friction but also gather enough horizontal speed not to plunge back into the atmosphere.
