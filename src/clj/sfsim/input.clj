@@ -326,7 +326,7 @@
    ::focus      0
    ::fullscreen true
    ::pause      true
-   ::time-lapse  1
+   ::time-lapse 1
    ::controls
    {::brake         false
     ::parking-brake false
@@ -446,7 +446,7 @@
 (defmethod simulator-key ::time-lapse-speed-up
   [state _id action _mods]
   (if (= action GLFW/GLFW_PRESS)
-    (update state ::time-lapse #(* ^long % 2))
+    (update state ::time-lapse (fn [x] (min 64 (* 2 ^long x))))
     state))
 
 
