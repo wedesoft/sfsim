@@ -71,7 +71,9 @@
 
 (facts "Akima spline function"
        ((akima-spline 2.0 3.0, 5.0 7.0, 6.0 8.0, 7.0 8.0, 8.0 7.0) 3.5) => (roughly 5.1875 1e-4)
-       ((akima-spline 2.0 3.0, 5.0 7.0, 11.0 13.0, 17.0 19.0, 23.0 29.0) 8.0) => (roughly 10.1667 1e-4))
+       ((akima-spline 2.0 3.0, 5.0 7.0, 11.0 13.0, 17.0 19.0, 23.0 29.0) 8.0) => (roughly 10.1667 1e-4)
+       ((akima-spline 2.0 3.0, 5.0 7.0, 6.0 8.0, 7.0 8.0, 8.0 7.0) 1.0) => (roughly 3.0 1e-4)
+       ((akima-spline 2.0 3.0, 5.0 7.0, 6.0 8.0, 7.0 8.0, 8.0 7.0) 9.0) => (roughly 7.0 1e-4))
 
 
 (facts "Mix two values depending on angle"

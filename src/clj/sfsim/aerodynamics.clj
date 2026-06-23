@@ -82,13 +82,21 @@
 
 
 (defn akima-spline
-  "Create Akima spline function from series of interleaved x and y coordinates"
+  "Create Akima spline function from series of at least 5 interleaved x and y coordinates"
   {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
   [& args]
   (let [points (partition 2 args)
         x      (map first points)
-        y      (map second points)]
-    (interpolation/akima-spline x y)))
+        y      (map second points)
+        x0     (first x)
+        y0     (first y)
+        x1     (last x)
+        y1     (last y)]
+    (fn [v]
+        (cond
+          (< ^double v ^double x0) y0
+          (> ^double v ^double x1) y1
+          :else ((interpolation/akima-spline x y) v)))))
 
 
 (defn mix
