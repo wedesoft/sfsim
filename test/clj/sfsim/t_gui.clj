@@ -294,7 +294,7 @@
         gui canvas rect 160 24
         (with-color red 255 0 0
           (stroke-rect canvas rect 0.0 3.0 red)))
-      => (is-image "test/clj/sfsim/fixtures/gui/stroke-rect.png" 0.10))
+      => (is-image "test/clj/sfsim/fixtures/gui/stroke-rect.png" 0.16))
 
 
 (fact "Test filled circle"

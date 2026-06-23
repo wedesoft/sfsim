@@ -4,8 +4,10 @@
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
   - [-] time lapse J, K, L, P?
+    - [ ] limit timelapse in atmosphere
+    - [ ] disallow timelapse with RCS
+    - [ ] limit timelapse with main engine on
     - [ ] Execution error (StackOverflowError) at sfsim.quadtree/build-neighbour (quadtree.clj:497).
-    - [ ] Orbit display true anomaly wrong
           physics-state       (physics/set-pose physics-state :sfsim.physics/orbit (vec3 6670000 0 200000) (q/->Quaternion 1 0 0 0))
           physics-state       (physics/set-speed physics-state :sfsim.physics/orbit (vec3 0 7000 4000) (vec3 0 0 0))
   - [ ] launch guidance indicators, reinforcement learning launch physics
