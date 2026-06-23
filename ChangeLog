@@ -1,3 +1,9 @@
+sfsim (0.26-1)
+
+	* Avoid out of bounds exception for Akima splines
+
+-- Jan Wedekind <jan@wedesoft.de>  Tue, 23 Jun 2026 23:12:00 +0100
+
 sfsim (0.25-1)
 
 	* Add time lapse functionality
