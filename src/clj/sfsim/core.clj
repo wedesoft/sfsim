@@ -184,8 +184,8 @@
                      (swap! state assoc :camera (:camera frame)))
                    (do
                      (when (not (-> @state :input :sfsim.input/pause))
-                       (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls) (* dt time-lapse)
-                              config/planet-config split-orientations thrust))
+                       (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls)
+                              (* ^double dt ^long time-lapse) config/planet-config split-orientations thrust))
                      (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
                      (swap! state update :audio audio/update-state (:physics @state) (:input @state) (:camera @state))
                      (when (and @recording (not (-> @state :input :sfsim.input/pause)))
