@@ -48,6 +48,7 @@
    :weight-angle-reward 1.0
    :weight-orbit-reward 1.0
    :weight-dynamic-pressure-reward 1.0
+   :sigma-speed-mix 1.0
    :weight-apoapsis-or-height-reward 0.0})
 
 
@@ -249,11 +250,17 @@
 
 
 (facts "Reward closest point of orbit"
-       (reward-apoapsis-or-height {:position (vec3 6538000 0 0) :speed (vec3 0 6000.0 0)} test-config) => (roughly 0.0 1e-3)
-       (reward-apoapsis-or-height {:position (vec3 6538000 0 0) :speed (vec3 0 9000.0 0)} test-config) => (roughly 0.0 1e-3)
-       (reward-apoapsis-or-height {:position (vec3 6698000 0 0) :speed (vec3 0 9000.0 0)} test-config) => (roughly -1.0 1e-3)
-       (reward-apoapsis-or-height {:position (vec3 6378000 0 0) :speed (vec3 0 6000.0 0)} test-config) => (roughly -1.0 1e-3)
-       (reward-apoapsis-or-height {:position (vec3 6378000 0 0) :speed (vec3 -100 7900.0 0)} test-config) => (roughly -1.0 1e-3))
+       (reward-apoapsis-or-height {:position (vec3 6538000 0 0) :speed (vec3 0 6000.0 0)} test-config 1.0) => (roughly 0.0 1e-3)
+       (reward-apoapsis-or-height {:position (vec3 6538000 0 0) :speed (vec3 0 8000.0 0)} test-config 1.0) => (roughly -18.305 1e-3)
+       (reward-apoapsis-or-height {:position (vec3 6698000 0 0) :speed (vec3 0 6000.0 0)} test-config 1.0) => (roughly -1.0 1e-3)
+       (reward-apoapsis-or-height {:position (vec3 6378000 0 0) :speed (vec3 0 6000.0 0)} test-config 1.0) => (roughly -1.0 1e-3)
+       (reward-apoapsis-or-height {:position (vec3 6378000 0 0) :speed (vec3 -100 7900.0 0)} test-config 0.0) => (roughly -1.0 1e-3))
+
+
+(facts "Sigmoid function"
+       (sigmoid 1.0) => (roughly 0.731 1e-3)
+       (sigmoid -1.0) => (roughly 0.269 1e-3)
+       (sigmoid 0.0) => 0.5)
 
 
 (facts "Penalise deviation from desired speed vector"

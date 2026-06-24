@@ -59,13 +59,14 @@
    :max-speed 9000.0
    :sigma-height 1000.0
    :sigma-speed 100.0
-   :weight-height-reward 0.0
-   :weight-apoapsis-or-height-reward 1.0
-   :weight-speed-reward 0.1
-   :weight-fuel-reward 0.0
-   :weight-angle-reward 0.01
-   :weight-orbit-reward 1.0
-   :weight-dynamic-pressure-reward 1.0})
+   :sigma-speed-mix 100.0
+   :weight-height-reward 0.5
+   :weight-apoapsis-or-height-reward 0.0
+   :weight-speed-reward 1.0
+   :weight-fuel-reward 0.001
+   :weight-angle-reward 0.1
+   :weight-orbit-reward 10.0
+   :weight-dynamic-pressure-reward 0.0})
 
 
 (defn setup
@@ -262,17 +263,26 @@
   "Penalty for deviations of apoapsis height"
   [{:keys [position speed]} {:keys [planet-mass radius orbit]}]
   (let [physics-state {:sfsim.physics/domain :sfsim.physics/orbit :sfsim.physics/position position :sfsim.physics/speed speed}
-        planet        {:sfsim.planet/mass planet-mass :sfsim.planet/radius radius}]
-    (-> (physics/apoapsis planet physics-state) (- ^double radius ^double orbit) (/ ^double orbit) sqr -)))
+        planet        {:sfsim.planet/mass planet-mass :sfsim.planet/radius radius}
+        apoapsis      (physics/apoapsis planet physics-state)]
+    (- (sqr (/ (- ^double apoapsis ^double radius ^double orbit) ^double orbit)))))
+
+
+(defn sigmoid
+  "Sigmoid function"
+  [x]
+  (/ 1.0 (+ 1.0 (exp (- ^double x)))))
 
 
 (defn reward-apoapsis-or-height
   "Penalty for smallest deviation from orbit height"
-  [{:keys [position speed] :as state} config]
-  (let [vertical-speed (dot speed (normalize position))]
-    (if (pos? vertical-speed)
-      (reward-apoapsis state config)
-      (reward-height state config))))
+  ([{:keys [speed position] :as state} {:keys [sigma-speed-mix] :as config}]
+   (let [vertical-speed (dot speed (normalize position))
+         mix            (sigmoid (/ vertical-speed sigma-speed-mix))]
+     (reward-apoapsis-or-height state config 0.0)))
+  ([state config mix]
+   (+ (* mix (reward-apoapsis state config))
+      (* (- 1.0 mix) (reward-height state config)))))
 
 
 (defn reward-speed
@@ -496,10 +506,10 @@
         n-batches          16
         batch-size         64
         checkpoint         100
-        entropy-factor     (atom 0.02)
-        entropy-decay      0.9995
-        lr                 1e-5
-        weight-decay       2e-6
+        entropy-factor     (atom 0.01)
+        entropy-decay      0.999
+        lr                 2e-5
+        weight-decay       5e-5
         smooth-actor-loss  (atom 0.0)
         smooth-critic-loss (atom 0.0)
         actor-optimizer    (adam-optimizer actor lr weight-decay)
