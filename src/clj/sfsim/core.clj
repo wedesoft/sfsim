@@ -169,10 +169,13 @@
                  (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
                  (swap! state assoc-in [:gui :sfsim.gui/window-width] (aget w 0))
                  (swap! state assoc-in [:gui :sfsim.gui/window-height] (aget h 0)))
-               (let [dt            (if fix-fps (elapsed-time (/ 1.0 ^double fix-fps) (/ 1.0 ^double fix-fps)) (elapsed-time))
-                     time-lapse    (-> @state :input :sfsim.input/time-lapse)
-                     window-width  (-> @state :gui :sfsim.gui/window-width)
-                     window-height (-> @state :gui :sfsim.gui/window-height)]
+               (let [dt              (if fix-fps (elapsed-time (/ 1.0 ^double fix-fps) (/ 1.0 ^double fix-fps)) (elapsed-time))
+                     earth-radius    (:sfsim.planet/radius config/planet-config)
+                     object-position (physics/get-position :sfsim.physics/surface (:physics @state))
+                     height          (- (mag object-position) ^double earth-radius)
+                     time-lapse      (min (-> @state :input :sfsim.input/time-lapse) (aerodynamics/time-lapse-limit height))
+                     window-width    (-> @state :gui :sfsim.gui/window-width)
+                     window-height   (-> @state :gui :sfsim.gui/window-height)]
                  (planet/update-tile-tree (:sfsim.graphics/planet-renderer graphics) tile-tree window-width
                                           (physics/get-position :sfsim.physics/surface (:physics @state)))
                  (if (-> @state :input :sfsim.input/menu)
@@ -192,7 +195,6 @@
                        (let [frame {:physics (physics/save-state (:physics @state)) :camera (:camera @state)}]
                          (swap! recording conj frame)))))
                  (let [object-position    (physics/get-position :sfsim.physics/surface (:physics @state))
-                       earth-radius       (:sfsim.planet/radius config/planet-config)
                        height             (- (mag object-position) ^double earth-radius)
                        pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
                        object-orientation (physics/get-orientation :sfsim.physics/surface (:physics @state))
