@@ -59,10 +59,7 @@
    :max-speed 9000.0
    :sigma-height 1000.0
    :sigma-speed 100.0
-   :sigma-speed-mix 100.0
    :weight-height-reward 0.5
-   :weight-apoapsis-reward 0.001
-   :weight-apoapsis-or-height-reward 0.0  ; increase once agent reaches orbit
    :weight-speed-reward 4.0
    :weight-fuel-reward 0.0001
    :weight-angle-reward 0.1
@@ -260,15 +257,6 @@
   (-> ^double (orbit-deviation state config) (/ ^double orbit) sqr -))
 
 
-(defn reward-apoapsis
-  "Penalty for deviations of apoapsis height"
-  [{:keys [position speed]} {:keys [planet-mass radius orbit]}]
-  (let [physics-state {:sfsim.physics/domain :sfsim.physics/orbit :sfsim.physics/position position :sfsim.physics/speed speed}
-        planet        {:sfsim.planet/mass planet-mass :sfsim.planet/radius radius}
-        apoapsis      (physics/apoapsis planet physics-state)]
-    (- (sqr (/ (- ^double apoapsis ^double radius ^double orbit) ^double orbit)))))
-
-
 (defn reward-speed
   "Reward for approaching orbital speed"
   [state {:keys [radius orbit planet-mass] :as config}]
@@ -319,14 +307,13 @@
   "Overall reward function"
   [state action
    {:keys [weight-height-reward weight-speed-reward weight-fuel-reward weight-angle-reward weight-orbit-reward
-           weight-dynamic-pressure-reward weight-apoapsis-reward] :as config}]
+           weight-dynamic-pressure-reward] :as config}]
   (+ (* ^double weight-height-reward ^double (reward-height state config))
      (* ^double weight-speed-reward ^double (reward-speed state config))
      (* ^double weight-orbit-reward ^double (reward-orbit state config))
      (* ^double weight-angle-reward ^double (reward-angle state action config))
      (* ^double weight-fuel-reward ^double (reward-fuel action))
-     (* ^double weight-dynamic-pressure-reward ^double (reward-dynamic-pressure state config))
-     (* ^double weight-apoapsis-reward ^double (reward-apoapsis state config))))
+     (* ^double weight-dynamic-pressure-reward ^double (reward-dynamic-pressure state config))))
 
 
 (defn speed-limit-at-height

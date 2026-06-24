@@ -47,9 +47,7 @@
    :weight-fuel-reward 1.0
    :weight-angle-reward 1.0
    :weight-orbit-reward 1.0
-   :weight-dynamic-pressure-reward 1.0
-   :sigma-speed-mix 1.0
-   :weight-apoapsis-reward 0.0})
+   :weight-dynamic-pressure-reward 1.0})
 
 
 (facts "Launch rocket"
@@ -243,12 +241,6 @@
        (reward-height {:position (vec3 6458000 0 0)} test-config) => -0.25)
 
 
-(facts "Reward correct apoapsis height"
-       (reward-apoapsis {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} test-config) => (roughly 0.0 1e-3)
-       (reward-apoapsis {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} test-config) => (roughly -1.0 1e-3)
-       (reward-apoapsis {:position (vec3 6698000 0 0) :speed (vec3 0 6000.0 0)} test-config) => (roughly -1.0 1e-3))
-
-
 (facts "Penalise deviation from desired speed vector"
        (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 0)} test-config) => (roughly -1.0 1e-3)
        (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} test-config) => (roughly 0.0 1e-3)
@@ -317,9 +309,6 @@
        => (roughly -2.0 1e-3)
        (reward {:position (vec3 6389000 0 0) :speed (vec3 542.462 0 0)} {:control (vec3 0 0 0)}
                                 (assoc test-config :weight-height-reward 0.0 :weight-speed-reward 0.0))
-       => (roughly -1.0 1e-3)
-       (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)}
-               (assoc test-config :weight-dynamic-pressure-reward 0.0 :weight-height-reward 0.0 :weight-apoapsis-reward 1.0))
        => (roughly -1.0 1e-3))
 
 
