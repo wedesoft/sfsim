@@ -49,7 +49,7 @@
    :weight-orbit-reward 1.0
    :weight-dynamic-pressure-reward 1.0
    :sigma-speed-mix 1.0
-   :weight-apoapsis-or-height-reward 0.0})
+   :weight-apoapsis-reward 0.0})
 
 
 (facts "Launch rocket"
@@ -249,20 +249,6 @@
        (reward-apoapsis {:position (vec3 6698000 0 0) :speed (vec3 0 6000.0 0)} test-config) => (roughly -1.0 1e-3))
 
 
-(facts "Reward closest point of orbit"
-       (reward-apoapsis-or-height {:position (vec3 6538000 0 0) :speed (vec3 0 6000.0 0)} test-config 1.0) => (roughly 0.0 1e-3)
-       (reward-apoapsis-or-height {:position (vec3 6538000 0 0) :speed (vec3 0 8000.0 0)} test-config 1.0) => (roughly -18.305 1e-3)
-       (reward-apoapsis-or-height {:position (vec3 6698000 0 0) :speed (vec3 0 6000.0 0)} test-config 1.0) => (roughly -1.0 1e-3)
-       (reward-apoapsis-or-height {:position (vec3 6378000 0 0) :speed (vec3 0 6000.0 0)} test-config 1.0) => (roughly -1.0 1e-3)
-       (reward-apoapsis-or-height {:position (vec3 6378000 0 0) :speed (vec3 -100 7900.0 0)} test-config 0.0) => (roughly -1.0 1e-3))
-
-
-(facts "Sigmoid function"
-       (sigmoid 1.0) => (roughly 0.731 1e-3)
-       (sigmoid -1.0) => (roughly 0.269 1e-3)
-       (sigmoid 0.0) => 0.5)
-
-
 (facts "Penalise deviation from desired speed vector"
        (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 0 0)} test-config) => (roughly -1.0 1e-3)
        (reward-speed {:position (vec3 6538000 0 0) :speed (vec3 0 7808.140 0)} test-config) => (roughly 0.0 1e-3)
@@ -333,7 +319,7 @@
                                 (assoc test-config :weight-height-reward 0.0 :weight-speed-reward 0.0))
        => (roughly -1.0 1e-3)
        (reward {:position (vec3 6378000 0 0) :speed (vec3 0 7808.140 0)} {:control (vec3 0 0 0)}
-               (assoc test-config :weight-dynamic-pressure-reward 0.0 :weight-height-reward 0.0 :weight-apoapsis-or-height-reward 1.0))
+               (assoc test-config :weight-dynamic-pressure-reward 0.0 :weight-height-reward 0.0 :weight-apoapsis-reward 1.0))
        => (roughly -1.0 1e-3))
 
 

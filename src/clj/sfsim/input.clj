@@ -835,7 +835,7 @@
   "Limit time lapse depending on height"
   ^long [^double height ^double throttle]
   (if (zero? throttle)
-    (* 2 (long (pow 2 (min 6 (floor (/ height 10000))))))
+    (* 2 (long (pow 2 (min 5 (floor (/ height 10000))))))
     4))
 
 
