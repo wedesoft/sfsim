@@ -6,7 +6,7 @@
 
 (ns sfsim.aerodynamics
     (:require
-      [clojure.math :refer (PI cos sin to-radians atan2 hypot exp floor pow)]
+      [clojure.math :refer (PI cos sin to-radians atan2 hypot exp)]
       [fastmath.matrix :refer (mat3x3 mulv)]
       [fastmath.vector :refer (vec3 mag add)]
       [fastmath.interpolation :as interpolation]
@@ -499,12 +499,6 @@
   "Maximum dynamic pressure data point from space shuttle (height 11000m, speed 1.3 Ma)"
   (let [h 11000]
     (dynamic-pressure (atmosphere/density-at-height h) (* 1.3 (atmosphere/speed-of-sound (atmosphere/temperature-at-height h))))))
-
-
-(defn time-lapse-limit
-  "Limit time lapse depending on height"
-  ^long [^double height]
-  (* 2 (long (pow 2 (floor (/ height 10000))))))
 
 
 (def C-l-q 4.2624)

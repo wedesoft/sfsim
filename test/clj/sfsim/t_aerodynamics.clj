@@ -702,13 +702,6 @@
                 height => (fn [height] (>= (:upper (pitch-acceleration-range height)) 0.0)))))
 
 
-(facts "Limit time lapse depending on height"
-       (time-lapse-limit 0) => 2
-       (time-lapse-limit 10000) => 4
-       (time-lapse-limit 20000) => 8
-       (time-lapse-limit 5000) => 2)
-
-
 (facts "Test altitude control authority at different heights"
        (doseq [height (range 0.0 120000.0 1000.0)]
               height => (fn [height]

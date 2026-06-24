@@ -6,7 +6,7 @@
 
 (ns sfsim.input
     (:require
-      [clojure.math :refer (signum)]
+      [clojure.math :refer (signum pow floor)]
       [clojure.string :refer (upper-case)]
       [clojure.set :refer (map-invert)]
       [sfsim.config :as config]
@@ -829,6 +829,14 @@
       (menu-joystick-button state device button action)
       (let [joystick (some-> state ::mappings ::joysticks ::devices (get device))]
         (simulator-joystick-button (some-> joystick ::buttons (get button)) state action)))))
+
+
+(defn time-lapse-limit
+  "Limit time lapse depending on height"
+  ^long [^double height ^double throttle]
+  (if (zero? throttle)
+    (* 2 (long (pow 2 (min 6 (floor (/ height 10000))))))
+    4))
 
 
 (set! *warn-on-reflection* false)

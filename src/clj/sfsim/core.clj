@@ -38,7 +38,7 @@
     [sfsim.image :refer (spit-png)]
     [sfsim.audio :as audio]
     [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config process-events joysticks-poll ->InputHandler
-                         char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback)])
+                         char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback time-lapse-limit)])
   (:import
     (org.lwjgl.glfw
       GLFW
@@ -173,7 +173,8 @@
                      earth-radius    (:sfsim.planet/radius config/planet-config)
                      object-position (physics/get-position :sfsim.physics/surface (:physics @state))
                      height          (- (mag object-position) ^double earth-radius)
-                     time-lapse      (min (-> @state :input :sfsim.input/time-lapse) (aerodynamics/time-lapse-limit height))
+                     throttle        (-> @state :input :sfsim.input/controls :sfsim.input/throttle)
+                     time-lapse      (min (-> @state :input :sfsim.input/time-lapse) (time-lapse-limit height throttle))
                      window-width    (-> @state :gui :sfsim.gui/window-width)
                      window-height   (-> @state :gui :sfsim.gui/window-height)]
                  (planet/update-tile-tree (:sfsim.graphics/planet-renderer graphics) tile-tree window-width
