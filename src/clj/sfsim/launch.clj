@@ -60,9 +60,9 @@
    :sigma-height 1000.0
    :sigma-speed 100.0
    :weight-height-reward 0.5
-   :weight-speed-reward 4.0
+   :weight-speed-reward 2.0
    :weight-fuel-reward 0.0001
-   :weight-angle-reward 0.1
+   :weight-angle-reward 0.0001
    :weight-orbit-reward 10.0
    :weight-dynamic-pressure-reward 0.01})
 
