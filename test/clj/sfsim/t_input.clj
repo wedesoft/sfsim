@@ -672,6 +672,7 @@
        (time-lapse-limit 20000 0.0) => 8
        (time-lapse-limit 5000 0.0) => 2
        (time-lapse-limit 20000 0.5) => 4
+       (time-lapse-limit 5000 0.5) => 2
        (time-lapse-limit 1000000 0.0) => 64)
 
 
