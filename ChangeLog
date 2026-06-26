@@ -1,3 +1,11 @@
+sfsim (0.27-1)
+
+	* Make pause label more prominent
+	* Limit time lapse depending on height
+	* Limit time lapse with engine on
+
+-- Jan Wedekind <jan@wedesoft.de>  Fri, 26 Jun 2026 23:40:00 +0100
+
 sfsim (0.26-1)
 
 	* Avoid out of bounds exception for Akima splines

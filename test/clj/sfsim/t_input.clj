@@ -666,4 +666,13 @@
        (get-key-name GLFW/GLFW_KEY_ENTER) => "Enter")
 
 
+(facts "Limit time lapse depending on height and throttle"
+       (time-lapse-limit 0 0.0) => 2
+       (time-lapse-limit 10000 0.0) => 4
+       (time-lapse-limit 20000 0.0) => 8
+       (time-lapse-limit 5000 0.0) => 2
+       (time-lapse-limit 20000 0.5) => 4
+       (time-lapse-limit 1000000 0.0) => 64)
+
+
 (GLFW/glfwTerminate)

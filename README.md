@@ -98,27 +98,36 @@ You can take the data folder of a Steam playtest build instead.
   * Perform all build steps above: `clj -T:build all`
 * Make navball texture: `clj -T:build navball-orbit`
 
+# Run
+
+* Run tests (recommended to use xvfb-run): `xvfb-run uv run clj -M:test`
+* Run test for specific module (rendering for example): `xvfb-run uv run clj -M:test sfsim.t-render`
+* Run the global cloud cover prototype: `clj -M etc/cover.clj`
+* Run main program: `clj -M:run`
+
 You can enable the integration tests as follows (requires results of above build steps): `touch .integration`
 
-## Further Build Steps under Windows
+# Release on Steam
+
+## Steps under GNU/Linux
 
 * Update version number in `src/clj/sfsim/version.clj`
 * Update ChangeLog
-* make sure Jolt wrapper library was built: `make jolt`
-* Delete target and out-windows directories (do not omit this step otherwise it can generate a broken build)
-* Build JAR file: `clj -T:build uber`
-* Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json` (delete out-windows folder first)
-* Upload to Steam: `sdk\tools\ContentBuilder\builder\steamcmd.exe +login <account_name> <password> +run_app_build C:\Users\....\sfsim\scripts\sfsim_playtest_windows.vdf +quit`
-
-## Further Build Steps under GNU/Linux
-
-* Update version number in `src/clj/sfsim/version.clj`
-* Update ChangeLog
+* Add a Git tag
 * make sure Jolt wrapper library was built: `make jolt`
 * Delete target and out-linux directories (do not omit this step, otherwise it can generate a broken build)
 * Build JAR file: `clj -T:build uber`
 * Create Linux executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json` (delete out-linux folder first)
 * Upload to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login <account_name> <password> +run_app_build /home/..../sfsim/scripts/sfsim_playtest_linux.vdf +quit`
+
+## Steps under Windows
+
+* Checkout windows branch and merge in main branch
+* make sure Jolt wrapper library was built: `make jolt`
+* Delete target and out-windows directories (do not omit this step otherwise it can generate a broken build)
+* Build JAR file: `clj -T:build uber`
+* Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json` (delete out-windows folder first)
+* Upload to Steam: `sdk\tools\ContentBuilder\builder\steamcmd.exe +login <account_name> <password> +run_app_build C:\Users\....\sfsim\scripts\sfsim_playtest_windows.vdf +quit`
 
 ## Data Upload to Steam
 
@@ -128,13 +137,6 @@ You can enable the integration tests as follows (requires results of above build
 
 * [Install clj-kondo](https://github.com/clj-kondo/clj-kondo/blob/master/doc/install.md)
 * Run `clj-kondo --lint src/clj/sfsim`
-
-# Run
-
-* Run tests (recommended to use xvfb-run): `xvfb-run uv run clj -M:test`
-* Run test for specific module (rendering for example): `xvfb-run uv run clj -M:test sfsim.t-render`
-* Run the global cloud cover prototype: `clj -M etc/cover.clj`
-* Run main program: `clj -M:run`
 
 # Converting Blender file to GLB
 

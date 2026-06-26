@@ -3,13 +3,15 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [-] time lapse J, K, L, P?
-    - [ ] limit timelapse in atmosphere
-    - [ ] disallow timelapse with RCS
-    - [ ] limit timelapse with main engine on
-    - [ ] Execution error (StackOverflowError) at sfsim.quadtree/build-neighbour (quadtree.clj:497).
-          physics-state       (physics/set-pose physics-state :sfsim.physics/orbit (vec3 6670000 0 200000) (q/->Quaternion 1 0 0 0))
-          physics-state       (physics/set-speed physics-state :sfsim.physics/orbit (vec3 0 7000 4000) (vec3 0 0 0))
+  - [ ] more prominent pause indicator
+  - [ ] replace flight stick
+  - [ ] runway with lights and glide slope indicator
+    - [ ] render cube mesh backfaces without depth writing but leave depth testing on
+    - [ ] look at depth buffer in fragment shader
+    - [ ] calculate world position
+    - [ ] transform to texture coordinate
+    - [ ] use texture arrays for albedo, normal map, roughness map
+    - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
   - [ ] launch guidance indicators, reinforcement learning launch physics
     - [-] rewards/penalties
       - [-] fix not-a-number problems
@@ -35,7 +37,6 @@
     - [ ] use down-range and cross-range, ad coriolis and centrifugal acceleration to observations?
     - [ ] use velocity, flight path angle, altitude
     - [ ] final entry window and heading alignment cylinder
-  - [ ] runway with lights and glide slope indicator
   - [ ] fuel consumption
   - [ ] f-35 style glass cockpit [[https://my.storageshare.cloud/s/5XozrsEY8xHLN3t][A400M cockpit]]
 * TODO [#A] spacecraft simulation                                      :physics:
