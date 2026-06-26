@@ -1882,7 +1882,7 @@
                                     [bg  255 255 255
                                      red 255   0   0]
                                     (fill-rect canvas canvas-rect 0.0 bg)
-                                    (draw-text canvas (+ x0 (/ (- w tw) 2)) y0 tw h "Pause" font red)))))))
+                                    (draw-text canvas (+ x0 (/ (- w ^double tw) 2)) y0 tw h "Pause" font red)))))))
     (nuklear-window gui "Information" (scale gui (+ 20 256)) (- ^long h (scale gui (+ 10 ^long text-height)))
                     (scale gui 720) (scale gui (* ^long text-height 1)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)
