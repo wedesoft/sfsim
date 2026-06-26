@@ -1849,14 +1849,13 @@
 (defn information-display
   [gui w h state frametime time-lapse]
   (let [controls (-> state :input :sfsim.input/controls)
-        text1    (format "vs = %.1f m/s, v = %.1f m/s, %s%s%s%s, fps = %5.1f, time x = %3d"
+        text     (format "vs = %.1f m/s, v = %.1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
                          (:sfsim.physics/display-vertical-speed (:physics state))
                          (:sfsim.physics/display-speed (:physics state))
                          (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
                          (if (:sfsim.input/brake controls) ", brake"
                            (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
                          (if (:sfsim.input/air-brake controls) ", air brake" "")
-                         (if (-> state :input :sfsim.input/pause) ", pause" "")
                          (/ 1.0 ^double frametime)
                          time-lapse)]
     (without-window-padding gui
@@ -1868,11 +1867,26 @@
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
                       (navball-prepare gui (physics/orbit-orientation (:physics state)))
-                      (navball-mfd gui (physics/rotation-rates (:physics state)))))
-    (nuklear-window gui "Information" (scale gui (+ 20 256)) (- ^long h (scale gui (+ 10 (* ^long text-height 1))))
+                      (navball-mfd gui (physics/rotation-rates (:physics state))))
+      (when (-> state :input :sfsim.input/pause)
+        (nuklear-window gui "Pause" (scale gui (+ 20 128)) (scale gui 10) (scale gui 80) (scale gui text-row-height) :widget
+                        (layout-row-dynamic gui (scale gui text-row-height) 1)
+                        (widget gui canvas canvas-rect
+                                (let [font (::bitmap-font gui)
+                                      x0   (.x ^NkRect canvas-rect)
+                                      y0   (.y ^NkRect canvas-rect)
+                                      w    (.w ^NkRect canvas-rect)
+                                      h    (.h ^NkRect canvas-rect)
+                                      tw   (text-width "Pause" font)]
+                                  (with-colors
+                                    [bg  255 255 255
+                                     red 255   0   0]
+                                    (fill-rect canvas canvas-rect 0.0 bg)
+                                    (draw-text canvas (+ x0 (/ (- w tw) 2)) y0 tw h "Pause" font red)))))))
+    (nuklear-window gui "Information" (scale gui (+ 20 256)) (- ^long h (scale gui (+ 10 ^long text-height)))
                     (scale gui 720) (scale gui (* ^long text-height 1)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)
-                    (text-label gui text1))))
+                    (text-label gui text))))
 
 
 (set! *warn-on-reflection* false)
