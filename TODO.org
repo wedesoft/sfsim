@@ -3,7 +3,8 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [ ] more prominent pause indicator
+  - [X] more prominent pause indicator
+  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [ ] replace flight stick
   - [ ] runway with lights and glide slope indicator
     - [ ] render cube mesh backfaces without depth writing but leave depth testing on
@@ -103,7 +104,6 @@
       [[https://news.ycombinator.com/item?id=45145794]]
     - [[https://www.youtube.com/watch?v=1oyCzT6sB_4][Lockheed Martin F-35 Lightning II Stealth Fighter Cockpit Demonstrator Hands-On]]
     - nominal angular RCS accelerations according to Gemini: 1 degree for roll and pitch, 2 degrees per second square for yaw
-  - [ ] schemas for model, planet, and atmosphere geometry renderer
   - [-] reentry physics
     - [X] Can still use small simulation steps but large control steps
     - [ ] Start state curriculum: start with training runs near the landing site
