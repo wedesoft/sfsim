@@ -189,14 +189,14 @@
 
 (def mesh
   (m/schema [:map [::indices [:vector N0]]
-             [::vertices [:vector number?]]
-             [::attributes [:vector [:or :string N0]]]
-             [::material-index N0]]))
+                  [::vertices [:vector number?]]
+                  [::attributes [:vector [:or :string N0]]]
+                  [::material-index N0]]))
 
 
 (defn- decode-mesh
   "Fetch vertex and index data for mesh with given index"
-  {:malli/schema [:=> [:cat :some [:vector material] N0] :map]}
+  {:malli/schema [:=> [:cat :some [:vector material] N0] mesh]}
   [scene materials i]
   (let [buffer              (.mMeshes ^AIScene scene)
         mesh                (AIMesh/create ^long (.get buffer ^long i))
@@ -685,8 +685,20 @@
   (get-translation (::transform node)))
 
 
+(def hull
+  (m/schema [:map [::name :string]
+             [::transform fmat4]
+             [::children [:vector fvec3]]]))
+
+
+(def hulls
+  (m/schema [:map [::name :string]
+             [::transform fmat4]
+             [::children [:vector hull]]]))
+
 (defn- extract-hull
   "Get empty coordinate systems from empty meshes"
+  {:malli/schema [:=> [:cat node] [:maybe hull]]}
   [node]
   (if (and (empty? (::mesh-indices node)) (every? #(empty? (::children %)) (::children node)) (> (count (::children node)) 3))
     (assoc (select-keys node [::transform ::name]) ::children (mapv extract-empty (::children node)))
@@ -695,6 +707,7 @@
 
 (defn- extract-hulls
   "Convert empty meshes to convex hulls"
+  {:malli/schema [:=> [:cat node] hulls]}
   [root]
   (let [children (map extract-hull (::children root))]
     (assoc (select-keys root [::transform ::name]) ::children (vec (remove nil? children)))))
@@ -702,6 +715,7 @@
 
 (defn empty-meshes-to-points
   "Convert empty meshes to points of for convex hulls"
+  {:malli/schema [:=> [:cat [:map [::root node]]] hulls]}
   [scene]
   (extract-hulls (::root scene)))
 
