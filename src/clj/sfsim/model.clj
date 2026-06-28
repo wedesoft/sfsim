@@ -298,9 +298,13 @@
       ::channels (into {} (mapv #(decode-channel animation ticks-per-second %) (range (.mNumChannels animation))))}]))
 
 
+(def scene
+  (m/schema [:map [::root node]]))
+
+
 (defn read-gltf
   "Import a glTF file"
-  {:malli/schema [:=> [:cat :string] [:map [::root node]]]}
+  {:malli/schema [:=> [:cat :string] scene]}
   [filename]
   (let [scene      (Assimp/aiImportFile ^String filename (bit-or Assimp/aiProcess_Triangulate Assimp/aiProcess_CalcTangentSpace))
         materials  (mapv #(decode-material scene %) (range (.mNumMaterials scene)))
@@ -373,7 +377,7 @@
 
 (defn- load-textures-into-opengl
   "Load images into OpenGL textures"
-  {:malli/schema [:=> [:cat [:map [::root node]]] [:map [::root node] [::textures [:vector texture-2d]]]]}
+  {:malli/schema [:=> [:cat scene] [:map [::root node] [::textures [:vector texture-2d]]]]}
   [scene]
   (update scene ::textures
           (fn load-textures-into-opengl [textures]
@@ -398,7 +402,7 @@
 
 (defn- propagate-materials
   "Add material information to meshes"
-  {:malli/schema [:=> [:cat [:map [::root node]]] [:map [::root node] [::meshes [:vector mesh]]]]}
+  {:malli/schema [:=> [:cat scene] [:map [::root node] [::meshes [:vector mesh]]]]}
   [scene]
   (update scene ::meshes
           (fn propagate-materials [meshes] (mapv #(assoc % ::material (nth (::materials scene) (::material-index %))) meshes))))
@@ -406,7 +410,7 @@
 
 (defn load-scene-into-opengl
   "Load indices and vertices into OpenGL buffers"
-  {:malli/schema [:=> [:cat fn? [:map [::root node]]] [:map [::root node]]]}
+  {:malli/schema [:=> [:cat fn? scene] scene]}
   [program-selection scene]
   (-> scene
       load-textures-into-opengl
@@ -417,7 +421,7 @@
 
 (defn destroy-scene
   "Destroy vertex array objects of scene"
-  {:malli/schema [:=> [:cat [:map [::root node]]] :nil]}
+  {:malli/schema [:=> [:cat scene] :nil]}
   [scene]
   (doseq [mesh (::meshes scene)] (destroy-vertex-array-object (::vao mesh)))
   (doseq [texture (::textures scene)] (destroy-texture texture)))
@@ -433,7 +437,7 @@
 
 (defn render-scene
   "Render meshes of specified scene"
-  {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:vector fmat4] [:map [::root node]] ifn?
+  {:malli/schema [:=> [:cat [:=> [:cat material] :nil] :int :map [:vector fmat4] scene ifn?
                        [:? [:cat fmat4 fmat4 node]]] :nil]}
   ([program-selection texture-offset render-vars scene-shadow-matrices scene callback]
    (render-scene program-selection texture-offset render-vars scene-shadow-matrices scene callback (::transform (::root scene))
@@ -674,7 +678,7 @@
 
 (defn remove-empty-meshes
   "Remove empty meshes from scene"
-  {:malli/schema [:=> [:cat [:map [::root node]]] [:map [::root node]]]}
+  {:malli/schema [:=> [:cat scene] scene]}
   [scene]
   (update scene ::root remove-empty-children))
 
@@ -716,14 +720,14 @@
 
 (defn empty-meshes-to-points
   "Convert empty meshes to points of for convex hulls"
-  {:malli/schema [:=> [:cat [:map [::root node]]] hulls]}
+  {:malli/schema [:=> [:cat scene] hulls]}
   [scene]
   (extract-hulls (::root scene)))
 
 
 (defn load-scene
   "Load glTF scene and load it into OpenGL"
-  {:malli/schema [:=> [:cat scene-renderer [:map [::root node]]] [:map [::root node]]]}
+  {:malli/schema [:=> [:cat scene-renderer scene] scene]}
   [scene-renderer model]
   (let [gltf-object   (remove-empty-meshes model)
         opengl-object (load-scene-into-opengl (comp (::programs scene-renderer) material-and-shadow-type) gltf-object)]
@@ -788,7 +792,7 @@
   "Render a list of scenes"
   {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector scene-shadow]
                             [:map [:sfsim.clouds/distance texture-2d]] texture-2d
-                            [:vector [:map [::root node]]]] :nil]}
+                            [:vector scene]] :nil]}
   [scene-renderer render-vars shadow-vars scene-shadows geometry clouds scenes]
   (let [render-config      (:sfsim.render/config scene-renderer)
         cloud-data         (:sfsim.clouds/data scene-renderer)
@@ -902,7 +906,7 @@
 
 (defn render-shadow-map
   "Render shadow map for an object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer :map [:map [::root node]]] texture-2d]}
+  {:malli/schema [:=> [:cat scene-shadow-renderer :map scene] texture-2d]}
   [renderer shadow-vars scene]
   (let [size           (::size renderer)
         centered-scene (assoc-in scene [::root ::transform] (eye 4))]
@@ -917,7 +921,7 @@
 
 (defn scene-shadow-map
   "Determine shadow matrices and render shadow map for object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 [:map [::root node]]] scene-shadow]}
+  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene] scene-shadow]}
   [renderer light-direction scene]
   (let [object-to-world (get-in scene [:sfsim.model/root :sfsim.model/transform])
         object-radius   (::object-radius renderer)
@@ -990,7 +994,7 @@
 
 (defn render-scene-geometry
   "Render geometry (points and distances) for a scene"
-  {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars [:map [::root node]]] :nil]}
+  {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars scene] :nil]}
   [geometry-renderer render-vars scene]
   (let [projection       (:sfsim.render/overlay-projection render-vars)]
     (doseq [program (vals (::programs geometry-renderer))]
@@ -1034,17 +1038,28 @@
   (destroy-atmosphere-geometry-renderer atmosphere-renderer))
 
 
+(def model-planet-render-vars
+  (m/schema [:map
+              [:sfsim.render/camera-to-world fmat4]
+              [:sfsim.render/z-near :double]
+              [:sfsim.render/z-far :double]
+              [:sfsim.render/overlay-projection fmat4]
+              [:sfsim.render/overlay-width :int]
+              [:sfsim.render/overlay-height :int]]))
+
+
 (defn render-joined-geometry
   "Render joined geometry of scene, planet, and atmosphere"
-  {:malli/schema [:=> [:cat joined-geometry-renderer :any :any :any :any] :nil]}
-  [{::keys [scene-renderer planet-renderer atmosphere-renderer]} scene-render-vars planet-render-vars model tree]
-  (let [model-covers-planet? (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
+  {:malli/schema [:=> [:cat joined-geometry-renderer model-planet-render-vars model-planet-render-vars [:maybe scene]
+                       [:maybe :some]] :any]}
+  [{::keys [scene-renderer planet-renderer atmosphere-renderer]} model-render-vars planet-render-vars model tree]
+  (let [model-covers-planet? (< ^double (:sfsim.render/z-near model-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
     (render-cloud-geometry (:sfsim.render/overlay-width planet-render-vars) (:sfsim.render/overlay-height planet-render-vars)
                            (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
                              (when model
                                (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
                                  (render-scene-geometry scene-renderer
-                                                        (if model-covers-planet? scene-render-vars planet-render-vars) model)))
+                                                        (if model-covers-planet? model-render-vars planet-render-vars) model)))
                              (when tree
                                (with-stencil-op-ref-and-mask GL11/GL_GREATER 0x2 (if model-covers-planet? 0x6 0x2)
                                  (render-planet-geometry planet-renderer planet-render-vars tree)))
