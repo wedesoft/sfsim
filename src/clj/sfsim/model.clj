@@ -968,9 +968,16 @@
     {::programs (zipmap variations programs)}))
 
 
+(def model-render-vars
+  (m/schema [:map [::program :int]
+                  [::transform fmat4]
+                  [:sfsim.render/overlay-projection fmat4]]))
+
+
 (defn render-geometry-mesh
   "Render function to render points and distances for a mesh (part of scene)"
-  [_material {:sfsim.model/keys [program transform] :as render-vars}]
+  {:malli/schema [:=> [:cat material model-render-vars] :nil]}
+  [_material {::keys [program transform] :as render-vars}]
   (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
     (use-program program)
     (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))))
