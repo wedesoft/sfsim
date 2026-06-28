@@ -983,8 +983,13 @@
     (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))))
 
 
+(def geometry-render-vars
+  (m/schema [:map [:sfsim.render/camera-to-world fmat4] [:sfsim.render/overlay-projection fmat4]]))
+
+
 (defn render-scene-geometry
   "Render geometry (points and distances) for a scene"
+  {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars [:map [::root node]]] :nil]}
   [geometry-renderer render-vars scene]
   (let [projection       (:sfsim.render/overlay-projection render-vars)]
     (doseq [program (vals (::programs geometry-renderer))]
@@ -996,6 +1001,7 @@
 
 (defn destroy-scene-geometry-renderer
   "Destroy scene geometry renderer"
+  {:malli/schema [:=> [:cat scene-geometry-renderer] :nil]}
   [{::keys [programs]}]
   (doseq [program (vals programs)] (destroy-program program)))
 
