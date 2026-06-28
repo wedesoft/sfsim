@@ -24,6 +24,7 @@
     - [ ] pink attitude error indicators (top: roll, right: pitch, bottom: yaw) [[https://gemini.google.com/share/dddf04ae5ff2]]
     - [ ] simulate propellant weight
     - [ ] simulate Earth rotation
+  - [ ] draw mfds first and use stencil
   - [ ] scales: airspeed, angle of attack (alpha), altitude (H) (and radar altitude), climb speed (Hdot)
   - [ ] clock display: g-meter for acceleration
   - [ ] switching between orbit horizon and compass horizon
