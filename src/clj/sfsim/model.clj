@@ -13,14 +13,15 @@
     [fastmath.vector :refer (vec3 mult add)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
-                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay)]
+                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay
+                              atmosphere-geometry-renderer)]
     [sfsim.clouds :refer (lod-offset overall-shading overall-shading-parameters render-cloud-geometry)]
     [sfsim.plume :refer (model-data model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3
                           fvec3 fmat4 rotation-matrix get-translation get-translation)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
-                          render-planet-geometry)]
+                          render-planet-geometry planet-data planet-geometry-renderer)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
@@ -1006,8 +1007,15 @@
   (doseq [program (vals programs)] (destroy-program program)))
 
 
+(def joined-geometry-renderer
+  (m/schema [:map [::scene-renderer scene-geometry-renderer]
+                  [::planet-renderer planet-geometry-renderer]
+                  [::atmosphere-renderer atmosphere-geometry-renderer]]))
+
+
 (defn make-joined-geometry-renderer
   "Joined geometry renderer for rendering scene, planet, and atmosphere geometry information"
+  {:malli/schema [:=> [:cat planet-data] joined-geometry-renderer]}
   [data]
   (let [scene-renderer (make-scene-geometry-renderer)
         planet-renderer (make-planet-geometry-renderer data)

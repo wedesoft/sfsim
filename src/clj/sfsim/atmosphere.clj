@@ -17,7 +17,7 @@
     [sfsim.ray :refer (integral-ray ray)]
     [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
                           uniform-vector3 destroy-program make-vertex-array-object use-textures destroy-vertex-array-object
-                          render-quads render-config render-vars)]
+                          render-quads render-config render-vars vertex-array-object)]
     [sfsim.shaders :as shaders]
     [sfsim.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection sphere)]
     [sfsim.texture :refer (destroy-texture make-vector-texture-2d make-vector-texture-4d texture-2d texture-4d)]
@@ -724,8 +724,13 @@
   (slurp "resources/shaders/atmosphere/fragment-geometry.glsl"))
 
 
+(def atmosphere-geometry-renderer
+  (m/schema [:map [::program :int] [::vao vertex-array-object]]))
+
+
 (defn make-atmosphere-geometry-renderer
   "Create renderer for rendering atmospheric direction vectors for output to a geometry buffer"
+  {:malli/schema [:=> [:cat] atmosphere-geometry-renderer]}
   []
   (let [program  (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
                                :sfsim.render/fragment [fragment-atmosphere-geometry])

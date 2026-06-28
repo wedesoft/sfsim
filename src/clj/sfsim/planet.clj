@@ -452,8 +452,17 @@ void main()
 }")
 
 
+(def planet-data
+  (m/schema [:map [::config [:map [::tilesize :int]]]]))
+
+
+(def planet-geometry-renderer
+  (m/schema [:map  [::program :int]]))
+
+
 (defn make-planet-geometry-renderer
   "Create renderer for rendering planet points in camera coordinate system"
+  {:malli/schema [:=> [:cat planet-data] planet-geometry-renderer]}
   [data]
   (let [program  (make-program :sfsim.render/vertex [vertex-planet]
                                :sfsim.render/tess-control [tess-control-planet]

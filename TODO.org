@@ -4,13 +4,6 @@
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
   - [X] more prominent pause indicator
-  - [ ] schemas
-    - [ ] renderers
-      - [ ] model
-      - [ ] planet
-      - [ ] atmosphere
-      - [ ] geometry
-    - [ ] physics
   - [ ] replace flight stick
   - [ ] runway with lights and glide slope indicator
     - [ ] render cube mesh backfaces without depth writing but leave depth testing on
