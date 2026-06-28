@@ -747,6 +747,7 @@
 
 
 (defmulti render-mesh (fn [material _render-vars] (material-type material)))
+
 (m/=> render-mesh [:=> [:cat material mesh-vars] :nil])
 
 
@@ -785,8 +786,8 @@
 (defn render-scenes
   "Render a list of scenes"
   {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector scene-shadow]
-                            [:map [:sfsim.clouds/distance texture-2d]] texture-2d [:vector [:map [::root node]]]]
-                      :nil]}
+                            [:map [:sfsim.clouds/distance texture-2d]] texture-2d
+                            [:vector [:map [::root node]]]] :nil]}
   [scene-renderer render-vars shadow-vars scene-shadows geometry clouds scenes]
   (let [render-config      (:sfsim.render/config scene-renderer)
         cloud-data         (:sfsim.clouds/data scene-renderer)
@@ -858,6 +859,7 @@
 
 (defn vertex-shadow-scene
   "Vertex shader for rendering scene shadow maps"
+  {:malli/schema [:=> [:cat :boolean :boolean] [:vector :string]]}
   [textured bump]
   [shrink-shadow-index (template/eval (slurp "resources/shaders/model/vertex-shadow.glsl") {:textured textured :bump bump})])
 
