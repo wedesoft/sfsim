@@ -892,6 +892,7 @@
 
 
 (defn render-depth
+  "Setup rendering of shadow map map"
   {:malli/schema [:=> [:cat material mesh-vars] :nil]}
   [_material {::keys [program transform] :as render-vars}]
   (use-program program)
@@ -934,6 +935,7 @@
 
 (defn destroy-scene-shadow-renderer
   "Destroy shadow renderer"
+  {:malli/schema [:=> [:cat scene-shadow-renderer] :nil]}
   [{::keys [programs]}]
   (doseq [program (vals programs)] (destroy-program program)))
 
@@ -948,13 +950,18 @@
 
 (defn make-scene-geometry-program
   "Create program to render scene points and distances"
+  {:malli/schema [:=> [:cat :boolean :boolean] :int]}
   [textured bump]
   (make-program :sfsim.render/vertex [(vertex-geometry-scene textured bump)]
                 :sfsim.render/fragment [fragment-geometry-scene]))
 
 
+(def scene-geometry-renderer (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean] :int]]]))
+
+
 (defn make-scene-geometry-renderer
   "Create renderer to render scene points and distances"
+  {:malli/schema [:=> [:cat] scene-geometry-renderer]}
   []
   (let [variations (for [textured [false true] bump [false true]] [textured bump])
         programs   (mapv #(make-scene-geometry-program (first %) (second %)) variations)]
