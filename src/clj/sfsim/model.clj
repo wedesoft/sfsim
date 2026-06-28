@@ -1027,6 +1027,7 @@
 
 (defn destroy-joined-geometry-renderer
   "Destroy joined geometry renderer"
+  {:malli/schema [:=> [:cat joined-geometry-renderer] :nil]}
   [{::keys [scene-renderer planet-renderer atmosphere-renderer]}]
   (destroy-scene-geometry-renderer scene-renderer)
   (destroy-planet-geometry-renderer planet-renderer)
@@ -1035,6 +1036,7 @@
 
 (defn render-joined-geometry
   "Render joined geometry of scene, planet, and atmosphere"
+  {:malli/schema [:=> [:cat joined-geometry-renderer :any :any :any :any] :nil]}
   [{::keys [scene-renderer planet-renderer atmosphere-renderer]} scene-render-vars planet-render-vars model tree]
   (let [model-covers-planet? (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
     (render-cloud-geometry (:sfsim.render/overlay-width planet-render-vars) (:sfsim.render/overlay-height planet-render-vars)
