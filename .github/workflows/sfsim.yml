@@ -123,8 +123,7 @@ jobs:
         with:
           path: packr-all-4.0.0.jar
           key: packr-4.0.0
-      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
-        name: Set up MSYS2
+      - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
