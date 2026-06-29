@@ -77,7 +77,7 @@ jobs:
       - name: Install Java
         uses: actions/setup-java@v5
         with:
-          distribution: 'oracle'
+          distribution: 'temurin'
           java-version: '26.0.1'
       - name: Install Clojure
         uses: DeLaGuardo/setup-clojure@13.6.1
@@ -146,9 +146,9 @@ jobs:
         run: |
           cd ~
           cd JoltPhysics-5.5.0/Build
-          ./cmake_windows_mingw.sh Release -DCMAKE_INSTALL_PREFIX=$MINGW_PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
+          ./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
           cmake --build MinGW_Release -j `nproc`
-          cmake --install MinGW_Release --prefix /usr/local
+          cmake --install MinGW_Release --prefix $MINGW_PREFIX
           cd ..
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
         name: Build Jolt bindings
@@ -157,7 +157,7 @@ jobs:
       - name: Install Java
         uses: actions/setup-java@v5
         with:
-          distribution: 'oracle'
+          distribution: 'temurin'
           java-version: '26.0.1'
       - name: Install Clojure
         uses: DeLaGuardo/setup-clojure@13.6.1
