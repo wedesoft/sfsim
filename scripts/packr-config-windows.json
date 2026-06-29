@@ -1,6 +1,6 @@
 {
   "platform": "windows64",
-  "jdk": "C:/Program Files/Eclipse Adoptium/jdk-26.0.0.35-hotspot",
+  "jdk": "C:\hostedtoolcache\windows\Java_Temurin-Hotspot_jdk\26.0.1-8\x64",
   "executable": "sfsim",
   "classpath": ["target/sfsim.jar", "resources"],
   "mainclass": "sfsim.core",

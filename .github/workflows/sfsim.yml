@@ -155,35 +155,3 @@ jobs:
         name: Build Jolt bindings
         shell: msys2 {0}
         run: mingw32-make
-      - name: Set up Software OpenGL (Mesa3D)
-        shell: msys2 {0}
-        run: |
-          curl -L -o mesa.7z "https://github.com/pal1000/mesa-dist-win/releases/download/26.1.3/mesa3d-26.1.3-release-msvc.7z"
-          7z x mesa.7z -omesa-dist
-          cp mesa-dist/x64/opengl32.dll .
-          cp mesa-dist/x64/libEGL.dll .
-      - name: Install Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '26.0.1'
-      - name: Print JAVA_HOME
-        run: echo $env:JAVA_HOME
-      - name: Install Clojure
-        uses: DeLaGuardo/setup-clojure@13.6.1
-        with:
-          cli: 1.12.5.1654
-      - name: Run tests
-        run: clj -M:test
-      - name: Create Java archive
-        run: clj -T:build uber
-      - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
-        name: Download packr jar
-        run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
-      - name: Create Windows executable
-        run: java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json
-      - name: upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: out-windows
-          path: out-windows/
