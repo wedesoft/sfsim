@@ -175,4 +175,5 @@ jobs:
       - name: Run tests
         run: |
           $MesaPath = "$PWD\mesa-dist\x64"
-          clj "-J-Djava.library.path=$MesaPath" -M:test
+          $env:PATH = "$MesaPath;$env:PATH"
+          clj "-J-Djava.library.path=$MesaPath" "-J-Dorg.lwjgl.librarypath=$MesaPath" -M:test
