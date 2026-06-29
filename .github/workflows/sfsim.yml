@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  ubuntu-build-and-test:
+  ubuntu-build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
@@ -30,11 +30,6 @@ jobs:
         key: ${{ runner.os }}-pip-torch-2.11.0-numpy-2.4.3
         restore-keys: |
           ${{ runner.os }}-pip-
-    - name: Cache Packr
-      uses: actions/cache@v5.0.5
-      with:
-        path: packr-all-4.0.0.jar
-        key: packr-4.0.0
     - name: Install APT packages
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -80,11 +75,31 @@ jobs:
     - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
       name: Build Jolt bindings
       run: make
+
+jobs:
+  ubuntu-test:
+    needs: ubuntu-build
+    runs-on: ubuntu-latest
+    steps:
     - name: Run tests
       run: xvfb-run clj -M:test
+
+
+jobs:
+  ubuntu-pack:
+    needs: ubuntu-test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Cache Packr
+      id: cache-packr
+      uses: actions/cache@v5.0.5
+      with:
+        path: packr-all-4.0.0.jar
+        key: packr-4.0.0
     - name: Create Java archive
       run: clj -T:build uber
-    - name: Download packr jar
+    - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
+      name: Download packr jar
       run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
     - name: Print JAVA_HOME
       run: echo $JAVA_HOME
