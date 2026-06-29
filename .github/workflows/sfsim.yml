@@ -67,7 +67,7 @@ jobs:
       uses: actions/setup-java@v5
       with:
         distribution: 'oracle'
-        java-version: '26'
+        java-version: '26.0.1'
     - name: Install Clojure
       uses: DeLaGuardo/setup-clojure@13.6.1
       with:
