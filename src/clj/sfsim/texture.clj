@@ -100,6 +100,7 @@
 (defmulti setup-interpolation
   "Initialize different types of texture interpolation"
   (fn [_target interpolation] interpolation))
+
 (m/=> setup-interpolation [:=> [:cat :int interpolation] :nil])
 
 
@@ -120,6 +121,7 @@
 (defmulti setup-boundary-1d
   "Configure different types of boundary threatment for 1D texture"
   identity)
+
 (m/=> setup-boundary-1d [:=> [:cat boundary] :nil])
 
 
@@ -146,6 +148,7 @@
 (defmulti setup-boundary-2d
   "Configure different types of boundary threatment for 2D texture"
   identity)
+
 (m/=> setup-boundary-2d [:=> [:cat boundary] :nil])
 
 
@@ -183,6 +186,7 @@
 (defmulti setup-boundary-3d
   "Configure different types of boundary threatment for 3D texture"
   (fn [_target boundary] boundary))
+
 (m/=> setup-boundary-3d [:=> [:cat :int boundary] :nil])
 
 
@@ -343,6 +347,7 @@
 
 (defn make-rgb-texture-array
   "Create 2D RGB texture array"
+  {:malli/schema [:=> [:cat interpolation boundary [:sequential image]] texture-3d]}
   [interpolation boundary images]
   (make-byte-texture-2d-array images interpolation boundary GL11/GL_RGB GL12/GL_RGBA GL11/GL_UNSIGNED_BYTE))
 
