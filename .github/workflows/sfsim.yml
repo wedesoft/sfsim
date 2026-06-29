@@ -162,7 +162,7 @@ jobs:
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
         name: Build Jolt bindings
         shell: msys2 {0}
-        run: make
+        run: mingw32-make
       - name: Run tests
         run: clj -M:test
       - name: Create Java archive
