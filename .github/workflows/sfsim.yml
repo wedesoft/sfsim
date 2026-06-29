@@ -76,7 +76,6 @@ jobs:
       name: Build Jolt bindings
       run: make
 
-jobs:
   ubuntu-test:
     needs: ubuntu-build
     runs-on: ubuntu-latest
@@ -84,8 +83,6 @@ jobs:
     - name: Run tests
       run: xvfb-run clj -M:test
 
-
-jobs:
   ubuntu-pack:
     needs: ubuntu-test
     runs-on: ubuntu-latest
