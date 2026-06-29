@@ -30,6 +30,12 @@ jobs:
         key: ${{ runner.os }}-pip-torch-2.11.0-numpy-2.4.3
         restore-keys: |
           ${{ runner.os }}-pip-
+    - name: Cache Packr
+      id: cache-packr
+      uses: actions/cache@v5.0.5
+      with:
+        path: packr-all-4.0.0.jar
+        key: packr-4.0.0
     - name: Install APT packages
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -77,12 +83,6 @@ jobs:
       run: make
     - name: Run tests
       run: xvfb-run clj -M:test
-    - name: Cache Packr
-      id: cache-packr
-      uses: actions/cache@v5.0.5
-      with:
-        path: packr-all-4.0.0.jar
-        key: packr-4.0.0
     - name: Create Java archive
       run: clj -T:build uber
     - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
@@ -92,3 +92,8 @@ jobs:
       run: echo $JAVA_HOME
     - name: Create Linux executable
       run: java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json
+    - name: upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: out-linux
+        path: out-linux/
