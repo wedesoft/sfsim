@@ -30,6 +30,11 @@ jobs:
         key: ${{ runner.os }}-pip-torch-2.11.0-numpy-2.4.3
         restore-keys: |
           ${{ runner.os }}-pip-
+    - name: Cache Packr
+      uses: actions/cache@v5.0.5
+      with:
+        path: packr-all-4.0.0.jar
+        key: packr-4.0.0
     - name: Install APT packages
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
