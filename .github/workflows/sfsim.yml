@@ -2,98 +2,176 @@ name: SFsim CI
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - windows
+
 
 jobs:
   ubuntu-build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - name: Cache Jolt bindings
-      id: cache-libjolt
-      uses: actions/cache@v5.0.5
-      with:
-        path: libjolt.so
-        key: ${{ runner.os }}-libjolt-5.5.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
-    - name: Cache Maven packages
-      uses: actions/cache@v5.0.5
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('deps.edn') }}
-        restore-keys: ${{ runner.os }}-m2-
-    - name: Cache Python packages
-      uses: actions/cache@v5.0.5
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-torch-2.11.0-numpy-2.4.3
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    - name: Cache Packr
-      id: cache-packr
-      uses: actions/cache@v5.0.5
-      with:
-        path: packr-all-4.0.0.jar
-        key: packr-4.0.0
-    - name: Install APT packages
-      uses: awalsh128/cache-apt-pkgs-action@latest
-      with:
-        packages: build-essential xvfb rlwrap
-        version: 1.0
-    - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
-      name: Download JoltPhysics
-      run: |
-        cd ~
-        wget -q -O JoltPhysics-5.5.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.5.0.tar.gz
-        tar xzf JoltPhysics-5.5.0.tar.gz
-    - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
-      name: Build JoltPhysics
-      run: |
-        cd ~
-        cd JoltPhysics-5.5.0/Build
-        ./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
-        cd Linux_Release
-        make
-        cd ../../..
-    - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
-      name: Install JoltPhysics
-      run: |
-        cd ~/JoltPhysics-5.5.0/Build/Linux_Release
-        sudo make install
-        cd ../../..
-    - name: Set up Python
-      uses: actions/setup-python@v6.2.0
-      with:
-        python-version: '3.13'
-    - name: Install PyTorch
-      run: |
-        pip install --index-url https://download.pytorch.org/whl/cpu torch==2.11.0 numpy==2.4.3
-    - name: Install Java
-      uses: actions/setup-java@v5
-      with:
-        distribution: 'oracle'
-        java-version: '26.0.1'
-    - name: Install Clojure
-      uses: DeLaGuardo/setup-clojure@13.6.1
-      with:
-        cli: 1.12.5.1654
-    - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
-      name: Build Jolt bindings
-      run: make
-    - name: Run tests
-      run: xvfb-run clj -M:test
-    - name: Create Java archive
-      run: clj -T:build uber
-    - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
-      name: Download packr jar
-      run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
-    - name: Print JAVA_HOME
-      run: echo $JAVA_HOME
-    - name: Create Linux executable
-      run: java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json
-    - name: upload
-      uses: actions/upload-artifact@v4
-      with:
-        name: out-linux
-        path: out-linux/
+      - uses: actions/checkout@v6
+      - name: Cache Jolt bindings
+        id: cache-libjolt
+        uses: actions/cache@v5.0.5
+        with:
+          path: libjolt.so
+          key: ${{ runner.os }}-libjolt-5.5.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
+      - name: Cache Maven packages
+        uses: actions/cache@v5.0.5
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('deps.edn') }}
+          restore-keys: ${{ runner.os }}-m2-
+      - name: Cache Python packages
+        uses: actions/cache@v5.0.5
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-torch-2.11.0-numpy-2.4.3
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Cache Packr
+        id: cache-packr
+        uses: actions/cache@v5.0.5
+        with:
+          path: packr-all-4.0.0.jar
+          key: packr-4.0.0
+      - name: Install APT packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: build-essential xvfb rlwrap
+          version: 1.0
+      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
+        name: Download JoltPhysics
+        run: |
+          cd ~
+          curl -L -o JoltPhysics-5.5.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.5.0.tar.gz
+          tar xzf JoltPhysics-5.5.0.tar.gz
+      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
+        name: Build JoltPhysics
+        run: |
+          cd ~
+          cd JoltPhysics-5.5.0/Build
+          ./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
+          cd Linux_Release
+          make
+          cd ../../..
+      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
+        name: Install JoltPhysics
+        run: |
+          cd ~/JoltPhysics-5.5.0/Build/Linux_Release
+          sudo make install
+          cd ../../..
+      - name: Set up Python
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version: '3.13'
+      - name: Install PyTorch
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch==2.11.0 numpy==2.4.3
+      - name: Install Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'oracle'
+          java-version: '26.0.1'
+      - name: Install Clojure
+        uses: DeLaGuardo/setup-clojure@13.6.1
+        with:
+          cli: 1.12.5.1654
+      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
+        name: Build Jolt bindings
+        run: make
+      - name: Run tests
+        run: xvfb-run clj -M:test
+      - name: Create Java archive
+        run: clj -T:build uber
+      - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
+        name: Download packr jar
+        run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
+      - name: Print JAVA_HOME
+        run: echo $JAVA_HOME
+      - name: Create Linux executable
+        run: java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: out-linux
+          path: out-linux/
+
+  windows-build:
+    if: github.ref == 'refs/heads/windows'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Cache Jolt bindings
+        id: cache-libjolt
+        uses: actions/cache@v5.0.5
+        with:
+          path: libjolt.dll
+          key: ${{ runner.os }}-libjolt-5.5.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
+      - name: Cache Maven packages
+        uses: actions/cache@v5.0.5
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('deps.edn') }}
+          restore-keys: ${{ runner.os }}-m2-
+      - name: Cache Packr
+        id: cache-packr
+        uses: actions/cache@v5.0.5
+        with:
+          path: packr-all-4.0.0.jar
+          key: packr-4.0.0
+      - name: Set up MinGW
+        uses: egor-tensin/setup-mingw@v3
+        with:
+          platform: x64
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
+        name: Download JoltPhysics
+        shell: msys2 {0}
+        run: |
+          cd ~
+          curl -L -o JoltPhysics-5.5.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.5.0.tar.gz
+          tar xzf JoltPhysics-5.5.0.tar.gz
+      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
+        name: Build JoltPhysics
+        shell: msys2 {0}
+        run: |
+          cd ~
+          cd JoltPhysics-5.5.0/Build
+          ./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
+          cmake --build MinGW_Release -j `nproc`
+          cmake --install MinGW_Release --prefix /usr/local
+          cd ..
+      - name: Install Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'oracle'
+          java-version: '26.0.1'
+      - name: Install Clojure
+        uses: DeLaGuardo/setup-clojure@13.6.1
+        with:
+          cli: 1.12.5.1654
+      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
+        name: Build Jolt bindings
+        shell: msys2 {0}
+        run: make
+      - name: Run tests
+        run: clj -M:test
+      - name: Create Java archive
+        run: clj -T:build uber
+      - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
+        name: Download packr jar
+        run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
+      - name: Print JAVA_HOME
+        run: echo $env:JAVA_HOME
+      - name: Create Windows executable
+        run: java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: out-windows
+          path: out-windows/
