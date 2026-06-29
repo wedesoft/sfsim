@@ -171,11 +171,11 @@ jobs:
         name: Download packr jar
         run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
       - name: Copy MinGW system DLLs
+        shell: msys2 {0}
         run: |
-          $MinGWBin = "${env:MINGW_PREFIX}\bin"
-          Copy-Item "$MinGWBin\libgcc_s_seh-1.dll" -Destination $PWD
-          Copy-Item "$MinGWBin\libstdc++-6.dll" -Destination $PWD
-          Copy-Item "$MinGWBin\libwinpthread-1.dll" -Destination $PWD
+          cp $MINGW_PREFIX/bin/libgcc_s_seh-1.dll .
+          cp $MINGW_PREFIX/bin/libstdc++-6.dll .
+          cp $MINGW_PREFIX/bin/libwinpthread-1.dll .
       - name: Create Windows executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json
       - name: upload
