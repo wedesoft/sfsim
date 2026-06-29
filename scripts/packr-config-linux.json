@@ -5,6 +5,6 @@
   "classpath": ["target/sfsim.jar", "resources"],
   "mainclass": "sfsim.core",
   "resources": ["LICENSE", "AUTHORS", "libjolt.so"],
-  "vmargs": ["Xms2g", "Xmx4g", "XX:+UseZGC", "-XX:+UseDynamicNumberOfGCThreads"],
+  "vmargs": ["-Xms2g", "-Xmx4g", "-XX:+UseZGC", "-XX:+UseDynamicNumberOfGCThreads"],
   "output": "out-linux"
 }

@@ -77,3 +77,11 @@ jobs:
       run: make
     - name: Run tests
       run: xvfb-run clj -M:test
+    - name: Create Java archive
+      run: clj -T:build uber
+    - name: Download packr jar
+      run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
+    - name: Print JAVA_HOME
+      run: echo $JAVA_HOME
+    - name: Create Linux executable
+      run: java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json
