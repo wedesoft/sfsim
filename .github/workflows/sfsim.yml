@@ -75,18 +75,8 @@ jobs:
     - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
       name: Build Jolt bindings
       run: make
-
-  ubuntu-test:
-    needs: ubuntu-build
-    runs-on: ubuntu-latest
-    steps:
     - name: Run tests
       run: xvfb-run clj -M:test
-
-  ubuntu-pack:
-    needs: ubuntu-test
-    runs-on: ubuntu-latest
-    steps:
     - name: Cache Packr
       id: cache-packr
       uses: actions/cache@v5.0.5
