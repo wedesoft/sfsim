@@ -79,6 +79,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '26.0.1'
+      - name: Print JAVA_HOME
+        run: echo $JAVA_HOME
       - name: Install Clojure
         uses: DeLaGuardo/setup-clojure@13.6.1
         with:
@@ -90,8 +92,6 @@ jobs:
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
         name: Download packr jar
         run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
-      - name: Print JAVA_HOME
-        run: echo $JAVA_HOME
       - name: Create Linux executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json
       - name: upload
@@ -159,6 +159,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '26.0.1'
+      - name: Print JAVA_HOME
+        run: echo $env:JAVA_HOME
       - name: Install Clojure
         uses: DeLaGuardo/setup-clojure@13.6.1
         with:
@@ -170,8 +172,6 @@ jobs:
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
         name: Download packr jar
         run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
-      - name: Print JAVA_HOME
-        run: echo $env:JAVA_HOME
       - name: Create Windows executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json
       - name: upload
