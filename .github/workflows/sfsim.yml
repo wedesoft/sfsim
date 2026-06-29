@@ -64,6 +64,9 @@ jobs:
           cd ~/JoltPhysics-5.5.0/Build/Linux_Release
           sudo make install
           cd ../../..
+      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
+        name: Build Jolt bindings
+        run: make
       - name: Set up Python
         uses: actions/setup-python@v6.2.0
         with:
@@ -80,9 +83,6 @@ jobs:
         uses: DeLaGuardo/setup-clojure@13.6.1
         with:
           cli: 1.12.5.1654
-      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
-        name: Build Jolt bindings
-        run: make
       - name: Run tests
         run: xvfb-run clj -M:test
       - name: Create Java archive
@@ -146,10 +146,14 @@ jobs:
         run: |
           cd ~
           cd JoltPhysics-5.5.0/Build
-          ./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
+          ./cmake_windows_mingw.sh Release -DCMAKE_INSTALL_PREFIX=$MINGW_PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
           cmake --build MinGW_Release -j `nproc`
           cmake --install MinGW_Release --prefix /usr/local
           cd ..
+      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
+        name: Build Jolt bindings
+        shell: msys2 {0}
+        run: mingw32-make
       - name: Install Java
         uses: actions/setup-java@v5
         with:
@@ -159,10 +163,6 @@ jobs:
         uses: DeLaGuardo/setup-clojure@13.6.1
         with:
           cli: 1.12.5.1654
-      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
-        name: Build Jolt bindings
-        shell: msys2 {0}
-        run: mingw32-make
       - name: Run tests
         run: clj -M:test
       - name: Create Java archive
