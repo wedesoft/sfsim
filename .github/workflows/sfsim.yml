@@ -123,12 +123,15 @@ jobs:
         with:
           path: packr-all-4.0.0.jar
           key: packr-4.0.0
-      - name: Set up MinGW
-        uses: egor-tensin/setup-mingw@v3
-        with:
-          platform: x64
-      - name: Set up MSYS2
+      - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
+        name: Set up MSYS2
         uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
         name: Download JoltPhysics
         shell: msys2 {0}
