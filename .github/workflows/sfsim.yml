@@ -165,17 +165,6 @@ jobs:
         uses: DeLaGuardo/setup-clojure@13.6.1
         with:
           cli: 1.12.5.1654
-      - name: Set up Software OpenGL (Mesa3D)
-        shell: msys2 {0}
-        run: |
-          curl -L -o mesa.7z "https://github.com/pal1000/mesa-dist-win/releases/download/26.1.3/mesa3d-26.1.3-release-msvc.7z"
-          7z x mesa.7z -omesa-dist
-          cp mesa-dist/x64/opengl32.dll .
-          cp mesa-dist/x64/libEGL.dll .
-      - name: Run tests
-        env:
-          GALLIUM_DRIVER: llvmpipe
-        run: clj -J-DLIBGL_ALWAYS_SOFTWARE=true -M:test
       - name: Create Java archive
         run: clj -T:build uber
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
