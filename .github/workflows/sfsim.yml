@@ -175,7 +175,7 @@ jobs:
       - name: Run tests
         env:
           GALLIUM_DRIVER: llvmpipe
-        run: clj -J-DLIBGL_ALWAYS_SOFTWARE=true -J-Dorg.lwjgl.opengl.libname=./opengl32.dll -M:test
+        run: clj -J-Dorg.lwjgl.opengl.libname=./opengl32.dll -M:test
       - name: Create Java archive
         run: clj -T:build uber
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
