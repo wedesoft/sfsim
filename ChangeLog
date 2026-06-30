@@ -1,3 +1,11 @@
+sfsim (0.28-1)
+
+  * Minor fix for time lapse limit
+	* Github CI builds for Linux and Windows
+	* Increased coverage of schemas
+
+-- Jan Wedekind <jan@wedesoft.de>  Tue, 30 Jun 2026 21:27:00 +0100
+
 sfsim (0.27-1)
 
 	* Make pause label more prominent
