@@ -171,7 +171,7 @@ jobs:
           curl -L -o mesa.7z "https://github.com/pal1000/mesa-dist-win/releases/download/26.1.3/mesa3d-26.1.3-release-msvc.7z"
           7z x mesa.7z -omesa-dist
           cp mesa-dist/x64/opengl32.dll .
-          cp mesa-dist/x64/libEGL.dll .
+          cp mesa-dist/x64/libglapi.dll .
       - name: Run tests
         env:
           GALLIUM_DRIVER: llvmpipe
