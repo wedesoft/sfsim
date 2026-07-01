@@ -112,16 +112,16 @@
       (render/with-stencils
         ;; Clear color, depth, and stencil buffer
         (render/clear (vec3 0 1 0) 0.0 0)
-        ;; Render model
         (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+          ;; Render model
           (model/render-scenes scene-renderer scene-render-vars shadow-vars object-shadows geometry clouds objects))
-        ;; Only clear depth buffer
         (when model-covers-planet?
+          ;; Only clear depth buffer
           (render/clear))
-        (render/with-stencil-op-ref-and-mask GL11/GL_GREATER 0x2 (if model-covers-planet? 0x6 0x2)
+        (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
           ;; Render planet with cloud overlay
           (planet/render-planet planet-renderer planet-render-vars shadow-vars object-shadows geometry clouds tree))
-        (render/with-stencil-op-ref-and-mask GL11/GL_GREATER 0x1 0x7
+        (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
           ;; Render atmosphere with cloud overlay
           (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds))))))
 
