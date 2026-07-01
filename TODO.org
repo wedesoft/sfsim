@@ -12,6 +12,7 @@
     - [ ] transform to texture coordinate
     - [ ] use texture arrays for albedo, normal map, roughness map
     - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
+    - [ ] introduce a geometry buffer for shadows
   - [ ] launch guidance indicators, reinforcement learning launch physics
     - [-] rewards/penalties
       - [-] fix not-a-number problems

@@ -108,29 +108,30 @@
         object-shadows      (::object-shadows frame)
         objects             (::objects frame)]
     (render/with-depth-test true
-      (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
-        (render/with-stencils
-          ;; Clear color, depth, and stencil buffer
-          (render/clear (vec3 0 1 0) 0.0 0)
-          ;; Render model
-          (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x1 0x1
-            (model/render-scenes scene-renderer scene-render-vars shadow-vars object-shadows geometry clouds objects))
-          ;; Only clear depth buffer
-          (render/clear)
-          (render/with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x0 0x1
-            ;; Render planet with cloud overlay
-            (planet/render-planet planet-renderer planet-render-vars shadow-vars object-shadows geometry clouds tree)
-            ;; Render atmosphere with cloud overlay
-            (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds)))
-        (do
-          ;; Clear color and depth buffer
-          (render/clear (vec3 0 1 0) 0.0)
-          ;; Render model
-          (model/render-scenes scene-renderer planet-render-vars shadow-vars object-shadows geometry clouds objects)
-          ;; Render planet with cloud overlay
-          (planet/render-planet planet-renderer planet-render-vars shadow-vars object-shadows geometry clouds tree)
-          ;; Render atmosphere with cloud overlay
-          (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds))))))
+      ;; Clear color, depth, and stencil buffer
+      (render/clear (vec3 0 1 0) 0.0 0)
+      (render/with-stencils
+        (if (< ^double (:sfsim.render/z-near scene-render-vars) ^double (:sfsim.render/z-near planet-render-vars))
+          (do
+            ;; Render model
+            (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x1 0x1
+              (model/render-scenes scene-renderer scene-render-vars shadow-vars object-shadows geometry clouds objects))
+            ;; Only clear depth buffer
+            (render/clear)
+            (render/with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x0 0x1
+              ;; Render planet with cloud overlay
+              (planet/render-planet planet-renderer planet-render-vars shadow-vars object-shadows geometry clouds tree)
+              ;; Render atmosphere with cloud overlay
+              (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds)))
+          (do
+            (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x1 0x1
+              ;; Render model
+              (model/render-scenes scene-renderer planet-render-vars shadow-vars object-shadows geometry clouds objects)
+              ;; Render planet with cloud overlay
+              (planet/render-planet planet-renderer planet-render-vars shadow-vars object-shadows geometry clouds tree))
+            (render/with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x0 0x1
+              ;; Render atmosphere with cloud overlay
+              (atmosphere/render-atmosphere atmosphere-renderer planet-render-vars geometry clouds))))))))
 
 
 (defn finalise-frame
