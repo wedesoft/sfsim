@@ -13,6 +13,12 @@
     - [ ] use texture arrays for albedo, normal map, roughness map
     - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
     - [ ] introduce a geometry buffer for shadows
+  - [ ] use modern rendering pipeline
+    - [ ] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
+    - [ ] decal pass: overwrite/blend colors and normals
+    - [ ] shadow pass (separate render): render shadow map from light source view
+    - [ ] lighting pass: sample shadow map, calculate light colors, and specular highlights
+    - [ ] render localized lights using blending (not sure whether this is done earlier)
   - [ ] launch guidance indicators, reinforcement learning launch physics
     - [-] rewards/penalties
       - [-] fix not-a-number problems
