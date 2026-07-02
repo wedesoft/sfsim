@@ -8,7 +8,7 @@
   (:require
     [clojure.math :refer (PI exp pow to-radians)]
     [comb.template :as template]
-    [fastmath.matrix :refer (eye diagonal inverse)]
+    [fastmath.matrix :refer (eye diagonal inverse rotation-matrix-3d-x)]
     [fastmath.vector :refer (vec3 vec4 dot mag)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -29,6 +29,8 @@
   (:import
     (clojure.lang
       Keyword)
+    (org.lwjgl.opengl
+      GL30)
     (org.lwjgl.glfw
       GLFW)))
 
@@ -370,7 +372,7 @@ void main()
 
 
 (def vertex-planet-probe
-  "#version 450 core
+"#version 450 core
 in vec3 point;
 in vec2 colorcoord;
 uniform float radius;
@@ -745,6 +747,59 @@ void main()
            (destroy-texture surface)
            (destroy-vertex-array-object vao)
            (destroy-planet-geometry-renderer renderer))))
+
+
+(def vertex-plane
+"#version 450 core
+uniform mat4 projection;
+uniform mat4 object_to_camera;
+in vec3 point;
+out VS_OUT
+{
+  vec4 camera_point;
+} vs_out;
+void main()
+{
+  vec4 camera_point = object_to_camera * vec4(point, 1);
+  vs_out.camera_point = camera_point;
+  gl_Position = projection * camera_point;
+}")
+
+
+(def fragment-plane
+"#version 450 core
+in VS_OUT
+{
+  vec4 camera_point;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float dist;
+void main()
+{
+  camera_point = vec4(normalize(fs_in.camera_point.xyz), 0.0);
+  dist = length(fs_in.camera_point.xyz) / 8.0;
+}")
+
+
+(fact "Render a decal"
+      (with-invisible-window
+        (let [point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 320 240)
+              distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 320 240)
+              indices          [0 1 3 2]
+              vertices         [-1.0 -1.0 0.0, +1.0 -1.0 0.0, -1.0  1.0 0.0, +1.0  1.0 0.0]
+              program          (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-plane])
+              vao              (make-vertex-array-object program indices vertices ["point" 3])]
+          (framebuffer-render 320 240 :sfsim.render/cullback nil [point-texture distance-texture]
+                              (use-program program)
+                              (uniform-matrix4 program "projection" (projection-matrix 320 240 0.1 10.0 (to-radians -45)))
+                              (uniform-matrix4 program "object_to_camera"
+                                               (transformation-matrix (rotation-matrix-3d-x (to-radians 60.0)) (vec3 0 0 -4)))
+                              (render-quads vao))
+          ; (spit-png "/tmp/test.png" (floats->image (float-texture-2d->floats distance-texture)) true)
+          (destroy-vertex-array-object vao)
+          (destroy-program program)
+          (destroy-texture point-texture)
+          (destroy-texture distance-texture))))
 
 
 (GLFW/glfwTerminate)
