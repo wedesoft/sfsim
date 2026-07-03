@@ -629,17 +629,23 @@
     matrix-cascade))
 
 
-(defmacro offscreen-render
+(defmacro render-to-image
   "Macro to render to a texture using depth and stencil buffer and convert it to an image"
   [width height & body]
+  `(let [depth# (make-empty-depth-stencil-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp ~width ~height)
+         tex#   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL11/GL_RGB8 ~width ~height)]
+     (framebuffer-render ~width ~height ::cullback depth# [tex#] ~@body)
+     (let [img# (texture->image tex#)]
+       (destroy-texture tex#)
+       (destroy-texture depth#)
+       img#)))
+
+
+(defmacro offscreen-render
+  "Macro create invisible window and invoke macro to render to image"
+  [width height & body]
   `(with-invisible-window
-     (let [depth# (make-empty-depth-stencil-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp ~width ~height)
-           tex#   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL11/GL_RGB8 ~width ~height)]
-       (framebuffer-render ~width ~height ::cullback depth# [tex#] ~@body)
-       (let [img# (texture->image tex#)]
-         (destroy-texture tex#)
-         (destroy-texture depth#)
-         img#))))
+     (render-to-image ~width ~height ~@body)))
 
 
 (defn diagonal-field-of-view
