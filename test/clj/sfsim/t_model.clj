@@ -16,7 +16,7 @@
     [sfsim.atmosphere :as atmosphere]
     [sfsim.clouds :as clouds]
     [sfsim.conftest :refer (roughly-matrix roughly-vector roughly-quaternion is-image)]
-    [sfsim.image :refer (floats->image get-vector4 get-float)]
+    [sfsim.image :refer (floats->image get-vector4 get-float spit-png get-vector3)]
     [sfsim.matrix :refer :all]
     [sfsim.model :refer :all :as model]
     [sfsim.plume :as plume]
@@ -172,6 +172,69 @@ void main()
                                             (uniform-vector3 program "diffuse_color" diffuse))))
                           (destroy-scene opengl-scene)
                           (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/cube.png" 0.0))
+
+
+(def vertex-geometry-cube
+"#version 450 core
+uniform mat4 projection;
+uniform mat4 object_to_camera;
+in vec3 vertex;
+in vec3 normal;
+out VS_OUT
+{
+  vec3 point;
+  vec3 normal;
+} vs_out;
+void main()
+{
+  vec3 point = (object_to_camera * vec4(vertex, 1)).xyz;
+  vs_out.normal = mat3(object_to_camera) * normal;
+  vs_out.point = point;
+  gl_Position = projection * vec4(point, 1);
+}")
+
+(def fragment-geometry-cube
+"#version 450 core
+in VS_OUT
+{
+  vec3 point;
+  vec3 normal;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out vec4 camera_normal;
+void main()
+{
+  camera_point = vec4(fs_in.point, 1);
+  camera_normal = vec4(fs_in.normal, 0);
+}")
+
+(fact "Perform geometry pass and lighting pass for red cube"
+      (with-invisible-window
+        (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-cube]
+                                             :sfsim.render/fragment [fragment-geometry-cube])
+              opengl-scene    (load-scene-into-opengl (constantly geometry-program) cube)
+              camera-to-world (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
+                                                                    (rotation-matrix-3d-y -0.4))
+                                                            (vec3 0 0 -5)))
+              depth           (make-empty-depth-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 160 120)
+              point-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)
+              normal-texture  (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 160 120)]
+          (framebuffer-render 160 120 :sfsim.render/cullback depth [point-texture normal-texture]
+                              (clear)
+                              (use-program geometry-program)
+                              (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                              (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
+                                            opengl-scene (fn [_material {:sfsim.model/keys [program transform] :as render-vars}]
+                                                             (uniform-matrix4 program "object_to_camera"
+                                                                              (mulm (inverse camera-to-world) transform)))))
+          ; (let [img (rgb-texture->vectors3 point-texture)]
+          ;   (println (get-vector3 img 60 80)))
+          ; (spit-png "/tmp/test.png" (texture->image point-texture))
+          (destroy-texture point-texture)
+          (destroy-texture normal-texture)
+          (destroy-texture depth)
+          (destroy-scene opengl-scene)
+          (destroy-program geometry-program))))
 
 
 (def cubes (read-gltf "test/clj/sfsim/fixtures/model/cubes.gltf"))
