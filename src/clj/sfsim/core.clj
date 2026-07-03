@@ -174,7 +174,8 @@
                      object-position (physics/get-position :sfsim.physics/surface (:physics @state))
                      height          (- (mag object-position) ^double earth-radius)
                      throttle        (-> @state :input :sfsim.input/controls :sfsim.input/throttle)
-                     time-lapse      (min ^long (-> @state :input :sfsim.input/time-lapse) (time-lapse-limit height throttle))
+                     time-lapse-sel  (-> @state :input :sfsim.input/time-lapse)
+                     time-lapse      (min ^long time-lapse-sel (time-lapse-limit height throttle))
                      window-width    (-> @state :gui :sfsim.gui/window-width)
                      window-height   (-> @state :gui :sfsim.gui/window-height)]
                  (planet/update-tile-tree (:sfsim.graphics/planet-renderer graphics) tile-tree window-width
