@@ -12,21 +12,21 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Cache Jolt bindings
         id: cache-libjolt
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: libjolt.so
           key: ${{ runner.os }}-libjolt-5.5.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
       - name: Cache Maven packages
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('deps.edn') }}
           restore-keys: ${{ runner.os }}-m2-
       - name: Cache Python packages
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-torch-2.11.0-numpy-2.4.3
@@ -34,7 +34,7 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Cache Packr
         id: cache-packr
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: packr-all-4.0.0.jar
           key: packr-4.0.0
@@ -68,7 +68,7 @@ jobs:
         name: Build Jolt bindings
         run: make
       - name: Set up Python
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: '3.13'
       - name: Install PyTorch
@@ -95,7 +95,7 @@ jobs:
       - name: Create Linux executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json
       - name: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: out-linux
           path: out-linux/
@@ -104,22 +104,22 @@ jobs:
     if: github.ref == 'refs/heads/windows'
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Cache Jolt bindings
         id: cache-libjolt
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: libjolt.dll
           key: ${{ runner.os }}-libjolt-5.5.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
       - name: Cache Maven packages
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('deps.edn') }}
           restore-keys: ${{ runner.os }}-m2-
       - name: Cache Packr
         id: cache-packr
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: packr-all-4.0.0.jar
           key: packr-4.0.0
@@ -194,7 +194,7 @@ jobs:
       - name: Create Windows executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json
       - name: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: out-windows
           path: out-windows/
