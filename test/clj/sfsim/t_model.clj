@@ -171,7 +171,7 @@ void main()
                                             (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
                                             (uniform-vector3 program "diffuse_color" diffuse))))
                           (destroy-scene opengl-scene)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/cube.png" 0.0))
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/cube.png" 0.1))
 
 
 (def vertex-geometry-cube
@@ -182,55 +182,104 @@ in vec3 vertex;
 in vec3 normal;
 out VS_OUT
 {
-  vec3 point;
-  vec3 normal;
+  vec4 point;
+  vec4 normal;
 } vs_out;
 void main()
 {
-  vec3 point = (object_to_camera * vec4(vertex, 1)).xyz;
-  vs_out.normal = mat3(object_to_camera) * normal;
+  vec4 point = object_to_camera * vec4(vertex, 1);
+  vs_out.normal = object_to_camera * vec4(normal, 0);
   vs_out.point = point;
-  gl_Position = projection * vec4(point, 1);
+  gl_Position = projection * point;
 }")
+
 
 (def fragment-geometry-cube
 "#version 450 core
+uniform vec3 diffuse_color;
 in VS_OUT
 {
-  vec3 point;
-  vec3 normal;
+  vec4 point;
+  vec4 normal;
 } fs_in;
 layout (location = 0) out vec4 camera_point;
 layout (location = 1) out vec4 camera_normal;
+layout (location = 2) out vec4 diffuse_material;
 void main()
 {
-  camera_point = vec4(fs_in.point, 1);
-  camera_normal = vec4(fs_in.normal, 0);
+  camera_point = fs_in.point;
+  camera_normal = fs_in.normal;
+  diffuse_material = vec4(diffuse_color, 1.0);
 }")
+
+
+(def fragment-lighting
+"#version 450 core
+uniform sampler2D camera_point;
+uniform sampler2D camera_normal;
+uniform sampler2D diffuse_material;
+uniform vec3 light;
+uniform int width;
+uniform int height;
+out vec3 fragColor;
+void main()
+{
+  vec2 uv = vec2 (gl_FragCoord.x / width, gl_FragCoord.y / height);
+  vec4 normal = texture(camera_normal, uv);
+  vec4 point = texture(camera_point, uv);
+  vec3 diffuse_color = texture(diffuse_material, uv).rgb;
+  if (point.w > 0.0)
+    fragColor = diffuse_color * max(0, dot(light, normal.xyz));
+  else
+    fragColor = vec3(0.0);
+}")
+
 
 (fact "Perform geometry pass and lighting pass for red cube"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-cube]
-                                             :sfsim.render/fragment [fragment-geometry-cube])
-              opengl-scene    (load-scene-into-opengl (constantly geometry-program) cube)
-              camera-to-world (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
-                                                                    (rotation-matrix-3d-y -0.4))
-                                                            (vec3 0 0 -5)))
-              depth           (make-empty-depth-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 160 120)
-              point-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)
-              normal-texture  (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 160 120)]
-          (framebuffer-render 160 120 :sfsim.render/cullback depth [point-texture normal-texture]
+                                              :sfsim.render/fragment [fragment-geometry-cube])
+              opengl-scene     (load-scene-into-opengl (constantly geometry-program) cube)
+              camera-to-world  (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
+                                                                     (rotation-matrix-3d-y -0.4))
+                                                             (vec3 0 0 -5)))
+              depth            (make-empty-depth-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 160 120)
+              point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)
+              normal-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)
+              diffuse-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)
+              lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                             :sfsim.render/fragment [fragment-lighting])
+              indices          [0 1 3 2]
+              vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+              screen           (make-vertex-array-object lighting-program indices vertices ["point" 3])]
+          (framebuffer-render 160 120 :sfsim.render/cullback depth [point-texture normal-texture diffuse-texture]
                               (clear)
                               (use-program geometry-program)
                               (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                               (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                            opengl-scene (fn [_material {:sfsim.model/keys [program transform] :as render-vars}]
-                                                             (uniform-matrix4 program "object_to_camera"
-                                                                              (mulm (inverse camera-to-world) transform)))))
-          ; (let [img (rgb-texture->vectors3 point-texture)]
-          ;   (println (get-vector3 img 60 80)))
-          ; (spit-png "/tmp/test.png" (texture->image point-texture))
+                                            opengl-scene
+                                            (fn [{:sfsim.model/keys [diffuse]}
+                                                 {:sfsim.model/keys [program transform] :as render-vars}]
+                                                (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                                                  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
+                                                                                                    transform))
+                                                  (uniform-vector3 program "diffuse_color" diffuse)))))
+          (render-to-image 160 120 false
+                           (clear (vec3 0.0 0.0 0.0))
+                           (use-program lighting-program)
+                           (uniform-sampler lighting-program "camera_point" 0)
+                           (uniform-sampler lighting-program "camera_normal" 1)
+                           (uniform-sampler lighting-program "diffuse_material" 2)
+                           (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))
+                           (uniform-vector3 lighting-program "diffuse_color" (vec3 1.0 0.0 0.0))  ; TODO: use buffer
+                           (uniform-int lighting-program "width" 160)
+                           (uniform-int lighting-program "height" 120)
+                           (use-textures {0 point-texture 1 normal-texture 2 diffuse-texture})
+                           (render-quads screen)) => (is-image "test/clj/sfsim/fixtures/model/cube.png" 0.1)
+          (destroy-vertex-array-object screen)
+          (destroy-program lighting-program)
           (destroy-texture point-texture)
+          (destroy-texture diffuse-texture)
           (destroy-texture normal-texture)
           (destroy-texture depth)
           (destroy-scene opengl-scene)
