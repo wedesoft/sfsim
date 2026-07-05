@@ -329,24 +329,37 @@ void main()
       (set (map :sfsim.model/name (:sfsim.model/children (:sfsim.model/root cubes)))) => #{"Cube1" "Cube2"})
 
 
-(fact "Render red and green cube"
-      (offscreen-render 160 120
-                        (let [program         (make-program :sfsim.render/vertex [vertex-cube] :sfsim.render/fragment [fragment-cube])
-                              opengl-scene    (load-scene-into-opengl (constantly program) cubes)
-                              camera-to-world (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
-                                                                                    (rotation-matrix-3d-y -0.4))
-                                                                              (vec3 0 0 -7)))]
-                          (clear (vec3 0 0 0) 0.0)
-                          (use-program program)
-                          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                          (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
-                                        (fn [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
-                                          (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                            (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
-                                            (uniform-vector3 program "diffuse_color" diffuse))))
-                          (destroy-scene opengl-scene)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/cubes.png" 0.02))
+(fact "Perform geometry pass and lighting pass for red and green cube"
+      (with-invisible-window
+        (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-cube]
+                                              :sfsim.render/fragment [fragment-geometry-cube])
+              opengl-scene     (load-scene-into-opengl (constantly geometry-program) cubes)
+              camera-to-world  (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
+                                                                     (rotation-matrix-3d-y -0.4))
+                                                             (vec3 0 0 -7)))
+              geometry-buffers (make-geometry-buffers 160 120)
+              lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                             :sfsim.render/fragment [fragment-lighting])]
+          (render-geometry geometry-buffers
+                           (clear)
+                           (use-program geometry-program)
+                           (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                           (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
+                                         opengl-scene
+                                         (fn [{:sfsim.model/keys [diffuse]}
+                                              {:sfsim.model/keys [program transform] :as render-vars}]
+                                             (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
+                                                                                                 transform))
+                                               (uniform-vector3 program "diffuse_color" diffuse)))))
+          (render-to-image 160 120 false
+                           (render-lighting geometry-buffers lighting-program 0
+                                            (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))))
+          => (is-image "test/clj/sfsim/fixtures/model/cubes.png" 0.1)
+          (destroy-program lighting-program)
+          (destroy-geometry-buffers geometry-buffers)
+          (destroy-scene opengl-scene)
+          (destroy-program geometry-program))))
 
 
 (def dice (read-gltf "test/clj/sfsim/fixtures/model/dice.gltf"))
