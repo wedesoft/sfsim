@@ -257,6 +257,21 @@ void main()
                  (+ texture-offset 2) diffuse-texture}))
 
 
+(defmacro render-lighting
+  "Perform lighting pass"
+  [geometry-buffers program texture-offset & body]
+  `(let [indices#  [0 1 3 2]
+         vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+         screen#   (make-vertex-array-object ~program indices# vertices# ["point" 3])]
+     (use-program ~program)
+     ~@body
+     (geometry-buffer-uniforms ~geometry-buffers ~program ~texture-offset)
+     (use-geometry-buffer-textures ~geometry-buffers ~texture-offset)
+     (clear (vec3 0.0 0.0 0.0))
+     (render-quads screen#)
+     (destroy-vertex-array-object screen#)))
+
+
 (defn destroy-geometry-buffers
   "Destroy geometry buffer textures"
   [{:sfsim.model/keys [depth point-texture normal-texture diffuse-texture]}]
@@ -276,10 +291,7 @@ void main()
                                                              (vec3 0 0 -5)))
               geometry-buffers (make-geometry-buffers 160 120)
               lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                             :sfsim.render/fragment [fragment-lighting])
-              indices          [0 1 3 2]
-              vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-              screen           (make-vertex-array-object lighting-program indices vertices ["point" 3])]
+                                             :sfsim.render/fragment [fragment-lighting])]
           (render-geometry geometry-buffers
                            (clear)
                            (use-program geometry-program)
@@ -293,13 +305,9 @@ void main()
                                                                                                  transform))
                                                (uniform-vector3 program "diffuse_color" diffuse)))))
           (render-to-image 160 120 false
-                           (clear (vec3 0.0 0.0 0.0))
-                           (use-program lighting-program)
-                           (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))
-                           (geometry-buffer-uniforms geometry-buffers lighting-program 0)
-                           (use-geometry-buffer-textures geometry-buffers 0)
-                           (render-quads screen)) => (is-image "test/clj/sfsim/fixtures/model/cube.png" 0.1)
-          (destroy-vertex-array-object screen)
+                           (render-lighting geometry-buffers lighting-program 0
+                                            (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))))
+          => (is-image "test/clj/sfsim/fixtures/model/cube.png" 0.1)
           (destroy-program lighting-program)
           (destroy-geometry-buffers geometry-buffers)
           (destroy-scene opengl-scene)

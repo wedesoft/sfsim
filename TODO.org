@@ -46,6 +46,7 @@
     - [ ] use down-range and cross-range, ad coriolis and centrifugal acceleration to observations?
     - [ ] use velocity, flight path angle, altitude
     - [ ] final entry window and heading alignment cylinder
+  - [ ] map mfd
   - [ ] fuel consumption
   - [ ] f-35 style glass cockpit [[https://my.storageshare.cloud/s/5XozrsEY8xHLN3t][A400M cockpit]]
 * TODO [#A] spacecraft simulation                                      :physics:
