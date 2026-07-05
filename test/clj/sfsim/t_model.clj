@@ -215,6 +215,57 @@ void main()
 }")
 
 
+(defn make-geometry-buffers
+  "Initialize textures for storing geometry"
+  [width height]
+  {:sfsim.model/width           width
+   :sfsim.model/height          height
+   :sfsim.model/depth           (make-empty-depth-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp width height)
+   :sfsim.model/point-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
+   :sfsim.model/normal-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
+   :sfsim.model/diffuse-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)})
+
+
+(defmacro render-geometry
+  "Perform rendering to geometry buffer"
+  [geometry-buffers & body]
+  `(let [width#           (:sfsim.model/width ~geometry-buffers)
+         height#          (:sfsim.model/height ~geometry-buffers)
+         depth#           (:sfsim.model/depth ~geometry-buffers)
+         point-texture#   (:sfsim.model/point-texture ~geometry-buffers)
+         normal-texture#  (:sfsim.model/normal-texture ~geometry-buffers)
+         diffuse-texture# (:sfsim.model/diffuse-texture ~geometry-buffers)]
+     (framebuffer-render width# height# :sfsim.render/cullback depth# [point-texture# normal-texture# diffuse-texture#]
+                         ~@body)))
+
+
+(defn geometry-buffer-uniforms
+  "Set up geometry uniforms for lighting pass"
+  [{:sfsim.model/keys [width height]} program texture-offset]
+  (uniform-int program "width" width)
+  (uniform-int program "height" height)
+  (uniform-sampler program "camera_point" texture-offset)
+  (uniform-sampler program "camera_normal" (inc texture-offset))
+  (uniform-sampler program "diffuse_material" (+ texture-offset 2)))
+
+
+(defn use-geometry-buffer-textures
+  "Set up geometry buffers for lighting pass"
+  [{:sfsim.model/keys [point-texture normal-texture diffuse-texture]} texture-offset]
+  (use-textures {texture-offset point-texture
+                 (inc texture-offset) normal-texture
+                 (+ texture-offset 2) diffuse-texture}))
+
+
+(defn destroy-geometry-buffers
+  "Destroy geometry buffer textures"
+  [{:sfsim.model/keys [depth point-texture normal-texture diffuse-texture]}]
+  (destroy-texture depth)
+  (destroy-texture point-texture)
+  (destroy-texture diffuse-texture)
+  (destroy-texture normal-texture))
+
+
 (fact "Perform geometry pass and lighting pass for red cube"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-cube]
@@ -223,45 +274,34 @@ void main()
               camera-to-world  (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
                                                                      (rotation-matrix-3d-y -0.4))
                                                              (vec3 0 0 -5)))
-              depth            (make-empty-depth-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 160 120)
-              point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)
-              normal-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)
-              diffuse-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 160 120)
+              geometry-buffers (make-geometry-buffers 160 120)
               lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                              :sfsim.render/fragment [fragment-lighting])
               indices          [0 1 3 2]
               vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
               screen           (make-vertex-array-object lighting-program indices vertices ["point" 3])]
-          (framebuffer-render 160 120 :sfsim.render/cullback depth [point-texture normal-texture diffuse-texture]
-                              (clear)
-                              (use-program geometry-program)
-                              (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                              (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                            opengl-scene
-                                            (fn [{:sfsim.model/keys [diffuse]}
-                                                 {:sfsim.model/keys [program transform] :as render-vars}]
-                                                (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                                  (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
-                                                                                                    transform))
-                                                  (uniform-vector3 program "diffuse_color" diffuse)))))
+          (render-geometry geometry-buffers
+                           (clear)
+                           (use-program geometry-program)
+                           (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                           (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
+                                         opengl-scene
+                                         (fn [{:sfsim.model/keys [diffuse]}
+                                              {:sfsim.model/keys [program transform] :as render-vars}]
+                                             (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
+                                                                                                 transform))
+                                               (uniform-vector3 program "diffuse_color" diffuse)))))
           (render-to-image 160 120 false
                            (clear (vec3 0.0 0.0 0.0))
                            (use-program lighting-program)
-                           (uniform-sampler lighting-program "camera_point" 0)
-                           (uniform-sampler lighting-program "camera_normal" 1)
-                           (uniform-sampler lighting-program "diffuse_material" 2)
                            (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))
-                           (uniform-vector3 lighting-program "diffuse_color" (vec3 1.0 0.0 0.0))  ; TODO: use buffer
-                           (uniform-int lighting-program "width" 160)
-                           (uniform-int lighting-program "height" 120)
-                           (use-textures {0 point-texture 1 normal-texture 2 diffuse-texture})
+                           (geometry-buffer-uniforms geometry-buffers lighting-program 0)
+                           (use-geometry-buffer-textures geometry-buffers 0)
                            (render-quads screen)) => (is-image "test/clj/sfsim/fixtures/model/cube.png" 0.1)
           (destroy-vertex-array-object screen)
           (destroy-program lighting-program)
-          (destroy-texture point-texture)
-          (destroy-texture diffuse-texture)
-          (destroy-texture normal-texture)
-          (destroy-texture depth)
+          (destroy-geometry-buffers geometry-buffers)
           (destroy-scene opengl-scene)
           (destroy-program geometry-program))))
 
