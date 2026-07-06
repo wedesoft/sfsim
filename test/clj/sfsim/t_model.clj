@@ -402,8 +402,8 @@ void main()
        +1.0  1.0  1.0 0.0  1.0  0.0 0.625 0.25])
 
 
-(def vertex-dice
-  "#version 450 core
+(def vertex-geometry-dice
+"#version 450 core
 uniform mat4 projection;
 uniform mat4 object_to_camera;
 in vec3 vertex;
@@ -411,14 +411,17 @@ in vec3 normal;
 in vec2 texcoord;
 out VS_OUT
 {
-  vec3 normal;
+  vec4 point;
+  vec4 normal;
   vec2 texcoord;
 } vs_out;
 void main()
 {
-  vs_out.normal = mat3(object_to_camera) * normal;
+  vec4 point = object_to_camera * vec4(vertex, 1);
+  vs_out.point = point;
+  vs_out.normal = object_to_camera * vec4(normal, 0);
   vs_out.texcoord = texcoord;
-  gl_Position = projection * object_to_camera * vec4(vertex, 1);
+  gl_Position = projection * point;
 }")
 
 
@@ -428,36 +431,69 @@ uniform vec3 light;
 uniform sampler2D colors;
 in VS_OUT
 {
-  vec3 normal;
+  vec4 point;
+  vec4 normal;
   vec2 texcoord;
 } fs_in;
 out vec3 fragColor;
 void main()
 {
   vec3 color = texture(colors, fs_in.texcoord).rgb;
-  fragColor = color * max(0, dot(light, fs_in.normal));
+  fragColor = color * max(0, dot(light, fs_in.normal.xyz));
 }")
 
 
-(fact "Render textured cube"
-      (offscreen-render 160 120
-                        (let [program         (make-program :sfsim.render/vertex [vertex-dice] :sfsim.render/fragment [fragment-dice])
-                              opengl-scene    (load-scene-into-opengl (constantly program) dice)
-                              camera-to-world (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
-                                                                                    (rotation-matrix-3d-y -0.4))
-                                                                              (vec3 0 0 -5)))]
-                          (clear (vec3 0 0 0) 0.0)
-                          (use-program program)
-                          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                          (uniform-vector3 program "light" (normalize (vec3 1 2 3)))
-                          (uniform-sampler program "colors" 0)
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
-                                        (fn [{:sfsim.model/keys [colors]} {:sfsim.model/keys [program transform] :as render-vars}]
-                                          (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                            (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
-                                            (use-textures {0 colors}))))
-                          (destroy-scene opengl-scene)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/dice.png" 0.13))
+(def fragment-geometry-dice
+"#version 450 core
+uniform sampler2D colors;
+in VS_OUT
+{
+  vec4 point;
+  vec4 normal;
+  vec2 texcoord;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out vec4 camera_normal;
+layout (location = 2) out vec4 diffuse_material;
+void main()
+{
+  camera_point = fs_in.point;
+  camera_normal = fs_in.normal;
+  diffuse_material = vec4(texture(colors, fs_in.texcoord).rgb, 1.0);
+}")
+
+(fact "Perform geometry pass and lighting pass for textured cube"
+      (with-invisible-window
+        (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-dice]
+                                              :sfsim.render/fragment [fragment-geometry-dice])
+              opengl-scene     (load-scene-into-opengl (constantly geometry-program) dice)
+              camera-to-world  (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
+                                                                     (rotation-matrix-3d-y -0.4))
+                                                             (vec3 0 0 -5)))
+              geometry-buffers (make-geometry-buffers 160 120)
+              lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                             :sfsim.render/fragment [fragment-lighting])]
+          (render-geometry geometry-buffers
+                           (clear)
+                           (use-program geometry-program)
+                           (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                           (uniform-sampler geometry-program "colors" 0)
+                           (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
+                                         opengl-scene
+                                         (fn [{:sfsim.model/keys [colors]}
+                                              {:sfsim.model/keys [program transform] :as render-vars}]
+                                             (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
+                                                                                                 transform))
+                                               (use-textures {0 colors})))))
+          (render-to-image 160 120 false
+                           (render-lighting geometry-buffers lighting-program 0
+                                            (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))))
+          => (is-image "test/clj/sfsim/fixtures/model/dice.png" 0.1)
+          (destroy-program lighting-program)
+          (destroy-geometry-buffers geometry-buffers)
+          (destroy-scene opengl-scene)
+          (destroy-program geometry-program))))
 
 
 (def bricks (read-gltf "test/clj/sfsim/fixtures/model/bricks.gltf"))
@@ -564,7 +600,7 @@ void main()
       (offscreen-render 160 120
                         (let [program-cube      (make-program :sfsim.render/vertex [vertex-cube]
                                                               :sfsim.render/fragment [fragment-cube])
-                              program-dice      (make-program :sfsim.render/vertex [vertex-dice]
+                              program-dice      (make-program :sfsim.render/vertex [vertex-geometry-dice]
                                                               :sfsim.render/fragment [fragment-dice])
                               program-selection (comp {:colored program-cube :textured program-dice} cube-material-type)
                               opengl-scene      (load-scene-into-opengl program-selection cube-and-dice)
