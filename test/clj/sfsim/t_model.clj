@@ -426,7 +426,7 @@ void main()
 
 
 (def fragment-dice
-  "#version 450 core
+"#version 450 core
 uniform vec3 light;
 uniform sampler2D colors;
 in VS_OUT
@@ -462,7 +462,7 @@ void main()
   diffuse_material = vec4(texture(colors, fs_in.texcoord).rgb, 1.0);
 }")
 
-(fact "Perform geometry pass and lighting pass for textured cube"
+(fact "Perform gometry pass and lighting pass for textured cube"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-dice]
                                               :sfsim.render/fragment [fragment-geometry-dice])
@@ -507,7 +507,7 @@ void main()
       (:sfsim.model/normal-texture-index (first (:sfsim.model/materials bricks))) => 1)
 
 
-(def vertex-bricks
+(def vertex-geometry-bricks
   "#version 450 core
 uniform mat4 projection;
 uniform mat4 object_to_camera;
@@ -518,14 +518,39 @@ in vec3 normal;
 in vec2 texcoord;
 out VS_OUT
 {
+  vec4 point;
   mat3 surface;
   vec2 texcoord;
 } vs_out;
 void main()
 {
+  vec4 point = object_to_camera * vec4(vertex, 1);
+  vs_out.point = point;
   vs_out.surface = mat3(object_to_camera) * mat3(tangent, bitangent, normal);
   vs_out.texcoord = texcoord;
-  gl_Position = projection * object_to_camera * vec4(vertex, 1);
+  gl_Position = projection * point;
+}")
+
+
+(def fragment-geometry-bricks
+"#version 450 core
+uniform sampler2D colors;
+uniform sampler2D normals;
+in VS_OUT
+{
+  vec4 point;
+  mat3 surface;
+  vec2 texcoord;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out vec4 camera_normal;
+layout (location = 2) out vec4 diffuse_material;
+void main()
+{
+  vec3 normal = 2.0 * texture(normals, fs_in.texcoord).xyz - 1.0;
+  camera_point = fs_in.point;
+  camera_normal = vec4(fs_in.surface * normal, 0.0);
+  diffuse_material = vec4(texture(colors, fs_in.texcoord).rgb, 1.0);
 }")
 
 
@@ -536,6 +561,7 @@ uniform sampler2D colors;
 uniform sampler2D normals;
 in VS_OUT
 {
+  vec4 point;
   mat3 surface;
   vec2 texcoord;
 } fs_in;
@@ -549,26 +575,37 @@ void main()
 }")
 
 
-(fact "Render brick wall"
-      (offscreen-render 160 120
-                        (let [program         (make-program :sfsim.render/vertex [vertex-bricks]
-                                                            :sfsim.render/fragment [fragment-bricks])
-                              opengl-scene    (load-scene-into-opengl (constantly program) bricks)
-                              camera-to-world (inverse (transformation-matrix (rotation-matrix-3d-x 1.8) (vec3 0 0 -3)))]
-                          (clear (vec3 0 0 0) 0.0)
-                          (use-program program)
-                          (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                          (uniform-vector3 program "light" (normalize (vec3 0 -3 1)))
-                          (uniform-sampler program "colors" 0)
-                          (uniform-sampler program "normals" 1)
-                          (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
-                                        (fn [{:sfsim.model/keys [colors normals]}
-                                             {:sfsim.model/keys [program transform] :as render-vars}]
-                                          (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                            (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))
-                                            (use-textures {0 colors 1 normals}))))
-                          (destroy-scene opengl-scene)
-                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/model/bricks.png" 0.10))
+(fact "Perform gometry pass and lighting pass for rendering brick wall"
+      (with-invisible-window
+        (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-bricks]
+                                              :sfsim.render/fragment [fragment-geometry-bricks])
+              opengl-scene     (load-scene-into-opengl (constantly geometry-program) bricks)
+              camera-to-world  (inverse (transformation-matrix (rotation-matrix-3d-x 1.8) (vec3 0 0 -3)))
+              geometry-buffers (make-geometry-buffers 160 120)
+              lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                             :sfsim.render/fragment [fragment-lighting])]
+          (render-geometry geometry-buffers
+                           (clear)
+                           (use-program geometry-program)
+                           (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                           (uniform-sampler geometry-program "colors" 0)
+                           (uniform-sampler geometry-program "normals" 1)
+                           (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
+                                         opengl-scene
+                                         (fn [{:sfsim.model/keys [colors normals]}
+                                              {:sfsim.model/keys [program transform] :as render-vars}]
+                                             (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
+                                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
+                                                                                                 transform))
+                                               (use-textures {0 colors 1 normals})))))
+          (render-to-image 160 120 false
+                           (render-lighting geometry-buffers lighting-program 0
+                                            (uniform-vector3 lighting-program "light" (normalize (vec3 0 -3 1)))))
+          => (is-image "test/clj/sfsim/fixtures/model/bricks.png" 0.1)
+          (destroy-program lighting-program)
+          (destroy-geometry-buffers geometry-buffers)
+          (destroy-scene opengl-scene)
+          (destroy-program geometry-program))))
 
 
 (defn cube-material-type
