@@ -15,11 +15,17 @@ in vec2 texcoord;
 out VS_OUT
 {
   vec4 camera_point;
+<% (if full %>
+  vec4 normal;
+<% ) %>
 } vs_out;
 
 void main()
 {
   vec4 camera_point = object_to_camera * vec4(vertex, 1);
   vs_out.camera_point = camera_point;
+<% (if full %>
+  vs_out.normal = object_to_camera * vec4(normal, 0);
+<% ) %>
   gl_Position = projection * camera_point;
 }

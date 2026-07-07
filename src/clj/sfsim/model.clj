@@ -946,7 +946,7 @@
 
 
 (def vertex-geometry-scene
-  (template/fn [textured bump] (slurp "resources/shaders/model/vertex-geometry.glsl")))
+  (template/fn [textured bump full] (slurp "resources/shaders/model/vertex-geometry.glsl")))
 
 
 (def fragment-geometry-scene
@@ -957,7 +957,7 @@
   "Create program to render scene points and distances or full geometry"
   {:malli/schema [:=> [:cat :boolean :boolean :boolean] :int]}
   [textured bump full]
-  (make-program :sfsim.render/vertex [(vertex-geometry-scene textured bump)]
+  (make-program :sfsim.render/vertex [(vertex-geometry-scene textured bump full)]
                 :sfsim.render/fragment [(fragment-geometry-scene full)]))
 
 
