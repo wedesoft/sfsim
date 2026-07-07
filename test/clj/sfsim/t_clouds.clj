@@ -1526,11 +1526,11 @@ void main()
                (destroy-joined-geometry-renderer renderer))))
          ?model ?planet ?planet-z-near ?coordinate ?distance
          nil    nil     0.1            -1.0        10.0
-        -4.0    nil     0.1            -1.0         3.0
+        -4.0    nil     0.1            -3.0         3.0
          nil   -5.0     0.1            -1.0         5.0
-        -4.0   -5.0     0.1            -1.0         3.0
+        -4.0   -5.0     0.1            -3.0         3.0
         -7.0   -5.0     0.1            -1.0         5.0
-        -7.0   -5.0     0.5            -1.0         6.0)
+        -7.0   -5.0     0.5            -6.0         6.0)
 
 
 (def fragment-mock-geometry
@@ -1540,7 +1540,7 @@ layout (location = 1) out float dist;
 uniform vec3 point;
 void main()
 {
-  camera_point = vec4(normalize(point), 0.0);
+  camera_point = vec4(point, 1.0);
   dist = length(point);
 }")
 

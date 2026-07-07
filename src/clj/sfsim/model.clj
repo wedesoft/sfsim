@@ -996,7 +996,7 @@
   "Render geometry (points and distances) for a scene"
   {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars scene] :nil]}
   [geometry-renderer render-vars scene]
-  (let [projection       (:sfsim.render/overlay-projection render-vars)]
+  (let [projection (:sfsim.render/overlay-projection render-vars)]
     (doseq [program (vals (::programs geometry-renderer))]
            (use-program program)
            (uniform-matrix4 program "projection" projection))

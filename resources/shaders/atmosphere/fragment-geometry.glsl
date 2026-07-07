@@ -12,6 +12,6 @@ layout (location = 1) out float dist;
 
 void main ()
 {
-  camera_point = vec4(normalize(fs_in.direction), 0.0);
+  camera_point = vec4(fs_in.direction, 0.0);
   dist = z_far;
 }
