@@ -830,7 +830,6 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                               (conj model-shader-mocks
                                                     (template/eval (slurp "resources/shaders/model/fragment.glsl")
                                                                    {:textured textured :bump bump :num-scene-shadows 0})))
-                       plume/setup-static-plume-uniforms (fn [_program _model-data])
                        model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
                                                            (use-program program)
                                                            (setup-scene-samplers program 0 0 textured bump)
@@ -1204,7 +1203,7 @@ vec4 cloud_overlay(float depth)
 
 (fact "Render camera points to frame buffer"
       (with-invisible-window
-        (let [renderer        (make-scene-geometry-renderer)
+        (let [renderer        (make-scene-geometry-renderer false)
               opengl-scene    (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-type) cube)
               camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))
               render-vars     {:sfsim.render/camera-to-world camera-to-world

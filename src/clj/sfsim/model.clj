@@ -950,26 +950,26 @@
 
 
 (def fragment-geometry-scene
-  (slurp "resources/shaders/model/fragment-geometry.glsl"))
+  (template/fn [full] (slurp "resources/shaders/model/fragment-geometry.glsl")))
 
 
 (defn make-scene-geometry-program
-  "Create program to render scene points and distances"
-  {:malli/schema [:=> [:cat :boolean :boolean] :int]}
-  [textured bump]
+  "Create program to render scene points and distances or full geometry"
+  {:malli/schema [:=> [:cat :boolean :boolean :boolean] :int]}
+  [textured bump full]
   (make-program :sfsim.render/vertex [(vertex-geometry-scene textured bump)]
-                :sfsim.render/fragment [fragment-geometry-scene]))
+                :sfsim.render/fragment [(fragment-geometry-scene full)]))
 
 
 (def scene-geometry-renderer (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean] :int]]]))
 
 
 (defn make-scene-geometry-renderer
-  "Create renderer to render scene points and distances"
-  {:malli/schema [:=> [:cat] scene-geometry-renderer]}
-  []
+  "Create renderer to render scene points and distances or full geometry"
+  {:malli/schema [:=> [:cat :boolean] scene-geometry-renderer]}
+  [full]
   (let [variations (for [textured [false true] bump [false true]] [textured bump])
-        programs   (mapv #(make-scene-geometry-program (first %) (second %)) variations)]
+        programs   (mapv #(make-scene-geometry-program (first %) (second %) full) variations)]
     {::programs (zipmap variations programs)}))
 
 
@@ -1021,7 +1021,7 @@
   "Joined geometry renderer for rendering scene, planet, and atmosphere geometry information"
   {:malli/schema [:=> [:cat planet-data] joined-geometry-renderer]}
   [data]
-  (let [scene-renderer (make-scene-geometry-renderer)
+  (let [scene-renderer (make-scene-geometry-renderer false)
         planet-renderer (make-planet-geometry-renderer data)
         atmosphere-renderer (make-atmosphere-geometry-renderer)]
     {::scene-renderer scene-renderer
