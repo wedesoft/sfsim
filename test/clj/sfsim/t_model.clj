@@ -350,29 +350,6 @@ void main()
        +1.0  1.0  1.0 0.0  1.0  0.0 0.625 0.25])
 
 
-(def vertex-geometry-dice
-"#version 450 core
-uniform mat4 projection;
-uniform mat4 object_to_camera;
-in vec3 vertex;
-in vec3 normal;
-in vec2 texcoord;
-out VS_OUT
-{
-  vec4 camera_point;
-  vec4 normal;
-  vec2 texcoord;
-} vs_out;
-void main()
-{
-  vec4 point = object_to_camera * vec4(vertex, 1);
-  vs_out.camera_point = point;
-  vs_out.normal = object_to_camera * vec4(normal, 0);
-  vs_out.texcoord = texcoord;
-  gl_Position = projection * point;
-}")
-
-
 (def fragment-geometry-dice
 "#version 450 core
 uniform sampler2D colors;
@@ -394,7 +371,7 @@ void main()
 
 (fact "Perform gometry pass and lighting pass for textured cube"
       (with-invisible-window
-        (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-dice]
+        (let [geometry-program (make-program :sfsim.render/vertex [(vertex-geometry-scene true false true)]
                                               :sfsim.render/fragment [fragment-geometry-dice])
               opengl-scene     (load-scene-into-opengl (constantly geometry-program) dice)
               camera-to-world  (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
@@ -437,31 +414,6 @@ void main()
       (:sfsim.model/normal-texture-index (first (:sfsim.model/materials bricks))) => 1)
 
 
-(def vertex-geometry-bricks
-  "#version 450 core
-uniform mat4 projection;
-uniform mat4 object_to_camera;
-in vec3 vertex;
-in vec3 tangent;
-in vec3 bitangent;
-in vec3 normal;
-in vec2 texcoord;
-out VS_OUT
-{
-  vec4 camera_point;
-  mat3 surface;
-  vec2 texcoord;
-} vs_out;
-void main()
-{
-  vec4 point = object_to_camera * vec4(vertex, 1);
-  vs_out.camera_point = point;
-  vs_out.surface = mat3(object_to_camera) * mat3(tangent, bitangent, normal);
-  vs_out.texcoord = texcoord;
-  gl_Position = projection * point;
-}")
-
-
 (def fragment-geometry-bricks
 "#version 450 core
 uniform sampler2D colors;
@@ -486,7 +438,7 @@ void main()
 
 (fact "Perform gometry pass and lighting pass for rendering brick wall"
       (with-invisible-window
-        (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-bricks]
+        (let [geometry-program (make-program :sfsim.render/vertex [(vertex-geometry-scene true true true)]
                                               :sfsim.render/fragment [fragment-geometry-bricks])
               opengl-scene     (load-scene-into-opengl (constantly geometry-program) bricks)
               camera-to-world  (inverse (transformation-matrix (rotation-matrix-3d-x 1.8) (vec3 0 0 -3)))
@@ -546,7 +498,7 @@ void main()
       (with-invisible-window
         (let [geometry-program-cube (make-program :sfsim.render/vertex [(vertex-geometry-scene false false true)]
                                                   :sfsim.render/fragment [fragment-geometry-cube])
-              geometry-program-dice (make-program :sfsim.render/vertex [vertex-geometry-dice]
+              geometry-program-dice (make-program :sfsim.render/vertex [(vertex-geometry-scene true false true)]
                                                   :sfsim.render/fragment [fragment-geometry-dice])
               program-selection     (comp {:colored geometry-program-cube :textured geometry-program-dice}
                                           cube-material-type)
