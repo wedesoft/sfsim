@@ -213,7 +213,7 @@ void main()
 (fact "Perform geometry pass and lighting pass for red cube"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [(vertex-geometry-scene false false true)]
-                                              :sfsim.render/fragment [(fragment-geometry-scene true)])
+                                              :sfsim.render/fragment [(fragment-geometry-scene false false true)])
               opengl-scene     (load-scene-into-opengl (constantly geometry-program) cube)
               camera-to-world  (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
                                                                      (rotation-matrix-3d-y -0.4))
@@ -261,7 +261,7 @@ void main()
 (fact "Perform geometry pass and lighting pass for red and green cube"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [(vertex-geometry-scene false false true)]
-                                              :sfsim.render/fragment [(fragment-geometry-scene true)])
+                                              :sfsim.render/fragment [(fragment-geometry-scene false false true)])
               opengl-scene     (load-scene-into-opengl (constantly geometry-program) cubes)
               camera-to-world  (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
                                                                      (rotation-matrix-3d-y -0.4))
@@ -331,29 +331,10 @@ void main()
        +1.0  1.0  1.0 0.0  1.0  0.0 0.625 0.25])
 
 
-(def fragment-geometry-dice
-"#version 450 core
-uniform sampler2D colors;
-in VS_OUT
-{
-  vec4 camera_point;
-  vec4 normal;
-  vec2 texcoord;
-} fs_in;
-layout (location = 0) out vec4 camera_point;
-layout (location = 1) out vec4 camera_normal;
-layout (location = 2) out vec4 diffuse_material;
-void main()
-{
-  camera_point = fs_in.camera_point;
-  camera_normal = fs_in.normal;
-  diffuse_material = vec4(texture(colors, fs_in.texcoord).rgb, 1.0);
-}")
-
 (fact "Perform gometry pass and lighting pass for textured cube"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [(vertex-geometry-scene true false true)]
-                                              :sfsim.render/fragment [fragment-geometry-dice])
+                                              :sfsim.render/fragment [(fragment-geometry-scene true false true)])
               opengl-scene     (load-scene-into-opengl (constantly geometry-program) dice)
               camera-to-world  (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
                                                                      (rotation-matrix-3d-y -0.4))
@@ -478,9 +459,9 @@ void main()
 (fact "Perform gometry pass and lighting pass for uniformly colored cube and textured cube"
       (with-invisible-window
         (let [geometry-program-cube (make-program :sfsim.render/vertex [(vertex-geometry-scene false false true)]
-                                                  :sfsim.render/fragment [(fragment-geometry-scene true)])
+                                                  :sfsim.render/fragment [(fragment-geometry-scene false false true)])
               geometry-program-dice (make-program :sfsim.render/vertex [(vertex-geometry-scene true false true)]
-                                                  :sfsim.render/fragment [fragment-geometry-dice])
+                                                  :sfsim.render/fragment [(fragment-geometry-scene true false true)])
               program-selection     (comp {:colored geometry-program-cube :textured geometry-program-dice}
                                           cube-material-type)
               opengl-scene          (load-scene-into-opengl program-selection cube-and-dice)

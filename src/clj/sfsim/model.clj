@@ -950,7 +950,7 @@
 
 
 (def fragment-geometry-scene
-  (template/fn [full] (slurp "resources/shaders/model/fragment-geometry.glsl")))
+  (template/fn [textured bump full] (slurp "resources/shaders/model/fragment-geometry.glsl")))
 
 
 (defn make-scene-geometry-program
@@ -958,7 +958,7 @@
   {:malli/schema [:=> [:cat :boolean :boolean :boolean] :int]}
   [textured bump full]
   (make-program :sfsim.render/vertex [(vertex-geometry-scene textured bump full)]
-                :sfsim.render/fragment [(fragment-geometry-scene full)]))
+                :sfsim.render/fragment [(fragment-geometry-scene textured bump full)]))
 
 
 (def scene-geometry-renderer (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean] :int]]]))

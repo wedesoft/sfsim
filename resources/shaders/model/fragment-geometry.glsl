@@ -1,7 +1,10 @@
 #version 450 core
 
-<% (if full %>
+<% (if (and full (not textured)) %>
 uniform vec3 diffuse_color;
+<% ) %>
+<% (if (and full textured) %>
+uniform sampler2D colors;
 <% ) %>
 
 in VS_OUT
@@ -9,6 +12,9 @@ in VS_OUT
   vec4 camera_point;
 <% (if full %>
   vec4 normal;
+<% ) %>
+<% (if (and full textured) %>
+  vec2 texcoord;
 <% ) %>
 } fs_in;
 
@@ -29,6 +35,9 @@ void main()
 <% ) %>
 <% (if (and full (not textured)) %>
   diffuse_material = vec4(diffuse_color, 1.0);
+<% ) %>
+<% (if (and full textured) %>
+  diffuse_material = vec4(texture(colors, fs_in.texcoord).rgb, 1.0);
 <% ) %>
 <% (if (not full) %>
   dist = length(fs_in.camera_point.xyz);
