@@ -27,6 +27,9 @@ void main()
 <% (if full %>
   camera_normal = fs_in.normal;
 <% ) %>
+<% (if (and full (not textured)) %>
+  diffuse_material = vec4(diffuse_color, 1.0);
+<% ) %>
 <% (if (not full) %>
   dist = length(fs_in.camera_point.xyz);
 <% ) %>
