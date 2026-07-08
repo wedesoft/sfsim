@@ -791,7 +791,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                                                                    (rotation-matrix-3d-y -0.4))
                                                                              (vec3 1 0 -5))
                                      moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
-                                 (clear (vec3 0.5 0.5 0.5) 0.0)
+                                 (clear (vec3 0.0 0.0 0.0) 0.0)
                                  (render-scene (comp (:sfsim.model/programs renderer) material-and-shadow-type)
                                                0
                                                {:sfsim.render/camera-to-world camera-to-world}
