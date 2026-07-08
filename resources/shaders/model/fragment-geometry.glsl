@@ -6,14 +6,20 @@ uniform vec3 diffuse_color;
 <% (if (and full textured) %>
 uniform sampler2D colors;
 <% ) %>
+<% (if (and full bump) %>
+uniform sampler2D normals;
+<% ) %>
 
 in VS_OUT
 {
   vec4 camera_point;
-<% (if full %>
+<% (if (and full (not bump)) %>
   vec4 normal;
 <% ) %>
-<% (if (and full textured) %>
+<% (if (and full bump) %>
+  mat3 surface;
+<% ) %>
+<% (if (and full (or textured bump)) %>
   vec2 texcoord;
 <% ) %>
 } fs_in;
@@ -30,8 +36,12 @@ layout (location = 2) out vec4 diffuse_material;
 void main()
 {
   camera_point = fs_in.camera_point;
-<% (if full %>
+<% (if (and full (not bump)) %>
   camera_normal = fs_in.normal;
+<% ) %>
+<% (if (and full bump) %>
+  vec3 normal = 2.0 * texture(normals, fs_in.texcoord).xyz - 1.0;
+  camera_normal = vec4(fs_in.surface * normal, 0.0);
 <% ) %>
 <% (if (and full (not textured)) %>
   diffuse_material = vec4(diffuse_color, 1.0);

@@ -376,32 +376,10 @@ void main()
       (:sfsim.model/normal-texture-index (first (:sfsim.model/materials bricks))) => 1)
 
 
-(def fragment-geometry-bricks
-"#version 450 core
-uniform sampler2D colors;
-uniform sampler2D normals;
-in VS_OUT
-{
-  vec4 camera_point;
-  mat3 surface;
-  vec2 texcoord;
-} fs_in;
-layout (location = 0) out vec4 camera_point;
-layout (location = 1) out vec4 camera_normal;
-layout (location = 2) out vec4 diffuse_material;
-void main()
-{
-  vec3 normal = 2.0 * texture(normals, fs_in.texcoord).xyz - 1.0;
-  camera_point = fs_in.camera_point;
-  camera_normal = vec4(fs_in.surface * normal, 0.0);
-  diffuse_material = vec4(texture(colors, fs_in.texcoord).rgb, 1.0);
-}")
-
-
 (fact "Perform gometry pass and lighting pass for rendering brick wall"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [(vertex-geometry-scene true true true)]
-                                              :sfsim.render/fragment [fragment-geometry-bricks])
+                                              :sfsim.render/fragment [(fragment-geometry-scene true true true)])
               opengl-scene     (load-scene-into-opengl (constantly geometry-program) bricks)
               camera-to-world  (inverse (transformation-matrix (rotation-matrix-3d-x 1.8) (vec3 0 0 -3)))
               geometry-buffers (make-geometry-buffers 160 120)
