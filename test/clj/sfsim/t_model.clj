@@ -697,6 +697,17 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
    (last (clouds/overall-shading 3 []))])
 
 
+(tabular "Perform geometry pass and lighting pass including mock fog and mock atmosphere"
+         (fact
+           (with-invisible-window
+             (let [geometry-renderer (make-scene-geometry-renderer true)
+                   opengl-scene      (load-scene-into-opengl (comp (:sfsim.model/programs geometry-renderer) material-type) ?model)]
+               (destroy-scene opengl-scene)
+               (destroy-scene-geometry-renderer geometry-renderer))))
+         ?model ?transmittance
+         cube   1.0)
+
+
 (tabular "Render red cube with fog and atmosphere"
          (with-redefs [model/fragment-scene (fn [textured bump num-steps num-scene-shadows]
                                               (conj model-shader-mocks
