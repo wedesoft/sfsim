@@ -118,7 +118,7 @@ You can enable the integration tests as follows (requires results of above build
 * Delete target and out-linux directories (do not omit this step, otherwise it can generate a broken build)
 * Build JAR file: `clj -T:build uber`
 * Create Linux executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json` (delete out-linux folder first)
-* Upload to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login <account_name> <password> +run_app_build /home/..../sfsim/scripts/sfsim_playtest_linux.vdf +quit`
+* Upload to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login $STEAM_ACCOUNT $STEAM_PASSWORD +run_app_build $PWD/scripts/sfsim_playtest_linux.vdf +quit`
 
 ## Steps under Windows
 
@@ -127,11 +127,11 @@ You can enable the integration tests as follows (requires results of above build
 * Delete target and out-windows directories (do not omit this step otherwise it can generate a broken build)
 * Build JAR file: `clj -T:build uber`
 * Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json` (delete out-windows folder first)
-* Upload to Steam: `sdk\tools\ContentBuilder\builder\steamcmd.exe +login <account_name> <password> +run_app_build C:\Users\....\sfsim\scripts\sfsim_playtest_windows.vdf +quit`
+* Upload to Steam: `.\sdk\tools\ContentBuilder\builder\steamcmd.exe +login $env:STEAM_ACCOUNT $env:STEAM_PASSWORD +run_app_build "$PWD\scripts\sfsim_playtest_windows.vdf" +quit`
 
 ## Data Upload to Steam
 
-* Upload data to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login <account_name> <password> +run_app_build /home/..../sfsim/scripts/sfsim_playtest_data.vdf +quit`
+* Upload data to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login $STEAM_ACCOUNT $STEAM_PASSWORD +run_app_build $PWD/scripts/sfsim_playtest_data.vdf +quit`
 
 # Lint
 
