@@ -708,7 +708,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                                            (uniform-float program "albedo" 3.14159265358)
                                                            (uniform-float program "amplification" 1.0)
                                                            (uniform-float program "specular" 1.0)
-                                                           (uniform-vector3 program "origin" (vec3 0 0 5))
+                                                           (uniform-vector3 program "origin" (vec3 0 0 0))
                                                            (uniform-matrix4 program "projection"
                                                                             (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                                            (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3)))
