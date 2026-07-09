@@ -9,7 +9,7 @@
     [clojure.math :refer (to-radians sqrt PI)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye mulm inverse mat4x4 rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z)]
-    [fastmath.vector :refer (vec3 vec4 normalize)]
+    [fastmath.vector :refer (vec3 vec4 normalize mag)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -122,7 +122,7 @@
        (:sfsim.model/normal-texture-index (first (:sfsim.model/materials cube))) => nil)
 
 
-(def fragment-lighting
+(def fragment-lighting-mock
 "#version 450 core
 uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
@@ -133,7 +133,7 @@ uniform int height;
 out vec3 fragColor;
 void main()
 {
-  vec2 uv = vec2 (gl_FragCoord.x / width, gl_FragCoord.y / height);
+  vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
   vec4 normal = texture(camera_normal, uv);
   vec4 point = texture(camera_point, uv);
   vec3 diffuse_color = texture(diffuse_material, uv).rgb;
@@ -220,7 +220,7 @@ void main()
                                                              (vec3 0 0 -5)))
               geometry-buffers (make-geometry-buffers 160 120)
               lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                             :sfsim.render/fragment [fragment-lighting])]
+                                             :sfsim.render/fragment [fragment-lighting-mock])]
           (render-geometry geometry-buffers
                            (clear)
                            (use-program geometry-program)
@@ -268,7 +268,7 @@ void main()
                                                              (vec3 0 0 -7)))
               geometry-buffers (make-geometry-buffers 160 120)
               lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                             :sfsim.render/fragment [fragment-lighting])]
+                                             :sfsim.render/fragment [fragment-lighting-mock])]
           (render-geometry geometry-buffers
                            (clear)
                            (use-program geometry-program)
@@ -341,7 +341,7 @@ void main()
                                                              (vec3 0 0 -5)))
               geometry-buffers (make-geometry-buffers 160 120)
               lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                             :sfsim.render/fragment [fragment-lighting])]
+                                             :sfsim.render/fragment [fragment-lighting-mock])]
           (render-geometry geometry-buffers
                            (clear)
                            (use-program geometry-program)
@@ -384,7 +384,7 @@ void main()
               camera-to-world  (inverse (transformation-matrix (rotation-matrix-3d-x 1.8) (vec3 0 0 -3)))
               geometry-buffers (make-geometry-buffers 160 120)
               lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                             :sfsim.render/fragment [fragment-lighting])]
+                                             :sfsim.render/fragment [fragment-lighting-mock])]
           (render-geometry geometry-buffers
                            (clear)
                            (use-program geometry-program)
@@ -448,7 +448,7 @@ void main()
                                                                     (vec3 0 0 -7)))
               geometry-buffers      (make-geometry-buffers 160 120)
               lighting-program      (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                  :sfsim.render/fragment [fragment-lighting])]
+                                                  :sfsim.render/fragment [fragment-lighting-mock])]
           (render-geometry geometry-buffers
                            (clear)
                            (doseq [program [geometry-program-cube geometry-program-dice]]
@@ -637,6 +637,15 @@ vec4 cloud_overlay(float depth)
 }")
 
 
+(def cloud-overlay-mock-2
+  "#version 450 core
+vec4 cloud_overlay(float depth)
+{
+  float transparency = exp(-depth / 10.0);
+  return vec4(0.5, 0.5, 0.5, 1 - transparency);
+}")
+
+
 (def transmittance-point-mock
   "#version 450 core
 uniform float transmittance;
@@ -697,6 +706,70 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
    (last (clouds/overall-shading 3 []))])
 
 
+(defmulti render-mesh-geometry (fn [material _render-vars] (material-type material)))
+
+; (m/=> render-mesh-geometry [:=> [:cat material mesh-vars] :nil])
+
+
+(defmethod render-mesh-geometry [false false]
+  [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-vector3 program "diffuse_color" diffuse))
+
+
+(defmethod render-mesh-geometry [true false]
+  [{:sfsim.model/keys [colors]} {:sfsim.model/keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (use-textures {texture-offset colors}))
+
+
+(defmethod render-mesh-geometry [false true]
+  [{:sfsim.model/keys [diffuse normals]} {:sfsim.model/keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-vector3 program "diffuse_color" diffuse)
+  (use-textures {texture-offset normals}))
+
+
+(defmethod render-mesh-geometry [true true]
+  [{:sfsim.model/keys [colors normals]} {:sfsim.model/keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
+
+
+(def fragment-lighting
+"#version 450 core
+uniform sampler2D camera_point;
+uniform sampler2D camera_normal;
+uniform sampler2D diffuse_material;
+uniform mat4 camera_to_world;
+uniform vec3 light_direction;
+uniform int width;
+uniform int height;
+out vec4 fragColor;
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec4 cloud_overlay(float depth);
+void main()
+{
+  vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
+  vec4 normal = texture(camera_normal, uv);
+  vec4 point = texture(camera_point, uv);
+  vec3 diffuse_color = texture(diffuse_material, uv).rgb;
+  if (point.w > 0.0) {
+    vec3 world_point = (camera_to_world * point).xyz;
+    vec3 ambient_light = vec3(0.0, 0.0, 0.0);
+    vec3 light = vec3(1.0, 1.0, 1.0);
+    vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
+    vec4 cloud_scatter = cloud_overlay(length(point.xyz));
+    fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
+  } else
+    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+}")
+
+
 (tabular "Perform geometry pass and lighting pass including mock fog and mock atmosphere"
          (fact
            (with-invisible-window
@@ -708,21 +781,66 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                                                   (rotation-matrix-3d-y -0.4))
                                                             (vec3 1 0 -5))
                    moved-scene       (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-                   geometry-buffers  (make-geometry-buffers 160 120)]
+                   geometry-buffers  (make-geometry-buffers 160 120)
+                   lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                   :sfsim.render/fragment [fragment-lighting shaders/phong cloud-overlay-mock-2])]
                (render-geometry geometry-buffers
                                 (clear)
-                                (doseq [[[textured bump] program] (:sfsim.model/program geometry-renderer)]
+                                (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
                                        (use-program program)
                                        (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                        (when textured (uniform-sampler program "colors" 0))
-                                       (when bump (uniform-sampler program "normals" (when textured 1 0))))
-                                 ; TODO: (render-scene program-selection 0)
-                                )
+                                       (when bump (uniform-sampler program "normals" (if textured 1 0))))
+                                (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                                              render-mesh-geometry))
+               (render-to-image 160 120 false
+                                (render-lighting geometry-buffers lighting-program 0
+                                                 (uniform-float lighting-program "albedo" 3.14159265358)
+                                                 (uniform-float lighting-program "amplification" 1.0)
+                                                 (uniform-float lighting-program "specular" 1.0)
+                                                 (uniform-vector3 lighting-program "origin" (vec3 0 0 0))
+                                                 (uniform-matrix4 lighting-program "camera_to_world" camera-to-world)
+                                                 (uniform-vector3 lighting-program "light_direction" (normalize (vec3 1 2 3)))
+                                                 ; (uniform-float lighting-program "transmittance" ?transmittance)
+                                                 ; (uniform-float lighting-program "ambient" ?ambient)
+                                                 ; (uniform-float lighting-program "shadow" ?shadow)
+                                                 ; (uniform-float lighting-program "attenuation" ?attenuation)
+                                                 ; (uniform-float lighting-program "radius" 1000.0)
+                                                 ; (uniform-float lighting-program "max_height" 100.0)
+                                                 ; (uniform-int lighting-program "above" ?above)
+                                                 ))
+               ; => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 1.5)
+               => (is-image "/tmp/test.png" 0.31)
+               (destroy-program lighting-program)
                (destroy-geometry-buffers geometry-buffers)
                (destroy-scene opengl-scene)
                (destroy-scene-geometry-renderer geometry-renderer))))
-         ?model ?transmittance
-         cube   1.0)
+         ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
+         cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
+         ; cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
+         ; cube   1.0            0      0.0      1.0     1.0          "cube-sunset.png"
+         ; cube   1.0            0      1.0      1.0     1.0          "cube-ambient.png"
+         ; cube   1.0            1      0.0      0.5     1.0          "cube-shadow.png"
+         ; cube   1.0            1      0.0      1.0     0.5          "cube-attenuation.png"
+         ; dice   1.0            1      0.0      1.0     1.0          "dice-fog.png"
+         ; dice   0.5            1      0.0      1.0     1.0          "dice-dark.png"
+         ; dice   1.0            0      0.0      1.0     1.0          "dice-sunset.png"
+         ; dice   1.0            0      1.0      1.0     1.0          "dice-ambient.png"
+         ; dice   1.0            1      0.0      0.5     1.0          "dice-shadow.png"
+         ; dice   1.0            1      0.0      1.0     0.5          "dice-attenuation.png"
+         ; bump   1.0            1      0.0      1.0     1.0          "bump-fog.png"
+         ; bump   0.5            1      0.0      1.0     1.0          "bump-dark.png"
+         ; bump   1.0            0      0.0      1.0     1.0          "bump-sunset.png"
+         ; bump   1.0            0      1.0      1.0     1.0          "bump-ambient.png"
+         ; bump   1.0            1      0.0      0.5     1.0          "bump-shadow.png"
+         ; bump   1.0            1      0.0      1.0     0.5          "bump-attenuation.png"
+         ; bricks 1.0            1      0.0      1.0     1.0          "bricks-fog.png"
+         ; bricks 0.5            1      0.0      1.0     1.0          "bricks-dark.png"
+         ; bricks 1.0            0      0.0      1.0     1.0          "bricks-sunset.png"
+         ; bricks 1.0            0      1.0      1.0     1.0          "bricks-ambient.png"
+         ; bricks 1.0            1      0.0      0.5     1.0          "bricks-shadow.png"
+         ; bricks 1.0            1      0.0      1.0     0.5          "bricks-attenuation.png"
+         )
 
 
 (tabular "Render red cube with fog and atmosphere"
@@ -737,6 +855,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
                                                            (uniform-float program "amplification" 1.0)
                                                            (uniform-float program "specular" 1.0)
                                                            (uniform-vector3 program "origin" (vec3 0 0 0))
+                                                           (uniform-float program "object_distance" (mag (vec3 1 0 -5)))
                                                            (uniform-matrix4 program "projection"
                                                                             (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                                            (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3)))

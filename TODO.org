@@ -10,6 +10,8 @@
     - [ ] lighting pass: sample shadow map, calculate light colors, and specular highlights
     - [ ] render localized lights using blending (not sure whether this is done earlier)
     - [ ] use glClearNamedFramebufferfv(fbo, GL_COLOR, 0, clearColor) to clear frame buffer
+    - [ ] render-scene: remove texture-offset and shadow matrices, just render geometry
+    - [ ] remove object_origin
   - [ ] runway with lights and glide slope indicator
     - [ ] render cube mesh backfaces without depth writing but leave depth testing on
     - [ ] render geometry and shadow information (full resolution) and use in subsequent pass
