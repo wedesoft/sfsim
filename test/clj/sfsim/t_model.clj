@@ -701,7 +701,24 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
          (fact
            (with-invisible-window
              (let [geometry-renderer (make-scene-geometry-renderer true)
-                   opengl-scene      (load-scene-into-opengl (comp (:sfsim.model/programs geometry-renderer) material-type) ?model)]
+                   program-selection (comp (:sfsim.model/programs geometry-renderer) material-type)
+                   opengl-scene      (load-scene-into-opengl program-selection ?model)
+                   camera-to-world   (transformation-matrix (eye 3) (vec3 1 0 0))
+                   object-to-world   (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
+                                                                  (rotation-matrix-3d-y -0.4))
+                                                            (vec3 1 0 -5))
+                   moved-scene       (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
+                   geometry-buffers  (make-geometry-buffers 160 120)]
+               (render-geometry geometry-buffers
+                                (clear)
+                                (doseq [[[textured bump] program] (:sfsim.model/program geometry-renderer)]
+                                       (use-program program)
+                                       (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                                       (when textured (uniform-sampler program "colors" 0))
+                                       (when bump (uniform-sampler program "normals" (when textured 1 0))))
+                                 ; TODO: (render-scene program-selection 0)
+                                )
+               (destroy-geometry-buffers geometry-buffers)
                (destroy-scene opengl-scene)
                (destroy-scene-geometry-renderer geometry-renderer))))
          ?model ?transmittance
