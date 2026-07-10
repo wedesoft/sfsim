@@ -35,6 +35,7 @@
                             "-XX:+UseDynamicNumberOfGCThreads" "--sun-misc-unsafe-memory-access=allow"]
                  :main-opts ["-m" "sfsim.core"]}
            :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.14"}
+                          com.scarletcomply/license-finder {:mvn/version "0.4.0"}
                           sfsim/sfsim {:local/root "."}}
                    :ns-default build
                    :exec-fn all

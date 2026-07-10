@@ -4,8 +4,8 @@
   <url>https://github.com/wedesoft/sfsim</url>
   <licenses>
     <license>
-      <name>GNU General Public License version 3</name>
-      <url>https://www.gnu.org/licenses/gpl-3.0.en.html</url>
+      <name>Eclipse Public License - v 1.0</name>
+      <url>https://www.eclipse.org/legal/epl/epl-v10.html</url>
     </license>
   </licenses>
 </project>
