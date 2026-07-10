@@ -39,7 +39,7 @@ However you can get the data folder from the latest Steam install instead.
 
 ### Can I use the source code in my own project?
 
-Yes, same as Clojure, the project is released under [EPL-1.0][3].
+Yes, as long as I adhere to the terms and conditions of the [EPL-1.0][3].
 The Eclipse Public License 1.0 is a weak copyleft open source license that allows modification and distribution of code, requiring that changes to EPL-licensed code be shared under the same license, but allowing proprietary use of combined works.
 
 Note that if you just want to study the source code, you do not need a license.
