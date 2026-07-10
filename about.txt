@@ -1,9 +1,9 @@
 ================================================================================
 LICENSE INFORMATION
 ================================================================================
-Application:         sfsim
-Primary Author:      Jan Wedekind
-Primary License:     Eclipse Public License 1.0 (EPL-1.0)
+Name: sfsim
+Author: Jan Wedekind
+License: Eclipse Public License 1.0 (EPL-1.0)
 
 ================================================================================
 THIRD-PARTY DEPENDENCY LICENSES & ATTRIBUTIONS
@@ -15,7 +15,7 @@ License: MIT
 Description: Physics engine for real-time 3D simulation.
 
 Name: ch.qos.logback/logback-classic
-Author: Ceki Gülcü
+Author: Ceki Guelcue
 License: EPL-2.0
 Description: Logging framework implementation for Java applications.
 
