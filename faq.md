@@ -9,50 +9,88 @@ permalink: /faq/
 I hope to release a demo in ~~2025~~ 2026, but for the full game there is no fixed release date yet since there is still some work left to do.
 You can [wishlist it on Steam][1] to get notified when it gets released.
 This also helps me reach more players by boosting visibility on Steam.
-
-### What operating systems are supported?
-
-Currently GNU/Linux and Microsoft Windows are supported.
-Steam Deck has not been tested, but the graphics are likely to be too demanding for it.
-
-### What are the system requirements?
-
-You need at least a graphics card with [passmark][17] 10000 such as the Nvidia GeForce GTX 1060.
-The hardware requirements might still change, but the main bottleneck are the volumetric clouds.
-Early tests show that the Steam Deck achieves 25 fps (1280x800 display) and an AMD Radeon RX 6700 XT achieves 50 fps with a 3440x1440 display.
-
-Also ideally you will use a joystick or a game controller for controlling the space craft.
+Note that a playtest build is [available on Steam][1].
 
 ### What features will the full game have?
 
 Planned features are vertical launch, space station docking, moon landing, atmospheric reentry, and landing on a runway.
 It is also planned to have flight instruments to support the different stages of flight.
 
-### Is the game free software?
+### What operating systems are supported?
 
-Yes, the game is free and open source software ([EPL-1.0][3]).
-The source code is [available on Github][2].
-It makes use of [Clojure][4], [LWJGL][6], [Fastmath][5], [Jolt Physics][9], and other libraries.
-The celestical positions are implemented according to [Skyfield][8].
-Note that building the project assets takes several days on a modern computer.
-However you can get the data folder from the latest Steam install instead.
+GNU/Linux and Microsoft Windows are supported.
+You can also install the game on Steam Deck, but current compatibility on Steam Deck has not been tested recently.
+Currently there is no plan to support macOS.
 
-### Can I use the source code in my own project?
+### Will there be multiplayer?
 
-Yes, as long as I adhere to the terms and conditions of the [EPL-1.0][3].
-The Eclipse Public License 1.0 is a weak copyleft open source license that allows modification and distribution of code, requiring that changes to EPL-licensed code be shared under the same license, but allowing proprietary use of combined works.
+Sorry, there is no plan to support multiplayer.
 
-Note that if you just want to study the source code, you do not need a license.
-I.e. you are not bound by the license if you just want to study the source code and reimplement concepts in your own project.
+### Is this game realistic or arcade?
 
-### Who made the music?
+The game aims to provide a realistic simulation of orbital mechanics, atmospheric flight, and celestial positions.
 
-The free ([CC-BY 4.0][18]) music is made by [Andrewkn][7]!
-Andrewkn's main styles are ambient, сhillout, drone, and cinematic.
+### What are the system requirements?
+
+The hardware requirements might still change, but the main bottleneck is rendering of the volumetric clouds.
+Here are a few test results:
+
+* Steam Deck achieved 25 fps (1280x800 display, SteamOS)
+* AMD Radeon RX 6700 XT achieved 50 fps (3440x1440 display, Debian)
+* AMD Radeon RX 7600 achieved 50 fps (2560x1440 display, Debian)
+
+I recommend a quad-core CPU with more than 2GHz and at least 8 GB of RAM.
+
+The game requires 10 GB of disk space.
+
+### What input devices are supported?
+
+You need mouse control to navigate the menus.
+The spacecraft can be controlled using keyboard or a game controller (or joystick).
+The game also supports using multiple game controllers (e.g. joystick and throttle).
+Force feedback is not supported.
 
 ### Will there be support for virtual reality headsets?
 
 At the moment, VR support is not planned.
+
+### What languages are supported?
+
+Currently the game is available in English only.
+
+### Can I play offline?
+
+Yes, the game does not require an internet connection after installation.
+
+### Is the game free software?
+
+Yes, the game is free and open source software ([EPL-1.0][3]).
+The source code is [available on GitHub][2].
+Note that building the project assets takes several days on a modern computer.
+However you can get the data folder from the latest Steam install instead.
+
+### Will the game cost money?
+
+No, currently it is planned to be free of charge.
+
+### Who made the music?
+
+The free ([CC-BY 4.0][17]) music is made by [Andrewkn][7]!
+Andrewkn's main styles are ambient, сhillout, drone, and cinematic.
+
+### What game engine does sfsim use?
+
+*sfsim* does not use a game engine, but it does rely on several libraries.
+It makes use of [Clojure][4], [LWJGL][6], [Fastmath][5], [Jolt Physics][9], and other libraries.
+The celestial positions are implemented according to [Skyfield][8].
+
+### Can I use the source code in my own project?
+
+Yes, provided you comply with the terms of the [EPL-1.0][3].
+
+The Eclipse Public License 1.0 is a weak copyleft open-source license. It permits you to modify and distribute the code, requires that changes to EPL-licensed code remain under the same license, and still allows proprietary use in larger combined works.
+
+If your goal is only to examine the source code, no license is required. In other words, simply studying the code and independently reimplementing its ideas in your own project does not bind you to the license.
 
 ### Where is the Earth data from?
 
@@ -71,7 +109,7 @@ The spacecraft model was created using [Blender][15] and is inspired by the real
 
 Development is fairly slow because it is a hobby.
 The first commit to the [sfsim repository][16] happened in September 2020.
-There also is prior work on model rendering in 2017.
+There is also prior work on model rendering in 2017.
 Also I made two attempts at implementing a physics engine using sequential impulses in 2017 and 2020.
 
 [1]: https://store.steampowered.com/app/3687560/sfsim/
@@ -90,5 +128,4 @@ Also I made two attempts at implementing a physics engine using sequential impul
 [14]: https://rhodesmill.org/skyfield/
 [15]: https://www.blender.org/
 [16]: https://github.com/wedesoft/sfsim
-[17]: https://www.videocardbenchmark.net/high_end_gpus.html
-[18]: https://creativecommons.org/licenses/by/4.0/
+[17]: https://creativecommons.org/licenses/by/4.0/
