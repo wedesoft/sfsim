@@ -750,7 +750,10 @@ uniform vec3 light_direction;
 uniform int width;
 uniform int height;
 out vec4 fragColor;
+vec3 overall_shading(vec3 world_point);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec4 attenuation_point(vec3 point, vec4 incoming);
+vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 vec4 cloud_overlay(float depth);
 void main()
 {
@@ -760,9 +763,10 @@ void main()
   vec3 diffuse_color = texture(diffuse_material, uv).rgb;
   if (point.w > 0.0) {
     vec3 world_point = (camera_to_world * point).xyz;
-    vec3 ambient_light = vec3(0.0, 0.0, 0.0);
-    vec3 light = vec3(1.0, 1.0, 1.0);
+    vec3 ambient_light = surface_radiance_function(world_point, light_direction);
+    vec3 light = overall_shading(world_point);
     vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
+    incoming = attenuation_point(world_point, vec4(incoming, 1.0)).rgb;
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));
     fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
   } else
@@ -770,123 +774,66 @@ void main()
 }")
 
 
+(def lighting-fragment-shaders
+  [fragment-lighting shaders/phong cloud-overlay-mock-2 (last (clouds/environmental-shading 3))
+   (last (clouds/overall-shading 3 [])) (last atmosphere/attenuation-point) shaders/limit-interval ray-sphere-mock above-horizon-mock
+   planet-and-cloud-shadows-mock transmittance-point-mock surface-radiance-mock attenuation-mock])
+
+
+(defn set-lighting-uniforms
+  [program camera-to-world transmittance ambient shadow attenuation above]
+  (uniform-float program "albedo" 3.14159265358)
+  (uniform-float program "amplification" 1.0)
+  (uniform-float program "specular" 1.0)
+  (uniform-vector3 program "origin" (vec3 0 0 0))
+  (uniform-matrix4 program "camera_to_world" camera-to-world)
+  (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3)))
+  (uniform-float program "transmittance" transmittance)
+  (uniform-float program "ambient" ambient)
+  (uniform-float program "shadow" shadow)
+  (uniform-float program "attenuation" attenuation)
+  (uniform-float program "radius" 1000.0)
+  (uniform-float program "max_height" 100.0)
+  (uniform-int program "above" above))
+
+
+(defn run-lighting-test
+  [model transmittance above ambient shadow attenuation]
+  (with-invisible-window
+    (let [geometry-renderer (make-scene-geometry-renderer true)
+          program-selection (comp (:sfsim.model/programs geometry-renderer) material-type)
+          opengl-scene      (load-scene-into-opengl program-selection model)
+          camera-to-world   (transformation-matrix (eye 3) (vec3 1 0 0))
+          object-to-world   (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
+                                                         (rotation-matrix-3d-y -0.4))
+                                                   (vec3 1 0 -5))
+          moved-scene       (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
+          geometry-buffers  (make-geometry-buffers 160 120)
+          lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                          :sfsim.render/fragment lighting-fragment-shaders)]
+      (render-geometry geometry-buffers
+                       (clear)
+                       (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
+                              (use-program program)
+                              (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                              (when textured (uniform-sampler program "colors" 0))
+                              (when bump (uniform-sampler program "normals" (if textured 1 0))))
+                       (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                                     render-mesh-geometry))
+      (render-to-image 160 120 false
+                       (render-lighting geometry-buffers lighting-program 0
+                                        (set-lighting-uniforms lighting-program camera-to-world transmittance ambient
+                                                               shadow attenuation above))
+                       (destroy-program lighting-program)
+                       (destroy-geometry-buffers geometry-buffers)
+                       (destroy-scene opengl-scene)
+                       (destroy-scene-geometry-renderer geometry-renderer)))))
+
+
 (tabular "Perform geometry pass and lighting pass including mock fog and mock atmosphere"
          (fact
-           (with-invisible-window
-             (let [geometry-renderer (make-scene-geometry-renderer true)
-                   program-selection (comp (:sfsim.model/programs geometry-renderer) material-type)
-                   opengl-scene      (load-scene-into-opengl program-selection ?model)
-                   camera-to-world   (transformation-matrix (eye 3) (vec3 1 0 0))
-                   object-to-world   (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
-                                                                  (rotation-matrix-3d-y -0.4))
-                                                            (vec3 1 0 -5))
-                   moved-scene       (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-                   geometry-buffers  (make-geometry-buffers 160 120)
-                   lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                   :sfsim.render/fragment [fragment-lighting shaders/phong cloud-overlay-mock-2])]
-               (render-geometry geometry-buffers
-                                (clear)
-                                (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
-                                       (use-program program)
-                                       (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                                       (when textured (uniform-sampler program "colors" 0))
-                                       (when bump (uniform-sampler program "normals" (if textured 1 0))))
-                                (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
-                                              render-mesh-geometry))
-               (render-to-image 160 120 false
-                                (render-lighting geometry-buffers lighting-program 0
-                                                 (uniform-float lighting-program "albedo" 3.14159265358)
-                                                 (uniform-float lighting-program "amplification" 1.0)
-                                                 (uniform-float lighting-program "specular" 1.0)
-                                                 (uniform-vector3 lighting-program "origin" (vec3 0 0 0))
-                                                 (uniform-matrix4 lighting-program "camera_to_world" camera-to-world)
-                                                 (uniform-vector3 lighting-program "light_direction" (normalize (vec3 1 2 3)))
-                                                 ; (uniform-float lighting-program "transmittance" ?transmittance)
-                                                 ; (uniform-float lighting-program "ambient" ?ambient)
-                                                 ; (uniform-float lighting-program "shadow" ?shadow)
-                                                 ; (uniform-float lighting-program "attenuation" ?attenuation)
-                                                 ; (uniform-float lighting-program "radius" 1000.0)
-                                                 ; (uniform-float lighting-program "max_height" 100.0)
-                                                 ; (uniform-int lighting-program "above" ?above)
-                                                 ))
-               ; => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 1.5)
-               => (is-image "/tmp/test.png" 0.31)
-               (destroy-program lighting-program)
-               (destroy-geometry-buffers geometry-buffers)
-               (destroy-scene opengl-scene)
-               (destroy-scene-geometry-renderer geometry-renderer))))
-         ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
-         cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
-         ; cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
-         ; cube   1.0            0      0.0      1.0     1.0          "cube-sunset.png"
-         ; cube   1.0            0      1.0      1.0     1.0          "cube-ambient.png"
-         ; cube   1.0            1      0.0      0.5     1.0          "cube-shadow.png"
-         ; cube   1.0            1      0.0      1.0     0.5          "cube-attenuation.png"
-         ; dice   1.0            1      0.0      1.0     1.0          "dice-fog.png"
-         ; dice   0.5            1      0.0      1.0     1.0          "dice-dark.png"
-         ; dice   1.0            0      0.0      1.0     1.0          "dice-sunset.png"
-         ; dice   1.0            0      1.0      1.0     1.0          "dice-ambient.png"
-         ; dice   1.0            1      0.0      0.5     1.0          "dice-shadow.png"
-         ; dice   1.0            1      0.0      1.0     0.5          "dice-attenuation.png"
-         ; bump   1.0            1      0.0      1.0     1.0          "bump-fog.png"
-         ; bump   0.5            1      0.0      1.0     1.0          "bump-dark.png"
-         ; bump   1.0            0      0.0      1.0     1.0          "bump-sunset.png"
-         ; bump   1.0            0      1.0      1.0     1.0          "bump-ambient.png"
-         ; bump   1.0            1      0.0      0.5     1.0          "bump-shadow.png"
-         ; bump   1.0            1      0.0      1.0     0.5          "bump-attenuation.png"
-         ; bricks 1.0            1      0.0      1.0     1.0          "bricks-fog.png"
-         ; bricks 0.5            1      0.0      1.0     1.0          "bricks-dark.png"
-         ; bricks 1.0            0      0.0      1.0     1.0          "bricks-sunset.png"
-         ; bricks 1.0            0      1.0      1.0     1.0          "bricks-ambient.png"
-         ; bricks 1.0            1      0.0      0.5     1.0          "bricks-shadow.png"
-         ; bricks 1.0            1      0.0      1.0     0.5          "bricks-attenuation.png"
-         )
-
-
-(tabular "Render red cube with fog and atmosphere"
-         (with-redefs [model/fragment-scene (fn [textured bump num-steps num-scene-shadows]
-                                              (conj model-shader-mocks
-                                                    (template/eval (slurp "resources/shaders/model/fragment.glsl")
-                                                                   {:textured textured :bump bump :num-scene-shadows 0})))
-                       model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
-                                                           (use-program program)
-                                                           (setup-scene-samplers program 0 0 textured bump)
-                                                           (uniform-float program "albedo" 3.14159265358)
-                                                           (uniform-float program "amplification" 1.0)
-                                                           (uniform-float program "specular" 1.0)
-                                                           (uniform-vector3 program "origin" (vec3 0 0 0))
-                                                           (uniform-float program "object_distance" (mag (vec3 1 0 -5)))
-                                                           (uniform-matrix4 program "projection"
-                                                                            (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                                                           (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3)))
-                                                           (uniform-float program "transmittance" ?transmittance)
-                                                           (uniform-float program "ambient" ?ambient)
-                                                           (uniform-float program "shadow" ?shadow)
-                                                           (uniform-float program "attenuation" ?attenuation)
-                                                           (uniform-float program "radius" 1000.0)
-                                                           (uniform-float program "max_height" 100.0)
-                                                           (uniform-int program "above" ?above))]
-           (fact
-             (offscreen-render 160 120
-                               (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/scene-shadow-counts [0]}
-                                                       :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}
-                                                       :sfsim.model/data {:sfsim.model/object-radius 30.0}}
-                                     renderer         (make-scene-renderer data)
-                                     opengl-scene     (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-and-shadow-type) ?model)
-                                     camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
-                                     object-to-world  (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
-                                                                                   (rotation-matrix-3d-y -0.4))
-                                                                             (vec3 1 0 -5))
-                                     moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
-                                 (clear (vec3 0.0 0.0 0.0) 0.0)
-                                 (render-scene (comp (:sfsim.model/programs renderer) material-and-shadow-type)
-                                               0
-                                               {:sfsim.render/camera-to-world camera-to-world}
-                                               []
-                                               moved-scene
-                                               render-mesh)
-                                 (destroy-scene opengl-scene)
-                                 (destroy-scene-renderer renderer))) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.31)))
+           (run-lighting-test ?model ?transmittance ?above ?ambient ?shadow ?attenuation)
+           => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 1.75))
          ?model ?transmittance ?above ?ambient ?shadow ?attenuation ?result
          cube   1.0            1      0.0      1.0     1.0          "cube-fog.png"
          cube   0.5            1      0.0      1.0     1.0          "cube-dark.png"
