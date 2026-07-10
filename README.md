@@ -236,5 +236,7 @@ Copyright © 2026 Jan Wedekind
 Distributed under the Eclipse Public License version 1.0.
 See the LICENSE file at the root of this repository.
 
+For third-party dependency licenses see CREDITS file.
+
 [1]: https://wedesoft.github.io/sfsim/
 [2]: https://store.steampowered.com/app/3687560/sfsim/
