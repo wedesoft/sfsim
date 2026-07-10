@@ -9,6 +9,7 @@
     (:require [clojure.tools.build.api :as b]
               [clojure.java.io :as io]
               [clojure.java.shell :refer (sh)]
+              [scarlet.license-finder.core :as license-finder]
               [sfsim.worley :as w]
               [sfsim.gui :as gui]
               [sfsim.perlin :as p]
@@ -409,6 +410,77 @@
   (sh "convert" "tmp/navball-orbit.png" "-rotate" "270" "data/texture/navball-orbit.png")
   (GLFW/glfwTerminate))
 
+
+(defn licenses
+  [& _]
+  (let [
+        deps         (license-finder/find-licenses "./deps.edn" :transitive? false)
+        ignore-deps  #{"org.lwjgl/lwjgl$natives-linux"
+                       "org.lwjgl/lwjgl-assimp"
+                       "org.lwjgl/lwjgl-assimp$natives-linux"
+                       "org.lwjgl/lwjgl-glfw"
+                       "org.lwjgl/lwjgl-glfw$natives-linux"
+                       "org.lwjgl/lwjgl-nuklear"
+                       "org.lwjgl/lwjgl-nuklear$natives-linux"
+                       "org.lwjgl/lwjgl-openal"
+                       "org.lwjgl/lwjgl-openal$natives-linux"
+                       "org.lwjgl/lwjgl-opengl"
+                       "org.lwjgl/lwjgl-opengl$natives-linux"
+                       "org.lwjgl/lwjgl-stb"
+                       "org.lwjgl/lwjgl-stb$natives-linux"}
+        add-deps     [{:name "jrouwe/joltphysics"
+                       :version "5.5.0"
+                       :license {:name "MIT License"
+                                 :url "https://github.com/jrouwe/JoltPhysics/blob/master/LICENSE"}}]
+        url-subst    (fn [project url]
+                         (or ({"jrouwe/joltphysics"
+                               "https://raw.githubusercontent.com/jrouwe/JoltPhysics/refs/heads/master/LICENSE"
+                               "ch.qos.logback/logback-classic"
+                               "https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.txt"
+                               "clj-python/libpython-clj"
+                               "https://raw.githubusercontent.com/cnuernber/charred/refs/heads/master/LICENSE"
+                               "com.code-disaster.steamworks4j/steamworks4j-lwjgl3"
+                               "https://raw.githubusercontent.com/code-disaster/steamworks4j/refs/heads/master/LICENSE"
+                               "com.code-disaster.steamworks4j/steamworks4j"
+                               "https://raw.githubusercontent.com/code-disaster/steamworks4j/refs/heads/master/LICENSE"
+                               "comb/comb"
+                               "https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt"
+                               "generateme/fastmath"
+                               "https://raw.githubusercontent.com/generateme/fastmath/refs/heads/master/LICENSE"
+                               "instaparse/instaparse"
+                               "https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt"
+                               "levand/immuconf"
+                               "https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt"
+                               "metosin/malli"
+                               "https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.txt"
+                               "org.clj-commons/claypoole"
+                               "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                               "org.clj-commons/gloss"
+                               "https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt"
+                               "org.clojure/clojure"
+                               "https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt"
+                               "org.clojure/core.memoize"
+                               "https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt"
+                               "org.clojure/tools.logging"
+                               "https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt"
+                               "org.lwjgl/lwjgl"
+                               "https://raw.githubusercontent.com/LWJGL/lwjgl3/refs/heads/master/LICENSE.md"
+                               "org.suskalo/coffi"
+                               "https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt"
+                               "progrock/progrock"
+                               "https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt"
+                               } project)
+                             url))
+        descriptions (map (fn [{:keys [name version license]}]
+                              (str
+                                (apply str (repeat 60 "-")) "\n"
+                                (format "%s %s %s %s" name version (:name license) (:url license)) "\n"
+                                (apply str (repeat 60 "-")) "\n"
+                                (slurp (url-subst name (:url license))) "\n"))
+                          (concat add-deps (remove (comp ignore-deps :name) deps)))]
+    (spit "CREDITS" (clojure.string/join "\n" descriptions))))
+
+
 (defn quit
   "Fast quit"
   [& _]
@@ -436,4 +508,5 @@
   (cube-maps)
   (atmosphere-lut)
   (navball-orbit)
+  (licenses)
   (quit))

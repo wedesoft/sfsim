@@ -9,7 +9,7 @@ See [sfsim homepage][1] for more details.
 
 [![Aerodynamic prototype](https://i.ytimg.com/vi/38FGT7SWVh0/hqdefault.jpg)](https://www.youtube.com/watch?v=38FGT7SWVh0)
 
-# Installation
+## Installation
 
 * Tested on Debian 13 and Windows 11
 * Install [JDK 26 Deb for Linux](https://www.oracle.com/uk/java/technologies/downloads/) or [JDK 25 MSI for Windows](https://adoptium.net/temurin/releases)
@@ -20,7 +20,7 @@ See [sfsim homepage][1] for more details.
   * On the CI it is installed like this: `pip install --index-url https://download.pytorch.org/whl/cpu torch numpy`
   * I recommend to install [uv](https://docs.astral.sh/uv/) and install PyTorch using `uv sync` (pyproject.toml is provided)
 
-# Get Code for GNU/Linux
+### Get Code for GNU/Linux
 
 ```Shell
 git clone https://github.com/wedesoft/sfsim.git
@@ -28,7 +28,7 @@ cd sfsim
 git checkout main
 ```
 
-## Get Code for Windows
+### Get Code for Windows
 
 ```Shell
 git clone https://github.com/wedesoft/sfsim.git
@@ -36,12 +36,12 @@ cd sfsim
 git checkout windows
 ```
 
-## Install JoltPhysics
+### Install JoltPhysics
 
 Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.5.0 and build it as follows.
 Note you might have to install glslc if you already have Vulkan installed.
 
-### GCC/Linux
+#### GCC/Linux
 
 ```Shell
 cd Build
@@ -52,7 +52,7 @@ sudo make install
 cd ../..
 ```
 
-### MinGW/Windows
+#### MinGW/Windows
 
 ```Shell
 cd Build
@@ -62,7 +62,7 @@ cmake --install MinGW_Release --prefix /usr/local
 cd ..
 ```
 
-# Build
+## Build
 
 You need to build the Jolt wrapper library (tested with Linux and Windows/MinGW): `make jolt`
 
@@ -98,7 +98,7 @@ You can take the data folder of a Steam playtest build instead.
   * Perform all build steps above: `clj -T:build all`
 * Make navball texture: `clj -T:build navball-orbit`
 
-# Run
+## Run
 
 * Run tests (recommended to use xvfb-run): `xvfb-run uv run clj -M:test`
 * Run test for specific module (rendering for example): `xvfb-run uv run clj -M:test sfsim.t-render`
@@ -107,9 +107,9 @@ You can take the data folder of a Steam playtest build instead.
 
 You can enable the integration tests as follows (requires results of above build steps): `touch .integration`
 
-# Release on Steam
+## Release on Steam
 
-## Steps under GNU/Linux
+### Steps under GNU/Linux
 
 * Update version number in `src/clj/sfsim/version.clj`
 * Update ChangeLog
@@ -120,7 +120,7 @@ You can enable the integration tests as follows (requires results of above build
 * Create Linux executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json` (delete out-linux folder first)
 * Upload to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login $STEAM_ACCOUNT $STEAM_PASSWORD +run_app_build $PWD/scripts/sfsim_playtest_linux.vdf +quit`
 
-## Steps under Windows
+### Steps under Windows
 
 * Checkout windows branch and merge in main branch
 * make sure Jolt wrapper library was built: `make jolt`
@@ -129,16 +129,16 @@ You can enable the integration tests as follows (requires results of above build
 * Create Windows executable: `java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json` (delete out-windows folder first)
 * Upload to Steam: `.\sdk\tools\ContentBuilder\builder\steamcmd.exe +login $env:STEAM_ACCOUNT $env:STEAM_PASSWORD +run_app_build "$PWD\scripts\sfsim_playtest_windows.vdf" +quit`
 
-## Data Upload to Steam
+### Data Upload to Steam
 
 * Upload data to Steam: `sdk/tools/ContentBuilder/builder_linux/steamcmd.sh +login $STEAM_ACCOUNT $STEAM_PASSWORD +run_app_build $PWD/scripts/sfsim_playtest_data.vdf +quit`
 
-# Lint
+## Lint
 
 * [Install clj-kondo](https://github.com/clj-kondo/clj-kondo/blob/master/doc/install.md)
 * Run `clj-kondo --lint src/clj/sfsim`
 
-# Converting Blender file to GLB
+## Converting Blender file to GLB
 
 If you want to modify the [spacecraft model](https://github.com/wedesoft/blender/tree/master/venturestar), you need to edit the Blender model and convert it to GLB again.
 The Blender model can be converted to GLB as follows:
@@ -150,7 +150,7 @@ The Blender model can be converted to GLB as follows:
 * export to GLB with baking animations enabled (animation mode "NLA track"!)
 * exit Blender without overwriting model
 
-# External Links
+## External Links
 
 * Sfsim
   * [Sfsim homepage](https://wedesoft.github.io/sfsim/)
@@ -228,6 +228,13 @@ The Blender model can be converted to GLB as follows:
 * Data
   * [NASA CGI moon toolkit](https://svs.gsfc.nasa.gov/4720/)
   * [International Space Station 3D Model](https://science.nasa.gov/resource/international-space-station-3d-model/)
+
+## License
+
+Copyright © 2026 Jan Wedekind
+
+Distributed under the Eclipse Public License version 1.0.
+See the LICENSE file at the root of this repository.
 
 [1]: https://wedesoft.github.io/sfsim/
 [2]: https://store.steampowered.com/app/3687560/sfsim/

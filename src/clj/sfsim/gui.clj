@@ -1199,7 +1199,7 @@
       (layout-row-dynamic gui (scale gui (* ^long text-height 12)) 1)
       (group gui "license" "License"
              (layout-row-dynamic gui (scale gui text-row-height) 1)
-             (doseq [line (line-seq (io/reader "LICENSE"))]
+             (doseq [line (line-seq (io/reader "about.txt"))]
                     (text-label gui line)))
       (layout-row-dynamic gui (scale gui row-height) 1)
       (when (button-label gui "Close")
