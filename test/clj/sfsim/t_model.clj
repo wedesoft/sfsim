@@ -774,13 +774,13 @@ void main()
 
 
 (defn set-lighting-uniforms
-  [program camera-to-world transmittance ambient shadow attenuation above]
+  [program camera-to-world light-direction transmittance ambient shadow attenuation above]
   (uniform-float program "albedo" 3.14159265358)
   (uniform-float program "amplification" 1.0)
   (uniform-float program "specular" 1.0)
   (uniform-vector3 program "origin" (vec3 0 0 0))
   (uniform-matrix4 program "camera_to_world" camera-to-world)
-  (uniform-vector3 program "light_direction" (normalize (vec3 1 2 3)))
+  (uniform-vector3 program "light_direction" (normalize light-direction))
   (uniform-float program "transmittance" transmittance)
   (uniform-float program "ambient" ambient)
   (uniform-float program "shadow" shadow)
@@ -815,7 +815,8 @@ void main()
                                      render-mesh-geometry))
       (render-to-image 160 120 false
                        (render-lighting geometry-buffers lighting-program 0
-                                        (set-lighting-uniforms lighting-program camera-to-world transmittance ambient
+                                        (set-lighting-uniforms lighting-program camera-to-world
+                                                               (vec3 1 2 3) transmittance ambient
                                                                shadow attenuation above))
                        (destroy-program lighting-program)
                        (destroy-geometry-buffers geometry-buffers)
@@ -956,6 +957,42 @@ void main()
   float cos_incidence = dot(light_direction, fs_in.normal);
   fragColor = vec4(diffuse_color * max(cos_incidence * shadow, 0.125), 1.0);
 }")
+
+
+(tabular "Render objects with self-shading using geometry and lighting pass"
+         (fact
+           (with-invisible-window
+             (let [geometry-renderer (make-scene-geometry-renderer true)
+                   program-selection (comp (:sfsim.model/programs geometry-renderer) material-type)
+                   opengl-scene      (load-scene-into-opengl program-selection ?model)
+                   camera-to-world   (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
+                                                                           (rotation-matrix-3d-y -0.4))
+                                                                     (vec3 0 0 (- ?distance))))
+                   geometry-buffers  (make-geometry-buffers 160 120)
+                   lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                   :sfsim.render/fragment lighting-fragment-shaders)]
+               (render-geometry geometry-buffers
+                                (clear)
+                                (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
+                                       (use-program program)
+                                       (uniform-matrix4 program "projection"
+                                                        (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                                       (when textured (uniform-sampler program "colors" 0))
+                                       (when bump (uniform-sampler program "normals" (if textured 1 0))))
+                                (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world}
+                                              [] opengl-scene render-mesh-geometry))
+               (render-to-image 160 120 false
+                                (render-lighting geometry-buffers lighting-program 0
+                                                 (set-lighting-uniforms lighting-program camera-to-world
+                                                                        (vec3 5 2 1) 1.0 0.0 1.0 1.0 1))
+                                (destroy-program lighting-program)
+                                (destroy-geometry-buffers geometry-buffers)
+                                (destroy-scene opengl-scene)
+                                (destroy-scene-geometry-renderer geometry-renderer))))
+           => (is-image (str "/tmp/" ?result) 1.0))
+         ?model ?object-radius ?distance ?result
+         torus  1.5            3         "torus-shadow.png"
+         cubes  4.0            7         "cubes-shadow.png")
 
 
 (tabular "Render objects with self-shadowing"
