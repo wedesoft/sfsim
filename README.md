@@ -7,7 +7,7 @@ See [sfsim homepage][1] for more details.
 
 **[Warning: Only download sfsim binary releases via Steam and not from other sources!][2]**
 
-[![Aerodynamic prototype](https://i.ytimg.com/vi/38FGT7SWVh0/hqdefault.jpg)](https://www.youtube.com/watch?v=38FGT7SWVh0)
+[![Aerodynamic prototype](https://i.ytimg.com/vi/bbmusPm7QZc/hqdefault.jpg)](https://www.youtube.com/watch?v=bbmusPm7QZc)
 
 ## Installation
 

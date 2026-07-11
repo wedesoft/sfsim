@@ -1,12 +1,12 @@
 ================================================================================
-LICENSE INFORMATION
+LICENSE INFORMATION (also see LICENSE file)
 ================================================================================
 Name: sfsim
 Author: Jan Wedekind
 License: Eclipse Public License 1.0 (EPL-1.0)
 
 ================================================================================
-THIRD-PARTY DEPENDENCY LICENSES & ATTRIBUTIONS
+THIRD-PARTY DEPENDENCY LICENSES & ATTRIBUTIONS (also see CREDITS file)
 ================================================================================
 
 Name: jrouwe/joltphysics
