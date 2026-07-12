@@ -124,6 +124,7 @@
 
 (def fragment-lighting-mock
 "#version 450 core
+uniform mat4 camera_to_world;
 uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
 uniform sampler2D diffuse_material;
@@ -138,7 +139,7 @@ void main()
   vec4 point = texture(camera_point, uv);
   vec3 diffuse_color = texture(diffuse_material, uv).rgb;
   if (point.w > 0.0)
-    fragColor = diffuse_color * max(0, dot(light, normal.xyz));
+    fragColor = diffuse_color * max(0, dot(light, (camera_to_world * normal).xyz));
   else
     fragColor = vec3(0.0);
 }")
@@ -758,7 +759,7 @@ void main()
     vec3 world_point = (camera_to_world * point).xyz;
     vec3 ambient_light = surface_radiance_function(world_point, light_direction);
     vec3 light = overall_shading(world_point);
-    vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
+    vec3 incoming = phong(ambient_light, light, world_point, (camera_to_world * normal).xyz, diffuse_color, 0.0);
     incoming = attenuation_point(world_point, vec4(incoming, 1.0)).rgb;
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));
     fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
