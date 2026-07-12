@@ -629,21 +629,10 @@ void main()
 
 (def cloud-overlay-mock
   "#version 450 core
-uniform vec3 origin;
-uniform float object_distance;
-vec4 cloud_overlay(float depth)
-{
-  float transparency = exp(-object_distance / 10.0);
-  return vec4(0.5, 0.5, 0.5, 1 - transparency);
-}")
-
-
-(def cloud-overlay-mock-2
-  "#version 450 core
 vec4 cloud_overlay(float depth)
 {
   float transparency = exp(-depth / 10.0);
-  return vec4(0.5, 0.5, 0.5, 1 - transparency);
+  return vec4(0.5, 0.5, 0.5, 1.0) * (1.0 - transparency);
 }")
 
 
@@ -768,8 +757,8 @@ void main()
 }")
 
 
-(def lighting-fragment-shaders
-  [fragment-lighting shaders/phong cloud-overlay-mock-2 (last (clouds/environmental-shading 3))
+(def lighting-fog-fragment-shaders
+  [fragment-lighting shaders/phong cloud-overlay-mock (last (clouds/environmental-shading 3))
    (last (clouds/overall-shading 3 [])) (last atmosphere/attenuation-point) shaders/limit-interval ray-sphere-mock above-horizon-mock
    planet-and-cloud-shadows-mock transmittance-point-mock surface-radiance-mock attenuation-mock])
 
@@ -781,7 +770,7 @@ void main()
   (uniform-float program "specular" 1.0)
   (uniform-vector3 program "origin" (vec3 0 0 0))
   (uniform-matrix4 program "camera_to_world" camera-to-world)
-  (uniform-vector3 program "light_direction" (normalize light-direction))
+  (uniform-vector3 program "light_direction" light-direction)
   (uniform-float program "transmittance" transmittance)
   (uniform-float program "ambient" ambient)
   (uniform-float program "shadow" shadow)
@@ -798,13 +787,14 @@ void main()
           program-selection (comp (:sfsim.model/programs geometry-renderer) material-type)
           opengl-scene      (load-scene-into-opengl program-selection model)
           camera-to-world   (transformation-matrix (eye 3) (vec3 1 0 0))
+          light-direction   (normalize (vec3 1 2 3))
           object-to-world   (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
                                                          (rotation-matrix-3d-y -0.4))
                                                    (vec3 1 0 -5))
           moved-scene       (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
           geometry-buffers  (make-geometry-buffers 160 120)
           lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                          :sfsim.render/fragment lighting-fragment-shaders)]
+                                          :sfsim.render/fragment lighting-fog-fragment-shaders)]
       (render-geometry geometry-buffers
                        (clear)
                        (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
@@ -817,7 +807,7 @@ void main()
       (render-to-image 160 120 false
                        (render-lighting geometry-buffers lighting-program 0
                                         (set-lighting-uniforms lighting-program camera-to-world
-                                                               (vec3 1 2 3) transmittance ambient
+                                                               light-direction transmittance ambient
                                                                shadow attenuation above))
                        (destroy-program lighting-program)
                        (destroy-geometry-buffers geometry-buffers)
@@ -952,26 +942,86 @@ in VS_OUT
 } fs_in;
 out vec4 fragColor;
 float average_scene_shadow(sampler2DShadow shadow_map, vec4 shadow_pos);
+float scene_shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
 void main()
 {
-  float shadow = average_scene_shadow(shadow_map, fs_in.object_shadow_pos);
+  float shadow = scene_shadow_lookup(shadow_map, fs_in.object_shadow_pos);
   float cos_incidence = dot(light_direction, fs_in.normal);
   fragColor = vec4(diffuse_color * max(cos_incidence * shadow, 0.125), 1.0);
 }")
 
 
+(def cloud-clear-overlay-mock
+  "#version 450 core
+uniform vec3 origin;
+uniform float object_distance;
+vec4 cloud_overlay(float depth)
+{
+  return vec4(0.0, 0.0, 0.0, 0.0);
+}")
+
+
+(def fragment-lighting-shadow
+"#version 450 core
+uniform sampler2D camera_point;
+uniform sampler2D camera_normal;
+uniform sampler2D diffuse_material;
+uniform mat4 camera_to_world;
+uniform mat4 camera_to_shadow_map;
+uniform vec3 light_direction;
+uniform int width;
+uniform int height;
+out vec4 fragColor;
+vec3 overall_shading(vec3 world_point, vec4 object_shadow_pos_1);
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec4 attenuation_point(vec3 point, vec4 incoming);
+vec3 surface_radiance_function(vec3 point, vec3 light_direction);
+vec4 cloud_overlay(float depth);
+void main()
+{
+  vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
+  vec4 normal = texture(camera_normal, uv);
+  vec4 point = texture(camera_point, uv);
+  vec3 diffuse_color = texture(diffuse_material, uv).rgb;
+  if (point.w > 0.0) {
+    vec3 world_point = (camera_to_world * point).xyz;
+    vec4 object_shadow_pos = camera_to_shadow_map * point + vec4(3, 3, 3, 0);
+    vec3 ambient_light = surface_radiance_function(world_point, light_direction);
+    vec3 light = overall_shading(world_point, object_shadow_pos);
+    vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
+    incoming = attenuation_point(world_point, vec4(incoming, 1.0)).rgb;
+    vec4 cloud_scatter = cloud_overlay(length(point.xyz));
+    fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
+  } else
+    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+}")
+
+
+(def lighting-shadow-fragment-shaders
+  [fragment-lighting-shadow shaders/phong cloud-clear-overlay-mock (last (clouds/environmental-shading 3))
+   (last (clouds/overall-shading 3 [["scene_shadow_lookup" "shadow_map"]]))
+   (last atmosphere/attenuation-point) shaders/limit-interval ray-sphere-mock above-horizon-mock
+   planet-and-cloud-shadows-mock transmittance-point-mock surface-radiance-mock attenuation-mock
+   (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")])
+
+
 (tabular "Render objects with self-shading using geometry and lighting pass"
          (fact
            (with-invisible-window
-             (let [geometry-renderer (make-scene-geometry-renderer true)
-                   program-selection (comp (:sfsim.model/programs geometry-renderer) material-type)
-                   opengl-scene      (load-scene-into-opengl program-selection ?model)
-                   camera-to-world   (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
-                                                                           (rotation-matrix-3d-y -0.4))
-                                                                     (vec3 0 0 (- ?distance))))
-                   geometry-buffers  (make-geometry-buffers 160 120)
-                   lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                   :sfsim.render/fragment lighting-fragment-shaders)]
+             (let [geometry-renderer    (make-scene-geometry-renderer true)
+                   program-selection    (comp (:sfsim.model/programs geometry-renderer) material-type)
+                   opengl-scene         (load-scene-into-opengl program-selection ?model)
+                   camera-to-world      (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5) (rotation-matrix-3d-y -0.4))
+                                                                        (vec3 0 0 (- ?distance))))
+                   light-direction      (normalize (vec3 5 2 1))
+                   shadow-size          64
+                   shadow-renderer      (make-scene-shadow-renderer shadow-size ?object-radius)
+                   object-shadow        (scene-shadow-map shadow-renderer light-direction opengl-scene)
+                   world-to-object      (-> object-shadow :sfsim.model/matrices :sfsim.matrix/world-to-object)
+                   object-to-shadow-map (-> object-shadow :sfsim.model/matrices :sfsim.matrix/object-to-shadow-map)
+                   geometry-buffers     (make-geometry-buffers 160 120)
+                   lighting-program     (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                      :sfsim.render/fragment lighting-shadow-fragment-shaders)]
                (render-geometry geometry-buffers
                                 (clear)
                                 (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
@@ -985,9 +1035,17 @@ void main()
                (render-to-image 160 120 false
                                 (render-lighting geometry-buffers lighting-program 0
                                                  (set-lighting-uniforms lighting-program camera-to-world
-                                                                        (vec3 5 2 1) 1.0 0.0 1.0 1.0 1))
+                                                                        light-direction 1.0 0.1 1.0 1.0 1)
+                                                 (uniform-matrix4 lighting-program "camera_to_shadow_map"
+                                                                  (mulm object-to-shadow-map (mulm world-to-object camera-to-world)))
+                                                 (uniform-int lighting-program "scene_shadow_size" shadow-size)
+                                                 (uniform-float lighting-program "shadow_bias" 1e-6)
+                                                 (uniform-sampler lighting-program "shadow_map" 0)
+                                                 (use-textures {0 (:sfsim.model/shadows object-shadow)}))
                                 (destroy-program lighting-program)
                                 (destroy-geometry-buffers geometry-buffers)
+                                (destroy-scene-shadow-map object-shadow)
+                                (destroy-scene-shadow-renderer shadow-renderer)
                                 (destroy-scene opengl-scene)
                                 (destroy-scene-geometry-renderer geometry-renderer))))
            => (is-image (str "/tmp/" ?result) 1.0))
