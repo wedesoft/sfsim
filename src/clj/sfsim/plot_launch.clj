@@ -83,7 +83,7 @@
 (defn -main [& _args]
   (q/defsketch launch-view
     :title "Orbital launch attempt"
-    :size [512 512]
+    :size [1280 1280]
     :setup setup
     :draw draw
     :middleware [m/fun-mode]
