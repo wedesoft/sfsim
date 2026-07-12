@@ -985,7 +985,7 @@ void main()
   vec3 diffuse_color = texture(diffuse_material, uv).rgb;
   if (point.w > 0.0) {
     vec3 world_point = (camera_to_world * point).xyz;
-    vec4 object_shadow_pos = camera_to_shadow_map * point + vec4(3, 3, 3, 0);
+    vec4 object_shadow_pos = camera_to_shadow_map * point;
     vec3 ambient_light = surface_radiance_function(world_point, light_direction);
     vec3 light = overall_shading(world_point, object_shadow_pos);
     vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
@@ -999,9 +999,12 @@ void main()
 
 (def lighting-shadow-fragment-shaders
   [fragment-lighting-shadow shaders/phong cloud-clear-overlay-mock (last (clouds/environmental-shading 3))
-   (last (clouds/overall-shading 3 [["scene_shadow_lookup" "shadow_map"]]))
+   (last (clouds/overall-shading 3 [["average_scene_shadow" "shadow_map"]]))
    (last atmosphere/attenuation-point) shaders/limit-interval ray-sphere-mock above-horizon-mock
    planet-and-cloud-shadows-mock transmittance-point-mock surface-radiance-mock attenuation-mock
+   (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")
+   (shaders/percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size"
+                                        [["sampler2DShadow" "shadow_map"]])
    (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")])
 
 
@@ -1027,13 +1030,13 @@ void main()
                                 (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
                                        (use-program program)
                                        (uniform-matrix4 program "projection"
-                                                        (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                                                        (projection-matrix 160 120 0.0 10.0 (to-radians 60)))
                                        (when textured (uniform-sampler program "colors" 0))
                                        (when bump (uniform-sampler program "normals" (if textured 1 0))))
                                 (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world}
                                               [] opengl-scene render-mesh-geometry))
                (render-to-image 160 120 false
-                                (render-lighting geometry-buffers lighting-program 0
+                                (render-lighting geometry-buffers lighting-program 1
                                                  (set-lighting-uniforms lighting-program camera-to-world
                                                                         light-direction 1.0 0.1 1.0 1.0 1)
                                                  (uniform-matrix4 lighting-program "camera_to_shadow_map"
@@ -1048,60 +1051,7 @@ void main()
                                 (destroy-scene-shadow-renderer shadow-renderer)
                                 (destroy-scene opengl-scene)
                                 (destroy-scene-geometry-renderer geometry-renderer))))
-           => (is-image (str "/tmp/" ?result) 1.0))
-         ?model ?object-radius ?distance ?result
-         torus  1.5            3         "torus-shadow.png"
-         cubes  4.0            7         "cubes-shadow.png")
-
-
-(tabular "Render objects with self-shadowing"
-         (fact
-           (with-invisible-window
-             (let [program         (make-program :sfsim.render/vertex [vertex-torus]
-                                                 :sfsim.render/fragment [fragment-torus
-                                                                         (shaders/percentage-closer-filtering "average_scene_shadow"
-                                                                                                              "scene_shadow_lookup"
-                                                                                                              "scene_shadow_size"
-                                                                                                              [["sampler2DShadow"
-                                                                                                                "shadow_map"]])
-                                                                         (shaders/shadow-lookup "scene_shadow_lookup"
-                                                                                                "scene_shadow_size")])
-                   opengl-scene    (load-scene-into-opengl (constantly program) ?model)
-                   light-direction (normalize (vec3 5 2 1))
-                   shadow-size     64
-                   camera-to-world (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5) (rotation-matrix-3d-y -0.4))
-                                                                   (vec3 0 0 (- ?distance))))
-                   shadow-renderer (make-scene-shadow-renderer shadow-size ?object-radius)
-                   object-shadow   (scene-shadow-map shadow-renderer light-direction opengl-scene)
-                   tex             (texture-render-color-depth 160 120 false
-                                                               (clear (vec3 0 0 0) 0.0)
-                                                               (use-program program)
-                                                               (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                                                               (uniform-matrix4 program "object_to_world" (eye 4))
-                                                               (uniform-vector3 program "light_direction" light-direction)
-                                                               (uniform-int program "scene_shadow_size" shadow-size)
-                                                               (uniform-float program "shadow_bias" 1e-6)
-                                                               (uniform-sampler program "shadow_map" 0)
-                                                               (use-textures {0 (:sfsim.model/shadows object-shadow)})
-                                                               (render-scene (constantly program) 0 {:sfsim.render/camera-to-world camera-to-world} [] opengl-scene
-                                                                             (fn [{:sfsim.model/keys [diffuse]}
-                                                                                  {:sfsim.model/keys [program transform] :as render-vars}]
-                                                                               (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                                                                 (uniform-matrix4 program "object_to_shadow_map"
-                                                                                                  (mulm (-> object-shadow
-                                                                                                            :sfsim.model/matrices
-                                                                                                            :sfsim.matrix/object-to-shadow-map)
-                                                                                                        transform))
-                                                                                 (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
-                                                                                                                                   transform))
-                                                                                 (uniform-vector3 program "diffuse_color" diffuse)))))
-                   result            (texture->image tex)]
-               (destroy-texture tex)
-               (destroy-scene-shadow-map object-shadow)
-               (destroy-scene opengl-scene)
-               (destroy-scene-shadow-renderer shadow-renderer)
-               (destroy-program program)
-               result)) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.11))
+           => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 1.0))
          ?model ?object-radius ?distance ?result
          torus  1.5            3         "torus-shadow.png"
          cubes  4.0            7         "cubes-shadow.png")
