@@ -1077,6 +1077,58 @@ vec4 cloud_overlay(float depth)
 }")
 
 
+(tabular "Integration test of model geometry and lighting"
+         (fact
+           (with-invisible-window
+             (let [geometry-renderer    (make-scene-geometry-renderer true)
+                   program-selection    (comp (:sfsim.model/programs geometry-renderer) material-type)
+                   opengl-scene         (load-scene-into-opengl program-selection ?model)
+                   camera-to-world      (transformation-matrix (eye 3) (vec3 1 0 0))
+                   object-to-world      (transformation-matrix (mulm (rotation-matrix-3d-x ?angle-x) (rotation-matrix-3d-y ?angle-y)) (vec3 1 0 (- ?dist)))
+                   moved-scene          (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
+                   shadow-size          256
+                   object-radius        4.0
+                   light-direction      (normalize (mulv (get-rotation object-to-world) (vec3 5 2 1)))
+                   shadow-renderer      (make-scene-shadow-renderer shadow-size object-radius)
+                   object-shadow        (scene-shadow-map shadow-renderer light-direction moved-scene)
+                   world-to-object      (-> object-shadow :sfsim.model/matrices :sfsim.matrix/world-to-object)
+                   object-to-shadow-map (-> object-shadow :sfsim.model/matrices :sfsim.matrix/object-to-shadow-map)
+                   geometry-buffers     (make-geometry-buffers 160 120)
+                   lighting-program     (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                      :sfsim.render/fragment lighting-shadow-fragment-shaders)]
+               (render-geometry geometry-buffers
+                                (clear)
+                                (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
+                                       (use-program program)
+                                       (uniform-matrix4 program "projection"
+                                                        (projection-matrix 160 120 0.0 10.0 (to-radians 60)))
+                                       (when textured (uniform-sampler program "colors" 0))
+                                       (when bump (uniform-sampler program "normals" (if textured 1 0))))
+                                (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world}
+                                              [] moved-scene render-mesh-geometry))
+               (render-to-image 160 120 false
+                                (render-lighting geometry-buffers lighting-program 1
+                                                 (set-lighting-uniforms lighting-program camera-to-world
+                                                                        light-direction 1.0 0.1 1.0 1.0 1)
+                                                 (uniform-matrix4 lighting-program "camera_to_shadow_map"
+                                                                  (mulm object-to-shadow-map (mulm world-to-object camera-to-world)))
+                                                 (uniform-int lighting-program "scene_shadow_size" shadow-size)
+                                                 (uniform-float lighting-program "shadow_bias" 1e-6)
+                                                 (uniform-sampler lighting-program "shadow_map" 0)
+                                                 (use-textures {0 (:sfsim.model/shadows object-shadow)}))
+
+                                (destroy-program lighting-program)
+                                (destroy-geometry-buffers geometry-buffers)
+                                (destroy-scene-shadow-map object-shadow)
+                                (destroy-scene-shadow-renderer shadow-renderer)
+                                (destroy-scene opengl-scene)
+                                (destroy-scene-geometry-renderer geometry-renderer))))
+           => (is-image (str "/tmp/" ?result) 1.0))
+         ?model ?dist ?angle-x ?angle-y ?result
+         torus  3.0   0.5      -0.4     "torus-integration.png"
+         cubes  6.0   0.1      -1.0     "cubes-integration.png")
+
+
 (tabular "Integration of model's self-shading"
          (fact
            (with-invisible-window
