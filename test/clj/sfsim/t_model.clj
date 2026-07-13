@@ -8,7 +8,7 @@
   (:require
     [clojure.math :refer (to-radians sqrt PI)]
     [comb.template :as template]
-    [fastmath.matrix :refer (eye mulm inverse mat4x4 rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z)]
+    [fastmath.matrix :refer (eye mulm mulv inverse mat4x4 rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z)]
     [fastmath.vector :refer (vec3 vec4 normalize mag)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -1082,9 +1082,9 @@ vec4 cloud_overlay(float depth)
            (with-invisible-window
              (with-redefs [model/fragment-scene (fn [textured bump num-steps num-scene-shadows]
                                                   (conj [model-shadow-mocks shaders/phong
-                                                         (last (clouds/overall-shading 3 (repeat num-scene-shadows
-                                                                                                 ["average_scene_shadow"
-                                                                                                  "scene_shadow_map_1"])))
+                                                         (last (clouds/overall-shading num-steps (repeat num-scene-shadows
+                                                                                                         ["average_scene_shadow"
+                                                                                                          "scene_shadow_map_1"])))
                                                          (shaders/percentage-closer-filtering "average_scene_shadow"
                                                                                               "scene_shadow_lookup"
                                                                                               "scene_shadow_size"
@@ -1113,13 +1113,13 @@ vec4 cloud_overlay(float depth)
                      renderer         (make-scene-renderer data)
                      shadow-size      256
                      object-radius    4.0
-                     light-direction  (normalize (vec3 5 2 1))
                      shadow-renderer  (make-scene-shadow-renderer shadow-size object-radius)
                      opengl-scene     (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-and-shadow-type) ?model)
                      camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
                      object-to-world  (transformation-matrix (mulm (rotation-matrix-3d-x ?angle-x) (rotation-matrix-3d-y ?angle-y)) (vec3 1 0 (- ?dist)))
+                     light-direction  (normalize (mulv (get-rotation object-to-world) (vec3 5 2 1)))
                      moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-                     object-shadow    (scene-shadow-map shadow-renderer light-direction opengl-scene)
+                     object-shadow    (scene-shadow-map shadow-renderer light-direction moved-scene)
                      tex              (texture-render-color-depth 160 120 false
                                                                   (clear (vec3 0.5 0.5 0.5) 0.0)
                                                                   (use-textures {0 (:sfsim.model/shadows object-shadow)})
