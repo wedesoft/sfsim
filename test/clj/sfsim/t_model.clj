@@ -909,48 +909,6 @@ void main()
 (def torus (read-gltf "test/clj/sfsim/fixtures/model/torus.gltf"))
 
 
-(def vertex-torus
-  "#version 450 core
-uniform mat4 projection;
-uniform mat4 object_to_world;
-uniform mat4 object_to_camera;
-uniform mat4 object_to_shadow_map;
-in vec3 vertex;
-in vec3 normal;
-out VS_OUT
-{
-  vec4 object_shadow_pos;
-  vec3 normal;
-} vs_out;
-void main()
-{
-  vs_out.object_shadow_pos = object_to_shadow_map * vec4(vertex, 1);
-  vs_out.normal = mat3(object_to_world) * normal;
-  gl_Position = projection * object_to_camera * vec4(vertex, 1);
-}")
-
-
-(def fragment-torus
-  "#version 450 core
-uniform sampler2DShadow shadow_map;
-uniform vec3 light_direction;
-uniform vec3 diffuse_color;
-in VS_OUT
-{
-  vec4 object_shadow_pos;
-  vec3 normal;
-} fs_in;
-out vec4 fragColor;
-float average_scene_shadow(sampler2DShadow shadow_map, vec4 shadow_pos);
-float scene_shadow_lookup(sampler2DShadow shadow_map, vec4 shadow_pos);
-void main()
-{
-  float shadow = scene_shadow_lookup(shadow_map, fs_in.object_shadow_pos);
-  float cos_incidence = dot(light_direction, fs_in.normal);
-  fragColor = vec4(diffuse_color * max(cos_incidence * shadow, 0.125), 1.0);
-}")
-
-
 (def cloud-clear-overlay-mock
   "#version 450 core
 uniform vec3 origin;
