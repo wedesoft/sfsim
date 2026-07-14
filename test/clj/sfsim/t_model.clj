@@ -784,8 +784,7 @@ void main()
   [model transmittance above ambient shadow attenuation]
   (with-invisible-window
     (let [geometry-renderer (make-scene-geometry-renderer true)
-          program-selection (comp (:sfsim.model/programs geometry-renderer) material-type)
-          opengl-scene      (load-scene-into-opengl program-selection model)
+          opengl-scene      (load-scene-into-opengl (geometry-program-selection geometry-renderer) model)
           camera-to-world   (transformation-matrix (eye 3) (vec3 1 0 0))
           light-direction   (normalize (vec3 1 2 3))
           object-to-world   (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
@@ -802,8 +801,8 @@ void main()
                               (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                               (when textured (uniform-sampler program "colors" 0))
                               (when bump (uniform-sampler program "normals" (if textured 1 0))))
-                       (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
-                                     render-mesh-geometry))
+                       (render-scene (geometry-program-selection geometry-renderer) 0
+                                     {:sfsim.render/camera-to-world camera-to-world} [] moved-scene render-mesh-geometry))
       (render-to-image 160 120 false
                        (render-lighting geometry-buffers lighting-program 0
                                         (set-lighting-uniforms lighting-program camera-to-world
@@ -970,8 +969,7 @@ void main()
          (fact
            (with-invisible-window
              (let [geometry-renderer    (make-scene-geometry-renderer true)
-                   program-selection    (comp (:sfsim.model/programs geometry-renderer) material-type)
-                   opengl-scene         (load-scene-into-opengl program-selection ?model)
+                   opengl-scene         (load-scene-into-opengl (geometry-program-selection geometry-renderer) ?model)
                    camera-to-world      (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5) (rotation-matrix-3d-y -0.4))
                                                                         (vec3 0 0 (- ?distance))))
                    light-direction      (normalize (vec3 5 2 1))
@@ -991,7 +989,8 @@ void main()
                                                         (projection-matrix 160 120 0.0 10.0 (to-radians 60)))
                                        (when textured (uniform-sampler program "colors" 0))
                                        (when bump (uniform-sampler program "normals" (if textured 1 0))))
-                                (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world}
+                                (render-scene (geometry-program-selection geometry-renderer) 0
+                                              {:sfsim.render/camera-to-world camera-to-world}
                                               [] opengl-scene render-mesh-geometry))
                (render-to-image 160 120 false
                                 (render-lighting geometry-buffers lighting-program 1
@@ -1049,8 +1048,7 @@ vec4 cloud_overlay(float depth)
          (fact
            (with-invisible-window
              (let [geometry-renderer    (make-scene-geometry-renderer true)
-                   program-selection    (comp (:sfsim.model/programs geometry-renderer) material-type)
-                   opengl-scene         (load-scene-into-opengl program-selection ?model)
+                   opengl-scene         (load-scene-into-opengl (geometry-program-selection geometry-renderer) ?model)
                    camera-to-world      (transformation-matrix (eye 3) (vec3 1 0 0))
                    object-to-world      (transformation-matrix (mulm (rotation-matrix-3d-x ?angle-x) (rotation-matrix-3d-y ?angle-y)) (vec3 1 0 (- ?dist)))
                    moved-scene          (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
@@ -1072,8 +1070,9 @@ vec4 cloud_overlay(float depth)
                                                         (projection-matrix 160 120 0.0 10.0 (to-radians 60)))
                                        (when textured (uniform-sampler program "colors" 0))
                                        (when bump (uniform-sampler program "normals" (if textured 1 0))))
-                                (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world}
-                                              [] moved-scene render-mesh-geometry))
+                                (render-scene (geometry-program-selection geometry-renderer) 0
+                                              {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
+                                              render-mesh-geometry))
                (render-to-image 160 120 false
                                 (render-lighting geometry-buffers lighting-program 1
                                                  (set-lighting-uniforms lighting-program camera-to-world

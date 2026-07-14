@@ -973,6 +973,13 @@
     {::programs (zipmap variations programs)}))
 
 
+(defn geometry-program-selection
+  "Select correct shader program to render mesh using specific material"
+  {:malli/schema [:=> [:cat scene-geometry-renderer] [:=> [:cat material] :int]]}
+  [geometry-renderer]
+  (fn [material] ((::programs geometry-renderer) (material-type material))))
+
+
 (def model-render-vars
   (m/schema [:map [::program :int]
                   [::transform fmat4]
