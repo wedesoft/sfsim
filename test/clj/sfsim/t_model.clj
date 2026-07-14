@@ -1035,6 +1035,16 @@ vec4 cloud_overlay(float depth)
 }")
 
 
+(def lighting-fragment-shaders
+  [fragment-lighting-shadow shaders/phong model-shadow-mocks
+   (last (clouds/overall-shading 3 [["average_scene_shadow" "shadow_map"]])) shaders/limit-interval ray-sphere-mock
+   above-horizon-mock planet-and-cloud-shadows-mock transmittance-point-mock
+   (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")
+   (shaders/percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size"
+                                        [["sampler2DShadow" "shadow_map"]])
+   (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")])
+
+
 (tabular "Integration test of model geometry and lighting"
          (fact
            (with-invisible-window
@@ -1053,7 +1063,7 @@ vec4 cloud_overlay(float depth)
                    object-to-shadow-map (-> object-shadow :sfsim.model/matrices :sfsim.matrix/object-to-shadow-map)
                    geometry-buffers     (make-geometry-buffers 160 120)
                    lighting-program     (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                      :sfsim.render/fragment lighting-shadow-fragment-shaders)]
+                                                      :sfsim.render/fragment lighting-fragment-shaders)]
                (render-geometry geometry-buffers
                                 (clear)
                                 (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
@@ -1081,69 +1091,7 @@ vec4 cloud_overlay(float depth)
                                 (destroy-scene-shadow-renderer shadow-renderer)
                                 (destroy-scene opengl-scene)
                                 (destroy-scene-geometry-renderer geometry-renderer))))
-           => (is-image (str "/tmp/" ?result) 1.0))
-         ?model ?dist ?angle-x ?angle-y ?result
-         torus  3.0   0.5      -0.4     "torus-integration.png"
-         cubes  6.0   0.1      -1.0     "cubes-integration.png")
-
-
-(tabular "Integration of model's self-shading"
-         (fact
-           (with-invisible-window
-             (with-redefs [model/fragment-scene (fn [textured bump num-steps num-scene-shadows]
-                                                  (conj [model-shadow-mocks shaders/phong
-                                                         (last (clouds/overall-shading num-steps (repeat num-scene-shadows
-                                                                                                         ["average_scene_shadow"
-                                                                                                          "scene_shadow_map_1"])))
-                                                         (shaders/percentage-closer-filtering "average_scene_shadow"
-                                                                                              "scene_shadow_lookup"
-                                                                                              "scene_shadow_size"
-                                                                                              [["sampler2DShadow"
-                                                                                                "shadow_map"]])
-                                                         (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")]
-                                                        (template/eval (slurp "resources/shaders/model/fragment.glsl")
-                                                                       {:textured textured
-                                                                        :bump bump
-                                                                        :num-scene-shadows num-scene-shadows})))
-                           plume/setup-static-plume-uniforms (fn [_program _model-data])
-                           model/setup-scene-static-uniforms (fn [program texture-offset num-scene-shadows textured bump data]
-                                                               (use-program program)
-                                                               (setup-scene-samplers program 0 0 textured bump)
-                                                               (uniform-sampler program "scene_shadow_map_1" 0)
-                                                               (uniform-float program "albedo" 3.14159265358)
-                                                               (uniform-float program "amplification" 1.0)
-                                                               (uniform-float program "specular" 1.0)
-                                                               (uniform-int program "scene_shadow_size" 256)
-                                                               (uniform-matrix4 program "projection"
-                                                                                (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                                                               (uniform-vector3 program "light_direction" (normalize (vec3 5 2 1))))]
-               (let [data             {:sfsim.opacity/data {:sfsim.opacity/num-steps 3 :sfsim.opacity/scene-shadow-counts [0 1]}
-                                       :sfsim.clouds/data {:sfsim.clouds/perlin-octaves [] :sfsim.clouds/cloud-octaves []}
-                                       :sfsim.model/data {:sfsim.model/object-radius 30.0}}
-                     renderer         (make-scene-renderer data)
-                     shadow-size      256
-                     object-radius    4.0
-                     shadow-renderer  (make-scene-shadow-renderer shadow-size object-radius)
-                     opengl-scene     (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-and-shadow-type) ?model)
-                     camera-to-world  (transformation-matrix (eye 3) (vec3 1 0 0))
-                     object-to-world  (transformation-matrix (mulm (rotation-matrix-3d-x ?angle-x) (rotation-matrix-3d-y ?angle-y)) (vec3 1 0 (- ?dist)))
-                     light-direction  (normalize (mulv (get-rotation object-to-world) (vec3 5 2 1)))
-                     moved-scene      (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-                     object-shadow    (scene-shadow-map shadow-renderer light-direction moved-scene)
-                     tex              (texture-render-color-depth 160 120 false
-                                                                  (clear (vec3 0.5 0.5 0.5) 0.0)
-                                                                  (use-textures {0 (:sfsim.model/shadows object-shadow)})
-                                                                  (render-scene (comp (:sfsim.model/programs renderer) material-and-shadow-type) 1
-                                                                                {:sfsim.render/camera-to-world camera-to-world}
-                                                                                [(:sfsim.matrix/object-to-shadow-map (:sfsim.model/matrices object-shadow))]
-                                                                                moved-scene render-mesh))
-                     result           (texture->image tex)]
-                 (destroy-texture tex)
-                 (destroy-scene-shadow-map object-shadow)
-                 (destroy-scene opengl-scene)
-                 (destroy-scene-shadow-renderer shadow-renderer)
-                 (destroy-scene-renderer renderer)
-                 result))) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.01))
+           => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 1.0))
          ?model ?dist ?angle-x ?angle-y ?result
          torus  3.0   0.5      -0.4     "torus-integration.png"
          cubes  6.0   0.1      -1.0     "cubes-integration.png")
