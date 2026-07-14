@@ -146,7 +146,7 @@ void main()
 (fact "Perform geometry pass and lighting pass for red cube"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [(vertex-geometry-scene false false true)]
-                                              :sfsim.render/fragment [(fragment-geometry-scene false false true)])
+                                             :sfsim.render/fragment [(fragment-geometry-scene false false true)])
               opengl-scene     (load-scene-into-opengl (constantly geometry-program) cube)
               camera-to-world  (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
                                                                      (rotation-matrix-3d-y -0.4))
@@ -255,7 +255,7 @@ void main()
 (fact "Perform gometry pass and lighting pass for textured cube"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [(vertex-geometry-scene true false true)]
-                                              :sfsim.render/fragment [(fragment-geometry-scene true false true)])
+                                             :sfsim.render/fragment [(fragment-geometry-scene true false true)])
               opengl-scene     (load-scene-into-opengl (constantly geometry-program) dice)
               camera-to-world  (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
                                                                      (rotation-matrix-3d-y -0.4))
@@ -355,11 +355,7 @@ void main()
                                                   :sfsim.render/fragment [fragment-lighting-mock])]
           (render-geometry geometry-buffers
                            (clear)
-                           (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
-                              (use-program program)
-                              (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                              (when textured (uniform-sampler program "colors" 0))
-                              (when bump (uniform-sampler program "normals" (if textured 1 0))))
+                           (setup-model-geometry-uniforms geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                            (render-model-geometry (geometry-program-selection geometry-renderer)
                                                   {:sfsim.render/camera-to-world camera-to-world} opengl-scene))
           (render-to-image 160 120 false
@@ -665,11 +661,7 @@ void main()
                                           :sfsim.render/fragment lighting-fog-fragment-shaders)]
       (render-geometry geometry-buffers
                        (clear)
-                       (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
-                              (use-program program)
-                              (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                              (when textured (uniform-sampler program "colors" 0))
-                              (when bump (uniform-sampler program "normals" (if textured 1 0))))
+                       (setup-model-geometry-uniforms geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                        (render-model-geometry (geometry-program-selection geometry-renderer)
                                               {:sfsim.render/camera-to-world camera-to-world} moved-scene))
       (render-to-image 160 120 false
@@ -852,12 +844,7 @@ void main()
                                                       :sfsim.render/fragment lighting-shadow-fragment-shaders)]
                (render-geometry geometry-buffers
                                 (clear)
-                                (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
-                                       (use-program program)
-                                       (uniform-matrix4 program "projection"
-                                                        (projection-matrix 160 120 0.0 10.0 (to-radians 60)))
-                                       (when textured (uniform-sampler program "colors" 0))
-                                       (when bump (uniform-sampler program "normals" (if textured 1 0))))
+                                (setup-model-geometry-uniforms geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                 (render-model-geometry (geometry-program-selection geometry-renderer)
                                                        {:sfsim.render/camera-to-world camera-to-world} opengl-scene))
                (render-to-image 160 120 false
@@ -932,12 +919,7 @@ vec4 cloud_overlay(float depth)
                                                       :sfsim.render/fragment lighting-fragment-shaders)]
                (render-geometry geometry-buffers
                                 (clear)
-                                (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
-                                       (use-program program)
-                                       (uniform-matrix4 program "projection"
-                                                        (projection-matrix 160 120 0.0 10.0 (to-radians 60)))
-                                       (when textured (uniform-sampler program "colors" 0))
-                                       (when bump (uniform-sampler program "normals" (if textured 1 0))))
+                                (setup-model-geometry-uniforms geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                                 (render-model-geometry (geometry-program-selection geometry-renderer)
                                                        {:sfsim.render/camera-to-world camera-to-world} moved-scene))
                (render-to-image 160 120 false

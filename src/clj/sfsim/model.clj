@@ -1180,6 +1180,15 @@
   (destroy-texture normal-texture))
 
 
+(defn setup-model-geometry-uniforms
+  "Set up uniforms for different model geometry shader programs"
+  [geometry-renderer projection]
+  (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
+         (use-program program)
+         (uniform-matrix4 program "projection" projection)
+         (when textured (uniform-sampler program "colors" 0))
+         (when bump (uniform-sampler program "normals" (if textured 1 0)))))
+
 
 (defmulti render-mesh-geometry (fn [material _render-vars] (material-type material)))
 
