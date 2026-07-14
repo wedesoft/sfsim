@@ -211,6 +211,46 @@ void main()
   (destroy-texture normal-texture))
 
 
+
+(defmulti render-mesh-geometry (fn [material _render-vars] (material-type material)))
+
+; (m/=> render-mesh-geometry [:=> [:cat material mesh-vars] :nil])
+
+
+(defmethod render-mesh-geometry [false false]
+  [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-vector3 program "diffuse_color" diffuse))
+
+
+(defmethod render-mesh-geometry [true false]
+  [{:sfsim.model/keys [colors]} {:sfsim.model/keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (use-textures {texture-offset colors}))
+
+
+(defmethod render-mesh-geometry [false true]
+  [{:sfsim.model/keys [diffuse normals]} {:sfsim.model/keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-vector3 program "diffuse_color" diffuse)
+  (use-textures {texture-offset normals}))
+
+
+(defmethod render-mesh-geometry [true true]
+  [{:sfsim.model/keys [colors normals]} {:sfsim.model/keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
+
+
+(defn render-model-geometry
+  [program-selection render-vars scene]
+  (render-scene program-selection 0 render-vars [] scene render-mesh-geometry))
+
+
 (fact "Perform geometry pass and lighting pass for red cube"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [(vertex-geometry-scene false false true)]
@@ -226,14 +266,8 @@ void main()
                            (clear)
                            (use-program geometry-program)
                            (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                           (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                         opengl-scene
-                                         (fn [{:sfsim.model/keys [diffuse]}
-                                              {:sfsim.model/keys [program transform] :as render-vars}]
-                                             (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
-                                                                                                 transform))
-                                               (uniform-vector3 program "diffuse_color" diffuse)))))
+                           (render-model-geometry (constantly geometry-program) {:sfsim.render/camera-to-world camera-to-world}
+                                                  opengl-scene))
           (render-to-image 160 120 false
                            (render-lighting geometry-buffers lighting-program 0
                                             (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))))
@@ -274,14 +308,8 @@ void main()
                            (clear)
                            (use-program geometry-program)
                            (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
-                           (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                         opengl-scene
-                                         (fn [{:sfsim.model/keys [diffuse]}
-                                              {:sfsim.model/keys [program transform] :as render-vars}]
-                                             (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
-                                                                                                 transform))
-                                               (uniform-vector3 program "diffuse_color" diffuse)))))
+                           (render-model-geometry (constantly geometry-program) {:sfsim.render/camera-to-world camera-to-world}
+                                                  opengl-scene))
           (render-to-image 160 120 false
                            (render-lighting geometry-buffers lighting-program 0
                                             (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))))
@@ -348,14 +376,8 @@ void main()
                            (use-program geometry-program)
                            (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                            (uniform-sampler geometry-program "colors" 0)
-                           (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                         opengl-scene
-                                         (fn [{:sfsim.model/keys [colors]}
-                                              {:sfsim.model/keys [program transform] :as render-vars}]
-                                             (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
-                                                                                                 transform))
-                                               (use-textures {0 colors})))))
+                           (render-model-geometry (constantly geometry-program) {:sfsim.render/camera-to-world camera-to-world}
+                                                  opengl-scene))
           (render-to-image 160 120 false
                            (render-lighting geometry-buffers lighting-program 0
                                             (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))))
@@ -392,14 +414,8 @@ void main()
                            (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                            (uniform-sampler geometry-program "colors" 0)
                            (uniform-sampler geometry-program "normals" 1)
-                           (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                         opengl-scene
-                                         (fn [{:sfsim.model/keys [colors normals]}
-                                              {:sfsim.model/keys [program transform] :as render-vars}]
-                                             (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-                                               (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world)
-                                                                                                 transform))
-                                               (use-textures {0 colors 1 normals})))))
+                           (render-model-geometry (constantly geometry-program) {:sfsim.render/camera-to-world camera-to-world}
+                                                  opengl-scene))
           (render-to-image 160 120 false
                            (render-lighting geometry-buffers lighting-program 0
                                             (uniform-vector3 lighting-program "light" (normalize (vec3 0 -3 1)))))
@@ -437,13 +453,8 @@ void main()
 
 (fact "Perform gometry pass and lighting pass for uniformly colored cube and textured cube"
       (with-invisible-window
-        (let [geometry-program-cube (make-program :sfsim.render/vertex [(vertex-geometry-scene false false true)]
-                                                  :sfsim.render/fragment [(fragment-geometry-scene false false true)])
-              geometry-program-dice (make-program :sfsim.render/vertex [(vertex-geometry-scene true false true)]
-                                                  :sfsim.render/fragment [(fragment-geometry-scene true false true)])
-              program-selection     (comp {:colored geometry-program-cube :textured geometry-program-dice}
-                                          cube-material-type)
-              opengl-scene          (load-scene-into-opengl program-selection cube-and-dice)
+        (let [geometry-renderer     (make-scene-geometry-renderer true)
+              opengl-scene          (load-scene-into-opengl (geometry-program-selection geometry-renderer) cube-and-dice)
               camera-to-world       (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5)
                                                                           (rotation-matrix-3d-y -0.4))
                                                                     (vec3 0 0 -7)))
@@ -452,12 +463,13 @@ void main()
                                                   :sfsim.render/fragment [fragment-lighting-mock])]
           (render-geometry geometry-buffers
                            (clear)
-                           (doseq [program [geometry-program-cube geometry-program-dice]]
-                                  (use-program program)
-                                  (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60))))
-                           (uniform-sampler geometry-program-dice "colors" 0)
-                           (render-scene program-selection 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                         opengl-scene render-cube))
+                           (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
+                              (use-program program)
+                              (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
+                              (when textured (uniform-sampler program "colors" 0))
+                              (when bump (uniform-sampler program "normals" (if textured 1 0))))
+                           (render-model-geometry (geometry-program-selection geometry-renderer)
+                                                  {:sfsim.render/camera-to-world camera-to-world} opengl-scene))
           (render-to-image 160 120 false
                            (render-lighting geometry-buffers lighting-program 0
                                             (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))))
@@ -465,8 +477,7 @@ void main()
           (destroy-program lighting-program)
           (destroy-geometry-buffers geometry-buffers)
           (destroy-scene opengl-scene)
-          (destroy-program geometry-program-dice)
-          (destroy-program geometry-program-cube))))
+          (destroy-scene-geometry-renderer geometry-renderer))))
 
 
 (def translation (read-gltf "test/clj/sfsim/fixtures/model/translation.gltf"))
@@ -689,40 +700,6 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 }")
 
 
-(defmulti render-mesh-geometry (fn [material _render-vars] (material-type material)))
-
-; (m/=> render-mesh-geometry [:=> [:cat material mesh-vars] :nil])
-
-
-(defmethod render-mesh-geometry [false false]
-  [{:sfsim.model/keys [diffuse]} {:sfsim.model/keys [program transform] :as render-vars}]
-  (use-program program)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
-  (uniform-vector3 program "diffuse_color" diffuse))
-
-
-(defmethod render-mesh-geometry [true false]
-  [{:sfsim.model/keys [colors]} {:sfsim.model/keys [program texture-offset transform] :as render-vars}]
-  (use-program program)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
-  (use-textures {texture-offset colors}))
-
-
-(defmethod render-mesh-geometry [false true]
-  [{:sfsim.model/keys [diffuse normals]} {:sfsim.model/keys [program texture-offset transform] :as render-vars}]
-  (use-program program)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
-  (uniform-vector3 program "diffuse_color" diffuse)
-  (use-textures {texture-offset normals}))
-
-
-(defmethod render-mesh-geometry [true true]
-  [{:sfsim.model/keys [colors normals]} {:sfsim.model/keys [program texture-offset transform] :as render-vars}]
-  (use-program program)
-  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
-  (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
-
-
 (def fragment-lighting
 "#version 450 core
 uniform sampler2D camera_point;
@@ -801,8 +778,8 @@ void main()
                               (uniform-matrix4 program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                               (when textured (uniform-sampler program "colors" 0))
                               (when bump (uniform-sampler program "normals" (if textured 1 0))))
-                       (render-scene (geometry-program-selection geometry-renderer) 0
-                                     {:sfsim.render/camera-to-world camera-to-world} [] moved-scene render-mesh-geometry))
+                       (render-model-geometry (geometry-program-selection geometry-renderer)
+                                              {:sfsim.render/camera-to-world camera-to-world} moved-scene))
       (render-to-image 160 120 false
                        (render-lighting geometry-buffers lighting-program 0
                                         (set-lighting-uniforms lighting-program camera-to-world
@@ -989,9 +966,8 @@ void main()
                                                         (projection-matrix 160 120 0.0 10.0 (to-radians 60)))
                                        (when textured (uniform-sampler program "colors" 0))
                                        (when bump (uniform-sampler program "normals" (if textured 1 0))))
-                                (render-scene (geometry-program-selection geometry-renderer) 0
-                                              {:sfsim.render/camera-to-world camera-to-world}
-                                              [] opengl-scene render-mesh-geometry))
+                                (render-model-geometry (geometry-program-selection geometry-renderer)
+                                                       {:sfsim.render/camera-to-world camera-to-world} opengl-scene))
                (render-to-image 160 120 false
                                 (render-lighting geometry-buffers lighting-program 1
                                                  (set-lighting-uniforms lighting-program camera-to-world
@@ -1070,9 +1046,8 @@ vec4 cloud_overlay(float depth)
                                                         (projection-matrix 160 120 0.0 10.0 (to-radians 60)))
                                        (when textured (uniform-sampler program "colors" 0))
                                        (when bump (uniform-sampler program "normals" (if textured 1 0))))
-                                (render-scene (geometry-program-selection geometry-renderer) 0
-                                              {:sfsim.render/camera-to-world camera-to-world} [] moved-scene
-                                              render-mesh-geometry))
+                                (render-model-geometry (geometry-program-selection geometry-renderer)
+                                                       {:sfsim.render/camera-to-world camera-to-world} moved-scene))
                (render-to-image 160 120 false
                                 (render-lighting geometry-buffers lighting-program 1
                                                  (set-lighting-uniforms lighting-program camera-to-world
