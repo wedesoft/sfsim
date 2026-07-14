@@ -26,9 +26,11 @@
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
                           uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps with-stencil-op-ref-and-mask
-                          setup-shadow-matrices render-vars make-render-vars texture-render-depth clear with-stencils) :as render]
+                          setup-shadow-matrices render-vars make-render-vars texture-render-depth clear with-stencils
+                          framebuffer-render render-quads) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
-    [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap)]
+    [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d
+                           make-empty-depth-texture-2d)]
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.util :refer (N0 N third)])
   (:import
@@ -54,7 +56,8 @@
     (org.lwjgl.stb
       STBImage)
     (org.lwjgl.opengl
-      GL11)))
+      GL11
+      GL30)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -923,7 +926,7 @@
   "Determine shadow matrices and render shadow map for object"
   {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene] scene-shadow]}
   [renderer light-direction scene]
-  (let [object-to-world (get-in scene [:sfsim.model/root :sfsim.model/transform])
+  (let [object-to-world (get-in scene [::root ::transform])
         object-radius   (::object-radius renderer)
         shadow-matrices (shadow-patch-matrices object-to-world light-direction object-radius)
         shadow-map      (render-shadow-map renderer shadow-matrices scene)]
@@ -1007,7 +1010,7 @@
     (doseq [program (vals (::programs geometry-renderer))]
            (use-program program)
            (uniform-matrix4 program "projection" projection))
-    (render-scene (comp (:sfsim.model/programs geometry-renderer) material-type) 0
+    (render-scene (comp (::programs geometry-renderer) material-type) 0
                   render-vars [] scene render-geometry-mesh)))
 
 
@@ -1109,6 +1112,112 @@
         (concat ordered-front-children ordered-back-children)
         (concat ordered-back-children ordered-front-children)))
     [(::name bsp-node)]))
+
+
+(defn make-geometry-buffers
+  "Initialize textures for storing geometry"
+  [width height]
+  {::width           width
+   ::height          height
+   ::depth           (make-empty-depth-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp width height)
+   ::point-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
+   ::normal-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
+   ::diffuse-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)})
+
+
+(defmacro render-geometry
+  "Perform rendering to geometry buffer"
+  [geometry-buffers & body]
+  `(let [width#           (::width ~geometry-buffers)
+         height#          (::height ~geometry-buffers)
+         depth#           (::depth ~geometry-buffers)
+         point-texture#   (::point-texture ~geometry-buffers)
+         normal-texture#  (::normal-texture ~geometry-buffers)
+         diffuse-texture# (::diffuse-texture ~geometry-buffers)]
+     (framebuffer-render width# height# :sfsim.render/cullback depth# [point-texture# normal-texture# diffuse-texture#]
+                         ~@body)))
+
+
+(defn geometry-buffer-uniforms
+  "Set up geometry uniforms for lighting pass"
+  [{::keys [width height]} program texture-offset]
+  (uniform-int program "width" width)
+  (uniform-int program "height" height)
+  (uniform-sampler program "camera_point" texture-offset)
+  (uniform-sampler program "camera_normal" (inc ^long texture-offset))
+  (uniform-sampler program "diffuse_material" (+ ^long texture-offset 2)))
+
+
+(defn use-geometry-buffer-textures
+  "Set up geometry buffers for lighting pass"
+  [{::keys [point-texture normal-texture diffuse-texture]} texture-offset]
+  (use-textures {texture-offset point-texture
+                 (inc ^long texture-offset) normal-texture
+                 (+ ^long texture-offset 2) diffuse-texture}))
+
+
+(defmacro render-lighting
+  "Perform lighting pass"
+  [geometry-buffers program texture-offset & body]
+  `(let [indices#  [0 1 3 2]
+         vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+         screen#   (make-vertex-array-object ~program indices# vertices# ["point" 3])]
+     (use-program ~program)
+     ~@body
+     (geometry-buffer-uniforms ~geometry-buffers ~program ~texture-offset)
+     (use-geometry-buffer-textures ~geometry-buffers ~texture-offset)
+     (clear (vec3 0.0 0.0 0.0))
+     (render-quads screen#)
+     (destroy-vertex-array-object screen#)))
+
+
+(defn destroy-geometry-buffers
+  "Destroy geometry buffer textures"
+  [{::keys [depth point-texture normal-texture diffuse-texture]}]
+  (destroy-texture depth)
+  (destroy-texture point-texture)
+  (destroy-texture diffuse-texture)
+  (destroy-texture normal-texture))
+
+
+
+(defmulti render-mesh-geometry (fn [material _render-vars] (material-type material)))
+
+(m/=> render-mesh-geometry [:=> [:cat material mesh-vars] :nil])
+
+
+(defmethod render-mesh-geometry [false false]
+  [{::keys [diffuse]} {::keys [program transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-vector3 program "diffuse_color" diffuse))
+
+
+(defmethod render-mesh-geometry [true false]
+  [{::keys [colors]} {::keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (use-textures {texture-offset colors}))
+
+
+(defmethod render-mesh-geometry [false true]
+  [{::keys [diffuse normals]} {::keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-vector3 program "diffuse_color" diffuse)
+  (use-textures {texture-offset normals}))
+
+
+(defmethod render-mesh-geometry [true true]
+  [{::keys [colors normals]} {::keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
+
+
+(defn render-model-geometry
+  [program-selection render-vars scene]
+  (render-scene program-selection 0 render-vars [] scene render-mesh-geometry))
 
 
 (set! *warn-on-reflection* false)
