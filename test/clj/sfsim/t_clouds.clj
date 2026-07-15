@@ -19,7 +19,7 @@
     [sfsim.image :refer (get-vector3 get-vector4 get-float-3d get-float)]
     [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
     [sfsim.quaternion :as q]
-    [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet make-cube-map-tile-vertices)]
+    [sfsim.planet :refer (make-cube-map-tile-vertices)]
     [sfsim.model :refer (read-gltf make-model-vars
                          load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry
                          destroy-joined-geometry-renderer)]

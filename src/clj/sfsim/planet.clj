@@ -65,10 +65,15 @@
 
 
 (defn tess-evaluation-planet
-  "Tessellation evaluation shader to generate output points of tessellated quads"
+  "Tessellation evaluation shader to generate output points of tessellated quads with shadow positions"
   {:malli/schema [:=> [:cat N0] render/shaders]}
   [num-scene-shadows]
   [(template/eval (slurp "resources/shaders/planet/tess-evaluation.glsl") {:num-scene-shadows num-scene-shadows})])
+
+
+(def tess-evaluation-planet-geometry
+  "Tessellation evaluation shader to generate output points of tessellated quads"
+  (slurp "resources/shaders/planet/tess-evaluation-geometry.glsl"))
 
 
 (def tess-evaluation-planet-shadow
@@ -76,11 +81,16 @@
   [shaders/shrink-shadow-index (slurp "resources/shaders/planet/tess-evaluation-shadow.glsl")])
 
 
-(defn geometry-planet
-  "Geometry shader outputting triangles with color texture coordinates and 3D points"
+(defn geometry-planet-shading
+  "Geometry shader outputting triangles with color texture coordinates and 3D points and shadow coordinates"
   {:malli/schema [:=> [:cat N0] render/shaders]}
   [num-scene-shadows]
-  [(template/eval (slurp "resources/shaders/planet/geometry.glsl") {:num-scene-shadows num-scene-shadows})])
+  [(template/eval (slurp "resources/shaders/planet/geometry-shading.glsl") {:num-scene-shadows num-scene-shadows})])
+
+
+(def geometry-planet
+  "Geometry shader outputting triangles with color texture coordinates and 3D points"
+  (template/eval (slurp "resources/shaders/planet/geometry.glsl")))
 
 
 (def surface-radiance-function
@@ -162,7 +172,7 @@
         program     (make-program :sfsim.render/vertex [vertex-planet]
                                   :sfsim.render/tess-control [tess-control-planet]
                                   :sfsim.render/tess-evaluation [tess-evaluation-planet-shadow]
-                                  :sfsim.render/geometry [(geometry-planet 0)]
+                                  :sfsim.render/geometry [(geometry-planet-shading 0)]
                                   :sfsim.render/fragment [fragment-planet-shadow])]
     (use-program program)
     (uniform-sampler program "surface" 0)
@@ -215,7 +225,7 @@
         program         (make-program :sfsim.render/vertex [vertex-planet]
                                       :sfsim.render/tess-control [tess-control-planet]
                                       :sfsim.render/tess-evaluation [(tess-evaluation-planet num-scene-shadows)]
-                                      :sfsim.render/geometry [(geometry-planet num-scene-shadows)]
+                                      :sfsim.render/geometry [(geometry-planet-shading num-scene-shadows)]
                                       :sfsim.render/fragment [(fragment-planet num-steps num-scene-shadows)])]
     (use-program program)
     (uniform-sampler program "surface"   0)
@@ -467,7 +477,7 @@ void main()
   (let [program  (make-program :sfsim.render/vertex [vertex-planet]
                                :sfsim.render/tess-control [tess-control-planet]
                                :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                               :sfsim.render/geometry [(geometry-planet 0)]
+                               :sfsim.render/geometry [(geometry-planet-shading 0)]
                                :sfsim.render/fragment [fragment-planet-geometry])
         tilesize (::tilesize (::config data))]
     (use-program program)
