@@ -281,7 +281,7 @@ void main()
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
                                                         :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                                                        :sfsim.render/geometry [(geometry-planet-shading 0)]
+                                                        :sfsim.render/geometry [geometry-planet]
                                                         :sfsim.render/fragment [fragment-white])
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
@@ -294,7 +294,8 @@ void main()
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
-                          (uniform-matrix4 program "world_to_camera" (eye 4))
+                          (uniform-matrix4 program "tile_to_camera" (eye 4))
+                          (uniform-vector3 program "tile_center" (vec3 0 0 0))
                           (uniform-matrix4 program "projection" (eye 4))
                           (uniform-float program "z_near" 0.0)
                           (use-textures {0 surface})
