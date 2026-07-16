@@ -13,7 +13,9 @@ This requires me to separate rendering into two passes:
 * **Geometry pass**: render data to a point buffer, normal buffer, and a color buffer, etc.
 * **Lighting pass**: use the geometry buffers to compute lighting including shadows and volumetric clouds.
 
-This will facilitate rendering of runway textures which are at the same height as the rest of the scene but have a higher texture resolution.
+The change is quite a bit of work, because I have to split up the graphics code and the shaders for rendering the space craft, the planet, and the atmosphere.
+
+However this will facilitate rendering of runway textures which are at the same height as the rest of the scene but have a higher texture resolution.
 Simply adding textured polygons to render a runway does not work, because extra geometry placed at the same elevation as the ground causes [z-fighting][2].
 Z-fighting is a rendering artifact where two surfaces are so close together that the depth buffer can’t reliably tell which one is in front.
 
@@ -24,7 +26,8 @@ I.e., deferred shading enables detailed nighttime runway rendering with dense, s
 
 Don't forget to [wishlist sfsim][1]!
 
-Enjoy!
+Also you can catch me on the [sfsim Discord][3].
 
 [1]: https://store.steampowered.com/app/3687560/sfsim/
 [2]: https://en.wikipedia.org/wiki/Z-fighting
+[3]: https://discord.com/invite/EJEE6QNHra
