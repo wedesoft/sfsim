@@ -134,6 +134,18 @@
        result#)))
 
 
+(defmacro with-additive-blending
+  [& body]
+  `(do
+     (GL11/glEnable GL11/GL_BLEND)
+     (GL14/glBlendEquation GL14/GL_FUNC_ADD)
+     ; void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+     (GL14/glBlendFuncSeparate GL11/GL_SRC_ALPHA GL11/GL_ONE GL11/GL_ZERO GL11/GL_ONE)
+     (let [result# (do ~@body)]
+       (GL11/glDisable GL11/GL_BLEND)
+       result#)))
+
+
 (defmacro with-scissor
   "Enable scissor test for the specified body of code"
   [& body]

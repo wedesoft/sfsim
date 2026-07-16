@@ -8,7 +8,7 @@
   (:require
     [clojure.math :refer (PI exp pow to-radians)]
     [comb.template :as template]
-    [fastmath.matrix :refer (eye diagonal inverse rotation-matrix-3d-x)]
+    [fastmath.matrix :refer (eye diagonal inverse mulm rotation-matrix-3d-x)]
     [fastmath.vector :refer (vec3 vec4 dot mag)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -777,11 +777,9 @@ in VS_OUT
   vec4 camera_point;
 } fs_in;
 layout (location = 0) out vec4 camera_point;
-layout (location = 1) out float dist;
 void main()
 {
-  camera_point = vec4(normalize(fs_in.camera_point.xyz), 0.0);
-  dist = length(fs_in.camera_point.xyz);
+  camera_point = fs_in.camera_point;
 }")
 
 
@@ -813,16 +811,14 @@ void main()
 (def fragment-decal
 "#version 450 core
 uniform sampler2D camera_point;
-uniform sampler2D dist;
 uniform mat4 camera_to_object;
 out vec4 fragColor;
 void main()
 {
   vec2 uv = vec2(gl_FragCoord.x / 320, gl_FragCoord.y / 240);
-  float distance = texture(dist, uv).r;
   vec4 cam_point = texture(camera_point, uv);
-  vec4 point = camera_to_object * (cam_point * distance + vec4(0, 0, 0, 1));
-  if (abs(point.x) <= 0.5 && abs(point.y) <= 0.5) {
+  vec4 point = camera_to_object * cam_point;
+  if (point.w > 0.0 && abs(point.x) <= 0.5 && abs(point.y) <= 0.5) {
     fragColor = vec4(1, 1, 1, 1);
   } else
     discard;
@@ -852,7 +848,6 @@ void main()
 (fact "Render a decal"
       (with-invisible-window
         (let [point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 320 240)
-              distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 320 240)
               indices          [0 1 3 2]
               vertices         [-1.0 -1.0 0.0, +1.0 -1.0 0.0, -1.0  1.0 0.0, +1.0  1.0 0.0]
               projection       (projection-matrix 320 240 0.1 10.0 (to-radians -45))
@@ -860,7 +855,7 @@ void main()
               program-geometry (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-plane])
               program-plane    (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-grey])
               plane            (make-vertex-array-object program-geometry indices vertices ["point" 3])]
-          (framebuffer-render 320 240 :sfsim.render/cullback nil [point-texture distance-texture]
+          (framebuffer-render 320 240 :sfsim.render/cullback nil [point-texture]
                               (use-program program-geometry)
                               (uniform-matrix4 program-geometry "projection" projection)
                               (uniform-matrix4 program-geometry "object_to_camera" object-to-camera)
@@ -876,11 +871,10 @@ void main()
                                 (render-quads plane)
                                 (use-program program-decal)
                                 (uniform-sampler program-decal "camera_point" 0)
-                                (uniform-sampler program-decal "dist" 1)
                                 (uniform-matrix4 program-decal "projection" projection)
                                 (uniform-matrix4 program-decal "object_to_camera" object-to-camera)
                                 (uniform-matrix4 program-decal "camera_to_object" (inverse object-to-camera))
-                                (use-textures {0 point-texture 1 distance-texture})
+                                (use-textures {0 point-texture})
                                 (render-quads cube))
             (texture->image img) => (is-image "test/clj/sfsim/fixtures/planet/decal.png" 0.5)
             (destroy-texture img)
@@ -889,8 +883,106 @@ void main()
             (destroy-vertex-array-object plane)
             (destroy-program program-geometry)
             (destroy-program program-plane))
-          (destroy-texture point-texture)
-          (destroy-texture distance-texture))))
+          (destroy-texture point-texture))))
+
+
+(def fragment-darkgrey
+"#version 450 core
+in VS_OUT
+{
+  vec4 camera_point;
+} fs_in;
+out vec4 fragColor;
+void main()
+{
+  fragColor = vec4(0.1, 0.1, 0.1, 1.0);
+}")
+
+
+(def light-vertices
+  [-0.5 -0.5 -0.5
+    0.5 -0.5 -0.5
+   -0.5  0.5 -0.5
+    0.5  0.5 -0.5
+   -0.5 -0.5  0.5
+    0.5 -0.5  0.5
+   -0.5  0.5  0.5
+    0.5  0.5  0.5])
+
+
+(def light-positions
+  [(vec3 -0.5 -0.5 0.05)
+   (vec3  0.0 -0.5 0.05)
+   (vec3  0.5 -0.5 0.05)
+   (vec3 -0.5  0.5 0.05)
+   (vec3  0.0  0.5 0.05)
+   (vec3  0.5  0.5 0.05)
+   (vec3 -0.5  0.0 0.05)
+   (vec3  0.5  0.0 0.05)])
+
+
+(def fragment-light
+"#version 450 core
+uniform sampler2D camera_point;
+uniform mat4 object_to_camera;
+uniform mat4 camera_to_object;
+out vec4 fragColor;
+void main()
+{
+  vec2 uv = vec2(gl_FragCoord.x / 320, gl_FragCoord.y / 240);
+  vec4 cam_point = texture(camera_point, uv);
+  vec4 normal = vec4(0, 0, 1, 0);
+  vec4 point = camera_to_object * cam_point;
+  if (point.w > 0.0 && length(point.xyz) <= 0.5) {
+    float alpha = 0.05 * max(0, -dot(point.xyz, normal.xyz)) / dot(point.xyz, point.xyz);
+    fragColor = vec4(1, 1, 1, alpha);
+  } else
+    discard;
+}")
+
+
+(fact "Render localized light sources"
+      (with-invisible-window
+        (let [point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 320 240)
+              indices          [0 1 3 2]
+              vertices         [-1.0 -1.0 0.0, +1.0 -1.0 0.0, -1.0  1.0 0.0, +1.0  1.0 0.0]
+              projection       (projection-matrix 320 240 0.1 10.0 (to-radians -45))
+              object-to-camera (transformation-matrix (rotation-matrix-3d-x (to-radians 60.0)) (vec3 0 0 -4))
+              program-geometry (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-plane])
+              program-plane    (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-darkgrey])
+              plane            (make-vertex-array-object program-geometry indices vertices ["point" 3])]
+          (framebuffer-render 320 240 :sfsim.render/cullback nil [point-texture]
+                              (use-program program-geometry)
+                              (uniform-matrix4 program-geometry "projection" projection)
+                              (uniform-matrix4 program-geometry "object_to_camera" object-to-camera)
+                              (render-quads plane))
+          (let [program-decal (make-program :sfsim.render/vertex [vertex-decal] :sfsim.render/fragment [fragment-light])
+                cube          (make-vertex-array-object program-decal decal-indices light-vertices ["point" 3])
+                img           (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL11/GL_RGB8 320 240)]
+            (framebuffer-render 320 240 :sfsim.render/cullback nil [img]
+                                (clear (vec3 0 0 0))
+                                (use-program program-plane)
+                                (uniform-matrix4 program-plane "projection" projection)
+                                (uniform-matrix4 program-plane "object_to_camera" object-to-camera)
+                                (render-quads plane)
+                                (with-additive-blending
+                                  (use-program program-decal)
+                                  (uniform-sampler program-decal "camera_point" 0)
+                                  (uniform-matrix4 program-decal "projection" projection)
+                                  (use-textures {0 point-texture})
+                                  (doseq [light-pos light-positions]
+                                         (let [light-to-camera (mulm object-to-camera (translation-matrix light-pos))]
+                                           (uniform-matrix4 program-decal "object_to_camera" light-to-camera)
+                                           (uniform-matrix4 program-decal "camera_to_object" (inverse light-to-camera))
+                                           (render-quads cube)))))
+            (texture->image img) => (is-image "test/clj/sfsim/fixtures/planet/light.png" 0.5)
+            (destroy-texture img)
+            (destroy-vertex-array-object cube)
+            (destroy-program program-decal)
+            (destroy-vertex-array-object plane)
+            (destroy-program program-geometry)
+            (destroy-program program-plane))
+          (destroy-texture point-texture))))
 
 
 (GLFW/glfwTerminate)
