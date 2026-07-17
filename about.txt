@@ -1,0 +1,105 @@
+================================================================================
+LICENSE INFORMATION (also see LICENSE file)
+================================================================================
+Name: sfsim
+Author: Jan Wedekind
+License: Eclipse Public License 1.0 (EPL-1.0)
+
+================================================================================
+THIRD-PARTY DEPENDENCY LICENSES & ATTRIBUTIONS (also see CREDITS file)
+================================================================================
+
+Name: jrouwe/joltphysics
+Author: Jorrit Rouwe
+License: MIT
+Description: Physics engine for real-time 3D simulation.
+
+Name: ch.qos.logback/logback-classic
+Author: Ceki Guelcue
+License: EPL-2.0
+Description: Logging framework implementation for Java applications.
+
+Name: clj-python/libpython-clj
+Author: Chris Nuernberger
+License: MIT
+Description: Clojure bindings for interacting with Python.
+
+Name: com.code-disaster.steamworks4j/steamworks4j
+Author: Daniel Ludwig
+License: MIT
+Description: Java wrapper for the Steamworks API.
+
+Name: comb/comb
+Author: James Reeves
+License: EPL-1.0
+Description: Clojure utility library.
+
+Name: generateme/fastmath
+Author: Tomasz Sulej
+License: MIT
+Description: Fast math utilities for Clojure.
+
+Name: instaparse/instaparse
+Author: Mark Engelberg
+License: EPL-1.0
+Description: Parser generator library for Clojure.
+
+Name: levand/immuconf
+Author: Luke VanderHart
+License: EPL-1.0
+Description: Immutable configuration library.
+
+Name: metosin/malli
+Author: Metosin
+License: EPL-2.0
+Description: Data-driven schema and validation library.
+
+Name: org.apache.commons/commons-compress
+Author: Apache Software Foundation
+License: Apache-2.0
+Description: Library for working with compressed and archived files.
+
+Name: org.clj-commons/claypoole
+Author: clj-commons
+License: Apache-2.0
+Description: Threadpool and parallelism utilities for Clojure.
+
+Name: org.clj-commons/gloss
+Author: clj-commons
+License: EPL-1.0
+Description: Data encoding and binary parsing library.
+
+Name: org.clojure/clojure
+Author: Rich Hickey
+License: EPL-1.0
+Description: The Clojure programming language.
+
+Name: org.clojure/core.memoize
+Author: Rich Hickey and contributors
+License: EPL-1.0
+Description: Memoization library for Clojure.
+
+Name: org.clojure/tools.logging
+Author: Rich Hickey and contributors
+License: EPL-1.0
+Description: Logging abstraction for Clojure.
+
+Name: org.lwjgl/lwjgl
+Author: Ioannis Tsakpinis
+License: BSD-3-Clause
+Description: Lightweight Java game and multimedia library.
+
+Name: org.suskalo/coffi
+Author: Joshua Suskalo
+License: EPL-1.0
+Description: Clojure library for reading Java class files.
+
+Name: progrock/progrock
+Author: James Reeves
+License: EPL-1.0
+Description: Progress bar library for Clojure.
+
+Name: quil/quil
+Author: Quil contributors
+License: EPL-2.0
+Description: Clojure creative coding library based on Processing.
