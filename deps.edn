@@ -15,20 +15,20 @@
         quil/quil {:mvn/version "4.3.1563"}
         com.code-disaster.steamworks4j/steamworks4j {:mvn/version "1.10.0"}
         com.code-disaster.steamworks4j/steamworks4j-lwjgl3 {:mvn/version "1.10.0"}
-        org.lwjgl/lwjgl {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-opengl {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-glfw {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-nuklear {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-nuklear$natives-linux {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-stb {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-openal {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-openal$natives-linux {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-assimp {:mvn/version "3.4.1"}
-        org.lwjgl/lwjgl-assimp$natives-linux {:mvn/version "3.4.1"}
+        org.lwjgl/lwjgl {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl$natives-linux {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-opengl {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-opengl$natives-linux {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-glfw {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-nuklear {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-nuklear$natives-linux {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-stb {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-openal {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-openal$natives-linux {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-assimp {:mvn/version "3.4.2"}
+        org.lwjgl/lwjgl-assimp$natives-linux {:mvn/version "3.4.2"}
         clj-python/libpython-clj {:mvn/version "2.026"}}
  :paths ["src/clj" "resources"]
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED" "-XX:+UseZGC"
