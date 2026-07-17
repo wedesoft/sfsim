@@ -19,6 +19,7 @@
     [sfsim.cubemap :as cubemap]
     [sfsim.image :refer :all]
     [sfsim.interpolate :refer :all]
+    [sfsim.model :refer (make-geometry-buffers destroy-geometry-buffers render-geometry render-lighting)]
     [sfsim.matrix :refer :all :as matrix]
     [sfsim.planet :refer :all :as planet]
     [sfsim.quaternion :as q]
@@ -602,6 +603,100 @@ float land_noise(vec3 point)
          "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.5     1.0  0   0   1   0   0   1   "clouds"
          "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     0.5  0   0   1   0   0   1   "shadow"
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  1.0  0.0     1.0  0   0   1   0   0   1   "noise")
+
+
+(def vertex-geometry-planet-mock
+"#version 450 core
+in vec3 point;
+in vec2 colorcoord;
+out VS_OUT
+{
+  vec4 camera_point;
+  vec4 normal;
+  vec2 texcoord;
+} vs_out;
+void main()
+{
+  vs_out.camera_point = vec4(0, 0, 0, 1);
+  vs_out.normal = vec4(0, 0, 1, 0);
+  vs_out.texcoord = colorcoord;
+  gl_Position = vec4(point, 1);
+}")
+
+
+(def fragment-geometry-planet-mock
+"#version 450 core
+uniform sampler2DArray day_night;
+uniform sampler2D normals;
+in VS_OUT
+{
+  vec4 camera_point;
+  vec4 normal;
+  vec2 texcoord;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float dist;
+layout (location = 1) out vec4 camera_normal;
+layout (location = 2) out vec4 diffuse_material;
+void main()
+{
+  camera_point = fs_in.camera_point;
+  camera_normal = fs_in.normal;
+  // vec3 day_color = texture(day_night, vec3(fs_in.texcoord, 0.25)).rgb;
+  // diffuse_material = vec4(day_color, 1.0);
+  diffuse_material = vec4(1.0, 1.0, 1.0, 1.0);
+}")
+
+
+(def fragment-lighting-mock
+"#version 450 core
+uniform mat4 camera_to_world;
+uniform sampler2D camera_point;
+uniform sampler2D camera_normal;
+uniform sampler2D diffuse_material;
+uniform vec3 light;
+uniform int width;
+uniform int height;
+out vec3 fragColor;
+void main()
+{
+  vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
+  vec4 normal = texture(camera_normal, uv);
+  vec4 point = texture(camera_point, uv);
+  vec3 diffuse_color = texture(diffuse_material, uv).rgb;
+  if (point.w > 0.0)
+    fragColor = diffuse_color;
+  else
+    fragColor = vec3(0.0);
+}")
+
+
+(tabular "Render geometry and lighting of planet surface"
+         (fact
+           (with-invisible-window
+             (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
+                                                  :sfsim.render/fragment [fragment-geometry-planet-mock])
+                   variables        ["point" 3 "colorcoord" 2 "surfacecoord" 2]
+                   vao              (make-vertex-array-object geometry-program planet-indices planet-vertices variables)
+                   radius           6378000
+                   camera-to-world  (translation-matrix (vec3 0 0 radius))
+                   geometry-buffers (make-geometry-buffers 256 256)
+                   lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                  :sfsim.render/fragment [fragment-lighting-mock])]
+               (render-geometry geometry-buffers
+                                (clear)
+                                (use-program geometry-program)
+                                (render-quads vao))
+               (render-to-image 256 256 false
+                                (render-lighting geometry-buffers lighting-program 0))
+               => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
+               (destroy-program lighting-program)
+               (destroy-geometry-buffers geometry-buffers)
+               (destroy-vertex-array-object vao)
+               (destroy-program geometry-program))))
+         ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "fragment"
+         )
 
 
 (def fragment-white-tree

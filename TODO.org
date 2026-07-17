@@ -24,6 +24,8 @@
     - [ ] use texture arrays for albedo, normal map, roughness map
     - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
     - [ ] introduce a geometry buffer for shadows
+  - [ ] add some animated gifs to Steam description and Github page
+  - [ ] add some starting positions and times to menu (unlock orbit and stuff)
   - [ ] launch guidance indicators, reinforcement learning launch physics
     - [-] rewards/penalties
       - [-] fix not-a-number problems
