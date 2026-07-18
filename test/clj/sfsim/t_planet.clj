@@ -642,9 +642,8 @@ void main()
 {
   camera_point = fs_in.camera_point;
   camera_normal = fs_in.normal;
-  // vec3 day_color = texture(day_night, vec3(fs_in.texcoord, 0.25)).rgb;
-  // diffuse_material = vec4(day_color, 1.0);
-  diffuse_material = vec4(1.0, 1.0, 1.0, 1.0);
+  vec3 day_color = texture(day_night, vec3(fs_in.texcoord, 0.25)).rgb;
+  diffuse_material = vec4(day_color, 1.0);
 }")
 
 
@@ -671,6 +670,15 @@ void main()
 }")
 
 
+(defn make-planet-geometry-textures
+  [program colors]
+  (let [day-night (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
+                                          [(slurp-image (str "test/clj/sfsim/fixtures/planet/" colors ".png"))
+                                           (slurp-image (str "test/clj/sfsim/fixtures/planet/night.png"))])]
+    (uniform-sampler program "day_night" 0)
+    {0 day-night}))
+
+
 (tabular "Render geometry and lighting of planet surface"
          (fact
            (with-invisible-window
@@ -681,21 +689,25 @@ void main()
                    radius           6378000
                    camera-to-world  (translation-matrix (vec3 0 0 radius))
                    geometry-buffers (make-geometry-buffers 256 256)
+                   planet-textures  (make-planet-geometry-textures geometry-program ?colors)
                    lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                                   :sfsim.render/fragment [fragment-lighting-mock])]
                (render-geometry geometry-buffers
                                 (clear)
                                 (use-program geometry-program)
+                                (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
                                 (render-lighting geometry-buffers lighting-program 0))
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
                (destroy-program lighting-program)
                (destroy-geometry-buffers geometry-buffers)
+               (doseq [tex (vals planet-textures)] (destroy-texture tex))
                (destroy-vertex-array-object vao)
                (destroy-program geometry-program))))
          ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "fragment"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "colors"
          )
 
 
