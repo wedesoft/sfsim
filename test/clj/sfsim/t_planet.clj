@@ -281,7 +281,7 @@ void main()
                                            +0.5  0.5 0.5 0.75 0.75 0.0 0.0]
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
-                                                        :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
+                                                        :sfsim.render/tess-evaluation [tess-evaluation-planet-geometry]
                                                         :sfsim.render/geometry [geometry-planet]
                                                         :sfsim.render/fragment [fragment-white])
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
