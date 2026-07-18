@@ -798,8 +798,8 @@ vec4 cloud_overlay(float depth);
 void main()
 {
   vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
-  vec4 normal = texture(camera_normal, uv);
   vec4 point = texture(camera_point, uv);
+  vec4 normal = texture(camera_normal, uv);
   vec3 diffuse_color = texture(diffuse_material, uv).rgb;
   if (point.w > 0.0) {
     vec3 world_point = (camera_to_world * point).xyz;

@@ -612,13 +612,11 @@ in vec2 colorcoord;
 out VS_OUT
 {
   vec4 camera_point;
-  vec4 normal;
   vec2 texcoord;
 } vs_out;
 void main()
 {
   vs_out.camera_point = vec4(0, 0, 0, 1);
-  vs_out.normal = vec4(0, 0, 1, 0);
   vs_out.texcoord = colorcoord;
   gl_Position = vec4(point, 1);
 }")
@@ -628,20 +626,19 @@ void main()
 "#version 450 core
 uniform sampler2DArray day_night;
 uniform sampler2D normals;
+uniform mat4 world_to_camera;
 in VS_OUT
 {
   vec4 camera_point;
-  vec4 normal;
   vec2 texcoord;
 } fs_in;
 layout (location = 0) out vec4 camera_point;
-layout (location = 1) out float dist;
 layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
 void main()
 {
   camera_point = fs_in.camera_point;
-  camera_normal = fs_in.normal;
+  camera_normal = vec4(texture(normals, fs_in.texcoord).xyz, 0);
   vec3 day_color = texture(day_night, vec3(fs_in.texcoord, 0.25)).rgb;
   diffuse_material = vec4(day_color, 1.0);
 }")
@@ -649,34 +646,44 @@ void main()
 
 (def fragment-lighting-mock
 "#version 450 core
-uniform mat4 camera_to_world;
 uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
 uniform sampler2D diffuse_material;
-uniform vec3 light;
+uniform mat4 camera_to_world;
 uniform int width;
 uniform int height;
-out vec3 fragColor;
+out vec4 fragColor;
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 void main()
 {
   vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
-  vec4 normal = texture(camera_normal, uv);
   vec4 point = texture(camera_point, uv);
+  vec4 normal = texture(camera_normal, uv);
   vec3 diffuse_color = texture(diffuse_material, uv).rgb;
-  if (point.w > 0.0)
-    fragColor = diffuse_color;
+  if (point.w > 0.0) {
+    vec3 world_point = (camera_to_world * point).xyz;
+    vec3 ambient_light = vec3(0, 0, 0);
+    vec3 light = vec3(1, 1, 1);
+    vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
+    fragColor = vec4(incoming, 1.0);
+  }
   else
-    fragColor = vec3(0.0);
+    fragColor = vec4(0, 0, 0, 1);
 }")
 
 
 (defn make-planet-geometry-textures
-  [program colors]
+  [program colors nx ny nz]
   (let [day-night (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
                                           [(slurp-image (str "test/clj/sfsim/fixtures/planet/" colors ".png"))
-                                           (slurp-image (str "test/clj/sfsim/fixtures/planet/night.png"))])]
+                                           (slurp-image (str "test/clj/sfsim/fixtures/planet/night.png"))])
+        normals   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                          #:sfsim.image{:width 2 :height 2
+                                                        :data (float-array (flatten (repeat 4 [nx ny nz])))})]
+    (use-program program)
     (uniform-sampler program "day_night" 0)
-    {0 day-night}))
+    (uniform-sampler program "normals" 1)
+    {0 day-night 1 normals}))
 
 
 (tabular "Render geometry and lighting of planet surface"
@@ -688,26 +695,35 @@ void main()
                    vao              (make-vertex-array-object geometry-program planet-indices planet-vertices variables)
                    radius           6378000
                    camera-to-world  (translation-matrix (vec3 0 0 radius))
+                   world-to-camera  (inverse camera-to-world)
                    geometry-buffers (make-geometry-buffers 256 256)
-                   planet-textures  (make-planet-geometry-textures geometry-program ?colors)
+                   planet-textures  (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz)
                    lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                  :sfsim.render/fragment [fragment-lighting-mock])]
+                                                  :sfsim.render/fragment [fragment-lighting-mock shaders/phong])]
                (render-geometry geometry-buffers
                                 (clear)
                                 (use-program geometry-program)
+                                (uniform-matrix4 geometry-program "world_to_camera" world-to-camera)
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
-                                (render-lighting geometry-buffers lighting-program 0))
+                                (render-lighting geometry-buffers lighting-program 0
+                                                 (uniform-float lighting-program "albedo" ?alb)
+                                                 (uniform-float lighting-program "amplification" 1.0)
+                                                 (uniform-float lighting-program "specular" 1.0)
+                                                 (uniform-vector3 lighting-program "origin" (vec3 0 0 0))
+                                                 (uniform-matrix4 lighting-program "camera_to_world" camera-to-world)
+                                                 (uniform-vector3 lighting-program "light_direction" (vec3 ?lx ?ly ?lz))))
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
                (destroy-program lighting-program)
                (destroy-geometry-buffers geometry-buffers)
                (doseq [tex (vals planet-textures)] (destroy-texture tex))
                (destroy-vertex-array-object vao)
                (destroy-program geometry-program))))
-         ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "fragment"
-         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "colors"
+         ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   PI   1.0  1   1   1   0   0   0     0    100  0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "fragment"
+         "pattern" PI   1.0  1   1   1   0   0   0     0    100  0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "colors"
+         "white"   PI   1.0  1   1   1   0   0   0     0    100  0   0.0   0.0     0.0     1.0  0   0   1   0.8 0   0.6 "normal"
          )
 
 
