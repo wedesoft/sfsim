@@ -586,23 +586,23 @@ float land_noise(vec3 point)
                                (destroy-program program)))
            => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33))
          ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "fragment"
-         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "colors"
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9  1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "albedo"
-         "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "amplify"
-         "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "transmit"
-         "pattern" PI   1.0  1   1   1   0.2 0.3 0.5   0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "ambient"
-         "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   0   "water"
-         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5  0.0  0.0     1.0  0   0   1   0   0   1   "reflection1"
-         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5  0.0  0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
-         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5  0.0  0.0     1.0  0   0  -1   0   0   1   "reflection3"
-         "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0.5 0.0  0.0  0.0     1.0  0   0   1   0   0   1   "scatter"
-         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.5     1.0  0   0   1   0   0   1   "clouds"
-         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     0.5  0   0   1   0   0   1   "shadow"
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  1.0  0.0     1.0  0   0   1   0   0   1   "noise")
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "fragment"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "colors"
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9  1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "albedo"
+         "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "amplify"
+         "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "transmit"
+         "pattern" PI   1.0  1   1   1   0.2 0.3 0.5   0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "ambient"
+         "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   0   "water"
+         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0   1   0   0   1   "reflection1"
+         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
+         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "reflection3"
+         "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.5     1.0  0   0   1   0   0   1   "clouds"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     0.5  0   0   1   0   0   1   "shadow"
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
 
 
 (def vertex-geometry-planet-mock
@@ -709,21 +709,24 @@ void main()
                (render-to-image 256 256 false
                                 (render-lighting geometry-buffers lighting-program 0
                                                  (uniform-float lighting-program "albedo" ?alb)
-                                                 (uniform-float lighting-program "amplification" 1.0)
+                                                 (uniform-float lighting-program "amplification" ?a)
                                                  (uniform-float lighting-program "specular" 1.0)
                                                  (uniform-vector3 lighting-program "origin" (vec3 0 0 0))
                                                  (uniform-matrix4 lighting-program "camera_to_world" camera-to-world)
                                                  (uniform-vector3 lighting-program "light_direction" (vec3 ?lx ?ly ?lz))))
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
+               ; => (is-image (str "/tmp/" ?result ".png") 0.33)
                (destroy-program lighting-program)
                (destroy-geometry-buffers geometry-buffers)
                (doseq [tex (vals planet-textures)] (destroy-texture tex))
                (destroy-vertex-array-object vao)
                (destroy-program geometry-program))))
          ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI   1.0  1   1   1   0   0   0     0    100  0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "fragment"
-         "pattern" PI   1.0  1   1   1   0   0   0     0    100  0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "colors"
-         "white"   PI   1.0  1   1   1   0   0   0     0    100  0   0.0   0.0     0.0     1.0  0   0   1   0.8 0   0.6 "normal"
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "fragment"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "colors"
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9  1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "albedo"
+         "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "amplify"
          )
 
 
