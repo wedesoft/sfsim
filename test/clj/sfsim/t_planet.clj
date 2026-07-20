@@ -626,7 +626,11 @@ void main()
 "#version 450 core
 uniform sampler2DArray day_night;
 uniform sampler2D normals;
+uniform sampler2D water;
+uniform float water_threshold;
+uniform vec3 water_color;
 uniform mat4 world_to_camera;
+uniform mat4 camera_to_world;
 in VS_OUT
 {
   vec4 camera_point;
@@ -637,10 +641,15 @@ layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
 void main()
 {
+  float wet = texture(water, fs_in.texcoord).r >= water_threshold ? 1.0 : 0.0;
   camera_point = fs_in.camera_point;
-  camera_normal = vec4(texture(normals, fs_in.texcoord).xyz, 0);
+  vec3 water_normal = normalize((camera_to_world * fs_in.camera_point).xyz);
+  vec3 land_normal = texture(normals, fs_in.texcoord).xyz;
+  vec3 normal = mix(land_normal, water_normal, wet);
+  camera_normal = world_to_camera * vec4(normal, 0);
   vec3 day_color = texture(day_night, vec3(fs_in.texcoord, 0.25)).rgb;
-  diffuse_material = vec4(day_color, 1.0);
+  vec3 color = mix(day_color, water_color, wet);
+  diffuse_material = vec4(color, 1.0);
 }")
 
 
@@ -676,17 +685,20 @@ void main()
 
 
 (defn make-planet-geometry-textures
-  [program colors nx ny nz]
+  [program colors nx ny nz water]
   (let [day-night     (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
                                               [(slurp-image (str "test/clj/sfsim/fixtures/planet/" colors ".png"))
                                                (slurp-image (str "test/clj/sfsim/fixtures/planet/night.png"))])
         normals       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width 2 :height 2
-                                                            :data (float-array (flatten (repeat 4 [nx ny nz])))})]
+                                                            :data (float-array (flatten (repeat 4 [nx ny nz])))})
+        water         (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                             #:sfsim.image{:width 2 :height 2 :data (byte-array (repeat 8 water))})]
     (use-program program)
     (uniform-sampler program "day_night" 0)
     (uniform-sampler program "normals" 1)
-    {0 day-night 1 normals}))
+    (uniform-sampler program "water" 2)
+    {0 day-night 1 normals 2 water}))
 
 
 (defn make-lighting-textures
@@ -715,7 +727,7 @@ void main()
                    camera-to-world   (inverse world-to-camera)
                    geometry-buffers  (make-geometry-buffers 256 256)
                    size              7
-                   planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz)
+                   planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz ?water)
                    lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                                    :sfsim.render/fragment [fragment-lighting-mock shaders/phong shaders/ray-shell
                                                                            fake-attenuation fake-transmittance fake-ray-scatter planet-and-cloud-shadows-mock
@@ -728,10 +740,13 @@ void main()
                                 (clear)
                                 (use-program geometry-program)
                                 (uniform-matrix4 geometry-program "world_to_camera" world-to-camera)
+                                (uniform-matrix4 geometry-program "camera_to_world" camera-to-world)
+                                (uniform-float geometry-program "water_threshold" 0.5)
+                                (uniform-vector3 geometry-program "water_color" (vec3 0.09 0.11 0.34))
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
-                                (render-lighting geometry-buffers lighting-program 2
+                                (render-lighting geometry-buffers lighting-program (count lighting-textures)
                                                  (uniform-int lighting-program "transmittance_height_size" size)
                                                  (uniform-int lighting-program "transmittance_elevation_size" size)
                                                  (uniform-int lighting-program "surface_height_size" size)
@@ -763,6 +778,7 @@ void main()
          "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "amplify"
          "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "transmit"
          "pattern" PI   1.0  1   1   1   0.2 0.3 0.5   0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "ambient"
+         "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   0   "water"
          )
 
 
