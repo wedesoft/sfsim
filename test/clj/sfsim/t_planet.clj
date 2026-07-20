@@ -665,7 +665,6 @@ void main()
     vec3 world_point = (camera_to_world * point).xyz;
     vec3 ambient_light = vec3(0, 0, 0);
     vec3 light = overall_shading(world_point);
-    light = vec3(1, 1, 1);
     vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
     fragColor = vec4(incoming, 1.0);
   }
@@ -726,7 +725,7 @@ void main()
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
-                                (render-lighting geometry-buffers lighting-program 0
+                                (render-lighting geometry-buffers lighting-program 1
                                                  (uniform-int lighting-program "transmittance_height_size" size)
                                                  (uniform-int lighting-program "transmittance_elevation_size" size)
                                                  (uniform-vector3 lighting-program "scatter" (vec3 0 0 0))
@@ -754,8 +753,7 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0.8 0   0.6 "normal"
          "white"   0.9  1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "albedo"
          "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "amplify"
-         ; "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "transmit"
-         )
+         "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "transmit")
 
 
 (def fragment-white-tree
