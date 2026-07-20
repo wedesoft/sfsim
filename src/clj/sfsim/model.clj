@@ -1117,24 +1117,27 @@
 (defn make-geometry-buffers
   "Initialize textures for storing geometry"
   [width height]
-  {::width           width
-   ::height          height
-   ::depth           (make-empty-depth-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp width height)
-   ::point-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
-   ::normal-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
-   ::diffuse-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)})
+  {::width            width
+   ::height           height
+   ::depth            (make-empty-depth-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp width height)
+   ::point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
+   ::normal-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
+   ::diffuse-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
+   ::specular-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_R32F width height)})
 
 
 (defmacro render-geometry
   "Perform rendering to geometry buffer"
   [geometry-buffers & body]
-  `(let [width#           (::width ~geometry-buffers)
-         height#          (::height ~geometry-buffers)
-         depth#           (::depth ~geometry-buffers)
-         point-texture#   (::point-texture ~geometry-buffers)
-         normal-texture#  (::normal-texture ~geometry-buffers)
-         diffuse-texture# (::diffuse-texture ~geometry-buffers)]
-     (framebuffer-render width# height# :sfsim.render/cullback depth# [point-texture# normal-texture# diffuse-texture#]
+  `(let [width#            (::width ~geometry-buffers)
+         height#           (::height ~geometry-buffers)
+         depth#            (::depth ~geometry-buffers)
+         point-texture#    (::point-texture ~geometry-buffers)
+         normal-texture#   (::normal-texture ~geometry-buffers)
+         diffuse-texture#  (::diffuse-texture ~geometry-buffers)
+         specular-texture# (::specular-texture ~geometry-buffers)]
+     (framebuffer-render width# height# :sfsim.render/cullback depth#
+                         [point-texture# normal-texture# diffuse-texture# specular-texture#]
                          ~@body)))
 
 
@@ -1145,15 +1148,17 @@
   (uniform-int program "height" height)
   (uniform-sampler program "camera_point" texture-offset)
   (uniform-sampler program "camera_normal" (inc ^long texture-offset))
-  (uniform-sampler program "diffuse_material" (+ ^long texture-offset 2)))
+  (uniform-sampler program "diffuse_material" (+ ^long texture-offset 2))
+  (uniform-sampler program "specular_material" (+ ^long texture-offset 3)))
 
 
 (defn use-geometry-buffer-textures
   "Set up geometry buffers for lighting pass"
-  [{::keys [point-texture normal-texture diffuse-texture]} texture-offset]
+  [{::keys [point-texture normal-texture diffuse-texture specular-texture]} texture-offset]
   (use-textures {texture-offset point-texture
                  (inc ^long texture-offset) normal-texture
-                 (+ ^long texture-offset 2) diffuse-texture}))
+                 (+ ^long texture-offset 2) diffuse-texture
+                 (+ ^long texture-offset 3) specular-texture}))
 
 
 (defmacro render-lighting
@@ -1173,11 +1178,12 @@
 
 (defn destroy-geometry-buffers
   "Destroy geometry buffer textures"
-  [{::keys [depth point-texture normal-texture diffuse-texture]}]
+  [{::keys [depth point-texture normal-texture diffuse-texture specular-texture]}]
   (destroy-texture depth)
   (destroy-texture point-texture)
+  (destroy-texture normal-texture)
   (destroy-texture diffuse-texture)
-  (destroy-texture normal-texture))
+  (destroy-texture specular-texture))
 
 
 (defn setup-model-geometry-uniforms

@@ -126,6 +126,7 @@ uniform mat4 camera_to_world;
 uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
 uniform sampler2D diffuse_material;
+uniform sampler2D specular_material;
 uniform vec3 light;
 uniform int width;
 uniform int height;
@@ -593,6 +594,7 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
 uniform sampler2D diffuse_material;
+uniform sampler2D specular_material;
 uniform mat4 camera_to_world;
 uniform vec3 light_direction;
 uniform int width;
@@ -784,6 +786,7 @@ vec4 cloud_overlay(float depth)
 uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
 uniform sampler2D diffuse_material;
+uniform sampler2D specular_material;
 uniform mat4 camera_to_world;
 uniform mat4 camera_to_shadow_map;
 uniform vec3 light_direction;

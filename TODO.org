@@ -14,6 +14,7 @@
     - [ ] move object shadow map position computation into scene shadow code
     - [ ] remove texture-offset and scene-shadow-matrices from render-scene
     - [ ] make RCS thrusters and main engine light sources
+    - [ ] add specular lighting to space craft
   - [ ] runway with lights and glide slope indicator
     - [ ] render cube mesh backfaces without depth writing but leave depth testing on
     - [ ] render geometry and shadow information (full resolution) and use in subsequent pass

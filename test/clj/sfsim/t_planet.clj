@@ -629,6 +629,7 @@ uniform sampler2D normals;
 uniform sampler2D water;
 uniform float water_threshold;
 uniform vec3 water_color;
+uniform float reflectivity;
 uniform mat4 world_to_camera;
 uniform mat4 camera_to_world;
 in VS_OUT
@@ -639,6 +640,7 @@ in VS_OUT
 layout (location = 0) out vec4 camera_point;
 layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
+layout (location = 3) out float specular_material;
 void main()
 {
   float wet = texture(water, fs_in.texcoord).r >= water_threshold ? 1.0 : 0.0;
@@ -650,6 +652,7 @@ void main()
   vec3 day_color = texture(day_night, vec3(fs_in.texcoord, 0.25)).rgb;
   vec3 color = mix(day_color, water_color, wet);
   diffuse_material = vec4(color, 1.0);
+  specular_material = wet * reflectivity;
 }")
 
 
@@ -658,6 +661,7 @@ void main()
 uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
 uniform sampler2D diffuse_material;
+uniform sampler2D specular_material;
 uniform mat4 camera_to_world;
 uniform vec3 light_direction;
 uniform int width;
@@ -672,11 +676,12 @@ void main()
   vec4 point = texture(camera_point, uv);
   vec4 normal = texture(camera_normal, uv);
   vec3 diffuse_color = texture(diffuse_material, uv).rgb;
+  float specular = texture(specular_material, uv).r;
   if (point.w > 0.0) {
     vec3 world_point = (camera_to_world * point).xyz;
     vec3 ambient_light = surface_radiance_function(world_point, light_direction);
     vec3 light = overall_shading(world_point);
-    vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
+    vec3 incoming = phong(ambient_light, light, world_point, (camera_to_world * normal).xyz, diffuse_color, specular);
     fragColor = vec4(incoming, 1.0);
   }
   else
@@ -724,7 +729,7 @@ void main()
   (uniform-vector3 program "scatter" (vec3 0 0 0))
   (uniform-float program "albedo" albedo)
   (uniform-float program "amplification" amplification)
-  (uniform-float program "specular" 1.0)
+  (uniform-float program "specular" 100.0)
   (uniform-float program "shadow" shadow)
   (uniform-float program "radius" radius)
   (uniform-float program "max_height" 100000.0)
@@ -761,12 +766,13 @@ void main()
                                 (uniform-matrix4 geometry-program "camera_to_world" camera-to-world)
                                 (uniform-float geometry-program "water_threshold" 0.5)
                                 (uniform-vector3 geometry-program "water_color" (vec3 0.09 0.11 0.34))
+                                (uniform-float geometry-program "reflectivity" ?refl)
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
                                 (render-lighting geometry-buffers lighting-program (count lighting-textures)
-                                                 (setup-lighting-uniforms lighting-program camera-to-world radius ?alb ?a ?shd ?dist
-                                                                          ?lx ?ly ?lz size)
+                                                 (setup-lighting-uniforms lighting-program camera-to-world radius ?alb
+                                                                          ?a ?shd ?dist ?lx ?ly ?lz size)
                                                  (use-textures lighting-textures)))
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
                ; => (is-image (str "/tmp/" ?result ".png") 0.33)
@@ -785,6 +791,9 @@ void main()
          "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "transmit"
          "pattern" PI   1.0  1   1   1   0.2 0.3 0.5   0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "ambient"
          "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   0   "water"
+         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0   1   0   0   1   "reflection1"
+         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
+         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "reflection3"
          )
 
 
