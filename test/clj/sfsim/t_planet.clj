@@ -715,6 +715,24 @@ void main()
     {0 transmittance 1 radiance}))
 
 
+(defn setup-lighting-uniforms
+  [program camera-to-world radius albedo amplification shadow dist lx ly lz size]
+  (uniform-int program "transmittance_height_size" size)
+  (uniform-int program "transmittance_elevation_size" size)
+  (uniform-int program "surface_height_size" size)
+  (uniform-int program "surface_sun_elevation_size" size)
+  (uniform-vector3 program "scatter" (vec3 0 0 0))
+  (uniform-float program "albedo" albedo)
+  (uniform-float program "amplification" amplification)
+  (uniform-float program "specular" 1.0)
+  (uniform-float program "shadow" shadow)
+  (uniform-float program "radius" radius)
+  (uniform-float program "max_height" 100000.0)
+  (uniform-vector3 program "origin" (vec3 0 0 (+ radius dist)))
+  (uniform-matrix4 program "camera_to_world" camera-to-world)
+  (uniform-vector3 program "light_direction" (vec3 lx ly lz)))
+
+
 (tabular "Render geometry and lighting of planet surface"
          (fact
            (with-invisible-window
@@ -747,20 +765,8 @@ void main()
                                 (render-quads vao))
                (render-to-image 256 256 false
                                 (render-lighting geometry-buffers lighting-program (count lighting-textures)
-                                                 (uniform-int lighting-program "transmittance_height_size" size)
-                                                 (uniform-int lighting-program "transmittance_elevation_size" size)
-                                                 (uniform-int lighting-program "surface_height_size" size)
-                                                 (uniform-int lighting-program "surface_sun_elevation_size" size)
-                                                 (uniform-vector3 lighting-program "scatter" (vec3 0 0 0))
-                                                 (uniform-float lighting-program "albedo" ?alb)
-                                                 (uniform-float lighting-program "amplification" ?a)
-                                                 (uniform-float lighting-program "specular" 1.0)
-                                                 (uniform-float lighting-program "shadow" ?shd)
-                                                 (uniform-float lighting-program "radius" radius)
-                                                 (uniform-float lighting-program "max_height" 100000.0)
-                                                 (uniform-vector3 lighting-program "origin" (vec3 0 0 (+ radius ?dist)))
-                                                 (uniform-matrix4 lighting-program "camera_to_world" camera-to-world)
-                                                 (uniform-vector3 lighting-program "light_direction" (vec3 ?lx ?ly ?lz))
+                                                 (setup-lighting-uniforms lighting-program camera-to-world radius ?alb ?a ?shd ?dist
+                                                                          ?lx ?ly ?lz size)
                                                  (use-textures lighting-textures)))
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
                ; => (is-image (str "/tmp/" ?result ".png") 0.33)
