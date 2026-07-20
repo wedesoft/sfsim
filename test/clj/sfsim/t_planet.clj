@@ -650,11 +650,13 @@ uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
 uniform sampler2D diffuse_material;
 uniform mat4 camera_to_world;
+uniform vec3 light_direction;
 uniform int width;
 uniform int height;
 out vec4 fragColor;
 vec3 overall_shading(vec3 world_point);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 void main()
 {
   vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
@@ -663,7 +665,7 @@ void main()
   vec3 diffuse_color = texture(diffuse_material, uv).rgb;
   if (point.w > 0.0) {
     vec3 world_point = (camera_to_world * point).xyz;
-    vec3 ambient_light = vec3(0, 0, 0);
+    vec3 ambient_light = surface_radiance_function(world_point, light_direction);
     vec3 light = overall_shading(world_point);
     vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
     fragColor = vec4(incoming, 1.0);
@@ -688,13 +690,17 @@ void main()
 
 
 (defn make-lighting-textures
-  [program tr tg tb size]
+  [program tr tg tb ar ag ab size]
   (let [transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width size :height size
-                                                            :data (float-array (flatten (repeat (* size size) [tr tg tb])))})]
+                                                            :data (float-array (flatten (repeat (* size size) [tr tg tb])))})
+        radiance      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                              #:sfsim.image{:width size :height size
+                                                            :data (float-array (flatten (repeat (* size size) [ar ag ab])))})]
     (use-program program)
     (uniform-sampler program "transmittance" 0)
-    {0 transmittance}))
+    (uniform-sampler program "surface_radiance" 1)
+    {0 transmittance 1 radiance}))
 
 
 (tabular "Render geometry and lighting of planet surface"
@@ -713,11 +719,11 @@ void main()
                    lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                                    :sfsim.render/fragment [fragment-lighting-mock shaders/phong shaders/ray-shell
                                                                            fake-attenuation fake-transmittance fake-ray-scatter planet-and-cloud-shadows-mock
-                                                                           atmosphere/transmittance-point
+                                                                           atmosphere/transmittance-point surface-radiance-function
                                                                            shaders/is-above-horizon shaders/limit-interval (last atmosphere/attenuation-point)
                                                                            (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
                                                                            (last atmosphere/attenuation-track)])
-                   lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb size)]
+                   lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb ?ar ?ag ?ab size)]
                (render-geometry geometry-buffers
                                 (clear)
                                 (use-program geometry-program)
@@ -725,9 +731,11 @@ void main()
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
-                                (render-lighting geometry-buffers lighting-program 1
+                                (render-lighting geometry-buffers lighting-program 2
                                                  (uniform-int lighting-program "transmittance_height_size" size)
                                                  (uniform-int lighting-program "transmittance_elevation_size" size)
+                                                 (uniform-int lighting-program "surface_height_size" size)
+                                                 (uniform-int lighting-program "surface_sun_elevation_size" size)
                                                  (uniform-vector3 lighting-program "scatter" (vec3 0 0 0))
                                                  (uniform-float lighting-program "albedo" ?alb)
                                                  (uniform-float lighting-program "amplification" ?a)
@@ -753,7 +761,9 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0.8 0   0.6 "normal"
          "white"   0.9  1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "albedo"
          "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "amplify"
-         "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "transmit")
+         "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "transmit"
+         "pattern" PI   1.0  1   1   1   0.2 0.3 0.5   0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "ambient"
+         )
 
 
 (def fragment-white-tree
