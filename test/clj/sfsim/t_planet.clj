@@ -596,7 +596,7 @@ float land_noise(vec3 point)
          "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   0   "water"
          "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0   1   0   0   1   "reflection1"
          "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
-         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "reflection3"
+         ; "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "reflection3"
          "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
@@ -609,6 +609,7 @@ float land_noise(vec3 point)
 "#version 450 core
 in vec3 point;
 in vec2 colorcoord;
+uniform float distance;
 out VS_OUT
 {
   vec4 camera_point;
@@ -616,7 +617,7 @@ out VS_OUT
 } vs_out;
 void main()
 {
-  vs_out.camera_point = vec4(0, 0, 0, 1);
+  vs_out.camera_point = vec4(0, 0, -distance, 1);
   vs_out.texcoord = colorcoord;
   gl_Position = vec4(point, 1);
 }")
@@ -746,8 +747,8 @@ void main()
                    variables         ["point" 3 "colorcoord" 2 "surfacecoord" 2]
                    vao               (make-vertex-array-object geometry-program planet-indices planet-vertices variables)
                    radius            6378000.0
-                   world-to-camera   (transformation-matrix (eye 3) (vec3 0 0 (- 0 radius ?dist)))
-                   camera-to-world   (inverse world-to-camera)
+                   camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
+                   world-to-camera   (inverse camera-to-world)
                    geometry-buffers  (make-geometry-buffers 256 256)
                    size              7
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz ?water)
@@ -762,6 +763,7 @@ void main()
                (render-geometry geometry-buffers
                                 (clear)
                                 (use-program geometry-program)
+                                (uniform-float geometry-program "distance" (double ?dist))
                                 (uniform-matrix4 geometry-program "world_to_camera" world-to-camera)
                                 (uniform-matrix4 geometry-program "camera_to_world" camera-to-world)
                                 (uniform-float geometry-program "water_threshold" 0.5)
