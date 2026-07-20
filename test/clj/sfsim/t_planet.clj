@@ -653,6 +653,7 @@ uniform mat4 camera_to_world;
 uniform int width;
 uniform int height;
 out vec4 fragColor;
+vec3 overall_shading(vec3 world_point);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 void main()
 {
@@ -663,7 +664,8 @@ void main()
   if (point.w > 0.0) {
     vec3 world_point = (camera_to_world * point).xyz;
     vec3 ambient_light = vec3(0, 0, 0);
-    vec3 light = vec3(1, 1, 1);
+    vec3 light = overall_shading(world_point);
+    light = vec3(1, 1, 1);
     vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
     fragColor = vec4(incoming, 1.0);
   }
@@ -674,32 +676,49 @@ void main()
 
 (defn make-planet-geometry-textures
   [program colors nx ny nz]
-  (let [day-night (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
-                                          [(slurp-image (str "test/clj/sfsim/fixtures/planet/" colors ".png"))
-                                           (slurp-image (str "test/clj/sfsim/fixtures/planet/night.png"))])
-        normals   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                          #:sfsim.image{:width 2 :height 2
-                                                        :data (float-array (flatten (repeat 4 [nx ny nz])))})]
+  (let [day-night     (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
+                                              [(slurp-image (str "test/clj/sfsim/fixtures/planet/" colors ".png"))
+                                               (slurp-image (str "test/clj/sfsim/fixtures/planet/night.png"))])
+        normals       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                              #:sfsim.image{:width 2 :height 2
+                                                            :data (float-array (flatten (repeat 4 [nx ny nz])))})]
     (use-program program)
     (uniform-sampler program "day_night" 0)
     (uniform-sampler program "normals" 1)
     {0 day-night 1 normals}))
 
 
+(defn make-lighting-textures
+  [program tr tg tb size]
+  (let [transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                              #:sfsim.image{:width size :height size
+                                                            :data (float-array (flatten (repeat (* size size) [tr tg tb])))})]
+    (use-program program)
+    (uniform-sampler program "transmittance" 0)
+    {0 transmittance}))
+
+
 (tabular "Render geometry and lighting of planet surface"
          (fact
            (with-invisible-window
-             (let [geometry-program (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
-                                                  :sfsim.render/fragment [fragment-geometry-planet-mock])
-                   variables        ["point" 3 "colorcoord" 2 "surfacecoord" 2]
-                   vao              (make-vertex-array-object geometry-program planet-indices planet-vertices variables)
-                   radius           6378000
-                   camera-to-world  (translation-matrix (vec3 0 0 radius))
-                   world-to-camera  (inverse camera-to-world)
-                   geometry-buffers (make-geometry-buffers 256 256)
-                   planet-textures  (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz)
-                   lighting-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                  :sfsim.render/fragment [fragment-lighting-mock shaders/phong])]
+             (let [geometry-program  (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
+                                                   :sfsim.render/fragment [fragment-geometry-planet-mock])
+                   variables         ["point" 3 "colorcoord" 2 "surfacecoord" 2]
+                   vao               (make-vertex-array-object geometry-program planet-indices planet-vertices variables)
+                   radius            6378000.0
+                   world-to-camera   (transformation-matrix (eye 3) (vec3 0 0 (- 0 radius ?dist)))
+                   camera-to-world   (inverse world-to-camera)
+                   geometry-buffers  (make-geometry-buffers 256 256)
+                   size              7
+                   planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz)
+                   lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                   :sfsim.render/fragment [fragment-lighting-mock shaders/phong shaders/ray-shell
+                                                                           fake-attenuation fake-transmittance fake-ray-scatter planet-and-cloud-shadows-mock
+                                                                           atmosphere/transmittance-point
+                                                                           shaders/is-above-horizon shaders/limit-interval (last atmosphere/attenuation-point)
+                                                                           (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
+                                                                           (last atmosphere/attenuation-track)])
+                   lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb size)]
                (render-geometry geometry-buffers
                                 (clear)
                                 (use-program geometry-program)
@@ -708,17 +727,25 @@ void main()
                                 (render-quads vao))
                (render-to-image 256 256 false
                                 (render-lighting geometry-buffers lighting-program 0
+                                                 (uniform-int lighting-program "transmittance_height_size" size)
+                                                 (uniform-int lighting-program "transmittance_elevation_size" size)
+                                                 (uniform-vector3 lighting-program "scatter" (vec3 0 0 0))
                                                  (uniform-float lighting-program "albedo" ?alb)
                                                  (uniform-float lighting-program "amplification" ?a)
                                                  (uniform-float lighting-program "specular" 1.0)
-                                                 (uniform-vector3 lighting-program "origin" (vec3 0 0 0))
+                                                 (uniform-float lighting-program "shadow" ?shd)
+                                                 (uniform-float lighting-program "radius" radius)
+                                                 (uniform-float lighting-program "max_height" 100000.0)
+                                                 (uniform-vector3 lighting-program "origin" (vec3 0 0 (+ radius ?dist)))
                                                  (uniform-matrix4 lighting-program "camera_to_world" camera-to-world)
-                                                 (uniform-vector3 lighting-program "light_direction" (vec3 ?lx ?ly ?lz))))
+                                                 (uniform-vector3 lighting-program "light_direction" (vec3 ?lx ?ly ?lz))
+                                                 (use-textures lighting-textures)))
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
                ; => (is-image (str "/tmp/" ?result ".png") 0.33)
                (destroy-program lighting-program)
                (destroy-geometry-buffers geometry-buffers)
                (doseq [tex (vals planet-textures)] (destroy-texture tex))
+               (doseq [tex (vals lighting-textures)] (destroy-texture tex))
                (destroy-vertex-array-object vao)
                (destroy-program geometry-program))))
          ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
@@ -727,6 +754,7 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0.8 0   0.6 "normal"
          "white"   0.9  1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "albedo"
          "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "amplify"
+         ; "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "transmit"
          )
 
 
