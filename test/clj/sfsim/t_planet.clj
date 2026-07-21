@@ -631,8 +631,13 @@ uniform sampler2D water;
 uniform float water_threshold;
 uniform vec3 water_color;
 uniform float reflectivity;
+uniform float land_noise_scale;
+uniform float land_noise_strength;
+uniform float dawn_start;
+uniform float dawn_end;
 uniform mat4 world_to_camera;
 uniform mat4 camera_to_world;
+float land_noise(vec3 point);
 in VS_OUT
 {
   vec4 camera_point;
@@ -646,11 +651,13 @@ void main()
 {
   float wet = texture(water, fs_in.texcoord).r >= water_threshold ? 1.0 : 0.0;
   camera_point = fs_in.camera_point;
-  vec3 water_normal = normalize((camera_to_world * fs_in.camera_point).xyz);
+  vec4 world_point = camera_to_world * fs_in.camera_point;
+  vec3 water_normal = normalize(world_point.xyz);
   vec3 land_normal = texture(normals, fs_in.texcoord).xyz;
   vec3 normal = mix(land_normal, water_normal, wet);
   camera_normal = world_to_camera * vec4(normal, 0);
-  vec3 day_color = texture(day_night, vec3(fs_in.texcoord, 0.25)).rgb;
+  float land_modulation = 1.0 - land_noise_strength * land_noise(world_point.xyz / land_noise_scale);
+  vec3 day_color = texture(day_night, vec3(fs_in.texcoord, 0.25)).rgb * land_modulation;
   vec3 color = mix(day_color, water_color, wet);
   diffuse_material = vec4(color, 1.0);
   specular_material = wet * reflectivity;
@@ -730,14 +737,21 @@ void main()
 
 
 (defn setup-planet-geometry-uniforms
-  [program camera-to-world distance reflectivity]
+  [program camera-to-world distance reflectivity land-noise]
   (let [world-to-camera (inverse camera-to-world)]
+    (clear)
+    (use-program program)
     (uniform-float program "distance" (double distance))
     (uniform-matrix4 program "world_to_camera" world-to-camera)
     (uniform-matrix4 program "camera_to_world" camera-to-world)
     (uniform-float program "water_threshold" 0.5)
     (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34))
-    (uniform-float program "reflectivity" reflectivity)))
+    (uniform-float program "reflectivity" reflectivity)
+    (uniform-float program "land_noise_value" land-noise)
+    (uniform-float program "land_noise_scale" 1.0)
+    (uniform-float program "land_noise_strength" 0.5)
+    (uniform-float program "dawn_start" -0.05)
+    (uniform-float program "dawn_end" 0.05)))
 
 
 (defn setup-lighting-uniforms
@@ -771,22 +785,30 @@ void main()
                                         (last atmosphere/attenuation-track)]))
 
 
+(defn make-planet-geometry-program
+  []
+  (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
+                :sfsim.render/fragment [fragment-geometry-planet-mock land-noise-mock]))
+
+
+(defn make-planet-vertex-array-object
+  [geometry-program]
+  (let [variables ["point" 3 "colorcoord" 2 "surfacecoord" 2] ]
+    (make-vertex-array-object geometry-program planet-indices planet-vertices variables)))
+
+
 (tabular "Render geometry and lighting of planet surface"
          (fact
            (with-invisible-window
-             (let [geometry-program  (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
-                                                   :sfsim.render/fragment [fragment-geometry-planet-mock])
-                   variables         ["point" 3 "colorcoord" 2 "surfacecoord" 2]
-                   vao               (make-vertex-array-object geometry-program planet-indices planet-vertices variables)
+             (let [geometry-program  (make-planet-geometry-program)
+                   vao               (make-planet-vertex-array-object geometry-program)
                    camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
                    geometry-buffers  (make-geometry-buffers 256 256)
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz ?water)
                    lighting-program  (make-lighting-program)
                    lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb ?ar ?ag ?ab ?s 7)]
                (render-geometry geometry-buffers
-                                (clear)
-                                (use-program geometry-program)
-                                (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist ?refl)
+                                (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist ?refl ?lnoise)
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
@@ -819,7 +841,7 @@ void main()
          "white"   PI   0.5  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
          "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.5     1.0  0   0   1   0   0   1   "clouds"
          "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     0.5  0   0   1   0   0   1   "shadow"
-         )
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
 
 
 (def fragment-white-tree
