@@ -574,7 +574,6 @@ float land_noise(vec3 point)
                              (let [program   (make-mocked-planet-program)
                                    variables ["point" 3 "colorcoord" 2 "surfacecoord" 2]
                                    vao       (make-vertex-array-object program planet-indices planet-vertices variables)
-                                   radius    6378000
                                    size      7
                                    textures  (planet-textures ?colors ?nx ?ny ?nz ?tr ?tg ?tb ?s ?ar ?ag ?ab ?water size)]
                                (clear (vec3 0 0 0))
@@ -731,13 +730,14 @@ void main()
 
 
 (defn setup-planet-geometry-uniforms
-  [program world-to-camera camera-to-world distance reflectivity]
-  (uniform-float program "distance" (double distance))
-  (uniform-matrix4 program "world_to_camera" world-to-camera)
-  (uniform-matrix4 program "camera_to_world" camera-to-world)
-  (uniform-float program "water_threshold" 0.5)
-  (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34))
-  (uniform-float program "reflectivity" reflectivity))
+  [program camera-to-world distance reflectivity]
+  (let [world-to-camera (inverse camera-to-world)]
+    (uniform-float program "distance" (double distance))
+    (uniform-matrix4 program "world_to_camera" world-to-camera)
+    (uniform-matrix4 program "camera_to_world" camera-to-world)
+    (uniform-float program "water_threshold" 0.5)
+    (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34))
+    (uniform-float program "reflectivity" reflectivity)))
 
 
 (defn setup-lighting-uniforms
@@ -778,18 +778,15 @@ void main()
                                                    :sfsim.render/fragment [fragment-geometry-planet-mock])
                    variables         ["point" 3 "colorcoord" 2 "surfacecoord" 2]
                    vao               (make-vertex-array-object geometry-program planet-indices planet-vertices variables)
-                   radius            6378000.0
                    camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
-                   world-to-camera   (inverse camera-to-world)
                    geometry-buffers  (make-geometry-buffers 256 256)
-                   size              7
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz ?water)
                    lighting-program  (make-lighting-program)
-                   lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb ?ar ?ag ?ab ?s size)]
+                   lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb ?ar ?ag ?ab ?s 7)]
                (render-geometry geometry-buffers
                                 (clear)
                                 (use-program geometry-program)
-                                (setup-planet-geometry-uniforms geometry-program world-to-camera camera-to-world ?dist ?refl)
+                                (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist ?refl)
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
@@ -821,6 +818,7 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   0.5  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
          "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.5     1.0  0   0   1   0   0   1   "clouds"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     0.5  0   0   1   0   0   1   "shadow"
          )
 
 
