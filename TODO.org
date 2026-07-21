@@ -4,6 +4,7 @@
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
   - [ ] use modern rendering pipeline
+    - [ ] emissive or ambient buffer
     - [ ] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
     - [ ] decal pass: overwrite/blend colors and normals
     - [ ] shadow pass (separate render): render shadow map from light source view
