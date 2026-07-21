@@ -673,6 +673,7 @@ vec3 overall_shading(vec3 world_point);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 vec4 attenuation_point(vec3 point, vec4 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
+vec4 cloud_overlay(float depth);
 void main()
 {
   vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
@@ -686,7 +687,8 @@ void main()
     vec3 light = overall_shading(world_point);
     vec3 incoming = phong(ambient_light, light, world_point, (camera_to_world * normal).xyz, diffuse_color, specular);
     incoming = attenuation_point(world_point, vec4(incoming, 1.0)).rgb;
-    fragColor = vec4(incoming, 1.0);
+    vec4 cloud_scatter = cloud_overlay(length(point.xyz));
+    fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
   }
   else
     fragColor = vec4(0, 0, 0, 1);
@@ -739,7 +741,7 @@ void main()
 
 
 (defn setup-lighting-uniforms
-  [program camera-to-world radius albedo amplification shadow dist lx ly lz scatter size]
+  [program camera-to-world radius albedo amplification shadow dist lx ly lz scatter clouds size]
   (uniform-int program "transmittance_height_size" size)
   (uniform-int program "transmittance_elevation_size" size)
   (uniform-int program "surface_height_size" size)
@@ -749,6 +751,7 @@ void main()
   (uniform-float program "amplification" amplification)
   (uniform-float program "specular" 100.0)
   (uniform-float program "shadow" shadow)
+  (uniform-float program "clouds" clouds)
   (uniform-float program "radius" radius)
   (uniform-float program "max_height" 100000.0)
   (uniform-vector3 program "origin" (vec3 0 0 (+ radius dist)))
@@ -762,7 +765,7 @@ void main()
   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                 :sfsim.render/fragment [fragment-lighting-mock shaders/phong shaders/ray-shell
                                         fake-attenuation fake-transmittance fake-ray-scatter planet-and-cloud-shadows-mock
-                                        atmosphere/transmittance-point surface-radiance-function
+                                        atmosphere/transmittance-point surface-radiance-function cloud-overlay-mock
                                         shaders/is-above-horizon shaders/limit-interval (last atmosphere/attenuation-point)
                                         (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
                                         (last atmosphere/attenuation-track)]))
@@ -792,7 +795,7 @@ void main()
                (render-to-image 256 256 false
                                 (render-lighting geometry-buffers lighting-program (count lighting-textures)
                                                  (setup-lighting-uniforms lighting-program camera-to-world radius ?alb
-                                                                          ?a ?shd ?dist ?lx ?ly ?lz ?s size)
+                                                                          ?a ?shd ?dist ?lx ?ly ?lz ?s ?clouds size)
                                                  (use-textures lighting-textures)))
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
                ; => (is-image (str "/tmp/" ?result ".png") 0.33)
@@ -817,6 +820,7 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   0.5  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.5     1.0  0   0   1   0   0   1   "clouds"
          )
 
 
