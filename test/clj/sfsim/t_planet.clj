@@ -78,7 +78,7 @@
 
 
 (def fragment-white
-  "#version 450 core
+"#version 450 core
 out vec3 fragColor;
 void main()
 {
@@ -396,7 +396,7 @@ void main()
 
 
 (def fake-transmittance
-  "#version 450 core
+"#version 450 core
 vec3 transmittance_track(vec3 p, vec3 q)
 {
   float dist = distance(p, q);
@@ -407,7 +407,7 @@ vec3 transmittance_track(vec3 p, vec3 q)
 
 
 (def fake-ray-scatter
-  "#version 450 core
+"#version 450 core
 uniform vec3 scatter;
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
@@ -429,7 +429,7 @@ vec4 attenuate(vec3 light_direction, vec3 start, vec3 point, vec4 incoming)
 
 
 (def opacity-lookup-mock
-  "#version 450 core
+"#version 450 core
 float opacity_cascade_lookup(vec4 point)
 {
   return 1.0;
@@ -437,7 +437,7 @@ float opacity_cascade_lookup(vec4 point)
 
 
 (def sampling-offset-mock
-  "#version 450 core
+"#version 450 core
 float sampling_offset()
 {
   return 0.5;
@@ -445,7 +445,7 @@ float sampling_offset()
 
 
 (def cloud-overlay-mock
-  "#version 450 core
+"#version 450 core
 uniform float clouds;
 vec4 cloud_overlay(float depth)
 {
@@ -454,7 +454,7 @@ vec4 cloud_overlay(float depth)
 
 
 (def planet-and-cloud-shadows-mock
-  "#version 450 core
+"#version 450 core
 uniform float shadow;
 float planet_and_cloud_shadows(vec4 point)
 {
@@ -463,7 +463,7 @@ float planet_and_cloud_shadows(vec4 point)
 
 
 (def land-noise-mock
-  "#version 450 core
+"#version 450 core
 uniform float land_noise_value;
 float land_noise(vec3 point)
 {
@@ -670,6 +670,7 @@ uniform int height;
 out vec4 fragColor;
 vec3 overall_shading(vec3 world_point);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec4 attenuation_point(vec3 point, vec4 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 void main()
 {
@@ -683,6 +684,7 @@ void main()
     vec3 ambient_light = surface_radiance_function(world_point, light_direction);
     vec3 light = overall_shading(world_point);
     vec3 incoming = phong(ambient_light, light, world_point, (camera_to_world * normal).xyz, diffuse_color, specular);
+    incoming = attenuation_point(world_point, vec4(incoming, 1.0)).rgb;
     fragColor = vec4(incoming, 1.0);
   }
   else
@@ -719,6 +721,16 @@ void main()
     (uniform-sampler program "transmittance" 0)
     (uniform-sampler program "surface_radiance" 1)
     {0 transmittance 1 radiance}))
+
+
+(defn setup-planet-geometry-uniforms
+  [program world-to-camera camera-to-world distance reflectivity]
+  (uniform-float program "distance" (double distance))
+  (uniform-matrix4 program "world_to_camera" world-to-camera)
+  (uniform-matrix4 program "camera_to_world" camera-to-world)
+  (uniform-float program "water_threshold" 0.5)
+  (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34))
+  (uniform-float program "reflectivity" reflectivity))
 
 
 (defn setup-lighting-uniforms
@@ -763,12 +775,7 @@ void main()
                (render-geometry geometry-buffers
                                 (clear)
                                 (use-program geometry-program)
-                                (uniform-float geometry-program "distance" (double ?dist))
-                                (uniform-matrix4 geometry-program "world_to_camera" world-to-camera)
-                                (uniform-matrix4 geometry-program "camera_to_world" camera-to-world)
-                                (uniform-float geometry-program "water_threshold" 0.5)
-                                (uniform-vector3 geometry-program "water_color" (vec3 0.09 0.11 0.34))
-                                (uniform-float geometry-program "reflectivity" ?refl)
+                                (setup-planet-geometry-uniforms geometry-program world-to-camera camera-to-world ?dist ?refl)
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
@@ -796,11 +803,12 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0   1   0   0   1   "reflection1"
          "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
          "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "reflection3"
+         "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          )
 
 
 (def fragment-white-tree
-  "#version 450 core
+"#version 450 core
 in GEO_OUT
 {
   vec2 colorcoord;
