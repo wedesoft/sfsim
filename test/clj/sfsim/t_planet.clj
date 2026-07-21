@@ -501,7 +501,7 @@ float land_noise(vec3 point)
 
 
 (defn setup-uniforms
-  [program size ?albedo ?refl ?lnoise ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
+  [program size ?albedo ?refl ?lnoise ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?s ?a]
   ;; Moved this code out of the test below, otherwise method is too large
   (use-program program)
   (uniform-int program "height_size" size)
@@ -521,6 +521,7 @@ float land_noise(vec3 point)
   (uniform-float program "shadow" ?shd)
   (uniform-float program "radius" radius)
   (uniform-float program "z_near" 0.0)
+  (uniform-vector3 program "scatter" (vec3 ?s ?s ?s))
   (uniform-vector3 program "origin" (vec3 0 0 (+ ?radius ?dist)))
   (uniform-matrix4 program "world_to_camera" (transformation-matrix (eye 3) (vec3 0 0 (- 0 ?radius ?dist))))
   (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
@@ -578,7 +579,7 @@ float land_noise(vec3 point)
                                    textures  (planet-textures ?colors ?nx ?ny ?nz ?tr ?tg ?tb ?s ?ar ?ag ?ab ?water size)]
                                (clear (vec3 0 0 0))
                                (setup-static-uniforms program)
-                               (setup-uniforms program size ?alb ?refl ?lnoise ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
+                               (setup-uniforms program size ?alb ?refl ?lnoise ?clouds ?shd radius ?dist ?lx ?ly ?lz ?s ?a)
                                (use-textures (zipmap (range) textures))
                                (render-quads vao)
                                (doseq [tex textures] (destroy-texture tex))
@@ -599,7 +600,7 @@ float land_noise(vec3 point)
          ; "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "reflection3"
          "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
+         "white"   PI   0.5  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
          "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.5     1.0  0   0   1   0   0   1   "clouds"
          "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     0.5  0   0   1   0   0   1   "shadow"
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
@@ -710,17 +711,21 @@ void main()
 
 
 (defn make-lighting-textures
-  [program tr tg tb ar ag ab size]
+  [program tr tg tb ar ag ab scatter size]
   (let [transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width size :height size
                                                             :data (float-array (flatten (repeat (* size size) [tr tg tb])))})
         radiance      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width size :height size
-                                                            :data (float-array (flatten (repeat (* size size) [ar ag ab])))})]
+                                                            :data (float-array (flatten (repeat (* size size) [ar ag ab])))})
+        ray-scatter   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                              #:sfsim.image{:width (* size size) :height (* size size)
+                                                            :data (float-array (repeat (* size size size size 3) scatter))})]
     (use-program program)
     (uniform-sampler program "transmittance" 0)
     (uniform-sampler program "surface_radiance" 1)
-    {0 transmittance 1 radiance}))
+    (uniform-sampler program "ray_scatter" 2)
+    {0 transmittance 1 radiance 2 ray-scatter}))
 
 
 (defn setup-planet-geometry-uniforms
@@ -734,7 +739,7 @@ void main()
 
 
 (defn setup-lighting-uniforms
-  [program camera-to-world radius albedo amplification shadow dist lx ly lz size]
+  [program camera-to-world radius albedo amplification shadow dist lx ly lz scatter size]
   (uniform-int program "transmittance_height_size" size)
   (uniform-int program "transmittance_elevation_size" size)
   (uniform-int program "surface_height_size" size)
@@ -748,7 +753,19 @@ void main()
   (uniform-float program "max_height" 100000.0)
   (uniform-vector3 program "origin" (vec3 0 0 (+ radius dist)))
   (uniform-matrix4 program "camera_to_world" camera-to-world)
-  (uniform-vector3 program "light_direction" (vec3 lx ly lz)))
+  (uniform-vector3 program "light_direction" (vec3 lx ly lz))
+  (uniform-vector3 program "scatter" (vec3 scatter scatter scatter)))
+
+
+(defn make-lighting-program
+  []
+  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                :sfsim.render/fragment [fragment-lighting-mock shaders/phong shaders/ray-shell
+                                        fake-attenuation fake-transmittance fake-ray-scatter planet-and-cloud-shadows-mock
+                                        atmosphere/transmittance-point surface-radiance-function
+                                        shaders/is-above-horizon shaders/limit-interval (last atmosphere/attenuation-point)
+                                        (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
+                                        (last atmosphere/attenuation-track)]))
 
 
 (tabular "Render geometry and lighting of planet surface"
@@ -764,14 +781,8 @@ void main()
                    geometry-buffers  (make-geometry-buffers 256 256)
                    size              7
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz ?water)
-                   lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                   :sfsim.render/fragment [fragment-lighting-mock shaders/phong shaders/ray-shell
-                                                                           fake-attenuation fake-transmittance fake-ray-scatter planet-and-cloud-shadows-mock
-                                                                           atmosphere/transmittance-point surface-radiance-function
-                                                                           shaders/is-above-horizon shaders/limit-interval (last atmosphere/attenuation-point)
-                                                                           (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
-                                                                           (last atmosphere/attenuation-track)])
-                   lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb ?ar ?ag ?ab size)]
+                   lighting-program  (make-lighting-program)
+                   lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb ?ar ?ag ?ab ?s size)]
                (render-geometry geometry-buffers
                                 (clear)
                                 (use-program geometry-program)
@@ -781,7 +792,7 @@ void main()
                (render-to-image 256 256 false
                                 (render-lighting geometry-buffers lighting-program (count lighting-textures)
                                                  (setup-lighting-uniforms lighting-program camera-to-world radius ?alb
-                                                                          ?a ?shd ?dist ?lx ?ly ?lz size)
+                                                                          ?a ?shd ?dist ?lx ?ly ?lz ?s size)
                                                  (use-textures lighting-textures)))
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
                ; => (is-image (str "/tmp/" ?result ".png") 0.33)
@@ -805,6 +816,7 @@ void main()
          "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "reflection3"
          "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI   0.5  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
          )
 
 
