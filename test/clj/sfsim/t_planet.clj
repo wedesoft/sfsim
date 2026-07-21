@@ -804,6 +804,7 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
          "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "reflection3"
          "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          )
 
 
