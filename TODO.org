@@ -17,6 +17,8 @@
     - [ ] render localized lights using blending (not sure whether this is done earlier)
     - [X] shadow pass (separate render): render shadow map from light source view
     - [X] lighting pass: sample shadow map, calculate light colors, and specular highlights
+    - [ ] bloom for sun
+    - [ ] investigate cloud color/shadowing for far away clouds
     - [ ] move object shadow map position computation into scene shadow code
     - [ ] remove texture-offset and scene-shadow-matrices from render-scene
     - [ ] make RCS thrusters and main engine light sources
