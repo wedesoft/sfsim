@@ -596,7 +596,7 @@ float land_noise(vec3 point)
          "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   0   "water"
          "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0   1   0   0   1   "reflection1"
          "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
-         ; "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "reflection3"
+         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "nightlights"
          "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   0.5  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
@@ -628,6 +628,7 @@ void main()
 uniform sampler2DArray day_night;
 uniform sampler2D normals;
 uniform sampler2D water;
+uniform vec3 light_direction;
 uniform float water_threshold;
 uniform vec3 water_color;
 uniform float reflectivity;
@@ -638,6 +639,7 @@ uniform float dawn_end;
 uniform mat4 world_to_camera;
 uniform mat4 camera_to_world;
 float land_noise(vec3 point);
+float remap(float value, float original_min, float original_max, float new_min, float new_max);
 in VS_OUT
 {
   vec4 camera_point;
@@ -647,6 +649,7 @@ layout (location = 0) out vec4 camera_point;
 layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
 layout (location = 3) out float specular_material;
+layout (location = 4) out vec4 emissive_material;
 void main()
 {
   float wet = texture(water, fs_in.texcoord).r >= water_threshold ? 1.0 : 0.0;
@@ -661,6 +664,9 @@ void main()
   vec3 color = mix(day_color, water_color, wet);
   diffuse_material = vec4(color, 1.0);
   specular_material = wet * reflectivity;
+  vec3 night_color = max(texture(day_night, vec3(fs_in.texcoord, 0.75)).rgb - 0.3, 0.0) / 0.7;
+  vec3 emissive = clamp(remap(dot(light_direction, water_normal), dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
+  emissive_material = vec4(emissive, 0.0);
 }")
 
 
@@ -670,6 +676,7 @@ uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
 uniform sampler2D diffuse_material;
 uniform sampler2D specular_material;
+uniform sampler2D emissive_material;
 uniform mat4 camera_to_world;
 uniform vec3 light_direction;
 uniform int width;
@@ -691,8 +698,9 @@ void main()
     vec3 world_point = (camera_to_world * point).xyz;
     vec3 ambient_light = surface_radiance_function(world_point, light_direction);
     vec3 light = overall_shading(world_point);
-    vec3 incoming = phong(ambient_light, light, world_point, (camera_to_world * normal).xyz, diffuse_color, specular);
-    incoming = attenuation_point(world_point, vec4(incoming, 1.0)).rgb;
+    vec3 phong = phong(ambient_light, light, world_point, (camera_to_world * normal).xyz, diffuse_color, specular);
+    vec3 emissive = texture(emissive_material, uv).rgb;
+    vec3 incoming = attenuation_point(world_point, vec4(phong + emissive, 1.0)).rgb;
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));
     fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
   }
@@ -737,13 +745,14 @@ void main()
 
 
 (defn setup-planet-geometry-uniforms
-  [program camera-to-world distance reflectivity land-noise]
+  [program camera-to-world distance reflectivity land-noise lx ly lz]
   (let [world-to-camera (inverse camera-to-world)]
     (clear)
     (use-program program)
     (uniform-float program "distance" (double distance))
     (uniform-matrix4 program "world_to_camera" world-to-camera)
     (uniform-matrix4 program "camera_to_world" camera-to-world)
+    (uniform-vector3 program "light_direction" (vec3 lx ly lz))
     (uniform-float program "water_threshold" 0.5)
     (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34))
     (uniform-float program "reflectivity" reflectivity)
@@ -788,7 +797,7 @@ void main()
 (defn make-planet-geometry-program
   []
   (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
-                :sfsim.render/fragment [fragment-geometry-planet-mock land-noise-mock]))
+                :sfsim.render/fragment [fragment-geometry-planet-mock land-noise-mock shaders/remap]))
 
 
 (defn make-planet-vertex-array-object
@@ -808,7 +817,8 @@ void main()
                    lighting-program  (make-lighting-program)
                    lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb ?ar ?ag ?ab ?s 7)]
                (render-geometry geometry-buffers
-                                (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist ?refl ?lnoise)
+                                (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist ?refl ?lnoise
+                                                                ?lx ?ly ?lz)
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
@@ -835,7 +845,7 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   0   "water"
          "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0   1   0   0   1   "reflection1"
          "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
-         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "reflection3"
+         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "nightlights"
          "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
          "white"   PI   0.5  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"

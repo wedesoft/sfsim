@@ -32,6 +32,7 @@ layout (location = 1) out float dist;
 layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
 layout (location = 3) out float specular_material;
+layout (location = 4) out vec4 emissive_material;
 <% ) %>
 
 void main()
@@ -52,6 +53,7 @@ void main()
 <% ) %>
 <% (if full %>
   specular_material = 0.0;
+  emissive_material = vec4(0, 0, 0, 0);
 <% ) %>
 <% (if (not full) %>
   dist = length(fs_in.camera_point.xyz);

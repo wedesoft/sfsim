@@ -1123,7 +1123,8 @@
    ::point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
    ::normal-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
    ::diffuse-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
-   ::specular-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_R32F width height)})
+   ::specular-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_R32F width height)
+   ::emissive-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)})
 
 
 (defmacro render-geometry
@@ -1135,9 +1136,10 @@
          point-texture#    (::point-texture ~geometry-buffers)
          normal-texture#   (::normal-texture ~geometry-buffers)
          diffuse-texture#  (::diffuse-texture ~geometry-buffers)
-         specular-texture# (::specular-texture ~geometry-buffers)]
+         specular-texture# (::specular-texture ~geometry-buffers)
+         emissive-texture# (::emissive-texture ~geometry-buffers)]
      (framebuffer-render width# height# :sfsim.render/cullback depth#
-                         [point-texture# normal-texture# diffuse-texture# specular-texture#]
+                         [point-texture# normal-texture# diffuse-texture# specular-texture# emissive-texture#]
                          ~@body)))
 
 
@@ -1149,16 +1151,18 @@
   (uniform-sampler program "camera_point" texture-offset)
   (uniform-sampler program "camera_normal" (inc ^long texture-offset))
   (uniform-sampler program "diffuse_material" (+ ^long texture-offset 2))
-  (uniform-sampler program "specular_material" (+ ^long texture-offset 3)))
+  (uniform-sampler program "specular_material" (+ ^long texture-offset 3))
+  (uniform-sampler program "emissive_material" (+ ^long texture-offset 4)))
 
 
 (defn use-geometry-buffer-textures
   "Set up geometry buffers for lighting pass"
-  [{::keys [point-texture normal-texture diffuse-texture specular-texture]} texture-offset]
+  [{::keys [point-texture normal-texture diffuse-texture specular-texture emissive-texture]} texture-offset]
   (use-textures {texture-offset point-texture
                  (inc ^long texture-offset) normal-texture
                  (+ ^long texture-offset 2) diffuse-texture
-                 (+ ^long texture-offset 3) specular-texture}))
+                 (+ ^long texture-offset 3) specular-texture
+                 (+ ^long texture-offset 4) emissive-texture}))
 
 
 (defmacro render-lighting
@@ -1178,12 +1182,13 @@
 
 (defn destroy-geometry-buffers
   "Destroy geometry buffer textures"
-  [{::keys [depth point-texture normal-texture diffuse-texture specular-texture]}]
+  [{::keys [depth point-texture normal-texture diffuse-texture specular-texture emissive-texture]}]
   (destroy-texture depth)
   (destroy-texture point-texture)
   (destroy-texture normal-texture)
   (destroy-texture diffuse-texture)
-  (destroy-texture specular-texture))
+  (destroy-texture specular-texture)
+  (destroy-texture emissive-texture))
 
 
 (defn setup-model-geometry-uniforms
