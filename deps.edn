@@ -46,7 +46,7 @@
                   :extra-paths ["test/clj"]
                   :main-opts ["-m" "midje-runner.runner"]
                   :jvm-opts ["--enable-native-access=ALL-UNNAMED" "--sun-misc-unsafe-memory-access=allow"]}
-           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.7.0"}}
+           :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.8.0"}}
                      :jvm-opts ["-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"
                                 "-XX:+UseZGC" "--sun-misc-unsafe-memory-access=allow"]
                      :main-opts ["-m" "sfsim.core"]}}}
