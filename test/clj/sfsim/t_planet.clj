@@ -910,7 +910,7 @@ void main()
          false true  true  true   "tile-up.png"    1.07
          true  false true  true   "tile-left.png"  1.07
          true  true  false true   "tile-down.png"  1.07
-         true  true  true  false  "tile-right.png" 93.95)
+         true  true  true  false  "tile-right.png" 1.07)
 
 
 (defn render-tile-calls
