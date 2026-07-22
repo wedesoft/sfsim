@@ -765,6 +765,10 @@ void main()
 
 (defn setup-lighting-uniforms
   [program camera-to-world radius albedo amplification shadow dist lx ly lz scatter clouds size]
+  (uniform-int program "height_size" size)
+  (uniform-int program "elevation_size" size)
+  (uniform-int program "light_elevation_size" size)
+  (uniform-int program "heading_size" size)
   (uniform-int program "transmittance_height_size" size)
   (uniform-int program "transmittance_elevation_size" size)
   (uniform-int program "surface_height_size" size)
