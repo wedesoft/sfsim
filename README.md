@@ -9,7 +9,7 @@ See [sfsim homepage][1] for more details.
 
 [![Aerodynamic prototype](https://i.ytimg.com/vi/bbmusPm7QZc/hqdefault.jpg)](https://www.youtube.com/watch?v=bbmusPm7QZc)
 
-## Installation
+## Dependencies
 
 * Tested on Debian 13 and Windows 11
 * Install [JDK 26 Deb for Linux](https://www.oracle.com/uk/java/technologies/downloads/) or [JDK 25 MSI for Windows](https://adoptium.net/temurin/releases)
@@ -19,22 +19,7 @@ See [sfsim homepage][1] for more details.
 * Install [PyTorch](https://pytorch.org/) if you are using GNU/Linux (couldn't get the Pytorch to work with Clojure under Windows)
   * On the CI it is installed like this: `pip install --index-url https://download.pytorch.org/whl/cpu torch numpy`
   * I recommend to install [uv](https://docs.astral.sh/uv/) and install PyTorch using `uv sync` (pyproject.toml is provided)
-
-### Get Code for GNU/Linux
-
-```Shell
-git clone https://github.com/wedesoft/sfsim.git
-cd sfsim
-git checkout main
-```
-
-### Get Code for Windows
-
-```Shell
-git clone https://github.com/wedesoft/sfsim.git
-cd sfsim
-git checkout windows
-```
+* For data build, install `convert` (part of ImageMagick) and modify the `policy.xml` file to allow large images.
 
 ### Install JoltPhysics
 
@@ -62,14 +47,36 @@ cmake --install MinGW_Release --prefix /usr/local
 cd ..
 ```
 
+## Get Source Code
+
+### Get Code for GNU/Linux
+
+```Shell
+git clone https://github.com/wedesoft/sfsim.git
+cd sfsim
+git checkout main
+```
+
+### Get Code for Windows
+
+```Shell
+git clone https://github.com/wedesoft/sfsim.git
+cd sfsim
+git checkout windows
+```
+
 ## Build
 
+### Jolt Wrapper
+
 You need to build the Jolt wrapper library (tested with Linux and Windows/MinGW): `make jolt`
+
+### Assets
 
 Furthermore you need to create content of data folder as shown in the bullet points below.
 Note that building everything takes days!
 You can take the data folder of a Steam playtest build instead.
-* Install `convert` and modify the `policy.xml` file to allow large images.
+
 * Download space ship model: `clj -T:build download-spaceship`
 * Download audio files: `clj -T:build download-audio`
 * Volumetric clouds
@@ -102,11 +109,10 @@ You can take the data folder of a Steam playtest build instead.
 ## Run
 
 * Run tests (recommended to use xvfb-run): `xvfb-run uv run clj -M:test`
-* Run test for specific module (rendering for example): `xvfb-run uv run clj -M:test sfsim.t-render`
-* Run the global cloud cover prototype: `clj -M etc/cover.clj`
+* Run tests for specific module (rendering for example): `xvfb-run uv run clj -M:test sfsim.t-render`
 * Run main program: `clj -M:run`
 
-You can enable the integration tests as follows (requires results of above build steps): `touch .integration`
+You can enable the integration tests as follows (requires assets): `touch .integration`
 
 ## Release on Steam
 
