@@ -69,6 +69,7 @@ You need to build the Jolt wrapper library (tested with Linux and Windows/MinGW)
 Furthermore you need to create content of data folder as shown in the bullet points below.
 Note that building everything takes days!
 You can take the data folder of a Steam playtest build instead.
+* Install `convert` and modify the `policy.xml` file to allow large images.
 * Download space ship model: `clj -T:build download-spaceship`
 * Download audio files: `clj -T:build download-audio`
 * Volumetric clouds
