@@ -3,15 +3,18 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [ ] use modern rendering pipeline
-    - [ ] emissive or ambient buffer
-    - [ ] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
-    - [ ] decal pass: overwrite/blend colors and normals
-    - [ ] shadow pass (separate render): render shadow map from light source view
-    - [ ] lighting pass: sample shadow map, calculate light colors, and specular highlights
-    - [ ] render localized lights using blending (not sure whether this is done earlier)
-    - [ ] use glClearNamedFramebufferfv(fbo, GL_COLOR, 0, clearColor) to clear frame buffer
+  - [-] use modern rendering pipeline
+    - [X] emissive or ambient buffer
+    - [X] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
+    - [ ] multi-pass rendering for atmosphere
+    - [ ] merge lighting shaders into one
+    - [ ] switch integration tests over to multi-pass rendering
+    - [ ] switch game over to multi-pass rendering
     - [ ] render-scene: remove texture-offset and shadow matrices, just render geometry
+    - [ ] decal pass: overwrite/blend colors and normals
+    - [ ] render localized lights using blending (not sure whether this is done earlier)
+    - [X] shadow pass (separate render): render shadow map from light source view
+    - [X] lighting pass: sample shadow map, calculate light colors, and specular highlights
     - [ ] move object shadow map position computation into scene shadow code
     - [ ] remove texture-offset and scene-shadow-matrices from render-scene
     - [ ] make RCS thrusters and main engine light sources
