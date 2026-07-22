@@ -19,6 +19,7 @@
     [sfsim.image :refer (convert-4d-to-2d get-vector3 get-vector4 get-float get-pixel)]
     [sfsim.interpolate :refer (make-lookup-table)]
     [sfsim.matrix :refer (pack-matrices projection-matrix transformation-matrix)]
+    [sfsim.model :refer (make-geometry-buffers destroy-geometry-buffers render-geometry render-lighting)]
     [sfsim.units :refer :all]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
@@ -835,10 +836,7 @@ vec4 cloud_overlay(float depth)
          (fact
            (offscreen-render 256 256
                              (let [indices         [0 1 3 2]
-                                   vertices        [-0.8 -0.8,
-                                                    +0.8 -0.8,
-                                                    -0.8 +0.8,
-                                                    +0.8 +0.8]
+                                   vertices        [-0.8 -0.8, +0.8 -0.8, -0.8 +0.8, +0.8 +0.8]
                                    origin          (vec3 ?x ?y ?z)
                                    camera-to-world (transformation-matrix (rotation-matrix-3d-x ?rotation) origin)
                                    program         (make-program :sfsim.render/vertex [vertex-atmosphere]
@@ -892,6 +890,42 @@ vec4 cloud_overlay(float depth)
          0  0               (- 0 radius 2)            0.0         0   0         -1            0.0    "inside.png"
          0  (* 3 radius)    0                         (* -0.5 PI) 0   1          0            0.0    "yview.png"
          0  (+ radius 1000) 0                         0.0         0   (sin 0.1) (- (cos 0.1)) 0.5    "cloudy.png")
+
+
+(def fragment-geometry
+"#version 450 core
+in VS_OUT
+{
+  vec3 direction;
+} fs_in;
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out vec4 camera_normal;
+layout (location = 2) out vec4 diffuse_material;
+layout (location = 3) out float specular_material;
+layout (location = 4) out vec4 emissive_material;
+void main ()
+{
+  camera_point = vec4(fs_in.direction, 0.0);
+}")
+
+
+(tabular "Render geometry and lighting of atmosphere"
+         (fact
+           (with-invisible-window
+             (let [geometry-program (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
+                                                  :sfsim.render/fragment [fragment-geometry])
+                   indices          [0 1 3 2]
+                   vertices         [-0.8 -0.8, +0.8 -0.8, -0.8 +0.8, +0.8 +0.8]
+                   variables        ["ndc" 2]
+                   vao              (make-vertex-array-object geometry-program indices vertices variables)
+                   origin           (vec3 ?x ?y ?z)
+                   camera-to-world  (transformation-matrix (rotation-matrix-3d-x ?rotation) origin)
+                   geometry-buffers (make-geometry-buffers 256 256)]
+               (destroy-geometry-buffers geometry-buffers)
+               (destroy-vertex-array-object vao)
+               (destroy-program geometry-program))))
+         ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?cloud ?result
+         0  0               (- 0 radius max-height 1) 0.0         0   0         -1            0.0    "sun.png")
 
 
 (def phase-probe
