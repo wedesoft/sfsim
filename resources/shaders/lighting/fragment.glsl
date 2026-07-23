@@ -6,7 +6,9 @@ uniform sampler2D diffuse_material;
 uniform sampler2D specular_material;
 uniform sampler2D emissive_material;
 uniform mat4 camera_to_world;
-uniform mat4 camera_to_shadow_map;
+<% (doseq [i (range num-scene-shadows)] %>
+uniform mat4 camera_to_shadow_map_<%= (inc ^long i) %>;
+<% ) %>
 uniform vec3 light_direction;
 uniform int width;
 uniform int height;
@@ -28,12 +30,10 @@ void main()
   if (point.w > 0.0) {
     vec3 world_point = (camera_to_world * point).xyz;
     vec3 ambient_light = surface_radiance_function(world_point, light_direction);
-<% (if (zero? num-scene-shadows) %>
-    vec3 light = overall_shading(world_point);
-<% %>
-    vec4 object_shadow_pos = camera_to_shadow_map * point;
-    vec3 light = overall_shading(world_point, object_shadow_pos);
+<% (doseq [i (range num-scene-shadows)] %>
+    vec4 object_shadow_pos_<%= (inc ^long i) %> = camera_to_shadow_map_<%= (inc ^long i) %> * point;
 <% ) %>
+    vec3 light = overall_shading(world_point <%= (apply str (map #(str ", object_shadow_pos_" (inc ^long %)) (range num-scene-shadows))) %>);
     vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
     incoming = attenuation_point(world_point, vec4(incoming, 1.0)).rgb;
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));

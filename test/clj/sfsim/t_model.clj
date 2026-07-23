@@ -784,7 +784,7 @@ vec4 cloud_overlay(float depth)
                                 (render-lighting geometry-buffers lighting-program 1
                                                  (set-lighting-uniforms lighting-program camera-to-world
                                                                         light-direction 1.0 0.1 1.0 1.0 1)
-                                                 (uniform-matrix4 lighting-program "camera_to_shadow_map"
+                                                 (uniform-matrix4 lighting-program "camera_to_shadow_map_1"
                                                                   (mulm object-to-shadow-map (mulm world-to-object camera-to-world)))
                                                  (uniform-int lighting-program "scene_shadow_size" shadow-size)
                                                  (uniform-float lighting-program "shadow_bias" 1e-6)
@@ -859,7 +859,7 @@ vec4 cloud_overlay(float depth)
                                 (render-lighting geometry-buffers lighting-program 1
                                                  (set-lighting-uniforms lighting-program camera-to-world
                                                                         light-direction 1.0 0.1 1.0 1.0 1)
-                                                 (uniform-matrix4 lighting-program "camera_to_shadow_map"
+                                                 (uniform-matrix4 lighting-program "camera_to_shadow_map_1"
                                                                   (mulm object-to-shadow-map (mulm world-to-object camera-to-world)))
                                                  (uniform-int lighting-program "scene_shadow_size" shadow-size)
                                                  (uniform-float lighting-program "shadow_bias" 1e-6)
