@@ -8,10 +8,10 @@
     - [X] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
     - [ ] multi-pass rendering for atmosphere
     - [ ] merge lighting shaders into one
+    - [ ] move lighting code into separate module (remove from model module)
     - [ ] switch integration tests over to multi-pass rendering
     - [ ] switch game over to multi-pass rendering
     - [ ] remove unused single-pass rendering code and tests
-    - [ ] move lighting code into separate module (remove from model module)
     - [ ] render-scene: remove texture-offset and shadow matrices, just render geometry
     - [ ] decal pass: overwrite/blend colors and normals
     - [ ] render localized lights using blending (not sure whether this is done earlier)

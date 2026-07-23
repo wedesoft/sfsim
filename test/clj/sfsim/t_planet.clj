@@ -703,8 +703,7 @@ void main()
     vec3 incoming = attenuation_point(world_point, vec4(phong + emissive, 1.0)).rgb;
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));
     fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
-  }
-  else
+  } else
     fragColor = vec4(0, 0, 0, 1);
 }")
 

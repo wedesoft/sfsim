@@ -894,6 +894,8 @@ vec4 cloud_overlay(float depth)
 
 (def fragment-geometry
 "#version 450 core
+uniform vec3 light_direction;
+uniform float specular;
 in VS_OUT
 {
   vec3 direction;
@@ -903,24 +905,86 @@ layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
 layout (location = 3) out float specular_material;
 layout (location = 4) out vec4 emissive_material;
-void main ()
+vec3 sun_color(vec3 direction)
 {
-  camera_point = vec4(fs_in.direction, 0.0);
+  float glare = pow(max(0, dot(direction, light_direction)), specular);
+  return vec3(glare, glare, glare);
+}
+void main()
+{
+  vec3 direction = normalize(fs_in.direction);
+  camera_point = vec4(direction, 0.0);
+  camera_normal = vec4(0, 0, 0, 0);
+  diffuse_material = vec4(0, 0, 0, 0);
+  specular_material = 0.0;
+  vec3 incoming = sun_color(direction);
+  emissive_material = vec4(incoming, 0);
 }")
+
+
+(def fragment-lighting-mock
+"#version 450 core
+uniform sampler2D camera_point;
+uniform sampler2D camera_normal;
+uniform sampler2D diffuse_material;
+uniform sampler2D specular_material;
+uniform sampler2D emissive_material;
+uniform mat4 camera_to_world;
+uniform vec3 light_direction;
+uniform int width;
+uniform int height;
+out vec4 fragColor;
+vec3 overall_shading(vec3 world_point);
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec4 attenuation_point(vec3 point, vec4 incoming);
+vec3 surface_radiance_function(vec3 point, vec3 light_direction);
+vec4 cloud_overlay(float depth);
+void main()
+{
+  vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
+  vec4 point = texture(camera_point, uv);
+  vec3 emissive = texture(emissive_material, uv).rgb;
+  if (point.w > 0.0) {
+    fragColor = vec4(0, 0, 0, 1);
+  } else {
+    fragColor = vec4(emissive, 1);
+  }
+}")
+
+
+(defn make-lighting-program
+  []
+  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                :sfsim.render/fragment [fragment-lighting-mock]))
 
 
 (tabular "Render geometry and lighting of atmosphere"
          (fact
            (with-invisible-window
-             (let [geometry-program (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
-                                                  :sfsim.render/fragment [fragment-geometry])
-                   indices          [0 1 3 2]
-                   vertices         [-0.8 -0.8, +0.8 -0.8, -0.8 +0.8, +0.8 +0.8]
-                   variables        ["ndc" 2]
-                   vao              (make-vertex-array-object geometry-program indices vertices variables)
-                   origin           (vec3 ?x ?y ?z)
-                   camera-to-world  (transformation-matrix (rotation-matrix-3d-x ?rotation) origin)
-                   geometry-buffers (make-geometry-buffers 256 256)]
+             (let [geometry-program  (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
+                                                   :sfsim.render/fragment [fragment-geometry])
+                   indices           [0 1 3 2]
+                   vertices          [-0.8 -0.8, +0.8 -0.8, -0.8 +0.8, +0.8 +0.8]
+                   variables         ["ndc" 2]
+                   vao               (make-vertex-array-object geometry-program indices vertices variables)
+                   origin            (vec3 ?x ?y ?z)
+                   camera-to-world   (transformation-matrix (rotation-matrix-3d-x ?rotation) origin)
+                   projection        (projection-matrix 256 256 0.5 1.5 (/ PI 3))
+                   geometry-buffers  (make-geometry-buffers 256 256)
+                   lighting-program  (make-lighting-program)
+                   lighting-textures {}]
+               (render-geometry geometry-buffers
+                                (use-program geometry-program)
+                                (uniform-matrix4 geometry-program "inverse_projection" (inverse projection))
+                                (uniform-vector3 geometry-program "light_direction" (vec3 ?lx ?ly ?lz))
+                                (uniform-float geometry-program "specular" 500.0)
+                                (render-quads vao))
+               (render-to-image 256 256 false
+                                (render-lighting geometry-buffers lighting-program (count lighting-textures)
+                                                 (println lighting-program)))
+               => (is-image (str "test/clj/sfsim/fixtures/atmosphere/" ?result) 0.16)
+               ; => (is-image (str "/tmp/" ?result) 0.16)
+               (destroy-program lighting-program)
                (destroy-geometry-buffers geometry-buffers)
                (destroy-vertex-array-object vao)
                (destroy-program geometry-program))))
