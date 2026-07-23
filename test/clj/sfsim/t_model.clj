@@ -591,44 +591,8 @@ vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 s
 }")
 
 
-(def fragment-lighting
-"#version 450 core
-uniform sampler2D camera_point;
-uniform sampler2D camera_normal;
-uniform sampler2D diffuse_material;
-uniform sampler2D specular_material;
-uniform sampler2D emissive_material;
-uniform mat4 camera_to_world;
-uniform vec3 light_direction;
-uniform int width;
-uniform int height;
-out vec4 fragColor;
-vec3 overall_shading(vec3 world_point);
-vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
-vec4 attenuation_point(vec3 point, vec4 incoming);
-vec3 surface_radiance_function(vec3 point, vec3 light_direction);
-vec4 cloud_overlay(float depth);
-void main()
-{
-  vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
-  vec4 normal = texture(camera_normal, uv);
-  vec4 point = texture(camera_point, uv);
-  vec3 diffuse_color = texture(diffuse_material, uv).rgb;
-  if (point.w > 0.0) {
-    vec3 world_point = (camera_to_world * point).xyz;
-    vec3 ambient_light = surface_radiance_function(world_point, light_direction);
-    vec3 light = overall_shading(world_point);
-    vec3 incoming = phong(ambient_light, light, world_point, (camera_to_world * normal).xyz, diffuse_color, 0.0);
-    incoming = attenuation_point(world_point, vec4(incoming, 1.0)).rgb;
-    vec4 cloud_scatter = cloud_overlay(length(point.xyz));
-    fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
-  } else
-    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
-}")
-
-
 (def lighting-fog-fragment-shaders
-  [fragment-lighting shaders/phong cloud-overlay-mock (last (clouds/environmental-shading 3))
+  [(lighting/fragment-lighting 0) shaders/phong cloud-overlay-mock (last (clouds/environmental-shading 3))
    (last (clouds/overall-shading 3 [])) (last atmosphere/attenuation-point) shaders/limit-interval ray-sphere-mock above-horizon-mock
    planet-and-cloud-shadows-mock transmittance-point-mock surface-radiance-mock attenuation-mock])
 
@@ -785,7 +749,7 @@ vec4 cloud_overlay(float depth)
 
 
 (def lighting-shadow-fragment-shaders
-  [lighting/fragment-lighting shaders/phong cloud-clear-overlay-mock (last (clouds/environmental-shading 3))
+  [(lighting/fragment-lighting 1) shaders/phong cloud-clear-overlay-mock (last (clouds/environmental-shading 3))
    (last (clouds/overall-shading 3 [["average_scene_shadow" "shadow_map"]]))
    (last atmosphere/attenuation-point) shaders/limit-interval ray-sphere-mock above-horizon-mock
    planet-and-cloud-shadows-mock transmittance-point-mock surface-radiance-mock attenuation-mock
@@ -859,7 +823,7 @@ vec4 cloud_overlay(float depth)
 
 
 (def lighting-fragment-shaders
-  [lighting/fragment-lighting shaders/phong model-shadow-mocks
+  [(lighting/fragment-lighting 1) shaders/phong model-shadow-mocks
    (last (clouds/overall-shading 3 [["average_scene_shadow" "shadow_map"]])) shaders/limit-interval ray-sphere-mock
    above-horizon-mock planet-and-cloud-shadows-mock transmittance-point-mock
    (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")

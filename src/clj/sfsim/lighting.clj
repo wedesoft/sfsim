@@ -5,8 +5,11 @@
 ;; which you can obtain at https://www.eclipse.org/legal/epl-v10.html
 
 (ns sfsim.lighting
-    "Shaders and methods for lighting pass")
+    "Shaders and methods for lighting pass"
+    (:require
+      [comb.template :as template]))
 
 
-(def fragment-lighting
-  (slurp "resources/shaders/lighting/fragment.glsl"))
+(defn fragment-lighting
+  [num-scene-shadows]
+  (template/eval (slurp "resources/shaders/lighting/fragment.glsl") {:num-scene-shadows num-scene-shadows}))

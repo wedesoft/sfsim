@@ -13,7 +13,7 @@ uniform int height;
 
 out vec4 fragColor;
 
-vec3 overall_shading(vec3 world_point, vec4 object_shadow_pos_1);
+vec3 overall_shading(vec3 world_point<%= (apply str (map #(str ", vec4 object_shadow_pos_" (inc ^long %)) (range num-scene-shadows))) %>);
 vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
 vec4 attenuation_point(vec3 point, vec4 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
@@ -27,9 +27,13 @@ void main()
   vec3 diffuse_color = texture(diffuse_material, uv).rgb;
   if (point.w > 0.0) {
     vec3 world_point = (camera_to_world * point).xyz;
-    vec4 object_shadow_pos = camera_to_shadow_map * point;
     vec3 ambient_light = surface_radiance_function(world_point, light_direction);
+<% (if (zero? num-scene-shadows) %>
+    vec3 light = overall_shading(world_point);
+<% %>
+    vec4 object_shadow_pos = camera_to_shadow_map * point;
     vec3 light = overall_shading(world_point, object_shadow_pos);
+<% ) %>
     vec3 incoming = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, 0.0);
     incoming = attenuation_point(world_point, vec4(incoming, 1.0)).rgb;
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));
