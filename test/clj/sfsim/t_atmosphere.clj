@@ -933,18 +933,19 @@ uniform mat4 camera_to_world;
 uniform vec3 origin;
 uniform float radius;
 uniform float max_height;
+uniform float z_far;
 uniform vec3 light_direction;
 uniform int width;
 uniform int height;
 out vec4 fragColor;
 vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
 vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
-// vec4 cloud_overlay(float depth);
+vec4 cloud_overlay(float depth);
 void main()
 {
   vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
   vec4 point = texture(camera_point, uv);
-  if (point.w > 0.0) {
+  if (point == vec4(0, 0, 0, 0)) {
     fragColor = vec4(0, 0, 0, 1);
   } else {
     vec3 direction = (camera_to_world * point).xyz;
@@ -953,15 +954,18 @@ void main()
     if (atmosphere_intersection.y > 0) {
       incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
     };
+    vec4 cloud_scatter = cloud_overlay(z_far);
+    incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
     fragColor = vec4(incoming, 1);
   }
 }")
 
 
 (defn make-lighting-program
-  []
+  [cloud]
   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                :sfsim.render/fragment [fragment-lighting-mock shaders/ray-sphere attenuation-outer]))
+                :sfsim.render/fragment [fragment-lighting-mock shaders/ray-sphere attenuation-outer
+                                        (cloud-overlay-mock cloud)]))
 
 
 (tabular "Render geometry and lighting of atmosphere"
@@ -977,7 +981,7 @@ void main()
                    camera-to-world   (transformation-matrix (rotation-matrix-3d-x ?rotation) origin)
                    projection        (projection-matrix 256 256 0.5 1.5 (/ PI 3))
                    geometry-buffers  (make-geometry-buffers 256 256)
-                   lighting-program  (make-lighting-program)
+                   lighting-program  (make-lighting-program ?cloud)
                    transmittance     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                              #:sfsim.image{:width size :height size :data T})
                    ray-scatter       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
@@ -1000,6 +1004,7 @@ void main()
                                                  (uniform-vector3 lighting-program "origin" origin)
                                                  (uniform-float lighting-program "radius" radius)
                                                  (uniform-float lighting-program "max_height" max-height)
+                                                 (uniform-float lighting-program "z_far" 1.0)
                                                  (uniform-vector3 lighting-program "light_direction" (vec3 ?lx ?ly ?lz))
                                                  (uniform-int lighting-program "height_size" size)
                                                  (uniform-int lighting-program "elevation_size" size)
@@ -1009,8 +1014,8 @@ void main()
                                                  (uniform-int lighting-program "transmittance_elevation_size" size)
                                                  (uniform-float lighting-program "amplification" 5.0)
                                                  (use-textures lighting-textures)))
-               => (is-image (str "test/clj/sfsim/fixtures/atmosphere/" ?result) 0.16)
-               ; => (is-image (str "/tmp/" ?result) 0.16)
+               ; => (is-image (str "test/clj/sfsim/fixtures/atmosphere/" ?result) 0.16)
+               => (is-image (str "/tmp/" ?result) 0.16)
                (destroy-texture mie-strength)
                (destroy-texture ray-scatter)
                (destroy-texture transmittance)
@@ -1026,7 +1031,7 @@ void main()
          0  (+ radius 1000) 0                         0.0         0   (sin 0.1) (- (cos 0.1)) 0.0    "sunset2.png"
          0  0               (- 0 radius 2)            0.0         0   0         -1            0.0    "inside.png"
          0  (* 3 radius)    0                         (* -0.5 PI) 0   1          0            0.0    "yview.png"
-         )
+         0  (+ radius 1000) 0                         0.0         0   (sin 0.1) (- (cos 0.1)) 0.5    "cloudy.png")
 
 
 (def phase-probe
