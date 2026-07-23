@@ -6,7 +6,7 @@
   - [-] use modern rendering pipeline
     - [X] emissive or ambient buffer
     - [X] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
-    - [ ] multi-pass rendering for atmosphere
+    - [X] multi-pass rendering for atmosphere
     - [ ] merge lighting shaders into one
     - [ ] move lighting code into separate module (remove from model module)
     - [ ] switch integration tests over to multi-pass rendering
