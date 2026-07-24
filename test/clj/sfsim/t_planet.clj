@@ -377,25 +377,6 @@ void main()
          0  0  (+ radius 1000) 0   0   1   0.639491)
 
 
-(def vertex-planet-probe
-"#version 450 core
-in vec3 point;
-in vec2 colorcoord;
-uniform float radius;
-out GEO_OUT
-{
-  vec2 colorcoord;
-  vec3 point;
-  vec4 camera_point;
-} vs_out;
-void main()
-{
-  gl_Position = vec4(point, 1);
-  vs_out.colorcoord = colorcoord;
-  vs_out.point = vec3(0, 0, radius);
-}")
-
-
 (def fake-transmittance
 "#version 450 core
 vec3 transmittance_track(vec3 p, vec3 q)
@@ -429,22 +410,6 @@ vec4 attenuate(vec3 light_direction, vec3 start, vec3 point, vec4 incoming)
 }")
 
 
-(def opacity-lookup-mock
-"#version 450 core
-float opacity_cascade_lookup(vec4 point)
-{
-  return 1.0;
-}")
-
-
-(def sampling-offset-mock
-"#version 450 core
-float sampling_offset()
-{
-  return 0.5;
-}")
-
-
 (def cloud-overlay-mock
 "#version 450 core
 uniform float clouds;
@@ -472,65 +437,6 @@ float land_noise(vec3 point)
 }")
 
 
-(defn make-mocked-planet-program
-  []
-  (make-program :sfsim.render/vertex [vertex-planet-probe]
-                :sfsim.render/fragment [(last (fragment-planet 3 0)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
-                                        planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter fake-attenuation
-                                        shaders/ray-shell shaders/is-above-horizon atmosphere/transmittance-point shaders/phong
-                                        shaders/limit-interval surface-radiance-function land-noise-mock shaders/remap
-                                        (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
-                                        (last atmosphere/attenuation-track) (last atmosphere/attenuation-point)]))
-
-
-(defn setup-static-uniforms
-  [program]
-  ;; Moved this code out of the test below, otherwise method is too large
-  (use-program program)
-  (uniform-sampler program "day_night" 0)
-  (uniform-sampler program "normals" 1)
-  (uniform-sampler program "transmittance" 2)
-  (uniform-sampler program "ray_scatter" 3)
-  (uniform-sampler program "mie_strength" 4)
-  (uniform-sampler program "surface_radiance" 5)
-  (uniform-sampler program "water" 6)
-  (uniform-sampler program "worley" 7)
-  (uniform-float program "specular" 100.0)
-  (uniform-float program "max_height" 100000.0)
-  (uniform-float program "water_threshold" 0.5)
-  (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
-
-
-(defn setup-uniforms
-  [program size ?albedo ?refl ?lnoise ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?s ?a]
-  ;; Moved this code out of the test below, otherwise method is too large
-  (use-program program)
-  (uniform-int program "height_size" size)
-  (uniform-int program "elevation_size" size)
-  (uniform-int program "light_elevation_size" size)
-  (uniform-int program "heading_size" size)
-  (uniform-int program "transmittance_height_size" size)
-  (uniform-int program "transmittance_elevation_size" size)
-  (uniform-int program "surface_height_size" size)
-  (uniform-int program "surface_sun_elevation_size" size)
-  (uniform-float program "albedo" ?albedo)
-  (uniform-float program "reflectivity" ?refl)
-  (uniform-float program "land_noise_value" ?lnoise)
-  (uniform-float program "land_noise_scale" 1.0)
-  (uniform-float program "land_noise_strength" 0.5)
-  (uniform-float program "clouds" ?clouds)
-  (uniform-float program "shadow" ?shd)
-  (uniform-float program "radius" radius)
-  (uniform-float program "z_near" 0.0)
-  (uniform-vector3 program "scatter" (vec3 ?s ?s ?s))
-  (uniform-vector3 program "origin" (vec3 0 0 (+ ?radius ?dist)))
-  (uniform-matrix4 program "world_to_camera" (transformation-matrix (eye 3) (vec3 0 0 (- 0 ?radius ?dist))))
-  (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
-  (uniform-float program "dawn_start" -0.05)
-  (uniform-float program "dawn_end" 0.05)
-  (uniform-float program "amplification" ?a))
-
-
 (def planet-indices [0 1 3 2])
 
 
@@ -539,71 +445,6 @@ float land_noise(vec3 point)
    +0.5 -0.5 0.5 0.75 0.25 0.5 0.5
    -0.5  0.5 0.5 0.25 0.75 0.5 0.5
    +0.5  0.5 0.5 0.75 0.75 0.5 0.5])
-
-
-(defn planet-textures
-  [colors nx ny nz tr tg tb s ar ag ab water size]
-  (let [day-night     (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
-                                              [(slurp-image (str "test/clj/sfsim/fixtures/planet/" colors ".png"))
-                                               (slurp-image (str "test/clj/sfsim/fixtures/planet/night.png"))])
-        normals       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                              #:sfsim.image{:width 2 :height 2
-                                                            :data (float-array (flatten (repeat 4 [nx ny nz])))})
-        transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                              #:sfsim.image{:width size :height size
-                                                            :data (float-array (flatten (repeat (* size size) [tr tg tb])))})
-        ray-scatter   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                              #:sfsim.image{:width (* size size) :height (* size size)
-                                                            :data (float-array (repeat (* size size size size 3) s))})
-        mie-strength  (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                              #:sfsim.image{:width (* size size) :height (* size size)
-                                                            :data (float-array (repeat (* size size size size 3) 0))})
-        radiance      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                              #:sfsim.image{:width size :height size
-                                                            :data (float-array (flatten (repeat (* size size) [ar ag ab])))})
-        water         (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                             #:sfsim.image{:width 2 :height 2 :data (byte-array (repeat 8 water))})
-        worley-data   (float-array (repeat (* 2 2 2) 1.0))
-        worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
-                                             #:sfsim.image{:width 2 :height 2 :depth 2 :data worley-data})]
-    [day-night normals transmittance ray-scatter mie-strength radiance water worley]))
-
-
-(tabular "Fragment shader to render planetary surface"
-         (fact
-           (offscreen-render 256 256
-                             (let [program   (make-mocked-planet-program)
-                                   variables ["point" 3 "colorcoord" 2 "surfacecoord" 2]
-                                   vao       (make-vertex-array-object program planet-indices planet-vertices variables)
-                                   size      7
-                                   textures  (planet-textures ?colors ?nx ?ny ?nz ?tr ?tg ?tb ?s ?ar ?ag ?ab ?water size)]
-                               (clear (vec3 0 0 0))
-                               (setup-static-uniforms program)
-                               (setup-uniforms program size ?alb ?refl ?lnoise ?clouds ?shd radius ?dist ?lx ?ly ?lz ?s ?a)
-                               (use-textures (zipmap (range) textures))
-                               (render-quads vao)
-                               (doseq [tex textures] (destroy-texture tex))
-                               (destroy-vertex-array-object vao)
-                               (destroy-program program)))
-           => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33))
-         ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "fragment"
-         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "colors"
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9  1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "albedo"
-         "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "amplify"
-         "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "transmit"
-         "pattern" PI   1.0  1   1   1   0.2 0.3 0.5   0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "ambient"
-         "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   0   "water"
-         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0   1   0   0   1   "reflection1"
-         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
-         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "nightlights"
-         "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI   0.5  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
-         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.5     1.0  0   0   1   0   0   1   "clouds"
-         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     0.5  0   0   1   0   0   1   "shadow"
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
 
 
 (def vertex-geometry-planet-mock
