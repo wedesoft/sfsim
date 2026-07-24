@@ -885,7 +885,7 @@ void main()
 {
   vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
   vec4 point = texture(camera_point, uv);
-  if (point == vec4(0, 0, 0, 0)) {
+  if (point.w > 0.0) {
     fragColor = vec4(0, 0, 0, 1);
   } else {
     vec3 direction = (camera_to_world * point).xyz;
