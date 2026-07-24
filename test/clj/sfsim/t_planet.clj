@@ -693,11 +693,11 @@ void main()
   vec4 point = texture(camera_point, uv);
   vec4 normal = texture(camera_normal, uv);
   vec3 diffuse_color = texture(diffuse_material, uv).rgb;
-  float specular = texture(specular_material, uv).r;
   if (point.w > 0.0) {
     vec3 world_point = (camera_to_world * point).xyz;
     vec3 ambient_light = surface_radiance_function(world_point, light_direction);
     vec3 light = overall_shading(world_point);
+    float specular = texture(specular_material, uv).r;
     vec3 phong = phong(ambient_light, light, world_point, (camera_to_world * normal).xyz, diffuse_color, specular);
     vec3 emissive = texture(emissive_material, uv).rgb;
     vec3 incoming = attenuation_point(world_point, vec4(phong + emissive, 1.0)).rgb;
