@@ -394,6 +394,10 @@ uniform vec3 scatter;
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
 {
   return scatter;
+}
+vec3 ray_scatter_outer(vec3 light_direction, vec3 point, vec3 direction)
+{
+  return scatter;
 }")
 
 
@@ -597,6 +601,7 @@ void main()
                                         fake-attenuation fake-transmittance fake-ray-scatter planet-and-cloud-shadows-mock
                                         atmosphere/transmittance-point surface-radiance-function cloud-overlay-mock
                                         shaders/is-above-horizon shaders/limit-interval (last atmosphere/attenuation-point)
+                                        (last atmosphere/attenuation-outer)
                                         (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
                                         (last atmosphere/attenuation-track)]))
 

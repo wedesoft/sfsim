@@ -47,6 +47,14 @@ void main()
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));
     fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
   } else {
-    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    vec3 direction = (camera_to_world * point).xyz;
+    vec3 incoming = texture(emissive_material, uv).rgb;
+    vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
+    if (atmosphere_intersection.y > 0) {
+      incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
+    };
+    vec4 cloud_scatter = cloud_overlay(z_far);
+    incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
+    fragColor = vec4(incoming, 1);
   }
 }

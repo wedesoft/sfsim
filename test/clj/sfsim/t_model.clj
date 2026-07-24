@@ -588,6 +588,10 @@ uniform float attenuation;
 vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)
 {
   return vec4(incoming.rgb * attenuation, incoming.a);
+}
+vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming)
+{
+  return incoming;
 }")
 
 
@@ -819,6 +823,10 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 vec4 cloud_overlay(float depth)
 {
   return vec4(0, 0, 0, 0);
+}
+vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming)
+{
+  return incoming;
 }")
 
 
