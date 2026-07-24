@@ -36,7 +36,8 @@ void main()
     vec3 light = overall_shading(world_point <%= (apply str (map #(str ", object_shadow_pos_" (inc ^long %)) (range num-scene-shadows))) %>);
     float specular = texture(specular_material, uv).r;
     vec3 phong = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, specular);
-    vec3 incoming = attenuation_point(world_point, vec4(phong, 1.0)).rgb;
+    vec3 emissive = texture(emissive_material, uv).rgb;
+    vec3 incoming = attenuation_point(world_point, vec4(phong + emissive, 1.0)).rgb;
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));
     fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
   } else
