@@ -20,6 +20,7 @@
     [sfsim.interpolate :refer (make-lookup-table)]
     [sfsim.matrix :refer (pack-matrices projection-matrix transformation-matrix)]
     [sfsim.model :refer (make-geometry-buffers destroy-geometry-buffers render-geometry render-lighting)]
+    [sfsim.lighting :as lighting]
     [sfsim.units :refer :all]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
@@ -862,50 +863,31 @@ void main()
 }")
 
 
-(def fragment-lighting-mock
+(def fragment-lighting-mocks
 "#version 450 core
-uniform sampler2D camera_point;
-uniform sampler2D camera_normal;
-uniform sampler2D diffuse_material;
-uniform sampler2D specular_material;
-uniform sampler2D emissive_material;
-uniform mat4 camera_to_world;
-uniform vec3 origin;
-uniform float radius;
-uniform float max_height;
-uniform float z_far;
-uniform vec3 light_direction;
-uniform int width;
-uniform int height;
-out vec4 fragColor;
-vec2 ray_sphere(vec3 centre, float radius, vec3 origin, vec3 direction);
-vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float a, vec3 incoming);
-vec4 cloud_overlay(float depth);
-void main()
+vec3 overall_shading(vec3 world_point)
 {
-  vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
-  vec4 point = texture(camera_point, uv);
-  if (point.w > 0.0) {
-    fragColor = vec4(0, 0, 0, 1);
-  } else {
-    vec3 direction = (camera_to_world * point).xyz;
-    vec3 incoming = texture(emissive_material, uv).rgb;
-    vec2 atmosphere_intersection = ray_sphere(vec3(0, 0, 0), radius + max_height, origin, direction);
-    if (atmosphere_intersection.y > 0) {
-      incoming = attenuation_outer(light_direction, origin, direction, atmosphere_intersection.x, incoming);
-    };
-    vec4 cloud_scatter = cloud_overlay(z_far);
-    incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
-    fragColor = vec4(incoming, 1);
-  }
+  return vec3(1, 1, 1);
+}
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity)
+{
+  return vec3(0, 0, 0);
+}
+vec4 attenuation_point(vec3 point, vec4 incoming)
+{
+  return incoming;
+}
+vec3 surface_radiance_function(vec3 point, vec3 light_direction)
+{
+  return vec3(0, 0, 0);
 }")
 
 
 (defn make-lighting-program
   [cloud]
   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                :sfsim.render/fragment [fragment-lighting-mock shaders/ray-sphere attenuation-outer
-                                        (cloud-overlay-mock cloud)]))
+                :sfsim.render/fragment [(lighting/fragment-lighting 0) shaders/ray-sphere attenuation-outer
+                                        fragment-lighting-mocks (cloud-overlay-mock cloud)]))
 
 
 (tabular "Render geometry and lighting of atmosphere"
