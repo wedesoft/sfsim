@@ -7,9 +7,12 @@
     - [X] emissive or ambient buffer
     - [X] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
     - [X] multi-pass rendering for atmosphere
-    - [ ] merge lighting shaders into one
-    - [ ] move lighting code into separate module (remove from model module)
+    - [X] merge lighting shaders into one
     - [ ] switch integration tests over to multi-pass rendering
+      - [ ] make planet geometry renderer
+      - [ ] make model geometry renderer
+      - [ ] make atmosphere geometry renderer
+    - [ ] move lighting code into separate module (remove from model module)
     - [ ] switch game over to multi-pass rendering
     - [ ] remove unused single-pass rendering code and tests
     - [ ] render-scene: remove texture-offset and shadow matrices, just render geometry
