@@ -41,7 +41,7 @@
         models                (mapv model/read-gltf model-files)
         scene-renderer        (model/make-scene-renderer data)
         scene-shadow-renderer (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config) object-radius)]
-    {::data data
+    {::data                   data
      ::opacity-renderer       (opacity/make-opacity-renderer data)
      ::planet-shadow-renderer (planet/make-planet-shadow-renderer data)
      ::planet-renderer        (planet/make-planet-renderer data)
@@ -57,11 +57,13 @@
 (defn make-graphics2
   [model-files object-radius]
   (let [data (make-graphics-data)]
-    {::data data}))
+    {::data                   data
+     ::planet-renderer        (planet/make-planet-renderer data) }))
 
 
 (defn destroy-graphics2
   [graphics]
+  (planet/destroy-planet-renderer (::planet-renderer graphics))
   (atmosphere/destroy-atmosphere-luts (-> graphics ::data :sfsim.atmosphere/luts))
   (clouds/destroy-cloud-data (-> graphics ::data :sfsim.clouds/data)))
 
