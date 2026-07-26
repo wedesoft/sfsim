@@ -54,29 +54,6 @@
      ::scenes                 (mapv (partial model/load-scene scene-renderer) models)}))
 
 
-(defn make-graphics2
-  [model-files object-radius]
-  (let [data (make-graphics-data)]
-    {::data                   data
-     ::planet-renderer        (planet/make-planet-renderer2 data)}))
-
-
-(defn destroy-graphics2
-  [graphics]
-  (planet/destroy-planet-renderer2 (::planet-renderer graphics))
-  (atmosphere/destroy-atmosphere-luts (-> graphics ::data :sfsim.atmosphere/luts))
-  (clouds/destroy-cloud-data (-> graphics ::data :sfsim.clouds/data)))
-
-
-(defn prepare-frame2
-  [graphics]
-  {})
-
-
-(defn finalise-frame2
-  [frame])
-
-
 (defn prepare-frame
   "Render geometry buffer for deferred rendering and cloud overlay"
   [graphics model-vars tree width height position orientation light-direction

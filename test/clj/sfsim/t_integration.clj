@@ -50,25 +50,20 @@
       (load-tile-tree planet-renderer tree width position (dec n)))))
 
 
-(tabular
-  (fact
-    (with-invisible-window
-      (let [width             320
-            height            240
-            level             5
-            graphics          (graphics/make-graphics2 [] 1.4)
-            planet-renderer   (:sfsim.graphics/planet-renderer graphics)
-            ; tree              (load-tile-tree planet-renderer {} width ?position level)
-            geometry-buffers  (model/make-geometry-buffers width height)
-            frame             (graphics/prepare-frame2 graphics)]
-        (model/render-geometry geometry-buffers)
-        (render-to-image width height false) => (is-image (str "/tmp/" ?result) 0.0)
-        (graphics/finalise-frame2 frame)
-        (model/destroy-geometry-buffers geometry-buffers)
-        (graphics/destroy-graphics2 graphics))))
-  ?position                      ?orientation                               ?result
-  (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
-  (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png")
+(when (.exists (io/file ".integration"))
+  (tabular "Integration test rendering of planet, atmosphere, and clouds"
+    (fact
+      (with-invisible-window
+        (let [width             320
+              height            240
+              level             5
+              geometry-buffers  (model/make-geometry-buffers width height) ]
+          (model/render-geometry geometry-buffers)
+          (render-to-image width height false) => (is-image (str "/tmp/" ?result) 0.0)
+          (model/destroy-geometry-buffers geometry-buffers))))
+    ?position                      ?orientation                               ?result
+    (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
+    (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png"))
 
 
 (when (.exists (io/file ".integration"))

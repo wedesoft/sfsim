@@ -8,6 +8,7 @@
   "Functions for computing the atmosphere"
   (:require
     [clojure.math :refer (exp pow PI sqrt log)]
+    [comb.template :as template]
     [fastmath.matrix :refer (inverse)]
     [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
     [malli.core :as m]
@@ -720,8 +721,9 @@
   (slurp "resources/shaders/atmosphere/vertex-geometry.glsl"))
 
 
-(def fragment-atmosphere-geometry
-  (slurp "resources/shaders/atmosphere/fragment-geometry.glsl"))
+(defn fragment-atmosphere-geometry
+  [full]
+  (template/eval (slurp "resources/shaders/atmosphere/fragment-geometry.glsl") {:full full}))
 
 
 (def atmosphere-geometry-renderer
@@ -733,7 +735,7 @@
   {:malli/schema [:=> [:cat] atmosphere-geometry-renderer]}
   []
   (let [program  (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
-                               :sfsim.render/fragment [fragment-atmosphere-geometry])
+                               :sfsim.render/fragment [(fragment-atmosphere-geometry false)])
         indices  [0 1 3 2]
         vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao      (make-vertex-array-object program indices vertices ["ndc" 2])]

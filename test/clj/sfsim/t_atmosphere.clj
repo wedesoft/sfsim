@@ -833,36 +833,6 @@ vec4 cloud_overlay(float depth)
 }"))
 
 
-(def fragment-geometry
-"#version 450 core
-uniform vec3 light_direction;
-uniform float specular;
-in VS_OUT
-{
-  vec3 direction;
-} fs_in;
-layout (location = 0) out vec4 camera_point;
-layout (location = 1) out vec4 camera_normal;
-layout (location = 2) out vec4 diffuse_material;
-layout (location = 3) out float specular_material;
-layout (location = 4) out vec4 emissive_material;
-vec3 sun_color(vec3 direction)
-{
-  float glare = pow(max(0, dot(direction, light_direction)), specular);
-  return vec3(glare, glare, glare);
-}
-void main()
-{
-  vec3 direction = normalize(fs_in.direction);
-  camera_point = vec4(direction, 0.0);
-  camera_normal = vec4(0, 0, 0, 0);
-  diffuse_material = vec4(0, 0, 0, 0);
-  specular_material = 0.0;
-  vec3 incoming = sun_color(direction);
-  emissive_material = vec4(incoming, 0);
-}")
-
-
 (def fragment-lighting-mocks
 "#version 450 core
 vec3 overall_shading(vec3 world_point)
@@ -894,7 +864,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
          (fact
            (with-invisible-window
              (let [geometry-program  (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
-                                                   :sfsim.render/fragment [fragment-geometry])
+                                                   :sfsim.render/fragment [(fragment-atmosphere-geometry true)])
                    indices           [0 1 3 2]
                    vertices          [-0.8 -0.8, +0.8 -0.8, -0.8 +0.8, +0.8 +0.8]
                    variables         ["ndc" 2]
