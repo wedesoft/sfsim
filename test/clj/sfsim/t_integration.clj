@@ -53,14 +53,14 @@
 (tabular
   (fact
     (with-invisible-window
-      (let [width 320
-            height 240
-            level           5
-            graphics (graphics/make-graphics2 [] 1.4)
-            planet-renderer (:sfsim.graphics/planet-renderer graphics)
-            tree            (load-tile-tree planet-renderer {} width ?position level)
+      (let [width             320
+            height            240
+            level             5
+            graphics          (graphics/make-graphics2 [] 1.4)
+            planet-renderer   (:sfsim.graphics/planet-renderer graphics)
+            ; tree              (load-tile-tree planet-renderer {} width ?position level)
             geometry-buffers  (model/make-geometry-buffers width height)
-            frame  (graphics/prepare-frame2 graphics)]
+            frame             (graphics/prepare-frame2 graphics)]
         (model/render-geometry geometry-buffers)
         (render-to-image width height false) => (is-image (str "/tmp/" ?result) 0.0)
         (graphics/finalise-frame2 frame)

@@ -58,12 +58,12 @@
   [model-files object-radius]
   (let [data (make-graphics-data)]
     {::data                   data
-     ::planet-renderer        (planet/make-planet-renderer data) }))
+     ::planet-renderer        (planet/make-planet-renderer2 data)}))
 
 
 (defn destroy-graphics2
   [graphics]
-  (planet/destroy-planet-renderer (::planet-renderer graphics))
+  (planet/destroy-planet-renderer2 (::planet-renderer graphics))
   (atmosphere/destroy-atmosphere-luts (-> graphics ::data :sfsim.atmosphere/luts))
   (clouds/destroy-cloud-data (-> graphics ::data :sfsim.clouds/data)))
 
