@@ -50,6 +50,20 @@
       (load-tile-tree planet-renderer tree width position (dec n)))))
 
 
+(fact
+  (with-invisible-window
+    (let [width 320
+          height 240
+          graphics (graphics/make-graphics2 [] 1.4)
+          geometry-buffers  (model/make-geometry-buffers width height)
+          frame  (graphics/prepare-frame2)]
+      (model/render-geometry geometry-buffers)
+      (render-to-image width height false) => (is-image "/tmp/test.png" 0.0)
+      (graphics/finalise-frame2 frame)
+      (model/destroy-geometry-buffers geometry-buffers)
+      (graphics/destroy-graphics2 graphics))))
+
+
 (when (.exists (io/file ".integration"))
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
            (fact

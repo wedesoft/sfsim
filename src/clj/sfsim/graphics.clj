@@ -54,6 +54,24 @@
      ::scenes                 (mapv (partial model/load-scene scene-renderer) models)}))
 
 
+(defn make-graphics2
+  [model-files object-radius]
+  {})
+
+
+(defn destroy-graphics2
+  [graphics])
+
+
+(defn prepare-frame2
+  []
+  {})
+
+
+(defn finalise-frame2
+  [frame])
+
+
 (defn prepare-frame
   "Render geometry buffer for deferred rendering and cloud overlay"
   [graphics model-vars tree width height position orientation light-direction
