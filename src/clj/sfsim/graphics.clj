@@ -56,15 +56,18 @@
 
 (defn make-graphics2
   [model-files object-radius]
-  {})
+  (let [data (make-graphics-data)]
+    {::data data}))
 
 
 (defn destroy-graphics2
-  [graphics])
+  [graphics]
+  (atmosphere/destroy-atmosphere-luts (-> graphics ::data :sfsim.atmosphere/luts))
+  (clouds/destroy-cloud-data (-> graphics ::data :sfsim.clouds/data)))
 
 
 (defn prepare-frame2
-  []
+  [graphics]
   {})
 
 
