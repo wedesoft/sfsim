@@ -84,7 +84,7 @@ jobs:
       - name: Install Clojure
         uses: DeLaGuardo/setup-clojure@13.6.1
         with:
-          cli: 1.12.5.1661
+          cli: 1.12.5.1654
       - name: Run tests
         run: xvfb-run clj -M:test
       - name: Create Java archive
@@ -164,7 +164,7 @@ jobs:
       - name: Install Clojure
         uses: DeLaGuardo/setup-clojure@13.6.1
         with:
-          cli: 1.12.5.1661
+          cli: 1.12.5.1654
     # Windows tests not working and fail with:
     #
     # java.lang.IllegalStateException: There is no OpenGL context current in the current thread.
