@@ -21,6 +21,8 @@
     [sfsim.conftest :refer (roughly-vector roughly-matrix is-image)]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix matrix->quaternion vec4->vec3)]
     [sfsim.model :as model]
+    [sfsim.lighting :as lighting]
+    [sfsim.shaders :as shaders]
     [sfsim.graphics :as graphics]
     [sfsim.planet :as planet]
     [sfsim.plume :as plume]
@@ -49,6 +51,32 @@
       (load-tile-tree planet-renderer tree width position (dec n)))))
 
 
+(def cloud-overlay-mock
+"#version 450 core
+vec4 cloud_overlay(float depth)
+{
+  return vec4(0.0, 0.0, 0.0, 0.0);
+}")
+
+(def fragment-lighting-mocks
+"#version 450 core
+vec3 overall_shading(vec3 world_point)
+{
+  return vec3(1, 1, 1);
+}
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity)
+{
+  return vec3(0, 0, 0);
+}
+vec4 attenuation_point(vec3 point, vec4 incoming)
+{
+  return incoming;
+}
+vec3 surface_radiance_function(vec3 point, vec3 light_direction)
+{
+  return vec3(0, 0, 0);
+}")
+
 (when (.exists (io/file ".integration"))
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
     (fact
@@ -62,18 +90,41 @@
               variables         ["ndc" 2]
               z-near            1.0
               z-far             2.0
+              radius            (:sfsim.planet/radius config/planet-config)
+              max-height        (:sfsim.planet/max-height config/planet-config)
+              amplification     (:sfsim.render/amplification config/render-config)
+              camera-to-world   (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               fov               (:sfsim.render/fov config/render-config)
               projection        (matrix/projection-matrix width height z-near z-far fov)
               vao               (make-vertex-array-object geometry-program indices vertices variables)
               geometry-buffers  (model/make-geometry-buffers width height)
-              light-direction   (vec3 1 0 0)]
+              light-direction   (vec3 1 0 0)
+              lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                              :sfsim.render/fragment [(lighting/fragment-lighting 0) shaders/ray-sphere
+                                                                      atmosphere/attenuation-outer fragment-lighting-mocks
+                                                                      cloud-overlay-mock])
+              atmosphere-luts   (atmosphere/make-atmosphere-luts max-height)
+              lighting-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts)
+                                 1 (:sfsim.atmosphere/scatter atmosphere-luts)
+                                 2 (:sfsim.atmosphere/mie atmosphere-luts)}]
           (model/render-geometry geometry-buffers
                                  (use-program geometry-program)
                                  (uniform-matrix4 geometry-program "inverse_projection" (inverse projection))
                                  (uniform-vector3 geometry-program "light_direction" light-direction)
                                  (uniform-float geometry-program "specular" 500.0)
                                  (render-quads vao))
-          (render-to-image width height false) => (is-image (str "/tmp/" ?result) 0.0)
+          (render-to-image width height false
+                           (model/render-lighting geometry-buffers lighting-program (count lighting-textures)
+                                                  (atmosphere/setup-atmosphere-uniforms lighting-program atmosphere-luts 0 false)
+                                                  (uniform-matrix4 lighting-program "camera_to_world" camera-to-world)
+                                                  (uniform-vector3 lighting-program "origin" ?position)
+                                                  (uniform-float lighting-program "radius" radius)
+                                                  (uniform-float lighting-program "z_far" z-far)
+                                                  (uniform-vector3 lighting-program "light_direction" light-direction)
+                                                  (uniform-float lighting-program "amplification" amplification)
+                                                  (use-textures lighting-textures))) => (is-image (str "/tmp/" ?result) 0.0)
+          (atmosphere/destroy-atmosphere-luts atmosphere-luts)
+          (destroy-program lighting-program)
           (model/destroy-geometry-buffers geometry-buffers)
           (destroy-vertex-array-object vao)
           (destroy-program geometry-program))))
