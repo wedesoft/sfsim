@@ -14,15 +14,14 @@
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.astro :refer :all]
+    [sfsim.matrix :as matrix]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
-    [sfsim.clouds :as clouds]
     [sfsim.config :as config]
     [sfsim.conftest :refer (roughly-vector roughly-matrix is-image)]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix matrix->quaternion vec4->vec3)]
     [sfsim.model :as model]
     [sfsim.graphics :as graphics]
-    [sfsim.opacity :as opacity]
     [sfsim.planet :as planet]
     [sfsim.plume :as plume]
     [sfsim.physics :as physics]
@@ -56,11 +55,28 @@
       (with-invisible-window
         (let [width             320
               height            240
-              level             5
-              geometry-buffers  (model/make-geometry-buffers width height) ]
-          (model/render-geometry geometry-buffers)
+              geometry-program  (make-program :sfsim.render/vertex [atmosphere/vertex-atmosphere-geometry]
+                                              :sfsim.render/fragment [(atmosphere/fragment-atmosphere-geometry true)])
+              indices           [0 1 3 2]
+              vertices          [-1.0 -1.0, +1.0 -1.0, -1.0 +1.0, +1.0 +1.0]
+              variables         ["ndc" 2]
+              z-near            1.0
+              z-far             2.0
+              fov               (:sfsim.render/fov config/render-config)
+              projection        (matrix/projection-matrix width height z-near z-far fov)
+              vao               (make-vertex-array-object geometry-program indices vertices variables)
+              geometry-buffers  (model/make-geometry-buffers width height)
+              light-direction   (vec3 1 0 0)]
+          (model/render-geometry geometry-buffers
+                                 (use-program geometry-program)
+                                 (uniform-matrix4 geometry-program "inverse_projection" (inverse projection))
+                                 (uniform-vector3 geometry-program "light_direction" light-direction)
+                                 (uniform-float geometry-program "specular" 500.0)
+                                 (render-quads vao))
           (render-to-image width height false) => (is-image (str "/tmp/" ?result) 0.0)
-          (model/destroy-geometry-buffers geometry-buffers))))
+          (model/destroy-geometry-buffers geometry-buffers)
+          (destroy-vertex-array-object vao)
+          (destroy-program geometry-program))))
     ?position                      ?orientation                               ?result
     (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
     (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png"))
