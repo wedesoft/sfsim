@@ -90,7 +90,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
   [program atmosphere-luts camera-to-world position light-direction z-far]
   (let [radius            (:sfsim.planet/radius config/planet-config)
         amplification     (:sfsim.render/amplification config/render-config)]
-    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 false)
+    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
     (uniform-matrix4 program "camera_to_world" camera-to-world)
     (uniform-vector3 program "origin" position)
     (uniform-float program "radius" radius)
@@ -99,39 +99,37 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
     (uniform-float program "amplification" amplification)
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts)
                    1 (:sfsim.atmosphere/scatter atmosphere-luts)
-                   2 (:sfsim.atmosphere/mie atmosphere-luts)})))
+                   2 (:sfsim.atmosphere/mie atmosphere-luts)
+                   3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)})))
 
 
 (when (.exists (io/file ".integration"))
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
     (fact
       (with-invisible-window
-        (let [width             320
-              height            240
-              geometry-renderer (atmosphere/make-atmosphere-geometry-renderer true)
-              geometry-program  (make-program :sfsim.render/vertex [atmosphere/vertex-atmosphere-geometry]
-                                              :sfsim.render/fragment [(atmosphere/fragment-atmosphere-geometry true)])
-              z-far             100000.0
-              max-height        (:sfsim.planet/max-height config/planet-config)
-              camera-to-world   (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
-              fov               (:sfsim.render/fov config/render-config)
-              light-direction   (vec3 1 0 0)
-              render-vars       (atmosphere/make-atmosphere-render-vars width height fov light-direction)
-              geometry-buffers  (model/make-geometry-buffers width height)
-              lighting-program  (make-lighting-program 0)
-              atmosphere-luts   (atmosphere/make-atmosphere-luts max-height)]
+        (let [width               320
+              height              240
+              atmosphere-renderer (atmosphere/make-atmosphere-geometry-renderer true)
+              z-far               100000.0
+              camera-to-world     (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
+              light-direction     (vec3 1 0 0)
+              geometry-buffers    (model/make-geometry-buffers width height)
+              lighting-program    (make-lighting-program 0)
+              atmosphere-luts     (atmosphere/make-atmosphere-luts (:sfsim.planet/max-height config/planet-config))]
           (model/render-geometry geometry-buffers
-                                 (atmosphere/render-full-atmosphere-geometry geometry-renderer render-vars))
+                                 (let [fov         (:sfsim.render/fov config/render-config)
+                                       render-vars (atmosphere/make-atmosphere-render-vars width height
+                                                                                           fov light-direction)]
+                                   (atmosphere/render-full-atmosphere-geometry atmosphere-renderer render-vars)))
           (render-to-image width height false
-                           (model/render-lighting geometry-buffers lighting-program 3
+                           (model/render-lighting geometry-buffers lighting-program 4
                                                   (set-lighting-uniforms lighting-program atmosphere-luts camera-to-world
                                                                          ?position light-direction z-far)))
           => (is-image (str "/tmp/" ?result) 0.0)
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)
           (model/destroy-geometry-buffers geometry-buffers)
-          (atmosphere/destroy-atmosphere-geometry-renderer geometry-renderer)
-          (destroy-program geometry-program))))
+          (atmosphere/destroy-atmosphere-geometry-renderer atmosphere-renderer))))
     ?position                      ?orientation                               ?result
     (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
     (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png"))
