@@ -13,7 +13,7 @@
     [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
     [malli.core :as m]
     [sfsim.interpolate :refer (interpolation-space)]
-    [sfsim.matrix :refer (fvec3)]
+    [sfsim.matrix :refer (fvec3 projection-matrix)]
     [sfsim.units :refer (rankin foot pound-force slugs)]
     [sfsim.ray :refer (integral-ray ray)]
     [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
@@ -758,6 +758,25 @@
     (use-program program)
     (uniform-matrix4 program "inverse_projection" (inverse projection))
     (uniform-float program "z_far" z-far)
+    (render-quads vao)))
+
+
+(defn make-atmosphere-render-vars
+  "Create atmosphere render variables for rendering full geometry"
+  [width height fov light-direction]
+  {:sfsim.render/projection (projection-matrix width height 1.0 2.0 fov)
+   :sfsim.render/light-direction light-direction})
+
+
+(defn render-full-atmosphere-geometry
+  "Render atmospheric direction vectors and emissive geometry buffer"
+  [{::keys [program vao]} render-vars]
+  (let [projection      (:sfsim.render/projection render-vars)
+        light-direction (:sfsim.render/light-direction render-vars)]
+    (use-program program)
+    (uniform-matrix4 program "inverse_projection" (inverse projection))
+    (uniform-vector3 program "light_direction" light-direction)
+    (uniform-float program "specular" 500.0)
     (render-quads vao)))
 
 

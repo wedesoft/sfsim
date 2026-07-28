@@ -92,9 +92,9 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
               amplification     (:sfsim.render/amplification config/render-config)
               camera-to-world   (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               fov               (:sfsim.render/fov config/render-config)
-              projection        (matrix/projection-matrix width height 1.0 2.0 fov)
-              geometry-buffers  (model/make-geometry-buffers width height)
               light-direction   (vec3 1 0 0)
+              render-vars       (atmosphere/make-atmosphere-render-vars width height fov light-direction)
+              geometry-buffers  (model/make-geometry-buffers width height)
               lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                               :sfsim.render/fragment [(lighting/fragment-lighting 0) shaders/ray-sphere
                                                                       atmosphere/attenuation-outer fragment-lighting-mocks
@@ -104,11 +104,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
                                  1 (:sfsim.atmosphere/scatter atmosphere-luts)
                                  2 (:sfsim.atmosphere/mie atmosphere-luts)}]
           (model/render-geometry geometry-buffers
-                                 (use-program (:sfsim.atmosphere/program geometry-renderer))
-                                 (uniform-matrix4 (:sfsim.atmosphere/program geometry-renderer) "inverse_projection" (inverse projection))
-                                 (uniform-vector3 (:sfsim.atmosphere/program geometry-renderer) "light_direction" light-direction)
-                                 (uniform-float (:sfsim.atmosphere/program geometry-renderer) "specular" 500.0)
-                                 (render-quads (:sfsim.atmosphere/vao geometry-renderer)))
+                                 (atmosphere/render-full-atmosphere-geometry geometry-renderer render-vars))
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (count lighting-textures)
                                                   (atmosphere/setup-atmosphere-uniforms lighting-program atmosphere-luts 0 false)
