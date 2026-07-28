@@ -77,6 +77,31 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
   return vec3(0, 0, 0);
 }")
 
+
+(defn make-lighting-program
+  [num-scene-shadows]
+  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                :sfsim.render/fragment [(lighting/fragment-lighting 0) shaders/ray-sphere
+                                        atmosphere/attenuation-outer fragment-lighting-mocks
+                                        cloud-overlay-mock]))
+
+
+(defn set-lighting-uniforms
+  [program atmosphere-luts camera-to-world position light-direction z-far]
+  (let [radius            (:sfsim.planet/radius config/planet-config)
+        amplification     (:sfsim.render/amplification config/render-config)]
+    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 false)
+    (uniform-matrix4 program "camera_to_world" camera-to-world)
+    (uniform-vector3 program "origin" position)
+    (uniform-float program "radius" radius)
+    (uniform-float program "z_far" z-far)
+    (uniform-vector3 program "light_direction" light-direction)
+    (uniform-float program "amplification" amplification)
+    (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts)
+                   1 (:sfsim.atmosphere/scatter atmosphere-luts)
+                   2 (:sfsim.atmosphere/mie atmosphere-luts)})))
+
+
 (when (.exists (io/file ".integration"))
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
     (fact
@@ -87,34 +112,21 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
               geometry-program  (make-program :sfsim.render/vertex [atmosphere/vertex-atmosphere-geometry]
                                               :sfsim.render/fragment [(atmosphere/fragment-atmosphere-geometry true)])
               z-far             100000.0
-              radius            (:sfsim.planet/radius config/planet-config)
               max-height        (:sfsim.planet/max-height config/planet-config)
-              amplification     (:sfsim.render/amplification config/render-config)
               camera-to-world   (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               fov               (:sfsim.render/fov config/render-config)
               light-direction   (vec3 1 0 0)
               render-vars       (atmosphere/make-atmosphere-render-vars width height fov light-direction)
               geometry-buffers  (model/make-geometry-buffers width height)
-              lighting-program  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                              :sfsim.render/fragment [(lighting/fragment-lighting 0) shaders/ray-sphere
-                                                                      atmosphere/attenuation-outer fragment-lighting-mocks
-                                                                      cloud-overlay-mock])
-              atmosphere-luts   (atmosphere/make-atmosphere-luts max-height)
-              lighting-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts)
-                                 1 (:sfsim.atmosphere/scatter atmosphere-luts)
-                                 2 (:sfsim.atmosphere/mie atmosphere-luts)}]
+              lighting-program  (make-lighting-program 0)
+              atmosphere-luts   (atmosphere/make-atmosphere-luts max-height)]
           (model/render-geometry geometry-buffers
                                  (atmosphere/render-full-atmosphere-geometry geometry-renderer render-vars))
           (render-to-image width height false
-                           (model/render-lighting geometry-buffers lighting-program (count lighting-textures)
-                                                  (atmosphere/setup-atmosphere-uniforms lighting-program atmosphere-luts 0 false)
-                                                  (uniform-matrix4 lighting-program "camera_to_world" camera-to-world)
-                                                  (uniform-vector3 lighting-program "origin" ?position)
-                                                  (uniform-float lighting-program "radius" radius)
-                                                  (uniform-float lighting-program "z_far" z-far)
-                                                  (uniform-vector3 lighting-program "light_direction" light-direction)
-                                                  (uniform-float lighting-program "amplification" amplification)
-                                                  (use-textures lighting-textures))) => (is-image (str "/tmp/" ?result) 0.0)
+                           (model/render-lighting geometry-buffers lighting-program 3
+                                                  (set-lighting-uniforms lighting-program atmosphere-luts camera-to-world
+                                                                         ?position light-direction z-far)))
+          => (is-image (str "/tmp/" ?result) 0.0)
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)
           (model/destroy-geometry-buffers geometry-buffers)

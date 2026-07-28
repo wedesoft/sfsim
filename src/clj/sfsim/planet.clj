@@ -282,11 +282,6 @@
      :sfsim.atmosphere/luts atmosphere-luts
      ::config config}))
 
-(defn make-planet-renderer2
-  [data]
-  (let [config (::config data)]))
-
-
 (defn render-planet
   "Render planet"
   {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars [:vector scene-shadow] [:map [:sfsim.clouds/distance texture-2d]]
@@ -326,10 +321,6 @@
   [{::keys [programs worley]}]
   (destroy-texture worley)
   (doseq [program (vals programs)] (destroy-program program)))
-
-
-(defn destroy-planet-renderer2
-  [planet-renderer])
 
 
 (defn load-tile-into-opengl
