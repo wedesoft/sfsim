@@ -1033,7 +1033,7 @@
   [data]
   (let [scene-renderer (make-scene-geometry-renderer false)
         planet-renderer (make-planet-geometry-renderer data)
-        atmosphere-renderer (make-atmosphere-geometry-renderer)]
+        atmosphere-renderer (make-atmosphere-geometry-renderer false)]
     {::scene-renderer scene-renderer
      ::planet-renderer planet-renderer
      ::atmosphere-renderer atmosphere-renderer}))

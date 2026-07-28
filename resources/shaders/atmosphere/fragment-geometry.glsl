@@ -1,6 +1,8 @@
 #version 450 core
 
+<% (if (not full) %>
 uniform float z_far;
+<% ) %>
 <% (if full %>
 uniform vec3 light_direction;
 uniform float specular;

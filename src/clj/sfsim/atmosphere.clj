@@ -732,10 +732,10 @@
 
 (defn make-atmosphere-geometry-renderer
   "Create renderer for rendering atmospheric direction vectors for output to a geometry buffer"
-  {:malli/schema [:=> [:cat] atmosphere-geometry-renderer]}
-  []
+  {:malli/schema [:=> [:cat :boolean] atmosphere-geometry-renderer]}
+  [full]
   (let [program  (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
-                               :sfsim.render/fragment [(fragment-atmosphere-geometry false)])
+                               :sfsim.render/fragment [(fragment-atmosphere-geometry full)])
         indices  [0 1 3 2]
         vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao      (make-vertex-array-object program indices vertices ["ndc" 2])]

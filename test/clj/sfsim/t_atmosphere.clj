@@ -1092,7 +1092,7 @@ void main()
 
 (facts "Render direction vectors for atmospheric background"
        (with-invisible-window
-         (let [renderer         (make-atmosphere-geometry-renderer)
+         (let [renderer         (make-atmosphere-geometry-renderer false)
                render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                :z-far 10.0}
                geometry         (clouds/render-cloud-geometry 160 120 (render-atmosphere-geometry renderer render-vars))]
