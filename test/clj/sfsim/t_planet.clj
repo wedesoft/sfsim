@@ -473,54 +473,6 @@ void main()
 }")
 
 
-(def fragment-geometry-planet-mock
-"#version 450 core
-uniform sampler2DArray day_night;
-uniform sampler2D normals;
-uniform sampler2D water;
-uniform vec3 light_direction;
-uniform float water_threshold;
-uniform vec3 water_color;
-uniform float reflectivity;
-uniform float land_noise_scale;
-uniform float land_noise_strength;
-uniform float dawn_start;
-uniform float dawn_end;
-uniform mat4 world_to_camera;
-uniform mat4 camera_to_world;
-float land_noise(vec3 point);
-float remap(float value, float original_min, float original_max, float new_min, float new_max);
-in GEO_OUT
-{
-  vec2 colorcoord;
-  vec3 point;
-  vec4 camera_point;
-} fs_in;
-layout (location = 0) out vec4 camera_point;
-layout (location = 1) out vec4 camera_normal;
-layout (location = 2) out vec4 diffuse_material;
-layout (location = 3) out float specular_material;
-layout (location = 4) out vec4 emissive_material;
-void main()
-{
-  float wet = texture(water, fs_in.colorcoord).r >= water_threshold ? 1.0 : 0.0;
-  camera_point = fs_in.camera_point;
-  vec3 world_point = fs_in.point;
-  vec3 water_normal = normalize(world_point);
-  vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
-  vec3 normal = mix(land_normal, water_normal, wet);
-  camera_normal = world_to_camera * vec4(normal, 0);
-  float land_modulation = 1.0 - land_noise_strength * land_noise(world_point / land_noise_scale);
-  vec3 day_color = texture(day_night, vec3(fs_in.colorcoord, 0.25)).rgb * land_modulation;
-  vec3 color = mix(day_color, water_color, wet);
-  diffuse_material = vec4(color, 1.0);
-  specular_material = wet * reflectivity;
-  vec3 night_color = max(texture(day_night, vec3(fs_in.colorcoord, 0.75)).rgb - 0.3, 0.0) / 0.7;
-  vec3 emissive = clamp(remap(dot(light_direction, water_normal), dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
-  emissive_material = vec4(emissive, 0.0);
-}")
-
-
 (defn make-planet-geometry-textures
   [program colors nx ny nz water]
   (let [day-night     (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
@@ -614,7 +566,7 @@ void main()
 (defn make-planet-geometry-program
   []
   (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
-                :sfsim.render/fragment [fragment-geometry-planet-mock land-noise-mock shaders/remap]))
+                :sfsim.render/fragment [(fragment-planet-geometry true) land-noise-mock shaders/remap]))
 
 
 (defn make-planet-vertex-array-object
@@ -811,7 +763,7 @@ void main()
                tree             {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 2)}
                geometry         (clouds/render-cloud-geometry 160 120 (render-planet-geometry renderer render-vars tree))]
            (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
-           => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
+           => (roughly-vector (vec4 0.011 0.011 -3.0 1.0) 1e-3)
            (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
            => (roughly 3.0 1e-3)
            (clouds/destroy-cloud-geometry geometry)
