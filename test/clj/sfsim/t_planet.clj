@@ -456,15 +456,15 @@ float land_noise(vec3 point)
 in vec3 point;
 in vec2 colorcoord;
 uniform float distance;
-out VS_OUT
+out GEO_OUT
 {
+  vec2 colorcoord;
   vec4 camera_point;
-  vec2 texcoord;
 } vs_out;
 void main()
 {
   vs_out.camera_point = vec4(0, 0, -distance, 1);
-  vs_out.texcoord = colorcoord;
+  vs_out.colorcoord = colorcoord;
   gl_Position = vec4(point, 1);
 }")
 
@@ -486,10 +486,10 @@ uniform mat4 world_to_camera;
 uniform mat4 camera_to_world;
 float land_noise(vec3 point);
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
-in VS_OUT
+in GEO_OUT
 {
+  vec2 colorcoord;
   vec4 camera_point;
-  vec2 texcoord;
 } fs_in;
 layout (location = 0) out vec4 camera_point;
 layout (location = 1) out vec4 camera_normal;
@@ -498,19 +498,19 @@ layout (location = 3) out float specular_material;
 layout (location = 4) out vec4 emissive_material;
 void main()
 {
-  float wet = texture(water, fs_in.texcoord).r >= water_threshold ? 1.0 : 0.0;
+  float wet = texture(water, fs_in.colorcoord).r >= water_threshold ? 1.0 : 0.0;
   camera_point = fs_in.camera_point;
   vec4 world_point = camera_to_world * fs_in.camera_point;
   vec3 water_normal = normalize(world_point.xyz);
-  vec3 land_normal = texture(normals, fs_in.texcoord).xyz;
+  vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
   vec3 normal = mix(land_normal, water_normal, wet);
   camera_normal = world_to_camera * vec4(normal, 0);
   float land_modulation = 1.0 - land_noise_strength * land_noise(world_point.xyz / land_noise_scale);
-  vec3 day_color = texture(day_night, vec3(fs_in.texcoord, 0.25)).rgb * land_modulation;
+  vec3 day_color = texture(day_night, vec3(fs_in.colorcoord, 0.25)).rgb * land_modulation;
   vec3 color = mix(day_color, water_color, wet);
   diffuse_material = vec4(color, 1.0);
   specular_material = wet * reflectivity;
-  vec3 night_color = max(texture(day_night, vec3(fs_in.texcoord, 0.75)).rgb - 0.3, 0.0) / 0.7;
+  vec3 night_color = max(texture(day_night, vec3(fs_in.colorcoord, 0.75)).rgb - 0.3, 0.0) / 0.7;
   vec3 emissive = clamp(remap(dot(light_direction, water_normal), dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
   emissive_material = vec4(emissive, 0.0);
 }")
