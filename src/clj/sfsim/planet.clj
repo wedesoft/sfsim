@@ -459,13 +459,13 @@
 
 (defn make-planet-geometry-renderer
   "Create renderer for rendering planet points in camera coordinate system"
-  {:malli/schema [:=> [:cat planet-data :int] planet-geometry-renderer]}
-  [data num-scene-shadows]
+  {:malli/schema [:=> [:cat planet-data :boolean :int] planet-geometry-renderer]}
+  [data full num-scene-shadows]
   (let [program  (make-program :sfsim.render/vertex [vertex-planet]
                                :sfsim.render/tess-control [tess-control-planet]
                                :sfsim.render/tess-evaluation [(tess-evaluation-planet num-scene-shadows)]
                                :sfsim.render/geometry [(geometry-planet-shading num-scene-shadows)]
-                               :sfsim.render/fragment [(fragment-planet-geometry false)])
+                               :sfsim.render/fragment [(fragment-planet-geometry full)])
         tilesize (::tilesize (::config data))]
     (use-program program)
     (uniform-sampler program "surface" 0)

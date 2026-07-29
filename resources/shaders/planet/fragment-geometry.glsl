@@ -43,7 +43,7 @@ void main()
 {
   camera_point = fs_in.camera_point;
 <% (if (not full) %>
-  dist = length(fs_in.camera_point.xyz);
+  dist = length(camera_point.xyz);
 <% ) %>
 <% (if full %>
   float wet = texture(water, fs_in.colorcoord).r >= water_threshold ? 1.0 : 0.0;

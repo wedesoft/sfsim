@@ -1032,7 +1032,7 @@
   {:malli/schema [:=> [:cat planet-data :int] joined-geometry-renderer]}
   [data num-scene-shadows]
   (let [scene-renderer (make-scene-geometry-renderer false)
-        planet-renderer (make-planet-geometry-renderer data num-scene-shadows)
+        planet-renderer (make-planet-geometry-renderer data false num-scene-shadows)
         atmosphere-renderer (make-atmosphere-geometry-renderer false)]
     {::scene-renderer scene-renderer
      ::planet-renderer planet-renderer
