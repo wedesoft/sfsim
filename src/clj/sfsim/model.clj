@@ -1029,10 +1029,10 @@
 
 (defn make-joined-geometry-renderer
   "Joined geometry renderer for rendering scene, planet, and atmosphere geometry information"
-  {:malli/schema [:=> [:cat planet-data] joined-geometry-renderer]}
-  [data]
+  {:malli/schema [:=> [:cat planet-data :int] joined-geometry-renderer]}
+  [data num-scene-shadows]
   (let [scene-renderer (make-scene-geometry-renderer false)
-        planet-renderer (make-planet-geometry-renderer data)
+        planet-renderer (make-planet-geometry-renderer data num-scene-shadows)
         atmosphere-renderer (make-atmosphere-geometry-renderer false)]
     {::scene-renderer scene-renderer
      ::planet-renderer planet-renderer

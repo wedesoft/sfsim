@@ -1488,7 +1488,7 @@ void main()
          (facts
            (with-invisible-window
              (let [data                {:sfsim.planet/config {:sfsim.planet/tilesize 3}}
-                   renderer            (make-joined-geometry-renderer data)
+                   renderer            (make-joined-geometry-renderer data 0)
                    scene-program       (:sfsim.model/programs (:sfsim.model/scene-renderer renderer))
                    planet-program      (:sfsim.planet/program (:sfsim.model/planet-renderer renderer))
                    opengl-scene        (load-scene-into-opengl (comp scene-program material-type) cube)

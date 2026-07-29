@@ -46,7 +46,7 @@
      ::planet-shadow-renderer (planet/make-planet-shadow-renderer data)
      ::planet-renderer        (planet/make-planet-renderer data)
      ::atmosphere-renderer    (atmosphere/make-atmosphere-renderer data)
-     ::geometry-renderer      (model/make-joined-geometry-renderer data)
+     ::geometry-renderer      (model/make-joined-geometry-renderer data 0)
      ::cloud-renderer         (clouds/make-cloud-renderer data)
      ::scene-renderer         scene-renderer
      ::scene-shadow-renderer  scene-shadow-renderer
