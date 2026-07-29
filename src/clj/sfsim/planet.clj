@@ -444,21 +444,9 @@
                       object-position object-orientation z-near z-far time_ pressure)))
 
 
-(def fragment-planet-geometry
-"#version 450 core
-in GEO_OUT
-{
-  vec2 colorcoord;
-  vec3 point;
-  vec4 camera_point;
-} fs_in;
-layout (location = 0) out vec4 camera_point;
-layout (location = 1) out float dist;
-void main()
-{
-  camera_point = vec4(normalize(fs_in.camera_point.xyz), 0.0);
-  dist = length(fs_in.camera_point.xyz);
-}")
+(defn fragment-planet-geometry
+  [full]
+  (template/eval (slurp "resources/shaders/planet/fragment-geometry.glsl") {:full full}))
 
 
 (def planet-data
@@ -477,7 +465,7 @@ void main()
                                :sfsim.render/tess-control [tess-control-planet]
                                :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
                                :sfsim.render/geometry [(geometry-planet-shading 0)]
-                               :sfsim.render/fragment [fragment-planet-geometry])
+                               :sfsim.render/fragment [(fragment-planet-geometry false)])
         tilesize (::tilesize (::config data))]
     (use-program program)
     (uniform-sampler program "surface" 0)
