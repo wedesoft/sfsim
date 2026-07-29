@@ -89,14 +89,21 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
 (defn set-lighting-uniforms
   [program atmosphere-luts camera-to-world position light-direction z-far]
   (let [radius            (:sfsim.planet/radius config/planet-config)
-        amplification     (:sfsim.render/amplification config/render-config)]
+        max-height        (:sfsim.planet/max-height config/planet-config)
+        amplification     (:sfsim.render/amplification config/render-config)
+        albedo            (:sfsim.planet/albedo config/planet-config)
+        specular          (:sfsim.render/specular config/render-config)]
     (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
-    (uniform-matrix4 program "camera_to_world" camera-to-world)
-    (uniform-vector3 program "origin" position)
-    (uniform-float program "radius" radius)
-    (uniform-float program "z_far" z-far)
-    (uniform-vector3 program "light_direction" light-direction)
+    ; See planet or model for shadow uniforms
+    (uniform-float program "albedo" albedo)
     (uniform-float program "amplification" amplification)
+    (uniform-float program "specular" specular)
+    (uniform-vector3 program "origin" position)
+    (uniform-matrix4 program "camera_to_world" camera-to-world)
+    (uniform-vector3 program "light_direction" light-direction)
+    (uniform-float program "radius" radius)
+    (uniform-float program "max_height" max-height)
+    (uniform-float program "z_far" z-far)
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts)
                    1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts)
