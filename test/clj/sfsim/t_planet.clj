@@ -453,18 +453,22 @@ float land_noise(vec3 point)
 
 (def vertex-geometry-planet-mock
 "#version 450 core
+uniform mat4 camera_to_world;
 in vec3 point;
 in vec2 colorcoord;
 uniform float distance;
 out GEO_OUT
 {
   vec2 colorcoord;
+  vec3 point;
   vec4 camera_point;
 } vs_out;
 void main()
 {
-  vs_out.camera_point = vec4(0, 0, -distance, 1);
   vs_out.colorcoord = colorcoord;
+  vec4 camera_point = vec4(0, 0, -distance, 1);
+  vs_out.camera_point = camera_point;
+  vs_out.point = (camera_to_world * camera_point).xyz;
   gl_Position = vec4(point, 1);
 }")
 
@@ -489,6 +493,7 @@ float remap(float value, float original_min, float original_max, float new_min, 
 in GEO_OUT
 {
   vec2 colorcoord;
+  vec3 point;
   vec4 camera_point;
 } fs_in;
 layout (location = 0) out vec4 camera_point;
@@ -500,12 +505,12 @@ void main()
 {
   float wet = texture(water, fs_in.colorcoord).r >= water_threshold ? 1.0 : 0.0;
   camera_point = fs_in.camera_point;
-  vec4 world_point = camera_to_world * fs_in.camera_point;
-  vec3 water_normal = normalize(world_point.xyz);
+  vec3 world_point = fs_in.point;
+  vec3 water_normal = normalize(world_point);
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
   vec3 normal = mix(land_normal, water_normal, wet);
   camera_normal = world_to_camera * vec4(normal, 0);
-  float land_modulation = 1.0 - land_noise_strength * land_noise(world_point.xyz / land_noise_scale);
+  float land_modulation = 1.0 - land_noise_strength * land_noise(world_point / land_noise_scale);
   vec3 day_color = texture(day_night, vec3(fs_in.colorcoord, 0.25)).rgb * land_modulation;
   vec3 color = mix(day_color, water_color, wet);
   diffuse_material = vec4(color, 1.0);
