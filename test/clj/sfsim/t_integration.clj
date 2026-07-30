@@ -33,7 +33,9 @@
     [sfsim.texture :refer :all])
   (:import
     (org.lwjgl.glfw
-      GLFW)))
+      GLFW)
+   (org.lwjgl.opengl
+      GL11)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -130,10 +132,21 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
               lighting-program    (make-lighting-program 0)
               atmosphere-luts     (atmosphere/make-atmosphere-luts (:sfsim.planet/max-height config/planet-config))]
           (model/render-geometry geometry-buffers
-                                 (let [fov         (:sfsim.render/fov config/render-config)
-                                       render-vars (atmosphere/make-atmosphere-render-vars width height
-                                                                                           fov light-direction)]
-                                   (atmosphere/render-full-atmosphere-geometry atmosphere-renderer render-vars)))
+                                 (with-stencils
+                                   (let [render-vars (planet/make-planet-render-vars config/planet-config config/cloud-config
+                                                                                     config/render-config width height ?position
+                                                                                     ?orientation light-direction
+                                                                                     ?position ?orientation (model/make-model-vars 0.0 1.0 0.0))]
+                                     (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2
+                                       (planet/render-planet-geometry planet-renderer (assoc render-vars
+                                                                                             :sfsim.render/overlay-projection
+                                                                                             (:sfsim.render/projection render-vars))
+                                                                      tree)))
+                                   (let [fov         (:sfsim.render/fov config/render-config)
+                                         render-vars (atmosphere/make-atmosphere-render-vars width height
+                                                                                             fov light-direction)]
+                                     (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
+                                       (atmosphere/render-full-atmosphere-geometry atmosphere-renderer render-vars)))))
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program 4
                                                   (set-lighting-uniforms lighting-program atmosphere-luts camera-to-world
