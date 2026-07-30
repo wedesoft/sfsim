@@ -116,7 +116,13 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
       (with-invisible-window
         (let [width               320
               height              240
+              level               5
               atmosphere-renderer (atmosphere/make-atmosphere-geometry-renderer true)
+              planet-renderer     (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
+              tree                (load-tile-tree (assoc planet-renderer
+                                                         :sfsim.planet/config config/planet-config
+                                                         :sfsim.planet/programs [(:sfsim.planet/program planet-renderer)]
+                                                         ) {} width ?position level)
               z-far               100000.0
               camera-to-world     (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               light-direction     (vec3 1 0 0)
@@ -136,6 +142,8 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)
           (model/destroy-geometry-buffers geometry-buffers)
+          (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
+          (planet/destroy-planet-geometry-renderer planet-renderer)
           (atmosphere/destroy-atmosphere-geometry-renderer atmosphere-renderer))))
     ?position                      ?orientation                               ?result
     (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"

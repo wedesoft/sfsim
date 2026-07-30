@@ -446,7 +446,8 @@
 
 (defn fragment-planet-geometry
   [full]
-  (template/eval (slurp "resources/shaders/planet/fragment-geometry.glsl") {:full full}))
+  [(shaders/lookup-3d "land_noise" "worley") shaders/remap
+   (template/eval (slurp "resources/shaders/planet/fragment-geometry.glsl") {:full full})])
 
 
 (def planet-data
@@ -469,6 +470,11 @@
         tilesize (::tilesize (::config data))]
     (use-program program)
     (uniform-sampler program "surface" 0)
+    (when full
+      (uniform-sampler program "day_night" 1)
+      (uniform-sampler program "normals"   2)
+      (uniform-sampler program "water"     3)
+      (uniform-sampler program "worley"    4))
     (uniform-int program "high_detail" (dec ^long tilesize))
     (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     {::program program}))
