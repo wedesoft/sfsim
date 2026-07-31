@@ -566,7 +566,7 @@ void main()
 (defn make-planet-geometry-program
   []
   (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
-                :sfsim.render/fragment [(fragment-planet-geometry true) land-noise-mock shaders/remap]))
+                :sfsim.render/fragment [(last (fragment-planet-geometry true)) land-noise-mock shaders/remap]))
 
 
 (defn make-planet-vertex-array-object
