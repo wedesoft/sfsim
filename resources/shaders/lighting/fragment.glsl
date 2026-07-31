@@ -32,7 +32,7 @@ void main()
   vec2 uv = vec2(gl_FragCoord.x / width, gl_FragCoord.y / height);
   vec4 point = texture(camera_point, uv);
   if (point.w > 0.0) {
-    vec4 normal = texture(camera_normal, uv);
+    vec3 normal = (camera_to_world * texture(camera_normal, uv)).xyz;
     vec3 diffuse_color = texture(diffuse_material, uv).rgb;
     vec3 world_point = (camera_to_world * point).xyz;
     vec3 ambient_light = surface_radiance_function(world_point, light_direction);
@@ -41,7 +41,7 @@ void main()
 <% ) %>
     vec3 light = overall_shading(world_point <%= (apply str (map #(str ", object_shadow_pos_" (inc ^long %)) (range num-scene-shadows))) %>);
     float specular = texture(specular_material, uv).r;
-    vec3 phong = phong(ambient_light, light, world_point, normal.xyz, diffuse_color, specular);
+    vec3 phong = phong(ambient_light, light, world_point, normal, diffuse_color, specular);
     vec3 emissive = texture(emissive_material, uv).rgb;
     vec3 incoming = attenuation_point(world_point, vec4(phong + emissive, 1.0)).rgb;
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));
