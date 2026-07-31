@@ -141,7 +141,7 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
                                        (planet/render-planet-geometry planet-renderer (assoc render-vars
                                                                                              :sfsim.render/overlay-projection
                                                                                              (:sfsim.render/projection render-vars))
-                                                                      tree)))
+                                                                      true tree)))
                                    (let [fov         (:sfsim.render/fov config/render-config)
                                          render-vars (atmosphere/make-atmosphere-render-vars width height
                                                                                              fov light-direction)]

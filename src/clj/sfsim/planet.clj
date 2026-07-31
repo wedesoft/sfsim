@@ -462,12 +462,16 @@
   "Create renderer for rendering planet points in camera coordinate system"
   {:malli/schema [:=> [:cat planet-data :boolean :int] planet-geometry-renderer]}
   [data full num-scene-shadows]
-  (let [program  (make-program :sfsim.render/vertex [vertex-planet]
-                               :sfsim.render/tess-control [tess-control-planet]
-                               :sfsim.render/tess-evaluation [(tess-evaluation-planet num-scene-shadows)]
-                               :sfsim.render/geometry [(geometry-planet-shading num-scene-shadows)]
-                               :sfsim.render/fragment [(fragment-planet-geometry full)])
-        tilesize (::tilesize (::config data))]
+  (let [program       (make-program :sfsim.render/vertex [vertex-planet]
+                                    :sfsim.render/tess-control [tess-control-planet]
+                                    :sfsim.render/tess-evaluation [(tess-evaluation-planet num-scene-shadows)]
+                                    :sfsim.render/geometry [(geometry-planet-shading num-scene-shadows)]
+                                    :sfsim.render/fragment [(fragment-planet-geometry full)])
+        config        (::config data)
+        tilesize      (::tilesize config)
+        worley-floats (slurp-floats "data/clouds/worley-cover.raw")
+        worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
+        worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)]
     (use-program program)
     (uniform-sampler program "surface" 0)
     (when full
@@ -477,21 +481,37 @@
       (uniform-sampler program "worley"    4))
     (uniform-int program "high_detail" (dec ^long tilesize))
     (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
-    {::program program}))
+    (when full
+      (uniform-float program "dawn_start" (::dawn-start config))
+      (uniform-float program "dawn_end" (::dawn-end config))
+      (uniform-float program "radius" (::radius config))
+      (uniform-float program "albedo" (::albedo config))
+      (uniform-float program "reflectivity" (::reflectivity config))
+      (uniform-float program "land_noise_scale" (::land-noise-scale config))
+      (uniform-float program "land_noise_strength" (::land-noise-strength config))
+      (uniform-float program "water_threshold" (::water-threshold config))
+      (uniform-vector3 program "water_color" (::water-color config)))
+    {::program program ::worley worley}))
 
 
 (defn destroy-planet-geometry-renderer
   "Destroy planet geometry renderer"
-  [{::keys [program]}]
+  [{::keys [program worley]}]
+  (destroy-texture worley)
   (destroy-program program))
 
 
 (defn render-planet-geometry
   "Render geometry (planet points and distances)"
-  [{::keys [program]} render-vars tree]
-  (use-program program)
-  (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))
-  (render-tree program tree (inverse (:sfsim.render/camera-to-world render-vars)) [] [:sfsim.planet/surf-tex]))
+  [{::keys [program worley]} render-vars full tree]
+  (let [world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
+    (use-program program)
+    (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))
+    (uniform-matrix4 program "world_to_camera" world-to-camera)
+    (when full
+      (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
+      (use-textures {4 worley}))
+    (render-tree program tree world-to-camera [] (if full [::surf-tex ::day-night-tex ::normal-tex ::water-tex] [::surf-tex]))))
 
 
 (defn update-local-mesh
@@ -501,18 +521,18 @@
         face   (determine-face point)
         j      (cube-j face point)
         i      (cube-i face point)
-        coords (dissoc (tile-coordinates j i (:sfsim.planet/level config/planet-config) (:sfsim.planet/tilesize config/planet-config))
+        coords (dissoc (tile-coordinates j i (::level config/planet-config) (::tilesize config/planet-config))
                        :sfsim.quadtree/dy :sfsim.quadtree/dx)]
     (if (not= coords (:coords local-mesh))
       (let [b            (:sfsim.quadtree/row coords)
             a            (:sfsim.quadtree/column coords)
             tile-y       (:sfsim.quadtree/tile-y coords)
             tile-x       (:sfsim.quadtree/tile-x coords)
-            earth-radius (:sfsim.planet/radius config/planet-config)
-            center       (tile-center face (:sfsim.planet/level config/planet-config) b a earth-radius)
+            earth-radius (::radius config/planet-config)
+            center       (tile-center face (::level config/planet-config) b a earth-radius)
             m            (create-local-mesh split-orientations face
-                                            (:sfsim.planet/level config/planet-config)
-                                            (:sfsim.planet/tilesize config/planet-config) b a tile-y tile-x
+                                            (::level config/planet-config)
+                                            (::tilesize config/planet-config) b a tile-y tile-x
                                             earth-radius center)]
         (when-let [mesh (:mesh local-mesh)]
                   (jolt/remove-and-destroy-body mesh))

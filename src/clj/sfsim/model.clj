@@ -1072,7 +1072,7 @@
                                                         (if model-covers-planet? model-render-vars planet-render-vars) model)))
                              (when tree
                                (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
-                                 (render-planet-geometry planet-renderer planet-render-vars tree)))
+                                 (render-planet-geometry planet-renderer planet-render-vars false tree)))
                              (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
                                (render-atmosphere-geometry atmosphere-renderer planet-render-vars))))))
 

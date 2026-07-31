@@ -761,7 +761,7 @@ void main()
                surface          (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                         #:sfsim.image{:width 3 :height 3 :data (float-array data)})
                tree             {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 2)}
-               geometry         (clouds/render-cloud-geometry 160 120 (render-planet-geometry renderer render-vars tree))]
+               geometry         (clouds/render-cloud-geometry 160 120 (render-planet-geometry renderer render-vars false tree))]
            (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
            => (roughly-vector (vec4 0.011 0.011 -3.0 1.0) 1e-3)
            (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)

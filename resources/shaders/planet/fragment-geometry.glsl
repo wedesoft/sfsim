@@ -13,7 +13,6 @@ uniform float land_noise_strength;
 uniform float dawn_start;
 uniform float dawn_end;
 uniform mat4 world_to_camera;
-uniform mat4 camera_to_world;
 <% ) %>
 
 in GEO_OUT
