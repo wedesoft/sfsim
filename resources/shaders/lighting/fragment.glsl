@@ -45,7 +45,8 @@ void main()
     vec3 emissive = texture(emissive_material, uv).rgb;
     vec3 incoming = attenuation_point(world_point, vec4(phong + emissive, 1.0)).rgb;
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));
-    fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
+    incoming = incoming * (1 - cloud_scatter.a) + cloud_scatter.rgb;
+    fragColor = vec4(incoming, 1);
   } else {
     vec3 direction = (camera_to_world * point).xyz;
     vec3 incoming = texture(emissive_material, uv).rgb;
