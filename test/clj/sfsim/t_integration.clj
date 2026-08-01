@@ -106,35 +106,41 @@ vec3 overall_shading(vec3 world_point)
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
     (fact
       (with-invisible-window
-        (let [width               320
-              height              240
-              level               5
-              atmosphere-renderer (atmosphere/make-atmosphere-geometry-renderer true)
-              planet-renderer     (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
-              tree                (load-tile-tree (assoc planet-renderer
-                                                         :sfsim.planet/config config/planet-config
-                                                         :sfsim.planet/programs [(:sfsim.planet/program planet-renderer)]
-                                                         ) {} width ?position level)
-              cloud-data          (clouds/make-cloud-data config/cloud-config)
-              opacity-data        (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
-              z-far               100000.0
-              camera-to-world     (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
-              light-direction     (vec3 1 0 0)
-              geometry-buffers    (model/make-geometry-buffers width height)
-              lighting-program    (make-lighting-program 0)
-              atmosphere-luts     (atmosphere/make-atmosphere-luts config/max-height)]
+        (let [width                  320
+              height                 240
+              level                  5
+              opacity-base           250.0
+              light-direction        (vec3 1 0 0)
+              atmosphere-renderer    (atmosphere/make-atmosphere-geometry-renderer true)
+              planet-renderer        (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
+              tree                   (load-tile-tree (assoc planet-renderer
+                                                            :sfsim.planet/config config/planet-config
+                                                            :sfsim.planet/programs [(:sfsim.planet/program planet-renderer)]
+                                                            ) {} width ?position level)
+              graphics-data          (graphics/make-graphics-data)
+              shadow-data            (:sfsim.opacity/data graphics-data)
+              cloud-data             (:sfsim.clouds/data graphics-data)
+              opacity-renderer       (opacity/make-opacity-renderer graphics-data)
+              planet-shadow-renderer (planet/make-planet-shadow-renderer graphics-data)
+              ;; TODO: make-planet-render-vars sets up to much information
+              planet-render-vars     (planet/make-planet-render-vars config/planet-config config/cloud-config
+                                                                     config/render-config width height ?position
+                                                                     ?orientation light-direction
+                                                                     ?position ?orientation (model/make-model-vars 0.0 1.0 0.0))
+              shadow-vars            (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
+                                                                         cloud-data planet-render-vars tree opacity-base)
+              atmosphere-luts        (:sfsim.atmosphere/luts graphics-data)
+              z-far                  100000.0
+              camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
+              geometry-buffers       (model/make-geometry-buffers width height)
+              lighting-program       (make-lighting-program 0)]
           (model/render-geometry geometry-buffers
                                  (with-stencils
-                                   ;; TODO: make-planet-render-vars sets up to much information
-                                   (let [render-vars (planet/make-planet-render-vars config/planet-config config/cloud-config
-                                                                                     config/render-config width height ?position
-                                                                                     ?orientation light-direction
-                                                                                     ?position ?orientation (model/make-model-vars 0.0 1.0 0.0))]
-                                     (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2
-                                       (planet/render-planet-geometry planet-renderer (assoc render-vars
-                                                                                             :sfsim.render/overlay-projection
-                                                                                             (:sfsim.render/projection render-vars))
-                                                                      true tree)))
+                                   (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2
+                                     (planet/render-planet-geometry planet-renderer (assoc planet-render-vars
+                                                                                           :sfsim.render/overlay-projection
+                                                                                           (:sfsim.render/projection planet-render-vars))
+                                                                    true tree))
                                    (let [fov         (:sfsim.render/fov config/render-config)
                                          render-vars (atmosphere/make-atmosphere-render-vars width height
                                                                                              fov light-direction)]
@@ -145,6 +151,9 @@ vec3 overall_shading(vec3 world_point)
                                                   (set-lighting-uniforms lighting-program width height atmosphere-luts camera-to-world
                                                                          ?position light-direction z-far)))
           => (is-image (str "/tmp/" ?result) 0.0)
+          (opacity/destroy-opacity-and-shadow shadow-vars)
+          (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
+          (opacity/destroy-opacity-renderer opacity-renderer)
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)
           (model/destroy-geometry-buffers geometry-buffers)
