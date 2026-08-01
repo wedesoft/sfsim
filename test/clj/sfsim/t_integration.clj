@@ -26,6 +26,7 @@
     [sfsim.graphics :as graphics]
     [sfsim.planet :as planet]
     [sfsim.clouds :as clouds]
+    [sfsim.opacity :as opacity]
     [sfsim.plume :as plume]
     [sfsim.physics :as physics]
     [sfsim.quadtree :refer :all]
@@ -114,6 +115,8 @@ vec3 overall_shading(vec3 world_point)
                                                          :sfsim.planet/config config/planet-config
                                                          :sfsim.planet/programs [(:sfsim.planet/program planet-renderer)]
                                                          ) {} width ?position level)
+              cloud-data          (clouds/make-cloud-data config/cloud-config)
+              opacity-data        (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
               z-far               100000.0
               camera-to-world     (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               light-direction     (vec3 1 0 0)
@@ -145,6 +148,7 @@ vec3 overall_shading(vec3 world_point)
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)
           (model/destroy-geometry-buffers geometry-buffers)
+          (clouds/destroy-cloud-data cloud-data)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
           (planet/destroy-planet-geometry-renderer planet-renderer)
           (atmosphere/destroy-atmosphere-geometry-renderer atmosphere-renderer))))
