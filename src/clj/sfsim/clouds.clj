@@ -264,7 +264,7 @@
 
 (defn planet-and-cloud-shadows
   "Multiply shadows to get overall shadow"
-  {:malli/schema [:=> [:cat N] render/shaders]}
+  {:malli/schema [:=> [:cat N0] render/shaders]}
   [num-steps]
   [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
    (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" "shadow_size"
@@ -277,7 +277,7 @@
 
 (defn environmental-shading
   "Shader function for determining direct light left after atmospheric scattering and shadows"
-  {:malli/schema [:=> [:cat N] render/shaders]}
+  {:malli/schema [:=> [:cat N0] render/shaders]}
   [num-steps]
   [shaders/is-above-horizon atmosphere/transmittance-point (planet-and-cloud-shadows num-steps)
    (slurp "resources/shaders/clouds/environmental-shading.glsl")])
@@ -463,7 +463,7 @@
 
 
 (defn overall-shading
-  {:malli/schema [:=> [:cat N [:sequential [:tuple :string :string]]] render/shaders]}
+  {:malli/schema [:=> [:cat N0 [:sequential [:tuple :string :string]]] render/shaders]}
   [num-steps parameters]
   [(environmental-shading num-steps)
    (template/eval (slurp "resources/shaders/clouds/overall-shading.glsl") {:parameters parameters})])

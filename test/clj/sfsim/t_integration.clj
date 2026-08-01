@@ -25,6 +25,7 @@
     [sfsim.shaders :as shaders]
     [sfsim.graphics :as graphics]
     [sfsim.planet :as planet]
+    [sfsim.clouds :as clouds]
     [sfsim.plume :as plume]
     [sfsim.physics :as physics]
     [sfsim.quadtree :refer :all]
@@ -65,27 +66,15 @@ vec4 cloud_overlay(float depth)
 vec3 overall_shading(vec3 world_point)
 {
   return vec3(1, 1, 1);
-}
-vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity)
-{
-  return vec3(0, 0, 0);
-}
-vec4 attenuation_point(vec3 point, vec4 incoming)
-{
-  return incoming;
-}
-vec3 surface_radiance_function(vec3 point, vec3 light_direction)
-{
-  return vec3(0, 0, 0);
 }")
 
 
 (defn make-lighting-program
   [num-scene-shadows]
   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                :sfsim.render/fragment [(lighting/fragment-lighting 0) shaders/ray-sphere
-                                        atmosphere/attenuation-outer fragment-lighting-mocks
-                                        cloud-overlay-mock]))
+                :sfsim.render/fragment [(lighting/fragment-lighting 0) shaders/phong shaders/ray-sphere
+                                        atmosphere/attenuation-outer atmosphere/attenuation-point
+                                        planet/surface-radiance-function (clouds/overall-shading 0 []) cloud-overlay-mock]))
 
 
 (defn set-lighting-uniforms
