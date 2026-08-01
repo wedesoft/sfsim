@@ -26,7 +26,7 @@
 (def config (immuconf/load "resources/config.edn"))
 
 
-(def max-height 35000.0)
+(def max-height (immuconf/get config :sfsim.max-height))
 (def render-config (immuconf/get config :sfsim.render-config))
 (def planet-config (immuconf/get config :sfsim.planet-config))
 (def cloud-config (immuconf/get config :sfsim.cloud-config))

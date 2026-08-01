@@ -80,7 +80,6 @@ vec3 overall_shading(vec3 world_point)
 (defn set-lighting-uniforms
   [program width height atmosphere-luts camera-to-world position light-direction z-far]
   (let [radius            (:sfsim.planet/radius config/planet-config)
-        max-height        (:sfsim.planet/max-height config/planet-config)
         amplification     (:sfsim.render/amplification config/render-config)
         albedo            (:sfsim.planet/albedo config/planet-config)
         specular          (:sfsim.render/specular config/render-config)]
@@ -95,9 +94,7 @@ vec3 overall_shading(vec3 world_point)
     (uniform-vector3 program "origin" position)
     (uniform-vector3 program "light_direction" light-direction)
     (uniform-float program "radius" radius)
-    (uniform-float program "max_height" max-height)
     (uniform-float program "z_far" z-far)
-    (uniform-vector3 program "light_direction" light-direction)
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts)
                    1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts)
@@ -122,7 +119,7 @@ vec3 overall_shading(vec3 world_point)
               light-direction     (vec3 1 0 0)
               geometry-buffers    (model/make-geometry-buffers width height)
               lighting-program    (make-lighting-program 0)
-              atmosphere-luts     (atmosphere/make-atmosphere-luts (:sfsim.planet/max-height config/planet-config))]
+              atmosphere-luts     (atmosphere/make-atmosphere-luts config/max-height)]
           (model/render-geometry geometry-buffers
                                  (with-stencils
                                    ;; TODO: make-planet-render-vars sets up to much information
@@ -174,7 +171,8 @@ vec3 overall_shading(vec3 world_point)
                                                              light-direction object-position (q/->Quaternion 1 0 0 0) []
                                                              opacity-base)
                      tex             (texture-render-color-depth width height true (graphics/render-frame graphics frame tree))]
-                 (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.5)
+                 (texture->image tex)
+                 => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.5)
                  (destroy-texture tex)
                  (graphics/finalise-frame frame)
                  (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
