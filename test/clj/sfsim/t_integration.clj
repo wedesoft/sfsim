@@ -62,20 +62,13 @@ vec4 cloud_overlay(float depth)
   return vec4(0.0, 0.0, 0.0, 0.0);
 }")
 
-(def fragment-lighting-mocks
-"#version 450 core
-vec3 overall_shading(vec3 world_point)
-{
-  return vec3(1, 1, 1);
-}")
-
-
 (defn make-lighting-program
-  [num-scene-shadows]
+  [num-scene-shadows num-steps]
   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                :sfsim.render/fragment [(lighting/fragment-lighting 0) shaders/phong shaders/ray-sphere
-                                        atmosphere/attenuation-outer atmosphere/attenuation-point
-                                        planet/surface-radiance-function (clouds/overall-shading 0 []) cloud-overlay-mock]))
+                :sfsim.render/fragment [(lighting/fragment-lighting num-scene-shadows) shaders/phong shaders/ray-sphere
+                                        atmosphere/attenuation-outer atmosphere/attenuation-point planet/surface-radiance-function
+                                        (clouds/overall-shading num-steps (clouds/overall-shading-parameters num-scene-shadows))
+                                        cloud-overlay-mock]))
 
 
 (defn set-lighting-uniforms
@@ -111,6 +104,7 @@ vec3 overall_shading(vec3 world_point)
               level                  5
               opacity-base           250.0
               light-direction        (vec3 1 0 0)
+              num-steps              (:sfsim.opacity/num-steps config/shadow-config)
               atmosphere-renderer    (atmosphere/make-atmosphere-geometry-renderer true)
               planet-renderer        (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
               tree                   (load-tile-tree (assoc planet-renderer
@@ -133,7 +127,7 @@ vec3 overall_shading(vec3 world_point)
               z-far                  100000.0
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               geometry-buffers       (model/make-geometry-buffers width height)
-              lighting-program       (make-lighting-program 0)]
+              lighting-program       (make-lighting-program 0 num-steps)]
           (model/render-geometry geometry-buffers
                                  (with-stencils
                                    (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2
@@ -147,9 +141,14 @@ vec3 overall_shading(vec3 world_point)
                                      (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
                                        (atmosphere/render-full-atmosphere-geometry atmosphere-renderer render-vars)))))
           (render-to-image width height false
-                           (model/render-lighting geometry-buffers lighting-program 4
+                           (model/render-lighting geometry-buffers lighting-program (+ 4 (* 2 num-steps))
                                                   (set-lighting-uniforms lighting-program width height atmosphere-luts camera-to-world
-                                                                         ?position light-direction z-far)))
+                                                                         ?position light-direction z-far)
+                                                  (setup-shadow-and-opacity-maps lighting-program shadow-data 4)
+                                                  (use-textures (zipmap (drop 4 (range))
+                                                                        (concat (:sfsim.opacity/shadows shadow-vars)
+                                                                                (:sfsim.opacity/opacities shadow-vars))))
+                                                  (setup-shadow-matrices lighting-program shadow-vars)))
           => (is-image (str "/tmp/" ?result) 0.0)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
