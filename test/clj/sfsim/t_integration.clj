@@ -111,18 +111,26 @@ vec4 cloud_overlay(float depth)
                                                             :sfsim.planet/config config/planet-config
                                                             :sfsim.planet/programs [(:sfsim.planet/program planet-renderer)]
                                                             ) {} width ?position level)
+              model-vars             (model/make-model-vars 0.0 1.0 0.0)
               graphics-data          (graphics/make-graphics-data)
               shadow-data            (:sfsim.opacity/data graphics-data)
               cloud-data             (:sfsim.clouds/data graphics-data)
               opacity-renderer       (opacity/make-opacity-renderer graphics-data)
               planet-shadow-renderer (planet/make-planet-shadow-renderer graphics-data)
-              ;; TODO: make-planet-render-vars sets up to much information
+              cloud-renderer         (clouds/make-cloud-renderer graphics-data)
+              ;; TODO: make-planet-render-vars sets up to much information, why does it need object position and orientation?
               planet-render-vars     (planet/make-planet-render-vars config/planet-config config/cloud-config
                                                                      config/render-config width height ?position
                                                                      ?orientation light-direction
                                                                      ?position ?orientation (model/make-model-vars 0.0 1.0 0.0))
               shadow-vars            (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                          cloud-data planet-render-vars tree opacity-base)
+              ;; TODO: should the objects not be an array?
+              cloud-render-vars      (clouds/make-cloud-render-vars config/render-config planet-render-vars width height ?position
+                                                                    ?orientation light-direction ?position ?orientation)
+              geometry-renderer      (model/make-joined-geometry-renderer graphics-data 0)
+              geometry               (model/render-joined-geometry geometry-renderer planet-render-vars planet-render-vars nil tree)
+              clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)
               atmosphere-luts        (:sfsim.atmosphere/luts graphics-data)
               z-far                  100000.0
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
@@ -150,6 +158,10 @@ vec4 cloud_overlay(float depth)
                                                                                 (:sfsim.opacity/opacities shadow-vars))))
                                                   (setup-shadow-matrices lighting-program shadow-vars)))
           => (is-image (str "/tmp/" ?result) 0.0)
+          (model/destroy-joined-geometry-renderer geometry-renderer)
+          (destroy-texture clouds)
+          (clouds/destroy-cloud-geometry geometry)
+          (clouds/destroy-cloud-renderer cloud-renderer)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
           (opacity/destroy-opacity-renderer opacity-renderer)
