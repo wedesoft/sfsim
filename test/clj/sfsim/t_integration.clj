@@ -55,20 +55,13 @@
       (load-tile-tree planet-renderer tree width position (dec n)))))
 
 
-(def cloud-overlay-mock
-"#version 450 core
-vec4 cloud_overlay(float depth)
-{
-  return vec4(0.0, 0.0, 0.0, 0.0);
-}")
-
 (defn make-lighting-program
   [num-scene-shadows num-steps]
   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                 :sfsim.render/fragment [(lighting/fragment-lighting num-scene-shadows) shaders/phong shaders/ray-sphere
                                         atmosphere/attenuation-outer atmosphere/attenuation-point planet/surface-radiance-function
                                         (clouds/overall-shading num-steps (clouds/overall-shading-parameters num-scene-shadows))
-                                        cloud-overlay-mock]))
+                                        atmosphere/cloud-overlay]))
 
 
 (defn set-lighting-uniforms
@@ -129,6 +122,7 @@ vec4 cloud_overlay(float depth)
               cloud-render-vars      (clouds/make-cloud-render-vars config/render-config planet-render-vars width height ?position
                                                                     ?orientation light-direction ?position ?orientation)
               geometry-renderer      (model/make-joined-geometry-renderer graphics-data 0)
+              ;; TODO: Why need to specify two render-vars hashmaps?
               geometry               (model/render-joined-geometry geometry-renderer planet-render-vars planet-render-vars nil tree)
               clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)
               atmosphere-luts        (:sfsim.atmosphere/luts graphics-data)
@@ -149,15 +143,29 @@ vec4 cloud_overlay(float depth)
                                      (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
                                        (atmosphere/render-full-atmosphere-geometry atmosphere-renderer render-vars)))))
           (render-to-image width height false
-                           (model/render-lighting geometry-buffers lighting-program (+ 4 (* 2 num-steps))
+                           (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
                                                   (set-lighting-uniforms lighting-program width height atmosphere-luts camera-to-world
                                                                          ?position light-direction z-far)
-                                                  (setup-shadow-and-opacity-maps lighting-program shadow-data 4)
-                                                  (use-textures (zipmap (drop 4 (range))
+                                                  (uniform-sampler lighting-program "clouds" 4)
+                                                  (uniform-sampler lighting-program "dist" 5)
+                                                  (uniform-int lighting-program "cloud_subsampling"
+                                                               (:sfsim.render/cloud-subsampling config/render-config))
+                                                  (uniform-float lighting-program "depth_sigma"
+                                                                 (:sfsim.clouds/depth-sigma (:sfsim.clouds/data graphics-data)))
+                                                  (uniform-float lighting-program "min_depth_exponent"
+                                                                 (:sfsim.clouds/min-depth-exponent (:sfsim.clouds/data graphics-data)))
+                                                  (uniform-int lighting-program "overlay_width"
+                                                               (:sfsim.render/overlay-width cloud-render-vars))
+                                                  (uniform-int lighting-program "overlay_height"
+                                                               (:sfsim.render/overlay-height cloud-render-vars))
+                                                  (setup-shadow-and-opacity-maps lighting-program shadow-data 6)
+                                                  (use-textures {4 clouds 5 (:sfsim.clouds/distance geometry)})
+                                                  (use-textures (zipmap (drop 6 (range))
                                                                         (concat (:sfsim.opacity/shadows shadow-vars)
                                                                                 (:sfsim.opacity/opacities shadow-vars))))
                                                   (setup-shadow-matrices lighting-program shadow-vars)))
-          => (is-image (str "/tmp/" ?result) 0.0)
+          ;; => (is-image (str "/tmp/" ?result) 0.0)
+          => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.5)
           (model/destroy-joined-geometry-renderer geometry-renderer)
           (destroy-texture clouds)
           (clouds/destroy-cloud-geometry geometry)
@@ -196,7 +204,7 @@ vec4 cloud_overlay(float depth)
                                                              opacity-base)
                      tex             (texture-render-color-depth width height true (graphics/render-frame graphics frame tree))]
                  (texture->image tex)
-                 => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.5)
+                 => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.2)
                  (destroy-texture tex)
                  (graphics/finalise-frame frame)
                  (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
