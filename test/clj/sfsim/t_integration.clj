@@ -186,35 +186,6 @@
 
 
 (when (.exists (io/file ".integration"))
-  (tabular "Integration test rendering of planet, atmosphere, and clouds"
-           (fact
-             (with-invisible-window
-               (let [width           320
-                     height          240
-                     level           5
-                     opacity-base    250.0
-                     graphics        (graphics/make-graphics [] 1.4)
-                     planet-renderer (:sfsim.graphics/planet-renderer graphics)
-                     tree            (load-tile-tree planet-renderer {} width ?position level)
-                     light-direction (vec3 1 0 0)
-                     object-position (add ?position (q/rotate-vector ?orientation (vec3 0 0 -1)))
-                     model-vars      (model/make-model-vars 0.0 1.0 0.0)
-                     frame           (graphics/prepare-frame graphics model-vars tree width height ?position ?orientation
-                                                             light-direction object-position (q/->Quaternion 1 0 0 0) []
-                                                             opacity-base)
-                     tex             (texture-render-color-depth width height true (graphics/render-frame graphics frame tree))]
-                 (texture->image tex)
-                 => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.2)
-                 (destroy-texture tex)
-                 (graphics/finalise-frame frame)
-                 (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
-                 (graphics/destroy-graphics graphics))))
-           ?position                      ?orientation                               ?result
-           (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
-           (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png"))
-
-
-(when (.exists (io/file ".integration"))
   (tabular "Integration test rendering of object with planet, atmosphere, and clouds"
            (fact
              (with-invisible-window
