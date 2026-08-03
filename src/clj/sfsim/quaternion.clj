@@ -171,16 +171,5 @@
     (fv/normalize (cross n b))))
 
 
-(defn vector-to-vector-rotation
-  "Create quaternion for rotating u to v"
-  {:malli/schema [:=> [:cat fvec3 fvec3] quaternion]}
-  ^Quaternion [u v]
-  (let [axis (cross u v)
-        w    (c/+ (c/* (mag u) (mag v)) (dot u v))]
-    (if (zero? w)
-      (rotation PI (orthogonal u))
-      (normalize (Quaternion. w (nth axis 0) (nth axis 1) (nth axis 2))))))
-
-
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -146,6 +146,11 @@ void main()
 }")
 
 
+(defn render-model-geometry
+  [program-selection render-vars scene]
+  (render-scene program-selection 0 render-vars [] scene render-mesh-geometry))
+
+
 (fact "Perform geometry pass and lighting pass for red cube"
       (with-invisible-window
         (let [geometry-program (make-program :sfsim.render/vertex [(vertex-geometry-scene false false true)]
@@ -344,6 +349,23 @@ void main()
 
 
 (def cube-and-dice (read-gltf "test/clj/sfsim/fixtures/model/cube-and-dice.gltf"))
+
+
+(defn geometry-program-selection
+  "Select correct shader program to render mesh using specific material"
+  {:malli/schema [:=> [:cat scene-geometry-renderer] [:=> [:cat material] :int]]}
+  [geometry-renderer]
+  (fn [material] ((:sfsim.model/programs geometry-renderer) (material-type material))))
+
+
+(defn setup-model-geometry-uniforms
+  "Set up uniforms for different model geometry shader programs"
+  [geometry-renderer projection]
+  (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
+         (use-program program)
+         (uniform-matrix4 program "projection" projection)
+         (when textured (uniform-sampler program "colors" 0))
+         (when bump (uniform-sampler program "normals" (if textured 1 0)))))
 
 
 (fact "Perform gometry pass and lighting pass for uniformly colored cube and textured cube"

@@ -7,7 +7,7 @@
 (ns sfsim.plane
   "Functions dealing with planar surfaces"
   (:require
-    [fastmath.vector :refer (cross normalize sub dot add mult)]
+    [fastmath.vector :refer (cross normalize sub dot)]
     [malli.core :as m]
     [sfsim.matrix :refer (fvec3)]
     [sfsim.ray :refer (ray)]))
@@ -33,13 +33,3 @@
         q (:sfsim.ray/origin ray)
         v (:sfsim.ray/direction ray)]
     (/ (dot n (sub p q)) (dot n v))))
-
-
-(defn ray-plane-intersection
-  "Compute intersection of ray with plane"
-  {:malli/schema [:=> [:cat plane ray] fvec3]}
-  [plane ray]
-  (let [t (ray-plane-intersection-parameter plane ray)
-        q (:sfsim.ray/origin ray)
-        v (:sfsim.ray/direction ray)]
-    (add q (mult v t))))

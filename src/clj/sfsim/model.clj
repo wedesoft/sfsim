@@ -976,13 +976,6 @@
     {::programs (zipmap variations programs)}))
 
 
-(defn geometry-program-selection
-  "Select correct shader program to render mesh using specific material"
-  {:malli/schema [:=> [:cat scene-geometry-renderer] [:=> [:cat material] :int]]}
-  [geometry-renderer]
-  (fn [material] ((::programs geometry-renderer) (material-type material))))
-
-
 (def model-render-vars
   (m/schema [:map [::program :int]
                   [::transform fmat4]
@@ -1191,16 +1184,6 @@
   (destroy-texture emissive-texture))
 
 
-(defn setup-model-geometry-uniforms
-  "Set up uniforms for different model geometry shader programs"
-  [geometry-renderer projection]
-  (doseq [[[textured bump] program] (:sfsim.model/programs geometry-renderer)]
-         (use-program program)
-         (uniform-matrix4 program "projection" projection)
-         (when textured (uniform-sampler program "colors" 0))
-         (when bump (uniform-sampler program "normals" (if textured 1 0)))))
-
-
 (defmulti render-mesh-geometry (fn [material _render-vars] (material-type material)))
 
 (m/=> render-mesh-geometry [:=> [:cat material mesh-vars] :nil])
@@ -1233,11 +1216,6 @@
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
-
-
-(defn render-model-geometry
-  [program-selection render-vars scene]
-  (render-scene program-selection 0 render-vars [] scene render-mesh-geometry))
 
 
 (set! *warn-on-reflection* false)

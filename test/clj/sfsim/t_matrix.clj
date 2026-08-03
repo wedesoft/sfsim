@@ -41,10 +41,6 @@
          (rotation (/ PI 6) (fv/vec3 0 0 1)))
 
 
-(fact "Project homogeneous coordinate to cartesian"
-      (project (fv/vec4 4 6 10 2)) => (fv/vec3 2 3 5))
-
-
 (fact "Creating a 4x4 matrix from a 3x3 matrix and a translation vector"
       (transformation-matrix (fm/mat3x3 1 2 3, 5 6 7, 9 10 11) (fv/vec3 4 8 12))
       => (fm/mat4x4 1 2 3 4, 5 6 7 8, 9 10 11 12, 0 0 0 1))
@@ -68,6 +64,13 @@
 (fact "Extract translation vector from 4x4 matrix"
       (get-translation (fm/mat4x4 1 0 0 2, 0 1 0 3, 0 0 1 5, 0 0 0 1))
       => (fv/vec3 2 3 5))
+
+
+(defn project
+  "Project homogeneous coordinate to cartesian"
+  {:malli/schema [:=> [:cat fvec4] fvec3]}
+  [v]
+  (fv/div (fv/vec3 (v 0) (v 1) (v 2)) (v 3)))
 
 
 (facts "OpenGL projection matrix"
@@ -214,12 +217,6 @@
        (split-list {:sfsim.opacity/mix 0.0 :sfsim.opacity/num-steps 2}
                    {:sfsim.render/z-near 10.0 :sfsim.render/z-far 40.0})
        => [10.0 25.0 40.0])
-
-
-(facts "Create list of increasing biases"
-       (biases-like 100.0 [10.0 50.0]) => [100.0]
-       (biases-like 100.0 [10.0 50.0 100.0]) => [100.0 200.0]
-       (biases-like 100.0 [10.0 50.0 100.0 200.0]) => [100.0 200.0 400.0])
 
 
 (facts "Cascade of shadow matrices"

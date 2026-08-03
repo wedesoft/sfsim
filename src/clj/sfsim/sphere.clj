@@ -40,13 +40,6 @@
     (- (sqr (dot direction offset)) (* direction-sqr (- (dot offset offset) (sqr radius))))))
 
 
-(defn ray-intersects-sphere?
-  "Check whether the ray intersects the sphere"
-  {:malli/schema [:=> [:cat sphere ray] :boolean]}
-  [{::keys [centre radius]} {:sfsim.ray/keys [origin direction]}]
-  (> (ray-sphere-determinant centre radius origin direction) 0))
-
-
 (def intersection (m/schema [:map [:sfsim.intersection/distance :double] [:sfsim.intersection/length :double]]))
 
 
@@ -64,13 +57,6 @@
           {:sfsim.intersection/distance 0.0 :sfsim.intersection/length (max 0.0 (+ middle length2))}
           {:sfsim.intersection/distance (- middle length2) :sfsim.intersection/length (* 2 length2)}))
       {:sfsim.intersection/distance (max 0.0 middle) :sfsim.intersection/length 0.0})))
-
-
-(defn ray-pointing-downwards
-  "Check whether ray points towards centre of sphere"
-  {:malli/schema [:=> [:cat sphere ray] :boolean]}
-  [{::keys [centre]} {:sfsim.ray/keys [origin direction]}]
-  (< (dot direction (sub origin centre)) 0))
 
 
 (defn integrate-circle

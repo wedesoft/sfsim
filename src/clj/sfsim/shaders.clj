@@ -15,11 +15,6 @@
   (template/fn [method-name vector-type] (slurp "resources/shaders/core/ray-hypersphere.glsl")))
 
 
-(def ray-circle
-  "Shader function for computing intersection of ray with circle"
-  (ray-hypersphere "ray_circle" "vec2"))
-
-
 (def ray-sphere
   "Shader function for computing intersection of ray with sphere"
   (ray-hypersphere "ray_sphere" "vec3"))
@@ -244,21 +239,6 @@
   [oriented-matrix (slurp "resources/shaders/core/rotate-vector.glsl")])
 
 
-(def rotation-x
-  "Shader for creating matrix for rotation around x axis"
-  (slurp "resources/shaders/core/rotation-x.glsl"))
-
-
-(def rotation-y
-  "Shader for creating matrix for rotation around y axis"
-  (slurp "resources/shaders/core/rotation-y.glsl"))
-
-
-(def rotation-z
-  "Shader for creating matrix for rotation around z axis"
-  (slurp "resources/shaders/core/rotation-z.glsl"))
-
-
 (def vertex-passthrough
   "Vertex shader to simply pass vertex through"
   (slurp "resources/shaders/core/vertex-passthrough.glsl"))
@@ -272,14 +252,6 @@
 (def remap
   "Shader for mapping linear range to a new linear range"
   (slurp "resources/shaders/core/remap.glsl"))
-
-
-(defn shadow-lookup-shaders
-  "Shaders for performing lookups in the cascaded shadow map"
-  {:malli/schema [:=> [:cat :int] [:vector :string]]}
-  [num-steps]
-  [(shadow-cascade-lookup num-steps "average_shadow") (shadow-lookup "shadow_lookup" "shadow_size") convert-shadow-index
-   (percentage-closer-filtering "average_shadow" "shadow_lookup" "shadow_size" [["sampler2DShadow" "shadow_map"]])])
 
 
 (def phong
@@ -315,8 +287,3 @@
 (def noise3d
   "Shader function to create continuous 3D noise"
   [(interpolate-function "noise3d" "hermite_interpolate" "hash3d") hermite-interpolate hash3d])
-
-
-(def subtract-interval
-  "Shader function to subtract two intervals"
-  (slurp "resources/shaders/core/subtract-interval.glsl"))

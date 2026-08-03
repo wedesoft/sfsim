@@ -9,7 +9,7 @@
       [midje.sweet :refer :all]
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
-      [clojure.math :refer (PI to-radians sqrt cos)]
+      [clojure.math :refer (PI to-radians sqrt cos sin)]
       [fastmath.matrix :refer (mat3x3 mulv eye col inverse)]
       [fastmath.vector :refer (vec3 mag div)]
       [sfsim.conftest :refer (roughly-vector)]
@@ -51,22 +51,6 @@
        ((limiting-function 0.5) 10.0) => (roughly 0.5 1e-4)
        ((limiting-function 1.0) 0.001) => (roughly 0.001 1e-4)
        ((limiting-function 0.5) 0.001) => (roughly 0.001 1e-4))
-
-
-(facts "Piecewise function"
-       ((piecewise [0.0 1.0] (fn [x] x)) 0.5) => 0.5
-       ((piecewise [0.0 1.0] (constantly 1.0) [1.0 2.0] (constantly 2.0)) 1.5) => 2.0
-       ((piecewise [0.0 1.0] (constantly 1.0) [1.0 2.0] (constantly 2.0)) 0.5) => 1.0)
-
-
-(facts "Piecewise linear function"
-       ((piecewise-linear 2.0 3.0, 5.0 7.0) 3.5) => 5.0
-       ((piecewise-linear 2.0 3.0, 5.0 7.0, 11.0 13.0) 8.0) => 10.0)
-
-
-(facts "Cubic spline function"
-       ((cubic-spline 2.0 3.0, 5.0 7.0, 6.0 8.0, 7.0 8.0, 8.0 7.0) 3.5) => (roughly 5.0582 1e-4)
-       ((cubic-spline 2.0 3.0, 5.0 7.0, 11.0 13.0, 17.0 19.0, 23.0 29.0) 8.0) => (roughly 10.2744 1e-4))
 
 
 (facts "Akima spline function"
@@ -144,25 +128,30 @@
        (mirror (to-radians -180)) => (roughly (to-radians 0) 1e-6))
 
 
-(facts "Airplane coordinates of speed vector in body system for angle of attack and side slip angle"
-       (speed-x (to-radians 0) (to-radians 0)) => 1.0
-       (speed-y (to-radians 0) (to-radians 0)) => 0.0
-       (speed-z (to-radians 0) (to-radians 0)) => 0.0
-       (speed-x (to-radians 90) (to-radians 0)) => (roughly 0.0 1e-6)
-       (speed-z (to-radians 90) (to-radians 0)) => 1.0
-       (speed-y (to-radians 0) (to-radians 90)) => 1.0
-       (speed-x (to-radians 0) (to-radians 90)) => (roughly 0.0 1e-6)
-       (speed-z (to-radians 90) (to-radians 90)) => (roughly 0.0 1e-6))
+(defn speed-x
+  "Airplane x-coordinate (forward) of speed vector in body system for angle of attack and side slip angle"
+  [angle-of-attack angle-of-side-slip]
+  (* (cos angle-of-attack) (cos angle-of-side-slip)))
 
 
-(fact "Get speed vector in aircraft body system"
-      (let [angle-of-attack (to-radians 20)
-            angle-of-side-slip (to-radians 30)]
-        (speed-vector angle-of-attack angle-of-side-slip)
-        => (roughly-vector (vec3 (speed-x angle-of-attack angle-of-side-slip)
-                                 (speed-y angle-of-attack angle-of-side-slip)
-                                 (speed-z angle-of-attack angle-of-side-slip))
-                           1e-6)))
+(defn speed-y
+  "Airplane y-coordinate (right) of speed vector in body system for angle of attack and side slip angle"
+  [_angle-of-attack angle-of-side-slip]
+  (sin angle-of-side-slip))
+
+
+(defn speed-z
+  "Airplane z-coordinate (down) of speed vector in body system for angle of attack and side slip angle"
+  [angle-of-attack angle-of-side-slip]
+  (* (sin angle-of-attack) (cos angle-of-side-slip)))
+
+
+(defn speed-vector
+  "Speed vector in aircraft body system for given angle of attack and side slip angle"
+  [angle-of-attack angle-of-side-slip]
+  (vec3 (speed-x angle-of-attack angle-of-side-slip)
+        (speed-y angle-of-attack angle-of-side-slip)
+        (speed-z angle-of-attack angle-of-side-slip)))
 
 
 (facts "Get angle of attack and side slip angles from speed vector in aircraft body system"
@@ -201,6 +190,21 @@
        => (roughly (* -3.1333 (to-radians 3.0) (to-radians 5.0)) 5e-3)
        (coefficient-of-roll-moment 0.6 (to-radians 3.0) (to-radians 90.0)) => (roughly 0.0 1e-6)
        (coefficient-of-roll-moment 0.6 (to-radians 90.0) (to-radians 3.0)) => (roughly 0.0 1e-6))
+
+
+(defn gltf->aerodynamic
+  "Convert glTF model coordinates (x: forward, y: up, z:right) to aerodynamic body ones (x: forward, y: right, z: down)"
+  [gltf-vector]
+  (mulv gltf-to-aerodynamic gltf-vector))
+
+
+(def aerodynamic-to-gltf (mat3x3 1 0 0, 0 0 -1, 0 1 0))
+
+
+(defn aerodynamic->gltf
+  "Convert aerodynamic body coordinates (x: forward, y: right, z: down) to glTF model ones (x: forward, y: up, z:right)"
+  [aerodynamic-vector]
+  (mulv aerodynamic-to-gltf aerodynamic-vector))
 
 
 (facts "Convert glTF model coordinates to aerodynamic body coordinates"

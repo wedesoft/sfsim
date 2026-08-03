@@ -10,7 +10,7 @@
     (:require
       [quil.core :as q]
       [quil.middleware :as m]
-      [libpython-clj2.python :refer (py.) :as py]
+      [libpython-clj2.python :refer () :as py]
       [fastmath.vector :refer (vec3 mag)]
       [sfsim.mlp :refer (tensor tolist without-gradient)]
       [sfsim.launch :refer (LaunchActor config) :as launch]))

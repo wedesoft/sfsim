@@ -33,6 +33,12 @@
 (def scale (fn [x s] (* x s)))
 
 
+(defn euler
+  "Euler integration method"
+  [y0 dt dy + *]
+  (+ y0 (* (dy y0 dt) dt)))
+
+
 (facts "Euler integration method"
        (euler 42.0 1.0 (fn [_y _dt] 0.0) add scale) => 42.0
        (euler 42.0 1.0 (fn [_y _dt] 5.0) add scale) => 47.0

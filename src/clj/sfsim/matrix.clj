@@ -73,13 +73,6 @@
            i3 (rotation (angle (if (pos? det) l2 l1)) v3))))
 
 
-(defn project
-  "Project homogeneous coordinate to cartesian"
-  {:malli/schema [:=> [:cat fvec4] fvec3]}
-  [v]
-  (fv/div (fv/vec3 (v 0) (v 1) (v 2)) (v 3)))
-
-
 (defn transformation-matrix
   "Create homogeneous 4x4 transformation matrix from 3x3 rotation matrix and translation vector"
   {:malli/schema [:=> [:cat fmat3 fvec3] fmat4]}
@@ -311,12 +304,6 @@
   {:malli/schema [:=> [:cat :map :map] [:vector :double]]}
   [{:sfsim.opacity/keys [^double mix ^long num-steps]} {:sfsim.render/keys [^double z-near ^double z-far]}]
   (mapv (partial split-mixed mix z-near z-far num-steps) (range (inc num-steps))))
-
-
-(defn biases-like
-  "Create list of increasing biases"
-  [^double opacity-bias splits]
-  (mapv #(* opacity-bias ^double (/ ^double % ^double (second splits))) (rest splits)))
 
 
 (defn shadow-matrix-cascade

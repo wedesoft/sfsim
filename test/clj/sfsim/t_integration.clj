@@ -97,6 +97,7 @@
               level                  5
               opacity-base           250.0
               light-direction        (vec3 1 0 0)
+              graphics-data          (graphics/make-graphics-data)
               num-steps              (:sfsim.opacity/num-steps config/shadow-config)
               atmosphere-renderer    (atmosphere/make-atmosphere-geometry-renderer true)
               planet-renderer        (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
@@ -105,7 +106,6 @@
                                                             :sfsim.planet/programs [(:sfsim.planet/program planet-renderer)]
                                                             ) {} width ?position level)
               model-vars             (model/make-model-vars 0.0 1.0 0.0)
-              graphics-data          (graphics/make-graphics-data)
               shadow-data            (:sfsim.opacity/data graphics-data)
               cloud-data             (:sfsim.clouds/data graphics-data)
               opacity-renderer       (opacity/make-opacity-renderer graphics-data)

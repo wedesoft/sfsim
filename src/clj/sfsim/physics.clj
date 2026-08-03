@@ -34,12 +34,6 @@
 (def gravitational-constant 6.67430e-11)
 
 
-(defn euler
-  "Euler integration method"
-  [y0 dt dy + *]
-  (+ y0 (* (dy y0 dt) dt)))
-
-
 (defn runge-kutta
   "Runge-Kutta integration method"
   {:malli/schema [:=> [:cat :some :double [:=> [:cat :some :double] :some] add-schema scale-schema] :some]}

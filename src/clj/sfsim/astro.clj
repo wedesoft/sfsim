@@ -403,9 +403,6 @@
         (chebyshev-polynomials coefficients s (vec3 0 0 0))))))
 
 
-(def date (m/schema [:map [::year :int] [::month :int] [::day :int]]))
-
-
 (defn julian-date
   "Convert calendar date to Julian date"
   ^long [{::keys [^long year ^long month ^long day]}]
@@ -428,9 +425,6 @@
         month (inc ^long (mod (+ (quot ^long h 153) 2) 12))
         year  (+ (- (quot ^long e 1461) 4716) (quot (- (+ 12 2) ^long month) 12))]
     {::year year ::month month ::day day}))
-
-
-(def clock (m/schema [:map [::hour :int] [::minute :int] [::second :int]]))
 
 
 (defn clock-time

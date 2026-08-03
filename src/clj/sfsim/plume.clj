@@ -96,10 +96,6 @@
    (template/eval (slurp "resources/shaders/plume/sample-segment.glsl") {:type "plume" :outer outer})])
 
 
-(def sample-plume-point
-  (sample-plume-segment false))
-
-
 (def sample-plume-outer
   (sample-plume-segment true))
 
