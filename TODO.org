@@ -138,6 +138,8 @@
     - [ ] reentry flame, burning up
       - [[https://www.shadertoy.com/view/XX3fDH]]
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
+  - [ ] stars
+  - [ ] new steam capsule with better font, glare, reentry flame, and stars
   - [X] increase start distance of audio volume falloff
   - [X] use compact formatting for text
   - [ ] out of bounds exception when exceeding speed of mach 30
@@ -358,7 +360,6 @@
 ** TODO arycama: limit darkness of cloud shadow (exponential approaching a base level)
 ** TODO add earth light
 ** TODO add moon light
-** TODO stars
 ** TODO [[https://www.shadertoy.com/view/ttcSD8][volumetric clouds]]
    - [[https://www.reddit.com/r/opengl/comments/1jqiwkl/comment/mlbr45o/]]
    - [[https://gist.github.com/pixelsnafu/e3904c49cbd8ff52cb53d95ceda3980e]]
