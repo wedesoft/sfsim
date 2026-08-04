@@ -108,27 +108,38 @@
               model-vars             (model/make-model-vars 0.0 1.0 0.0)
               shadow-data            (:sfsim.opacity/data graphics-data)
               cloud-data             (:sfsim.clouds/data graphics-data)
+              _                      (print "1")
               opacity-renderer       (opacity/make-opacity-renderer graphics-data)
+              _                      (print "2")
               planet-shadow-renderer (planet/make-planet-shadow-renderer graphics-data)
+              _                      (print "3")
               cloud-renderer         (clouds/make-cloud-renderer graphics-data)
+              _                      (print "4")
               ;; TODO: make-planet-render-vars sets up to much information, why does it need object position and orientation?
-              planet-render-vars     (planet/make-planet-render-vars config/planet-config config/cloud-config
-                                                                     config/render-config width height ?position
-                                                                     ?orientation light-direction
-                                                                     ?position ?orientation (model/make-model-vars 0.0 1.0 0.0))
+              planet-render-vars     (planet/make-planet-render-vars2 config/planet-config config/cloud-config
+                                                                      config/render-config width height ?position
+                                                                      ?orientation light-direction)
+              _                      (print "5")
               shadow-vars            (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                          cloud-data planet-render-vars tree opacity-base)
-              ;; TODO: should the objects not be an array?
+              _                      (print "6")
               cloud-render-vars      (clouds/make-cloud-render-vars config/render-config planet-render-vars width height ?position
                                                                     ?orientation light-direction ?position ?orientation)
+              _                      (print "7")
               geometry-renderer      (model/make-joined-geometry-renderer graphics-data 0)
-              ;; TODO: Why need to specify two render-vars hashmaps?
+              _                      (print "8")
               geometry               (model/render-joined-geometry geometry-renderer planet-render-vars planet-render-vars nil tree)
+              _                      (print "9")
               clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)
+              _                      (print "10")
               atmosphere-luts        (:sfsim.atmosphere/luts graphics-data)
+              _                      (print "11")
               z-far                  100000.0
+              _                      (print "12")
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
+              _                      (print "13")
               geometry-buffers       (model/make-geometry-buffers width height)
+              _                      (print "14")
               lighting-program       (make-lighting-program 0 num-steps)]
           (model/render-geometry geometry-buffers
                                  (with-stencils
@@ -164,8 +175,7 @@
                                                                         (concat (:sfsim.opacity/shadows shadow-vars)
                                                                                 (:sfsim.opacity/opacities shadow-vars))))
                                                   (setup-shadow-matrices lighting-program shadow-vars)))
-          ;; => (is-image (str "/tmp/" ?result) 0.0)
-          => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.5)
+          => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (model/destroy-joined-geometry-renderer geometry-renderer)
           (destroy-texture clouds)
           (clouds/destroy-cloud-geometry geometry)

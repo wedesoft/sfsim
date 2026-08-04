@@ -1045,10 +1045,7 @@
   (m/schema [:map
               [:sfsim.render/camera-to-world fmat4]
               [:sfsim.render/z-near :double]
-              [:sfsim.render/z-far :double]
-              [:sfsim.render/overlay-projection fmat4]
-              [:sfsim.render/overlay-width :int]
-              [:sfsim.render/overlay-height :int]]))
+              [:sfsim.render/z-far :double]]))
 
 
 (defn render-joined-geometry

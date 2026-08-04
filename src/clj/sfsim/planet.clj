@@ -26,7 +26,7 @@
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                           destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
                           setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-config
-                          render-vars diagonal-field-of-view make-render-vars)
+                          render-vars diagonal-field-of-view make-render-vars make-render-vars2)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
@@ -421,6 +421,23 @@
   ^double [^double radius ^double max-height ^double cloud-top]
   (+ (sqrt (- (sqr (+ radius max-height)) (sqr radius)))
      (sqrt (- (sqr (+ radius cloud-top)) (sqr radius)))))
+
+
+(defn make-planet-render-vars2
+  "Create hash map with render variables for rendering current frame of planet"
+  {:malli/schema [:=> [:cat [:map [::radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
+                       [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3] render-vars]}
+  [planet-config cloud-data render-config window-width window-height camera-position camera-orientation light-direction]
+  (let [distance        (mag camera-position)
+        radius          (::radius planet-config)
+        cloud-top       (:sfsim.clouds/cloud-top cloud-data)
+        fov             (:sfsim.render/fov render-config)
+        min-z-near      (:sfsim.render/min-z-near render-config)
+        height          (- ^double distance ^double radius)
+        diagonal-fov    (diagonal-field-of-view window-width window-height fov)
+        z-near          (max (* (- height ^double cloud-top) (cos (* 0.5 diagonal-fov))) ^double min-z-near)
+        z-far           (render-depth radius height cloud-top)]
+    (make-render-vars2 render-config window-width window-height camera-position camera-orientation light-direction z-near z-far)))
 
 
 (defn make-planet-render-vars

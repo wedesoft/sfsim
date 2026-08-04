@@ -675,9 +675,34 @@
 
 (def render-vars
   (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
-             [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]
-             [::object-origin fvec3] [::camera-to-object fmat4] [::object-distance :double]
-             [::time :double] [::pressure :double] [::overlay-width N] [::overlay-height N] [::overlay-projection fmat4]]))
+             [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]]))
+
+
+; (def render-vars
+;   (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
+;              [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]
+;              [::object-origin fvec3] [::camera-to-object fmat4] [::object-distance :double]
+;              [::time :double] [::pressure :double] [::overlay-width N] [::overlay-height N] [::overlay-projection fmat4]]))
+
+
+(defn make-render-vars2
+  "Create hash map with render variables for rendering current frame with specified depth range"
+  {:malli/schema [:=> [:cat [:map [::fov :double] [::cloud-subsampling :int]] N N fvec3 quaternion fvec3 :double :double]
+                      render-vars]}
+  [render-config window-width window-height camera-position camera-orientation light-direction z-near z-far]
+  (let [fov                (::fov render-config)
+        camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
+        z-offset           1.0
+        projection         (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)]
+    {::origin camera-position
+     ::z-near z-near
+     ::z-far z-far
+     ::fov fov
+     ::window-width window-width
+     ::window-height window-height
+     ::light-direction light-direction
+     ::camera-to-world camera-to-world
+     ::projection projection}))
 
 
 (defn make-render-vars
