@@ -705,6 +705,26 @@
      ::projection projection}))
 
 
+(defn make-subsampled-vars
+  "Create lower resolution configuration"
+  [render-vars render-config]
+  (let [fov               (::fov render-config)
+        cloud-subsampling (::cloud-subsampling render-config)
+        window-width      (::window-width render-vars)
+        window-height     (::window-height render-vars)
+        z-near            (::z-near render-vars)
+        z-far             (::z-far render-vars)
+        z-offset           1.0
+        overlay-width     (quot ^long window-width ^long cloud-subsampling)
+        overlay-height    (quot ^long window-height ^long cloud-subsampling)
+        cloud-subsampling (::cloud-subsampling render-config)
+        projection        (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) fov)]
+    (assoc render-vars
+           ::window-width overlay-width
+           ::window-height overlay-height
+           ::projection projection)))
+
+
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame with specified depth range"
   {:malli/schema [:=> [:cat [:map [::fov :double] [::cloud-subsampling :int]] N N fvec3 quaternion fvec3 fvec3 quaternion

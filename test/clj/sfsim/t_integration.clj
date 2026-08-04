@@ -108,38 +108,25 @@
               model-vars             (model/make-model-vars 0.0 1.0 0.0)
               shadow-data            (:sfsim.opacity/data graphics-data)
               cloud-data             (:sfsim.clouds/data graphics-data)
-              _                      (print "1")
               opacity-renderer       (opacity/make-opacity-renderer graphics-data)
-              _                      (print "2")
               planet-shadow-renderer (planet/make-planet-shadow-renderer graphics-data)
-              _                      (print "3")
               cloud-renderer         (clouds/make-cloud-renderer graphics-data)
-              _                      (print "4")
               ;; TODO: make-planet-render-vars sets up to much information, why does it need object position and orientation?
               planet-render-vars     (planet/make-planet-render-vars2 config/planet-config config/cloud-config
                                                                       config/render-config width height ?position
                                                                       ?orientation light-direction)
-              _                      (print "5")
               shadow-vars            (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                          cloud-data planet-render-vars tree opacity-base)
-              _                      (print "6")
               cloud-render-vars      (clouds/make-cloud-render-vars config/render-config planet-render-vars width height ?position
                                                                     ?orientation light-direction ?position ?orientation)
-              _                      (print "7")
               geometry-renderer      (model/make-joined-geometry-renderer graphics-data 0)
-              _                      (print "8")
-              geometry               (model/render-joined-geometry geometry-renderer planet-render-vars planet-render-vars nil tree)
-              _                      (print "9")
+              planet-geometry-vars   (make-subsampled-vars planet-render-vars config/render-config)
+              geometry               (model/render-joined-geometry2 geometry-renderer planet-geometry-vars planet-geometry-vars nil tree)
               clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)
-              _                      (print "10")
               atmosphere-luts        (:sfsim.atmosphere/luts graphics-data)
-              _                      (print "11")
               z-far                  100000.0
-              _                      (print "12")
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
-              _                      (print "13")
               geometry-buffers       (model/make-geometry-buffers width height)
-              _                      (print "14")
               lighting-program       (make-lighting-program 0 num-steps)]
           (model/render-geometry geometry-buffers
                                  (with-stencils

@@ -761,6 +761,17 @@
     (render-quads vao)))
 
 
+(defn render-atmosphere-geometry2
+  "Render atmospheric direction vectors for output to a geometry buffer"
+  [{::keys [program vao]} render-vars]
+  (let [projection (:sfsim.render/projection render-vars)
+        z-far      (:sfsim.render/z-far render-vars)]
+    (use-program program)
+    (uniform-matrix4 program "inverse_projection" (inverse projection))
+    (uniform-float program "z_far" z-far)
+    (render-quads vao)))
+
+
 (defn make-atmosphere-render-vars
   "Create atmosphere render variables for rendering full geometry"
   [width height fov light-direction]

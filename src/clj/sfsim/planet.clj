@@ -531,6 +531,19 @@
     (render-tree program tree world-to-camera [] (if full [::surf-tex ::day-night-tex ::normal-tex ::water-tex] [::surf-tex]))))
 
 
+(defn render-planet-geometry2
+  "Render geometry (planet points and distances)"
+  [{::keys [program worley]} render-vars full tree]
+  (let [world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
+    (use-program program)
+    (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
+    (uniform-matrix4 program "world_to_camera" world-to-camera)
+    (when full
+      (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
+      (use-textures {4 worley}))
+    (render-tree program tree world-to-camera [] (if full [::surf-tex ::day-night-tex ::normal-tex ::water-tex] [::surf-tex]))))
+
+
 (defn update-local-mesh
   "Method for maintaining a small 3x3 local mesh in order to handle collisions"
   [local-mesh split-orientations position]

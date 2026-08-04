@@ -13,15 +13,15 @@
     [fastmath.vector :refer (vec3 mult add)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
-                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay
-                              atmosphere-geometry-renderer)]
+                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry
+                              render-atmosphere-geometry2 cloud-overlay atmosphere-geometry-renderer)]
     [sfsim.clouds :refer (lod-offset overall-shading overall-shading-parameters render-cloud-geometry)]
     [sfsim.plume :refer (model-data model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3
                           fvec3 fmat4 rotation-matrix get-translation get-translation)]
     [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
-                          render-planet-geometry planet-data planet-geometry-renderer)]
+                          render-planet-geometry render-planet-geometry2 planet-data planet-geometry-renderer)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
@@ -1007,6 +1007,18 @@
                   render-vars [] scene render-geometry-mesh)))
 
 
+(defn render-scene-geometry2
+  "Render geometry (points and distances) for a scene"
+  {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars scene] :nil]}
+  [geometry-renderer render-vars scene]
+  (let [projection (:sfsim.render/projection render-vars)]
+    (doseq [program (vals (::programs geometry-renderer))]
+           (use-program program)
+           (uniform-matrix4 program "projection" projection))
+    (render-scene (comp (::programs geometry-renderer) material-type) 0
+                  render-vars [] scene render-geometry-mesh)))
+
+
 (defn destroy-scene-geometry-renderer
   "Destroy scene geometry renderer"
   {:malli/schema [:=> [:cat scene-geometry-renderer] :nil]}
@@ -1065,6 +1077,25 @@
                                  (render-planet-geometry planet-renderer planet-render-vars false tree)))
                              (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
                                (render-atmosphere-geometry atmosphere-renderer planet-render-vars))))))
+
+
+(defn render-joined-geometry2
+  "Render joined geometry of scene, planet, and atmosphere"
+  {:malli/schema [:=> [:cat joined-geometry-renderer model-planet-render-vars model-planet-render-vars [:maybe scene]
+                       [:maybe :some]] :any]}
+  [{::keys [scene-renderer planet-renderer atmosphere-renderer]} model-render-vars planet-render-vars model tree]
+  (let [model-covers-planet? (< ^double (:sfsim.render/z-near model-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
+    (render-cloud-geometry (:sfsim.render/window-width planet-render-vars) (:sfsim.render/window-height planet-render-vars)
+                           (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
+                             (when model
+                               (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+                                 (render-scene-geometry2 scene-renderer
+                                                         (if model-covers-planet? model-render-vars planet-render-vars) model)))
+                             (when tree
+                               (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
+                                 (render-planet-geometry2 planet-renderer planet-render-vars false tree)))
+                             (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
+                               (render-atmosphere-geometry2 atmosphere-renderer planet-render-vars))))))
 
 
 (defn- build-bsp-tree
