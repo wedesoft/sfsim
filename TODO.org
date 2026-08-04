@@ -11,7 +11,7 @@
     - [-] switch integration tests over to multi-pass rendering
       - [X] make planet geometry renderer
       - [ ] make model geometry renderer
-      - [ ] make atmosphere geometry renderer
+      - [X] make atmosphere geometry renderer
       - [ ] update schemas for render-vars, planet-render-vars, model-render-vars, cloud ...
     - [ ] move lighting code into separate module (remove from model module)
     - [ ] switch game over to multi-pass rendering
@@ -37,6 +37,8 @@
     - [ ] use texture arrays for albedo, normal map, roughness map
     - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
     - [ ] introduce a geometry buffer for shadows
+  - [ ] stars
+  - [ ] new steam capsule with better font, glare, thruster, and stars (add build script to render it)
   - [ ] add some animated gifs to Steam description and Github page
   - [ ] add some starting positions and times to menu (unlock orbit and stuff)
   - [ ] launch guidance indicators, reinforcement learning launch physics
@@ -139,8 +141,6 @@
     - [ ] reentry flame, burning up
       - [[https://www.shadertoy.com/view/XX3fDH]]
       - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
-  - [ ] stars
-  - [ ] new steam capsule with better font, glare, reentry flame, and stars
   - [X] increase start distance of audio volume falloff
   - [X] use compact formatting for text
   - [ ] out of bounds exception when exceeding speed of mach 30

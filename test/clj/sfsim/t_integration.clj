@@ -98,6 +98,7 @@
               opacity-base           250.0
               light-direction        (vec3 1 0 0)
               graphics-data          (graphics/make-graphics-data)
+              ;; TODO: graphics methods for: render shadows and opacity, render cloud overlay, render geometry, render lighting
               num-steps              (:sfsim.opacity/num-steps config/shadow-config)
               atmosphere-renderer    (atmosphere/make-atmosphere-geometry-renderer true)
               planet-renderer        (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
@@ -111,7 +112,6 @@
               opacity-renderer       (opacity/make-opacity-renderer graphics-data)
               planet-shadow-renderer (planet/make-planet-shadow-renderer graphics-data)
               cloud-renderer         (clouds/make-cloud-renderer graphics-data)
-              ;; TODO: make-planet-render-vars sets up to much information, why does it need object position and orientation?
               planet-render-vars     (planet/make-planet-render-vars2 config/planet-config config/cloud-config
                                                                       config/render-config width height ?position
                                                                       ?orientation light-direction)
