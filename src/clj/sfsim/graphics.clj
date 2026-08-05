@@ -80,16 +80,20 @@
                                                             camera-position camera-orientation light-direction)
         cloud-render-vars  (clouds/make-cloud-render-vars render-config planet-render-vars width height camera-position
                                                           camera-orientation light-direction camera-position camera-orientation)
-        model-vars         (model/make-model-vars 0.0 1.0 0.0)]
+        model-vars         (model/make-model-vars 0.0 1.0 0.0)
+        geometry-buffers   (model/make-geometry-buffers width height)]
     {::planet-render-vars planet-render-vars
      ::cloud-render-vars  cloud-render-vars
-     ::model-vars         model-vars}))
+     ::model-vars         model-vars
+     ::geometry-buffers   geometry-buffers}))
+
 
 (defn destroy-frame
   [frame]
   (texture/destroy-texture (::clouds frame))
   (clouds/destroy-cloud-geometry (::cloud-geometry frame))
-  (opacity/destroy-opacity-and-shadow (::shadow-vars frame)))
+  (opacity/destroy-opacity-and-shadow (::shadow-vars frame))
+  (model/destroy-geometry-buffers (::geometry-buffers frame)))
 
 
 (defn render-shadows

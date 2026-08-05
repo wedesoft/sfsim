@@ -117,7 +117,7 @@
               atmosphere-luts        (:sfsim.atmosphere/luts graphics)
               z-far                  100000.0
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
-              geometry-buffers       (model/make-geometry-buffers width height)
+              geometry-buffers       (:sfsim.graphics/geometry-buffers frame)
               lighting-program       (make-lighting-program 0 num-steps)]
           (model/render-geometry geometry-buffers
                                  (with-stencils
@@ -158,7 +158,6 @@
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (destroy-program lighting-program)
-          (model/destroy-geometry-buffers geometry-buffers)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
           (graphics/destroy-graphics2 graphics))))
     ?position                      ?orientation                               ?result
