@@ -105,10 +105,9 @@
               tree                   (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                             :sfsim.planet/config config/planet-config
                                                             :sfsim.planet/programs [(:sfsim.planet/program
-                                                                                      (:sfsim.graphics/planet-geometry-renderer graphics))]
-                                                            ) {} width ?position level)
+                                                                                      (:sfsim.graphics/planet-geometry-renderer graphics))])
+                                                     {} width ?position level)
               model-vars             (model/make-model-vars 0.0 1.0 0.0)
-              cloud-renderer         (clouds/make-cloud-renderer graphics)
               planet-render-vars     (planet/make-planet-render-vars2 config/planet-config config/cloud-config
                                                                       config/render-config width height ?position
                                                                       ?orientation light-direction)
@@ -120,7 +119,8 @@
               geometry-renderer      (model/make-joined-geometry-renderer graphics 0)
               planet-geometry-vars   (make-subsampled-vars planet-render-vars config/render-config)
               geometry               (model/render-joined-geometry2 geometry-renderer planet-geometry-vars planet-geometry-vars nil tree)
-              clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)
+              clouds                 (clouds/render-cloud-overlay (:sfsim.graphics/cloud-renderer graphics) cloud-render-vars model-vars
+                                                                  shadow-vars [] geometry)
               atmosphere-luts        (:sfsim.atmosphere/luts graphics)
               z-far                  100000.0
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
@@ -166,7 +166,6 @@
           (model/destroy-joined-geometry-renderer geometry-renderer)
           (destroy-texture clouds)
           (clouds/destroy-cloud-geometry geometry)
-          (clouds/destroy-cloud-renderer cloud-renderer)
           (opacity/destroy-opacity-and-shadow shadow-vars)
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)

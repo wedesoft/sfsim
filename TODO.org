@@ -17,6 +17,7 @@
     - [ ] switch game over to multi-pass rendering
     - [ ] remove unused single-pass rendering code and tests
     - [ ] render-scene: remove texture-offset and shadow matrices, just render geometry
+    - [ ] load-tile-into-opengl should use program instead of programs
     - [ ] decal pass: overwrite/blend colors and normals
     - [ ] render localized lights using blending (not sure whether this is done earlier)
     - [X] shadow pass (separate render): render shadow map from light source view
