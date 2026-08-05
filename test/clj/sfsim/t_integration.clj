@@ -95,12 +95,10 @@
         (let [width                  320
               height                 240
               level                  5
-              opacity-base           250.0
               light-direction        (vec3 1 0 0)
               graphics               (graphics/make-graphics2)
               ;; TODO: graphics methods for: render shadows and opacity, render cloud overlay, render geometry, render lighting
               shadow-data            (:sfsim.opacity/data graphics)
-              cloud-data             (:sfsim.clouds/data graphics)
               num-steps              (:sfsim.opacity/num-steps config/shadow-config)
               tree                   (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                             :sfsim.planet/config config/planet-config
@@ -108,11 +106,10 @@
                                                                                       (:sfsim.graphics/planet-geometry-renderer graphics))])
                                                      {} width ?position level)
               model-vars             (model/make-model-vars 0.0 1.0 0.0)
-              frame                  (graphics/make-frame graphics width height ?position ?orientation light-direction)
+              frame                  (-> (graphics/make-frame graphics width height ?position ?orientation light-direction)
+                                         (graphics/render-shadows graphics tree))
               planet-render-vars     (:sfsim.graphics/planet-render-vars frame)
-              shadow-vars            (opacity/opacity-and-shadow-cascade (:sfsim.graphics/opacity-renderer graphics)
-                                                                         (:sfsim.graphics/planet-shadow-renderer graphics)
-                                                                         shadow-data cloud-data planet-render-vars tree opacity-base)
+              shadow-vars            (:sfsim.graphics/shadow-vars frame)
               cloud-render-vars      (clouds/make-cloud-render-vars config/render-config planet-render-vars width height ?position
                                                                     ?orientation light-direction ?position ?orientation)
               planet-geometry-vars   (make-subsampled-vars planet-render-vars config/render-config)
@@ -163,8 +160,8 @@
                                                   (setup-shadow-matrices lighting-program shadow-vars)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (destroy-texture clouds)
+          (graphics/destroy-frame frame)
           (clouds/destroy-cloud-geometry geometry)
-          (opacity/destroy-opacity-and-shadow shadow-vars)
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)
           (model/destroy-geometry-buffers geometry-buffers)

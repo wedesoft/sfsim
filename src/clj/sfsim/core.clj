@@ -76,7 +76,7 @@
 
     (let [playback            false
           fix-fps             false
-          opacity-base        100.0
+          opacity-base        (:sfsim.clouds/opacity-base config/cloud-config)
           window-width        (:sfsim.render/window-width config/render-config)
           window-height       (:sfsim.render/window-height config/render-config)
           window              (make-window "sfsim" window-width window-height false)

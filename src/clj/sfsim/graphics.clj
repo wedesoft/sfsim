@@ -80,6 +80,23 @@
     {::planet-render-vars planet-render-vars}))
 
 
+(defn destroy-frame
+  [frame]
+  (opacity/destroy-opacity-and-shadow (::shadow-vars frame)))
+
+
+(defn render-shadows
+  [frame graphics tree]
+  (let [shadow-data            (:sfsim.opacity/data graphics)
+        cloud-data             (:sfsim.clouds/data graphics)
+        planet-render-vars     (::planet-render-vars frame)
+        opacity-base           (:sfsim.clouds/opacity-base (:sfsim.clouds/config graphics))
+        opacity-renderer       (::opacity-renderer graphics)
+        planet-shadow-renderer (::planet-shadow-renderer graphics)]
+    (assoc frame ::shadow-vars (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
+                                                                   cloud-data planet-render-vars tree opacity-base))))
+
+
 (defn make-graphics-data
   []
   (let [cloud-data (clouds/make-cloud-data config/cloud-config)]
