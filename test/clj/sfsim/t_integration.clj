@@ -97,8 +97,11 @@
               level                  5
               opacity-base           250.0
               light-direction        (vec3 1 0 0)
-              graphics-data          (graphics/make-graphics-data)
+              graphics               (graphics/make-graphics2)
               ;; TODO: graphics methods for: render shadows and opacity, render cloud overlay, render geometry, render lighting
+              planet-shadow-renderer (planet/make-planet-shadow-renderer graphics)
+              shadow-data            (:sfsim.opacity/data graphics)
+              cloud-data             (:sfsim.clouds/data graphics)
               num-steps              (:sfsim.opacity/num-steps config/shadow-config)
               atmosphere-renderer    (atmosphere/make-atmosphere-geometry-renderer true)
               planet-renderer        (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
@@ -107,11 +110,8 @@
                                                             :sfsim.planet/programs [(:sfsim.planet/program planet-renderer)]
                                                             ) {} width ?position level)
               model-vars             (model/make-model-vars 0.0 1.0 0.0)
-              shadow-data            (:sfsim.opacity/data graphics-data)
-              cloud-data             (:sfsim.clouds/data graphics-data)
-              opacity-renderer       (opacity/make-opacity-renderer graphics-data)
-              planet-shadow-renderer (planet/make-planet-shadow-renderer graphics-data)
-              cloud-renderer         (clouds/make-cloud-renderer graphics-data)
+              opacity-renderer       (opacity/make-opacity-renderer graphics)
+              cloud-renderer         (clouds/make-cloud-renderer graphics)
               planet-render-vars     (planet/make-planet-render-vars2 config/planet-config config/cloud-config
                                                                       config/render-config width height ?position
                                                                       ?orientation light-direction)
@@ -119,11 +119,11 @@
                                                                          cloud-data planet-render-vars tree opacity-base)
               cloud-render-vars      (clouds/make-cloud-render-vars config/render-config planet-render-vars width height ?position
                                                                     ?orientation light-direction ?position ?orientation)
-              geometry-renderer      (model/make-joined-geometry-renderer graphics-data 0)
+              geometry-renderer      (model/make-joined-geometry-renderer graphics 0)
               planet-geometry-vars   (make-subsampled-vars planet-render-vars config/render-config)
               geometry               (model/render-joined-geometry2 geometry-renderer planet-geometry-vars planet-geometry-vars nil tree)
               clouds                 (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] geometry)
-              atmosphere-luts        (:sfsim.atmosphere/luts graphics-data)
+              atmosphere-luts        (:sfsim.atmosphere/luts graphics)
               z-far                  100000.0
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               geometry-buffers       (model/make-geometry-buffers width height)
@@ -149,9 +149,9 @@
                                                   (uniform-int lighting-program "cloud_subsampling"
                                                                (:sfsim.render/cloud-subsampling config/render-config))
                                                   (uniform-float lighting-program "depth_sigma"
-                                                                 (:sfsim.clouds/depth-sigma (:sfsim.clouds/data graphics-data)))
+                                                                 (:sfsim.clouds/depth-sigma (:sfsim.clouds/data graphics)))
                                                   (uniform-float lighting-program "min_depth_exponent"
-                                                                 (:sfsim.clouds/min-depth-exponent (:sfsim.clouds/data graphics-data)))
+                                                                 (:sfsim.clouds/min-depth-exponent (:sfsim.clouds/data graphics)))
                                                   (uniform-int lighting-program "overlay_width"
                                                                (:sfsim.render/overlay-width cloud-render-vars))
                                                   (uniform-int lighting-program "overlay_height"
@@ -173,10 +173,10 @@
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)
           (model/destroy-geometry-buffers geometry-buffers)
-          (clouds/destroy-cloud-data cloud-data)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
           (planet/destroy-planet-geometry-renderer planet-renderer)
-          (atmosphere/destroy-atmosphere-geometry-renderer atmosphere-renderer))))
+          (atmosphere/destroy-atmosphere-geometry-renderer atmosphere-renderer)
+          (graphics/destroy-graphics2 graphics))))
     ?position                      ?orientation                               ?result
     (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
     (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png"))
