@@ -108,7 +108,8 @@
               frame                  (-> (graphics/make-frame graphics width height ?position ?orientation light-direction)
                                          (graphics/render-shadows graphics tree)
                                          (graphics/render-cloud-geometry graphics tree)
-                                         (graphics/render-clouds graphics))
+                                         (graphics/render-clouds graphics)
+                                         (graphics/render-geometry graphics tree))
               geometry               (:sfsim.graphics/cloud-geometry frame)
               planet-render-vars     (:sfsim.graphics/planet-render-vars frame)
               shadow-vars            (:sfsim.graphics/shadow-vars frame)
@@ -119,20 +120,6 @@
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               geometry-buffers       (:sfsim.graphics/geometry-buffers frame)
               lighting-program       (make-lighting-program 0 num-steps)]
-          (model/render-geometry geometry-buffers
-                                 (with-stencils
-                                   (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2
-                                     (planet/render-planet-geometry (:sfsim.graphics/planet-geometry-renderer graphics)
-                                                                    (assoc planet-render-vars
-                                                                           :sfsim.render/overlay-projection
-                                                                           (:sfsim.render/projection planet-render-vars))
-                                                                    true tree))
-                                   (let [fov         (:sfsim.render/fov config/render-config)
-                                         render-vars (atmosphere/make-atmosphere-render-vars width height
-                                                                                             fov light-direction)]
-                                     (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
-                                       (atmosphere/render-full-atmosphere-geometry (:sfsim.graphics/atmosphere-geometry-renderer graphics)
-                                                                                   render-vars)))))
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
                                                   (set-lighting-uniforms lighting-program width height atmosphere-luts camera-to-world

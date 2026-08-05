@@ -73,19 +73,22 @@
 
 (defn make-frame
   [graphics width height camera-position camera-orientation light-direction]
-  (let [render-config      (:sfsim.render/config graphics)
-        planet-config      (:sfsim.planet/config graphics)
-        cloud-config       (:sfsim.clouds/config graphics)
-        planet-render-vars (planet/make-planet-render-vars2 planet-config cloud-config render-config width height
-                                                            camera-position camera-orientation light-direction)
-        cloud-render-vars  (clouds/make-cloud-render-vars render-config planet-render-vars width height camera-position
-                                                          camera-orientation light-direction camera-position camera-orientation)
-        model-vars         (model/make-model-vars 0.0 1.0 0.0)
-        geometry-buffers   (model/make-geometry-buffers width height)]
-    {::planet-render-vars planet-render-vars
-     ::cloud-render-vars  cloud-render-vars
-     ::model-vars         model-vars
-     ::geometry-buffers   geometry-buffers}))
+  (let [render-config          (:sfsim.render/config graphics)
+        fov                    (:sfsim.render/fov render-config)
+        planet-config          (:sfsim.planet/config graphics)
+        cloud-config           (:sfsim.clouds/config graphics)
+        planet-render-vars     (planet/make-planet-render-vars2 planet-config cloud-config render-config width height
+                                                                camera-position camera-orientation light-direction)
+        cloud-render-vars      (clouds/make-cloud-render-vars render-config planet-render-vars width height camera-position
+                                                              camera-orientation light-direction camera-position camera-orientation)
+        atmosphere-render-vars (atmosphere/make-atmosphere-render-vars width height fov light-direction)
+        model-vars             (model/make-model-vars 0.0 1.0 0.0)
+        geometry-buffers       (model/make-geometry-buffers width height)]
+    {::planet-render-vars     planet-render-vars
+     ::cloud-render-vars      cloud-render-vars
+     ::atmosphere-render-vars atmosphere-render-vars
+     ::model-vars             model-vars
+     ::geometry-buffers       geometry-buffers}))
 
 
 (defn destroy-frame
@@ -126,6 +129,23 @@
         shadow-vars         (::shadow-vars frame)
         cloud-geometry      (::cloud-geometry frame)]
     (assoc frame ::clouds (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] cloud-geometry))))
+
+
+(defn render-geometry
+  [frame graphics tree]
+  (let [planet-geometry-renderer     (::planet-geometry-renderer graphics)
+        atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics)
+        planet-render-vars           (::planet-render-vars frame)
+        atmosphere-render-vars       (::atmosphere-render-vars frame)
+        geometry-buffers             (::geometry-buffers frame)]
+    (model/render-geometry
+      geometry-buffers
+      (render/with-stencils
+        (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2
+          (planet/render-planet-geometry2 planet-geometry-renderer planet-render-vars true tree))
+        (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
+          (atmosphere/render-full-atmosphere-geometry atmosphere-geometry-renderer atmosphere-render-vars))))
+    frame))
 
 
 (defn make-graphics-data
