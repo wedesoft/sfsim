@@ -38,6 +38,7 @@
     - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
     - [ ] introduce a geometry buffer for shadows
   - [ ] stars
+  - [ ] specular material for space ship
   - [ ] new steam capsule with better font, glare, thruster, and stars (add build script to render it)
   - [ ] add some animated gifs to Steam description and Github page
   - [ ] add some starting positions and times to menu (unlock orbit and stuff)
