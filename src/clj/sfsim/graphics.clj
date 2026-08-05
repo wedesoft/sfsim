@@ -26,23 +26,24 @@
 
 (defn make-graphics2
   []
-  (let [cloud-data             (clouds/make-cloud-data config/cloud-config)
-        opacity-data           (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
-        atmosphere-luts        (atmosphere/make-atmosphere-luts config/max-height)
-        planet-shadow-renderer (planet/make-planet-shadow-renderer {:sfsim.opacity/data opacity-data
-                                                                    :sfsim.planet/config config/planet-config})
-        opacity-renderer       (opacity/make-opacity-renderer {:sfsim.render/config config/render-config
-                                                               :sfsim.planet/config config/planet-config
-                                                               :sfsim.clouds/data cloud-data
-                                                               :sfsim.opacity/data opacity-data})
-        cloud-renderer         (clouds/make-cloud-renderer {:sfsim.render/config config/render-config
-                                                            :sfsim.planet/config config/planet-config
-                                                            :sfsim.model/data config/model-config
-                                                            :sfsim.opacity/data opacity-data
-                                                            :sfsim.clouds/data cloud-data
-                                                            :sfsim.atmosphere/luts atmosphere-luts})
-        planet-renderer        (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
-        atmosphere-renderer    (atmosphere/make-atmosphere-geometry-renderer true)]
+  (let [cloud-data              (clouds/make-cloud-data config/cloud-config)
+        opacity-data            (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
+        atmosphere-luts         (atmosphere/make-atmosphere-luts config/max-height)
+        planet-shadow-renderer  (planet/make-planet-shadow-renderer {:sfsim.opacity/data opacity-data
+                                                                     :sfsim.planet/config config/planet-config})
+        opacity-renderer        (opacity/make-opacity-renderer {:sfsim.render/config config/render-config
+                                                                :sfsim.planet/config config/planet-config
+                                                                :sfsim.clouds/data cloud-data
+                                                                :sfsim.opacity/data opacity-data})
+        cloud-renderer          (clouds/make-cloud-renderer {:sfsim.render/config config/render-config
+                                                             :sfsim.planet/config config/planet-config
+                                                             :sfsim.model/data config/model-config
+                                                             :sfsim.opacity/data opacity-data
+                                                             :sfsim.clouds/data cloud-data
+                                                             :sfsim.atmosphere/luts atmosphere-luts})
+        cloud-geometry-renderer (model/make-joined-geometry-renderer {:sfsim.planet/config config/planet-config} 0)
+        planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
+        atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)]
     {:sfsim.render/config config/render-config
      :sfsim.planet/config config/planet-config
      :sfsim.model/data config/model-config
@@ -52,6 +53,7 @@
      ::planet-shadow-renderer planet-shadow-renderer
      ::opacity-renderer opacity-renderer
      ::cloud-renderer cloud-renderer
+     ::cloud-geometry-renderer cloud-geometry-renderer
      ::planet-geometry-renderer planet-renderer
      ::atmosphere-geometry-renderer atmosphere-renderer}))
 
@@ -60,6 +62,7 @@
   [graphics]
   (atmosphere/destroy-atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics))
   (planet/destroy-planet-geometry-renderer (::planet-geometry-renderer graphics))
+  (model/destroy-joined-geometry-renderer (::cloud-geometry-renderer graphics))
   (clouds/destroy-cloud-renderer (::cloud-renderer graphics))
   (opacity/destroy-opacity-renderer (::opacity-renderer graphics))
   (planet/destroy-planet-shadow-renderer (::planet-shadow-renderer graphics))

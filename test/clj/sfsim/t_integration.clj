@@ -116,9 +116,9 @@
                                                                          shadow-data cloud-data planet-render-vars tree opacity-base)
               cloud-render-vars      (clouds/make-cloud-render-vars config/render-config planet-render-vars width height ?position
                                                                     ?orientation light-direction ?position ?orientation)
-              geometry-renderer      (model/make-joined-geometry-renderer graphics 0)
               planet-geometry-vars   (make-subsampled-vars planet-render-vars config/render-config)
-              geometry               (model/render-joined-geometry2 geometry-renderer planet-geometry-vars planet-geometry-vars nil tree)
+              geometry               (model/render-joined-geometry2 (:sfsim.graphics/cloud-geometry-renderer graphics) planet-geometry-vars
+                                                                    planet-geometry-vars nil tree)
               clouds                 (clouds/render-cloud-overlay (:sfsim.graphics/cloud-renderer graphics) cloud-render-vars model-vars
                                                                   shadow-vars [] geometry)
               atmosphere-luts        (:sfsim.atmosphere/luts graphics)
@@ -163,7 +163,6 @@
                                                                                 (:sfsim.opacity/opacities shadow-vars))))
                                                   (setup-shadow-matrices lighting-program shadow-vars)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
-          (model/destroy-joined-geometry-renderer geometry-renderer)
           (destroy-texture clouds)
           (clouds/destroy-cloud-geometry geometry)
           (opacity/destroy-opacity-and-shadow shadow-vars)
