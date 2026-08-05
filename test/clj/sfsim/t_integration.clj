@@ -108,9 +108,8 @@
                                                                                       (:sfsim.graphics/planet-geometry-renderer graphics))])
                                                      {} width ?position level)
               model-vars             (model/make-model-vars 0.0 1.0 0.0)
-              planet-render-vars     (planet/make-planet-render-vars2 config/planet-config config/cloud-config
-                                                                      config/render-config width height ?position
-                                                                      ?orientation light-direction)
+              frame                  (graphics/make-frame graphics width height ?position ?orientation light-direction)
+              planet-render-vars     (:sfsim.graphics/planet-render-vars frame)
               shadow-vars            (opacity/opacity-and-shadow-cascade (:sfsim.graphics/opacity-renderer graphics)
                                                                          (:sfsim.graphics/planet-shadow-renderer graphics)
                                                                          shadow-data cloud-data planet-render-vars tree opacity-base)

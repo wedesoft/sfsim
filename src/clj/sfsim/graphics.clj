@@ -46,6 +46,7 @@
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)]
     {:sfsim.render/config config/render-config
      :sfsim.planet/config config/planet-config
+     :sfsim.clouds/config config/cloud-config
      :sfsim.model/data config/model-config
      :sfsim.clouds/data cloud-data
      :sfsim.atmosphere/luts atmosphere-luts
@@ -67,6 +68,16 @@
   (opacity/destroy-opacity-renderer (::opacity-renderer graphics))
   (planet/destroy-planet-shadow-renderer (::planet-shadow-renderer graphics))
   (clouds/destroy-cloud-data (:sfsim.clouds/data graphics)))
+
+
+(defn make-frame
+  [graphics width height camera-position camera-orientation light-direction]
+  (let [render-config      (:sfsim.render/config graphics)
+        planet-config      (:sfsim.planet/config graphics)
+        cloud-config       (:sfsim.clouds/config graphics)
+        planet-render-vars (planet/make-planet-render-vars2 planet-config cloud-config render-config width height
+                                                            camera-position camera-orientation light-direction)]
+    {::planet-render-vars planet-render-vars}))
 
 
 (defn make-graphics-data
