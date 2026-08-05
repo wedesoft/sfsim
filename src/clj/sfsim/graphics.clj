@@ -24,6 +24,27 @@
       GL11)))
 
 
+(defn make-graphics2
+  []
+  (let [cloud-data             (clouds/make-cloud-data config/cloud-config)
+        opacity-data           (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
+        planet-shadow-renderer (planet/make-planet-shadow-renderer {:sfsim.opacity/data opacity-data
+                                                                    :sfsim.planet/config config/planet-config})]
+    {:sfsim.render/config config/render-config
+     :sfsim.planet/config config/planet-config
+     :sfsim.model/data config/model-config
+     :sfsim.clouds/data cloud-data
+     :sfsim.atmosphere/luts (atmosphere/make-atmosphere-luts config/max-height)
+     :sfsim.opacity/data opacity-data
+     ::planet-shadow-renderer planet-shadow-renderer}))
+
+
+(defn destroy-graphics2
+  [graphics]
+  (planet/destroy-planet-shadow-renderer (::planet-shadow-renderer graphics))
+  (clouds/destroy-cloud-data (:sfsim.clouds/data graphics)))
+
+
 (defn make-graphics-data
   []
   (let [cloud-data (clouds/make-cloud-data config/cloud-config)]
@@ -33,22 +54,6 @@
      :sfsim.clouds/data cloud-data
      :sfsim.atmosphere/luts (atmosphere/make-atmosphere-luts config/max-height)
      :sfsim.opacity/data (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)}))
-
-
-(defn make-graphics2
-  []
-  (let [cloud-data (clouds/make-cloud-data config/cloud-config)]
-    {:sfsim.render/config config/render-config
-     :sfsim.planet/config config/planet-config
-     :sfsim.model/data config/model-config
-     :sfsim.clouds/data cloud-data
-     :sfsim.atmosphere/luts (atmosphere/make-atmosphere-luts config/max-height)
-     :sfsim.opacity/data (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)}))
-
-
-(defn destroy-graphics2
-  [graphics]
-  (clouds/destroy-cloud-data (:sfsim.clouds/data graphics)))
 
 
 (defn make-graphics

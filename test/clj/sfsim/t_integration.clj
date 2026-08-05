@@ -99,7 +99,6 @@
               light-direction        (vec3 1 0 0)
               graphics               (graphics/make-graphics2)
               ;; TODO: graphics methods for: render shadows and opacity, render cloud overlay, render geometry, render lighting
-              planet-shadow-renderer (planet/make-planet-shadow-renderer graphics)
               shadow-data            (:sfsim.opacity/data graphics)
               cloud-data             (:sfsim.clouds/data graphics)
               num-steps              (:sfsim.opacity/num-steps config/shadow-config)
@@ -115,8 +114,8 @@
               planet-render-vars     (planet/make-planet-render-vars2 config/planet-config config/cloud-config
                                                                       config/render-config width height ?position
                                                                       ?orientation light-direction)
-              shadow-vars            (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
-                                                                         cloud-data planet-render-vars tree opacity-base)
+              shadow-vars            (opacity/opacity-and-shadow-cascade opacity-renderer (:sfsim.graphics/planet-shadow-renderer graphics)
+                                                                         shadow-data cloud-data planet-render-vars tree opacity-base)
               cloud-render-vars      (clouds/make-cloud-render-vars config/render-config planet-render-vars width height ?position
                                                                     ?orientation light-direction ?position ?orientation)
               geometry-renderer      (model/make-joined-geometry-renderer graphics 0)
@@ -168,7 +167,6 @@
           (clouds/destroy-cloud-geometry geometry)
           (clouds/destroy-cloud-renderer cloud-renderer)
           (opacity/destroy-opacity-and-shadow shadow-vars)
-          (planet/destroy-planet-shadow-renderer planet-shadow-renderer)
           (opacity/destroy-opacity-renderer opacity-renderer)
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)
