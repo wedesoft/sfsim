@@ -102,18 +102,18 @@
               shadow-data            (:sfsim.opacity/data graphics)
               cloud-data             (:sfsim.clouds/data graphics)
               num-steps              (:sfsim.opacity/num-steps config/shadow-config)
-              planet-renderer        (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
-              tree                   (load-tile-tree (assoc planet-renderer
+              tree                   (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                             :sfsim.planet/config config/planet-config
-                                                            :sfsim.planet/programs [(:sfsim.planet/program planet-renderer)]
+                                                            :sfsim.planet/programs [(:sfsim.planet/program
+                                                                                      (:sfsim.graphics/planet-geometry-renderer graphics))]
                                                             ) {} width ?position level)
               model-vars             (model/make-model-vars 0.0 1.0 0.0)
-              opacity-renderer       (opacity/make-opacity-renderer graphics)
               cloud-renderer         (clouds/make-cloud-renderer graphics)
               planet-render-vars     (planet/make-planet-render-vars2 config/planet-config config/cloud-config
                                                                       config/render-config width height ?position
                                                                       ?orientation light-direction)
-              shadow-vars            (opacity/opacity-and-shadow-cascade opacity-renderer (:sfsim.graphics/planet-shadow-renderer graphics)
+              shadow-vars            (opacity/opacity-and-shadow-cascade (:sfsim.graphics/opacity-renderer graphics)
+                                                                         (:sfsim.graphics/planet-shadow-renderer graphics)
                                                                          shadow-data cloud-data planet-render-vars tree opacity-base)
               cloud-render-vars      (clouds/make-cloud-render-vars config/render-config planet-render-vars width height ?position
                                                                     ?orientation light-direction ?position ?orientation)
@@ -129,9 +129,10 @@
           (model/render-geometry geometry-buffers
                                  (with-stencils
                                    (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2
-                                     (planet/render-planet-geometry planet-renderer (assoc planet-render-vars
-                                                                                           :sfsim.render/overlay-projection
-                                                                                           (:sfsim.render/projection planet-render-vars))
+                                     (planet/render-planet-geometry (:sfsim.graphics/planet-geometry-renderer graphics)
+                                                                    (assoc planet-render-vars
+                                                                           :sfsim.render/overlay-projection
+                                                                           (:sfsim.render/projection planet-render-vars))
                                                                     true tree))
                                    (let [fov         (:sfsim.render/fov config/render-config)
                                          render-vars (atmosphere/make-atmosphere-render-vars width height
@@ -167,12 +168,10 @@
           (clouds/destroy-cloud-geometry geometry)
           (clouds/destroy-cloud-renderer cloud-renderer)
           (opacity/destroy-opacity-and-shadow shadow-vars)
-          (opacity/destroy-opacity-renderer opacity-renderer)
           (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)
           (model/destroy-geometry-buffers geometry-buffers)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
-          (planet/destroy-planet-geometry-renderer planet-renderer)
           (graphics/destroy-graphics2 graphics))))
     ?position                      ?orientation                               ?result
     (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
