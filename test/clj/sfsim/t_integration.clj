@@ -105,18 +105,15 @@
                                                             :sfsim.planet/programs [(:sfsim.planet/program
                                                                                       (:sfsim.graphics/planet-geometry-renderer graphics))])
                                                      {} width ?position level)
-              model-vars             (model/make-model-vars 0.0 1.0 0.0)
               frame                  (-> (graphics/make-frame graphics width height ?position ?orientation light-direction)
-                                         (graphics/render-shadows graphics tree))
+                                         (graphics/render-shadows graphics tree)
+                                         (graphics/render-cloud-geometry graphics tree)
+                                         (graphics/render-clouds graphics))
+              geometry               (:sfsim.graphics/cloud-geometry frame)
               planet-render-vars     (:sfsim.graphics/planet-render-vars frame)
               shadow-vars            (:sfsim.graphics/shadow-vars frame)
-              cloud-render-vars      (clouds/make-cloud-render-vars config/render-config planet-render-vars width height ?position
-                                                                    ?orientation light-direction ?position ?orientation)
-              planet-geometry-vars   (make-subsampled-vars planet-render-vars config/render-config)
-              geometry               (model/render-joined-geometry2 (:sfsim.graphics/cloud-geometry-renderer graphics) planet-geometry-vars
-                                                                    planet-geometry-vars nil tree)
-              clouds                 (clouds/render-cloud-overlay (:sfsim.graphics/cloud-renderer graphics) cloud-render-vars model-vars
-                                                                  shadow-vars [] geometry)
+              cloud-render-vars      (:sfsim.graphics/cloud-render-vars frame)
+              clouds                 (:sfsim.graphics/clouds frame)
               atmosphere-luts        (:sfsim.atmosphere/luts graphics)
               z-far                  100000.0
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
@@ -159,10 +156,7 @@
                                                                                 (:sfsim.opacity/opacities shadow-vars))))
                                                   (setup-shadow-matrices lighting-program shadow-vars)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
-          (destroy-texture clouds)
           (graphics/destroy-frame frame)
-          (clouds/destroy-cloud-geometry geometry)
-          (atmosphere/destroy-atmosphere-luts atmosphere-luts)
           (destroy-program lighting-program)
           (model/destroy-geometry-buffers geometry-buffers)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))

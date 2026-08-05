@@ -67,7 +67,8 @@
   (clouds/destroy-cloud-renderer (::cloud-renderer graphics))
   (opacity/destroy-opacity-renderer (::opacity-renderer graphics))
   (planet/destroy-planet-shadow-renderer (::planet-shadow-renderer graphics))
-  (clouds/destroy-cloud-data (:sfsim.clouds/data graphics)))
+  (clouds/destroy-cloud-data (:sfsim.clouds/data graphics))
+  (atmosphere/destroy-atmosphere-luts (:sfsim.atmosphere/luts graphics)))
 
 
 (defn make-frame
@@ -76,12 +77,18 @@
         planet-config      (:sfsim.planet/config graphics)
         cloud-config       (:sfsim.clouds/config graphics)
         planet-render-vars (planet/make-planet-render-vars2 planet-config cloud-config render-config width height
-                                                            camera-position camera-orientation light-direction)]
-    {::planet-render-vars planet-render-vars}))
-
+                                                            camera-position camera-orientation light-direction)
+        cloud-render-vars  (clouds/make-cloud-render-vars render-config planet-render-vars width height camera-position
+                                                          camera-orientation light-direction camera-position camera-orientation)
+        model-vars         (model/make-model-vars 0.0 1.0 0.0)]
+    {::planet-render-vars planet-render-vars
+     ::cloud-render-vars  cloud-render-vars
+     ::model-vars         model-vars}))
 
 (defn destroy-frame
   [frame]
+  (texture/destroy-texture (::clouds frame))
+  (clouds/destroy-cloud-geometry (::cloud-geometry frame))
   (opacity/destroy-opacity-and-shadow (::shadow-vars frame)))
 
 
@@ -95,6 +102,26 @@
         planet-shadow-renderer (::planet-shadow-renderer graphics)]
     (assoc frame ::shadow-vars (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
                                                                    cloud-data planet-render-vars tree opacity-base))))
+
+(defn render-cloud-geometry
+  [frame graphics tree]
+  (let [render-config           (:sfsim.render/config graphics)
+        cloud-geometry-renderer (::cloud-geometry-renderer graphics)
+        planet-render-vars      (::planet-render-vars frame)
+        planet-geometry-vars    (render/make-subsampled-vars planet-render-vars render-config)]
+    (assoc frame
+           ::cloud-geometry
+           (model/render-joined-geometry2 cloud-geometry-renderer planet-geometry-vars planet-geometry-vars nil tree))))
+
+
+(defn render-clouds
+  [frame graphics]
+  (let [cloud-renderer      (::cloud-renderer graphics)
+        cloud-render-vars   (::cloud-render-vars frame)
+        model-vars          (::model-vars frame)
+        shadow-vars         (::shadow-vars frame)
+        cloud-geometry      (::cloud-geometry frame)]
+    (assoc frame ::clouds (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] cloud-geometry))))
 
 
 (defn make-graphics-data
