@@ -102,7 +102,6 @@
               shadow-data            (:sfsim.opacity/data graphics)
               cloud-data             (:sfsim.clouds/data graphics)
               num-steps              (:sfsim.opacity/num-steps config/shadow-config)
-              atmosphere-renderer    (atmosphere/make-atmosphere-geometry-renderer true)
               planet-renderer        (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
               tree                   (load-tile-tree (assoc planet-renderer
                                                             :sfsim.planet/config config/planet-config
@@ -138,7 +137,8 @@
                                          render-vars (atmosphere/make-atmosphere-render-vars width height
                                                                                              fov light-direction)]
                                      (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
-                                       (atmosphere/render-full-atmosphere-geometry atmosphere-renderer render-vars)))))
+                                       (atmosphere/render-full-atmosphere-geometry (:sfsim.graphics/atmosphere-geometry-renderer graphics)
+                                                                                   render-vars)))))
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
                                                   (set-lighting-uniforms lighting-program width height atmosphere-luts camera-to-world
@@ -173,7 +173,6 @@
           (model/destroy-geometry-buffers geometry-buffers)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
           (planet/destroy-planet-geometry-renderer planet-renderer)
-          (atmosphere/destroy-atmosphere-geometry-renderer atmosphere-renderer)
           (graphics/destroy-graphics2 graphics))))
     ?position                      ?orientation                               ?result
     (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
