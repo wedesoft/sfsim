@@ -84,7 +84,9 @@
         atmosphere-render-vars (atmosphere/make-atmosphere-render-vars width height fov light-direction)
         model-vars             (model/make-model-vars 0.0 1.0 0.0)
         geometry-buffers       (model/make-geometry-buffers width height)]
-    {::planet-render-vars     planet-render-vars
+    {::width                  width
+     ::height                 height
+     ::planet-render-vars     planet-render-vars
      ::cloud-render-vars      cloud-render-vars
      ::atmosphere-render-vars atmosphere-render-vars
      ::model-vars             model-vars

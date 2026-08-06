@@ -31,9 +31,7 @@
     [sfsim.texture :refer :all])
   (:import
     (org.lwjgl.glfw
-      GLFW)
-   (org.lwjgl.opengl
-      GL11)))
+      GLFW)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -52,13 +50,32 @@
 
 
 (defn set-lighting-uniforms
-  [program width height atmosphere-luts camera-to-world position light-direction z-far]
-  (let [radius            (:sfsim.planet/radius config/planet-config)
-        amplification     (:sfsim.render/amplification config/render-config)
-        albedo            (:sfsim.planet/albedo config/planet-config)
-        specular          (:sfsim.render/specular config/render-config)]
+  [frame graphics program camera-to-world position light-direction z-far]
+  (let [render-config      (:sfsim.render/config graphics)
+        planet-config      (:sfsim.planet/config graphics)
+        cloud-data         (:sfsim.clouds/data graphics)
+        shadow-data        (:sfsim.opacity/data graphics)
+        atmosphere-luts    (:sfsim.atmosphere/luts graphics)
+        cloud-geometry     (:sfsim.graphics/cloud-geometry frame)
+        cloud-render-vars  (:sfsim.graphics/cloud-render-vars frame)
+        width              (:sfsim.graphics/width frame)
+        height             (:sfsim.graphics/height frame)
+        clouds             (:sfsim.graphics/clouds frame)
+        shadow-vars        (:sfsim.graphics/shadow-vars frame)
+        radius             (:sfsim.planet/radius planet-config)
+        amplification      (:sfsim.render/amplification render-config)
+        albedo             (:sfsim.planet/albedo planet-config)
+        specular           (:sfsim.render/specular render-config)
+        cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
+        overlay-width      (:sfsim.render/overlay-width cloud-render-vars)
+        overlay-height     (:sfsim.render/overlay-height cloud-render-vars)
+        depth-sigma        (:sfsim.clouds/depth-sigma cloud-data)
+        min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)]
     (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
-    ; See planet or model for shadow uniforms
+    (setup-shadow-and-opacity-maps program shadow-data 6)
+    (setup-shadow-matrices program shadow-vars)
+    (uniform-sampler program "clouds" 4)
+    (uniform-sampler program "dist" 5)
     (uniform-int program "width" width)
     (uniform-int program "height" height)
     (uniform-float program "albedo" albedo)
@@ -69,10 +86,20 @@
     (uniform-vector3 program "light_direction" light-direction)
     (uniform-float program "radius" radius)
     (uniform-float program "z_far" z-far)
+    (uniform-int program "cloud_subsampling" cloud-subsampling)
+    (uniform-int program "overlay_width" overlay-width)
+    (uniform-int program "overlay_height" overlay-height)
+    (uniform-float program "depth_sigma" depth-sigma)
+    (uniform-float program "min_depth_exponent" min-depth-exponent)
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts)
                    1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts)
-                   3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)})))
+                   3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
+                   4 clouds
+                   5 (:sfsim.clouds/distance cloud-geometry)})
+    (use-textures (zipmap (drop 6 (range))
+                          (concat (:sfsim.opacity/shadows shadow-vars)
+                                  (:sfsim.opacity/opacities shadow-vars))))))
 
 
 (when (.exists (io/file ".integration"))
@@ -85,7 +112,6 @@
               light-direction        (vec3 1 0 0)
               graphics               (graphics/make-graphics2)
               ;; TODO: graphics methods for: render shadows and opacity, render cloud overlay, render geometry, render lighting
-              shadow-data            (:sfsim.opacity/data graphics)
               num-steps              (:sfsim.opacity/num-steps config/shadow-config)
               tree                   (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                             :sfsim.planet/config config/planet-config
@@ -97,37 +123,14 @@
                                          (graphics/render-cloud-geometry graphics tree)
                                          (graphics/render-clouds graphics)
                                          (graphics/render-geometry graphics tree))
-              geometry               (:sfsim.graphics/cloud-geometry frame)
-              shadow-vars            (:sfsim.graphics/shadow-vars frame)
-              cloud-render-vars      (:sfsim.graphics/cloud-render-vars frame)
-              clouds                 (:sfsim.graphics/clouds frame)
-              atmosphere-luts        (:sfsim.atmosphere/luts graphics)
               z-far                  100000.0
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               geometry-buffers       (:sfsim.graphics/geometry-buffers frame)
               lighting-program       (lighting/make-lighting-program 0 num-steps)]
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
-                                                  (set-lighting-uniforms lighting-program width height atmosphere-luts camera-to-world
-                                                                         ?position light-direction z-far)
-                                                  (uniform-sampler lighting-program "clouds" 4)
-                                                  (uniform-sampler lighting-program "dist" 5)
-                                                  (uniform-int lighting-program "cloud_subsampling"
-                                                               (:sfsim.render/cloud-subsampling config/render-config))
-                                                  (uniform-float lighting-program "depth_sigma"
-                                                                 (:sfsim.clouds/depth-sigma (:sfsim.clouds/data graphics)))
-                                                  (uniform-float lighting-program "min_depth_exponent"
-                                                                 (:sfsim.clouds/min-depth-exponent (:sfsim.clouds/data graphics)))
-                                                  (uniform-int lighting-program "overlay_width"
-                                                               (:sfsim.render/overlay-width cloud-render-vars))
-                                                  (uniform-int lighting-program "overlay_height"
-                                                               (:sfsim.render/overlay-height cloud-render-vars))
-                                                  (setup-shadow-and-opacity-maps lighting-program shadow-data 6)
-                                                  (use-textures {4 clouds 5 (:sfsim.clouds/distance geometry)})
-                                                  (use-textures (zipmap (drop 6 (range))
-                                                                        (concat (:sfsim.opacity/shadows shadow-vars)
-                                                                                (:sfsim.opacity/opacities shadow-vars))))
-                                                  (setup-shadow-matrices lighting-program shadow-vars)))
+                                                  (set-lighting-uniforms frame graphics lighting-program camera-to-world
+                                                                         ?position light-direction z-far)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (destroy-program lighting-program)
