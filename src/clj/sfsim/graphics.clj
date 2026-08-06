@@ -86,6 +86,8 @@
         geometry-buffers       (model/make-geometry-buffers width height)]
     {::width                  width
      ::height                 height
+     ::camera-position        camera-position
+     ::camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
      ::planet-render-vars     planet-render-vars
      ::cloud-render-vars      cloud-render-vars
      ::atmosphere-render-vars atmosphere-render-vars

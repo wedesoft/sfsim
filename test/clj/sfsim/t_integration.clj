@@ -50,12 +50,14 @@
 
 
 (defn set-lighting-uniforms
-  [frame graphics program camera-to-world position light-direction z-far]
+  [frame graphics program light-direction z-far]
   (let [render-config      (:sfsim.render/config graphics)
         planet-config      (:sfsim.planet/config graphics)
         cloud-data         (:sfsim.clouds/data graphics)
         shadow-data        (:sfsim.opacity/data graphics)
         atmosphere-luts    (:sfsim.atmosphere/luts graphics)
+        camera-position    (:sfsim.graphics/camera-position frame)
+        camera-to-world    (:sfsim.graphics/camera-to-world frame)
         cloud-geometry     (:sfsim.graphics/cloud-geometry frame)
         cloud-render-vars  (:sfsim.graphics/cloud-render-vars frame)
         width              (:sfsim.graphics/width frame)
@@ -82,7 +84,7 @@
     (uniform-float program "amplification" amplification)
     (uniform-float program "specular" specular)
     (uniform-matrix4 program "camera_to_world" camera-to-world)
-    (uniform-vector3 program "origin" position)
+    (uniform-vector3 program "origin" camera-position)
     (uniform-vector3 program "light_direction" light-direction)
     (uniform-float program "radius" radius)
     (uniform-float program "z_far" z-far)
@@ -124,13 +126,11 @@
                                          (graphics/render-clouds graphics)
                                          (graphics/render-geometry graphics tree))
               z-far                  100000.0
-              camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               geometry-buffers       (:sfsim.graphics/geometry-buffers frame)
               lighting-program       (lighting/make-lighting-program 0 num-steps)]
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
-                                                  (set-lighting-uniforms frame graphics lighting-program camera-to-world
-                                                                         ?position light-direction z-far)))
+                                                  (set-lighting-uniforms frame graphics lighting-program light-direction z-far)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (destroy-program lighting-program)
