@@ -7,9 +7,23 @@
 (ns sfsim.lighting
     "Shaders and methods for lighting pass"
     (:require
-      [comb.template :as template]))
+      [comb.template :as template]
+      [sfsim.render :refer (make-program)]
+      [sfsim.shaders :as shaders]
+      [sfsim.atmosphere :as atmosphere]
+      [sfsim.clouds :as clouds]
+      [sfsim.planet :as planet]))
 
 
 (defn fragment-lighting
   [num-scene-shadows]
   (template/eval (slurp "resources/shaders/lighting/fragment.glsl") {:num-scene-shadows num-scene-shadows}))
+
+
+(defn make-lighting-program
+  [num-scene-shadows num-steps]
+  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                :sfsim.render/fragment [(fragment-lighting num-scene-shadows) shaders/phong shaders/ray-sphere
+                                        atmosphere/attenuation-outer atmosphere/attenuation-point planet/surface-radiance-function
+                                        (clouds/overall-shading num-steps (clouds/overall-shading-parameters num-scene-shadows))
+                                        atmosphere/cloud-overlay]))

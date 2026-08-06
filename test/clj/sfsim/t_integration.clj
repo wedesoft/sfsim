@@ -14,19 +14,15 @@
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.astro :refer :all]
-    [sfsim.matrix :as matrix]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.config :as config]
     [sfsim.conftest :refer (roughly-vector roughly-matrix is-image)]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix matrix->quaternion vec4->vec3)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix matrix->quaternion vec4->vec3) :as matrix]
     [sfsim.model :as model]
     [sfsim.lighting :as lighting]
-    [sfsim.shaders :as shaders]
     [sfsim.graphics :as graphics]
     [sfsim.planet :as planet]
-    [sfsim.clouds :as clouds]
-    [sfsim.opacity :as opacity]
     [sfsim.plume :as plume]
     [sfsim.physics :as physics]
     [sfsim.quadtree :refer :all]
@@ -53,15 +49,6 @@
     (let [data (planet/background-tree-update planet-renderer tree width position)
           tree (planet/load-tiles-into-opengl planet-renderer (:tree data) (:load data))]
       (load-tile-tree planet-renderer tree width position (dec n)))))
-
-
-(defn make-lighting-program
-  [num-scene-shadows num-steps]
-  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                :sfsim.render/fragment [(lighting/fragment-lighting num-scene-shadows) shaders/phong shaders/ray-sphere
-                                        atmosphere/attenuation-outer atmosphere/attenuation-point planet/surface-radiance-function
-                                        (clouds/overall-shading num-steps (clouds/overall-shading-parameters num-scene-shadows))
-                                        atmosphere/cloud-overlay]))
 
 
 (defn set-lighting-uniforms
@@ -111,7 +98,6 @@
                                          (graphics/render-clouds graphics)
                                          (graphics/render-geometry graphics tree))
               geometry               (:sfsim.graphics/cloud-geometry frame)
-              planet-render-vars     (:sfsim.graphics/planet-render-vars frame)
               shadow-vars            (:sfsim.graphics/shadow-vars frame)
               cloud-render-vars      (:sfsim.graphics/cloud-render-vars frame)
               clouds                 (:sfsim.graphics/clouds frame)
@@ -119,7 +105,7 @@
               z-far                  100000.0
               camera-to-world        (matrix/transformation-matrix (matrix/quaternion->matrix ?orientation) ?position)
               geometry-buffers       (:sfsim.graphics/geometry-buffers frame)
-              lighting-program       (make-lighting-program 0 num-steps)]
+              lighting-program       (lighting/make-lighting-program 0 num-steps)]
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
                                                   (set-lighting-uniforms lighting-program width height atmosphere-luts camera-to-world
