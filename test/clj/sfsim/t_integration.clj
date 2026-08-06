@@ -49,13 +49,36 @@
       (load-tile-tree planet-renderer tree width position (dec n)))))
 
 
-(defn set-lighting-uniforms
-  [frame graphics program light-direction z-far]
+(defn set-static-lighting-uniforms
+  [graphics program]
   (let [render-config      (:sfsim.render/config graphics)
         planet-config      (:sfsim.planet/config graphics)
         cloud-data         (:sfsim.clouds/data graphics)
         shadow-data        (:sfsim.opacity/data graphics)
         atmosphere-luts    (:sfsim.atmosphere/luts graphics)
+        radius             (:sfsim.planet/radius planet-config)
+        amplification      (:sfsim.render/amplification render-config)
+        albedo             (:sfsim.planet/albedo planet-config)
+        specular           (:sfsim.render/specular render-config)
+        cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
+        depth-sigma        (:sfsim.clouds/depth-sigma cloud-data)
+        min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)]
+    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
+    (setup-shadow-and-opacity-maps program shadow-data 6)
+    (uniform-sampler program "clouds" 4)
+    (uniform-sampler program "dist" 5)
+    (uniform-float program "albedo" albedo)
+    (uniform-float program "amplification" amplification)
+    (uniform-float program "specular" specular)
+    (uniform-float program "radius" radius)
+    (uniform-int program "cloud_subsampling" cloud-subsampling)
+    (uniform-float program "depth_sigma" depth-sigma)
+    (uniform-float program "min_depth_exponent" min-depth-exponent)))
+
+
+(defn set-lighting-uniforms
+  [frame graphics program light-direction z-far]
+  (let [atmosphere-luts    (:sfsim.atmosphere/luts graphics)
         camera-position    (:sfsim.graphics/camera-position frame)
         camera-to-world    (:sfsim.graphics/camera-to-world frame)
         cloud-geometry     (:sfsim.graphics/cloud-geometry frame)
@@ -64,35 +87,17 @@
         height             (:sfsim.graphics/height frame)
         clouds             (:sfsim.graphics/clouds frame)
         shadow-vars        (:sfsim.graphics/shadow-vars frame)
-        radius             (:sfsim.planet/radius planet-config)
-        amplification      (:sfsim.render/amplification render-config)
-        albedo             (:sfsim.planet/albedo planet-config)
-        specular           (:sfsim.render/specular render-config)
-        cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
         overlay-width      (:sfsim.render/overlay-width cloud-render-vars)
-        overlay-height     (:sfsim.render/overlay-height cloud-render-vars)
-        depth-sigma        (:sfsim.clouds/depth-sigma cloud-data)
-        min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)]
-    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
-    (setup-shadow-and-opacity-maps program shadow-data 6)
+        overlay-height     (:sfsim.render/overlay-height cloud-render-vars)]
     (setup-shadow-matrices program shadow-vars)
-    (uniform-sampler program "clouds" 4)
-    (uniform-sampler program "dist" 5)
     (uniform-int program "width" width)
     (uniform-int program "height" height)
-    (uniform-float program "albedo" albedo)
-    (uniform-float program "amplification" amplification)
-    (uniform-float program "specular" specular)
     (uniform-matrix4 program "camera_to_world" camera-to-world)
     (uniform-vector3 program "origin" camera-position)
     (uniform-vector3 program "light_direction" light-direction)
-    (uniform-float program "radius" radius)
     (uniform-float program "z_far" z-far)
-    (uniform-int program "cloud_subsampling" cloud-subsampling)
     (uniform-int program "overlay_width" overlay-width)
     (uniform-int program "overlay_height" overlay-height)
-    (uniform-float program "depth_sigma" depth-sigma)
-    (uniform-float program "min_depth_exponent" min-depth-exponent)
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts)
                    1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts)
@@ -130,6 +135,7 @@
               lighting-program       (lighting/make-lighting-program 0 num-steps)]
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
+                                                  (set-static-lighting-uniforms graphics lighting-program)
                                                   (set-lighting-uniforms frame graphics lighting-program light-direction z-far)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
