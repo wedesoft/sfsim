@@ -34,11 +34,14 @@
   (:import
     (java.nio
       DirectByteBuffer)
+    (org.lwjgl
+      PointerBuffer)
     (org.lwjgl.assimp
       AIAnimation
       AIColor4D
       AIFace
       AIMaterial
+      AIMaterialProperty
       AIMatrix4x4
       AIMesh
       AINode
@@ -149,9 +152,20 @@
   "Get RGB color of material"
   {:malli/schema [:=> [:cat :some :string] fvec3]}
   [^AIMaterial material ^String property]
-  (let [color (AIColor4D/create)]
-    (Assimp/aiGetMaterialColor material property Assimp/aiTextureType_NONE 0 color)
-    (vec3 (.r color) (.g color) (.b color))))
+  (let [color  (AIColor4D/create)
+        result (Assimp/aiGetMaterialColor material property Assimp/aiTextureType_NONE 0 color)]
+    (when (not (neg? result))
+      (vec3 (.r color) (.g color) (.b color)))))
+
+
+(defn- decode-factor
+  "Get float property of material"
+  {:malli/schema [:=> [:cat :some :string] :double]}
+  [^AIMaterial material ^String property]
+  (let [factor  (PointerBuffer/allocateDirect 1)
+        result (Assimp/aiGetMaterialProperty material property 0 0 factor)]
+    (when (not (neg? result))
+      (.getFloat (.mData (AIMaterialProperty/create ^long (.get factor 0)))))))
 
 
 (set! *warn-on-reflection* false)
@@ -184,6 +198,8 @@
   [^AIScene scene ^long i]
   (let [material (AIMaterial/create ^long (.get (.mMaterials scene) ^long i))]
     {::diffuse              (decode-color material Assimp/AI_MATKEY_COLOR_DIFFUSE)
+     ::metallic             (decode-factor material Assimp/AI_MATKEY_METALLIC_FACTOR)
+     ::roughness            (decode-factor material Assimp/AI_MATKEY_ROUGHNESS_FACTOR)
      ::color-texture-index  (decode-texture-index material Assimp/aiTextureType_DIFFUSE)
      ::normal-texture-index (decode-texture-index material Assimp/aiTextureType_NORMALS)}))
 

@@ -38,6 +38,7 @@
 
 (def cube (read-gltf "test/clj/sfsim/fixtures/model/cube.glb"))
 (def cube-moved (read-gltf "test/clj/sfsim/fixtures/model/cube-moved.glb"))
+(def materials (read-gltf "test/clj/sfsim/fixtures/model/materials.glb"))
 
 
 (fact "Root of cube scene"
@@ -111,6 +112,10 @@
 
 (fact "Second material has a diffuse white color"
       (:sfsim.model/diffuse (second (:sfsim.model/materials cube))) => (roughly-vector (vec3 1.0 1.0 1.0) 1e-6))
+
+
+(fact "Get metallic component"
+      (:sfsim.model/metallic (first (:sfsim.model/materials materials))) => (roughly 0.5 1e-6))
 
 
 (fact "Cube has no textures"
