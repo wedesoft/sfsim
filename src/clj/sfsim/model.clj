@@ -642,7 +642,6 @@
     (uniform-int program "cloud_subsampling" (:sfsim.render/cloud-subsampling render-config))
     (uniform-float program "depth_sigma" (:sfsim.clouds/depth-sigma cloud-data))
     (uniform-float program "min_depth_exponent" (:sfsim.clouds/min-depth-exponent cloud-data))
-    (uniform-float program "specular" (:sfsim.render/specular render-config))
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
@@ -773,31 +772,39 @@
 
 
 (defmethod render-mesh [false false]
-  [{::keys [diffuse]} {::keys [program transform internal-transform scene-shadow-matrices] :as render-vars}]
+  [{::keys [diffuse metallic roughness]} {::keys [program transform internal-transform scene-shadow-matrices] :as render-vars}]
   (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
                                           scene-shadow-matrices)
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 roughness))
   (uniform-vector3 program "diffuse_color" diffuse))
 
 
 (defmethod render-mesh [true false]
-  [{::keys [colors]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
+  [{::keys [colors metallic roughness]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
   (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
                                           scene-shadow-matrices)
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 roughness))
   (use-textures {texture-offset colors}))
 
 
 (defmethod render-mesh [false true]
-  [{::keys [diffuse normals]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
+  [{::keys [diffuse normals metallic roughness]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
   (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
                                           scene-shadow-matrices)
   (uniform-vector3 program "diffuse_color" diffuse)
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 roughness))
   (use-textures {texture-offset normals}))
 
 
 (defmethod render-mesh [true true]
-  [{::keys [colors normals]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
+  [{::keys [colors normals metallic roughness]} {::keys [program texture-offset transform internal-transform scene-shadow-matrices] :as render-vars}]
   (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
                                           scene-shadow-matrices)
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 roughness))
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
 
 
