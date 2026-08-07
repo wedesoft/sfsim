@@ -168,7 +168,7 @@
   (let [factor  (PointerBuffer/allocateDirect 1)
         result (Assimp/aiGetMaterialProperty material property 0 0 factor)]
     (when (not (neg? result))
-      (.getFloat (.mData (AIMaterialProperty/create ^long (.get factor 0)))))))
+      (double (.getFloat (.mData (AIMaterialProperty/create ^long (.get factor 0))))))))
 
 
 (set! *warn-on-reflection* false)
@@ -1234,31 +1234,39 @@
 
 
 (defmethod render-mesh-geometry [false false]
-  [{::keys [diffuse]} {::keys [program transform] :as render-vars}]
+  [{::keys [diffuse metallic roughness]} {::keys [program transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 roughness))
   (uniform-vector3 program "diffuse_color" diffuse))
 
 
 (defmethod render-mesh-geometry [true false]
-  [{::keys [colors]} {::keys [program texture-offset transform] :as render-vars}]
+  [{::keys [colors metallic roughness]} {::keys [program texture-offset transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 roughness))
   (use-textures {texture-offset colors}))
 
 
 (defmethod render-mesh-geometry [false true]
-  [{::keys [diffuse normals]} {::keys [program texture-offset transform] :as render-vars}]
+  [{::keys [diffuse metallic roughness normals]} {::keys [program texture-offset transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (uniform-vector3 program "diffuse_color" diffuse)
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 roughness))
   (use-textures {texture-offset normals}))
 
 
 (defmethod render-mesh-geometry [true true]
-  [{::keys [colors normals]} {::keys [program texture-offset transform] :as render-vars}]
+  [{::keys [metallic roughness colors normals]} {::keys [program texture-offset transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 roughness))
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
 
 
