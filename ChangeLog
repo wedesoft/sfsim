@@ -1,3 +1,10 @@
+sfsim (0.29-1)
+
+  * Use metallic and roughness value from Blender
+	* Update model materials
+
+-- Jan Wedekind <jan@wedesoft.de>  Fri,  7 Jun 2026 23:19:31 +0100
+
 sfsim (0.28-1)
 
   * Minor fix for time lapse limit

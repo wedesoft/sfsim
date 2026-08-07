@@ -3,6 +3,8 @@
 uniform vec3 origin;
 uniform vec3 light_direction;
 uniform vec3 object_origin;
+uniform float metallic;
+uniform float roughness;
 <% (if textured %>
 uniform sampler2D colors;
 <% %>
@@ -49,7 +51,7 @@ void main()
 <% (if textured %>
   vec3 diffuse_color = texture(colors, fs_in.texcoord).rgb;
 <% ) %>
-  vec3 incoming = phong(ambient_light, light, fs_in.world_point, normal, diffuse_color, 0.0);
+  vec3 incoming = phong(ambient_light, light, fs_in.world_point, normal, diffuse_color * (1.0 - metallic), metallic);
   incoming = attenuation_point(fs_in.world_point, vec4(incoming, 1.0)).rgb;
   vec4 cloud_scatter = cloud_overlay(length(fs_in.vertex - object_origin));
   fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);
