@@ -779,7 +779,7 @@
   (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
                                           scene-shadow-matrices)
   (uniform-float program "metallic" metallic)
-  (uniform-float program "specular" (/ 1.0 roughness))
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
   (uniform-vector3 program "diffuse_color" diffuse))
 
 
@@ -788,7 +788,7 @@
   (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
                                           scene-shadow-matrices)
   (uniform-float program "metallic" metallic)
-  (uniform-float program "specular" (/ 1.0 roughness))
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
   (use-textures {texture-offset colors}))
 
 
@@ -798,7 +798,7 @@
                                           scene-shadow-matrices)
   (uniform-vector3 program "diffuse_color" diffuse)
   (uniform-float program "metallic" metallic)
-  (uniform-float program "specular" (/ 1.0 roughness))
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
   (use-textures {texture-offset normals}))
 
 
@@ -807,7 +807,7 @@
   (setup-camera-world-and-shadow-matrices program transform internal-transform (:sfsim.render/camera-to-world render-vars)
                                           scene-shadow-matrices)
   (uniform-float program "metallic" metallic)
-  (uniform-float program "specular" (/ 1.0 roughness))
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
 
 
@@ -1245,7 +1245,7 @@
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (uniform-float program "metallic" metallic)
-  (uniform-float program "specular" (/ 1.0 roughness))
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
   (uniform-vector3 program "diffuse_color" diffuse))
 
 
@@ -1254,7 +1254,7 @@
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (uniform-float program "metallic" metallic)
-  (uniform-float program "specular" (/ 1.0 roughness))
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
   (use-textures {texture-offset colors}))
 
 
@@ -1264,7 +1264,7 @@
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (uniform-vector3 program "diffuse_color" diffuse)
   (uniform-float program "metallic" metallic)
-  (uniform-float program "specular" (/ 1.0 roughness))
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
   (use-textures {texture-offset normals}))
 
 
@@ -1273,7 +1273,7 @@
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (uniform-float program "metallic" metallic)
-  (uniform-float program "specular" (/ 1.0 roughness))
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
 
 
