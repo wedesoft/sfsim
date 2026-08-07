@@ -115,7 +115,8 @@
 
 
 (fact "Get metallic component"
-      (:sfsim.model/metallic (first (:sfsim.model/materials materials))) => (roughly 0.5 1e-6))
+      (:sfsim.model/metallic (first (:sfsim.model/materials materials))) => (roughly 0.5 1e-6)
+      (:sfsim.model/roughness (first (:sfsim.model/materials materials))) => (roughly 0.2 1e-6))
 
 
 (fact "Cube has no textures"

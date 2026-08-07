@@ -165,7 +165,7 @@
   (let [factor  (PointerBuffer/allocateDirect 1)
         result (Assimp/aiGetMaterialProperty material property 0 0 factor)]
     (when (not (neg? result))
-      (.getFloat (.mData (AIMaterialProperty/create ^long (.get factor 0)))))))
+      (double (.getFloat (.mData (AIMaterialProperty/create ^long (.get factor 0))))))))
 
 
 (set! *warn-on-reflection* false)
