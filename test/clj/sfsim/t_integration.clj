@@ -60,13 +60,7 @@
         clouds             (:sfsim.graphics/clouds frame)
         shadow-vars        (:sfsim.graphics/shadow-vars frame)]
     (lighting/set-dynamic-lighting-uniforms lighting-renderer width height camera-position camera-orientation light-direction
-                                            planet-render-vars cloud-render-vars shadow-vars)
-    (use-textures {0 clouds
-                   1 (:sfsim.clouds/distance cloud-geometry)
-                   2 (:sfsim.atmosphere/transmittance atmosphere-luts)
-                   3 (:sfsim.atmosphere/scatter atmosphere-luts)
-                   4 (:sfsim.atmosphere/mie atmosphere-luts)
-                   5 (:sfsim.atmosphere/surface-radiance atmosphere-luts)})))
+                                            planet-render-vars cloud-render-vars shadow-vars cloud-geometry clouds)))
 
 
 (when (.exists (io/file ".integration"))

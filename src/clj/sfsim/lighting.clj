@@ -61,11 +61,13 @@
 
 (defn make-lighting-renderer
   [data]
-  (let [shadow-config (:sfsim.opacity/data data)
-        num-steps     (:sfsim.opacity/num-steps shadow-config)
-        program       (make-lighting-program 0 num-steps)]
+  (let [shadow-config   (:sfsim.opacity/data data)
+        atmosphere-luts (:sfsim.atmosphere/luts data)
+        num-steps       (:sfsim.opacity/num-steps shadow-config)
+        program         (make-lighting-program 0 num-steps)]
     (set-static-lighting-uniforms data program)
-    {::program program}))
+    {::program program
+     ::atmosphere-luts atmosphere-luts}))
 
 
 (defn destroy-lighting-renderer
@@ -75,8 +77,9 @@
 
 (defn set-dynamic-lighting-uniforms
   [lighting-renderer width height camera-position camera-orientation light-direction planet-render-vars
-   cloud-render-vars shadow-vars]
+   cloud-render-vars shadow-vars cloud-geometry clouds]
   (let [program         (::program lighting-renderer)
+        atmosphere-luts (::atmosphere-luts lighting-renderer)
         camera-to-world (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
         z-far           (:sfsim.render/z-far planet-render-vars)
         overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
@@ -90,6 +93,12 @@
     (uniform-float program "z_far" z-far)
     (uniform-int program "overlay_width" overlay-width)
     (uniform-int program "overlay_height" overlay-height)
+    (use-textures {0 clouds
+                   1 (:sfsim.clouds/distance cloud-geometry)
+                   2 (:sfsim.atmosphere/transmittance atmosphere-luts)
+                   3 (:sfsim.atmosphere/scatter atmosphere-luts)
+                   4 (:sfsim.atmosphere/mie atmosphere-luts)
+                   5 (:sfsim.atmosphere/surface-radiance atmosphere-luts)})
     (use-textures (zipmap (drop 6 (range))
                           (concat (:sfsim.opacity/shadows shadow-vars)
                                   (:sfsim.opacity/opacities shadow-vars))))))
