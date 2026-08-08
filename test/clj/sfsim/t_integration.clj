@@ -50,8 +50,9 @@
 
 
 (defn set-lighting-uniforms
-  [frame graphics program light-direction z-far]
-  (let [atmosphere-luts    (:sfsim.atmosphere/luts graphics)
+  [frame lighting-renderer graphics light-direction z-far]
+  (let [program            (:sfsim.lighting/program lighting-renderer)
+        atmosphere-luts    (:sfsim.atmosphere/luts graphics)
         camera-position    (:sfsim.graphics/camera-position frame)
         camera-to-world    (:sfsim.graphics/camera-to-world frame)
         cloud-geometry     (:sfsim.graphics/cloud-geometry frame)
@@ -63,8 +64,7 @@
         overlay-width      (:sfsim.render/overlay-width cloud-render-vars)
         overlay-height     (:sfsim.render/overlay-height cloud-render-vars)]
     (setup-shadow-matrices program shadow-vars)
-    (uniform-int program "width" width)
-    (uniform-int program "height" height)
+    (lighting/set-dynamic-lighting-uniforms lighting-renderer width height)
     (uniform-matrix4 program "camera_to_world" camera-to-world)
     (uniform-vector3 program "origin" camera-position)
     (uniform-vector3 program "light_direction" light-direction)
@@ -109,7 +109,7 @@
               lighting-program       (:sfsim.lighting/program lighting-renderer)]
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
-                                                  (set-lighting-uniforms frame graphics lighting-program light-direction z-far)))
+                                                  (set-lighting-uniforms frame lighting-renderer graphics light-direction z-far)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))

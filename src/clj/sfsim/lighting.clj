@@ -70,3 +70,10 @@
 (defn destroy-lighting-renderer
   [renderer]
   (destroy-program (::program renderer)))
+
+
+(defn set-dynamic-lighting-uniforms
+  [lighting-renderer width height]
+  (let [program (::program lighting-renderer)]
+    (uniform-int program "width" width)
+    (uniform-int program "height" height)))
