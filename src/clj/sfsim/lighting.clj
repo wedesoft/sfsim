@@ -13,6 +13,7 @@
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.matrix :as matrix]
+      [sfsim.model :as model]
       [sfsim.clouds :as clouds]
       [sfsim.planet :as planet]))
 
@@ -102,3 +103,15 @@
     (use-textures (zipmap (drop 6 (range))
                           (concat (:sfsim.opacity/shadows shadow-vars)
                                   (:sfsim.opacity/opacities shadow-vars))))))
+
+
+(defn render-lighting
+  [lighting-renderer width height geometry-buffers shadow-config camera-position camera-orientation
+   light-direction planet-render-vars cloud-render-vars shadow-vars cloud-geometry clouds]
+  (let [program   (::program lighting-renderer)
+        num-steps (:sfsim.opacity/num-steps shadow-config)]
+    (model/render-lighting geometry-buffers program (+ 4 2 (* 2 num-steps))
+                           (set-dynamic-lighting-uniforms lighting-renderer width height camera-position
+                                                          camera-orientation light-direction
+                                                          planet-render-vars cloud-render-vars shadow-vars
+                                                          cloud-geometry clouds))))
