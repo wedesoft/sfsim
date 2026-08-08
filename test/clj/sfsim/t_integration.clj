@@ -49,33 +49,6 @@
       (load-tile-tree planet-renderer tree width position (dec n)))))
 
 
-(defn set-static-lighting-uniforms
-  [graphics program]
-  (let [render-config      (:sfsim.render/config graphics)
-        planet-config      (:sfsim.planet/config graphics)
-        cloud-data         (:sfsim.clouds/data graphics)
-        shadow-data        (:sfsim.opacity/data graphics)
-        atmosphere-luts    (:sfsim.atmosphere/luts graphics)
-        radius             (:sfsim.planet/radius planet-config)
-        amplification      (:sfsim.render/amplification render-config)
-        albedo             (:sfsim.planet/albedo planet-config)
-        specular           (:sfsim.render/specular render-config)
-        cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
-        depth-sigma        (:sfsim.clouds/depth-sigma cloud-data)
-        min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)]
-    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
-    (setup-shadow-and-opacity-maps program shadow-data 6)
-    (uniform-sampler program "clouds" 4)
-    (uniform-sampler program "dist" 5)
-    (uniform-float program "albedo" albedo)
-    (uniform-float program "amplification" amplification)
-    (uniform-float program "specular" specular)
-    (uniform-float program "radius" radius)
-    (uniform-int program "cloud_subsampling" cloud-subsampling)
-    (uniform-float program "depth_sigma" depth-sigma)
-    (uniform-float program "min_depth_exponent" min-depth-exponent)))
-
-
 (defn set-lighting-uniforms
   [frame graphics program light-direction z-far]
   (let [atmosphere-luts    (:sfsim.atmosphere/luts graphics)
@@ -132,11 +105,10 @@
                                          (graphics/render-geometry graphics tree))
               z-far                  100000.0
               geometry-buffers       (:sfsim.graphics/geometry-buffers frame)
-              lighting-renderer      (lighting/make-lighting-renderer {:sfsim.opacity/data config/shadow-config})
+              lighting-renderer      (lighting/make-lighting-renderer graphics)
               lighting-program       (:sfsim.lighting/program lighting-renderer)]
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
-                                                  (set-static-lighting-uniforms graphics lighting-program)
                                                   (set-lighting-uniforms frame graphics lighting-program light-direction z-far)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)

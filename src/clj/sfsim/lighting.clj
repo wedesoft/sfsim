@@ -8,7 +8,8 @@
     "Shaders and methods for lighting pass"
     (:require
       [comb.template :as template]
-      [sfsim.render :refer (make-program destroy-program)]
+      [sfsim.render :refer (make-program destroy-program setup-shadow-and-opacity-maps uniform-sampler uniform-float uniform-int
+                            use-program)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.clouds :as clouds]
@@ -29,11 +30,40 @@
                                         atmosphere/cloud-overlay]))
 
 
+(defn set-static-lighting-uniforms
+  [data program]
+  (let [render-config      (:sfsim.render/config data)
+        planet-config      (:sfsim.planet/config data)
+        cloud-data         (:sfsim.clouds/data data)
+        shadow-data        (:sfsim.opacity/data data)
+        atmosphere-luts    (:sfsim.atmosphere/luts data)
+        radius             (:sfsim.planet/radius planet-config)
+        amplification      (:sfsim.render/amplification render-config)
+        albedo             (:sfsim.planet/albedo planet-config)
+        specular           (:sfsim.render/specular render-config)
+        cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
+        depth-sigma        (:sfsim.clouds/depth-sigma cloud-data)
+        min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)]
+    (use-program program)
+    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
+    (setup-shadow-and-opacity-maps program shadow-data 6)
+    (uniform-sampler program "clouds" 4)
+    (uniform-sampler program "dist" 5)
+    (uniform-float program "albedo" albedo)
+    (uniform-float program "amplification" amplification)
+    (uniform-float program "specular" specular)
+    (uniform-float program "radius" radius)
+    (uniform-int program "cloud_subsampling" cloud-subsampling)
+    (uniform-float program "depth_sigma" depth-sigma)
+    (uniform-float program "min_depth_exponent" min-depth-exponent)))
+
+
 (defn make-lighting-renderer
   [data]
   (let [shadow-config (:sfsim.opacity/data data)
         num-steps     (:sfsim.opacity/num-steps shadow-config)
         program       (make-lighting-program 0 num-steps)]
+    (set-static-lighting-uniforms data program)
     {::program program}))
 
 
