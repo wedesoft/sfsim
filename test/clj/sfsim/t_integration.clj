@@ -64,12 +64,12 @@
     (setup-shadow-matrices program shadow-vars)
     (lighting/set-dynamic-lighting-uniforms lighting-renderer width height camera-position camera-orientation light-direction
                                             planet-render-vars cloud-render-vars)
-    (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts)
-                   1 (:sfsim.atmosphere/scatter atmosphere-luts)
-                   2 (:sfsim.atmosphere/mie atmosphere-luts)
-                   3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                   4 clouds
-                   5 (:sfsim.clouds/distance cloud-geometry)})
+    (use-textures {0 clouds
+                   1 (:sfsim.clouds/distance cloud-geometry)
+                   2 (:sfsim.atmosphere/transmittance atmosphere-luts)
+                   3 (:sfsim.atmosphere/scatter atmosphere-luts)
+                   4 (:sfsim.atmosphere/mie atmosphere-luts)
+                   5 (:sfsim.atmosphere/surface-radiance atmosphere-luts)})
     (use-textures (zipmap (drop 6 (range))
                           (concat (:sfsim.opacity/shadows shadow-vars)
                                   (:sfsim.opacity/opacities shadow-vars))))))

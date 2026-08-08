@@ -46,10 +46,10 @@
         depth-sigma        (:sfsim.clouds/depth-sigma cloud-data)
         min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)]
     (use-program program)
-    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 0 true)
+    (uniform-sampler program "clouds" 0)
+    (uniform-sampler program "dist" 1)
+    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 2 true)
     (setup-shadow-and-opacity-maps program shadow-data 6)
-    (uniform-sampler program "clouds" 4)
-    (uniform-sampler program "dist" 5)
     (uniform-float program "albedo" albedo)
     (uniform-float program "amplification" amplification)
     (uniform-float program "specular" specular)
