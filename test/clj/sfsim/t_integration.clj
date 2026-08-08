@@ -49,8 +49,8 @@
 
 
 (defn set-lighting-uniforms
-  [frame lighting-renderer graphics light-direction planet-render-vars]
-  (let [atmosphere-luts    (:sfsim.atmosphere/luts graphics)
+  [frame graphics light-direction planet-render-vars]
+  (let [lighting-renderer  (:sfsim.graphics/lighting-renderer graphics)
         camera-position    (:sfsim.graphics/camera-position frame)
         camera-orientation (:sfsim.graphics/camera-orientation frame)
         cloud-geometry     (:sfsim.graphics/cloud-geometry frame)
@@ -90,8 +90,7 @@
               lighting-program       (:sfsim.lighting/program lighting-renderer)]
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
-                                                  (set-lighting-uniforms frame lighting-renderer graphics light-direction
-                                                                         planet-render-vars)))
+                                                  (set-lighting-uniforms frame graphics light-direction planet-render-vars)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
