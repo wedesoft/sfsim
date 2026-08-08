@@ -98,6 +98,7 @@
      ::camera-orientation     camera-orientation
      ::planet-render-vars     planet-render-vars
      ::cloud-render-vars      cloud-render-vars
+     ::light-direction        light-direction
      ::atmosphere-render-vars atmosphere-render-vars
      ::model-vars             model-vars
      ::geometry-buffers       geometry-buffers}))

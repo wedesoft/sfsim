@@ -14,7 +14,6 @@
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.astro :refer :all]
-    [sfsim.atmosphere :as atmosphere]
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.config :as config]
     [sfsim.conftest :refer (roughly-vector roughly-matrix is-image)]
@@ -51,8 +50,7 @@
 
 (defn set-lighting-uniforms
   [frame lighting-renderer graphics light-direction planet-render-vars]
-  (let [program            (:sfsim.lighting/program lighting-renderer)
-        atmosphere-luts    (:sfsim.atmosphere/luts graphics)
+  (let [atmosphere-luts    (:sfsim.atmosphere/luts graphics)
         camera-position    (:sfsim.graphics/camera-position frame)
         camera-orientation (:sfsim.graphics/camera-orientation frame)
         cloud-geometry     (:sfsim.graphics/cloud-geometry frame)
@@ -61,9 +59,8 @@
         height             (:sfsim.graphics/height frame)
         clouds             (:sfsim.graphics/clouds frame)
         shadow-vars        (:sfsim.graphics/shadow-vars frame)]
-    (setup-shadow-matrices program shadow-vars)
     (lighting/set-dynamic-lighting-uniforms lighting-renderer width height camera-position camera-orientation light-direction
-                                            planet-render-vars cloud-render-vars)
+                                            planet-render-vars cloud-render-vars shadow-vars)
     (use-textures {0 clouds
                    1 (:sfsim.clouds/distance cloud-geometry)
                    2 (:sfsim.atmosphere/transmittance atmosphere-luts)
