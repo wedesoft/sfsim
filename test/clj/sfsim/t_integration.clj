@@ -103,7 +103,7 @@
                                          (graphics/render-cloud-geometry graphics tree)
                                          (graphics/render-clouds graphics)
                                          (graphics/render-geometry graphics tree))
-              z-far                  100000.0
+              z-far                  (:sfsim.render/z-far (:sfsim.graphics/planet-render-vars frame))
               geometry-buffers       (:sfsim.graphics/geometry-buffers frame)
               lighting-renderer      (:sfsim.graphics/lighting-renderer graphics)
               lighting-program       (:sfsim.lighting/program lighting-renderer)]
