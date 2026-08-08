@@ -161,6 +161,29 @@
     frame))
 
 
+(defn render-lighting
+  [frame graphics]
+  (let [lighting-renderer  (::lighting-renderer graphics)
+        shadow-config      (:sfsim.opacity/data graphics)
+        lighting-program   (:sfsim.lighting/program lighting-renderer)
+        camera-position    (::camera-position frame)
+        camera-orientation (::camera-orientation frame)
+        light-direction    (::light-direction frame)
+        planet-render-vars (::planet-render-vars frame)
+        cloud-geometry     (::cloud-geometry frame)
+        cloud-render-vars  (::cloud-render-vars frame)
+        num-steps          (:sfsim.opacity/num-steps shadow-config)
+        geometry-buffers   (::geometry-buffers frame)
+        width              (::width frame)
+        height             (::height frame)
+        clouds             (::clouds frame)
+        shadow-vars        (::shadow-vars frame)]
+    (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
+                           (lighting/set-dynamic-lighting-uniforms lighting-renderer width height camera-position
+                                                                   camera-orientation light-direction
+                                                                   planet-render-vars cloud-render-vars shadow-vars
+                                                                   cloud-geometry clouds))))
+
 (defn make-graphics-data
   []
   (let [cloud-data (clouds/make-cloud-data config/cloud-config)]

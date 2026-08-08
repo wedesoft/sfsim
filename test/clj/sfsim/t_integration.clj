@@ -48,30 +48,6 @@
       (load-tile-tree planet-renderer tree width position (dec n)))))
 
 
-(defn render-lighting
-  [frame graphics]
-  (let [lighting-renderer  (:sfsim.graphics/lighting-renderer graphics)
-        shadow-config      (:sfsim.opacity/data graphics)
-        lighting-program   (:sfsim.lighting/program lighting-renderer)
-        camera-position    (:sfsim.graphics/camera-position frame)
-        camera-orientation (:sfsim.graphics/camera-orientation frame)
-        light-direction    (:sfsim.graphics/light-direction frame)
-        planet-render-vars (:sfsim.graphics/planet-render-vars frame)
-        cloud-geometry     (:sfsim.graphics/cloud-geometry frame)
-        cloud-render-vars  (:sfsim.graphics/cloud-render-vars frame)
-        num-steps          (:sfsim.opacity/num-steps shadow-config)
-        geometry-buffers   (:sfsim.graphics/geometry-buffers frame)
-        width              (:sfsim.graphics/width frame)
-        height             (:sfsim.graphics/height frame)
-        clouds             (:sfsim.graphics/clouds frame)
-        shadow-vars        (:sfsim.graphics/shadow-vars frame)]
-    (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
-                           (lighting/set-dynamic-lighting-uniforms lighting-renderer width height camera-position
-                                                                   camera-orientation light-direction
-                                                                   planet-render-vars cloud-render-vars shadow-vars
-                                                                   cloud-geometry clouds))))
-
-
 (when (.exists (io/file ".integration"))
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
     (fact
@@ -81,7 +57,6 @@
               level                  5
               light-direction        (vec3 1 0 0)
               graphics               (graphics/make-graphics2)
-              ;; TODO: graphics methods for: render shadows and opacity, render cloud overlay, render geometry, render lighting
               tree                   (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                             :sfsim.planet/config config/planet-config
                                                             :sfsim.planet/programs [(:sfsim.planet/program
@@ -93,7 +68,7 @@
                                          (graphics/render-clouds graphics)
                                          (graphics/render-geometry graphics tree)) ]
           (render-to-image width height false
-                           (render-lighting frame graphics))
+                           (graphics/render-lighting frame graphics))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
