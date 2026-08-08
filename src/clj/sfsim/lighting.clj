@@ -9,9 +9,10 @@
     (:require
       [comb.template :as template]
       [sfsim.render :refer (make-program destroy-program setup-shadow-and-opacity-maps uniform-sampler uniform-float uniform-int
-                            use-program)]
+                            use-program uniform-matrix4 uniform-vector3)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
+      [sfsim.matrix :as matrix]
       [sfsim.clouds :as clouds]
       [sfsim.planet :as planet]))
 
@@ -73,7 +74,18 @@
 
 
 (defn set-dynamic-lighting-uniforms
-  [lighting-renderer width height]
-  (let [program (::program lighting-renderer)]
+  [lighting-renderer width height camera-position camera-orientation light-direction planet-render-vars
+   cloud-render-vars]
+  (let [program         (::program lighting-renderer)
+        camera-to-world (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
+        z-far           (:sfsim.render/z-far planet-render-vars)
+        overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
+        overlay-height  (:sfsim.render/overlay-height cloud-render-vars)]
     (uniform-int program "width" width)
-    (uniform-int program "height" height)))
+    (uniform-int program "height" height)
+    (uniform-matrix4 program "camera_to_world" camera-to-world)
+    (uniform-vector3 program "origin" camera-position)
+    (uniform-vector3 program "light_direction" light-direction)
+    (uniform-float program "z_far" z-far)
+    (uniform-int program "overlay_width" overlay-width)
+    (uniform-int program "overlay_height" overlay-height)))

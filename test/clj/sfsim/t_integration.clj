@@ -50,27 +50,20 @@
 
 
 (defn set-lighting-uniforms
-  [frame lighting-renderer graphics light-direction z-far]
+  [frame lighting-renderer graphics light-direction planet-render-vars]
   (let [program            (:sfsim.lighting/program lighting-renderer)
         atmosphere-luts    (:sfsim.atmosphere/luts graphics)
         camera-position    (:sfsim.graphics/camera-position frame)
-        camera-to-world    (:sfsim.graphics/camera-to-world frame)
+        camera-orientation (:sfsim.graphics/camera-orientation frame)
         cloud-geometry     (:sfsim.graphics/cloud-geometry frame)
         cloud-render-vars  (:sfsim.graphics/cloud-render-vars frame)
         width              (:sfsim.graphics/width frame)
         height             (:sfsim.graphics/height frame)
         clouds             (:sfsim.graphics/clouds frame)
-        shadow-vars        (:sfsim.graphics/shadow-vars frame)
-        overlay-width      (:sfsim.render/overlay-width cloud-render-vars)
-        overlay-height     (:sfsim.render/overlay-height cloud-render-vars)]
+        shadow-vars        (:sfsim.graphics/shadow-vars frame)]
     (setup-shadow-matrices program shadow-vars)
-    (lighting/set-dynamic-lighting-uniforms lighting-renderer width height)
-    (uniform-matrix4 program "camera_to_world" camera-to-world)
-    (uniform-vector3 program "origin" camera-position)
-    (uniform-vector3 program "light_direction" light-direction)
-    (uniform-float program "z_far" z-far)
-    (uniform-int program "overlay_width" overlay-width)
-    (uniform-int program "overlay_height" overlay-height)
+    (lighting/set-dynamic-lighting-uniforms lighting-renderer width height camera-position camera-orientation light-direction
+                                            planet-render-vars cloud-render-vars)
     (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts)
                    1 (:sfsim.atmosphere/scatter atmosphere-luts)
                    2 (:sfsim.atmosphere/mie atmosphere-luts)
@@ -103,13 +96,14 @@
                                          (graphics/render-cloud-geometry graphics tree)
                                          (graphics/render-clouds graphics)
                                          (graphics/render-geometry graphics tree))
-              z-far                  (:sfsim.render/z-far (:sfsim.graphics/planet-render-vars frame))
+              planet-render-vars     (:sfsim.graphics/planet-render-vars frame)
               geometry-buffers       (:sfsim.graphics/geometry-buffers frame)
               lighting-renderer      (:sfsim.graphics/lighting-renderer graphics)
               lighting-program       (:sfsim.lighting/program lighting-renderer)]
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
-                                                  (set-lighting-uniforms frame lighting-renderer graphics light-direction z-far)))
+                                                  (set-lighting-uniforms frame lighting-renderer graphics light-direction
+                                                                         planet-render-vars)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
