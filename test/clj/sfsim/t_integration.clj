@@ -66,10 +66,7 @@
                    2 (:sfsim.atmosphere/transmittance atmosphere-luts)
                    3 (:sfsim.atmosphere/scatter atmosphere-luts)
                    4 (:sfsim.atmosphere/mie atmosphere-luts)
-                   5 (:sfsim.atmosphere/surface-radiance atmosphere-luts)})
-    (use-textures (zipmap (drop 6 (range))
-                          (concat (:sfsim.opacity/shadows shadow-vars)
-                                  (:sfsim.opacity/opacities shadow-vars))))))
+                   5 (:sfsim.atmosphere/surface-radiance atmosphere-luts)})))
 
 
 (when (.exists (io/file ".integration"))

@@ -9,7 +9,7 @@
     (:require
       [comb.template :as template]
       [sfsim.render :refer (make-program destroy-program setup-shadow-and-opacity-maps uniform-sampler uniform-float uniform-int
-                            use-program uniform-matrix4 uniform-vector3 setup-shadow-matrices)]
+                            use-program uniform-matrix4 uniform-vector3 setup-shadow-matrices use-textures)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.matrix :as matrix]
@@ -89,4 +89,7 @@
     (uniform-vector3 program "light_direction" light-direction)
     (uniform-float program "z_far" z-far)
     (uniform-int program "overlay_width" overlay-width)
-    (uniform-int program "overlay_height" overlay-height)))
+    (uniform-int program "overlay_height" overlay-height)
+    (use-textures (zipmap (drop 6 (range))
+                          (concat (:sfsim.opacity/shadows shadow-vars)
+                                  (:sfsim.opacity/opacities shadow-vars))))))
