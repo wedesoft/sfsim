@@ -132,7 +132,8 @@
                                          (graphics/render-geometry graphics tree))
               z-far                  100000.0
               geometry-buffers       (:sfsim.graphics/geometry-buffers frame)
-              lighting-program       (lighting/make-lighting-program 0 num-steps)]
+              lighting-renderer      (lighting/make-lighting-renderer {:sfsim.opacity/data config/shadow-config})
+              lighting-program       (:sfsim.lighting/program lighting-renderer)]
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
                                                   (set-static-lighting-uniforms graphics lighting-program)

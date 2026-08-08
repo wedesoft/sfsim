@@ -8,7 +8,7 @@
     "Shaders and methods for lighting pass"
     (:require
       [comb.template :as template]
-      [sfsim.render :refer (make-program)]
+      [sfsim.render :refer (make-program destroy-program)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.clouds :as clouds]
@@ -27,3 +27,16 @@
                                         atmosphere/attenuation-outer atmosphere/attenuation-point planet/surface-radiance-function
                                         (clouds/overall-shading num-steps (clouds/overall-shading-parameters num-scene-shadows))
                                         atmosphere/cloud-overlay]))
+
+
+(defn make-lighting-renderer
+  [data]
+  (let [shadow-config (:sfsim.opacity/data data)
+        num-steps     (:sfsim.opacity/num-steps shadow-config)
+        program       (make-lighting-program 0 num-steps)]
+    {::program program}))
+
+
+(defn destroy-lighting-renderer
+  [renderer]
+  (destroy-program (::program renderer)))
