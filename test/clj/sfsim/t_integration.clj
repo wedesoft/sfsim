@@ -105,14 +105,13 @@
                                          (graphics/render-geometry graphics tree))
               z-far                  100000.0
               geometry-buffers       (:sfsim.graphics/geometry-buffers frame)
-              lighting-renderer      (lighting/make-lighting-renderer graphics)
+              lighting-renderer      (:sfsim.graphics/lighting-renderer graphics)
               lighting-program       (:sfsim.lighting/program lighting-renderer)]
           (render-to-image width height false
                            (model/render-lighting geometry-buffers lighting-program (+ 4 2 (* 2 num-steps))
                                                   (set-lighting-uniforms frame graphics lighting-program light-direction z-far)))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
-          (destroy-program lighting-program)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
           (graphics/destroy-graphics2 graphics))))
     ?position                      ?orientation                               ?result

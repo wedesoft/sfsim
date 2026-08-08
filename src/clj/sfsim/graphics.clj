@@ -16,6 +16,7 @@
       [sfsim.planet :as planet]
       [sfsim.model :as model]
       [sfsim.render :as render]
+      [sfsim.lighting :as lighting]
       [sfsim.texture :as texture]
       [sfsim.opacity :as opacity]
       [sfsim.matrix :as matrix])
@@ -43,7 +44,12 @@
                                                              :sfsim.atmosphere/luts atmosphere-luts})
         cloud-geometry-renderer (model/make-joined-geometry-renderer {:sfsim.planet/config config/planet-config} 0)
         planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
-        atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)]
+        atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
+        lighting-renderer       (lighting/make-lighting-renderer {:sfsim.render/config config/render-config
+                                                                  :sfsim.planet/config config/planet-config
+                                                                  :sfsim.opacity/data opacity-data
+                                                                  :sfsim.clouds/data cloud-data
+                                                                  :sfsim.atmosphere/luts atmosphere-luts})]
     {:sfsim.render/config config/render-config
      :sfsim.planet/config config/planet-config
      :sfsim.clouds/config config/cloud-config
@@ -56,11 +62,13 @@
      ::cloud-renderer cloud-renderer
      ::cloud-geometry-renderer cloud-geometry-renderer
      ::planet-geometry-renderer planet-renderer
-     ::atmosphere-geometry-renderer atmosphere-renderer}))
+     ::atmosphere-geometry-renderer atmosphere-renderer
+     ::lighting-renderer lighting-renderer}))
 
 
 (defn destroy-graphics2
   [graphics]
+  (lighting/destroy-lighting-renderer (::lighting-renderer graphics))
   (atmosphere/destroy-atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics))
   (planet/destroy-planet-geometry-renderer (::planet-geometry-renderer graphics))
   (model/destroy-joined-geometry-renderer (::cloud-geometry-renderer graphics))
