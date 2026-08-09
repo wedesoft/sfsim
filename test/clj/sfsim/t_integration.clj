@@ -66,7 +66,7 @@
                                   (graphics/render-shadows graphics tree)
                                   (graphics/render-cloud-geometry graphics tree)
                                   (graphics/render-clouds graphics)
-                                  (graphics/render-geometry graphics tree)) ]
+                                  (graphics/render-geometry graphics tree []))]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
@@ -79,7 +79,7 @@
 
 
 (when (.exists (io/file ".integration"))
-  (tabular "Integration test rendering of planet, atmosphere, and clouds"
+  (tabular "Integration test rendering of object, planet, atmosphere, and clouds"
     (fact
       (with-invisible-window
         (let [width              320
@@ -103,7 +103,8 @@
                                      (graphics/render-shadows graphics tree)
                                      (graphics/render-cloud-geometry graphics tree)
                                      (graphics/render-clouds graphics)
-                                     (graphics/render-geometry graphics tree)) ]
+                                     (graphics/render-geometry graphics tree [{:sfsim.graphics/object-position object-position
+                                                                               :sfsim.graphics/object-orientation object-orientation}])) ]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
           ; => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)

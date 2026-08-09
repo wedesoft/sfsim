@@ -51,7 +51,8 @@
                                                                   :sfsim.opacity/data opacity-data
                                                                   :sfsim.clouds/data cloud-data
                                                                   :sfsim.atmosphere/luts atmosphere-luts})
-        models                  (mapv (comp model/read-gltf ::model-file) models)]
+        models                  (mapv (comp model/read-gltf ::model-file) models)
+        scenes                  (mapv (partial model/load-scene-into-opengl (model/geometry-program-selection scene-renderer)) models)]
     {:sfsim.render/config config/render-config
      :sfsim.planet/config config/planet-config
      :sfsim.clouds/config config/cloud-config
@@ -66,11 +67,13 @@
      ::planet-geometry-renderer planet-renderer
      ::atmosphere-geometry-renderer atmosphere-renderer
      ::scene-geometry-renderer scene-renderer
-     ::lighting-renderer lighting-renderer}))
+     ::lighting-renderer lighting-renderer
+     ::scenes scenes}))
 
 
 (defn destroy-graphics2
   [graphics]
+  (doseq [scene (::scenes graphics)] (model/destroy-scene scene))
   (lighting/destroy-lighting-renderer (::lighting-renderer graphics))
   (model/destroy-scene-geometry-renderer (::scene-geometry-renderer graphics))
   (atmosphere/destroy-atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics))
@@ -149,16 +152,29 @@
 
 
 (defn render-geometry
-  [frame graphics tree]
+  [frame graphics tree object-poses]
   (let [planet-geometry-renderer     (::planet-geometry-renderer graphics)
         atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics)
+        scene-geometry-renderer      (::scene-geometry-renderer graphics)
+        scenes                       (::scenes graphics)
+        camera-position              (::camera-position frame)
+        camera-orientation           (::camera-orientation frame)
+        camera-to-world              (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
         planet-render-vars           (::planet-render-vars frame)
+        projection                   (:sfsim.render/projection planet-render-vars)  ; TOOD: handle case where model projection matrix is separate
         atmosphere-render-vars       (::atmosphere-render-vars frame)
         geometry-buffers             (::geometry-buffers frame)]
     (model/render-geometry
       geometry-buffers
       (render/with-stencils
-        (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2
+        (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+          (doseq [[scene object-pose] (map vector scenes object-poses)]
+                 (let [object-position    (::object-position object-pose)
+                       object-orientation (::object-orientation object-pose)
+                       object-to-world    (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position)
+                       moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
+                   (model/render-scene-geometry2 scene-geometry-renderer projection {:sfsim.render/camera-to-world camera-to-world} moved-scene))))
+        (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2  ; TODO: handle case where model and planet use distinct projections
           (planet/render-planet-geometry2 planet-geometry-renderer planet-render-vars true tree))
         (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
           (atmosphere/render-full-atmosphere-geometry atmosphere-geometry-renderer atmosphere-render-vars))))
