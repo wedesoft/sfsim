@@ -1171,6 +1171,16 @@
    ::emissive-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)})
 
 
+(defn setup-model-geometry-uniforms
+  "Set up uniforms for different model geometry shader programs"
+  [geometry-renderer projection]
+  (doseq [[[textured bump] program] (::programs geometry-renderer)]
+         (use-program program)
+         (uniform-matrix4 program "projection" projection)
+         (when textured (uniform-sampler program "colors" 0))
+         (when bump (uniform-sampler program "normals" (if textured 1 0)))))
+
+
 (defmacro render-geometry
   "Perform rendering to geometry buffer"
   [geometry-buffers & body]
@@ -1275,6 +1285,11 @@
   (uniform-float program "metallic" metallic)
   (uniform-float program "specular" (/ 1.0 ^double roughness))
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
+
+
+(defn render-scene-geometry3
+  [program-selection render-vars scene]
+  (render-scene program-selection 0 render-vars [] scene render-mesh-geometry))
 
 
 (set! *warn-on-reflection* false)
