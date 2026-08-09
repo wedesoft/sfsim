@@ -1235,7 +1235,7 @@
                 render-vars [] scene render-geometry-mesh))
 
 
-(defn render-scene-geometry3
+(defn render-scene-geometry2
   [geometry-renderer program-selection projection-matrix render-vars scene]
   (setup-model-geometry-uniforms geometry-renderer projection-matrix true)
   (render-scene program-selection 0 render-vars [] scene render-mesh-geometry))

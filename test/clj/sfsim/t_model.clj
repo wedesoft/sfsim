@@ -371,7 +371,7 @@ void main()
                                                   :sfsim.render/fragment [fragment-lighting-mock])]
           (render-geometry geometry-buffers
                            (clear)
-                           (render-scene-geometry3 geometry-renderer (geometry-program-selection geometry-renderer)
+                           (render-scene-geometry2 geometry-renderer (geometry-program-selection geometry-renderer)
                                                    (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                    {:sfsim.render/camera-to-world camera-to-world} opengl-scene))
           (render-to-image 160 120 false
@@ -647,7 +647,7 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
                                           :sfsim.render/fragment lighting-fog-fragment-shaders)]
       (render-geometry geometry-buffers
                        (clear)
-                       (render-scene-geometry3 geometry-renderer (geometry-program-selection geometry-renderer)
+                       (render-scene-geometry2 geometry-renderer (geometry-program-selection geometry-renderer)
                                                (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                {:sfsim.render/camera-to-world camera-to-world} moved-scene))
       (render-to-image 160 120 false
@@ -794,7 +794,7 @@ vec4 cloud_overlay(float depth)
                                                       :sfsim.render/fragment lighting-shadow-fragment-shaders)]
                (render-geometry geometry-buffers
                                 (clear)
-                                (render-scene-geometry3 geometry-renderer (geometry-program-selection geometry-renderer)
+                                (render-scene-geometry2 geometry-renderer (geometry-program-selection geometry-renderer)
                                                         (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                         {:sfsim.render/camera-to-world camera-to-world} opengl-scene))
                (render-to-image 160 120 false
@@ -873,7 +873,7 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
                                                       :sfsim.render/fragment lighting-fragment-shaders)]
                (render-geometry geometry-buffers
                                 (clear)
-                                (render-scene-geometry3 geometry-renderer (geometry-program-selection geometry-renderer)
+                                (render-scene-geometry2 geometry-renderer (geometry-program-selection geometry-renderer)
                                                         (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                         {:sfsim.render/camera-to-world camera-to-world} moved-scene))
                (render-to-image 160 120 false
