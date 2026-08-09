@@ -52,21 +52,21 @@
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
     (fact
       (with-invisible-window
-        (let [width                  320
-              height                 240
-              level                  5
-              light-direction        (vec3 1 0 0)
-              graphics               (graphics/make-graphics2)
-              tree                   (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
-                                                            :sfsim.planet/config config/planet-config
-                                                            :sfsim.planet/programs [(:sfsim.planet/program
-                                                                                      (:sfsim.graphics/planet-geometry-renderer graphics))])
-                                                     {} width ?position level)
-              frame                  (-> (graphics/make-frame graphics width height ?position ?orientation light-direction)
-                                         (graphics/render-shadows graphics tree)
-                                         (graphics/render-cloud-geometry graphics tree)
-                                         (graphics/render-clouds graphics)
-                                         (graphics/render-geometry graphics tree)) ]
+        (let [width           320
+              height          240
+              level           5
+              light-direction (vec3 1 0 0)
+              graphics        (graphics/make-graphics2 [])
+              tree            (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
+                                                     :sfsim.planet/config config/planet-config
+                                                     :sfsim.planet/programs [(:sfsim.planet/program
+                                                                               (:sfsim.graphics/planet-geometry-renderer graphics))])
+                                              {} width ?position level)
+              frame           (-> (graphics/make-frame graphics width height ?position ?orientation light-direction)
+                                  (graphics/render-shadows graphics tree)
+                                  (graphics/render-cloud-geometry graphics tree)
+                                  (graphics/render-clouds graphics)
+                                  (graphics/render-geometry graphics tree)) ]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
@@ -76,6 +76,43 @@
     ?position                      ?orientation                               ?result
     (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "planet.png"
     (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png"))
+
+
+(when (.exists (io/file ".integration"))
+  (tabular "Integration test rendering of planet, atmosphere, and clouds"
+    (fact
+      (with-invisible-window
+        (let [width              320
+              height             240
+              level              5
+              object-radius      1.4
+              light-direction    (vec3 1 0 0)
+              graphics           (graphics/make-graphics2
+                                   [{:sfsim.graphics/model-file (str "test/clj/sfsim/fixtures/model/" ?model)
+                                     :sfsim.graphics/object-radius object-radius}])
+              object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
+              object-orientation (matrix->quaternion (mulm (rotation-matrix-3d-y (/ PI 4))
+                                                           (rotation-matrix-3d-x (/ PI 6))))
+              model-vars         (model/make-model-vars 0.0 1.0 0.0)
+              tree               (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
+                                                        :sfsim.planet/config config/planet-config
+                                                        :sfsim.planet/programs [(:sfsim.planet/program
+                                                                                  (:sfsim.graphics/planet-geometry-renderer graphics))])
+                                                 {} width ?position level)
+              frame              (-> (graphics/make-frame graphics width height ?position ?orientation light-direction)
+                                     (graphics/render-shadows graphics tree)
+                                     (graphics/render-cloud-geometry graphics tree)
+                                     (graphics/render-clouds graphics)
+                                     (graphics/render-geometry graphics tree)) ]
+          (render-to-image width height false
+                           (graphics/render-lighting frame graphics))
+          ; => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
+          => (is-image (str "/tmp/" ?result) 1.1)
+          (graphics/destroy-frame frame)
+          (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
+          (graphics/destroy-graphics2 graphics))))
+    ?position                      ?orientation                               ?model        ?result
+    (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "cube.glb"    "cube.png"))
 
 
 (when (.exists (io/file ".integration"))
