@@ -85,7 +85,7 @@
                (let [width              320
                      height             240
                      level              5
-                     opacity-base       250.0
+                     opacity-base       100.0
                      object-radius      1.4
                      graphics           (graphics/make-graphics [(str "test/clj/sfsim/fixtures/model/" ?model)] object-radius)
                      planet-renderer    (:sfsim.graphics/planet-renderer graphics)
@@ -117,7 +117,7 @@
           (let [width                     320
                 height                    240
                 level                     5
-                opacity-base              250.0
+                opacity-base              100.0
                 object-radius             1.4
                 graphics                  (graphics/make-graphics ["test/clj/sfsim/fixtures/model/torus.gltf"] object-radius)
                 planet-renderer           (:sfsim.graphics/planet-renderer graphics)
@@ -146,7 +146,7 @@
           (let [width 320
                 height 240
                 level                     5
-                opacity-base              250.0
+                opacity-base              100.0
                 object-radius             (:sfsim.model/object-radius config/model-config)
                 graphics                  (graphics/make-graphics ["data/models/venturestar.glb"] object-radius)
                 planet-renderer           (:sfsim.graphics/planet-renderer graphics)
@@ -225,7 +225,7 @@ void main()
           (let [width 320
                 height 240
                 level                     5
-                opacity-base              250.0
+                opacity-base              100.0
                 position                  (vec3 (+ 100.0 6378000.0) 0 0)
                 orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
                 object-position           (add position (q/rotate-vector orientation (vec3 0 0 -50)))
