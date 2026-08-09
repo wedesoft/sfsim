@@ -1018,16 +1018,24 @@
   (m/schema [:map [:sfsim.render/camera-to-world fmat4] [:sfsim.render/overlay-projection fmat4]]))
 
 
+(defn setup-model-geometry-uniforms
+  "Set up uniforms for different model geometry shader programs"
+  [geometry-renderer projection full]
+  (doseq [[[textured bump] program] (::programs geometry-renderer)]
+         (use-program program)
+         (uniform-matrix4 program "projection" projection)
+         (when full
+           (when textured (uniform-sampler program "colors" 0))
+           (when bump (uniform-sampler program "normals" (if textured 1 0))))))
+
+
 (defn render-scene-geometry
   "Render geometry (points and distances) for a scene"
   {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars scene] :nil]}
   [geometry-renderer render-vars scene]
-  (let [projection (:sfsim.render/overlay-projection render-vars)]
-    (doseq [program (vals (::programs geometry-renderer))]
-           (use-program program)
-           (uniform-matrix4 program "projection" projection))
-    (render-scene (comp (::programs geometry-renderer) material-type) 0
-                  render-vars [] scene render-geometry-mesh)))
+  (setup-model-geometry-uniforms geometry-renderer (:sfsim.render/overlay-projection render-vars) false)
+  (render-scene (comp (::programs geometry-renderer) material-type) 0
+                render-vars [] scene render-geometry-mesh))
 
 
 (defn destroy-scene-geometry-renderer
@@ -1265,19 +1273,9 @@
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
 
 
-(defn setup-model-geometry-uniforms
-  "Set up uniforms for different model geometry shader programs"
-  [geometry-renderer projection]
-  (doseq [[[textured bump] program] (::programs geometry-renderer)]
-         (use-program program)
-         (uniform-matrix4 program "projection" projection)
-         (when textured (uniform-sampler program "colors" 0))
-         (when bump (uniform-sampler program "normals" (if textured 1 0)))))
-
-
 (defn render-scene-geometry3
   [geometry-renderer program-selection projection-matrix render-vars scene]
-  (setup-model-geometry-uniforms geometry-renderer projection-matrix)
+  (setup-model-geometry-uniforms geometry-renderer projection-matrix true)
   (render-scene program-selection 0 render-vars [] scene render-mesh-geometry))
 
 
