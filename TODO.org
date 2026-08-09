@@ -11,6 +11,8 @@
     - [-] switch integration tests over to multi-pass rendering
       - [X] make planet geometry renderer
       - [ ] make model geometry renderer
+      - [ ] unify render-geometry-mesh and render-mesh-geometry
+      - [ ] render-scene-geometry, render-scene-geometry2, render-scene-geometry3
       - [X] make atmosphere geometry renderer
       - [ ] update schemas for render-vars, planet-render-vars, model-render-vars, cloud ...
     - [ ] move lighting code into separate module (remove from model module)

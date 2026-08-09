@@ -1030,18 +1030,6 @@
                   render-vars [] scene render-geometry-mesh)))
 
 
-(defn render-scene-geometry2
-  "Render geometry (points and distances) for a scene"
-  {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars scene] :nil]}
-  [geometry-renderer render-vars scene]
-  (let [projection (:sfsim.render/projection render-vars)]
-    (doseq [program (vals (::programs geometry-renderer))]
-           (use-program program)
-           (uniform-matrix4 program "projection" projection))
-    (render-scene (comp (::programs geometry-renderer) material-type) 0
-                  render-vars [] scene render-geometry-mesh)))
-
-
 (defn destroy-scene-geometry-renderer
   "Destroy scene geometry renderer"
   {:malli/schema [:=> [:cat scene-geometry-renderer] :nil]}
@@ -1112,8 +1100,8 @@
                            (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
                              (when model
                                (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
-                                 (render-scene-geometry2 scene-renderer
-                                                         (if model-covers-planet? model-render-vars planet-render-vars) model)))
+                                 (render-scene-geometry scene-renderer
+                                                        (if model-covers-planet? model-render-vars planet-render-vars) model)))
                              (when tree
                                (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
                                  (render-planet-geometry2 planet-renderer planet-render-vars false tree)))
@@ -1169,16 +1157,6 @@
    ::diffuse-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
    ::specular-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_R32F width height)
    ::emissive-texture (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)})
-
-
-(defn setup-model-geometry-uniforms
-  "Set up uniforms for different model geometry shader programs"
-  [geometry-renderer projection]
-  (doseq [[[textured bump] program] (::programs geometry-renderer)]
-         (use-program program)
-         (uniform-matrix4 program "projection" projection)
-         (when textured (uniform-sampler program "colors" 0))
-         (when bump (uniform-sampler program "normals" (if textured 1 0)))))
 
 
 (defmacro render-geometry
@@ -1287,8 +1265,19 @@
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
 
 
+(defn setup-model-geometry-uniforms
+  "Set up uniforms for different model geometry shader programs"
+  [geometry-renderer projection]
+  (doseq [[[textured bump] program] (::programs geometry-renderer)]
+         (use-program program)
+         (uniform-matrix4 program "projection" projection)
+         (when textured (uniform-sampler program "colors" 0))
+         (when bump (uniform-sampler program "normals" (if textured 1 0)))))
+
+
 (defn render-scene-geometry3
-  [program-selection render-vars scene]
+  [geometry-renderer program-selection projection-matrix render-vars scene]
+  (setup-model-geometry-uniforms geometry-renderer projection-matrix)
   (render-scene program-selection 0 render-vars [] scene render-mesh-geometry))
 
 
