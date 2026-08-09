@@ -45,6 +45,7 @@
         cloud-geometry-renderer (model/make-joined-geometry-renderer {:sfsim.planet/config config/planet-config} 0)
         planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
+        scene-renderer          (model/make-scene-geometry-renderer true)
         lighting-renderer       (lighting/make-lighting-renderer {:sfsim.render/config config/render-config
                                                                   :sfsim.planet/config config/planet-config
                                                                   :sfsim.opacity/data opacity-data
@@ -64,12 +65,14 @@
      ::cloud-geometry-renderer cloud-geometry-renderer
      ::planet-geometry-renderer planet-renderer
      ::atmosphere-geometry-renderer atmosphere-renderer
+     ::scene-geometry-renderer scene-renderer
      ::lighting-renderer lighting-renderer}))
 
 
 (defn destroy-graphics2
   [graphics]
   (lighting/destroy-lighting-renderer (::lighting-renderer graphics))
+  (model/destroy-scene-geometry-renderer (::scene-geometry-renderer graphics))
   (atmosphere/destroy-atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics))
   (planet/destroy-planet-geometry-renderer (::planet-geometry-renderer graphics))
   (model/destroy-joined-geometry-renderer (::cloud-geometry-renderer graphics))
