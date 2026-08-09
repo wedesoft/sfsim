@@ -352,13 +352,6 @@ void main()
 (def cube-and-dice (read-gltf "test/clj/sfsim/fixtures/model/cube-and-dice.gltf"))
 
 
-(defn geometry-program-selection
-  "Select correct shader program to render mesh using specific material"
-  {:malli/schema [:=> [:cat scene-geometry-renderer] [:=> [:cat material] :int]]}
-  [geometry-renderer]
-  (fn [material] ((:sfsim.model/programs geometry-renderer) (material-type material))))
-
-
 (fact "Perform gometry pass and lighting pass for uniformly colored cube and textured cube"
       (with-invisible-window
         (let [geometry-renderer     (make-scene-geometry-renderer true)
@@ -371,8 +364,7 @@ void main()
                                                   :sfsim.render/fragment [fragment-lighting-mock])]
           (render-geometry geometry-buffers
                            (clear)
-                           (render-scene-geometry2 geometry-renderer (geometry-program-selection geometry-renderer)
-                                                   (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                           (render-scene-geometry2 geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                    {:sfsim.render/camera-to-world camera-to-world} opengl-scene))
           (render-to-image 160 120 false
                            (render-lighting geometry-buffers lighting-program 0
@@ -647,8 +639,7 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
                                           :sfsim.render/fragment lighting-fog-fragment-shaders)]
       (render-geometry geometry-buffers
                        (clear)
-                       (render-scene-geometry2 geometry-renderer (geometry-program-selection geometry-renderer)
-                                               (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                       (render-scene-geometry2 geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                {:sfsim.render/camera-to-world camera-to-world} moved-scene))
       (render-to-image 160 120 false
                        (render-lighting geometry-buffers lighting-program 0
@@ -794,8 +785,7 @@ vec4 cloud_overlay(float depth)
                                                       :sfsim.render/fragment lighting-shadow-fragment-shaders)]
                (render-geometry geometry-buffers
                                 (clear)
-                                (render-scene-geometry2 geometry-renderer (geometry-program-selection geometry-renderer)
-                                                        (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                (render-scene-geometry2 geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                         {:sfsim.render/camera-to-world camera-to-world} opengl-scene))
                (render-to-image 160 120 false
                                 (render-lighting geometry-buffers lighting-program 1
@@ -873,8 +863,7 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
                                                       :sfsim.render/fragment lighting-fragment-shaders)]
                (render-geometry geometry-buffers
                                 (clear)
-                                (render-scene-geometry2 geometry-renderer (geometry-program-selection geometry-renderer)
-                                                        (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                (render-scene-geometry2 geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                         {:sfsim.render/camera-to-world camera-to-world} moved-scene))
                (render-to-image 160 120 false
                                 (render-lighting geometry-buffers lighting-program 1
