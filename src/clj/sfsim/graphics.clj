@@ -132,7 +132,7 @@
         planet-geometry-vars    (render/make-subsampled-vars planet-render-vars render-config)]
     (assoc frame
            ::cloud-geometry
-           (model/render-joined-geometry2 cloud-geometry-renderer planet-geometry-vars planet-geometry-vars nil tree))))
+           (model/render-joined-geometry cloud-geometry-renderer planet-geometry-vars planet-geometry-vars nil tree))))
 
 
 (defn render-clouds
