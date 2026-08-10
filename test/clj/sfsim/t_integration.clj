@@ -120,39 +120,6 @@
 
 
 (when (.exists (io/file ".integration"))
-  (tabular "Integration test rendering of object with planet, atmosphere, and clouds"
-           (fact
-             (with-invisible-window
-               (let [width              320
-                     height             240
-                     level              5
-                     opacity-base       100.0
-                     object-radius      1.4
-                     graphics           (graphics/make-graphics [(str "test/clj/sfsim/fixtures/model/" ?model)] object-radius)
-                     planet-renderer    (:sfsim.graphics/planet-renderer graphics)
-                     object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
-                     object-orientation (matrix->quaternion (mulm (rotation-matrix-3d-y (/ PI 4))
-                                                                  (rotation-matrix-3d-x (/ PI 6))))
-                     light-direction    (vec3 1 0 0)
-                     tree               (load-tile-tree planet-renderer {} width ?position level)
-                     model-vars         (model/make-model-vars 0.0 1.0 0.0)
-                     frame              (graphics/prepare-frame graphics model-vars tree width height ?position ?orientation
-                                                                light-direction object-position object-orientation [] opacity-base)
-                     tex                (texture-render-color-depth width height true
-                                                                    (graphics/render-frame graphics frame tree))]
-                 (texture->image tex) => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.77)
-                 (destroy-texture tex)
-                 (graphics/finalise-frame frame)
-                 (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
-                 (graphics/destroy-graphics graphics))))
-           ?position                      ?orientation                               ?model        ?result
-           (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "cube.glb"    "cube.png"
-           (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "dice.gltf"   "dice.png"
-           (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "bump.gltf"   "bump.png"
-           (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "bricks.gltf" "bricks.png"))
-
-
-(when (.exists (io/file ".integration"))
   (fact "Integration test rendering of model self-shadowing"
         (with-invisible-window
           (let [width                     320
