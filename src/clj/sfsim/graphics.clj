@@ -26,7 +26,7 @@
 
 
 (defn make-graphics2
-  [models]
+  [models num-scene-shadows]
   (let [cloud-data              (clouds/make-cloud-data config/cloud-config)
         opacity-data            (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
         atmosphere-luts         (atmosphere/make-atmosphere-luts config/max-height)
@@ -50,7 +50,8 @@
                                                                   :sfsim.planet/config config/planet-config
                                                                   :sfsim.opacity/data opacity-data
                                                                   :sfsim.clouds/data cloud-data
-                                                                  :sfsim.atmosphere/luts atmosphere-luts})
+                                                                  :sfsim.atmosphere/luts atmosphere-luts}
+                                                                 num-scene-shadows)
         models                  (mapv (comp model/read-gltf ::model-file) models)
         scenes                  (mapv (partial model/load-scene-into-opengl (model/geometry-program-selection scene-renderer)) models)]
     {:sfsim.render/config config/render-config

@@ -29,6 +29,9 @@
                 :sfsim.render/fragment [(fragment-lighting num-scene-shadows) shaders/phong shaders/ray-sphere
                                         atmosphere/attenuation-outer atmosphere/attenuation-point planet/surface-radiance-function
                                         (clouds/overall-shading num-steps (clouds/overall-shading-parameters num-scene-shadows))
+                                        (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")
+                                        (shaders/percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup"
+                                                                             "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
                                         atmosphere/cloud-overlay]))
 
 
@@ -61,11 +64,11 @@
 
 
 (defn make-lighting-renderer
-  [data]
+  [data num-scene-shadows]
   (let [shadow-config   (:sfsim.opacity/data data)
         atmosphere-luts (:sfsim.atmosphere/luts data)
         num-steps       (:sfsim.opacity/num-steps shadow-config)
-        program         (make-lighting-program 0 num-steps)]
+        program         (make-lighting-program num-scene-shadows num-steps)]
     (set-static-lighting-uniforms data program)
     {::program program
      ::atmosphere-luts atmosphere-luts}))

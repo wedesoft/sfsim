@@ -56,7 +56,7 @@
               height          240
               level           5
               light-direction (vec3 1 0 0)
-              graphics        (graphics/make-graphics2 [])
+              graphics        (graphics/make-graphics2 [] 0)
               tree            (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                      :sfsim.planet/config config/planet-config
                                                      :sfsim.planet/programs [(:sfsim.planet/program
@@ -89,7 +89,8 @@
               light-direction    (vec3 1 0 0)
               graphics           (graphics/make-graphics2
                                    [{:sfsim.graphics/model-file (str "test/clj/sfsim/fixtures/model/" ?model)
-                                     :sfsim.graphics/object-radius object-radius}])
+                                     :sfsim.graphics/object-radius object-radius}]
+                                   0)
               object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
               object-orientation (matrix->quaternion (mulm (mulm (rotation-matrix-3d-y (/ PI 4))
                                                                  (rotation-matrix-3d-x (/ PI 6)))
@@ -129,7 +130,8 @@
             light-direction    (vec3 1 0 0)
             graphics           (graphics/make-graphics2
                                  [{:sfsim.graphics/model-file "test/clj/sfsim/fixtures/model/torus.gltf"
-                                   :sfsim.graphics/object-radius object-radius}])
+                                   :sfsim.graphics/object-radius object-radius}]
+                                 1)  ;; TODO: use object count
             position           (vec3 (+ 1.5 6378000.0) 0 0)
             orientation        (q/rotation (to-radians 270) (vec3 0 0 1))
             object-position    (add position (q/rotate-vector orientation (vec3 0 0 -5)))
@@ -155,7 +157,7 @@
                                    (graphics/render-geometry graphics tree [{:sfsim.graphics/object-position object-position
                                                                              :sfsim.graphics/object-orientation object-orientation}]))]
         (render-to-image width height false
-                         (graphics/render-lighting frame graphics [object-shadow]))
+                         (graphics/render-lighting frame graphics [object-shadow]))  ;; TODO: compute shadows in graphics module
         ; => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.3)
         => (is-image "/tmp/torus.png" 0.3)
         (model/destroy-scene-shadow-map object-shadow)
