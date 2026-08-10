@@ -8,6 +8,7 @@
     "Shaders and methods for lighting pass"
     (:require
       [comb.template :as template]
+      [fastmath.matrix :refer (mulm inverse)]
       [sfsim.render :refer (make-program destroy-program setup-shadow-and-opacity-maps uniform-sampler uniform-float uniform-int
                             use-program uniform-matrix4 uniform-vector3 setup-shadow-matrices use-textures)]
       [sfsim.shaders :as shaders]
@@ -36,7 +37,7 @@
 
 
 (defn set-static-lighting-uniforms
-  [data program]
+  [data program num-scene-shadows]
   (let [render-config      (:sfsim.render/config data)
         planet-config      (:sfsim.planet/config data)
         cloud-data         (:sfsim.clouds/data data)
@@ -53,7 +54,7 @@
     (uniform-sampler program "clouds" 0)
     (uniform-sampler program "dist" 1)
     (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 2 true)
-    (setup-shadow-and-opacity-maps program shadow-data 6)
+    (setup-shadow-and-opacity-maps program shadow-data (+ num-scene-shadows 6))
     (uniform-float program "albedo" albedo)
     (uniform-float program "amplification" amplification)
     (uniform-float program "specular" specular)
@@ -69,9 +70,10 @@
         atmosphere-luts (:sfsim.atmosphere/luts data)
         num-steps       (:sfsim.opacity/num-steps shadow-config)
         program         (make-lighting-program num-scene-shadows num-steps)]
-    (set-static-lighting-uniforms data program)
+    (set-static-lighting-uniforms data program num-scene-shadows)
     {::program program
-     ::atmosphere-luts atmosphere-luts}))
+     ::atmosphere-luts atmosphere-luts
+     ::num-scene-shadows num-scene-shadows}))
 
 
 (defn destroy-lighting-renderer
@@ -82,12 +84,17 @@
 (defn set-dynamic-lighting-uniforms
   [lighting-renderer width height camera-position camera-orientation light-direction planet-render-vars
    cloud-render-vars shadow-vars cloud-geometry clouds object-shadows]
-  (let [program         (::program lighting-renderer)
-        atmosphere-luts (::atmosphere-luts lighting-renderer)
-        camera-to-world (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
-        z-far           (:sfsim.render/z-far planet-render-vars)
-        overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
-        overlay-height  (:sfsim.render/overlay-height cloud-render-vars)]
+  (println object-shadows)
+  ;; TODO:
+  ;; * set camera_to_shadow_map_1
+  ;; * set scene_shadow_map_1
+  (let [program           (::program lighting-renderer)
+        atmosphere-luts   (::atmosphere-luts lighting-renderer)
+        camera-to-world   (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
+        z-far             (:sfsim.render/z-far planet-render-vars)
+        overlay-width     (:sfsim.render/overlay-width cloud-render-vars)
+        overlay-height    (:sfsim.render/overlay-height cloud-render-vars)
+        num-scene-shadows (::num-scene-shadows lighting-renderer)]
     (setup-shadow-matrices program shadow-vars)
     (uniform-int program "width" width)
     (uniform-int program "height" height)
@@ -97,6 +104,16 @@
     (uniform-float program "z_far" z-far)
     (uniform-int program "overlay_width" overlay-width)
     (uniform-int program "overlay_height" overlay-height)
+    ;; TODO: shadow_size (sfsim.opacity/shadow-size) not set up?
+    (uniform-float program "shadow_bias" 1e-6) ;; TODO: get from config
+    (doseq [i (range num-scene-shadows)]
+           (let [matrices         (:sfsim.model/matrices (nth object-shadows i))
+                 world-to-object  (:sfsim.matrix/world-to-object matrices)
+                 object-to-shadow (:sfsim.matrix/object-to-shadow-map matrices)
+                 camera-to-shadow (mulm (mulm camera-to-world world-to-object) object-to-shadow)]
+             (uniform-int program "scene_shadow_size" (:sfsim.texture/width (:sfsim.model/shadows (nth object-shadows i)))) ;; TODO: get from config
+             (uniform-matrix4 program (str "camera_to_shadow_map_" (inc ^long i)) camera-to-shadow)
+             (uniform-sampler program (str "shadow_map_" i) (+ 6 i))))  ;; TODO: move this to static uniforms set up
     (use-textures {0 clouds
                    1 (:sfsim.clouds/distance cloud-geometry)
                    2 (:sfsim.atmosphere/transmittance atmosphere-luts)
@@ -104,6 +121,8 @@
                    4 (:sfsim.atmosphere/mie atmosphere-luts)
                    5 (:sfsim.atmosphere/surface-radiance atmosphere-luts)})
     (use-textures (zipmap (drop 6 (range))
+                          (map :sfsim.model/shadows object-shadows)))
+    (use-textures (zipmap (drop (+ num-scene-shadows 6) (range))
                           (concat (:sfsim.opacity/shadows shadow-vars)
                                   (:sfsim.opacity/opacities shadow-vars))))))
 
@@ -111,9 +130,10 @@
 (defn render-lighting
   [lighting-renderer width height geometry-buffers shadow-config camera-position camera-orientation
    light-direction planet-render-vars cloud-render-vars shadow-vars cloud-geometry clouds object-shadows]
-  (let [program   (::program lighting-renderer)
-        num-steps (:sfsim.opacity/num-steps shadow-config)]
-    (model/render-lighting geometry-buffers program (+ 4 2 (* 2 num-steps))
+  (let [program           (::program lighting-renderer)
+        num-steps         (:sfsim.opacity/num-steps shadow-config)
+        num-scene-shadows (::num-scene-shadows lighting-renderer)]
+    (model/render-lighting geometry-buffers program (+ num-scene-shadows 4 2 (* 2 num-steps))
                            (set-dynamic-lighting-uniforms lighting-renderer width height camera-position
                                                           camera-orientation light-direction
                                                           planet-render-vars cloud-render-vars shadow-vars
