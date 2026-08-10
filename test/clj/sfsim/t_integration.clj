@@ -91,8 +91,9 @@
                                    [{:sfsim.graphics/model-file (str "test/clj/sfsim/fixtures/model/" ?model)
                                      :sfsim.graphics/object-radius object-radius}])
               object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
-              object-orientation (matrix->quaternion (mulm (rotation-matrix-3d-y (/ PI 4))
-                                                           (rotation-matrix-3d-x (/ PI 6))))
+              object-orientation (matrix->quaternion (mulm (mulm (rotation-matrix-3d-y (/ PI 4))
+                                                                 (rotation-matrix-3d-x (/ PI 6)))
+                                                           aerodynamics/gltf-to-aerodynamic))
               model-vars         (model/make-model-vars 0.0 1.0 0.0)
               tree               (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                         :sfsim.planet/config config/planet-config
@@ -107,13 +108,15 @@
                                                                                :sfsim.graphics/object-orientation object-orientation}])) ]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
-          ; => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
-          => (is-image (str "/tmp/" ?result) 1.1)
+          => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
           (graphics/destroy-graphics2 graphics))))
     ?position                      ?orientation                               ?model        ?result
-    (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "cube.glb"    "cube.png"))
+    (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "cube.glb"    "cube.png"
+    (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "dice.gltf"   "dice.png"
+    (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "bump.gltf"   "bump.png"
+    (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "bricks.gltf" "bricks.png"))
 
 
 (when (.exists (io/file ".integration"))
