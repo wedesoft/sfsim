@@ -1235,10 +1235,17 @@
                 render-vars [] scene render-geometry-mesh))
 
 
-(defn render-scene-geometry3
-  [geometry-renderer program-selection projection-matrix render-vars scene]
+(defn geometry-program-selection
+  "Select correct shader program to render mesh using specific material"
+  {:malli/schema [:=> [:cat scene-geometry-renderer] [:=> [:cat material] :int]]}
+  [geometry-renderer]
+  (fn [material] ((:sfsim.model/programs geometry-renderer) (material-type material))))
+
+
+(defn render-scene-geometry2
+  [geometry-renderer projection-matrix render-vars scene]
   (setup-model-geometry-uniforms geometry-renderer projection-matrix true)
-  (render-scene program-selection 0 render-vars [] scene render-mesh-geometry))
+  (render-scene (geometry-program-selection geometry-renderer) 0 render-vars [] scene render-mesh-geometry))
 
 
 (defn render-joined-geometry

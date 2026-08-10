@@ -10,9 +10,11 @@
     - [X] merge lighting shaders into one
     - [-] switch integration tests over to multi-pass rendering
       - [X] make planet geometry renderer
-      - [ ] make model geometry renderer
+      - [X] make model geometry renderer
+      - [ ] handle model shadows
+      - [ ] handle metallic and roughness
       - [ ] unify render-geometry-mesh and render-mesh-geometry
-      - [ ] render-scene-geometry, render-scene-geometry2, render-scene-geometry3
+      - [ ] render-scene-geometry, render-scene-geometry2
       - [X] make atmosphere geometry renderer
       - [ ] update schemas for render-vars, planet-render-vars, model-render-vars, cloud ...
     - [ ] move lighting code into separate module (remove from model module)
