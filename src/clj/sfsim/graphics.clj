@@ -182,7 +182,7 @@
 
 
 (defn render-lighting
-  [frame graphics]
+  [frame graphics object-shadows]
   (let [lighting-renderer  (::lighting-renderer graphics)
         shadow-config      (:sfsim.opacity/data graphics)
         camera-position    (::camera-position frame)

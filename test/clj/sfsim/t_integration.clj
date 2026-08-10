@@ -68,7 +68,7 @@
                                   (graphics/render-clouds graphics)
                                   (graphics/render-geometry graphics tree []))]
           (render-to-image width height false
-                           (graphics/render-lighting frame graphics))
+                           (graphics/render-lighting frame graphics []))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
@@ -107,7 +107,7 @@
                                      (graphics/render-geometry graphics tree [{:sfsim.graphics/object-position object-position
                                                                                :sfsim.graphics/object-orientation object-orientation}]))]
           (render-to-image width height false
-                           (graphics/render-lighting frame graphics))
+                           (graphics/render-lighting frame graphics []))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
@@ -155,7 +155,7 @@
                                    (graphics/render-geometry graphics tree [{:sfsim.graphics/object-position object-position
                                                                              :sfsim.graphics/object-orientation object-orientation}]))]
         (render-to-image width height false
-                         (graphics/render-lighting frame graphics))
+                         (graphics/render-lighting frame graphics [object-shadow]))
         ; => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.3)
         => (is-image "/tmp/torus.png" 0.3)
         (model/destroy-scene-shadow-map object-shadow)
