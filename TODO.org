@@ -16,6 +16,7 @@
       - [ ] unify render-geometry-mesh and render-mesh-geometry
       - [ ] render-scene-geometry, render-scene-geometry2
       - [ ] remove object_to_scene matrix
+      - [ ] scene shadow renderer with individual object-radius for each model
       - [X] make atmosphere geometry renderer
       - [ ] update schemas for render-vars, planet-render-vars, model-render-vars, cloud ...
     - [ ] move lighting code into separate module (remove from model module)

@@ -105,7 +105,7 @@
                                      (graphics/render-cloud-geometry graphics tree)
                                      (graphics/render-clouds graphics)
                                      (graphics/render-geometry graphics tree [{:sfsim.graphics/object-position object-position
-                                                                               :sfsim.graphics/object-orientation object-orientation}])) ]
+                                                                               :sfsim.graphics/object-orientation object-orientation}]))]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
@@ -147,11 +147,14 @@
                                    (graphics/render-cloud-geometry graphics tree)
                                    (graphics/render-clouds graphics)
                                    (graphics/render-geometry graphics tree [{:sfsim.graphics/object-position object-position
-                                                                             :sfsim.graphics/object-orientation object-orientation}])) ]
+                                                                             :sfsim.graphics/object-orientation object-orientation}]))
+            scene-shadow-renderer (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
+                                                                    object-radius)]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics))
         ; => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.3)
         => (is-image "/tmp/torus.png" 0.3)
+        (model/destroy-scene-shadow-renderer scene-shadow-renderer)
         (graphics/destroy-frame frame)
         (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
         (graphics/destroy-graphics2 graphics)))))
