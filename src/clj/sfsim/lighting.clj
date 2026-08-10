@@ -8,12 +8,14 @@
     "Shaders and methods for lighting pass"
     (:require
       [comb.template :as template]
-      [fastmath.matrix :refer (mulm inverse)]
+      [fastmath.matrix :refer (mulm)]
       [sfsim.render :refer (make-program destroy-program setup-shadow-and-opacity-maps uniform-sampler uniform-float uniform-int
                             use-program uniform-matrix4 uniform-vector3 setup-shadow-matrices use-textures)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.matrix :as matrix]
+      [sfsim.image :as image]
+      [sfsim.texture :as texture]
       [sfsim.model :as model]
       [sfsim.clouds :as clouds]
       [sfsim.planet :as planet]))
@@ -30,9 +32,11 @@
                 :sfsim.render/fragment [(fragment-lighting num-scene-shadows) shaders/phong shaders/ray-sphere
                                         atmosphere/attenuation-outer atmosphere/attenuation-point planet/surface-radiance-function
                                         (clouds/overall-shading num-steps (clouds/overall-shading-parameters num-scene-shadows))
-                                        (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")
-                                        (shaders/percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup"
-                                                                             "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
+                                        (shaders/shadow-lookup "average_scene_shadow" "scene_shadow_size")
+                                        ;; TODO: enable this
+                                        ;; (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size")
+                                        ;; (shaders/percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup"
+                                        ;;                                      "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
                                         atmosphere/cloud-overlay]))
 
 
@@ -107,6 +111,7 @@
                  world-to-object  (:sfsim.matrix/world-to-object matrices)
                  object-to-shadow (:sfsim.matrix/object-to-shadow-map matrices)
                  camera-to-shadow (mulm object-to-shadow (mulm world-to-object camera-to-world))]
+             ;; (image/spit-png "/tmp/depth.png" (image/floats->image (texture/depth-texture->floats (:sfsim.model/shadows (nth object-shadows i)))))
              (uniform-int program "scene_shadow_size" (:sfsim.texture/width (:sfsim.model/shadows (nth object-shadows i)))) ;; TODO: get from config
              (uniform-matrix4 program (str "camera_to_shadow_map_" (inc ^long i)) camera-to-shadow)
              (uniform-sampler program (str "scene_shadow_map_" i) (+ 6 i))))  ;; TODO: move this to static uniforms set up
