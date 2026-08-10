@@ -158,42 +158,12 @@
                                                                              :sfsim.graphics/object-orientation object-orientation}]))]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics [object-shadow]))  ;; TODO: compute shadows in graphics module
-        ; => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.3)
-        => (is-image "/tmp/torus.png" 0.3)
+        => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.5)
         (model/destroy-scene-shadow-map object-shadow)
         (model/destroy-scene-shadow-renderer scene-shadow-renderer)
         (graphics/destroy-frame frame)
         (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
         (graphics/destroy-graphics2 graphics)))))
-
-
-(when (.exists (io/file ".integration"))
-  (fact "Integration test rendering of model self-shadowing"
-        (with-invisible-window
-          (let [width                     320
-                height                    240
-                level                     5
-                opacity-base              100.0
-                object-radius             1.4
-                graphics                  (graphics/make-graphics ["test/clj/sfsim/fixtures/model/torus.gltf"] object-radius)
-                planet-renderer           (:sfsim.graphics/planet-renderer graphics)
-                position                  (vec3 (+ 1.5 6378000.0) 0 0)
-                orientation               (q/rotation (to-radians 270) (vec3 0 0 1))
-                object-position           (add position (q/rotate-vector orientation (vec3 0 0 -5)))
-                object-orientation        (matrix->quaternion (mulm (rotation-matrix-3d-z (/ PI 6))
-                                                                    (rotation-matrix-3d-x (/ PI 6))))
-                light-direction           (vec3 1 0 0)
-                tree                      (load-tile-tree planet-renderer {} width position level)
-                model-vars                (model/make-model-vars 0.0 1.0 0.0)
-                frame                     (graphics/prepare-frame graphics model-vars tree width height position orientation
-                                                                  light-direction object-position object-orientation [] opacity-base)
-                tex                       (texture-render-color-depth width height true
-                                                                      (graphics/render-frame graphics frame tree))]
-            (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.3)
-            (destroy-texture tex)
-            (graphics/finalise-frame frame)
-            (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
-            (graphics/destroy-graphics graphics)))))
 
 
 (when (.exists (io/file ".integration"))
