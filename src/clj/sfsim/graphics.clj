@@ -198,7 +198,8 @@
         clouds             (::clouds frame)
         shadow-vars        (::shadow-vars frame)]
     (lighting/render-lighting lighting-renderer width height geometry-buffers shadow-config camera-position camera-orientation
-                              light-direction planet-render-vars cloud-render-vars shadow-vars cloud-geometry clouds)))
+                              light-direction planet-render-vars cloud-render-vars shadow-vars cloud-geometry clouds
+                              object-shadows)))
 
 
 (defn make-graphics-data

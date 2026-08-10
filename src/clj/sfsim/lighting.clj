@@ -110,7 +110,7 @@
 
 (defn render-lighting
   [lighting-renderer width height geometry-buffers shadow-config camera-position camera-orientation
-   light-direction planet-render-vars cloud-render-vars shadow-vars cloud-geometry clouds]
+   light-direction planet-render-vars cloud-render-vars shadow-vars cloud-geometry clouds object-shadows]
   (let [program   (::program lighting-renderer)
         num-steps (:sfsim.opacity/num-steps shadow-config)]
     (model/render-lighting geometry-buffers program (+ 4 2 (* 2 num-steps))
