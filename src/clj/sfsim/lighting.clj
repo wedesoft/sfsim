@@ -81,7 +81,7 @@
 
 (defn set-dynamic-lighting-uniforms
   [lighting-renderer width height camera-position camera-orientation light-direction planet-render-vars
-   cloud-render-vars shadow-vars cloud-geometry clouds]
+   cloud-render-vars shadow-vars cloud-geometry clouds object-shadows]
   (let [program         (::program lighting-renderer)
         atmosphere-luts (::atmosphere-luts lighting-renderer)
         camera-to-world (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
@@ -117,4 +117,4 @@
                            (set-dynamic-lighting-uniforms lighting-renderer width height camera-position
                                                           camera-orientation light-direction
                                                           planet-render-vars cloud-render-vars shadow-vars
-                                                          cloud-geometry clouds))))
+                                                          cloud-geometry clouds object-shadows))))
