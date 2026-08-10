@@ -84,10 +84,6 @@
 (defn set-dynamic-lighting-uniforms
   [lighting-renderer width height camera-position camera-orientation light-direction planet-render-vars
    cloud-render-vars shadow-vars cloud-geometry clouds object-shadows]
-  (println object-shadows)
-  ;; TODO:
-  ;; * set camera_to_shadow_map_1
-  ;; * set scene_shadow_map_1
   (let [program           (::program lighting-renderer)
         atmosphere-luts   (::atmosphere-luts lighting-renderer)
         camera-to-world   (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
@@ -110,10 +106,10 @@
            (let [matrices         (:sfsim.model/matrices (nth object-shadows i))
                  world-to-object  (:sfsim.matrix/world-to-object matrices)
                  object-to-shadow (:sfsim.matrix/object-to-shadow-map matrices)
-                 camera-to-shadow (mulm (mulm camera-to-world world-to-object) object-to-shadow)]
+                 camera-to-shadow (mulm object-to-shadow (mulm world-to-object camera-to-world))]
              (uniform-int program "scene_shadow_size" (:sfsim.texture/width (:sfsim.model/shadows (nth object-shadows i)))) ;; TODO: get from config
              (uniform-matrix4 program (str "camera_to_shadow_map_" (inc ^long i)) camera-to-shadow)
-             (uniform-sampler program (str "shadow_map_" i) (+ 6 i))))  ;; TODO: move this to static uniforms set up
+             (uniform-sampler program (str "scene_shadow_map_" i) (+ 6 i))))  ;; TODO: move this to static uniforms set up
     (use-textures {0 clouds
                    1 (:sfsim.clouds/distance cloud-geometry)
                    2 (:sfsim.atmosphere/transmittance atmosphere-luts)
