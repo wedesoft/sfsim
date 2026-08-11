@@ -46,18 +46,18 @@
 
 (defn set-static-lighting-uniforms
   [data program num-scene-shadows]
-  (let [render-config      (:sfsim.render/config data)
-        planet-config      (:sfsim.planet/config data)
-        cloud-data         (:sfsim.clouds/data data)
-        shadow-data        (:sfsim.opacity/data data)
-        atmosphere-luts    (:sfsim.atmosphere/luts data)
-        radius             (:sfsim.planet/radius planet-config)
-        amplification      (:sfsim.render/amplification render-config)
-        albedo             (:sfsim.planet/albedo planet-config)
-        specular           (:sfsim.render/specular render-config)
-        cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
-        depth-sigma        (:sfsim.clouds/depth-sigma cloud-data)
-        min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)]
+  (let [render-config       (:sfsim.render/config data)
+        planet-config       (:sfsim.planet/config data)
+        cloud-data          (:sfsim.clouds/data data)
+        shadow-data         (:sfsim.opacity/data data)
+        atmosphere-luts     (:sfsim.atmosphere/luts data)
+        radius              (:sfsim.planet/radius planet-config)
+        amplification       (:sfsim.render/amplification render-config)
+        albedo              (:sfsim.planet/albedo planet-config)
+        specular            (:sfsim.render/specular render-config)
+        cloud-subsampling   (:sfsim.render/cloud-subsampling render-config)
+        depth-sigma         (:sfsim.clouds/depth-sigma cloud-data)
+        min-depth-exponent  (:sfsim.clouds/min-depth-exponent cloud-data)]
     (use-program program)
     (uniform-sampler program "clouds" 0)
     (uniform-sampler program "dist" 1)
@@ -74,32 +74,34 @@
 
 
 (defn make-lighting-renderer
-  [data num-scene-shadows]
-  (let [shadow-config   (:sfsim.opacity/data data)
-        atmosphere-luts (:sfsim.atmosphere/luts data)
-        num-steps       (:sfsim.opacity/num-steps shadow-config)
-        program         (make-lighting-program num-scene-shadows num-steps)]
-    (set-static-lighting-uniforms data program num-scene-shadows)
-    {::program program
-     ::atmosphere-luts atmosphere-luts
-     ::num-scene-shadows num-scene-shadows}))
+  [data]
+  (let [shadow-config       (:sfsim.opacity/data data)
+        atmosphere-luts     (:sfsim.atmosphere/luts data)
+        num-steps           (:sfsim.opacity/num-steps shadow-config)
+        scene-shadow-counts (:sfsim.opacity/scene-shadow-counts shadow-config)
+        programs            (zipmap scene-shadow-counts (mapv #(make-lighting-program % num-steps) scene-shadow-counts))]
+    (doseq [[num-scene-shadows program] programs]
+           (set-static-lighting-uniforms data program num-scene-shadows))
+    {::programs programs
+     ::atmosphere-luts atmosphere-luts}))
 
 
 (defn destroy-lighting-renderer
   [renderer]
-  (destroy-program (::program renderer)))
+  (doseq [program (vals (::programs renderer))]
+    (destroy-program program)))
 
 
 (defn set-dynamic-lighting-uniforms
   [lighting-renderer width height camera-position camera-orientation light-direction planet-render-vars
    cloud-render-vars shadow-vars cloud-geometry clouds object-shadows]
-  (let [program           (::program lighting-renderer)
+  (let [program           ((::programs lighting-renderer) (count object-shadows))
         atmosphere-luts   (::atmosphere-luts lighting-renderer)
         camera-to-world   (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
         z-far             (:sfsim.render/z-far planet-render-vars)
         overlay-width     (:sfsim.render/overlay-width cloud-render-vars)
         overlay-height    (:sfsim.render/overlay-height cloud-render-vars)
-        num-scene-shadows (::num-scene-shadows lighting-renderer)]
+        num-scene-shadows (count object-shadows)]
     (setup-shadow-matrices program shadow-vars)
     (uniform-int program "width" width)
     (uniform-int program "height" height)
@@ -131,9 +133,9 @@
 (defn render-lighting
   [lighting-renderer width height geometry-buffers shadow-config camera-position camera-orientation
    light-direction planet-render-vars cloud-render-vars shadow-vars cloud-geometry clouds object-shadows]
-  (let [program           (::program lighting-renderer)
+  (let [program           ((::programs lighting-renderer) (count object-shadows))
         num-steps         (:sfsim.opacity/num-steps shadow-config)
-        num-scene-shadows (::num-scene-shadows lighting-renderer)]
+        num-scene-shadows (count object-shadows)]
     (model/render-lighting geometry-buffers program (+ num-scene-shadows 4 2 (* 2 num-steps))
                            (set-dynamic-lighting-uniforms lighting-renderer width height camera-position
                                                           camera-orientation light-direction

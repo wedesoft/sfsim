@@ -56,7 +56,7 @@
               height          240
               level           5
               light-direction (vec3 1 0 0)
-              graphics        (graphics/make-graphics2 [] 0)
+              graphics        (graphics/make-graphics2 [])
               tree            (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                      :sfsim.planet/config config/planet-config
                                                      :sfsim.planet/programs [(:sfsim.planet/program
@@ -89,8 +89,7 @@
               light-direction    (vec3 1 0 0)
               graphics           (graphics/make-graphics2
                                    [{:sfsim.graphics/model-file (str "test/clj/sfsim/fixtures/model/" ?model)
-                                     :sfsim.graphics/object-radius object-radius}]
-                                   0)
+                                     :sfsim.graphics/object-radius object-radius}])
               object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
               object-orientation (matrix->quaternion (mulm (mulm (rotation-matrix-3d-y (/ PI 4))
                                                                  (rotation-matrix-3d-x (/ PI 6)))
@@ -130,8 +129,7 @@
             light-direction    (vec3 1 0 0)
             graphics           (graphics/make-graphics2
                                  [{:sfsim.graphics/model-file "test/clj/sfsim/fixtures/model/torus.gltf"
-                                   :sfsim.graphics/object-radius object-radius}]
-                                 1)  ;; TODO: use object count
+                                   :sfsim.graphics/object-radius object-radius}])
             position           (vec3 (+ 1.5 6378000.0) 0 0)
             orientation        (q/rotation (to-radians 270) (vec3 0 0 1))
             object-position    (add position (q/rotate-vector orientation (vec3 0 0 -5)))
