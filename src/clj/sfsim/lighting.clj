@@ -49,7 +49,10 @@
         specular           (:sfsim.render/specular render-config)
         cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
         depth-sigma        (:sfsim.clouds/depth-sigma cloud-data)
-        min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)]
+        min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)
+        shadow-size        (:sfsim.opacity/shadow-size shadow-data)
+        scene-shadow-size  (:sfsim.opacity/scene-shadow-size shadow-data)
+        shadow-bias        (:sfsim.opacity/shadow-bias shadow-data)]
     (use-program program)
     (uniform-sampler program "clouds" 0)
     (uniform-sampler program "dist" 1)
@@ -61,7 +64,10 @@
     (uniform-float program "radius" radius)
     (uniform-int program "cloud_subsampling" cloud-subsampling)
     (uniform-float program "depth_sigma" depth-sigma)
-    (uniform-float program "min_depth_exponent" min-depth-exponent)))
+    (uniform-float program "min_depth_exponent" min-depth-exponent)
+    (uniform-int program "shadow_size" shadow-size)
+    (uniform-int program "scene_shadow_size" scene-shadow-size)
+    (uniform-float program "shadow_bias" shadow-bias)))
 
 
 (defn make-lighting-renderer
@@ -100,14 +106,11 @@
     (uniform-float program "z_far" z-far)
     (uniform-int program "overlay_width" overlay-width)
     (uniform-int program "overlay_height" overlay-height)
-    ;; TODO: shadow_size (sfsim.opacity/shadow-size) not set up?
-    (uniform-float program "shadow_bias" 1e-6) ;; TODO: get from config
     (doseq [i (range num-scene-shadows)]
            (let [matrices         (:sfsim.model/matrices (nth object-shadows i))
                  world-to-object  (:sfsim.matrix/world-to-object matrices)
                  object-to-shadow (:sfsim.matrix/object-to-shadow-map matrices)
                  camera-to-shadow (mulm object-to-shadow (mulm world-to-object camera-to-world))]
-             (uniform-int program "scene_shadow_size" (:sfsim.texture/width (:sfsim.model/shadows (nth object-shadows i)))) ;; TODO: get from config
              (uniform-matrix4 program (str "camera_to_shadow_map_" (inc ^long i)) camera-to-shadow)
              (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ 6 i))))  ;; TODO: move this to static uniforms set up
     (use-textures {0 clouds
