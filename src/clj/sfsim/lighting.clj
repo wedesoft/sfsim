@@ -36,6 +36,14 @@
                                         atmosphere/cloud-overlay]))
 
 
+(defn setup-scene-shadows
+  [program shadow-data texture-offset num-scene-shadows]
+  (let [scene-shadow-size  (:sfsim.opacity/scene-shadow-size shadow-data)]
+    (uniform-int program "scene_shadow_size" scene-shadow-size)
+    (doseq [i (range num-scene-shadows)]
+           (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ texture-offset i)))))
+
+
 (defn set-static-lighting-uniforms
   [data program num-scene-shadows]
   (let [render-config      (:sfsim.render/config data)
@@ -49,14 +57,12 @@
         specular           (:sfsim.render/specular render-config)
         cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
         depth-sigma        (:sfsim.clouds/depth-sigma cloud-data)
-        min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)
-        shadow-size        (:sfsim.opacity/shadow-size shadow-data)
-        scene-shadow-size  (:sfsim.opacity/scene-shadow-size shadow-data)
-        shadow-bias        (:sfsim.opacity/shadow-bias shadow-data)]
+        min-depth-exponent (:sfsim.clouds/min-depth-exponent cloud-data)]
     (use-program program)
     (uniform-sampler program "clouds" 0)
     (uniform-sampler program "dist" 1)
     (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 2 true)
+    (setup-scene-shadows program shadow-data 6 num-scene-shadows)
     (setup-shadow-and-opacity-maps program shadow-data (+ num-scene-shadows 6))
     (uniform-float program "albedo" albedo)
     (uniform-float program "amplification" amplification)
@@ -64,10 +70,7 @@
     (uniform-float program "radius" radius)
     (uniform-int program "cloud_subsampling" cloud-subsampling)
     (uniform-float program "depth_sigma" depth-sigma)
-    (uniform-float program "min_depth_exponent" min-depth-exponent)
-    (uniform-int program "shadow_size" shadow-size)
-    (uniform-int program "scene_shadow_size" scene-shadow-size)
-    (uniform-float program "shadow_bias" shadow-bias)))
+    (uniform-float program "min_depth_exponent" min-depth-exponent)))
 
 
 (defn make-lighting-renderer
@@ -111,8 +114,7 @@
                  world-to-object  (:sfsim.matrix/world-to-object matrices)
                  object-to-shadow (:sfsim.matrix/object-to-shadow-map matrices)
                  camera-to-shadow (mulm object-to-shadow (mulm world-to-object camera-to-world))]
-             (uniform-matrix4 program (str "camera_to_shadow_map_" (inc ^long i)) camera-to-shadow)
-             (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ 6 i))))  ;; TODO: move this to static uniforms set up
+             (uniform-matrix4 program (str "camera_to_shadow_map_" (inc ^long i)) camera-to-shadow)))
     (use-textures {0 clouds
                    1 (:sfsim.clouds/distance cloud-geometry)
                    2 (:sfsim.atmosphere/transmittance atmosphere-luts)
