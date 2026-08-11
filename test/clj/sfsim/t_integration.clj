@@ -62,11 +62,11 @@
                                                      :sfsim.planet/programs [(:sfsim.planet/program
                                                                                (:sfsim.graphics/planet-geometry-renderer graphics))])
                                               {} width ?position level)
-              frame           (-> (graphics/make-frame graphics width height ?position ?orientation light-direction)
+              frame           (-> (graphics/make-frame graphics width height ?position ?orientation light-direction [])
                                   (graphics/render-shadows graphics tree)
                                   (graphics/render-cloud-geometry graphics tree)
                                   (graphics/render-clouds graphics)
-                                  (graphics/render-geometry graphics tree []))]
+                                  (graphics/render-geometry graphics tree))]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
@@ -100,12 +100,13 @@
                                                         :sfsim.planet/programs [(:sfsim.planet/program
                                                                                   (:sfsim.graphics/planet-geometry-renderer graphics))])
                                                  {} width ?position level)
-              frame              (-> (graphics/make-frame graphics width height ?position ?orientation light-direction)
+              frame              (-> (graphics/make-frame graphics width height ?position ?orientation light-direction
+                                                          [{:sfsim.graphics/object-position object-position
+                                                            :sfsim.graphics/object-orientation object-orientation}])
                                      (graphics/render-shadows graphics tree)
                                      (graphics/render-cloud-geometry graphics tree)
                                      (graphics/render-clouds graphics)
-                                     (graphics/render-geometry graphics tree [{:sfsim.graphics/object-position object-position
-                                                                               :sfsim.graphics/object-orientation object-orientation}]))]
+                                     (graphics/render-geometry graphics tree))]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
@@ -141,15 +142,15 @@
                                                       :sfsim.planet/programs [(:sfsim.planet/program
                                                                                 (:sfsim.graphics/planet-geometry-renderer graphics))])
                                                {} width position level)
-            frame              (-> (graphics/make-frame graphics width height position orientation light-direction)
+            frame              (-> (graphics/make-frame graphics width height position orientation light-direction
+                                                        [{:sfsim.graphics/object-position object-position
+                                                          :sfsim.graphics/object-orientation object-orientation}])
                                    (graphics/render-shadows graphics tree)
                                    ;; TODO: object poses get passed in twice
-                                   (graphics/render-scene-shadows graphics [{:sfsim.graphics/object-position object-position
-                                                                             :sfsim.graphics/object-orientation object-orientation}])
+                                   (graphics/render-scene-shadows graphics)
                                    (graphics/render-cloud-geometry graphics tree)
                                    (graphics/render-clouds graphics)
-                                   (graphics/render-geometry graphics tree [{:sfsim.graphics/object-position object-position
-                                                                             :sfsim.graphics/object-orientation object-orientation}]))]
+                                   (graphics/render-geometry graphics tree))]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics))
         => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.5)

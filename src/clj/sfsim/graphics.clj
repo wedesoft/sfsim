@@ -92,7 +92,7 @@
 
 
 (defn make-frame
-  [graphics width height camera-position camera-orientation light-direction]
+  [graphics width height camera-position camera-orientation light-direction object-poses]
   (let [render-config          (:sfsim.render/config graphics)
         fov                    (:sfsim.render/fov render-config)
         planet-config          (:sfsim.planet/config graphics)
@@ -113,6 +113,7 @@
      ::light-direction        light-direction
      ::atmosphere-render-vars atmosphere-render-vars
      ::model-vars             model-vars
+     ::object-poses           object-poses
      ::object-shadows         []
      ::geometry-buffers       geometry-buffers}))
 
@@ -160,9 +161,10 @@
 
 
 (defn render-scene-shadows
-  [frame graphics object-poses]
+  [frame graphics]
   (let [scene-shadow-renderer (::scene-shadow-renderer graphics)
         light-direction       (::light-direction frame)
+        object-poses          (::object-poses frame)
         object-transforms     (mapv (fn [{::keys [object-position object-orientation]}]
                                         (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position))
                                     object-poses)
@@ -172,7 +174,7 @@
 
 
 (defn render-geometry
-  [frame graphics tree object-poses]
+  [frame graphics tree]
   (let [planet-geometry-renderer     (::planet-geometry-renderer graphics)
         atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics)
         scene-geometry-renderer      (::scene-geometry-renderer graphics)
@@ -180,6 +182,7 @@
         camera-position              (::camera-position frame)
         camera-orientation           (::camera-orientation frame)
         camera-to-world              (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
+        object-poses                 (::object-poses frame)
         planet-render-vars           (::planet-render-vars frame)
         projection                   (:sfsim.render/projection planet-render-vars)  ;; TOOD: handle case where model projection matrix is separate
         atmosphere-render-vars       (::atmosphere-render-vars frame)
