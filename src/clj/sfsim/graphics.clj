@@ -113,11 +113,14 @@
      ::light-direction        light-direction
      ::atmosphere-render-vars atmosphere-render-vars
      ::model-vars             model-vars
+     ::object-shadows         []
      ::geometry-buffers       geometry-buffers}))
 
 
 (defn destroy-frame
   [frame]
+  (doseq [object-shadow (::object-shadows frame)]
+         (model/destroy-scene-shadow-map object-shadow))
   (texture/destroy-texture (::clouds frame))
   (clouds/destroy-cloud-geometry (::cloud-geometry frame))
   (opacity/destroy-opacity-and-shadow (::shadow-vars frame))
@@ -156,6 +159,18 @@
     (assoc frame ::clouds (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] cloud-geometry))))
 
 
+(defn render-scene-shadows
+  [frame graphics object-poses]
+  (let [scene-shadow-renderer (::scene-shadow-renderer graphics)
+        light-direction       (::light-direction frame)
+        object-transforms     (mapv (fn [{::keys [object-position object-orientation]}]
+                                        (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position))
+                                    object-poses)
+        moved-scenes          (mapv #(assoc-in % [:sfsim.model/root :sfsim.model/transform] %2) (::scenes graphics) object-transforms)
+        object-shadows        (mapv #(model/scene-shadow-map scene-shadow-renderer light-direction %) moved-scenes)]
+    (assoc frame ::object-shadows object-shadows)))
+
+
 (defn render-geometry
   [frame graphics tree object-poses]
   (let [planet-geometry-renderer     (::planet-geometry-renderer graphics)
@@ -166,7 +181,7 @@
         camera-orientation           (::camera-orientation frame)
         camera-to-world              (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
         planet-render-vars           (::planet-render-vars frame)
-        projection                   (:sfsim.render/projection planet-render-vars)  ; TOOD: handle case where model projection matrix is separate
+        projection                   (:sfsim.render/projection planet-render-vars)  ;; TOOD: handle case where model projection matrix is separate
         atmosphere-render-vars       (::atmosphere-render-vars frame)
         geometry-buffers             (::geometry-buffers frame)]
     (model/render-geometry
@@ -187,7 +202,7 @@
 
 
 (defn render-lighting
-  [frame graphics object-shadows]
+  [frame graphics]
   (let [lighting-renderer  (::lighting-renderer graphics)
         shadow-config      (:sfsim.opacity/data graphics)
         camera-position    (::camera-position frame)
@@ -196,6 +211,7 @@
         planet-render-vars (::planet-render-vars frame)
         cloud-geometry     (::cloud-geometry frame)
         cloud-render-vars  (::cloud-render-vars frame)
+        object-shadows     (::object-shadows frame)
         geometry-buffers   (::geometry-buffers frame)
         width              (::width frame)
         height             (::height frame)

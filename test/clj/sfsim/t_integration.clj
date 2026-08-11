@@ -68,7 +68,7 @@
                                   (graphics/render-clouds graphics)
                                   (graphics/render-geometry graphics tree []))]
           (render-to-image width height false
-                           (graphics/render-lighting frame graphics []))
+                           (graphics/render-lighting frame graphics))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
@@ -107,7 +107,7 @@
                                      (graphics/render-geometry graphics tree [{:sfsim.graphics/object-position object-position
                                                                                :sfsim.graphics/object-orientation object-orientation}]))]
           (render-to-image width height false
-                           (graphics/render-lighting frame graphics []))
+                           (graphics/render-lighting frame graphics))
           => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 1.1)
           (graphics/destroy-frame frame)
           (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
@@ -136,12 +136,6 @@
             object-orientation (matrix->quaternion (mulm (mulm (rotation-matrix-3d-z (/ PI 6))
                                                                (rotation-matrix-3d-x (/ PI 6)))
                                                          aerodynamics/gltf-to-aerodynamic))
-            scene-shadow-renderer (:sfsim.graphics/scene-shadow-renderer graphics)
-            object-to-world    (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position)
-            scene              (assoc-in (first (:sfsim.graphics/scenes graphics))
-                                         [:sfsim.model/root :sfsim.model/transform] object-to-world)
-            object-shadow      (model/scene-shadow-map scene-shadow-renderer light-direction scene)
-            model-vars         (model/make-model-vars 0.0 1.0 0.0)
             tree               (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                       :sfsim.planet/config config/planet-config
                                                       :sfsim.planet/programs [(:sfsim.planet/program
@@ -149,14 +143,16 @@
                                                {} width position level)
             frame              (-> (graphics/make-frame graphics width height position orientation light-direction)
                                    (graphics/render-shadows graphics tree)
+                                   ;; TODO: object poses get passed in twice
+                                   (graphics/render-scene-shadows graphics [{:sfsim.graphics/object-position object-position
+                                                                             :sfsim.graphics/object-orientation object-orientation}])
                                    (graphics/render-cloud-geometry graphics tree)
                                    (graphics/render-clouds graphics)
                                    (graphics/render-geometry graphics tree [{:sfsim.graphics/object-position object-position
                                                                              :sfsim.graphics/object-orientation object-orientation}]))]
         (render-to-image width height false
-                         (graphics/render-lighting frame graphics [object-shadow]))  ;; TODO: compute shadows in graphics module
+                         (graphics/render-lighting frame graphics))
         => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.5)
-        (model/destroy-scene-shadow-map object-shadow)
         (graphics/destroy-frame frame)
         (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
         (graphics/destroy-graphics2 graphics)))))
