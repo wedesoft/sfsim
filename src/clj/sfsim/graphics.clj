@@ -46,6 +46,9 @@
         planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
         scene-renderer          (model/make-scene-geometry-renderer true)
+        object-radius           (or (::object-radius (first models)) (:sfsim.model/object-radius config/model-config))
+        scene-shadow-renderer   (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
+                                                                  object-radius)
         lighting-renderer       (lighting/make-lighting-renderer {:sfsim.render/config config/render-config
                                                                   :sfsim.planet/config config/planet-config
                                                                   :sfsim.opacity/data opacity-data
@@ -67,6 +70,7 @@
      ::planet-geometry-renderer planet-renderer
      ::atmosphere-geometry-renderer atmosphere-renderer
      ::scene-geometry-renderer scene-renderer
+     ::scene-shadow-renderer scene-shadow-renderer
      ::lighting-renderer lighting-renderer
      ::scenes scenes}))
 
@@ -75,6 +79,7 @@
   [graphics]
   (doseq [scene (::scenes graphics)] (model/destroy-scene scene))
   (lighting/destroy-lighting-renderer (::lighting-renderer graphics))
+  (model/destroy-scene-shadow-renderer (::scene-shadow-renderer graphics))
   (model/destroy-scene-geometry-renderer (::scene-geometry-renderer graphics))
   (atmosphere/destroy-atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics))
   (planet/destroy-planet-geometry-renderer (::planet-geometry-renderer graphics))

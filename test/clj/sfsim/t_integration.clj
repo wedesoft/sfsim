@@ -136,8 +136,7 @@
             object-orientation (matrix->quaternion (mulm (mulm (rotation-matrix-3d-z (/ PI 6))
                                                                (rotation-matrix-3d-x (/ PI 6)))
                                                          aerodynamics/gltf-to-aerodynamic))
-            scene-shadow-renderer (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
-                                                                    object-radius)
+            scene-shadow-renderer (:sfsim.graphics/scene-shadow-renderer graphics)
             object-to-world    (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position)
             scene              (assoc-in (first (:sfsim.graphics/scenes graphics))
                                          [:sfsim.model/root :sfsim.model/transform] object-to-world)
@@ -158,7 +157,6 @@
                          (graphics/render-lighting frame graphics [object-shadow]))  ;; TODO: compute shadows in graphics module
         => (is-image "test/clj/sfsim/fixtures/integration/torus.png" 0.5)
         (model/destroy-scene-shadow-map object-shadow)
-        (model/destroy-scene-shadow-renderer scene-shadow-renderer)
         (graphics/destroy-frame frame)
         (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
         (graphics/destroy-graphics2 graphics)))))
