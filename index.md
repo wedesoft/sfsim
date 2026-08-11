@@ -12,11 +12,17 @@ You can already download the [sfsim playtest build on Steam][3] and try it out.
 Use an advanced single-stage-to-orbit space craft to take off, orbit the planet, perform reentry, and land back on Earth.
 sfsim features a true to scale Earth planet using NOAA elevation data and procedurally generated volumetric clouds.
 
-**[Warning: Only download sfsim binary releases via Steam and not from other sources!][3]**
+Wishlist it on Steam to get notified when it gets released:
+
+<div class="iframe-container">
+<iframe src="https://store.steampowered.com/widget/3687560/" frameborder="0"></iframe>
+</div>
+
+**[Note: Official binary releases are strictly distributed through Steam. Do not download sfsim binaries from third-party sources!][3]**
 
 ### Take off
 Blast off from the launch pad and slowly tilt your spacecraft to start building up horizontal speed and climb to orbital height.
-Make sure you don't loose to much energy to air friction but also gather enough horizontal speed not to plunge back into the atmosphere.
+Make sure you don't lose to much energy to air friction but also gather enough horizontal speed not to plunge back into the atmosphere.
 
 <video src="pics/launch.mp4" autoplay loop playsinline></video>
 
@@ -36,12 +42,12 @@ Make sure you plan it right, otherwise you might end up over the ocean, or even 
 ### Land back on Earth
 Approach the runway, deploy your landing gear, and touch down on the runway.
 Apply the brakes, come to a standstill, and celebrate mission success.
-Don't touch down to fast, or you might break the landing gear or even destroy the spacecraft. Don't touch down too late, or you will run out of runway.
+Don't touch down too fast, or you might break the landing gear or even destroy the spacecraft. Don't touch down too late, or you will run out of runway.
 
 <video src="pics/landing.mp4" autoplay loop playsinline></video>
 
 ## The project
-Since a long time I wanted to develop a 3D space flight simulator.
+For a long time I wanted to develop a 3D space flight simulator.
 As a kid I implemented several 2D space flight simulators on an Atari ST.
 Many years later I saw Orbiter 2016 and I was inspired to create a free and open source space flight simulator.
 After some half-hearted attempts, I decided to start the project for real in 2020.
@@ -51,12 +57,6 @@ Progress is slow as this is only a hobby project, but I hope to release a demo s
 {% include youtube.html id="bbmusPm7QZc" %}
 
 The beautiful ambient music used in the trailer was made by [Andrewkn][2]!
-
-Wishlist it on Steam to get notified when it gets released:
-
-<div class="iframe-container">
-<iframe src="https://store.steampowered.com/widget/3687560/" frameborder="0"></iframe>
-</div>
 
 # News
 
