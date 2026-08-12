@@ -24,27 +24,35 @@ Wishlist it on Steam to get notified when it gets released:
 Blast off from the launch pad and slowly tilt your spacecraft to start building up horizontal speed and climb to orbital height.
 Make sure you don't lose to much energy to air friction but also gather enough horizontal speed not to plunge back into the atmosphere.
 
+<div class="video-container">
 <video src="pics/launch.mp4" autoplay loop playsinline></video>
+</div>
 
 ### Orbit the planet
 Perform a controlled burn for orbital insertion.
 Your orbit should be nearly circular and above the atmosphere.
 If you get it wrong, you might enter the atmosphere unprepared and might even burn up!
 
+<div class="video-container">
 <video src="pics/rcs.mp4" autoplay loop playsinline></video>
+</div>
 
 ### Perform reentry
 Perform a deorbit burn and reentry to come out at the desired location.
 Make sure you plan it right, otherwise you might end up over the ocean, or even burn up on reentry.
 
+<div class="video-container">
 <video src="pics/reentry.mp4" autoplay loop playsinline></video>
+</div>
 
 ### Land back on Earth
 Approach the runway, deploy your landing gear, and touch down on the runway.
 Apply the brakes, come to a standstill, and celebrate mission success.
 Don't touch down too fast, or you might break the landing gear or even destroy the spacecraft. Don't touch down too late, or you will run out of runway.
 
+<div class="video-container">
 <video src="pics/landing.mp4" autoplay loop playsinline></video>
+</div>
 
 ## The project
 For a long time I wanted to develop a 3D space flight simulator.
