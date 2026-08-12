@@ -999,10 +999,9 @@
     {::programs (zipmap variations programs)}))
 
 
-(def model-render-vars
+(def model-render-vars ;; TODO: require sfsim.render/projection
   (m/schema [:map [::program :int]
-                  [::transform fmat4]
-                  [:sfsim.render/overlay-projection fmat4]]))
+                  [::transform fmat4]]))
 
 
 (defn render-geometry-mesh
@@ -1016,6 +1015,10 @@
 
 (def geometry-render-vars
   (m/schema [:map [:sfsim.render/camera-to-world fmat4] [:sfsim.render/overlay-projection fmat4]]))
+
+
+(def geometry-render-vars2
+  (m/schema [:map [:sfsim.render/camera-to-world fmat4] [:sfsim.render/projection fmat4]]))
 
 
 (defn setup-model-geometry-uniforms
@@ -1235,6 +1238,15 @@
                 render-vars [] scene render-geometry-mesh))
 
 
+(defn render-scene-geometry3
+  "Render geometry (points and distances) for a scene"
+  {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars2 scene] :nil]}
+  [geometry-renderer render-vars scene]
+  (setup-model-geometry-uniforms geometry-renderer (:sfsim.render/projection render-vars) false)
+  (render-scene (comp (::programs geometry-renderer) material-type) 0
+                render-vars [] scene render-geometry-mesh))
+
+
 (defn geometry-program-selection
   "Select correct shader program to render mesh using specific material"
   {:malli/schema [:=> [:cat scene-geometry-renderer] [:=> [:cat material] :int]]}
@@ -1277,8 +1289,8 @@
                            (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
                              (when model
                                (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
-                                 (render-scene-geometry scene-renderer
-                                                        (if model-covers-planet? model-render-vars planet-render-vars) model)))
+                                 (render-scene-geometry3 scene-renderer
+                                                         (if model-covers-planet? model-render-vars planet-render-vars) model)))
                              (when tree
                                (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
                                  (render-planet-geometry2 planet-renderer planet-render-vars false tree)))

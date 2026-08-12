@@ -128,6 +128,16 @@
   (model/destroy-geometry-buffers (::geometry-buffers frame)))
 
 
+(defn get-moved-scenes
+  [frame graphics]
+  (let [object-poses      (::object-poses frame)
+        object-transforms (mapv (fn [{::keys [object-position object-orientation]}]
+                                    (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position))
+                                object-poses)
+        moved-scenes      (mapv #(assoc-in % [:sfsim.model/root :sfsim.model/transform] %2) (::scenes graphics) object-transforms)]
+    moved-scenes))
+
+
 (defn render-shadows
   [frame graphics tree]
   (let [shadow-data            (:sfsim.opacity/data graphics)
@@ -144,10 +154,12 @@
   (let [render-config           (:sfsim.render/config graphics)
         cloud-geometry-renderer (::cloud-geometry-renderer graphics)
         planet-render-vars      (::planet-render-vars frame)
-        planet-geometry-vars    (render/make-subsampled-vars planet-render-vars render-config)]
+        planet-geometry-vars    (render/make-subsampled-vars planet-render-vars render-config)
+        moved-scenes            (get-moved-scenes frame graphics)]
     (assoc frame
            ::cloud-geometry
-           (model/render-joined-geometry2 cloud-geometry-renderer planet-geometry-vars planet-geometry-vars nil tree))))
+           (model/render-joined-geometry2 cloud-geometry-renderer planet-geometry-vars planet-geometry-vars (first moved-scenes)
+                                          tree))))
 
 
 (defn render-clouds
@@ -164,11 +176,7 @@
   [frame graphics]
   (let [scene-shadow-renderer (::scene-shadow-renderer graphics)
         light-direction       (::light-direction frame)
-        object-poses          (::object-poses frame)
-        object-transforms     (mapv (fn [{::keys [object-position object-orientation]}]
-                                        (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position))
-                                    object-poses)
-        moved-scenes          (mapv #(assoc-in % [:sfsim.model/root :sfsim.model/transform] %2) (::scenes graphics) object-transforms)
+        moved-scenes          (get-moved-scenes frame graphics)
         object-shadows        (mapv #(model/scene-shadow-map scene-shadow-renderer light-direction %) moved-scenes)]
     (assoc frame ::object-shadows object-shadows)))
 
