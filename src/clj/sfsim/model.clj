@@ -1281,16 +1281,16 @@
 
 (defn render-joined-geometry2
   "Render joined geometry of scene, planet, and atmosphere"
-  {:malli/schema [:=> [:cat joined-geometry-renderer model-planet-render-vars model-planet-render-vars [:maybe scene]
+  {:malli/schema [:=> [:cat joined-geometry-renderer model-planet-render-vars model-planet-render-vars [:sequential scene]
                        [:maybe :some]] :any]}
-  [{::keys [scene-renderer planet-renderer atmosphere-renderer]} model-render-vars planet-render-vars model tree]
+  [{::keys [scene-renderer planet-renderer atmosphere-renderer]} model-render-vars planet-render-vars models tree]
   (let [model-covers-planet? (< ^double (:sfsim.render/z-near model-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
     (render-cloud-geometry (:sfsim.render/window-width planet-render-vars) (:sfsim.render/window-height planet-render-vars)
                            (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
-                             (when model
-                               (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
-                                 (render-scene-geometry3 scene-renderer
-                                                         (if model-covers-planet? model-render-vars planet-render-vars) model)))
+                             (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+                               (doseq [model models]
+                                      (render-scene-geometry3 scene-renderer
+                                                              (if model-covers-planet? model-render-vars planet-render-vars) model)))
                              (when tree
                                (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
                                  (render-planet-geometry2 planet-renderer planet-render-vars false tree)))

@@ -158,8 +158,7 @@
         moved-scenes            (get-moved-scenes frame graphics)]
     (assoc frame
            ::cloud-geometry
-           (model/render-joined-geometry2 cloud-geometry-renderer planet-geometry-vars planet-geometry-vars (first moved-scenes)
-                                          tree))))
+           (model/render-joined-geometry2 cloud-geometry-renderer planet-geometry-vars planet-geometry-vars moved-scenes tree))))
 
 
 (defn render-clouds
@@ -186,7 +185,7 @@
   (let [planet-geometry-renderer     (::planet-geometry-renderer graphics)
         atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics)
         scene-geometry-renderer      (::scene-geometry-renderer graphics)
-        scenes                       (::scenes graphics)
+        moved-scenes                 (get-moved-scenes frame graphics)
         camera-position              (::camera-position frame)
         camera-orientation           (::camera-orientation frame)
         camera-to-world              (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
@@ -199,12 +198,9 @@
       geometry-buffers
       (render/with-stencils
         (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
-          (doseq [[scene object-pose] (map vector scenes object-poses)]
-                 (let [object-position    (::object-position object-pose)
-                       object-orientation (::object-orientation object-pose)
-                       object-to-world    (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position)
-                       moved-scene        (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)]
-                   (model/render-scene-geometry2 scene-geometry-renderer projection {:sfsim.render/camera-to-world camera-to-world} moved-scene))))
+          (doseq [moved-scene moved-scenes]
+                 (model/render-scene-geometry2 scene-geometry-renderer projection {:sfsim.render/camera-to-world camera-to-world}
+                                               moved-scene)))
         (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2  ; TODO: handle case where model and planet use distinct projections
           (planet/render-planet-geometry2 planet-geometry-renderer planet-render-vars true tree))
         (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
