@@ -19,7 +19,7 @@
       - [X] handle model shadows
       - [ ] handle metallic and roughness
       - [ ] unify render-geometry-mesh and render-mesh-geometry
-      - [ ] render-scene-geometry, render-scene-geometry2
+      - [ ] render-scene-geometry, render-scene-geometry2, render-joined-geometry, render-joined-geometry2, render-joined-geometry3, graphics/render-geometry
       - [ ] remove object_to_scene matrix
       - [ ] scene shadow renderer with individual object-radius for each model
       - [ ] average_scene_shadow gets declared multiple times in overall-shading.glsl
