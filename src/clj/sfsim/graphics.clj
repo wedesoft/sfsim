@@ -92,7 +92,7 @@
 
 
 (defn make-frame
-  [graphics width height camera-position camera-orientation light-direction object-poses]
+  [graphics width height camera-position camera-orientation light-direction object-poses model-vars]
   (let [render-config          (:sfsim.render/config graphics)
         fov                    (:sfsim.render/fov render-config)
         planet-config          (:sfsim.planet/config graphics)
@@ -102,7 +102,6 @@
         cloud-render-vars      (clouds/make-cloud-render-vars render-config planet-render-vars width height camera-position
                                                               camera-orientation light-direction camera-position camera-orientation)
         atmosphere-render-vars (atmosphere/make-atmosphere-render-vars width height fov light-direction)
-        model-vars             (model/make-model-vars 0.0 1.0 0.0)
         geometry-buffers       (model/make-geometry-buffers width height)]
     {::width                  width
      ::height                 height
@@ -162,13 +161,14 @@
 
 
 (defn render-clouds
-  [frame graphics]
+  [frame graphics plume-transforms]
   (let [cloud-renderer      (::cloud-renderer graphics)
         cloud-render-vars   (::cloud-render-vars frame)
         model-vars          (::model-vars frame)
         shadow-vars         (::shadow-vars frame)
         cloud-geometry      (::cloud-geometry frame)]
-    (assoc frame ::clouds (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars [] cloud-geometry))))
+    (assoc frame ::clouds (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms
+                                                       cloud-geometry))))
 
 
 (defn render-scene-shadows

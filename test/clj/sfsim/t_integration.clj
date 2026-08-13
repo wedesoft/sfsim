@@ -62,10 +62,11 @@
                                                      :sfsim.planet/programs [(:sfsim.planet/program
                                                                                (:sfsim.graphics/planet-geometry-renderer graphics))])
                                               {} width ?position level)
-              frame           (-> (graphics/make-frame graphics width height ?position ?orientation light-direction [])
+              frame           (-> (graphics/make-frame graphics width height ?position ?orientation light-direction []
+                                                       (model/make-model-vars 0.0 1.0 0.0))
                                   (graphics/render-shadows graphics tree)
                                   (graphics/render-cloud-geometry graphics tree)
-                                  (graphics/render-clouds graphics)
+                                  (graphics/render-clouds graphics [])
                                   (graphics/render-geometry graphics tree))]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
@@ -102,10 +103,11 @@
                                                  {} width ?position level)
               frame              (-> (graphics/make-frame graphics width height ?position ?orientation light-direction
                                                           [{:sfsim.graphics/object-position object-position
-                                                            :sfsim.graphics/object-orientation object-orientation}])
+                                                            :sfsim.graphics/object-orientation object-orientation}]
+                                                          (model/make-model-vars 0.0 1.0 0.0))
                                      (graphics/render-shadows graphics tree)
                                      (graphics/render-cloud-geometry graphics tree)
-                                     (graphics/render-clouds graphics)
+                                     (graphics/render-clouds graphics [])
                                      (graphics/render-geometry graphics tree))]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
@@ -144,11 +146,12 @@
                                                {} width position level)
             frame              (-> (graphics/make-frame graphics width height position orientation light-direction
                                                         [{:sfsim.graphics/object-position object-position
-                                                          :sfsim.graphics/object-orientation object-orientation}])
+                                                          :sfsim.graphics/object-orientation object-orientation}]
+                                                        (model/make-model-vars 0.0 1.0 0.0))
                                    (graphics/render-shadows graphics tree)
                                    (graphics/render-scene-shadows graphics)
                                    (graphics/render-cloud-geometry graphics tree)
-                                   (graphics/render-clouds graphics)
+                                   (graphics/render-clouds graphics [])
                                    (graphics/render-geometry graphics tree))]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics))
@@ -182,11 +185,12 @@
                                                {} width position level)
             frame              (-> (graphics/make-frame graphics width height position orientation light-direction
                                                         [{:sfsim.graphics/object-position object-position
-                                                          :sfsim.graphics/object-orientation object-orientation}])
+                                                          :sfsim.graphics/object-orientation object-orientation}]
+                                                        (model/make-model-vars 0.0 1.0 0.0))
                                    (graphics/render-shadows graphics tree)
                                    (graphics/render-scene-shadows graphics)
                                    (graphics/render-cloud-geometry graphics tree)
-                                   (graphics/render-clouds graphics)
+                                   (graphics/render-clouds graphics [])
                                    (graphics/render-geometry graphics tree))]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics))
@@ -248,6 +252,61 @@ void main()
 
 (when (.exists (io/file ".integration"))
   (fact "Test rendering of model with main engine plume and RCS thrusters"
+    (with-invisible-window
+      (let [width               320
+            height              240
+            level               5
+            object-radius       (:sfsim.model/object-radius config/model-config)
+            light-direction     (vec3 1 0 0)
+            graphics            (graphics/make-graphics2
+                                  [{:sfsim.graphics/model-file "data/models/venturestar.glb"
+                                    :sfsim.graphics/object-radius object-radius}])
+            position            (vec3 (+ 100.0 6378000.0) 0 0)
+            orientation         (q/rotation (to-radians 270) (vec3 0 0 1))
+            object-position     (add position (q/rotate-vector orientation (vec3 0 0 -50)))
+            object-orientation  (matrix->quaternion (mulm (mulm (rotation-matrix-3d-x (* 0.8 PI))
+                                                                (rotation-matrix-3d-y (* -0.4 PI)))
+                                                          aerodynamics/gltf-to-aerodynamic))
+            tree                (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
+                                                       :sfsim.planet/config config/planet-config
+                                                       :sfsim.planet/programs [(:sfsim.planet/program
+                                                                                 (:sfsim.graphics/planet-geometry-renderer graphics))])
+                                                {} width position level)
+            model               (first (:sfsim.graphics/scenes graphics))
+            bsp-tree            (update (model/get-bsp-tree model "BSP")
+                                        :sfsim.model/transform #(mulm model/gltf-to-aerodynamic %))
+            thruster-transforms (into {}
+                                      (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
+                                                                                (mulm model/gltf-to-aerodynamic)
+                                                                                (vector rcs-name)))
+                                                        (physics/all-rcs))))
+            camera-to-world     (transformation-matrix (quaternion->matrix orientation) position)
+            world-to-object     (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
+            camera-to-object    (mulm world-to-object camera-to-world)
+            object-origin       (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
+            render-order        (model/bsp-render-order bsp-tree object-origin)
+            plume-transforms    (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
+            _ (println plume-transforms)
+            frame               (-> (graphics/make-frame graphics width height position orientation light-direction
+                                                         [{:sfsim.graphics/object-position object-position
+                                                           :sfsim.graphics/object-orientation object-orientation}]
+                                                         (model/make-model-vars 0.0 1.0 0.5))
+                                    (graphics/render-shadows graphics tree)
+                                    (graphics/render-scene-shadows graphics)
+                                    (graphics/render-cloud-geometry graphics tree)
+                                    (graphics/render-clouds graphics plume-transforms)
+                                    (graphics/render-geometry graphics tree))]
+        (render-to-image width height false
+                         (graphics/render-lighting frame graphics))
+        ; => (is-image "test/clj/sfsim/fixtures/integration/model-with-plume.png" 0.5)
+        => (is-image "/tmp/model-with-plume.png" 0.5)
+        (graphics/destroy-frame frame)
+        (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
+        (graphics/destroy-graphics2 graphics)))))
+
+
+(when (.exists (io/file ".integration"))
+  (fact "Test rendering of model with main engine plume and RCS thrusters"
         (with-invisible-window
           (let [width 320
                 height 240
@@ -263,12 +322,11 @@ void main()
                 planet-renderer           (:sfsim.graphics/planet-renderer graphics)
                 light-direction           (vec3 1 0 0)
                 model                     (first (:sfsim.graphics/models graphics))
-                gltf-to-aerodynamic       (rotation-matrix aerodynamics/gltf-to-aerodynamic)
                 bsp-tree                  (update (model/get-bsp-tree model "BSP")
-                                                  :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
+                                                  :sfsim.model/transform #(mulm model/gltf-to-aerodynamic %))
                 thruster-transforms       (into {}
                                                 (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
-                                                                                          (mulm gltf-to-aerodynamic)
+                                                                                          (mulm model/gltf-to-aerodynamic)
                                                                                           (vector rcs-name)))
                                                                   (physics/all-rcs))))
                 tree                      (load-tile-tree planet-renderer {} width position level)
