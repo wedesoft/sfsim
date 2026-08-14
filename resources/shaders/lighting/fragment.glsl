@@ -3,7 +3,7 @@
 uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
 uniform sampler2D diffuse_material;
-uniform sampler2D specular_material;
+uniform sampler2D metallic_material;
 uniform sampler2D emissive_material;
 uniform mat4 camera_to_world;
 uniform vec3 origin;
@@ -40,8 +40,8 @@ void main()
     vec4 object_shadow_pos_<%= (inc ^long i) %> = camera_to_shadow_map_<%= (inc ^long i) %> * point;
 <% ) %>
     vec3 light = overall_shading(world_point <%= (apply str (map #(str ", object_shadow_pos_" (inc ^long %)) (range num-scene-shadows))) %>);
-    float specular = texture(specular_material, uv).r;
-    vec3 phong = phong(ambient_light, light, world_point, normal, diffuse_color, specular);
+    float metallic = texture(metallic_material, uv).r;
+    vec3 phong = phong(ambient_light, light, world_point, normal, diffuse_color, metallic);
     vec3 emissive = texture(emissive_material, uv).rgb;
     vec3 incoming = attenuation_point(world_point, vec4(phong + emissive, 1.0)).rgb;
     vec4 cloud_scatter = cloud_overlay(length(point.xyz));

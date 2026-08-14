@@ -20,7 +20,7 @@ layout (location = 1) out float dist;
 <% (if full %>
 layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
-layout (location = 3) out float specular_material;
+layout (location = 3) out float metallic_material;
 layout (location = 4) out float roughness_material;
 layout (location = 5) out vec4 emissive_material;
 <% ) %>
@@ -43,7 +43,7 @@ void main()
 <% (if full %>
   camera_normal = vec4(0, 0, 0, 0);
   diffuse_material = vec4(0, 0, 0, 0);
-  specular_material = 0.0;
+  metallic_material = 0.0;
   vec3 incoming = sun_color(direction);
   emissive_material = vec4(incoming, 0);
 <% ) %>

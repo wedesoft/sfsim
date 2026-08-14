@@ -29,7 +29,7 @@ layout (location = 1) out float dist;
 <% (if full %>
 layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
-layout (location = 3) out float specular_material;
+layout (location = 3) out float metallic_material;
 layout (location = 4) out float roughness_material;
 layout (location = 5) out vec4 emissive_material;
 <% ) %>
@@ -56,7 +56,7 @@ void main()
   vec3 day_color = texture(day_night, vec3(fs_in.colorcoord, 0.25)).rgb * land_modulation;
   vec3 color = mix(day_color, water_color, wet);
   diffuse_material = vec4(color, 1.0);
-  specular_material = wet * reflectivity;
+  metallic_material = wet * reflectivity;
   vec3 night_color = max(texture(day_night, vec3(fs_in.colorcoord, 0.75)).rgb - 0.3, 0.0) / 0.7;
   vec3 emissive = clamp(remap(dot(light_direction, water_normal), dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
   emissive_material = vec4(emissive, 0.0);

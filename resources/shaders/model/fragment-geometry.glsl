@@ -34,7 +34,7 @@ layout (location = 1) out float dist;
 <% (if full %>
 layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
-layout (location = 3) out float specular_material;
+layout (location = 3) out float metallic_material;
 layout (location = 4) out float roughness_material;
 layout (location = 5) out vec4 emissive_material;
 <% ) %>
@@ -56,7 +56,7 @@ void main()
   diffuse_material = vec4(texture(colors, fs_in.texcoord).rgb * (1.0 - metallic), 1.0);
 <% ) %>
 <% (if full %>
-  specular_material = metallic;
+  metallic_material = metallic;
   emissive_material = vec4(0, 0, 0, 0);
 <% ) %>
 <% (if (not full) %>
