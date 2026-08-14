@@ -543,17 +543,6 @@
         z-far              (:sfsim.render/z-far planet-render-vars)
         z-offset           1.0
         overlay-projection (projection-matrix overlay-width overlay-height min-z-near (+ ^double z-far ^double z-offset) fov)]
-    ; (println :sfsim.render/window-width width)
-    ; (println :sfsim.render/window-height height)
-    ; (println :sfsim.render/overlay-width overlay-width)
-    ; (println :sfsim.render/overlay-height overlay-height)
-    ; (println :sfsim.render/overlay-projection overlay-projection)
-    ; (println :sfsim.render/origin camera-position)
-    ; (println :sfsim.render/light-direction light-direction)
-    ; (println :sfsim.render/object-origin object-origin)
-    ; (println :sfsim.render/camera-to-world camera-to-world)
-    ; (println :sfsim.render/camera-to-object camera-to-object)
-    ; (println :sfsim.render/object-distance (mag object-origin))
     {:sfsim.render/window-width width
      :sfsim.render/window-height height
      :sfsim.render/overlay-width overlay-width
@@ -728,18 +717,16 @@
          overlay-height  (:sfsim.render/overlay-height cloud-render-vars)
          overlay         (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
                                                 overlay-width overlay-height)]
-     ; (println (:sfsim.render/overlay-projection cloud-render-vars))
-     ; (println (:sfsim.render/camera-to-object cloud-render-vars))
      (doseq [program (vals programs)]
             (use-program program)
             (setup-dynamic-overlay-uniforms program cloud-render-vars)
             (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
             (uniform-float program "time" (:sfsim.model/time model-vars))
             (use-textures {0  (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
-     (framebuffer-render overlay-width overlay-height :sfsim.render/noculling (:sfsim.clouds/depth-stencil geometry) [overlay]
+     (framebuffer-render overlay-width overlay-height :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
                          (clear (vec3 0.0 0.0 0.0) 0.0)
                          (without-depth-test
-                           (do  ; TODO: with-stencils
+                           (with-stencils
                              (when front (render-cloud-front other cloud-render-vars shadow-vars))
                              (with-underlay-blending
                                (doseq [[thruster transform] plume-transforms]

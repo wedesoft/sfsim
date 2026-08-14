@@ -26,5 +26,4 @@ void main()
   float dist = geometry_distance();
   fragColor = <%= type %>_point(origin, direction, object_origin_plume, object_direction_plume, dist);
 <% ) %>
-  fragColor = vec4(1, 0, 0, 0.5);
 }
