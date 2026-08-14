@@ -297,7 +297,7 @@ void main()
                                     (graphics/render-shadows graphics tree)
                                     (graphics/render-scene-shadows graphics)
                                     (graphics/render-cloud-geometry graphics tree)
-                                    (graphics/render-clouds graphics [])
+                                    (graphics/render-clouds graphics plume-transforms)
                                     (graphics/render-geometry graphics tree))]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics))
