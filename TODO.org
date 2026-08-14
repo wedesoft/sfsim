@@ -17,7 +17,8 @@
       - [X] make planet geometry renderer
       - [X] make model geometry renderer
       - [X] handle model shadows
-      - [ ] handle metallic and roughness
+      - [X] handle metallic
+      - [ ] handle roughness
       - [ ] unify render-geometry-mesh and render-mesh-geometry
       - [ ] use separate uniforms set up for plume shader and cloud shader
       - [ ] render-scene-geometry, render-scene-geometry2, render-joined-geometry, render-joined-geometry2, render-joined-geometry3, graphics/render-geometry

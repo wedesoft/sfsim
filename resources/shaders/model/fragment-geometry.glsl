@@ -1,5 +1,8 @@
 #version 450 core
 
+uniform float metallic;
+uniform float roughness;
+
 <% (if (and full (not textured)) %>
 uniform vec3 diffuse_color;
 <% ) %>
@@ -49,10 +52,10 @@ void main()
   diffuse_material = vec4(diffuse_color, 1.0);
 <% ) %>
 <% (if (and full textured) %>
-  diffuse_material = vec4(texture(colors, fs_in.texcoord).rgb, 1.0);
+  diffuse_material = vec4(texture(colors, fs_in.texcoord).rgb * (1.0 - metallic), 1.0);
 <% ) %>
 <% (if full %>
-  specular_material = 0.0;
+  specular_material = metallic;
   emissive_material = vec4(0, 0, 0, 0);
 <% ) %>
 <% (if (not full) %>
