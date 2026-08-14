@@ -133,7 +133,7 @@ uniform mat4 camera_to_world;
 uniform sampler2D camera_point;
 uniform sampler2D camera_normal;
 uniform sampler2D diffuse_material;
-uniform sampler2D specular_material;
+uniform sampler2D metallic_material;
 uniform sampler2D emissive_material;
 uniform vec3 light;
 uniform int width;

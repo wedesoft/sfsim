@@ -21,7 +21,7 @@ layout (location = 1) out float dist;
 layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
 layout (location = 3) out float metallic_material;
-layout (location = 4) out float roughness_material;
+layout (location = 4) out float specular_material;
 layout (location = 5) out vec4 emissive_material;
 <% ) %>
 
