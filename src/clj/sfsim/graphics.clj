@@ -97,10 +97,12 @@
         fov                    (:sfsim.render/fov render-config)
         planet-config          (:sfsim.planet/config graphics)
         cloud-config           (:sfsim.clouds/config graphics)
+        object-position        (or (::object-position (first object-poses)) camera-position)
+        object-orientation     (or (::object-orientation (first object-poses)) camera-orientation)
         planet-render-vars     (planet/make-planet-render-vars2 planet-config cloud-config render-config width height
                                                                 camera-position camera-orientation light-direction)
         cloud-render-vars      (clouds/make-cloud-render-vars render-config planet-render-vars width height camera-position
-                                                              camera-orientation light-direction camera-position camera-orientation)
+                                                              camera-orientation light-direction object-position object-orientation)
         atmosphere-render-vars (atmosphere/make-atmosphere-render-vars width height fov light-direction)
         geometry-buffers       (model/make-geometry-buffers width height)]
     {::width                  width

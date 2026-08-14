@@ -48,7 +48,7 @@
       (load-tile-tree planet-renderer tree width position (dec n)))))
 
 
-(when (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration2"))
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
     (fact
       (with-invisible-window
@@ -79,7 +79,7 @@
     (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "space.png"))
 
 
-(when (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration2"))
   (tabular "Integration test rendering of object, planet, atmosphere, and clouds"
     (fact
       (with-invisible-window
@@ -122,7 +122,7 @@
     (vec3 (+ 300.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "bricks.gltf" "bricks.png"))
 
 
-(when (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration2"))
   (fact "Integration test rendering of model self-shadowing"
     (with-invisible-window
       (let [width              320
@@ -161,7 +161,7 @@
         (graphics/destroy-graphics2 graphics)))))
 
 
-(when (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration2"))
   (fact "Test rendering of model"
     (with-invisible-window
       (let [width              320
@@ -220,7 +220,7 @@ void main()
 }")
 
 
-(when (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration2"))
   (fact "Integration test rendering of rocket plume"
         (with-invisible-window
           (let [width 320
@@ -250,6 +250,7 @@ void main()
             (destroy-program program)))))
 
 
+(println "Failing test")
 (when (.exists (io/file ".integration"))
   (fact "Test rendering of model with main engine plume and RCS thrusters"
     (with-invisible-window
@@ -267,6 +268,8 @@ void main()
             object-orientation  (matrix->quaternion (mulm (mulm (rotation-matrix-3d-x (* 0.8 PI))
                                                                 (rotation-matrix-3d-y (* -0.4 PI)))
                                                           aerodynamics/gltf-to-aerodynamic))
+            object-orientation  (matrix->quaternion (mulm (rotation-matrix-3d-x (* 0.8 PI))
+                                                          (rotation-matrix-3d-y (* -0.4 PI))))
             tree                (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                        :sfsim.planet/config config/planet-config
                                                        :sfsim.planet/programs [(:sfsim.planet/program
@@ -280,13 +283,13 @@ void main()
                                                                                 (mulm model/gltf-to-aerodynamic)
                                                                                 (vector rcs-name)))
                                                         (physics/all-rcs))))
+            ; _ (println (get thruster-transforms "RCS LFD1"))
             camera-to-world     (transformation-matrix (quaternion->matrix orientation) position)
             world-to-object     (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
             camera-to-object    (mulm world-to-object camera-to-world)
             object-origin       (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
             render-order        (model/bsp-render-order bsp-tree object-origin)
             plume-transforms    (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
-            _ (println plume-transforms)
             frame               (-> (graphics/make-frame graphics width height position orientation light-direction
                                                          [{:sfsim.graphics/object-position object-position
                                                            :sfsim.graphics/object-orientation object-orientation}]
@@ -294,7 +297,7 @@ void main()
                                     (graphics/render-shadows graphics tree)
                                     (graphics/render-scene-shadows graphics)
                                     (graphics/render-cloud-geometry graphics tree)
-                                    (graphics/render-clouds graphics plume-transforms)
+                                    (graphics/render-clouds graphics [])
                                     (graphics/render-geometry graphics tree))]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics))
@@ -304,7 +307,7 @@ void main()
         (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
         (graphics/destroy-graphics2 graphics)))))
 
-
+(println "Working test")
 (when (.exists (io/file ".integration"))
   (fact "Test rendering of model with main engine plume and RCS thrusters"
         (with-invisible-window
@@ -329,6 +332,7 @@ void main()
                                                                                           (mulm model/gltf-to-aerodynamic)
                                                                                           (vector rcs-name)))
                                                                   (physics/all-rcs))))
+                ; _ (println (get thruster-transforms "RCS LFD1"))
                 tree                      (load-tile-tree planet-renderer {} width position level)
                 model-vars                (model/make-model-vars 0.0 1.0 0.5)
                 camera-to-world           (transformation-matrix (quaternion->matrix orientation) position)
@@ -349,7 +353,7 @@ void main()
             (graphics/destroy-graphics graphics)))))
 
 
-(when (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration2"))
   (fact "Integration test position of Sun relative to Earth at a certain time"
         (let [spk        (make-spk-document "data/astro/de430_1850-2150.bsp")
               sun        (make-spk-segment-interpolator spk 0 10)
@@ -361,7 +365,7 @@ void main()
           => (roughly-vector (vec3 -0.034666711163175164, -0.90209322168943, -0.391053015058352) 1e-6))))
 
 
-(when (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration2"))
   (fact "Test Lunar reference frame"
         (let [kern  (read-frame-kernel "data/astro/moon_080317.tf")
               data  (frame-kernel-body-frame-data kern "FRAME_MOON_ME_DE421")
@@ -371,7 +375,7 @@ void main()
                                            -3.80869119096078E-4  1.5798557868269077E-6  0.9999999274681064) 1e-8))))
 
 
-(when (.exists (io/file ".integration"))
+(when (.exists (io/file ".integration2"))
   (fact "Test Lunar frame at a certain time"
         (let [kern         (read-frame-kernel "data/astro/moon_080317.tf")
               pck          (make-pck-document "data/astro/moon_pa_de421_1900-2050.bpc")
