@@ -502,7 +502,7 @@
        (rcs-set "TEST") => ["RCS TEST1" "RCS TEST2" "RCS TEST3"]
        (rcs-sets) => #{}
        (rcs-sets "TEST") => #{"RCS TEST1" "RCS TEST2" "RCS TEST3"}
-       (intersection (set (all-rcs)) #{"RCS FF1" "RCS L3" "Plume"}) => #{"RCS FF1" "RCS L3" "Plume"}
+       (intersection (all-rcs) #{"RCS FF1" "RCS L3" "Plume"}) => #{"RCS FF1" "RCS L3" "Plume"}
        (ordered-rcs-transforms {} []) => []
        (ordered-rcs-transforms {"A" (eye 4)} ["A"]) => [["A" (eye 4)]]
        (ordered-rcs-transforms {"A" (eye 4)} []) => []

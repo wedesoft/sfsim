@@ -272,18 +272,6 @@ void main()
                                                        :sfsim.planet/programs [(:sfsim.planet/program
                                                                                  (:sfsim.graphics/planet-geometry-renderer graphics))])
                                                 {} width position level)
-            model               (first (:sfsim.graphics/scenes graphics))
-            bsp-tree            (:sfsim.graphics/bsp-tree graphics)
-            thruster-transforms (into {}
-                                      (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
-                                                                                (vector rcs-name)))
-                                                        (physics/all-rcs))))
-            camera-to-world     (transformation-matrix (quaternion->matrix orientation) position)
-            world-to-object     (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
-            camera-to-object    (mulm world-to-object camera-to-world)
-            object-origin       (vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
-            render-order        (model/bsp-render-order bsp-tree object-origin)
-            plume-transforms    (map (fn [thruster] [thruster (thruster-transforms thruster)]) render-order)
             frame               (-> (graphics/make-frame graphics width height position orientation light-direction
                                                          [{:sfsim.graphics/object-position object-position
                                                            :sfsim.graphics/object-orientation object-orientation}]
@@ -291,7 +279,7 @@ void main()
                                     (graphics/render-shadows graphics tree)
                                     (graphics/render-scene-shadows graphics)
                                     (graphics/render-cloud-geometry graphics tree)
-                                    (graphics/render-clouds graphics plume-transforms)
+                                    (graphics/render-clouds graphics (physics/all-rcs))
                                     (graphics/render-geometry graphics tree))]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics))

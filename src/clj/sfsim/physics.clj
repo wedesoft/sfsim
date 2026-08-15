@@ -181,7 +181,7 @@
 (defn all-rcs
   "Get list of all thruster names"
   []
-  (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
+  (into #{"Plume"} (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"])))
 
 
 (defn initialize-thrusters

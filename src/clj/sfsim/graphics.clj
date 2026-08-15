@@ -7,8 +7,8 @@
 (ns sfsim.graphics
     "High-level graphics code"
     (:require
-      [fastmath.matrix :refer (mulm)]
-      [fastmath.vector :refer (vec3)]
+      [fastmath.matrix :refer (mulm mulv inverse)]
+      [fastmath.vector :refer (vec4 vec3)]
       [sfsim.config :as config]
       [sfsim.clouds :as clouds]
       [sfsim.atmosphere :as atmosphere]
@@ -16,6 +16,7 @@
       [sfsim.planet :as planet]
       [sfsim.model :as model]
       [sfsim.render :as render]
+      [sfsim.physics :as physics]
       [sfsim.lighting :as lighting]
       [sfsim.texture :as texture]
       [sfsim.opacity :as opacity]
@@ -23,6 +24,14 @@
    (:import
     (org.lwjgl.opengl
       GL11)))
+
+
+(defn get-thruster-transforms
+  [model rcs-names]
+  (into {}
+        (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
+                                                  (vector rcs-name)))
+                          rcs-names))))
 
 
 (defn make-graphics2
@@ -56,6 +65,7 @@
                                                                   :sfsim.atmosphere/luts atmosphere-luts})
         scenes                  (mapv (comp model/read-gltf ::model-file) models)
         bsp-tree                (some-> (first scenes) (model/get-bsp-tree "BSP"))
+        thruster-transforms     (some-> (first scenes) (get-thruster-transforms (physics/all-rcs)))
         opengl-scenes           (mapv (partial model/load-scene-into-opengl (model/geometry-program-selection scene-renderer)) scenes)]
     {:sfsim.render/config config/render-config
      :sfsim.planet/config config/planet-config
@@ -74,6 +84,7 @@
      ::scene-shadow-renderer scene-shadow-renderer
      ::lighting-renderer lighting-renderer
      ::bsp-tree bsp-tree
+     ::thruster-transforms thruster-transforms
      ::scenes opengl-scenes}))
 
 
@@ -164,13 +175,31 @@
            (model/render-joined-geometry2 cloud-geometry-renderer planet-geometry-vars planet-geometry-vars moved-scenes tree))))
 
 
+(defn plume-transforms
+  [frame graphics rcs-names]
+  (let [bsp-tree            (::bsp-tree graphics)
+        thruster-transforms (::thruster-transforms graphics)
+        camera-position     (::camera-position frame)
+        camera-orientation  (::camera-orientation frame)
+        object-poses        (::object-poses frame)
+        object-position     (::object-position (first object-poses))
+        object-orientation  (::object-orientation (first object-poses))
+        object-to-world     (matrix/transformation-matrix (matrix/quaternion->matrix object-orientation) object-position)
+        camera-to-world     (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
+        camera-to-object    (mulm (inverse object-to-world) camera-to-world)
+        object-origin       (matrix/vec4->vec3 (mulv camera-to-object (vec4 0 0 0 1)))
+        render-order        (model/bsp-render-order bsp-tree object-origin)]
+    (map (fn [thruster] [thruster (thruster-transforms thruster)]) (filter (set rcs-names) render-order))))
+
+
 (defn render-clouds
-  [frame graphics plume-transforms]
+  [frame graphics rcs-names]
   (let [cloud-renderer      (::cloud-renderer graphics)
         cloud-render-vars   (::cloud-render-vars frame)
         model-vars          (::model-vars frame)
         shadow-vars         (::shadow-vars frame)
-        cloud-geometry      (::cloud-geometry frame)]
+        cloud-geometry      (::cloud-geometry frame)
+        plume-transforms    (if (::bsp-tree graphics) (plume-transforms frame graphics rcs-names) [])]
     (assoc frame ::clouds (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms
                                                        cloud-geometry))))
 
