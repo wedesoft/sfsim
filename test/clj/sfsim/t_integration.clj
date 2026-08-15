@@ -273,7 +273,7 @@ void main()
                                                                                  (:sfsim.graphics/planet-geometry-renderer graphics))])
                                                 {} width position level)
             model               (first (:sfsim.graphics/scenes graphics))
-            bsp-tree            (model/get-bsp-tree model "BSP")
+            bsp-tree            (:sfsim.graphics/bsp-tree graphics)
             thruster-transforms (into {}
                                       (remove nil? (map (fn [rcs-name] (some->> (model/get-node-transform model rcs-name)
                                                                                 (vector rcs-name)))

@@ -54,8 +54,9 @@
                                                                   :sfsim.opacity/data opacity-data
                                                                   :sfsim.clouds/data cloud-data
                                                                   :sfsim.atmosphere/luts atmosphere-luts})
-        models                  (mapv (comp model/read-gltf ::model-file) models)
-        scenes                  (mapv (partial model/load-scene-into-opengl (model/geometry-program-selection scene-renderer)) models)]
+        scenes                  (mapv (comp model/read-gltf ::model-file) models)
+        bsp-tree                (some-> (first scenes) (model/get-bsp-tree "BSP"))
+        opengl-scenes           (mapv (partial model/load-scene-into-opengl (model/geometry-program-selection scene-renderer)) scenes)]
     {:sfsim.render/config config/render-config
      :sfsim.planet/config config/planet-config
      :sfsim.clouds/config config/cloud-config
@@ -72,7 +73,8 @@
      ::scene-geometry-renderer scene-renderer
      ::scene-shadow-renderer scene-shadow-renderer
      ::lighting-renderer lighting-renderer
-     ::scenes scenes}))
+     ::bsp-tree bsp-tree
+     ::scenes opengl-scenes}))
 
 
 (defn destroy-graphics2
