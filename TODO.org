@@ -19,6 +19,7 @@
       - [X] handle model shadows
       - [X] handle metallic
       - [ ] handle roughness
+      - [ ] refactor plume code
       - [ ] unify render-geometry-mesh and render-mesh-geometry
       - [ ] use separate uniforms set up for plume shader and cloud shader
       - [ ] render-scene-geometry, render-scene-geometry2, render-joined-geometry, render-joined-geometry2, render-joined-geometry3, graphics/render-geometry
