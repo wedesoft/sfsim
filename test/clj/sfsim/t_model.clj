@@ -168,7 +168,7 @@ void main()
                            (use-program geometry-program)
                            (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                            (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                         opengl-scene render-mesh-geometry))
+                                         opengl-scene (partial render-mesh-geometry true)))
           (render-to-image 160 120 false
                            (render-lighting geometry-buffers lighting-program 0
                                             (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))))
@@ -210,7 +210,7 @@ void main()
                            (use-program geometry-program)
                            (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                            (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                         opengl-scene render-mesh-geometry))
+                                         opengl-scene (partial render-mesh-geometry true)))
           (render-to-image 160 120 false
                            (render-lighting geometry-buffers lighting-program 0
                                             (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))))
@@ -278,7 +278,7 @@ void main()
                            (uniform-matrix4 geometry-program "projection" (projection-matrix 160 120 0.1 10.0 (to-radians 60)))
                            (uniform-sampler geometry-program "colors" 0)
                            (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                         opengl-scene render-mesh-geometry))
+                                         opengl-scene (partial render-mesh-geometry true)))
           (render-to-image 160 120 false
                            (render-lighting geometry-buffers lighting-program 0
                                             (uniform-vector3 lighting-program "light" (normalize (vec3 1 2 3)))))
@@ -316,7 +316,7 @@ void main()
                            (uniform-sampler geometry-program "colors" 0)
                            (uniform-sampler geometry-program "normals" 1)
                            (render-scene (constantly geometry-program) 0 {:sfsim.render/camera-to-world camera-to-world} []
-                                         opengl-scene render-mesh-geometry))
+                                         opengl-scene (partial render-mesh-geometry true)))
           (render-to-image 160 120 false
                            (render-lighting geometry-buffers lighting-program 0
                                             (uniform-vector3 lighting-program "light" (normalize (vec3 0 -3 1)))))

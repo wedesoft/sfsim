@@ -1192,13 +1192,13 @@
   (destroy-texture emissive-texture))
 
 
-(defmulti render-mesh-geometry (fn [material _render-vars] (material-type material)))
+(defmulti render-mesh-geometry (fn [full material _render-vars] (if full (material-type material) nil)))
 
-(m/=> render-mesh-geometry [:=> [:cat material mesh-vars] :nil])
+(m/=> render-mesh-geometry [:=> [:cat :boolean material mesh-vars] :nil])
 
 
 (defmethod render-mesh-geometry [false false]
-  [{::keys [diffuse metallic roughness]} {::keys [program transform] :as render-vars}]
+  [_full {::keys [diffuse metallic roughness]} {::keys [program transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (uniform-float program "metallic" metallic)
@@ -1207,7 +1207,7 @@
 
 
 (defmethod render-mesh-geometry [true false]
-  [{::keys [colors metallic roughness]} {::keys [program texture-offset transform] :as render-vars}]
+  [_full {::keys [colors metallic roughness]} {::keys [program texture-offset transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (uniform-float program "metallic" metallic)
@@ -1216,7 +1216,7 @@
 
 
 (defmethod render-mesh-geometry [false true]
-  [{::keys [diffuse metallic roughness normals]} {::keys [program texture-offset transform] :as render-vars}]
+  [_full {::keys [diffuse metallic roughness normals]} {::keys [program texture-offset transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (uniform-vector3 program "diffuse_color" diffuse)
@@ -1226,7 +1226,7 @@
 
 
 (defmethod render-mesh-geometry [true true]
-  [{::keys [metallic roughness colors normals]} {::keys [program texture-offset transform] :as render-vars}]
+  [_full {::keys [metallic roughness colors normals]} {::keys [program texture-offset transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
   (uniform-float program "metallic" metallic)
@@ -1262,7 +1262,7 @@
 (defn render-scene-geometry2
   [geometry-renderer projection-matrix render-vars scene]
   (setup-model-geometry-uniforms geometry-renderer projection-matrix true)
-  (render-scene (geometry-program-selection geometry-renderer) 0 render-vars [] scene render-mesh-geometry))
+  (render-scene (geometry-program-selection geometry-renderer) 0 render-vars [] scene (partial render-mesh-geometry true)))
 
 
 (defn render-joined-geometry
