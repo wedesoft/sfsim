@@ -1004,15 +1004,6 @@
                   [::transform fmat4]]))
 
 
-(defn render-geometry-mesh
-  "Render function to render points and distances for a mesh (part of scene)"
-  {:malli/schema [:=> [:cat material model-render-vars] :nil]}
-  [_material {::keys [program transform] :as render-vars}]
-  (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-    (use-program program)
-    (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))))
-
-
 (def geometry-render-vars
   (m/schema [:map [:sfsim.render/camera-to-world fmat4] [:sfsim.render/overlay-projection fmat4]]))
 
@@ -1197,6 +1188,12 @@
 (m/=> render-mesh-geometry [:=> [:cat :boolean material mesh-vars] :nil])
 
 
+(defmethod render-mesh-geometry nil
+  [_full _material {::keys [program transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform)))
+
+
 (defmethod render-mesh-geometry [false false]
   [_full {::keys [diffuse metallic roughness]} {::keys [program transform] :as render-vars}]
   (use-program program)
@@ -1240,7 +1237,7 @@
   [geometry-renderer render-vars scene]
   (setup-model-geometry-uniforms geometry-renderer (:sfsim.render/overlay-projection render-vars) false)
   (render-scene (comp (::programs geometry-renderer) material-type) 0
-                render-vars [] scene render-geometry-mesh))
+                render-vars [] scene (partial render-mesh-geometry false)))
 
 
 (defn render-scene-geometry3
@@ -1249,7 +1246,7 @@
   [geometry-renderer render-vars scene]
   (setup-model-geometry-uniforms geometry-renderer (:sfsim.render/projection render-vars) false)
   (render-scene (comp (::programs geometry-renderer) material-type) 0
-                render-vars [] scene render-geometry-mesh))
+                render-vars [] scene (partial render-mesh-geometry false)))
 
 
 (defn geometry-program-selection
