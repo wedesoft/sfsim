@@ -13,31 +13,27 @@
     - [X] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
     - [X] multi-pass rendering for atmosphere
     - [X] merge lighting shaders into one
-    - [-] switch integration tests over to multi-pass rendering
+    - [X] switch integration tests over to multi-pass rendering
       - [X] make planet geometry renderer
       - [X] make model geometry renderer
       - [X] handle model shadows
       - [X] handle metallic
       - [X] handle roughness
-      - [-] unify render-geometry-mesh and render-mesh-geometry
-      - [ ] refactor plume code, duplication of plume rcs stuff in graphics module and physics module (move code into model module?)
-      - [ ] use separate uniforms set up for plume shader and cloud shader
-      - [ ] render-scene-geometry, render-scene-geometry2, render-joined-geometry, render-joined-geometry2, render-joined-geometry3, graphics/render-geometry
-      - [ ] remove object_to_scene matrix
-      - [ ] scene shadow renderer with individual object-radius for each model
-      - [ ] average_scene_shadow gets declared multiple times in overall-shading.glsl
-      - [X] make atmosphere geometry renderer
-      - [ ] update schemas for render-vars, planet-render-vars, model-render-vars, cloud ...
-      - [ ] handle case where model and planet use different projection matrices (both geometry and cloud geometry)
-    - [ ] move lighting code into separate module (remove from model module)
+      - [X] unify render-geometry-mesh and render-mesh-geometry
+    - [ ] handle case where model and planet use different projection matrices (both geometry and cloud geometry)
     - [ ] switch game over to multi-pass rendering
-    - [ ] remove unused single-pass rendering code and tests
+    - [ ] merge into main
+    - [ ] remove unused single-pass rendering code and tests (use clj -M:carve)
+    - [ ] refactor plume code, duplication of plume rcs stuff in graphics module and physics module (move code into model module?)
+    - [ ] use separate uniforms set up for plume shader and cloud shader
+    - [ ] render-scene-geometry, render-scene-geometry2, render-joined-geometry, render-joined-geometry2, render-joined-geometry3, graphics/render-geometry
+    - [ ] remove object_to_scene matrix
+    - [ ] update schemas for render-vars, planet-render-vars, model-render-vars, cloud ...
+    - [ ] move lighting code into separate module (remove from model module)
     - [ ] render-scene: remove texture-offset and shadow matrices, just render geometry
     - [ ] load-tile-into-opengl should use program instead of programs
     - [ ] decal pass: overwrite/blend colors and normals
     - [ ] render localized lights using blending (not sure whether this is done earlier)
-    - [X] shadow pass (separate render): render shadow map from light source view
-    - [X] lighting pass: sample shadow map, calculate light colors, and specular highlights
     - [ ] bloom for sun
     - [ ] investigate cloud color/shadowing for far away clouds
     - [ ] move object shadow map position computation into scene shadow code
