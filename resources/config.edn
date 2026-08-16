@@ -2,7 +2,6 @@
  :sfsim.max-height 35000.0
 
  :sfsim.render-config #:sfsim.render{:amplification 6.0
-                                     :specular 1000.0
                                      :window-width 1280
                                      :window-height 720
                                      ; :window-width 1920
@@ -27,6 +26,7 @@
                                      :level 7
                                      :color-tilesize 129
                                      :reflectivity 0.1
+                                     :specular 1000.0
                                      :land-noise-scale 32.0
                                      :land-noise-strength 0.16
                                      :water-threshold 0.8

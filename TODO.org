@@ -18,7 +18,7 @@
       - [X] make model geometry renderer
       - [X] handle model shadows
       - [X] handle metallic
-      - [ ] handle roughness
+      - [X] handle roughness
       - [ ] refactor plume code
       - [ ] duplication of plume rcs stuff in graphics module and physics module (move code into model module?)
       - [ ] unify render-geometry-mesh and render-mesh-geometry

@@ -3,12 +3,11 @@
 #define M_PI 3.1415926535897932384626433832795
 
 uniform float albedo;
-uniform float specular;
 uniform vec3 origin;
 uniform vec3 light_direction;
 uniform float amplification;
 
-vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float metallic)
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float metallic, float specular)
 {
   float cos_incidence = dot(light_direction, normal);
   float highlight;

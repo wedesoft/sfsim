@@ -669,8 +669,7 @@
     (* 2.0 (asin dxy))))
 
 
-(def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double] [::min-z-near :double]
-                                   [::cloud-subsampling :int]]))
+(def render-config (m/schema [:map [::amplification :double] [::fov :double] [::min-z-near :double] [::cloud-subsampling :int]]))
 
 
 (def render-vars

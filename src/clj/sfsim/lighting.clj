@@ -54,7 +54,6 @@
         radius              (:sfsim.planet/radius planet-config)
         amplification       (:sfsim.render/amplification render-config)
         albedo              (:sfsim.planet/albedo planet-config)
-        specular            (:sfsim.render/specular render-config)
         cloud-subsampling   (:sfsim.render/cloud-subsampling render-config)
         depth-sigma         (:sfsim.clouds/depth-sigma cloud-data)
         min-depth-exponent  (:sfsim.clouds/min-depth-exponent cloud-data)]
@@ -66,7 +65,6 @@
     (setup-shadow-and-opacity-maps program shadow-data (+ num-scene-shadows 6))
     (uniform-float program "albedo" albedo)
     (uniform-float program "amplification" amplification)
-    (uniform-float program "specular" specular)
     (uniform-float program "radius" radius)
     (uniform-int program "cloud_subsampling" cloud-subsampling)
     (uniform-float program "depth_sigma" depth-sigma)

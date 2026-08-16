@@ -1423,10 +1423,10 @@ void main()
 
 
 (def phong-probe
-  (template/fn [ambient light color reflectivity]
+  (template/fn [ambient light color reflectivity specular]
     "#version 450 core
 out vec3 fragColor;
-vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity, float specular);
 void main()
 {
   vec3 ambient = vec3(<%= ambient %>, <%= ambient %>, <%= ambient %>);
@@ -1435,15 +1435,15 @@ void main()
   vec3 normal = vec3(0, 0, 1);
   vec3 color = vec3(<%= color %>, <%= color %>, <%= color %>);
   float reflectivity = <%= reflectivity %>;
-  fragColor = phong(ambient, light, point, normal, color, reflectivity);
+  float specular = <%= specular %>;
+  fragColor = phong(ambient, light, point, normal, color, reflectivity, specular);
 }"))
 
 
 (def phong-test
   (shader-test
-    (fn [program albedo specular origin light-direction amplification]
+    (fn [program albedo origin light-direction amplification]
       (uniform-float program "albedo" albedo)
-      (uniform-float program "specular" specular)
       (uniform-vector3 program "origin" origin)
       (uniform-vector3 program "light_direction" light-direction)
       (uniform-float program "amplification" amplification))
@@ -1451,7 +1451,7 @@ void main()
 
 
 (tabular "Shader for phong shading (ambient, diffuse, and specular lighting)"
-         (fact ((phong-test [?albedo ?specular ?origin ?light-dir ?amplification] [?ambient ?light ?color ?reflect]) 0)
+         (fact ((phong-test [?albedo ?origin ?light-dir ?amplification] [?ambient ?light ?color ?reflect ?specular]) 0)
                => (roughly ?result 1e-6))
          ?albedo ?specular ?origin      ?light-dir           ?amplification ?ambient ?light ?color   ?reflect ?result
          0.0      1.0      (vec3 0  0   1) (vec3 0 0   1)     0.0           0.0      0.0    0.0      0.0      0.0

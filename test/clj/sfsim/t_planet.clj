@@ -509,7 +509,7 @@ void main()
 
 
 (defn setup-planet-geometry-uniforms
-  [program camera-to-world distance reflectivity land-noise lx ly lz]
+  [program camera-to-world distance reflectivity specular land-noise lx ly lz]
   (let [world-to-camera (inverse camera-to-world)]
     (clear)
     (use-program program)
@@ -520,6 +520,7 @@ void main()
     (uniform-float program "water_threshold" 0.5)
     (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34))
     (uniform-float program "reflectivity" reflectivity)
+    (uniform-float program "specular" specular)
     (uniform-float program "land_noise_value" land-noise)
     (uniform-float program "land_noise_scale" 1.0)
     (uniform-float program "land_noise_strength" 0.5)
@@ -586,8 +587,8 @@ void main()
                    lighting-program  (make-lighting-program)
                    lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb ?ar ?ag ?ab ?s 7)]
                (render-geometry geometry-buffers
-                                (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist ?refl ?lnoise
-                                                                ?lx ?ly ?lz)
+                                (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist ?refl 1000.0
+                                                                ?lnoise ?lx ?ly ?lz)
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false

@@ -57,6 +57,7 @@ void main()
 <% ) %>
 <% (if full %>
   metallic_material = metallic;
+  specular_material = specular;
   emissive_material = vec4(0, 0, 0, 0);
 <% ) %>
 <% (if (not full) %>

@@ -157,7 +157,7 @@
 (def planet-config
   (m/schema [:map [::radius :double] [::max-height :double] [::albedo :double] [::dawn-start :double]
              [::dawn-end :double] [::tilesize N] [::color-tilesize N] [::reflectivity :double]
-             [::water-color fvec3]]))
+             [::specular :double] [::water-color fvec3]]))
 
 
 (def planet-shadow-renderer (m/schema [:map [::program :int] [:sfsim.opacity/data shadow-data]]))
@@ -504,6 +504,7 @@
       (uniform-float program "radius" (::radius config))
       (uniform-float program "albedo" (::albedo config))
       (uniform-float program "reflectivity" (::reflectivity config))
+      (uniform-float program "specular" (::specular config))
       (uniform-float program "land_noise_scale" (::land-noise-scale config))
       (uniform-float program "land_noise_strength" (::land-noise-strength config))
       (uniform-float program "water_threshold" (::water-threshold config))

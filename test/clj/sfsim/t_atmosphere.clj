@@ -839,7 +839,7 @@ vec3 overall_shading(vec3 world_point)
 {
   return vec3(1, 1, 1);
 }
-vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity)
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity, float specular)
 {
   return vec3(0, 0, 0);
 }

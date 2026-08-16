@@ -44,6 +44,7 @@ void main()
   camera_normal = vec4(0, 0, 0, 0);
   diffuse_material = vec4(0, 0, 0, 0);
   metallic_material = 0.0;
+  specular_material = 1.0;
   vec3 incoming = sun_color(direction);
   emissive_material = vec4(incoming, 0);
 <% ) %>

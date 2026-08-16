@@ -1150,7 +1150,8 @@
   (uniform-sampler program "camera_normal" (inc ^long texture-offset))
   (uniform-sampler program "diffuse_material" (+ ^long texture-offset 2))
   (uniform-sampler program "metallic_material" (+ ^long texture-offset 3))
-  (uniform-sampler program "emissive_material" (+ ^long texture-offset 4)))
+  (uniform-sampler program "specular_material" (+ ^long texture-offset 4))
+  (uniform-sampler program "emissive_material" (+ ^long texture-offset 5)))
 
 
 (defn use-geometry-buffer-textures
@@ -1160,7 +1161,8 @@
                  (inc ^long texture-offset) normal-texture
                  (+ ^long texture-offset 2) diffuse-texture
                  (+ ^long texture-offset 3) metallic-texture
-                 (+ ^long texture-offset 4) emissive-texture}))
+                 (+ ^long texture-offset 4) specular-texture
+                 (+ ^long texture-offset 5) emissive-texture}))
 
 
 (defmacro render-lighting
