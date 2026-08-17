@@ -107,13 +107,19 @@
 (defn make-frame
   [graphics width height camera-position camera-orientation light-direction object-poses model-vars]
   (let [render-config          (:sfsim.render/config graphics)
-        fov                    (:sfsim.render/fov render-config)
+        model-config           (:sfsim.model/data graphics)
         planet-config          (:sfsim.planet/config graphics)
         cloud-config           (:sfsim.clouds/config graphics)
-        object-position        (or (::object-position (first object-poses)) camera-position)
-        object-orientation     (or (::object-orientation (first object-poses)) camera-orientation)
+        fov                    (:sfsim.render/fov render-config)
+        spacecraft             (seq object-poses)
+        object-position        (if spacecraft (::object-position (first object-poses)) camera-position)
+        object-orientation     (if spacecraft (::object-orientation (first object-poses)) camera-orientation)
         planet-render-vars     (planet/make-planet-render-vars2 planet-config cloud-config render-config width height
                                                                 camera-position camera-orientation light-direction)
+        scene-render-vars      (when spacecraft
+                                 (model/make-scene-render-vars render-config width height camera-position camera-orientation
+                                                               light-direction object-position object-orientation
+                                                               model-config model-vars))
         cloud-render-vars      (clouds/make-cloud-render-vars render-config planet-render-vars width height camera-position
                                                               camera-orientation light-direction object-position object-orientation)
         atmosphere-render-vars (atmosphere/make-atmosphere-render-vars width height fov light-direction)
@@ -123,6 +129,7 @@
      ::camera-position        camera-position
      ::camera-orientation     camera-orientation
      ::planet-render-vars     planet-render-vars
+     ::scene-render-vars      scene-render-vars
      ::cloud-render-vars      cloud-render-vars
      ::light-direction        light-direction
      ::atmosphere-render-vars atmosphere-render-vars
@@ -157,22 +164,30 @@
   (let [shadow-data            (:sfsim.opacity/data graphics)
         cloud-data             (:sfsim.clouds/data graphics)
         planet-render-vars     (::planet-render-vars frame)
+        scene-render-vars      (::scene-render-vars frame)
+        shadow-render-vars     (if scene-render-vars
+                                 (render/joined-render-vars2 planet-render-vars scene-render-vars)
+                                 planet-render-vars)
         opacity-base           (:sfsim.clouds/opacity-base (:sfsim.clouds/config graphics))
         opacity-renderer       (::opacity-renderer graphics)
         planet-shadow-renderer (::planet-shadow-renderer graphics)]
     (assoc frame ::shadow-vars (opacity/opacity-and-shadow-cascade opacity-renderer planet-shadow-renderer shadow-data
-                                                                   cloud-data planet-render-vars tree opacity-base))))
+                                                                   cloud-data shadow-render-vars tree opacity-base))))
 
 (defn render-cloud-geometry
   [frame graphics tree]
   (let [render-config           (:sfsim.render/config graphics)
         cloud-geometry-renderer (::cloud-geometry-renderer graphics)
         planet-render-vars      (::planet-render-vars frame)
+        scene-render-vars       (::scene-render-vars frame)
         planet-geometry-vars    (render/make-subsampled-vars planet-render-vars render-config)
+        scene-geometry-vars     (if scene-render-vars
+                                  (render/make-subsampled-vars scene-render-vars render-config)
+                                  planet-geometry-vars)
         moved-scenes            (get-moved-scenes frame graphics)]
     (assoc frame
            ::cloud-geometry
-           (model/render-joined-geometry2 cloud-geometry-renderer planet-geometry-vars planet-geometry-vars moved-scenes tree))))
+           (model/render-joined-geometry2 cloud-geometry-renderer scene-geometry-vars planet-geometry-vars moved-scenes tree))))
 
 
 (defn plume-transforms
@@ -224,17 +239,23 @@
         camera-to-world              (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
         object-poses                 (::object-poses frame)
         planet-render-vars           (::planet-render-vars frame)
-        projection                   (:sfsim.render/projection planet-render-vars)  ;; TOOD: handle case where model projection matrix is separate
+        scene-render-vars            (::scene-render-vars frame)
+        scene-projection             (if scene-render-vars
+                                       (:sfsim.render/projection scene-render-vars)
+                                       (:sfsim.render/projection planet-render-vars))
         atmosphere-render-vars       (::atmosphere-render-vars frame)
-        geometry-buffers             (::geometry-buffers frame)]
+        geometry-buffers             (::geometry-buffers frame)
+        model-covers-planet?         (when scene-render-vars
+                                       (< ^double (:sfsim.render/z-near scene-render-vars)
+                                          ^double (:sfsim.render/z-near planet-render-vars)))]
     (model/render-geometry
       geometry-buffers
       (render/with-stencils
         (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
           (doseq [moved-scene moved-scenes]
-                 (model/render-scene-geometry2 scene-geometry-renderer projection {:sfsim.render/camera-to-world camera-to-world}
+                 (model/render-scene-geometry2 scene-geometry-renderer scene-projection {:sfsim.render/camera-to-world camera-to-world}
                                                moved-scene)))
-        (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 0x2  ; TODO: handle case where model and planet use distinct projections
+        (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
           (planet/render-planet-geometry2 planet-geometry-renderer planet-render-vars true tree))
         (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
           (atmosphere/render-full-atmosphere-geometry atmosphere-geometry-renderer atmosphere-render-vars))))

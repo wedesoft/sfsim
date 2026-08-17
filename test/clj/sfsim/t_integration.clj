@@ -162,42 +162,44 @@
 
 
 (when (.exists (io/file ".integration"))
-  (fact "Test rendering of model"
-    (with-invisible-window
-      (let [width              320
-            height             240
-            level              5
-            object-radius      (:sfsim.model/object-radius config/model-config)
-            light-direction    (vec3 1 0 0)
-            graphics           (graphics/make-graphics2
-                                 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
-                                   :sfsim.graphics/object-radius object-radius}])
-            position           (vec3 (+ 100.0 6378000.0) 0 0)
-            orientation        (q/rotation (to-radians 270) (vec3 0 0 1))
-            object-position    (add position (q/rotate-vector orientation (vec3 0 0 -50)))
-            object-orientation (matrix->quaternion (mulm (mulm (rotation-matrix-3d-x (/ PI 6))
-                                                               (rotation-matrix-3d-y (/ PI -2)))
-                                                         aerodynamics/gltf-to-aerodynamic))
-            tree               (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
-                                                      :sfsim.planet/config config/planet-config
-                                                      :sfsim.planet/programs [(:sfsim.planet/program
-                                                                                (:sfsim.graphics/planet-geometry-renderer graphics))])
-                                               {} width position level)
-            frame              (-> (graphics/make-frame graphics width height position orientation light-direction
-                                                        [{:sfsim.graphics/object-position object-position
-                                                          :sfsim.graphics/object-orientation object-orientation}]
-                                                        (model/make-model-vars 0.0 1.0 0.0))
-                                   (graphics/render-shadows graphics tree)
-                                   (graphics/render-scene-shadows graphics)
-                                   (graphics/render-cloud-geometry graphics tree)
-                                   (graphics/render-clouds graphics [])
-                                   (graphics/render-geometry graphics tree))]
-        (render-to-image width height false
-                         (graphics/render-lighting frame graphics))
-        => (is-image "test/clj/sfsim/fixtures/integration/model.png" 0.5)
-        (graphics/destroy-frame frame)
-        (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
-        (graphics/destroy-graphics2 graphics)))))
+  (tabular "Test rendering of model"
+    (fact
+      (with-invisible-window
+        (let [width              320
+              height             240
+              level              5
+              object-radius      (:sfsim.model/object-radius config/model-config)
+              light-direction    (vec3 1 0 0)
+              graphics           (graphics/make-graphics2
+                                   [{:sfsim.graphics/model-file "data/models/venturestar.glb"
+                                     :sfsim.graphics/object-radius object-radius}])
+              object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -50)))
+              object-orientation (matrix->quaternion (mulm (mulm (rotation-matrix-3d-x (/ PI 6))
+                                                                 (rotation-matrix-3d-y (/ PI -2)))
+                                                           aerodynamics/gltf-to-aerodynamic))
+              tree               (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
+                                                        :sfsim.planet/config config/planet-config
+                                                        :sfsim.planet/programs [(:sfsim.planet/program
+                                                                                  (:sfsim.graphics/planet-geometry-renderer graphics))])
+                                                 {} width ?position level)
+              frame              (-> (graphics/make-frame graphics width height ?position ?orientation light-direction
+                                                          [{:sfsim.graphics/object-position object-position
+                                                            :sfsim.graphics/object-orientation object-orientation}]
+                                                          (model/make-model-vars 0.0 1.0 0.0))
+                                     (graphics/render-shadows graphics tree)
+                                     (graphics/render-scene-shadows graphics)
+                                     (graphics/render-cloud-geometry graphics tree)
+                                     (graphics/render-clouds graphics [])
+                                     (graphics/render-geometry graphics tree))]
+          (render-to-image width height false
+                           (graphics/render-lighting frame graphics))
+          => (is-image (str "test/clj/sfsim/fixtures/integration/" ?result) 0.5)
+          (graphics/destroy-frame frame)
+          (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
+          (graphics/destroy-graphics2 graphics))))
+    ?position                      ?orientation                               ?result
+    (vec3 (+ 100.0 6378000.0) 0 0) (q/rotation (to-radians 270) (vec3 0 0 1)) "model.png"
+    (vec3 0 0 (* 1.5 6378000.0))   (q/rotation (to-radians -20) (vec3 0 1 0)) "two-projections.png"))
 
 
 (def vertex-plume "#version 450
