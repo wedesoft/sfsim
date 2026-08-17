@@ -20,8 +20,8 @@
       - [X] handle metallic
       - [X] handle roughness
       - [X] unify render-geometry-mesh and render-mesh-geometry
-    - [ ] handle case where model and planet use different projection matrices (both geometry and cloud geometry)
-    - [ ] integration test for different projection matrices
+    - [X] handle case where model and planet use different projection matrices (both geometry and cloud geometry)
+    - [X] integration test for different projection matrices
     - [ ] switch game over to multi-pass rendering
     - [ ] merge into main
     - [ ] add rcs state to model vars?
