@@ -30,7 +30,7 @@
                           framebuffer-render render-quads) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d
-                           make-empty-depth-texture-2d)]
+                           make-empty-depth-stencil-texture-2d)]
     [sfsim.aerodynamics :as aerodynamics]
     [sfsim.util :refer (N0 N third)])
   (:import
@@ -1106,7 +1106,7 @@
   [width height]
   {::width             width
    ::height            height
-   ::depth             (make-empty-depth-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp width height)
+   ::depth             (make-empty-depth-stencil-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp width height)
    ::point-texture     (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
    ::normal-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
    ::diffuse-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
