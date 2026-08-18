@@ -231,7 +231,9 @@
                                                  "WheelRight" (nth wheel-animation 1)
                                                  "WheelFront" (nth wheel-animation 2)})))
                        tree               (planet/get-current-tree tile-tree)
-                       frame              (-> (graphics/make-frame graphics window-width window-height origin camera-orientation
+                       graphics           (assoc-in graphics [:sfsim.graphics/scenes 0] wheels-scene)
+                       frame              (-> (graphics/make-frame graphics
+                                                                   window-width window-height origin camera-orientation
                                                                    light-direction
                                                                    [{:sfsim.graphics/object-position object-position
                                                                      :sfsim.graphics/object-orientation (q/* object-orientation
