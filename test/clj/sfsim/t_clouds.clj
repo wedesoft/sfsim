@@ -21,7 +21,7 @@
     [sfsim.quaternion :as q]
     [sfsim.planet :refer (make-cube-map-tile-vertices)]
     [sfsim.model :refer (read-gltf make-model-vars
-                         load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry
+                         load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry2
                          destroy-joined-geometry-renderer)]
     [sfsim.plume :as plume]
     [sfsim.render :refer :all]
@@ -1494,11 +1494,11 @@ void main()
                    model-render-vars   #:sfsim.render{:sfsim.render/camera-to-world camera-to-world
                                                       :sfsim.render/z-near 0.1
                                                       :sfsim.render/z-far 10.0
-                                                      :sfsim.render/overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
-                                                      :sfsim.render/overlay-width 160
-                                                      :sfsim.render/overlay-height 120}
+                                                      :sfsim.render/projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                                      :sfsim.render/window-width 160
+                                                      :sfsim.render/window-height 120}
                    planet-render-vars  (assoc model-render-vars :sfsim.render/z-near ?planet-z-near)
-                   geometry            (render-joined-geometry renderer model-render-vars planet-render-vars moved-scene tree)]
+                   geometry            (render-joined-geometry2 renderer model-render-vars planet-render-vars [moved-scene] tree)]
                (nth (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80) 2)
                => (roughly ?coordinate 1e-3)
                (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)

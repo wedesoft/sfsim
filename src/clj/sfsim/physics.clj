@@ -605,12 +605,6 @@
       (union (when (pos? ^double ((::rcs-thrust state) 2)) (rcs-sets "R" "LF")))))
 
 
-(defn ordered-rcs-transforms
-  "Get transforms of RCS thrusters for ordered list of names"
-  [transforms rcs-names]
-  (mapv (fn [rcs-name] [rcs-name (transforms rcs-name)]) rcs-names))
-
-
 (defn set-thruster-forces
   "Set forces and torques of main thruster and RCS thrusters"
   [state thrust]

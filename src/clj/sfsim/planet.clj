@@ -263,66 +263,6 @@
 (def planet-renderer (m/schema [:map [::programs [:map-of :int :int]] [:sfsim.atmosphere/luts atmosphere-luts] [::config planet-config]]))
 
 
-(defn make-planet-renderer
-  "Program to render planet with cloud overlay"
-  {:malli/schema [:=> [:cat [:map [::config planet-config] [:sfsim.render/config render-config]
-                             [:sfsim.atmosphere/luts atmosphere-luts] [:sfsim.opacity/data shadow-data]]] planet-renderer]}
-  [data]
-  (let [config          (::config data)
-        atmosphere-luts (:sfsim.atmosphere/luts data)
-        shadow-data     (:sfsim.opacity/data data)
-        variations      (:sfsim.opacity/scene-shadow-counts shadow-data)
-        programs        (mapv #(make-planet-program data %) variations)
-        worley-floats   (slurp-floats "data/clouds/worley-cover.raw")
-        worley-data     #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
-        worley          (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)]
-    (generate-mipmap worley)
-    {::programs (zipmap variations programs)
-     ::worley worley
-     :sfsim.atmosphere/luts atmosphere-luts
-     ::config config}))
-
-(defn render-planet
-  "Render planet"
-  {:malli/schema [:=> [:cat planet-renderer render-vars shadow-vars [:vector scene-shadow] [:map [:sfsim.clouds/distance texture-2d]]
-                            texture-2d [:maybe :map]]
-                      :nil]}
-  [{::keys [programs worley] :as other} render-vars shadow-vars scene-shadows geometry clouds tree]
-  (let [atmosphere-luts   (:sfsim.atmosphere/luts other)
-        world-to-camera   (inverse (:sfsim.render/camera-to-world render-vars))
-        num-steps         (count (:sfsim.opacity/shadows shadow-vars))
-        num-scene-shadows (count scene-shadows)
-        dist              (:sfsim.clouds/distance geometry)
-        program           (programs num-scene-shadows)]
-    (use-program program)
-    (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
-    (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-    (uniform-matrix4 program "world_to_camera" world-to-camera)
-    (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
-    (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
-    (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
-    (uniform-int program "window_height" (:sfsim.render/window-height render-vars))
-    (uniform-int program "overlay_width" (:sfsim.render/overlay-width render-vars))
-    (uniform-int program "overlay_height" (:sfsim.render/overlay-height render-vars))
-    (setup-shadow-matrices program shadow-vars)
-    (use-textures {4 (:sfsim.atmosphere/transmittance atmosphere-luts) 5 (:sfsim.atmosphere/scatter atmosphere-luts)
-                   6 (:sfsim.atmosphere/mie atmosphere-luts) 7 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                   8 clouds 9 dist 10 worley})
-    (use-textures (zipmap (drop 11 (range)) (concat (:sfsim.opacity/shadows shadow-vars)
-                                                   (:sfsim.opacity/opacities shadow-vars))))
-    (doseq [^long i (range num-scene-shadows)]
-      (use-textures {(+ i 11 (* 2 num-steps)) (:sfsim.model/shadows (nth scene-shadows i))}))
-    (render-tree program tree world-to-camera scene-shadows [::surf-tex ::day-night-tex ::normal-tex ::water-tex])))
-
-
-(defn destroy-planet-renderer
-  "Destroy planet rendering program"
-  {:malli/schema [:=> [:cat planet-renderer] :nil]}
-  [{::keys [programs worley]}]
-  (destroy-texture worley)
-  (doseq [program (vals programs)] (destroy-program program)))
-
-
 (defn load-tile-into-opengl
   "Load textures of single tile into OpenGL"
   {:malli/schema [:=> [:cat :map tile-info] tile-info]}

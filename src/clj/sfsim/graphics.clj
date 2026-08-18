@@ -282,14 +282,3 @@
     (lighting/render-lighting lighting-renderer width height geometry-buffers shadow-config camera-position camera-orientation
                               light-direction planet-render-vars cloud-render-vars shadow-vars cloud-geometry clouds
                               object-shadows)))
-
-
-(defn make-graphics-data
-  []
-  (let [cloud-data (clouds/make-cloud-data config/cloud-config)]
-    {:sfsim.render/config config/render-config
-     :sfsim.planet/config config/planet-config
-     :sfsim.model/data config/model-config
-     :sfsim.clouds/data cloud-data
-     :sfsim.atmosphere/luts (atmosphere/make-atmosphere-luts config/max-height)
-     :sfsim.opacity/data (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)}))

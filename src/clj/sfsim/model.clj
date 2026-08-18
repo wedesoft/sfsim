@@ -662,28 +662,6 @@
     program))
 
 
-(defn make-scene-renderer
-  "Create set of programs for rendering different materials"
-  {:malli/schema [:=> [:cat data] scene-renderer]}
-  [data]
-  (let [num-steps            (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
-        scene-shadow-counts  (-> data :sfsim.opacity/data :sfsim.opacity/scene-shadow-counts)
-        model-data           (::data data)
-        cloud-data           (:sfsim.clouds/data data)
-        render-config        (:sfsim.render/config data)
-        atmosphere-luts      (:sfsim.atmosphere/luts data)
-        texture-offset       (+ 6 (* 2 ^long num-steps))
-        variations           (for [textured [false true] bump [false true] num-scene-shadows scene-shadow-counts]
-                               [textured bump num-scene-shadows])
-        programs             (mapv #(make-scene-program (first %) (second %) texture-offset (third %) data) variations)]
-    {::programs              (zipmap variations programs)
-     ::texture-offset        texture-offset
-     ::data                  model-data
-     :sfsim.clouds/data      cloud-data
-     :sfsim.render/config    render-config
-     :sfsim.atmosphere/luts  atmosphere-luts}))
-
-
 (defn- remove-empty-children
   "Recursively remove empty children"
   {:malli/schema [:=> [:cat node] node]}
@@ -741,15 +719,6 @@
   {:malli/schema [:=> [:cat scene] hulls]}
   [scene]
   (extract-hulls (::root scene)))
-
-
-(defn load-scene
-  "Load glTF scene and load it into OpenGL"
-  {:malli/schema [:=> [:cat scene-renderer scene] scene]}
-  [scene-renderer model]
-  (let [gltf-object   (remove-empty-meshes model)
-        opengl-object (load-scene-into-opengl (comp (::programs scene-renderer) material-and-shadow-type) gltf-object)]
-    opengl-object))
 
 
 (def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
@@ -812,53 +781,6 @@
 
 
 (def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
-
-
-(defn render-scenes
-  "Render a list of scenes"
-  {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector scene-shadow]
-                            [:map [:sfsim.clouds/distance texture-2d]] texture-2d
-                            [:vector scene]] :nil]}
-  [scene-renderer render-vars shadow-vars scene-shadows geometry clouds scenes]
-  (let [render-config      (:sfsim.render/config scene-renderer)
-        cloud-data         (:sfsim.clouds/data scene-renderer)
-        atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)
-        camera-to-world    (:sfsim.render/camera-to-world render-vars)
-        texture-offset     (::texture-offset scene-renderer)
-        dist               (:sfsim.clouds/distance geometry)
-        num-scene-shadows  (count scene-shadows)
-        world-to-camera    (inverse camera-to-world)]
-    (doseq [program (vals (::programs scene-renderer))]
-      (use-program program)
-      (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
-      (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
-      (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-      (uniform-matrix4 program "world_to_camera" world-to-camera)
-      (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
-      (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
-      (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
-      (uniform-int program "overlay_width" (:sfsim.render/overlay-width render-vars))
-      (uniform-int program "overlay_height" (:sfsim.render/overlay-height render-vars))
-      (setup-shadow-matrices program shadow-vars))
-    (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
-                   2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                   4 clouds 5 dist})
-    (doseq [i (range num-scene-shadows)]
-      (use-textures {(+ ^long i 6) (::shadows (nth scene-shadows i))}))
-    (use-textures (zipmap (drop (+ 6 num-scene-shadows) (range))
-                          (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
-    (doseq [scene scenes]
-      (render-scene (comp (::programs scene-renderer) material-and-shadow-type)
-                    (+ ^long texture-offset num-scene-shadows)
-                    render-vars
-                    (mapv (fn [s] (:sfsim.matrix/object-to-shadow-map (::matrices s))) scene-shadows)
-                    scene render-mesh))))
-
-
-(defn destroy-scene-renderer
-  {:malli/schema [:=> [:cat scene-renderer] :nil]}
-  [{::keys [programs]}]
-  (doseq [program (vals programs)] (destroy-program program)))
 
 
 (defn make-model-vars
@@ -1255,25 +1177,6 @@
   [geometry-renderer projection-matrix render-vars scene]
   (setup-model-geometry-uniforms geometry-renderer projection-matrix true)
   (render-scene (geometry-program-selection geometry-renderer) 0 render-vars [] scene (partial render-mesh-geometry true)))
-
-
-(defn render-joined-geometry
-  "Render joined geometry of scene, planet, and atmosphere"
-  {:malli/schema [:=> [:cat joined-geometry-renderer model-planet-render-vars model-planet-render-vars [:maybe scene]
-                       [:maybe :some]] :any]}
-  [{::keys [scene-renderer planet-renderer atmosphere-renderer]} model-render-vars planet-render-vars model tree]
-  (let [model-covers-planet? (< ^double (:sfsim.render/z-near model-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
-    (render-cloud-geometry (:sfsim.render/overlay-width planet-render-vars) (:sfsim.render/overlay-height planet-render-vars)
-                           (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
-                             (when model
-                               (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
-                                 (render-scene-geometry scene-renderer
-                                                        (if model-covers-planet? model-render-vars planet-render-vars) model)))
-                             (when tree
-                               (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
-                                 (render-planet-geometry planet-renderer planet-render-vars false tree)))
-                             (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
-                               (render-atmosphere-geometry atmosphere-renderer planet-render-vars))))))
 
 
 (defn render-joined-geometry2
