@@ -13,7 +13,6 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.atmosphere :refer (vertex-atmosphere)]
     [sfsim.clouds :refer :all :as clouds]
     [sfsim.conftest :refer (roughly-vector shader-test is-image)]
     [sfsim.image :refer (get-vector3 get-vector4 get-float-3d get-float)]

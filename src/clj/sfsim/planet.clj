@@ -25,12 +25,11 @@
     [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
                           destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
-                          setup-shadow-and-opacity-maps setup-shadow-matrices use-textures render-config
-                          render-vars diagonal-field-of-view make-render-vars make-render-vars2)
+                          setup-shadow-and-opacity-maps use-textures render-vars diagonal-field-of-view make-render-vars make-render-vars2)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
-                           texture-2d texture-3d make-float-texture-3d generate-mipmap)]
+                           texture-2d texture-3d make-float-texture-3d)]
     [sfsim.worley :refer (worley-size)]
     [sfsim.util :refer (N N0 sqr slurp-floats)]))
 
@@ -210,57 +209,6 @@
   (m/schema [:map [:sfsim.opacity/opacity-step :double] [:sfsim.opacity/splits [:vector :double]]
              [:sfsim.opacity/biases [:vector :double]] [:sfsim.opacity/matrix-cascade [:vector shadow-box]]
              [:sfsim.opacity/shadows [:vector texture-2d]] [:sfsim.opacity/opacities [:vector texture-3d]]]))
-
-
-(defn make-planet-program
-  "Make program to render planet"
-  {:malli/schema [:=> [:cat :map :int] :int]}
-  [data num-scene-shadows]
-  (let [config          (::config data)
-        tilesize        (::tilesize config)
-        render-config   (:sfsim.render/config data)
-        atmosphere-luts (:sfsim.atmosphere/luts data)
-        shadow-data     (:sfsim.opacity/data data)
-        num-steps       (:sfsim.opacity/num-steps shadow-data)
-        program         (make-program :sfsim.render/vertex [vertex-planet]
-                                      :sfsim.render/tess-control [tess-control-planet]
-                                      :sfsim.render/tess-evaluation [(tess-evaluation-planet num-scene-shadows)]
-                                      :sfsim.render/geometry [(geometry-planet-shading num-scene-shadows)]
-                                      :sfsim.render/fragment [(fragment-planet num-steps num-scene-shadows)])]
-    (use-program program)
-    (uniform-sampler program "surface"   0)
-    (uniform-sampler program "day_night" 1)
-    (uniform-sampler program "normals"   2)
-    (uniform-sampler program "water"     3)
-    (uniform-sampler program "clouds"    8)
-    (uniform-sampler program "dist"      9)
-    (uniform-sampler program "worley"   10)
-    (setup-atmosphere-uniforms program atmosphere-luts 4 true)
-    (setup-shadow-and-opacity-maps program shadow-data 11)
-    (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
-    (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
-    (doseq [^long i (range num-scene-shadows)]
-      (uniform-sampler program (str "scene_shadow_map_" (inc i)) (+ i 11 (* 2 ^long num-steps))))
-    (uniform-int program "high_detail" (dec ^long tilesize))
-    (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
-    (uniform-int program "cloud_subsampling" (:sfsim.render/cloud-subsampling render-config))
-    (uniform-float program "depth_sigma" (:sfsim.clouds/depth-sigma (:sfsim.clouds/data data)))
-    (uniform-float program "min_depth_exponent" (:sfsim.clouds/min-depth-exponent (:sfsim.clouds/data data)))
-    (uniform-float program "dawn_start" (::dawn-start config))
-    (uniform-float program "dawn_end" (::dawn-end config))
-    (uniform-float program "specular" (::specular config))
-    (uniform-float program "radius" (::radius config))
-    (uniform-float program "albedo" (::albedo config))
-    (uniform-float program "reflectivity" (::reflectivity config))
-    (uniform-float program "land_noise_scale" (::land-noise-scale config))
-    (uniform-float program "land_noise_strength" (::land-noise-strength config))
-    (uniform-float program "water_threshold" (::water-threshold config))
-    (uniform-vector3 program "water_color" (::water-color config))
-    (uniform-float program "amplification" (:sfsim.render/amplification render-config))
-    program))
-
-
-(def planet-renderer (m/schema [:map [::programs [:map-of :int :int]] [:sfsim.atmosphere/luts atmosphere-luts] [::config planet-config]]))
 
 
 (defn load-tile-into-opengl

@@ -13,26 +13,25 @@
     [fastmath.vector :refer (vec3 mult add)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
-                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry
-                              render-atmosphere-geometry2 cloud-overlay atmosphere-geometry-renderer)]
-    [sfsim.clouds :refer (lod-offset overall-shading overall-shading-parameters render-cloud-geometry)]
+                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry2 cloud-overlay atmosphere-geometry-renderer)]
+    [sfsim.clouds :refer (overall-shading overall-shading-parameters render-cloud-geometry)]
     [sfsim.plume :refer (model-data model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3
                           fvec3 fmat4 rotation-matrix get-translation get-translation)]
-    [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
-                          render-planet-geometry render-planet-geometry2 planet-data planet-geometry-renderer)]
+    [sfsim.planet :refer (surface-radiance-function make-planet-geometry-renderer destroy-planet-geometry-renderer
+                          render-planet-geometry2 planet-data planet-geometry-renderer)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
                           uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps with-stencil-op-ref-and-mask
-                          setup-shadow-matrices render-vars make-render-vars texture-render-depth clear with-stencils
+                          render-vars make-render-vars texture-render-depth clear with-stencils
                           framebuffer-render render-quads) :as render]
     [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d
                            make-empty-depth-stencil-texture-2d)]
     [sfsim.aerodynamics :as aerodynamics]
-    [sfsim.util :refer (N0 N third)])
+    [sfsim.util :refer (N0 N)])
   (:import
     (java.nio
       DirectByteBuffer)
@@ -578,12 +577,6 @@
   [(boolean color-texture-index) (boolean normal-texture-index)])
 
 
-(defn material-and-shadow-type
-  "Determine information for selecting correct shader program"
-  [{::keys [color-texture-index normal-texture-index num-scene-shadows]}]
-  [(boolean color-texture-index) (boolean normal-texture-index) (or num-scene-shadows 0)])
-
-
 (def vertex-scene (template/fn [textured bump num-scene-shadows] (slurp "resources/shaders/model/vertex.glsl")))
 
 
@@ -596,11 +589,6 @@
    (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function cloud-overlay
    (template/eval (slurp "resources/shaders/model/fragment.glsl")
                   {:textured textured :bump bump :num-scene-shadows num-scene-shadows})])
-
-
-(def scene-renderer
-  (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean :int] :int]]
-             [::texture-offset :int]]))
 
 
 (def data
@@ -648,18 +636,6 @@
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
-
-
-(defn make-scene-program
-  "Create and setup scene rendering program"
-  {:malli/schema [:=> [:cat :boolean :boolean N0 N0 data] :int]}
-  [textured bump texture-offset num-scene-shadows data]
-  (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
-        fragment-shader       (fragment-scene textured bump num-steps num-scene-shadows)
-        program               (make-program :sfsim.render/vertex [(vertex-scene textured bump num-scene-shadows)]
-                                            :sfsim.render/fragment fragment-shader)]
-    (setup-scene-static-uniforms program texture-offset num-scene-shadows textured bump data)
-    program))
 
 
 (defn- remove-empty-children
@@ -1146,15 +1122,6 @@
   (uniform-float program "metallic" metallic)
   (uniform-float program "specular" (/ 1.0 ^double roughness))
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
-
-
-(defn render-scene-geometry
-  "Render geometry (points and distances) for a scene"
-  {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars scene] :nil]}
-  [geometry-renderer render-vars scene]
-  (setup-model-geometry-uniforms geometry-renderer (:sfsim.render/overlay-projection render-vars) false)
-  (render-scene (comp (::programs geometry-renderer) material-type) 0
-                render-vars [] scene (partial render-mesh-geometry false)))
 
 
 (defn render-scene-geometry3

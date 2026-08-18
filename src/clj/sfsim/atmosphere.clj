@@ -17,8 +17,8 @@
     [sfsim.units :refer (rankin foot pound-force slugs)]
     [sfsim.ray :refer (integral-ray ray)]
     [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
-                          uniform-vector3 destroy-program make-vertex-array-object use-textures destroy-vertex-array-object
-                          render-quads render-config render-vars vertex-array-object)]
+                          uniform-vector3 destroy-program make-vertex-array-object destroy-vertex-array-object
+                          render-quads vertex-array-object)]
     [sfsim.shaders :as shaders]
     [sfsim.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection sphere)]
     [sfsim.texture :refer (destroy-texture make-vector-texture-2d make-vector-texture-4d texture-2d texture-4d)]
@@ -564,19 +564,9 @@
   [shaders/ray-sphere shaders/limit-interval attenuation-track (slurp "resources/shaders/atmosphere/attenuation-point.glsl")])
 
 
-(def vertex-atmosphere
-  "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
-  (slurp "resources/shaders/atmosphere/vertex.glsl"))
-
-
 (def cloud-overlay
   "Shader function to lookup cloud overlay values in lower resolution texture"
   (slurp "resources/shaders/atmosphere/cloud-overlay.glsl"))
-
-
-(def fragment-atmosphere
-  "Fragment shader for rendering atmosphere and sun"
-  [shaders/ray-sphere attenuation-outer cloud-overlay (slurp "resources/shaders/atmosphere/fragment.glsl")])
 
 
 (def transmittance-elevation-size 255)
@@ -658,9 +648,6 @@
     (uniform-int program "surface_height_size" (:sfsim.texture/height (::surface-radiance atmosphere-luts)))
     (uniform-int program "surface_sun_elevation_size" (:sfsim.texture/width (::surface-radiance atmosphere-luts))))
   (uniform-float program "max_height" (::max-height atmosphere-luts)))
-
-
-(def atmosphere-renderer (m/schema [:map [::program :int] [::luts atmosphere-luts]]))
 
 
 (def vertex-atmosphere-geometry

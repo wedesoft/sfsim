@@ -775,54 +775,6 @@ void main()
          0   0   6378000 100000 0   6378000 0.008272)
 
 
-(def vertex-atmosphere-probe
-  (template/fn [selector]
-    "#version 450 core
-in VS_OUT
-{
-  vec3 direction;
-} fs_in;
-out vec3 fragColor;
-void main()
-{
-  fragColor = <%= selector %>;
-}"))
-
-
-(def initial (eye 4))
-(def shifted (transformation-matrix (eye 3) (vec3 0.2 0.4 0.5)))
-(def rotated (transformation-matrix (rotation-matrix-3d-x (to-radians 90)) (vec3 0 0 0)))
-
-
-(tabular "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
-         (fact
-           (offscreen-render 256 256
-                             (let [indices   [0 1 3 2]
-                                   vertices  [-0.5 -0.5,
-                                              +0.5 -0.5,
-                                              -0.5 +0.5,
-                                              +0.5 +0.5]
-                                   program   (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                                           :sfsim.render/fragment [(vertex-atmosphere-probe ?selector)])
-                                   variables ["ndc" 2]
-                                   vao       (make-vertex-array-object program indices vertices variables)]
-                               (clear (vec3 0 0 0))
-                               (use-program program)
-                               (uniform-matrix4 program "inverse_projection"
-                                                (inverse (projection-matrix 256 256 0.5 1.5 (/ PI 3))))
-                               (uniform-matrix4 program "camera_to_world" ?matrix)
-                               (uniform-float program "z_far" 1.0)
-                               (uniform-float program "z_near" 0.5)
-                               (render-quads vao)
-                               (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image ?result 0.03))
-         ?selector                               ?matrix ?result
-         "vec3(1, 1, 1)"                         initial "test/clj/sfsim/fixtures/atmosphere/quad.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/clj/sfsim/fixtures/atmosphere/direction.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/clj/sfsim/fixtures/atmosphere/direction.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/clj/sfsim/fixtures/atmosphere/rotated.png")
-
-
 (def cloud-overlay-mock
   (template/fn [alpha]
     "#version 450 core
