@@ -23,11 +23,11 @@
     - [X] handle case where model and planet use different projection matrices (both geometry and cloud geometry)
     - [X] integration test for different projection matrices
     - [ ] switch game over to multi-pass rendering
+    - [ ] remove unused single-pass rendering code and tests (use clj -M:carve)
     - [ ] merge into main
     - [ ] add rcs state to model vars?
     - [ ] move wheel animation and state into model-vars?
     - [ ] stencil handling of controls (draw first)
-    - [ ] remove unused single-pass rendering code and tests (use clj -M:carve)
     - [ ] refactor plume code, duplication of plume rcs stuff in graphics module and physics module (move code into model module?)
     - [ ] use separate uniforms set up for plume shader and cloud shader
     - [ ] render-scene-geometry, render-scene-geometry2, render-joined-geometry, render-joined-geometry2, render-joined-geometry3, graphics/render-geometry
