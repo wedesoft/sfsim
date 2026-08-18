@@ -999,11 +999,6 @@
     {::programs (zipmap variations programs)}))
 
 
-(def model-render-vars ;; TODO: require sfsim.render/projection
-  (m/schema [:map [::program :int]
-                  [::transform fmat4]]))
-
-
 (def geometry-render-vars
   (m/schema [:map [:sfsim.render/camera-to-world fmat4] [:sfsim.render/overlay-projection fmat4]]))
 

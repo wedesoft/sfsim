@@ -9,7 +9,7 @@
   (:refer-clojure :exclude [+ - *])
   (:require
    [clojure.core :as c]
-   [clojure.math :refer (PI cos sqrt) :as m]
+   [clojure.math :refer (cos sqrt) :as m]
    [fastmath.matrix :refer (rows eye)]
    [fastmath.vector :refer (mag mult cross dot) :as fv]
    [malli.core :as mc]
