@@ -12,7 +12,6 @@
     [clojure.math :refer (PI to-radians)]
     [clojure.tools.logging :as log]
     [clojure.edn]
-    [clojure.pprint :refer (pprint)]
     [malli.dev :as dev]
     [malli.dev.pretty :as pretty]
     [fastmath.matrix :refer (inverse mulv mulm)]
@@ -26,8 +25,7 @@
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
     [sfsim.steam :as steam]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation get-translation
-                          matrix->quaternion)]
+    [sfsim.matrix :refer (rotation-matrix matrix->quaternion)]
     [sfsim.model :as model]
     [sfsim.planet :as planet]
     [sfsim.clock :refer (start-clock elapsed-time)]
@@ -36,7 +34,6 @@
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window onscreen-render quad-splits-orientations with-culling)]
     [sfsim.graphics :as graphics]
-    [sfsim.image :refer (spit-png)]
     [sfsim.audio :as audio]
     [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config process-events joysticks-poll ->InputHandler
                          char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback time-lapse-limit)])
@@ -44,8 +41,6 @@
     (org.lwjgl.glfw
       GLFW
       GLFWVidMode)
-    (org.lwjgl.opengl
-      GL11)
     (org.lwjgl.nuklear
       Nuklear)))
 
@@ -75,8 +70,7 @@
     (jolt/jolt-init)
     (jolt/set-gravity (vec3 0 0 0))
 
-    (let [opacity-base        (:sfsim.clouds/opacity-base config/cloud-config)
-          window-width        (:sfsim.render/window-width config/render-config)
+    (let [window-width        (:sfsim.render/window-width config/render-config)
           window-height       (:sfsim.render/window-height config/render-config)
           window              (make-window "sfsim" window-width window-height false)
           object-radius       (:sfsim.model/object-radius config/model-config)
@@ -85,7 +79,6 @@
           gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic)
           model               (first (:sfsim.graphics/scenes graphics))
           convex-hulls        (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
-          bsp-tree            (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
           tile-tree           (planet/make-tile-tree)
           split-orientations  (quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8)
           surface             (quadtree/distance-to-surface config/planet-config split-orientations)
@@ -205,11 +198,6 @@
                        light-direction    (normalize (mulv icrs-to-earth sun-pos))
                        model-vars         (model/make-model-vars (:sfsim.physics/offset-seconds (:physics @state)) pressure
                                                                  (:sfsim.physics/throttle (:physics @state)))
-                       camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) origin)
-                       world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
-                       camera-to-object   (mulm world-to-object camera-to-world)
-                       object-origin      (get-translation camera-to-object)
-                       plume-transforms   (physics/active-rcs-transforms (:physics @state) (model/bsp-render-order bsp-tree object-origin))
                        wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
                                                                      (physics/get-wheel-angles (:physics @state)))
                                                 gear-animation
