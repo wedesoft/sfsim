@@ -237,7 +237,6 @@
         camera-position              (::camera-position frame)
         camera-orientation           (::camera-orientation frame)
         camera-to-world              (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
-        object-poses                 (::object-poses frame)
         planet-render-vars           (::planet-render-vars frame)
         scene-render-vars            (::scene-render-vars frame)
         scene-projection             (if scene-render-vars
