@@ -683,7 +683,7 @@
     (uniform-float program "depth_sigma" (:sfsim.clouds/depth-sigma (:sfsim.clouds/data other)))
     (uniform-float program "min_depth_exponent" (:sfsim.clouds/min-depth-exponent (:sfsim.clouds/data other)))
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
-    (uniform-float program "specular" (:sfsim.render/specular render-config))
+    (uniform-float program "specular" (:sfsim.planet/specular planet-config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))
     {::program program
      ::luts luts

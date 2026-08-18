@@ -4,7 +4,7 @@ uniform vec3 origin;
 uniform vec3 light_direction;
 uniform vec3 object_origin;
 uniform float metallic;
-uniform float roughness;
+uniform float specular;
 <% (if textured %>
 uniform sampler2D colors;
 <% %>
@@ -33,7 +33,7 @@ in VS_OUT
 out vec4 fragColor;
 
 vec3 overall_shading(vec3 world_point<%= (apply str (map #(str ", vec4 object_shadow_pos_" (inc ^long %)) (range num-scene-shadows))) %>);
-vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float metallic, float specular);
 vec4 attenuation_point(vec3 point, vec4 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 vec4 cloud_overlay(float depth);
@@ -51,7 +51,7 @@ void main()
 <% (if textured %>
   vec3 diffuse_color = texture(colors, fs_in.texcoord).rgb;
 <% ) %>
-  vec3 incoming = phong(ambient_light, light, fs_in.world_point, normal, diffuse_color * (1.0 - metallic), metallic);
+  vec3 incoming = phong(ambient_light, light, fs_in.world_point, normal, diffuse_color * (1.0 - metallic), metallic, specular);
   incoming = attenuation_point(fs_in.world_point, vec4(incoming, 1.0)).rgb;
   vec4 cloud_scatter = cloud_overlay(length(fs_in.vertex - object_origin));
   fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);

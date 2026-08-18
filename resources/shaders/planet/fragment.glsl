@@ -4,6 +4,7 @@ uniform sampler2DArray day_night;
 uniform sampler2D normals;
 uniform sampler2D water;
 uniform float water_threshold;
+uniform float specular;
 uniform vec3 water_color;
 uniform vec3 light_direction;
 uniform float reflectivity;
@@ -26,7 +27,7 @@ out vec4 fragColor;
 
 vec3 overall_shading(vec3 world_point<%= (apply str (map #(str ", vec4 object_shadow_pos_" (inc ^long %)) (range num-scene-shadows))) %>);
 vec3 environmental_shading(vec3 point);
-vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float metallic, float specular);
 vec4 attenuation_point(vec3 point, vec4 incoming);
 vec3 surface_radiance_function(vec3 point, vec3 light_direction);
 float land_noise(vec3 point);
@@ -47,7 +48,7 @@ void main()
   vec3 color = mix(day_color, water_color, wet);
   vec3 night_color = max(texture(day_night, vec3(fs_in.colorcoord, 0.75)).rgb - 0.3, 0.0) / 0.7;
   vec3 emissive = clamp(remap(dot(light_direction, water_normal), dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
-  vec3 phong = phong(ambient_light, light, fs_in.point, normal, color, wet * reflectivity);
+  vec3 phong = phong(ambient_light, light, fs_in.point, normal, color, wet * reflectivity, specular);
   vec4 incoming = attenuation_point(fs_in.point, vec4(phong + emissive, 1.0));
   vec4 cloud_scatter = cloud_overlay(length(fs_in.camera_point.xyz));
   fragColor = vec4(incoming.rgb * (1 - cloud_scatter.a) + cloud_scatter.rgb, 1.0);

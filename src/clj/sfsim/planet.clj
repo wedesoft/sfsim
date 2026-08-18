@@ -248,7 +248,7 @@
     (uniform-float program "min_depth_exponent" (:sfsim.clouds/min-depth-exponent (:sfsim.clouds/data data)))
     (uniform-float program "dawn_start" (::dawn-start config))
     (uniform-float program "dawn_end" (::dawn-end config))
-    (uniform-float program "specular" (:sfsim.render/specular render-config))
+    (uniform-float program "specular" (::specular config))
     (uniform-float program "radius" (::radius config))
     (uniform-float program "albedo" (::albedo config))
     (uniform-float program "reflectivity" (::reflectivity config))
