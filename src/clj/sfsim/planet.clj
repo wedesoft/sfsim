@@ -326,9 +326,8 @@
 (defn load-tile-into-opengl
   "Load textures of single tile into OpenGL"
   {:malli/schema [:=> [:cat :map tile-info] tile-info]}
-  [{::keys [programs config]} tile]
-  (let [program        (programs 0)
-        tilesize       (::tilesize config)
+  [{::keys [program config]} tile]
+  (let [tilesize       (::tilesize config)
         color-tilesize (::color-tilesize config)
         indices        [0 2 3 1]
         vertices       (make-cube-map-tile-vertices (:sfsim.quadtree/face tile) (:sfsim.quadtree/level tile)

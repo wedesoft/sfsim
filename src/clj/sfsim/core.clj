@@ -26,7 +26,8 @@
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
     [sfsim.steam :as steam]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation get-translation)]
+    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation get-translation
+                          matrix->quaternion)]
     [sfsim.model :as model]
     [sfsim.planet :as planet]
     [sfsim.clock :refer (start-clock elapsed-time)]
@@ -78,9 +79,11 @@
           window-width        (:sfsim.render/window-width config/render-config)
           window-height       (:sfsim.render/window-height config/render-config)
           window              (make-window "sfsim" window-width window-height false)
-          graphics            (graphics/make-graphics ["data/models/venturestar.glb"] (:sfsim.model/object-radius config/model-config))
+          object-radius       (:sfsim.model/object-radius config/model-config)
+          graphics            (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
+                                                         :sfsim.graphics/object-radius object-radius}])
           gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic)
-          model               (first (:sfsim.graphics/models graphics))
+          model               (first (:sfsim.graphics/scenes graphics))
           convex-hulls        (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
           bsp-tree            (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
           tile-tree           (planet/make-tile-tree)
@@ -176,7 +179,8 @@
                      time-lapse      (min ^long time-lapse-sel (time-lapse-limit height throttle))
                      window-width    (-> @state :gui :sfsim.gui/window-width)
                      window-height   (-> @state :gui :sfsim.gui/window-height)]
-                 (planet/update-tile-tree (:sfsim.graphics/planet-renderer graphics) tile-tree window-width
+                 (planet/update-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
+                                                 :sfsim.planet/config config/planet-config) tile-tree window-width
                                           (physics/get-position :sfsim.physics/surface (:physics @state)))
                  (if (-> @state :input :sfsim.input/menu)
                    (swap! state update-in [:gui :sfsim.gui/menu] #(or % gui/main-dialog))
@@ -226,12 +230,20 @@
                                                  "WheelLeft" (nth wheel-animation 0)
                                                  "WheelRight" (nth wheel-animation 1)
                                                  "WheelFront" (nth wheel-animation 2)})))
-                       frame              (graphics/prepare-frame (assoc graphics :sfsim.graphics/scenes [wheels-scene]) model-vars
-                                                                  (planet/get-current-tree tile-tree) window-width window-height
-                                                                  origin camera-orientation light-direction object-position
-                                                                  object-orientation plume-transforms opacity-base)]
+                       tree               (planet/get-current-tree tile-tree)
+                       frame              (-> (graphics/make-frame graphics window-width window-height origin camera-orientation
+                                                                   light-direction
+                                                                   [{:sfsim.graphics/object-position object-position
+                                                                     :sfsim.graphics/object-orientation (q/* object-orientation
+                                                                                                             (matrix->quaternion aerodynamics/gltf-to-aerodynamic))}]
+                                                                   model-vars)
+                                              (graphics/render-shadows graphics tree)
+                                              (graphics/render-scene-shadows graphics)
+                                              (graphics/render-cloud-geometry graphics tree)
+                                              (graphics/render-clouds graphics (physics/active-rcs (:physics @state)))
+                                              (graphics/render-geometry graphics tree))]
                    (onscreen-render window
-                                    (graphics/render-frame graphics frame (planet/get-current-tree tile-tree))
+                                    (graphics/render-lighting frame graphics)
                                     (with-culling :sfsim.render/noculling
                                       (let [menu (-> @state :gui :sfsim.gui/menu)]
                                         (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR
@@ -241,7 +253,7 @@
                                         (gui/flight-controls-display controls @gui)
                                         (gui/information-display @gui window-width window-height @state @frametime time-lapse))
                                       (gui/render-nuklear-gui @gui window-width window-height)))
-                   (graphics/finalise-frame frame))
+                   (graphics/destroy-frame frame))
                  (Nuklear/nk_input_begin (:sfsim.gui/context @gui))
                  (GLFW/glfwPollEvents)
                  (swap! event-buffer joysticks-poll)
@@ -254,7 +266,7 @@
                  (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                  (swap! frame-counter inc)))
         (planet/destroy-tile-tree tile-tree)
-        (graphics/destroy-graphics graphics)
+        (graphics/destroy-graphics2 graphics)
         (audio/destroy-audio-state audio-state)
         (gui/destroy-navball @gui)
         (gui/destroy-nuklear-gui-with-font @gui)
