@@ -250,6 +250,8 @@
                                           ^double (:sfsim.render/z-near planet-render-vars)))]
     (model/render-geometry
       geometry-buffers
+      ;; Clear color, depth, and stencil buffer
+      (render/clear (vec3 0 1 0) 0.0 0)
       (render/with-stencils
         (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
           (doseq [moved-scene moved-scenes]
