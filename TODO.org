@@ -22,7 +22,7 @@
       - [X] unify render-geometry-mesh and render-mesh-geometry
     - [X] handle case where model and planet use different projection matrices (both geometry and cloud geometry)
     - [X] integration test for different projection matrices
-    - [ ] switch game over to multi-pass rendering
+    - [X] switch game over to multi-pass rendering
     - [ ] remove unused single-pass rendering code and tests (use clj -M:carve)
     - [ ] merge into main
     - [ ] add rcs state to model vars?
