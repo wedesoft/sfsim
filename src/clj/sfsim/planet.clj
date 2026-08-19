@@ -26,7 +26,6 @@
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
                            texture-2d texture-3d make-float-texture-3d)]
-    [sfsim.worley :refer (worley-size)]
     [sfsim.util :refer (N N0 sqr slurp-floats)]))
 
 
@@ -326,7 +325,8 @@
                                     :sfsim.render/fragment [(fragment-planet-geometry full)])
         config        (::config data)
         tilesize      (::tilesize config)
-        worley-floats (slurp-floats "data/clouds/worley-cover.raw")
+        worley-floats (slurp-floats (::worley-data config))
+        worley-size   (::worley-size config)
         worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
         worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)]
     (use-program program)

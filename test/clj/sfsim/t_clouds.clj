@@ -1470,7 +1470,9 @@ void main()
 (tabular "Render joined geometry of model, planet, and atmosphere"
          (facts
            (with-invisible-window
-             (let [data                {:sfsim.planet/config {:sfsim.planet/tilesize 3}}
+             (let [data                {:sfsim.planet/config {:sfsim.planet/tilesize 3
+                                                              :sfsim.planet/worley-data "test/clj/sfsim/fixtures/clouds/worley-cover.raw"
+                                                              :sfsim.planet/worley-size 8}}
                    renderer            (make-joined-geometry-renderer data 0)
                    scene-program       (:sfsim.model/programs (:sfsim.model/scene-renderer renderer))
                    planet-program      (:sfsim.planet/program (:sfsim.model/planet-renderer renderer))
