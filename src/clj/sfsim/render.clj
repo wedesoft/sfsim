@@ -761,47 +761,6 @@
      ::pressure pressure}))
 
 
-(defn joined-render-vars
-  "Create hash map with render variables using joined z-range of input render variables"
-  {:malli/schema [:=> [:cat render-vars render-vars] render-vars]}
-  [vars-first vars-second]
-  (let [fov                (::fov vars-first)
-        window-width       (::window-width vars-first)
-        window-height      (::window-height vars-first)
-        overlay-width      (::overlay-width vars-first)
-        overlay-height     (::overlay-height vars-first)
-        object-origin      (::object-origin vars-first)
-        object-distance    (::object-distance vars-first)
-        camera-to-object   (::camera-to-object vars-first)
-        position           (::origin vars-first)
-        z-near             (min ^double (::z-near vars-first) ^double (::z-near vars-second))
-        z-far              (max ^double (::z-far vars-first) ^double (::z-far vars-second))
-        light-direction    (::light-direction vars-first)
-        camera-to-world    (::camera-to-world vars-first)
-        z-offset           1.0
-        projection         (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)
-        overlay-projection (projection-matrix overlay-width overlay-height z-near (+ z-far z-offset) fov)
-        time_              (::time vars-first)
-        pressure           (::pressure vars-first)]
-    {::origin position
-     ::z-near z-near
-     ::z-far z-far
-     ::fov fov
-     ::window-width window-width
-     ::window-height window-height
-     ::overlay-width overlay-width
-     ::overlay-height overlay-height
-     ::object-origin object-origin
-     ::object-distance object-distance
-     ::camera-to-object camera-to-object
-     ::light-direction light-direction
-     ::camera-to-world camera-to-world
-     ::projection projection
-     ::overlay-projection overlay-projection
-     ::time time_
-     ::pressure pressure}))
-
-
 (defn joined-render-vars2
   "Create hash map with render variables using joined z-range of input render variables"
   {:malli/schema [:=> [:cat render-vars render-vars] render-vars]}

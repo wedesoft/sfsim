@@ -738,19 +738,19 @@ void main()
                        matrix/projection-matrix (fn [w h _near _far fov]
                                                     (fact [w h fov] => #(contains? #{[320 240 0.5] [640 480 0.5]} %))
                                                     (diagonal 1 2 3 4))]
-           (:sfsim.render/origin (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => pos1
-           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (roughly 47.549 1e-3)
-           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos2 o light opos o m-vars)) => 1.0
-           (:sfsim.render/z-far (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => 300.0
-           (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (eye 4)
-           (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (diagonal 1 2 3 4)
-           (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => light)))
+           (:sfsim.render/origin (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => pos1
+           (:sfsim.render/z-near (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => (roughly 47.549 1e-3)
+           (:sfsim.render/z-near (make-planet-render-vars2 planet cloud render 640 480 pos2 o light)) => 1.0
+           (:sfsim.render/z-far (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => 300.0
+           (:sfsim.render/camera-to-world (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => (eye 4)
+           (:sfsim.render/projection (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => (diagonal 1 2 3 4)
+           (:sfsim.render/light-direction (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => light)))
 
 
 (facts "Render planet geometry"
        (with-invisible-window
          (let [data             {:sfsim.planet/config {:sfsim.planet/tilesize 3}}
-               render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+               render-vars      #:sfsim.render{:projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
                renderer         (make-planet-geometry-renderer data false 0)
                indices          [0 2 3 1]
@@ -762,7 +762,7 @@ void main()
                surface          (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                         #:sfsim.image{:width 3 :height 3 :data (float-array data)})
                tree             {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 2)}
-               geometry         (clouds/render-cloud-geometry 160 120 (render-planet-geometry renderer render-vars false tree))]
+               geometry         (clouds/render-cloud-geometry 160 120 (render-planet-geometry2 renderer render-vars false tree))]
            (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
            => (roughly-vector (vec4 0.011 0.011 -3.0 1.0) 1e-3)
            (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)

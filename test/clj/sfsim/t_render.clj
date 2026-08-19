@@ -1137,15 +1137,12 @@ void main()
                                              1000.0 10000.0 0.0 1.0)
              scene-vars    (make-render-vars render-config 320 240 origin orientation light-dir object-origin orientation
                                              10.0 100.0 0.0 1.0)
-             joined-vars   (joined-render-vars planet-vars scene-vars)]
+             joined-vars   (joined-render-vars2 planet-vars scene-vars)]
          (:sfsim.render/origin joined-vars) => origin
          (:sfsim.render/object-origin planet-vars) => (vec3 -3 2 3)
          (:sfsim.render/window-width joined-vars) => 320
          (:sfsim.render/window-height joined-vars) => 240
-         (:sfsim.render/overlay-width joined-vars) => 160
-         (:sfsim.render/overlay-height joined-vars) => 120
          (:sfsim.render/projection joined-vars) => (roughly-matrix (projection-matrix 320 240 10.0 10001.0 (to-radians 60)) 1e-6)
-         (:sfsim.render/overlay-projection joined-vars) => (roughly-matrix (projection-matrix 160 120 10.0 10001.0 (to-radians 60)) 1e-6)
          (:sfsim.render/origin joined-vars) => origin
          (:sfsim.render/z-near joined-vars) => 10.0
          (:sfsim.render/z-far joined-vars) => 10000.0

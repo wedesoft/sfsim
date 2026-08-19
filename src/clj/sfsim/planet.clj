@@ -24,7 +24,7 @@
     [sfsim.jolt :as jolt]
     [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
-                          destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps use-textures render-vars diagonal-field-of-view make-render-vars make-render-vars2)
+                          destroy-vertex-array-object vertex-array-object use-textures render-vars diagonal-field-of-view make-render-vars make-render-vars2)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
@@ -81,26 +81,9 @@
   [(template/eval (slurp "resources/shaders/planet/geometry-shading.glsl") {:num-scene-shadows num-scene-shadows})])
 
 
-(def geometry-planet
-  "Geometry shader outputting triangles with color texture coordinates and 3D points"
-  (template/eval (slurp "resources/shaders/planet/geometry.glsl")))
-
-
 (def surface-radiance-function
   "Shader function to determine ambient light scattered by the atmosphere"
   [shaders/surface-radiance-forward shaders/interpolate-2d (slurp "resources/shaders/planet/surface-radiance.glsl")])
-
-
-(defn fragment-planet
-  "Fragment shader to render planetary surface"
-  {:malli/schema [:=> [:cat N N0] render/shaders]}
-  [num-steps num-scene-shadows]
-  [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
-   (shaders/percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size"
-                                        [["sampler2DShadow" "shadow_map"]])
-   (shaders/shadow-lookup "scene_shadow_lookup" "scene_shadow_size") surface-radiance-function shaders/remap shaders/phong
-   attenuation-point cloud-overlay (shaders/lookup-3d "land_noise" "worley")
-   (template/eval (slurp "resources/shaders/planet/fragment.glsl") {:num-scene-shadows num-scene-shadows})])
 
 
 (def fragment-planet-shadow
@@ -321,27 +304,6 @@
     (make-render-vars2 render-config window-width window-height camera-position camera-orientation light-direction z-near z-far)))
 
 
-(defn make-planet-render-vars
-  "Create hash map with render variables for rendering current frame of planet"
-  {:malli/schema [:=> [:cat [:map [::radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
-                       [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion model-vars] render-vars]}
-  [planet-config cloud-data render-config window-width window-height camera-position camera-orientation light-direction
-   object-position object-orientation model-vars]
-  (let [distance        (mag camera-position)
-        radius          (::radius planet-config)
-        cloud-top       (:sfsim.clouds/cloud-top cloud-data)
-        fov             (:sfsim.render/fov render-config)
-        min-z-near      (:sfsim.render/min-z-near render-config)
-        time_           (:sfsim.model/time model-vars)
-        pressure        (:sfsim.model/pressure model-vars)
-        height          (- ^double distance ^double radius)
-        diagonal-fov    (diagonal-field-of-view window-width window-height fov)
-        z-near          (max (* (- height ^double cloud-top) (cos (* 0.5 diagonal-fov))) ^double min-z-near)
-        z-far           (render-depth radius height cloud-top)]
-    (make-render-vars render-config window-width window-height camera-position camera-orientation light-direction
-                      object-position object-orientation z-near z-far time_ pressure)))
-
-
 (defn fragment-planet-geometry
   [full]
   [(shaders/lookup-3d "land_noise" "worley") shaders/remap
@@ -398,19 +360,6 @@
   [{::keys [program worley]}]
   (destroy-texture worley)
   (destroy-program program))
-
-
-(defn render-planet-geometry
-  "Render geometry (planet points and distances)"
-  [{::keys [program worley]} render-vars full tree]
-  (let [world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
-    (use-program program)
-    (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection render-vars))
-    (uniform-matrix4 program "world_to_camera" world-to-camera)
-    (when full
-      (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
-      (use-textures {4 worley}))
-    (render-tree program tree world-to-camera [] (if full [::surf-tex ::day-night-tex ::normal-tex ::water-tex] [::surf-tex]))))
 
 
 (defn render-planet-geometry2

@@ -12,22 +12,22 @@
     [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
     [fastmath.vector :refer (vec3 mult add)]
     [malli.core :as m]
-    [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
-                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry2 cloud-overlay atmosphere-geometry-renderer)]
-    [sfsim.clouds :refer (overall-shading overall-shading-parameters render-cloud-geometry)]
+    [sfsim.atmosphere :refer (make-atmosphere-geometry-renderer
+                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry2 atmosphere-geometry-renderer)]
+    [sfsim.clouds :refer (render-cloud-geometry)]
     [sfsim.plume :refer (model-data model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3
                           fvec3 fmat4 rotation-matrix get-translation get-translation)]
-    [sfsim.planet :refer (surface-radiance-function make-planet-geometry-renderer destroy-planet-geometry-renderer
+    [sfsim.planet :refer (make-planet-geometry-renderer destroy-planet-geometry-renderer
                           render-planet-geometry2 planet-data planet-geometry-renderer)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
-                          uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps with-stencil-op-ref-and-mask
+                          uniform-vector3 uniform-sampler use-textures with-stencil-op-ref-and-mask
                           render-vars make-render-vars texture-render-depth clear with-stencils
                           framebuffer-render render-quads) :as render]
-    [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
+    [sfsim.shaders :refer (shrink-shadow-index)]
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d
                            make-empty-depth-stencil-texture-2d)]
     [sfsim.aerodynamics :as aerodynamics]
@@ -575,25 +575,6 @@
   {:malli/schema [:=> [:cat material] [:tuple :boolean :boolean]]}
   [{::keys [color-texture-index normal-texture-index]}]
   [(boolean color-texture-index) (boolean normal-texture-index)])
-
-
-(def data
-  (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N]
-                                             [:sfsim.opacity/scene-shadow-counts [:vector N0]]]]
-                  [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
-                                             [:sfsim.clouds/cloud-octaves [:vector :double]]]]
-                  [:sfsim.model/data [:map [::object-radius :double]]]]))
-
-
-(defn setup-scene-samplers
-  "Set up uniform samplers for scene rendering program"
-  {:malli/schema [:=> [:cat :int :int :int :boolean :boolean] :nil]}
-  [program texture-offset num-scene-shadows textured bump]
-  (if textured
-    (do
-      (uniform-sampler program "colors" (+ ^long texture-offset ^long num-scene-shadows))
-      (when bump (uniform-sampler program "normals" (+ ^long texture-offset ^long num-scene-shadows 1))))
-    (when bump (uniform-sampler program "normals" (+ ^long texture-offset ^long num-scene-shadows)))))
 
 
 (defn- remove-empty-children
