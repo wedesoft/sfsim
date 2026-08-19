@@ -13,9 +13,6 @@
     [fastmath.vector :refer (mag)]
     [malli.core :as m]
     [sfsim.config :as config]
-    [sfsim.atmosphere :refer (attenuation-point cloud-overlay)]
-    [sfsim.clouds :refer (overall-shading overall-shading-parameters)]
-    [sfsim.plume :refer (model-vars)]
     [sfsim.cubemap :refer (cube-map-corners project-onto-cube determine-face cube-j cube-i tile-center)]
     [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box shadow-patch)]
     [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
@@ -24,7 +21,7 @@
     [sfsim.jolt :as jolt]
     [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
-                          destroy-vertex-array-object vertex-array-object use-textures render-vars diagonal-field-of-view make-render-vars make-render-vars2)
+                          destroy-vertex-array-object vertex-array-object use-textures render-vars diagonal-field-of-view make-render-vars2)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
