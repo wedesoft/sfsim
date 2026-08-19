@@ -24,6 +24,8 @@
                                      :dawn-end 0.0
                                      :tilesize 65
                                      :level 7
+                                     :worley-data "data/clouds/worley-cover.raw"
+                                     :worley-size 16
                                      :color-tilesize 129
                                      :reflectivity 0.1
                                      :specular 1000.0
