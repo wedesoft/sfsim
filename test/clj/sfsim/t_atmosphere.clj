@@ -19,6 +19,8 @@
     [sfsim.image :refer (convert-4d-to-2d get-vector3 get-vector4 get-float get-pixel)]
     [sfsim.interpolate :refer (make-lookup-table)]
     [sfsim.matrix :refer (pack-matrices projection-matrix transformation-matrix)]
+    [sfsim.model :refer (make-geometry-buffers destroy-geometry-buffers render-geometry render-lighting)]
+    [sfsim.lighting :as lighting]
     [sfsim.units :refer :all]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
@@ -773,54 +775,6 @@ void main()
          0   0   6378000 100000 0   6378000 0.008272)
 
 
-(def vertex-atmosphere-probe
-  (template/fn [selector]
-    "#version 450 core
-in VS_OUT
-{
-  vec3 direction;
-} fs_in;
-out vec3 fragColor;
-void main()
-{
-  fragColor = <%= selector %>;
-}"))
-
-
-(def initial (eye 4))
-(def shifted (transformation-matrix (eye 3) (vec3 0.2 0.4 0.5)))
-(def rotated (transformation-matrix (rotation-matrix-3d-x (to-radians 90)) (vec3 0 0 0)))
-
-
-(tabular "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
-         (fact
-           (offscreen-render 256 256
-                             (let [indices   [0 1 3 2]
-                                   vertices  [-0.5 -0.5,
-                                              +0.5 -0.5,
-                                              -0.5 +0.5,
-                                              +0.5 +0.5]
-                                   program   (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                                           :sfsim.render/fragment [(vertex-atmosphere-probe ?selector)])
-                                   variables ["ndc" 2]
-                                   vao       (make-vertex-array-object program indices vertices variables)]
-                               (clear (vec3 0 0 0))
-                               (use-program program)
-                               (uniform-matrix4 program "inverse_projection"
-                                                (inverse (projection-matrix 256 256 0.5 1.5 (/ PI 3))))
-                               (uniform-matrix4 program "camera_to_world" ?matrix)
-                               (uniform-float program "z_far" 1.0)
-                               (uniform-float program "z_near" 0.5)
-                               (render-quads vao)
-                               (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image ?result 0.03))
-         ?selector                               ?matrix ?result
-         "vec3(1, 1, 1)"                         initial "test/clj/sfsim/fixtures/atmosphere/quad.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" initial "test/clj/sfsim/fixtures/atmosphere/direction.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" shifted "test/clj/sfsim/fixtures/atmosphere/direction.png"
-         "fs_in.direction + vec3(0.5, 0.5, 1.5)" rotated "test/clj/sfsim/fixtures/atmosphere/rotated.png")
-
-
 (def cloud-overlay-mock
   (template/fn [alpha]
     "#version 450 core
@@ -831,58 +785,87 @@ vec4 cloud_overlay(float depth)
 }"))
 
 
-(tabular "Fragment shader for rendering atmosphere and sun"
+(def fragment-lighting-mocks
+"#version 450 core
+vec3 overall_shading(vec3 world_point)
+{
+  return vec3(1, 1, 1);
+}
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity, float specular)
+{
+  return vec3(0, 0, 0);
+}
+vec4 attenuation_point(vec3 point, vec4 incoming)
+{
+  return incoming;
+}
+vec3 surface_radiance_function(vec3 point, vec3 light_direction)
+{
+  return vec3(0, 0, 0);
+}")
+
+
+(defn make-lighting-program
+  [cloud]
+  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                :sfsim.render/fragment [(lighting/fragment-lighting 0) shaders/ray-sphere attenuation-outer
+                                        fragment-lighting-mocks (cloud-overlay-mock cloud)]))
+
+
+(tabular "Render geometry and lighting of atmosphere"
          (fact
-           (offscreen-render 256 256
-                             (let [indices         [0 1 3 2]
-                                   vertices        [-0.8 -0.8,
-                                                    +0.8 -0.8,
-                                                    -0.8 +0.8,
-                                                    +0.8 +0.8]
-                                   origin          (vec3 ?x ?y ?z)
-                                   camera-to-world (transformation-matrix (rotation-matrix-3d-x ?rotation) origin)
-                                   program         (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                                                 :sfsim.render/fragment [(last fragment-atmosphere)
-                                                                                         shaders/ray-sphere attenuation-outer
-                                                                                         (cloud-overlay-mock ?cloud)])
-                                   variables       ["ndc" 2]
-                                   transmittance   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                                           #:sfsim.image{:width size :height size :data T})
-                                   ray-scatter     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                                           #:sfsim.image{:width (* size size) :height (* size size) :data S})
-                                   mie-strength    (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                                           #:sfsim.image{:width (* size size) :height (* size size) :data M})
-                                   vao             (make-vertex-array-object program indices vertices variables)]
-                               (clear (vec3 0 0 0))
-                               (use-program program)
-                               (uniform-sampler program "transmittance" 0)
-                               (uniform-sampler program "ray_scatter" 1)
-                               (uniform-sampler program "mie_strength" 2)
-                               (uniform-matrix4 program "inverse_projection"
-                                                (inverse (projection-matrix 256 256 0.5 1.5 (/ PI 3))))
-                               (uniform-float program "z_near" 0.0)
-                               (uniform-float program "z_far" 1.0)
-                               (uniform-matrix4 program "camera_to_world" camera-to-world)
-                               (uniform-vector3 program "origin" origin)
-                               (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
-                               (uniform-float program "radius" radius)
-                               (uniform-float program "max_height" max-height)
-                               (uniform-float program "specular" 500.0)
-                               (uniform-int program "height_size" size)
-                               (uniform-int program "elevation_size" size)
-                               (uniform-int program "light_elevation_size" size)
-                               (uniform-int program "heading_size" size)
-                               (uniform-int program "transmittance_height_size" size)
-                               (uniform-int program "transmittance_elevation_size" size)
-                               (uniform-float program "amplification" 5.0)
-                               (use-textures {0 transmittance 1 ray-scatter 2 mie-strength})
-                               (render-quads vao)
-                               (destroy-texture ray-scatter)
-                               (destroy-texture mie-strength)
-                               (destroy-texture transmittance)
-                               (destroy-vertex-array-object vao)
-                               (destroy-program program)))
-           => (is-image (str "test/clj/sfsim/fixtures/atmosphere/" ?result) 0.16))
+           (with-invisible-window
+             (let [geometry-program  (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
+                                                   :sfsim.render/fragment [(fragment-atmosphere-geometry true)])
+                   indices           [0 1 3 2]
+                   vertices          [-0.8 -0.8, +0.8 -0.8, -0.8 +0.8, +0.8 +0.8]
+                   variables         ["ndc" 2]
+                   vao               (make-vertex-array-object geometry-program indices vertices variables)
+                   origin            (vec3 ?x ?y ?z)
+                   camera-to-world   (transformation-matrix (rotation-matrix-3d-x ?rotation) origin)
+                   projection        (projection-matrix 256 256 0.5 1.5 (/ PI 3))
+                   geometry-buffers  (make-geometry-buffers 256 256)
+                   lighting-program  (make-lighting-program ?cloud)
+                   transmittance     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                             #:sfsim.image{:width size :height size :data T})
+                   ray-scatter       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                             #:sfsim.image{:width (* size size) :height (* size size) :data S})
+                   mie-strength      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                                             #:sfsim.image{:width (* size size) :height (* size size) :data M})
+                   lighting-textures {0 transmittance 1 ray-scatter 2 mie-strength}]
+               (render-geometry geometry-buffers
+                                (use-program geometry-program)
+                                (uniform-matrix4 geometry-program "inverse_projection" (inverse projection))
+                                (uniform-vector3 geometry-program "light_direction" (vec3 ?lx ?ly ?lz))
+                                (uniform-float geometry-program "specular" 500.0)
+                                (render-quads vao))
+               (render-to-image 256 256 false
+                                (render-lighting geometry-buffers lighting-program (count lighting-textures)
+                                                 (uniform-sampler lighting-program "transmittance" 0)
+                                                 (uniform-sampler lighting-program "ray_scatter" 1)
+                                                 (uniform-sampler lighting-program "mie_strength" 2)
+                                                 (uniform-matrix4 lighting-program "camera_to_world" camera-to-world)
+                                                 (uniform-vector3 lighting-program "origin" origin)
+                                                 (uniform-float lighting-program "radius" radius)
+                                                 (uniform-float lighting-program "max_height" max-height)
+                                                 (uniform-float lighting-program "z_far" 1.0)
+                                                 (uniform-vector3 lighting-program "light_direction" (vec3 ?lx ?ly ?lz))
+                                                 (uniform-int lighting-program "height_size" size)
+                                                 (uniform-int lighting-program "elevation_size" size)
+                                                 (uniform-int lighting-program "light_elevation_size" size)
+                                                 (uniform-int lighting-program "heading_size" size)
+                                                 (uniform-int lighting-program "transmittance_height_size" size)
+                                                 (uniform-int lighting-program "transmittance_elevation_size" size)
+                                                 (uniform-float lighting-program "amplification" 5.0)
+                                                 (use-textures lighting-textures)))
+               => (is-image (str "test/clj/sfsim/fixtures/atmosphere/" ?result) 0.16)
+               (destroy-texture mie-strength)
+               (destroy-texture ray-scatter)
+               (destroy-texture transmittance)
+               (destroy-program lighting-program)
+               (destroy-geometry-buffers geometry-buffers)
+               (destroy-vertex-array-object vao)
+               (destroy-program geometry-program))))
          ?x ?y              ?z                        ?rotation   ?lx ?ly       ?lz           ?cloud ?result
          0  0               (- 0 radius max-height 1) 0.0         0   0         -1            0.0    "sun.png"
          0  0               (- 0 radius max-height 1) 0.0         0   0          1            0.0    "space.png"
@@ -906,7 +889,7 @@ void main()
 }"))
 
 
-(def phase-test (shader-test (fn [program]) phase-probe phase-function))
+(def phase-test (shader-test (fn [_program]) phase-probe phase-function))
 
 
 (tabular "Shader function for scattering phase function"
@@ -1061,10 +1044,10 @@ void main()
 
 (facts "Render direction vectors for atmospheric background"
        (with-invisible-window
-         (let [renderer         (make-atmosphere-geometry-renderer)
-               render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+         (let [renderer         (make-atmosphere-geometry-renderer false)
+               render-vars      #:sfsim.render{:projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                :z-far 10.0}
-               geometry         (clouds/render-cloud-geometry 160 120 (render-atmosphere-geometry renderer render-vars))]
+               geometry         (clouds/render-cloud-geometry 160 120 (render-atmosphere-geometry2 renderer render-vars))]
            (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
            => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
            (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)

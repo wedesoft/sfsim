@@ -8,16 +8,17 @@
   "Functions for computing the atmosphere"
   (:require
     [clojure.math :refer (exp pow PI sqrt log)]
+    [comb.template :as template]
     [fastmath.matrix :refer (inverse)]
     [fastmath.vector :refer (vec3 mag normalize add sub div dot mult emult) :as fv]
     [malli.core :as m]
     [sfsim.interpolate :refer (interpolation-space)]
-    [sfsim.matrix :refer (fvec3)]
+    [sfsim.matrix :refer (fvec3 projection-matrix)]
     [sfsim.units :refer (rankin foot pound-force slugs)]
     [sfsim.ray :refer (integral-ray ray)]
     [sfsim.render :refer (make-program use-program uniform-sampler uniform-int uniform-float uniform-matrix4
-                          uniform-vector3 destroy-program make-vertex-array-object use-textures destroy-vertex-array-object
-                          render-quads render-config render-vars vertex-array-object)]
+                          uniform-vector3 destroy-program make-vertex-array-object destroy-vertex-array-object
+                          render-quads vertex-array-object)]
     [sfsim.shaders :as shaders]
     [sfsim.sphere :refer (height integral-half-sphere integral-sphere ray-sphere-intersection sphere)]
     [sfsim.texture :refer (destroy-texture make-vector-texture-2d make-vector-texture-4d texture-2d texture-4d)]
@@ -563,19 +564,9 @@
   [shaders/ray-sphere shaders/limit-interval attenuation-track (slurp "resources/shaders/atmosphere/attenuation-point.glsl")])
 
 
-(def vertex-atmosphere
-  "Pass through coordinates of quad for rendering atmosphere and determine viewing direction and camera origin"
-  (slurp "resources/shaders/atmosphere/vertex.glsl"))
-
-
 (def cloud-overlay
   "Shader function to lookup cloud overlay values in lower resolution texture"
   (slurp "resources/shaders/atmosphere/cloud-overlay.glsl"))
-
-
-(def fragment-atmosphere
-  "Fragment shader for rendering atmosphere and sun"
-  [shaders/ray-sphere attenuation-outer cloud-overlay (slurp "resources/shaders/atmosphere/fragment.glsl")])
 
 
 (def transmittance-elevation-size 255)
@@ -659,69 +650,13 @@
   (uniform-float program "max_height" (::max-height atmosphere-luts)))
 
 
-(def atmosphere-renderer (m/schema [:map [::program :int] [::luts atmosphere-luts]]))
-
-
-(defn make-atmosphere-renderer
-  "Initialise atmosphere rendering program"
-  {:malli/schema [:=> [:cat [:map [:sfsim.render/config render-config] [::luts atmosphere-luts]
-                             [:sfsim.planet/config [:map [:sfsim.planet/radius :double]]]]] atmosphere-renderer]}
-  [{::keys [luts] :as other}]
-  (let [render-config (:sfsim.render/config other)
-        planet-config (:sfsim.planet/config other)
-        program       (make-program :sfsim.render/vertex [vertex-atmosphere]
-                                    :sfsim.render/fragment [fragment-atmosphere])
-        indices    [0 1 3 2]
-        vertices   [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
-        vao        (make-vertex-array-object program indices vertices ["ndc" 2])]
-    (use-program program)
-    (setup-atmosphere-uniforms program luts 0 false)
-    (uniform-sampler program "clouds" 3)
-    (uniform-sampler program "dist" 4)
-    (uniform-int program "cloud_subsampling" (:sfsim.render/cloud-subsampling render-config))
-    (uniform-float program "depth_sigma" (:sfsim.clouds/depth-sigma (:sfsim.clouds/data other)))
-    (uniform-float program "min_depth_exponent" (:sfsim.clouds/min-depth-exponent (:sfsim.clouds/data other)))
-    (uniform-float program "radius" (:sfsim.planet/radius planet-config))
-    (uniform-float program "specular" (:sfsim.render/specular render-config))
-    (uniform-float program "amplification" (:sfsim.render/amplification render-config))
-    {::program program
-     ::luts luts
-     ::vao vao}))
-
-
-(defn render-atmosphere
-  "Render atmosphere with cloud overlay"
-  {:malli/schema [:=> [:cat atmosphere-renderer render-vars [:map [:sfsim.clouds/distance texture-2d]] texture-2d] :nil]}
-  [{::keys [program luts vao]} render-vars geometry clouds]
-  (let [dist (:sfsim.clouds/distance geometry)]
-    (use-program program)
-    (uniform-matrix4 program "inverse_projection" (inverse (:sfsim.render/projection render-vars)))
-    (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world render-vars))
-    (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-    (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
-    (uniform-int program "window_width" (:sfsim.render/window-width render-vars))
-    (uniform-int program "window_height" (:sfsim.render/window-height render-vars))
-    (uniform-int program "overlay_width" (:sfsim.render/overlay-width render-vars))
-    (uniform-int program "overlay_height" (:sfsim.render/overlay-height render-vars))
-    (uniform-float program "z_far" (:sfsim.render/z-far render-vars))
-    (use-textures {0 (::transmittance luts) 1 (::scatter luts) 2 (::mie luts) 3 clouds 4 dist})
-    (render-quads vao)))
-
-
-(defn destroy-atmosphere-renderer
-  "Destroy atmosphere renderer"
-  {:malli/schema [:=> [:cat atmosphere-renderer] :nil]}
-  [{::keys [program vao]}]
-  (destroy-vertex-array-object vao)
-  (destroy-program program))
-
-
 (def vertex-atmosphere-geometry
   (slurp "resources/shaders/atmosphere/vertex-geometry.glsl"))
 
 
-(def fragment-atmosphere-geometry
-  (slurp "resources/shaders/atmosphere/fragment-geometry.glsl"))
+(defn fragment-atmosphere-geometry
+  [full]
+  (template/eval (slurp "resources/shaders/atmosphere/fragment-geometry.glsl") {:full full}))
 
 
 (def atmosphere-geometry-renderer
@@ -730,10 +665,10 @@
 
 (defn make-atmosphere-geometry-renderer
   "Create renderer for rendering atmospheric direction vectors for output to a geometry buffer"
-  {:malli/schema [:=> [:cat] atmosphere-geometry-renderer]}
-  []
+  {:malli/schema [:=> [:cat :boolean] atmosphere-geometry-renderer]}
+  [full]
   (let [program  (make-program :sfsim.render/vertex [vertex-atmosphere-geometry]
-                               :sfsim.render/fragment [fragment-atmosphere-geometry])
+                               :sfsim.render/fragment [(fragment-atmosphere-geometry full)])
         indices  [0 1 3 2]
         vertices [-1.0 -1.0, 1.0 -1.0, -1.0 1.0, 1.0 1.0]
         vao      (make-vertex-array-object program indices vertices ["ndc" 2])]
@@ -748,14 +683,33 @@
   (destroy-program program))
 
 
-(defn render-atmosphere-geometry
+(defn render-atmosphere-geometry2
   "Render atmospheric direction vectors for output to a geometry buffer"
   [{::keys [program vao]} render-vars]
-  (let [projection (:sfsim.render/overlay-projection render-vars)
+  (let [projection (:sfsim.render/projection render-vars)
         z-far      (:sfsim.render/z-far render-vars)]
     (use-program program)
     (uniform-matrix4 program "inverse_projection" (inverse projection))
     (uniform-float program "z_far" z-far)
+    (render-quads vao)))
+
+
+(defn make-atmosphere-render-vars
+  "Create atmosphere render variables for rendering full geometry"
+  [width height fov light-direction]
+  {:sfsim.render/projection (projection-matrix width height 1.0 2.0 fov)
+   :sfsim.render/light-direction light-direction})
+
+
+(defn render-full-atmosphere-geometry
+  "Render atmospheric direction vectors and emissive geometry buffer"
+  [{::keys [program vao]} render-vars]
+  (let [projection      (:sfsim.render/projection render-vars)
+        light-direction (:sfsim.render/light-direction render-vars)]
+    (use-program program)
+    (uniform-matrix4 program "inverse_projection" (inverse projection))
+    (uniform-vector3 program "light_direction" light-direction)
+    (uniform-float program "specular" 500.0)
     (render-quads vao)))
 
 

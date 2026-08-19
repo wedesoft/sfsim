@@ -3,12 +3,48 @@
 * TODO [#A] mvp game loop
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [ ] use modern rendering pipeline
-    - [ ] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
+  - [X] Steam page, mp4 files under 12 seconds, 780px
+    - [X] launch
+    - [X] RCS action
+    - [X] flying through clouds
+    - [X] landing
+  - [-] use modern rendering pipeline
+    - [X] emissive or ambient buffer
+    - [X] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
+    - [X] multi-pass rendering for atmosphere
+    - [X] merge lighting shaders into one
+    - [X] switch integration tests over to multi-pass rendering
+      - [X] make planet geometry renderer
+      - [X] make model geometry renderer
+      - [X] handle model shadows
+      - [X] handle metallic
+      - [X] handle roughness
+      - [X] unify render-geometry-mesh and render-mesh-geometry
+    - [X] handle case where model and planet use different projection matrices (both geometry and cloud geometry)
+    - [X] integration test for different projection matrices
+    - [X] switch game over to multi-pass rendering
+    - [X] remove unused single-pass rendering code and tests (use clj -M:carve --interactive --paths src)
+    - [ ] merge into main
+    - [ ] add rcs state to model vars?
+    - [ ] move wheel animation and state into model-vars?
+    - [ ] stencil handling of controls (draw first)
+    - [ ] refactor plume code, duplication of plume rcs stuff in graphics module and physics module (move code into model module?)
+    - [ ] use separate uniforms set up for plume shader and cloud shader
+    - [ ] render-scene-geometry, render-scene-geometry2, render-joined-geometry, render-joined-geometry2, render-joined-geometry3, graphics/render-geometry
+    - [ ] remove object_to_scene matrix
+    - [ ] cloud render vars for when no object being rendered?
+    - [ ] update schemas for render-vars, planet-render-vars, model-render-vars, cloud ...
+    - [ ] move lighting code into separate module (remove from model module)
+    - [ ] render-scene: remove texture-offset and shadow matrices, just render geometry
+    - [ ] load-tile-into-opengl should use program instead of programs
     - [ ] decal pass: overwrite/blend colors and normals
-    - [ ] shadow pass (separate render): render shadow map from light source view
-    - [ ] lighting pass: sample shadow map, calculate light colors, and specular highlights
     - [ ] render localized lights using blending (not sure whether this is done earlier)
+    - [ ] bloom for sun
+    - [ ] investigate cloud color/shadowing for far away clouds
+    - [ ] move object shadow map position computation into scene shadow code
+    - [ ] remove texture-offset and scene-shadow-matrices from render-scene
+    - [ ] make RCS thrusters and main engine light sources
+    - [ ] add specular lighting to space craft
   - [ ] runway with lights and glide slope indicator
     - [ ] render cube mesh backfaces without depth writing but leave depth testing on
     - [ ] render geometry and shadow information (full resolution) and use in subsequent pass
@@ -19,6 +55,11 @@
     - [ ] use texture arrays for albedo, normal map, roughness map
     - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
     - [ ] introduce a geometry buffer for shadows
+  - [ ] stars
+  - [ ] specular material for space ship
+  - [ ] new steam capsule with better font, glare, thruster, and stars (add build script to render it)
+  - [ ] add some animated gifs to Steam description and Github page
+  - [ ] add some starting positions and times to menu (unlock orbit and stuff)
   - [ ] launch guidance indicators, reinforcement learning launch physics
     - [-] rewards/penalties
       - [-] fix not-a-number problems
@@ -45,6 +86,7 @@
     - [ ] use down-range and cross-range, ad coriolis and centrifugal acceleration to observations?
     - [ ] use velocity, flight path angle, altitude
     - [ ] final entry window and heading alignment cylinder
+  - [ ] map mfd
   - [ ] fuel consumption
   - [ ] f-35 style glass cockpit [[https://my.storageshare.cloud/s/5XozrsEY8xHLN3t][A400M cockpit]]
 * TODO [#A] spacecraft simulation                                      :physics:
@@ -338,7 +380,6 @@
 ** TODO arycama: limit darkness of cloud shadow (exponential approaching a base level)
 ** TODO add earth light
 ** TODO add moon light
-** TODO stars
 ** TODO [[https://www.shadertoy.com/view/ttcSD8][volumetric clouds]]
    - [[https://www.reddit.com/r/opengl/comments/1jqiwkl/comment/mlbr45o/]]
    - [[https://gist.github.com/pixelsnafu/e3904c49cbd8ff52cb53d95ceda3980e]]

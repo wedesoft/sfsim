@@ -13,15 +13,14 @@
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
-    [sfsim.atmosphere :refer (vertex-atmosphere)]
     [sfsim.clouds :refer :all :as clouds]
     [sfsim.conftest :refer (roughly-vector shader-test is-image)]
     [sfsim.image :refer (get-vector3 get-vector4 get-float-3d get-float)]
     [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
     [sfsim.quaternion :as q]
-    [sfsim.planet :refer (vertex-planet tess-control-planet tess-evaluation-planet geometry-planet make-cube-map-tile-vertices)]
+    [sfsim.planet :refer (make-cube-map-tile-vertices)]
     [sfsim.model :refer (read-gltf make-model-vars
-                         load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry
+                         load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry2
                          destroy-joined-geometry-renderer)]
     [sfsim.plume :as plume]
     [sfsim.render :refer :all]
@@ -141,22 +140,6 @@ void main()
          ?distance ?stepsize ?result
          100.0       2.0       2.0
          100.0       5.0       5.0)
-
-
-(def exponential-sampling-test
-  (shader-test
-    (fn [program linear-range stepsize-factor]
-        (uniform-float program "linear_range" linear-range)
-        (uniform-float program "stepsize_factor" stepsize-factor))
-    sampling-probe
-    exponential-sampling))
-
-
-(tabular "Shader functions for updating exponential sampling stepsize"
-         (fact ((exponential-sampling-test [?linear-range ?stepsize-factor] [?distance ?stepsize]) 0) => (roughly ?result 1e-5))
-         ?linear-range ?stepsize-factor ?distance ?stepsize ?result
-         100.0         2.0              50.0      10.0       10.0
-         100.0         2.0              120.0     10.0       20.0)
 
 
 (def ray-shell-mock
@@ -1488,7 +1471,7 @@ void main()
          (facts
            (with-invisible-window
              (let [data                {:sfsim.planet/config {:sfsim.planet/tilesize 3}}
-                   renderer            (make-joined-geometry-renderer data)
+                   renderer            (make-joined-geometry-renderer data 0)
                    scene-program       (:sfsim.model/programs (:sfsim.model/scene-renderer renderer))
                    planet-program      (:sfsim.planet/program (:sfsim.model/planet-renderer renderer))
                    opengl-scene        (load-scene-into-opengl (comp scene-program material-type) cube)
@@ -1510,11 +1493,11 @@ void main()
                    model-render-vars   #:sfsim.render{:sfsim.render/camera-to-world camera-to-world
                                                       :sfsim.render/z-near 0.1
                                                       :sfsim.render/z-far 10.0
-                                                      :sfsim.render/overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
-                                                      :sfsim.render/overlay-width 160
-                                                      :sfsim.render/overlay-height 120}
+                                                      :sfsim.render/projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                                      :sfsim.render/window-width 160
+                                                      :sfsim.render/window-height 120}
                    planet-render-vars  (assoc model-render-vars :sfsim.render/z-near ?planet-z-near)
-                   geometry            (render-joined-geometry renderer model-render-vars planet-render-vars moved-scene tree)]
+                   geometry            (render-joined-geometry2 renderer model-render-vars planet-render-vars [moved-scene] tree)]
                (nth (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80) 2)
                => (roughly ?coordinate 1e-3)
                (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
@@ -1526,11 +1509,11 @@ void main()
                (destroy-joined-geometry-renderer renderer))))
          ?model ?planet ?planet-z-near ?coordinate ?distance
          nil    nil     0.1            -1.0        10.0
-        -4.0    nil     0.1            -1.0         3.0
-         nil   -5.0     0.1            -1.0         5.0
-        -4.0   -5.0     0.1            -1.0         3.0
-        -7.0   -5.0     0.1            -1.0         5.0
-        -7.0   -5.0     0.5            -1.0         6.0)
+        -4.0    nil     0.1            -3.0         3.0
+         nil   -5.0     0.1            -5.0         5.0
+        -4.0   -5.0     0.1            -3.0         3.0
+        -7.0   -5.0     0.1            -5.0         5.0
+        -7.0   -5.0     0.5            -6.0         6.0)
 
 
 (def fragment-mock-geometry
@@ -1540,7 +1523,7 @@ layout (location = 1) out float dist;
 uniform vec3 point;
 void main()
 {
-  camera_point = vec4(normalize(point), 0.0);
+  camera_point = vec4(point, 1.0);
   dist = length(point);
 }")
 

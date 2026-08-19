@@ -14,7 +14,7 @@ out vec4 fragColor;
 
 void main()
 {
-  vec3 direction = (camera_to_world * geometry_point()).xyz;
+  vec3 direction = normalize(mat3(camera_to_world) * geometry_point().xyz);
 <% (if front %>
   fragColor = cloud_point(origin, direction, vec2(0, object_distance));
 <% %>

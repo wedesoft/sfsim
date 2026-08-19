@@ -1137,15 +1137,12 @@ void main()
                                              1000.0 10000.0 0.0 1.0)
              scene-vars    (make-render-vars render-config 320 240 origin orientation light-dir object-origin orientation
                                              10.0 100.0 0.0 1.0)
-             joined-vars   (joined-render-vars planet-vars scene-vars)]
+             joined-vars   (joined-render-vars2 planet-vars scene-vars)]
          (:sfsim.render/origin joined-vars) => origin
          (:sfsim.render/object-origin planet-vars) => (vec3 -3 2 3)
          (:sfsim.render/window-width joined-vars) => 320
          (:sfsim.render/window-height joined-vars) => 240
-         (:sfsim.render/overlay-width joined-vars) => 160
-         (:sfsim.render/overlay-height joined-vars) => 120
          (:sfsim.render/projection joined-vars) => (roughly-matrix (projection-matrix 320 240 10.0 10001.0 (to-radians 60)) 1e-6)
-         (:sfsim.render/overlay-projection joined-vars) => (roughly-matrix (projection-matrix 160 120 10.0 10001.0 (to-radians 60)) 1e-6)
          (:sfsim.render/origin joined-vars) => origin
          (:sfsim.render/z-near joined-vars) => 10.0
          (:sfsim.render/z-far joined-vars) => 10000.0
@@ -1224,6 +1221,34 @@ void main()
          (vec4 1.0  0.0 0.0  0.75) (vec4 0.0  1.0 0.0  1.0) (vec4 1.0  0.25 0.0  1.0 )
          (vec4 1.0  0.0 0.0  0.25) (vec4 0.0  1.0 0.0  1.0) (vec4 1.0  0.75 0.0  1.0 )
          (vec4 1.0  0.0 0.0  0.4 ) (vec4 0.0  1.0 0.0  0.2) (vec4 1.0  0.6  0.0  0.52))
+
+
+(tabular "Additive blending test"
+         (fact
+           (with-invisible-window
+             (let [indices  [0 1 3 2]
+                   vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                   program  (make-program :sfsim.render/vertex [vertex-passthrough]
+                                          :sfsim.render/fragment [fragment-uniform-color])
+                   vao      (make-vertex-array-object program indices vertices ["point" 3])
+                   output   (texture-render-color 1 1 true
+                                                  (clear (vec3 0.0 0.0 0.0))
+                                                  (use-program program)
+                                                  (uniform-vector4 program "color" ?background)
+                                                  (render-quads vao)
+                                                  (with-additive-blending
+                                                    (uniform-vector4 program "color" ?overlay)
+                                                    (render-quads vao)))
+                   result   (get-vector4 (rgba-texture->vectors4 output) 0 0)]
+               (destroy-vertex-array-object vao)
+               (destroy-program program)
+               result)) => (roughly-vector ?result 1e-3))
+         ?background              ?overlay                  ?result
+         (vec4 0.25 0.5 0.75 0.5) (vec4 1.0  1.0 1.0  0.0 ) (vec4 0.25 0.5  0.75 0.5)
+         (vec4 1.0  1.0 1.0  0.5) (vec4 0.25 0.5 0.75 1.0 ) (vec4 1.25 1.5  1.75 0.5)
+         (vec4 1.0  0.0 0.0  1.0) (vec4 0.0  1.0 0.0  0.25) (vec4 1.0  0.25 0.0  1.0)
+         (vec4 1.0  0.0 0.0  1.0) (vec4 0.0  1.0 0.0  0.25) (vec4 1.0  0.25 0.0  1.0)
+         (vec4 1.0  0.0 0.0  0.2) (vec4 0.0  1.0 0.0  0.4 ) (vec4 1.0  0.4  0.0  0.2))
 
 
 (GLFW/glfwTerminate)

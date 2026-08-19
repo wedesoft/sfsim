@@ -75,6 +75,11 @@ void main()
 }"))
 
 
+(def ray-circle
+  "Shader function for computing intersection of ray with circle"
+  (ray-hypersphere "ray_circle" "vec2"))
+
+
 (def ray-circle-test (shader-test (fn [_program]) ray-circle-probe ray-circle))
 
 
@@ -1362,33 +1367,6 @@ void main()
          0   0   1   1  0  0  (/ PI 2)  0   1   0)
 
 
-(def rotation-matrix-probe
-  (template/fn [x y z axis angle]
-"#version 450 core
-out vec3 fragColor;
-mat3 rotation_<%= axis %>(float angle);
-void main()
-{
-  vec3 v = vec3(<%= x %>, <%= y %>, <%= z %>);
-  float angle = <%= angle %>;
-  fragColor = rotation_<%= axis %>(angle) * v;
-}"))
-
-(def rotation-matrix-test (shader-test (fn [_program]) rotation-matrix-probe rotation-x rotation-y rotation-z))
-
-(tabular "Shaders for creating rotation matrices"
-         (fact (rotation-matrix-test [] [?x ?y ?z ?axis ?angle]) => (roughly-vector (vec3 ?rx ?ry ?rz) 1e-6))
-         ?x ?y ?z ?axis ?angle    ?rx ?ry ?rz
-         2  3  5  "x"   0         2   3   5
-         0  1  0  "x"   (/ PI 2)  0   0   1
-         0  0  1  "x"   (/ PI 2)  0  -1   0
-         2  3  5  "y"   0         2   3   5
-         1  0  0  "y"   (/ PI 2)  0   0  -1
-         0  0  1  "y"   (/ PI 2)  1   0   0
-         2  3  5  "z"   0         2   3   5
-         1  0  0  "z"   (/ PI 2)  0   1   0
-         0  1  0  "z"   (/ PI 2) -1   0   0)
-
 (def scale-noise-probe
   (template/fn [x y z]
     "#version 450 core
@@ -1445,10 +1423,10 @@ void main()
 
 
 (def phong-probe
-  (template/fn [ambient light color reflectivity]
+  (template/fn [ambient light color reflectivity specular]
     "#version 450 core
 out vec3 fragColor;
-vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity);
+vec3 phong(vec3 ambient, vec3 light, vec3 point, vec3 normal, vec3 color, float reflectivity, float specular);
 void main()
 {
   vec3 ambient = vec3(<%= ambient %>, <%= ambient %>, <%= ambient %>);
@@ -1457,15 +1435,15 @@ void main()
   vec3 normal = vec3(0, 0, 1);
   vec3 color = vec3(<%= color %>, <%= color %>, <%= color %>);
   float reflectivity = <%= reflectivity %>;
-  fragColor = phong(ambient, light, point, normal, color, reflectivity);
+  float specular = <%= specular %>;
+  fragColor = phong(ambient, light, point, normal, color, reflectivity, specular);
 }"))
 
 
 (def phong-test
   (shader-test
-    (fn [program albedo specular origin light-direction amplification]
+    (fn [program albedo origin light-direction amplification]
       (uniform-float program "albedo" albedo)
-      (uniform-float program "specular" specular)
       (uniform-vector3 program "origin" origin)
       (uniform-vector3 program "light_direction" light-direction)
       (uniform-float program "amplification" amplification))
@@ -1473,7 +1451,7 @@ void main()
 
 
 (tabular "Shader for phong shading (ambient, diffuse, and specular lighting)"
-         (fact ((phong-test [?albedo ?specular ?origin ?light-dir ?amplification] [?ambient ?light ?color ?reflect]) 0)
+         (fact ((phong-test [?albedo ?origin ?light-dir ?amplification] [?ambient ?light ?color ?reflect ?specular]) 0)
                => (roughly ?result 1e-6))
          ?albedo ?specular ?origin      ?light-dir           ?amplification ?ambient ?light ?color   ?reflect ?result
          0.0      1.0      (vec3 0  0   1) (vec3 0 0   1)     0.0           0.0      0.0    0.0      0.0      0.0
@@ -1638,26 +1616,5 @@ void main()
        ((noise3d-test [] [1.0 0.0 0.0]) 0) => (roughly 0.7187500 1e-6)
        ((noise3d-test [] [0.5 0.0 0.0]) 0) => (roughly 0.3593750 1e-6))
 
-(def subtract-interval-probe
-  (template/fn [ax ay bx by]
-"#version 450 core
-out vec3 fragColor;
-vec2 subtract_interval(vec2 a, vec2 b);
-void main()
-{
-  vec2 result = subtract_interval(vec2(<%= ax %>, <%= ay %>), vec2(<%= bx %>, <%= by %>));
-  fragColor = vec3(result, 0);
-}"))
-
-(def subtract-interval-test (shader-test (fn [_program]) subtract-interval-probe subtract-interval))
-
-(tabular "Shader function to subtract two intervals"
-         (fact (take 2 (subtract-interval-test [] [?ax ?ay ?bx ?by])) => (vec2 ?rx ?ry))
-          ?ax  ?ay  ?bx  ?by  ?rx  ?ry
-          1.0  2.0  5.0  3.0  1.0  2.0
-          1.0  4.0  3.0  6.0  1.0  2.0
-          1.0  4.0  0.0  6.0  6.0 -1.0
-          2.0  3.0  1.0  2.0  3.0  2.0
-          4.0  1.0  1.0  2.0  4.0  1.0)
 
 (GLFW/glfwTerminate)

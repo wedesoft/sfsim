@@ -7,7 +7,7 @@
 (ns sfsim.aerodynamics
     (:require
       [clojure.math :refer (PI cos sin to-radians atan2 hypot exp)]
-      [fastmath.matrix :refer (mat3x3 mulv)]
+      [fastmath.matrix :refer (mat3x3)]
       [fastmath.vector :refer (vec3 mag add)]
       [fastmath.interpolation :as interpolation]
       [malli.core :as m]
@@ -51,36 +51,6 @@
   (fn ^double [^double x] (* 2.0 h (- (logistic-function (/ (* 2.0 x) h)) 0.5))))
 
 
-(defn piecewise
-  "Create piecewise function from intervals interleaved with functions"
-  {:malli/schema [:=> [:cat [:* [:cat [:tuple :double :double] [:=> [:cat :double] :double]]]] [:=> [:cat :double] :double]]}
-  [[start end] function & remaining]
-  (fn piecewise-function [x]
-      (if (<= start x end)
-        (function x)
-        ((apply piecewise remaining) x))))
-
-
-(defn piecewise-linear
-  "Create piecewise linear function from series of interleaved x and y coordinates"
-  {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
-  [& args]
-  (let [points (partition 2 args)
-        x      (map first points)
-        y      (map second points)]
-    (interpolation/linear-smile x y)))
-
-
-(defn cubic-spline
-  "Create cubic spline function from series of interleaved x and y coordinates"
-  {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
-  [& args]
-  (let [points (partition 2 args)
-        x      (map first points)
-        y      (map second points)]
-    (interpolation/cubic-spline x y)))
-
-
 (defn akima-spline
   "Create Akima spline function from series of at least 5 interleaved x and y coordinates"
   {:malli/schema [:=> [:cat [:* [:cat :double :double]]] [:=> [:cat :double] :double]]}
@@ -114,36 +84,6 @@
     (- (- PI) angle)))
 
 
-(defn speed-x
-  "Airplane x-coordinate (forward) of speed vector in body system for angle of attack and side slip angle"
-  {:malli/schema [:=> [:cat :double :double] :double]}
-  [angle-of-attack angle-of-side-slip]
-  (* (cos angle-of-attack) (cos angle-of-side-slip)))
-
-
-(defn speed-y
-  "Airplane y-coordinate (right) of speed vector in body system for angle of attack and side slip angle"
-  {:malli/schema [:=> [:cat :double :double] :double]}
-  [_angle-of-attack angle-of-side-slip]
-  (sin angle-of-side-slip))
-
-
-(defn speed-z
-  "Airplane z-coordinate (down) of speed vector in body system for angle of attack and side slip angle"
-  {:malli/schema [:=> [:cat :double :double] :double]}
-  [angle-of-attack angle-of-side-slip]
-  (* (sin angle-of-attack) (cos angle-of-side-slip)))
-
-
-(defn speed-vector
-  "Speed vector in aircraft body system for given angle of attack and side slip angle"
-  {:malli/schema [:=> [:cat :double :double] fvec3]}
-  [angle-of-attack angle-of-side-slip]
-  (vec3 (speed-x angle-of-attack angle-of-side-slip)
-        (speed-y angle-of-attack angle-of-side-slip)
-        (speed-z angle-of-attack angle-of-side-slip)))
-
-
 (defn angle-of-attack
   "Get angle of attack from speed vector in aircraft body system"
   {:malli/schema [:=> [:cat fvec3] :double]}
@@ -159,23 +99,6 @@
 
 
 (def gltf-to-aerodynamic (mat3x3 1 0 0, 0 0 1, 0 -1 0))
-
-
-(defn gltf->aerodynamic
-  "Convert glTF model coordinates (x: forward, y: up, z:right) to aerodynamic body ones (x: forward, y: right, z: down)"
-  {:malli/schema [:=> [:cat fvec3] fvec3]}
-  [gltf-vector]
-  (mulv gltf-to-aerodynamic gltf-vector))
-
-
-(def aerodynamic-to-gltf (mat3x3 1 0 0, 0 0 -1, 0 1 0))
-
-
-(defn aerodynamic->gltf
-  "Convert aerodynamic body coordinates (x: forward, y: right, z: down) to glTF model ones (x: forward, y: up, z:right)"
-  {:malli/schema [:=> [:cat fvec3] fvec3]}
-  [aerodynamic-vector]
-  (mulv aerodynamic-to-gltf aerodynamic-vector))
 
 
 (def wing-area 682.1415)

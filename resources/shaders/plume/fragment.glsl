@@ -15,8 +15,8 @@ out vec4 fragColor;
 
 void main()
 {
-  vec4 camera_direction = geometry_point();
-  vec3 direction = (camera_to_world * camera_direction).xyz;
+  vec4 camera_direction = vec4(normalize(geometry_point().xyz), 0);
+  vec3 direction = mat3(camera_to_world) * camera_direction.xyz;
   vec3 object_origin_plume = (object_to_plume * vec4(object_origin, 1)).xyz;
   vec3 object_direction_plume = (object_to_plume * camera_to_object * camera_direction).xyz;
 <% (when outer %>

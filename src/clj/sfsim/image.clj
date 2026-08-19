@@ -31,9 +31,6 @@
 (def float-image-2d (m/schema [:map [::width N] [::height N] [::data seqable?]]))
 (def float-image-3d (m/schema [:map [::width N] [::height N] [::depth N] [::data seqable?]]))
 (def float-image-4d (m/schema [:map [::width N] [::height N] [::depth N] [::hyperdepth N] [::data seqable?]]))
-(def field-2d (m/schema [:map [::width N] [::height N] [::data seqable?]]))
-
-
 (defn make-image
   "Create an empty RGBA image"
   [^long width ^long height]
@@ -243,9 +240,6 @@
   (aset-float data (+ (* width (+ (* height ^long z) ^long y)) ^long x) value))
 
 
-(def byte-field-2d (m/schema [:map [::width N] [::height N] [::data bytes?]]))
-
-
 (defn get-byte
   "Read byte value from a tile"
   [{::keys [^long width data]} ^long y ^long x]
@@ -316,23 +310,6 @@
                         (get-in array [(quot y ^long b) (quot x ^long a) (mod y ^long b) (mod x ^long a)]))
                     (range w)))
           (range h))))
-
-
-(defn convert-2d-to-4d
-  "Convert 2D array with tiles to 4D array (assuming that each two dimensions are the same)"
-  {:malli/schema [:=> [:cat array-2d N N N N] array-4d]}
-  [array d c b a]
-  (mapv (fn cube-4d
-          [^long y]
-          (mapv (fn plane-4d
-                  [^long x]
-                  (mapv (fn row-4d
-                          [^long v]
-                          (mapv (fn pixel-4d [^long u] (get-in array [(+ v (* y ^long b)) (+ u (* x ^long a))]))
-                                (range a)))
-                        (range b)))
-                (range c)))
-        (range d)))
 
 
 (defn floats->image

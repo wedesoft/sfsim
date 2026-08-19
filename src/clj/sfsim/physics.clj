@@ -34,12 +34,6 @@
 (def gravitational-constant 6.67430e-11)
 
 
-(defn euler
-  "Euler integration method"
-  [y0 dt dy + *]
-  (+ y0 (* (dy y0 dt) dt)))
-
-
 (defn runge-kutta
   "Runge-Kutta integration method"
   {:malli/schema [:=> [:cat :some :double [:=> [:cat :some :double] :some] add-schema scale-schema] :some]}
@@ -187,7 +181,7 @@
 (defn all-rcs
   "Get list of all thruster names"
   []
-  (conj (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"]) "Plume"))
+  (into #{"Plume"} (mapcat rcs-set ["FF" "FU" "L" "LA" "LD" "LU" "R" "RA" "RD" "RU" "LF" "RF" "LFD" "RFD"])))
 
 
 (defn initialize-thrusters
@@ -611,20 +605,6 @@
       (union (when (pos? ^double ((::rcs-thrust state) 2)) (rcs-sets "R" "LF")))))
 
 
-(defn ordered-rcs-transforms
-  "Get transforms of RCS thrusters for ordered list of names"
-  [transforms rcs-names]
-  (mapv (fn [rcs-name] [rcs-name (transforms rcs-name)]) rcs-names))
-
-
-(defn active-rcs-transforms
-  "Get transforms of active RCS thrusters given ordered list of names"
-  [state ordered-names]
-  (let [transforms   (::thrusters state)
-        active-names (active-rcs state)]
-    (ordered-rcs-transforms transforms (filter active-names ordered-names))))
-
-
 (defn set-thruster-forces
   "Set forces and torques of main thruster and RCS thrusters"
   [state thrust]
@@ -742,24 +722,6 @@
      ::wheel-angles (get-wheel-angles state)
      ::suspension (get-suspension state)
      ::rcs-thrust (::rcs-thrust state)}))
-
-
-(defn load-state
-  "Load physics state from serializable representation"
-  [state data]
-  (let [domain (::domain data)
-        result (-> state
-                   (assoc ::start-julian-date (::start-julian-date data))
-                   (assoc ::offset-seconds (::offset-seconds data))
-                   (set-domain domain)
-                   (set-pose domain (apply vec3 (::position data)) (q/map->Quaternion (::orientation data)))
-                   (assoc ::throttle (::throttle data))
-                   (assoc ::gear (::gear data))
-                   (assoc ::rcs-thrust (apply vec3 (::rcs-thrust data))))]
-    (update-gear-status result)
-    (set-wheel-angles result (::wheel-angles data))
-    (set-suspension result (::suspension data))
-    result))
 
 
 (defn simulation-step

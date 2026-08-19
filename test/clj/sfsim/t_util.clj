@@ -189,11 +189,6 @@
        ((comp* + vector) 1 2 3) => 6)
 
 
-(facts "Pack nested floating-point vector into float array"
-       (seq (pack-floats [2 3 5 7])) => [2.0 3.0 5.0 7.0]
-       (seq (pack-floats [[2 3 5] [7 11 13]])) => [2.0 3.0 5.0 7.0 11.0 13.0])
-
-
 (fact "Determine size of given shape"
       (size-of-shape [2 3 5]) => 30)
 
@@ -222,12 +217,6 @@
 (facts "Create octaves summing to one"
        (octaves 4 1.0) => [0.25 0.25 0.25 0.25]
        (octaves 2 0.25) => [0.8 0.2])
-
-(facts "Fetch first element matching a predicate"
-       (find-if odd? [2 4 6]) => nil
-       (find-if odd? [2 3 4]) => 3
-       (find-if odd? [2 4 5]) => 5)
-
 
 (def destruct (atom nil))
 (def sqr-cache (make-lru-cache 2 sqr (fn [x] (reset! destruct x))))

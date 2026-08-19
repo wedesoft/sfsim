@@ -23,3 +23,4 @@ venturestar.glb
 *.jar
 *.tgz
 *.log
+*.egg-info

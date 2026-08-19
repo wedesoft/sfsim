@@ -12,25 +12,26 @@
     [fastmath.matrix :refer (mat4x4 mulm mulv eye diagonal inverse)]
     [fastmath.vector :refer (vec3 mult add)]
     [malli.core :as m]
-    [sfsim.atmosphere :refer (attenuation-point setup-atmosphere-uniforms make-atmosphere-geometry-renderer
-                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry cloud-overlay
-                              atmosphere-geometry-renderer)]
-    [sfsim.clouds :refer (lod-offset overall-shading overall-shading-parameters render-cloud-geometry)]
+    [sfsim.atmosphere :refer (make-atmosphere-geometry-renderer
+                              destroy-atmosphere-geometry-renderer render-atmosphere-geometry2 atmosphere-geometry-renderer)]
+    [sfsim.clouds :refer (render-cloud-geometry)]
     [sfsim.plume :refer (model-data model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3
                           fvec3 fmat4 rotation-matrix get-translation get-translation)]
-    [sfsim.planet :refer (surface-radiance-function shadow-vars make-planet-geometry-renderer destroy-planet-geometry-renderer
-                          render-planet-geometry planet-data planet-geometry-renderer)]
+    [sfsim.planet :refer (make-planet-geometry-renderer destroy-planet-geometry-renderer
+                          render-planet-geometry2 planet-data planet-geometry-renderer)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
     [sfsim.render :refer (make-vertex-array-object destroy-vertex-array-object render-triangles vertex-array-object
                           make-program destroy-program use-program uniform-int uniform-float uniform-matrix4
-                          uniform-vector3 uniform-sampler use-textures setup-shadow-and-opacity-maps with-stencil-op-ref-and-mask
-                          setup-shadow-matrices render-vars make-render-vars texture-render-depth clear with-stencils) :as render]
-    [sfsim.shaders :refer (phong shrink-shadow-index percentage-closer-filtering shadow-lookup)]
-    [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap)]
+                          uniform-vector3 uniform-sampler use-textures with-stencil-op-ref-and-mask
+                          render-vars make-render-vars texture-render-depth clear with-stencils
+                          framebuffer-render render-quads) :as render]
+    [sfsim.shaders :refer (shrink-shadow-index)]
+    [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d
+                           make-empty-depth-stencil-texture-2d)]
     [sfsim.aerodynamics :as aerodynamics]
-    [sfsim.util :refer (N0 N third)])
+    [sfsim.util :refer (N0 N)])
   (:import
     (java.nio
       DirectByteBuffer)
@@ -57,7 +58,8 @@
     (org.lwjgl.stb
       STBImage)
     (org.lwjgl.opengl
-      GL11)))
+      GL11
+      GL30)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -575,112 +577,6 @@
   [(boolean color-texture-index) (boolean normal-texture-index)])
 
 
-(defn material-and-shadow-type
-  "Determine information for selecting correct shader program"
-  [{::keys [color-texture-index normal-texture-index num-scene-shadows]}]
-  [(boolean color-texture-index) (boolean normal-texture-index) (or num-scene-shadows 0)])
-
-
-(def vertex-scene (template/fn [textured bump num-scene-shadows] (slurp "resources/shaders/model/vertex.glsl")))
-
-
-(defn fragment-scene
-  "Fragment shader for rendering scene in atmosphere"
-  {:malli/schema [:=> [:cat :boolean :boolean N N0] render/shaders]}
-  [textured bump num-steps num-scene-shadows]
-  [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
-   (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
-   (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function cloud-overlay
-   (template/eval (slurp "resources/shaders/model/fragment.glsl")
-                  {:textured textured :bump bump :num-scene-shadows num-scene-shadows})])
-
-
-(def scene-renderer
-  (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean :int] :int]]
-             [::texture-offset :int]]))
-
-
-(def data
-  (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N]
-                                             [:sfsim.opacity/scene-shadow-counts [:vector N0]]]]
-                  [:sfsim.clouds/data  [:map [:sfsim.clouds/perlin-octaves [:vector :double]]
-                                             [:sfsim.clouds/cloud-octaves [:vector :double]]]]
-                  [:sfsim.model/data [:map [::object-radius :double]]]]))
-
-
-(defn setup-scene-samplers
-  "Set up uniform samplers for scene rendering program"
-  {:malli/schema [:=> [:cat :int :int :int :boolean :boolean] :nil]}
-  [program texture-offset num-scene-shadows textured bump]
-  (if textured
-    (do
-      (uniform-sampler program "colors" (+ ^long texture-offset ^long num-scene-shadows))
-      (when bump (uniform-sampler program "normals" (+ ^long texture-offset ^long num-scene-shadows 1))))
-    (when bump (uniform-sampler program "normals" (+ ^long texture-offset ^long num-scene-shadows)))))
-
-
-(defn setup-scene-static-uniforms
-  "Set up static uniforms of scene rendering program"
-  {:malli/schema [:=> [:cat :int :int :int :boolean :boolean data] :nil]}
-  [program texture-offset num-scene-shadows textured bump data]
-  (let [render-config   (:sfsim.render/config data)
-        planet-config   (:sfsim.planet/config data)
-        atmosphere-luts (:sfsim.atmosphere/luts data)
-        cloud-data      (:sfsim.clouds/data data)
-        shadow-data     (:sfsim.opacity/data data)]
-    (use-program program)
-    (setup-atmosphere-uniforms program atmosphere-luts 0 true)
-    (uniform-sampler program "clouds" 4)
-    (uniform-sampler program "dist" 5)
-    (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
-    (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
-    (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
-    (doseq [i (range num-scene-shadows)]
-      (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ ^long i 6)))
-    (setup-shadow-and-opacity-maps program shadow-data (+ 6 ^long num-scene-shadows))
-    (setup-scene-samplers program texture-offset num-scene-shadows textured bump)
-    (uniform-int program "cloud_subsampling" (:sfsim.render/cloud-subsampling render-config))
-    (uniform-float program "depth_sigma" (:sfsim.clouds/depth-sigma cloud-data))
-    (uniform-float program "min_depth_exponent" (:sfsim.clouds/min-depth-exponent cloud-data))
-    (uniform-float program "radius" (:sfsim.planet/radius planet-config))
-    (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
-    (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
-
-
-(defn make-scene-program
-  "Create and setup scene rendering program"
-  {:malli/schema [:=> [:cat :boolean :boolean N0 N0 data] :int]}
-  [textured bump texture-offset num-scene-shadows data]
-  (let [num-steps             (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
-        fragment-shader       (fragment-scene textured bump num-steps num-scene-shadows)
-        program               (make-program :sfsim.render/vertex [(vertex-scene textured bump num-scene-shadows)]
-                                            :sfsim.render/fragment fragment-shader)]
-    (setup-scene-static-uniforms program texture-offset num-scene-shadows textured bump data)
-    program))
-
-
-(defn make-scene-renderer
-  "Create set of programs for rendering different materials"
-  {:malli/schema [:=> [:cat data] scene-renderer]}
-  [data]
-  (let [num-steps            (-> data :sfsim.opacity/data :sfsim.opacity/num-steps)
-        scene-shadow-counts  (-> data :sfsim.opacity/data :sfsim.opacity/scene-shadow-counts)
-        model-data           (::data data)
-        cloud-data           (:sfsim.clouds/data data)
-        render-config        (:sfsim.render/config data)
-        atmosphere-luts      (:sfsim.atmosphere/luts data)
-        texture-offset       (+ 6 (* 2 ^long num-steps))
-        variations           (for [textured [false true] bump [false true] num-scene-shadows scene-shadow-counts]
-                               [textured bump num-scene-shadows])
-        programs             (mapv #(make-scene-program (first %) (second %) texture-offset (third %) data) variations)]
-    {::programs              (zipmap variations programs)
-     ::texture-offset        texture-offset
-     ::data                  model-data
-     :sfsim.clouds/data      cloud-data
-     :sfsim.render/config    render-config
-     :sfsim.atmosphere/luts  atmosphere-luts}))
-
-
 (defn- remove-empty-children
   "Recursively remove empty children"
   {:malli/schema [:=> [:cat node] node]}
@@ -738,15 +634,6 @@
   {:malli/schema [:=> [:cat scene] hulls]}
   [scene]
   (extract-hulls (::root scene)))
-
-
-(defn load-scene
-  "Load glTF scene and load it into OpenGL"
-  {:malli/schema [:=> [:cat scene-renderer scene] scene]}
-  [scene-renderer model]
-  (let [gltf-object   (remove-empty-meshes model)
-        opengl-object (load-scene-into-opengl (comp (::programs scene-renderer) material-and-shadow-type) gltf-object)]
-    opengl-object))
 
 
 (def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
@@ -809,53 +696,6 @@
 
 
 (def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
-
-
-(defn render-scenes
-  "Render a list of scenes"
-  {:malli/schema [:=> [:cat scene-renderer render-vars shadow-vars [:vector scene-shadow]
-                            [:map [:sfsim.clouds/distance texture-2d]] texture-2d
-                            [:vector scene]] :nil]}
-  [scene-renderer render-vars shadow-vars scene-shadows geometry clouds scenes]
-  (let [render-config      (:sfsim.render/config scene-renderer)
-        cloud-data         (:sfsim.clouds/data scene-renderer)
-        atmosphere-luts    (:sfsim.atmosphere/luts scene-renderer)
-        camera-to-world    (:sfsim.render/camera-to-world render-vars)
-        texture-offset     (::texture-offset scene-renderer)
-        dist               (:sfsim.clouds/distance geometry)
-        num-scene-shadows  (count scene-shadows)
-        world-to-camera    (inverse camera-to-world)]
-    (doseq [program (vals (::programs scene-renderer))]
-      (use-program program)
-      (uniform-float program "lod_offset" (lod-offset render-config cloud-data render-vars))
-      (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
-      (uniform-vector3 program "origin" (:sfsim.render/origin render-vars))
-      (uniform-matrix4 program "world_to_camera" world-to-camera)
-      (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
-      (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
-      (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
-      (uniform-int program "overlay_width" (:sfsim.render/overlay-width render-vars))
-      (uniform-int program "overlay_height" (:sfsim.render/overlay-height render-vars))
-      (setup-shadow-matrices program shadow-vars))
-    (use-textures {0 (:sfsim.atmosphere/transmittance atmosphere-luts) 1 (:sfsim.atmosphere/scatter atmosphere-luts)
-                   2 (:sfsim.atmosphere/mie atmosphere-luts) 3 (:sfsim.atmosphere/surface-radiance atmosphere-luts)
-                   4 clouds 5 dist})
-    (doseq [i (range num-scene-shadows)]
-      (use-textures {(+ ^long i 6) (::shadows (nth scene-shadows i))}))
-    (use-textures (zipmap (drop (+ 6 num-scene-shadows) (range))
-                          (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))
-    (doseq [scene scenes]
-      (render-scene (comp (::programs scene-renderer) material-and-shadow-type)
-                    (+ ^long texture-offset num-scene-shadows)
-                    render-vars
-                    (mapv (fn [s] (:sfsim.matrix/object-to-shadow-map (::matrices s))) scene-shadows)
-                    scene render-mesh))))
-
-
-(defn destroy-scene-renderer
-  {:malli/schema [:=> [:cat scene-renderer] :nil]}
-  [{::keys [programs]}]
-  (doseq [program (vals programs)] (destroy-program program)))
 
 
 (defn make-model-vars
@@ -946,7 +786,7 @@
   "Determine shadow matrices and render shadow map for object"
   {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene] scene-shadow]}
   [renderer light-direction scene]
-  (let [object-to-world (get-in scene [:sfsim.model/root :sfsim.model/transform])
+  (let [object-to-world (get-in scene [::root ::transform])
         object-radius   (::object-radius renderer)
         shadow-matrices (shadow-patch-matrices object-to-world light-direction object-radius)
         shadow-map      (render-shadow-map renderer shadow-matrices scene)]
@@ -969,62 +809,46 @@
 
 
 (def vertex-geometry-scene
-  (template/fn [textured bump] (slurp "resources/shaders/model/vertex-geometry.glsl")))
+  (template/fn [textured bump full] (slurp "resources/shaders/model/vertex-geometry.glsl")))
 
 
 (def fragment-geometry-scene
-  (slurp "resources/shaders/model/fragment-geometry.glsl"))
+  (template/fn [textured bump full] (slurp "resources/shaders/model/fragment-geometry.glsl")))
 
 
 (defn make-scene-geometry-program
-  "Create program to render scene points and distances"
-  {:malli/schema [:=> [:cat :boolean :boolean] :int]}
-  [textured bump]
-  (make-program :sfsim.render/vertex [(vertex-geometry-scene textured bump)]
-                :sfsim.render/fragment [fragment-geometry-scene]))
+  "Create program to render scene points and distances or full geometry"
+  {:malli/schema [:=> [:cat :boolean :boolean :boolean] :int]}
+  [textured bump full]
+  (make-program :sfsim.render/vertex [(vertex-geometry-scene textured bump full)]
+                :sfsim.render/fragment [(fragment-geometry-scene textured bump full)]))
 
 
 (def scene-geometry-renderer (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean] :int]]]))
 
 
 (defn make-scene-geometry-renderer
-  "Create renderer to render scene points and distances"
-  {:malli/schema [:=> [:cat] scene-geometry-renderer]}
-  []
+  "Create renderer to render scene points and distances or full geometry"
+  {:malli/schema [:=> [:cat :boolean] scene-geometry-renderer]}
+  [full]
   (let [variations (for [textured [false true] bump [false true]] [textured bump])
-        programs   (mapv #(make-scene-geometry-program (first %) (second %)) variations)]
+        programs   (mapv #(make-scene-geometry-program (first %) (second %) full) variations)]
     {::programs (zipmap variations programs)}))
 
 
-(def model-render-vars
-  (m/schema [:map [::program :int]
-                  [::transform fmat4]
-                  [:sfsim.render/overlay-projection fmat4]]))
+(def geometry-render-vars2
+  (m/schema [:map [:sfsim.render/camera-to-world fmat4] [:sfsim.render/projection fmat4]]))
 
 
-(defn render-geometry-mesh
-  "Render function to render points and distances for a mesh (part of scene)"
-  {:malli/schema [:=> [:cat material model-render-vars] :nil]}
-  [_material {::keys [program transform] :as render-vars}]
-  (let [camera-to-world (:sfsim.render/camera-to-world render-vars)]
-    (use-program program)
-    (uniform-matrix4 program "object_to_camera" (mulm (inverse camera-to-world) transform))))
-
-
-(def geometry-render-vars
-  (m/schema [:map [:sfsim.render/camera-to-world fmat4] [:sfsim.render/overlay-projection fmat4]]))
-
-
-(defn render-scene-geometry
-  "Render geometry (points and distances) for a scene"
-  {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars scene] :nil]}
-  [geometry-renderer render-vars scene]
-  (let [projection       (:sfsim.render/overlay-projection render-vars)]
-    (doseq [program (vals (::programs geometry-renderer))]
-           (use-program program)
-           (uniform-matrix4 program "projection" projection))
-    (render-scene (comp (:sfsim.model/programs geometry-renderer) material-type) 0
-                  render-vars [] scene render-geometry-mesh)))
+(defn setup-model-geometry-uniforms
+  "Set up uniforms for different model geometry shader programs"
+  [geometry-renderer projection full]
+  (doseq [[[textured bump] program] (::programs geometry-renderer)]
+         (use-program program)
+         (uniform-matrix4 program "projection" projection)
+         (when full
+           (when textured (uniform-sampler program "colors" 0))
+           (when bump (uniform-sampler program "normals" (if textured 1 0))))))
 
 
 (defn destroy-scene-geometry-renderer
@@ -1042,11 +866,11 @@
 
 (defn make-joined-geometry-renderer
   "Joined geometry renderer for rendering scene, planet, and atmosphere geometry information"
-  {:malli/schema [:=> [:cat planet-data] joined-geometry-renderer]}
-  [data]
-  (let [scene-renderer (make-scene-geometry-renderer)
-        planet-renderer (make-planet-geometry-renderer data)
-        atmosphere-renderer (make-atmosphere-geometry-renderer)]
+  {:malli/schema [:=> [:cat planet-data :int] joined-geometry-renderer]}
+  [data num-scene-shadows]
+  (let [scene-renderer (make-scene-geometry-renderer false)
+        planet-renderer (make-planet-geometry-renderer data false num-scene-shadows)
+        atmosphere-renderer (make-atmosphere-geometry-renderer false)]
     {::scene-renderer scene-renderer
      ::planet-renderer planet-renderer
      ::atmosphere-renderer atmosphere-renderer}))
@@ -1065,29 +889,7 @@
   (m/schema [:map
               [:sfsim.render/camera-to-world fmat4]
               [:sfsim.render/z-near :double]
-              [:sfsim.render/z-far :double]
-              [:sfsim.render/overlay-projection fmat4]
-              [:sfsim.render/overlay-width :int]
-              [:sfsim.render/overlay-height :int]]))
-
-
-(defn render-joined-geometry
-  "Render joined geometry of scene, planet, and atmosphere"
-  {:malli/schema [:=> [:cat joined-geometry-renderer model-planet-render-vars model-planet-render-vars [:maybe scene]
-                       [:maybe :some]] :any]}
-  [{::keys [scene-renderer planet-renderer atmosphere-renderer]} model-render-vars planet-render-vars model tree]
-  (let [model-covers-planet? (< ^double (:sfsim.render/z-near model-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
-    (render-cloud-geometry (:sfsim.render/overlay-width planet-render-vars) (:sfsim.render/overlay-height planet-render-vars)
-                           (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
-                             (when model
-                               (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
-                                 (render-scene-geometry scene-renderer
-                                                        (if model-covers-planet? model-render-vars planet-render-vars) model)))
-                             (when tree
-                               (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
-                                 (render-planet-geometry planet-renderer planet-render-vars tree)))
-                             (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
-                               (render-atmosphere-geometry atmosphere-renderer planet-render-vars))))))
+              [:sfsim.render/z-far :double]]))
 
 
 (defn- build-bsp-tree
@@ -1125,6 +927,177 @@
         (concat ordered-front-children ordered-back-children)
         (concat ordered-back-children ordered-front-children)))
     [(::name bsp-node)]))
+
+
+(defn make-geometry-buffers
+  "Initialize textures for storing geometry"
+  [width height]
+  {::width             width
+   ::height            height
+   ::depth             (make-empty-depth-stencil-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp width height)
+   ::point-texture     (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
+   ::normal-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
+   ::diffuse-texture   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)
+   ::metallic-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_R32F width height)
+   ::specular-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_R32F width height)
+   ::emissive-texture  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F width height)})
+
+
+(defmacro render-geometry
+  "Perform rendering to geometry buffer"
+  [geometry-buffers & body]
+  `(let [width#             (::width ~geometry-buffers)
+         height#            (::height ~geometry-buffers)
+         depth#             (::depth ~geometry-buffers)
+         point-texture#     (::point-texture ~geometry-buffers)
+         normal-texture#    (::normal-texture ~geometry-buffers)
+         diffuse-texture#   (::diffuse-texture ~geometry-buffers)
+         metallic-texture#  (::metallic-texture ~geometry-buffers)
+         specular-texture#  (::specular-texture ~geometry-buffers)
+         emissive-texture#  (::emissive-texture ~geometry-buffers)]
+     (framebuffer-render width# height# :sfsim.render/cullback depth#
+                         [point-texture# normal-texture# diffuse-texture# metallic-texture# specular-texture# emissive-texture#]
+                         ~@body)))
+
+
+(defn geometry-buffer-uniforms
+  "Set up geometry uniforms for lighting pass"
+  [{::keys [width height]} program texture-offset]
+  (uniform-int program "width" width)
+  (uniform-int program "height" height)
+  (uniform-sampler program "camera_point" texture-offset)
+  (uniform-sampler program "camera_normal" (inc ^long texture-offset))
+  (uniform-sampler program "diffuse_material" (+ ^long texture-offset 2))
+  (uniform-sampler program "metallic_material" (+ ^long texture-offset 3))
+  (uniform-sampler program "specular_material" (+ ^long texture-offset 4))
+  (uniform-sampler program "emissive_material" (+ ^long texture-offset 5)))
+
+
+(defn use-geometry-buffer-textures
+  "Set up geometry buffers for lighting pass"
+  [{::keys [point-texture normal-texture diffuse-texture metallic-texture specular-texture emissive-texture]} texture-offset]
+  (use-textures {texture-offset point-texture
+                 (inc ^long texture-offset) normal-texture
+                 (+ ^long texture-offset 2) diffuse-texture
+                 (+ ^long texture-offset 3) metallic-texture
+                 (+ ^long texture-offset 4) specular-texture
+                 (+ ^long texture-offset 5) emissive-texture}))
+
+
+(defmacro render-lighting
+  "Perform lighting pass"
+  [geometry-buffers program texture-offset & body]
+  `(let [indices#  [0 1 3 2]
+         vertices# [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+         screen#   (make-vertex-array-object ~program indices# vertices# ["point" 3])]
+     (use-program ~program)
+     ~@body
+     (geometry-buffer-uniforms ~geometry-buffers ~program ~texture-offset)
+     (use-geometry-buffer-textures ~geometry-buffers ~texture-offset)
+     (clear (vec3 0.0 0.0 0.0))
+     (render-quads screen#)
+     (destroy-vertex-array-object screen#)))
+
+
+(defn destroy-geometry-buffers
+  "Destroy geometry buffer textures"
+  [{::keys [depth point-texture normal-texture diffuse-texture metallic-texture specular-texture emissive-texture]}]
+  (destroy-texture depth)
+  (destroy-texture point-texture)
+  (destroy-texture normal-texture)
+  (destroy-texture diffuse-texture)
+  (destroy-texture metallic-texture)
+  (destroy-texture specular-texture)
+  (destroy-texture emissive-texture))
+
+
+(defmulti render-mesh-geometry (fn [full material _render-vars] (if full (material-type material) nil)))
+
+(m/=> render-mesh-geometry [:=> [:cat :boolean material mesh-vars] :nil])
+
+
+(defmethod render-mesh-geometry nil
+  [_full _material {::keys [program transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform)))
+
+
+(defmethod render-mesh-geometry [false false]
+  [_full {::keys [diffuse metallic roughness]} {::keys [program transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
+  (uniform-vector3 program "diffuse_color" diffuse))
+
+
+(defmethod render-mesh-geometry [true false]
+  [_full {::keys [colors metallic roughness]} {::keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
+  (use-textures {texture-offset colors}))
+
+
+(defmethod render-mesh-geometry [false true]
+  [_full {::keys [diffuse metallic roughness normals]} {::keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-vector3 program "diffuse_color" diffuse)
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
+  (use-textures {texture-offset normals}))
+
+
+(defmethod render-mesh-geometry [true true]
+  [_full {::keys [metallic roughness colors normals]} {::keys [program texture-offset transform] :as render-vars}]
+  (use-program program)
+  (uniform-matrix4 program "object_to_camera" (mulm (inverse (:sfsim.render/camera-to-world render-vars)) transform))
+  (uniform-float program "metallic" metallic)
+  (uniform-float program "specular" (/ 1.0 ^double roughness))
+  (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
+
+
+(defn render-scene-geometry3
+  "Render geometry (points and distances) for a scene"
+  {:malli/schema [:=> [:cat scene-geometry-renderer geometry-render-vars2 scene] :nil]}
+  [geometry-renderer render-vars scene]
+  (setup-model-geometry-uniforms geometry-renderer (:sfsim.render/projection render-vars) false)
+  (render-scene (comp (::programs geometry-renderer) material-type) 0
+                render-vars [] scene (partial render-mesh-geometry false)))
+
+
+(defn geometry-program-selection
+  "Select correct shader program to render mesh using specific material"
+  {:malli/schema [:=> [:cat scene-geometry-renderer] [:=> [:cat material] :int]]}
+  [geometry-renderer]
+  (fn [material] ((:sfsim.model/programs geometry-renderer) (material-type material))))
+
+
+(defn render-scene-geometry2
+  [geometry-renderer projection-matrix render-vars scene]
+  (setup-model-geometry-uniforms geometry-renderer projection-matrix true)
+  (render-scene (geometry-program-selection geometry-renderer) 0 render-vars [] scene (partial render-mesh-geometry true)))
+
+
+(defn render-joined-geometry2
+  "Render joined geometry of scene, planet, and atmosphere"
+  {:malli/schema [:=> [:cat joined-geometry-renderer model-planet-render-vars model-planet-render-vars [:sequential scene]
+                       [:maybe :some]] :any]}
+  [{::keys [scene-renderer planet-renderer atmosphere-renderer]} model-render-vars planet-render-vars models tree]
+  (let [model-covers-planet? (< ^double (:sfsim.render/z-near model-render-vars) ^double (:sfsim.render/z-near planet-render-vars))]
+    (render-cloud-geometry (:sfsim.render/window-width planet-render-vars) (:sfsim.render/window-height planet-render-vars)
+                           (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
+                             (with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+                               (doseq [model models]
+                                      (render-scene-geometry3 scene-renderer
+                                                              (if model-covers-planet? model-render-vars planet-render-vars) model)))
+                             (when tree
+                               (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
+                                 (render-planet-geometry2 planet-renderer planet-render-vars false tree)))
+                             (with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
+                               (render-atmosphere-geometry2 atmosphere-renderer planet-render-vars))))))
 
 
 (set! *warn-on-reflection* false)

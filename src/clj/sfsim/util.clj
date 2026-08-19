@@ -387,13 +387,6 @@
   (fn comp* [& args] (apply f (apply g args))))
 
 
-(defn pack-floats
-  "Pack nested floating-point vector into float array"
-  {:malli/schema [:=> [:cat [:vector :some]] seqable?]}
-  [array]
-  (float-array (flatten array)))
-
-
 (defn size-of-shape
   "Determine size of given shape"
   {:malli/schema [:=> [:cat [:vector N0]] N0]}
@@ -469,13 +462,6 @@
   (let [series (take n (iterate #(* ^double % decay) 1.0))
         sum    (apply + series)]
     (mapv #(/ ^double % ^double sum) series)))
-
-
-(defn find-if
-  "Fetch first element matching a predicate"
-  {:malli/schema [:=> [:cat fn? [:sequential :some]] :any]}
-  [pred coll]
-  (first (filter pred coll)))
 
 
 (defn make-lru-cache

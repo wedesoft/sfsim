@@ -33,6 +33,12 @@
 (def scale (fn [x s] (* x s)))
 
 
+(defn euler
+  "Euler integration method"
+  [y0 dt dy + *]
+  (+ y0 (* (dy y0 dt) dt)))
+
+
 (facts "Euler integration method"
        (euler 42.0 1.0 (fn [_y _dt] 0.0) add scale) => 42.0
        (euler 42.0 1.0 (fn [_y _dt] 5.0) add scale) => 47.0
@@ -472,42 +478,11 @@
 (destroy-vehicle-constraint @state)
 
 
-(facts "Save and load physics state"
-       (let [state  (-> (make-physics-state sphere)
-                          (set-julian-date-ut (+ astro/T0 42.0))
-                          (assoc :sfsim.physics/offset-seconds 86400.0)
-                          (set-domain :sfsim.physics/orbit)
-                          (set-pose :sfsim.physics/orbit (vec3 6678000 0 0) (q/->Quaternion 1.0 0.0 0.0 0.0))
-                          (assoc :sfsim.physics/throttle 0.25)
-                          (assoc :sfsim.physics/gear 0.5)
-                          (assoc :sfsim.physics/rcs-thrust (vec3 0.25 0.5 -0.5)))
-             data   (edn/read-string (with-out-str (pprint (save-state state))))
-             result (load-state (make-physics-state sphere) data)]
-         (get-julian-date-ut result) => (roughly (+ astro/T0 43.0) 1e-6)
-         (:sfsim.physics/domain result) => :sfsim.physics/orbit
-         (get-position :sfsim.physics/orbit result) => (vec3 6678000 0 0)
-         (get-orientation :sfsim.physics/orbit result) => (q/->Quaternion 1.0 0.0 0.0 0.0)
-         (:sfsim.physics/throttle result) => 0.25
-         (:sfsim.physics/gear result) => 0.5
-         (:sfsim.physics/rcs-thrust result) => (vec3 0.25 0.5 -0.5)))
-
-
 (facts "Test requesting of RCS transforms"
        (rcs-set "TEST") => ["RCS TEST1" "RCS TEST2" "RCS TEST3"]
        (rcs-sets) => #{}
        (rcs-sets "TEST") => #{"RCS TEST1" "RCS TEST2" "RCS TEST3"}
-       (intersection (set (all-rcs)) #{"RCS FF1" "RCS L3" "Plume"}) => #{"RCS FF1" "RCS L3" "Plume"}
-       (ordered-rcs-transforms {} []) => []
-       (ordered-rcs-transforms {"A" (eye 4)} ["A"]) => [["A" (eye 4)]]
-       (ordered-rcs-transforms {"A" (eye 4)} []) => []
-       (active-rcs-transforms {:sfsim.physics/throttle 1.0
-                               :sfsim.physics/rcs-thrust (vec3 0 0 0)
-                               :sfsim.physics/thrusters {"Plume" (eye 4)}}
-                              ["A"]) => []
-       (active-rcs-transforms {:sfsim.physics/throttle 1.0
-                               :sfsim.physics/rcs-thrust (vec3 0 0 0)
-                               :sfsim.physics/thrusters {"Plume" (eye 4)}}
-                              ["A" "Plume"]) => [["Plume" (eye 4)]])
+       (intersection (all-rcs) #{"RCS FF1" "RCS L3" "Plume"}) => #{"RCS FF1" "RCS L3" "Plume"})
 
 
 (facts "Get orbital parameters"

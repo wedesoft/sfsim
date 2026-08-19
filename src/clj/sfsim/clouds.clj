@@ -58,11 +58,6 @@
   (slurp "resources/shaders/clouds/linear-sampling.glsl"))
 
 
-(def exponential-sampling
-  "Shader functions for defining exponential sampling"
-  (slurp "resources/shaders/clouds/exponential-sampling.glsl"))
-
-
 (def opacity-lookup
   "Shader function for looking up transmittance value from deep opacity map"
   [shaders/convert-2d-index shaders/convert-3d-index (slurp "resources/shaders/clouds/opacity-lookup.glsl")])
@@ -264,7 +259,7 @@
 
 (defn planet-and-cloud-shadows
   "Multiply shadows to get overall shadow"
-  {:malli/schema [:=> [:cat N] render/shaders]}
+  {:malli/schema [:=> [:cat N0] render/shaders]}
   [num-steps]
   [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
    (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" "shadow_size"
@@ -277,7 +272,7 @@
 
 (defn environmental-shading
   "Shader function for determining direct light left after atmospheric scattering and shadows"
-  {:malli/schema [:=> [:cat N] render/shaders]}
+  {:malli/schema [:=> [:cat N0] render/shaders]}
   [num-steps]
   [shaders/is-above-horizon atmosphere/transmittance-point (planet-and-cloud-shadows num-steps)
    (slurp "resources/shaders/clouds/environmental-shading.glsl")])
@@ -346,23 +341,6 @@
                              ~@body)
          opacity-layers#))
      ~matrix-cascade))
-
-
-(defn cloud-density-shaders
-  "List of cloud shaders to sample density values"
-  {:malli/schema [:=> [:cat [:vector :double] [:vector :double]] render/shaders]}
-  [cloud-octaves perlin-octaves]
-  [(cloud-density perlin-octaves cloud-octaves) shaders/interpolate-float-cubemap shaders/convert-cubemap-index cloud-cover])
-
-
-(defn opacity-lookup-shaders
-  "List of opacity lookup shaders"
-  {:malli/schema [:=> [:cat N] render/shaders]}
-  [num-steps]
-  [(opacity-cascade-lookup num-steps "average_opacity") opacity-lookup
-   (shaders/percentage-closer-filtering "average_opacity" "opacity_lookup" "shadow_size"
-                                        [["sampler3D" "layers"] ["float" "depth"]])
-   shaders/convert-2d-index shaders/convert-3d-index])
 
 
 (defn lod-offset
@@ -463,7 +441,7 @@
 
 
 (defn overall-shading
-  {:malli/schema [:=> [:cat N [:sequential [:tuple :string :string]]] render/shaders]}
+  {:malli/schema [:=> [:cat N0 [:sequential [:tuple :string :string]]] render/shaders]}
   [num-steps parameters]
   [(environmental-shading num-steps)
    (template/eval (slurp "resources/shaders/clouds/overall-shading.glsl") {:parameters parameters})])

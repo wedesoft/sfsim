@@ -134,6 +134,18 @@
        result#)))
 
 
+(defmacro with-additive-blending
+  [& body]
+  `(do
+     (GL11/glEnable GL11/GL_BLEND)
+     (GL14/glBlendEquation GL14/GL_FUNC_ADD)
+     ; void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+     (GL14/glBlendFuncSeparate GL11/GL_SRC_ALPHA GL11/GL_ONE GL11/GL_ZERO GL11/GL_ONE)
+     (let [result# (do ~@body)]
+       (GL11/glDisable GL11/GL_BLEND)
+       result#)))
+
+
 (defmacro with-scissor
   "Enable scissor test for the specified body of code"
   [& body]
@@ -629,17 +641,23 @@
     matrix-cascade))
 
 
-(defmacro offscreen-render
+(defmacro render-to-image
   "Macro to render to a texture using depth and stencil buffer and convert it to an image"
+  [width height use-depth & body]
+  `(let [depth# (if ~use-depth (make-empty-depth-stencil-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp ~width ~height) nil)
+         tex#   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL11/GL_RGB8 ~width ~height)]
+     (framebuffer-render ~width ~height ::cullback depth# [tex#] ~@body)
+     (let [img# (texture->image tex#)]
+       (destroy-texture tex#)
+       (when ~use-depth (destroy-texture depth#))
+       img#)))
+
+
+(defmacro offscreen-render
+  "Macro create invisible window and invoke macro to render to image"
   [width height & body]
   `(with-invisible-window
-     (let [depth# (make-empty-depth-stencil-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp ~width ~height)
-           tex#   (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL11/GL_RGB8 ~width ~height)]
-       (framebuffer-render ~width ~height ::cullback depth# [tex#] ~@body)
-       (let [img# (texture->image tex#)]
-         (destroy-texture tex#)
-         (destroy-texture depth#)
-         img#))))
+     (render-to-image ~width ~height true ~@body)))
 
 
 (defn diagonal-field-of-view
@@ -651,15 +669,59 @@
     (* 2.0 (asin dxy))))
 
 
-(def render-config (m/schema [:map [::amplification :double] [::specular :double] [::fov :double] [::min-z-near :double]
-                                   [::cloud-subsampling :int]]))
+(def render-config (m/schema [:map [::amplification :double] [::fov :double] [::min-z-near :double] [::cloud-subsampling :int]]))
 
 
 (def render-vars
   (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
-             [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]
-             [::object-origin fvec3] [::camera-to-object fmat4] [::object-distance :double]
-             [::time :double] [::pressure :double] [::overlay-width N] [::overlay-height N] [::overlay-projection fmat4]]))
+             [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]]))
+
+
+; (def render-vars
+;   (m/schema [:map [::origin fvec3] [::z-near :double] [::z-far :double] [::window-width N]
+;              [::window-height N] [::light-direction fvec3] [::camera-to-world fmat4] [::projection fmat4]
+;              [::object-origin fvec3] [::camera-to-object fmat4] [::object-distance :double]
+;              [::time :double] [::pressure :double] [::overlay-width N] [::overlay-height N] [::overlay-projection fmat4]]))
+
+
+(defn make-render-vars2
+  "Create hash map with render variables for rendering current frame with specified depth range"
+  {:malli/schema [:=> [:cat [:map [::fov :double] [::cloud-subsampling :int]] N N fvec3 quaternion fvec3 :double :double]
+                      render-vars]}
+  [render-config window-width window-height camera-position camera-orientation light-direction z-near z-far]
+  (let [fov                (::fov render-config)
+        camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
+        z-offset           1.0
+        projection         (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)]
+    {::origin camera-position
+     ::z-near z-near
+     ::z-far z-far
+     ::fov fov
+     ::window-width window-width
+     ::window-height window-height
+     ::light-direction light-direction
+     ::camera-to-world camera-to-world
+     ::projection projection}))
+
+
+(defn make-subsampled-vars
+  "Create lower resolution configuration"
+  [render-vars render-config]
+  (let [fov               (::fov render-config)
+        cloud-subsampling (::cloud-subsampling render-config)
+        window-width      (::window-width render-vars)
+        window-height     (::window-height render-vars)
+        z-near            (::z-near render-vars)
+        z-far             (::z-far render-vars)
+        z-offset           1.0
+        overlay-width     (quot ^long window-width ^long cloud-subsampling)
+        overlay-height    (quot ^long window-height ^long cloud-subsampling)
+        cloud-subsampling (::cloud-subsampling render-config)
+        projection        (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) fov)]
+    (assoc render-vars
+           ::window-width overlay-width
+           ::window-height overlay-height
+           ::projection projection)))
 
 
 (defn make-render-vars
@@ -699,15 +761,13 @@
      ::pressure pressure}))
 
 
-(defn joined-render-vars
+(defn joined-render-vars2
   "Create hash map with render variables using joined z-range of input render variables"
   {:malli/schema [:=> [:cat render-vars render-vars] render-vars]}
   [vars-first vars-second]
   (let [fov                (::fov vars-first)
         window-width       (::window-width vars-first)
         window-height      (::window-height vars-first)
-        overlay-width      (::overlay-width vars-first)
-        overlay-height     (::overlay-height vars-first)
         object-origin      (::object-origin vars-first)
         object-distance    (::object-distance vars-first)
         camera-to-object   (::camera-to-object vars-first)
@@ -718,7 +778,6 @@
         camera-to-world    (::camera-to-world vars-first)
         z-offset           1.0
         projection         (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)
-        overlay-projection (projection-matrix overlay-width overlay-height z-near (+ z-far z-offset) fov)
         time_              (::time vars-first)
         pressure           (::pressure vars-first)]
     {::origin position
@@ -727,15 +786,12 @@
      ::fov fov
      ::window-width window-width
      ::window-height window-height
-     ::overlay-width overlay-width
-     ::overlay-height overlay-height
      ::object-origin object-origin
      ::object-distance object-distance
      ::camera-to-object camera-to-object
      ::light-direction light-direction
      ::camera-to-world camera-to-world
      ::projection projection
-     ::overlay-projection overlay-projection
      ::time time_
      ::pressure pressure}))
 

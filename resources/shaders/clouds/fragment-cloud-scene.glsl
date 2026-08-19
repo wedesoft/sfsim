@@ -14,6 +14,6 @@ out vec4 fragColor;
 void main()
 {
   float dist = geometry_distance();
-  vec3 direction = (camera_to_world * geometry_point()).xyz;
+  vec3 direction = normalize(mat3(camera_to_world) * geometry_point().xyz);
   fragColor = cloud_point(origin, direction, vec2(0, dist));
 }

@@ -8,7 +8,7 @@
   (:require
     [clojure.math :refer (PI exp pow to-radians)]
     [comb.template :as template]
-    [fastmath.matrix :refer (eye diagonal inverse rotation-matrix-3d-x)]
+    [fastmath.matrix :refer (eye diagonal inverse mulm rotation-matrix-3d-x)]
     [fastmath.vector :refer (vec3 vec4 dot mag)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -19,7 +19,9 @@
     [sfsim.cubemap :as cubemap]
     [sfsim.image :refer :all]
     [sfsim.interpolate :refer :all]
+    [sfsim.model :refer (make-geometry-buffers destroy-geometry-buffers render-geometry render-lighting)]
     [sfsim.matrix :refer :all :as matrix]
+    [sfsim.lighting :as lighting]
     [sfsim.planet :refer :all :as planet]
     [sfsim.quaternion :as q]
     [sfsim.render :refer :all]
@@ -77,7 +79,7 @@
 
 
 (def fragment-white
-  "#version 450 core
+"#version 450 core
 out vec3 fragColor;
 void main()
 {
@@ -114,7 +116,7 @@ void main()
                                    program     (make-program :sfsim.render/vertex [vertex-planet]
                                                              :sfsim.render/tess-control [tess-control-planet]
                                                              :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                                                             :sfsim.render/geometry [(geometry-planet 0)]
+                                                             :sfsim.render/geometry [(geometry-planet-shading 0)]
                                                              :sfsim.render/fragment [fragment-white])
                                    variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
@@ -129,7 +131,6 @@ void main()
                                (uniform-int program "neighbours" ?neighbours)
                                (uniform-matrix4 program "tile_to_camera" (eye 4))
                                (uniform-vector3 program "tile_center" (vec3 0 0 0))
-                               (uniform-matrix4 program "world_to_camera" (eye 4))
                                (uniform-matrix4 program "projection" (eye 4))
                                (uniform-float program "z_near" 0.0)
                                (use-textures {0 surface})
@@ -173,7 +174,7 @@ void main()
                                    program     (make-program :sfsim.render/vertex [vertex-planet]
                                                              :sfsim.render/tess-control [tess-control-planet]
                                                              :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                                                             :sfsim.render/geometry [(geometry-planet 0)]
+                                                             :sfsim.render/geometry [(geometry-planet-shading 0)]
                                                              :sfsim.render/fragment [(texture-coordinates-probe ?selector)])
                                    variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                                    vao         (make-vertex-array-object program indices vertices variables)
@@ -211,7 +212,7 @@ void main()
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
                                                         :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                                                        :sfsim.render/geometry [(geometry-planet 0)]
+                                                        :sfsim.render/geometry [(geometry-planet-shading 0)]
                                                         :sfsim.render/fragment [fragment-white])
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               data        [-0.6 -0.5 0.5, 0.4 -0.5 0.5, -0.6  0.5 0.5, 0.4  0.5 0.5]
@@ -246,7 +247,7 @@ void main()
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
                                                         :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                                                        :sfsim.render/geometry [(geometry-planet 0)]
+                                                        :sfsim.render/geometry [(geometry-planet-shading 0)]
                                                         :sfsim.render/fragment [fragment-white])
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
@@ -260,7 +261,8 @@ void main()
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
                           (uniform-float program "z_near" 0.0)
-                          (uniform-matrix4 program "world_to_camera" (transformation-matrix (eye 3) (vec3 0 0 -2)))
+                          (uniform-matrix4 program "tile_to_camera" (transformation-matrix (eye 3) (vec3 0 0 -2)))
+                          (uniform-vector3 program "tile_center" (vec3 0 0 0))
                           (uniform-matrix4 program "projection" (projection-matrix 256 256 1.0 3.0 (/ PI 3)))
                           (uniform-float program "z_near" 0.0)
                           (use-textures {0 surface})
@@ -281,7 +283,7 @@ void main()
                               program     (make-program :sfsim.render/vertex [vertex-planet]
                                                         :sfsim.render/tess-control [tess-control-planet]
                                                         :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                                                        :sfsim.render/geometry [(geometry-planet 0)]
+                                                        :sfsim.render/geometry [(geometry-planet-shading 0)]
                                                         :sfsim.render/fragment [fragment-white])
                               variables   ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao         (make-vertex-array-object program indices vertices variables)
@@ -294,7 +296,8 @@ void main()
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
-                          (uniform-matrix4 program "world_to_camera" (eye 4))
+                          (uniform-matrix4 program "tile_to_camera" (eye 4))
+                          (uniform-vector3 program "tile_center" (vec3 0 0 0))
                           (uniform-matrix4 program "projection" (eye 4))
                           (uniform-float program "z_near" 0.0)
                           (use-textures {0 surface})
@@ -374,27 +377,8 @@ void main()
          0  0  (+ radius 1000) 0   0   1   0.639491)
 
 
-(def vertex-planet-probe
-"#version 450 core
-in vec3 point;
-in vec2 colorcoord;
-uniform float radius;
-out GEO_OUT
-{
-  vec2 colorcoord;
-  vec3 point;
-  vec4 camera_point;
-} vs_out;
-void main()
-{
-  gl_Position = vec4(point, 1);
-  vs_out.colorcoord = colorcoord;
-  vs_out.point = vec3(0, 0, radius);
-}")
-
-
 (def fake-transmittance
-  "#version 450 core
+"#version 450 core
 vec3 transmittance_track(vec3 p, vec3 q)
 {
   float dist = distance(p, q);
@@ -405,9 +389,13 @@ vec3 transmittance_track(vec3 p, vec3 q)
 
 
 (def fake-ray-scatter
-  "#version 450 core
+"#version 450 core
 uniform vec3 scatter;
 vec3 ray_scatter_track(vec3 light_direction, vec3 p, vec3 q)
+{
+  return scatter;
+}
+vec3 ray_scatter_outer(vec3 light_direction, vec3 point, vec3 direction)
 {
   return scatter;
 }")
@@ -426,24 +414,8 @@ vec4 attenuate(vec3 light_direction, vec3 start, vec3 point, vec4 incoming)
 }")
 
 
-(def opacity-lookup-mock
-  "#version 450 core
-float opacity_cascade_lookup(vec4 point)
-{
-  return 1.0;
-}")
-
-
-(def sampling-offset-mock
-  "#version 450 core
-float sampling_offset()
-{
-  return 0.5;
-}")
-
-
 (def cloud-overlay-mock
-  "#version 450 core
+"#version 450 core
 uniform float clouds;
 vec4 cloud_overlay(float depth)
 {
@@ -452,7 +424,7 @@ vec4 cloud_overlay(float depth)
 
 
 (def planet-and-cloud-shadows-mock
-  "#version 450 core
+"#version 450 core
 uniform float shadow;
 float planet_and_cloud_shadows(vec4 point)
 {
@@ -461,70 +433,12 @@ float planet_and_cloud_shadows(vec4 point)
 
 
 (def land-noise-mock
-  "#version 450 core
+"#version 450 core
 uniform float land_noise_value;
 float land_noise(vec3 point)
 {
   return land_noise_value;
 }")
-
-
-(defn make-mocked-planet-program
-  []
-  (make-program :sfsim.render/vertex [vertex-planet-probe]
-                :sfsim.render/fragment [(last (fragment-planet 3 0)) opacity-lookup-mock sampling-offset-mock cloud-overlay-mock
-                                        planet-and-cloud-shadows-mock fake-transmittance fake-ray-scatter fake-attenuation
-                                        shaders/ray-shell shaders/is-above-horizon atmosphere/transmittance-point shaders/phong
-                                        shaders/limit-interval surface-radiance-function land-noise-mock shaders/remap
-                                        (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
-                                        (last atmosphere/attenuation-track) (last atmosphere/attenuation-point)]))
-
-
-(defn setup-static-uniforms
-  [program]
-  ;; Moved this code out of the test below, otherwise method is too large
-  (use-program program)
-  (uniform-sampler program "day_night" 0)
-  (uniform-sampler program "normals" 1)
-  (uniform-sampler program "transmittance" 2)
-  (uniform-sampler program "ray_scatter" 3)
-  (uniform-sampler program "mie_strength" 4)
-  (uniform-sampler program "surface_radiance" 5)
-  (uniform-sampler program "water" 6)
-  (uniform-sampler program "worley" 7)
-  (uniform-float program "specular" 100.0)
-  (uniform-float program "max_height" 100000.0)
-  (uniform-float program "water_threshold" 0.5)
-  (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34)))
-
-
-(defn setup-uniforms
-  [program size ?albedo ?refl ?lnoise ?clouds ?shd ?radius ?dist ?lx ?ly ?lz ?a]
-  ;; Moved this code out of the test below, otherwise method is too large
-  (use-program program)
-  (uniform-int program "height_size" size)
-  (uniform-int program "elevation_size" size)
-  (uniform-int program "light_elevation_size" size)
-  (uniform-int program "heading_size" size)
-  (uniform-int program "transmittance_height_size" size)
-  (uniform-int program "transmittance_elevation_size" size)
-  (uniform-int program "surface_height_size" size)
-  (uniform-int program "surface_sun_elevation_size" size)
-  (uniform-float program "albedo" ?albedo)
-  (uniform-float program "reflectivity" ?refl)
-  (uniform-float program "land_noise_value" ?lnoise)
-  (uniform-float program "land_noise_scale" 1.0)
-  (uniform-float program "land_noise_strength" 0.5)
-  (uniform-float program "clouds" ?clouds)
-  (uniform-float program "shadow" ?shd)
-  (uniform-float program "radius" radius)
-  (uniform-float program "z_near" 0.0)
-  (uniform-vector3 program "origin" (vec3 0 0 (+ ?radius ?dist)))
-  (uniform-matrix4 program "world_to_camera" (transformation-matrix (eye 3) (vec3 0 0 (- 0 ?radius ?dist))))
-  (uniform-vector3 program "light_direction" (vec3 ?lx ?ly ?lz))
-  (uniform-float program "dawn_start" -0.05)
-  (uniform-float program "dawn_end" 0.05)
-  (uniform-float program "amplification" ?a))
 
 
 (def planet-indices [0 1 3 2])
@@ -537,74 +451,181 @@ float land_noise(vec3 point)
    +0.5  0.5 0.5 0.75 0.75 0.5 0.5])
 
 
-(defn planet-textures
-  [colors nx ny nz tr tg tb s ar ag ab water size]
+(def vertex-geometry-planet-mock
+"#version 450 core
+uniform mat4 camera_to_world;
+in vec3 point;
+in vec2 colorcoord;
+uniform float distance;
+out GEO_OUT
+{
+  vec2 colorcoord;
+  vec3 point;
+  vec4 camera_point;
+} vs_out;
+void main()
+{
+  vs_out.colorcoord = colorcoord;
+  vec4 camera_point = vec4(0, 0, -distance, 1);
+  vs_out.camera_point = camera_point;
+  vs_out.point = (camera_to_world * camera_point).xyz;
+  gl_Position = vec4(point, 1);
+}")
+
+
+(defn make-planet-geometry-textures
+  [program colors nx ny nz water]
   (let [day-night     (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp
                                               [(slurp-image (str "test/clj/sfsim/fixtures/planet/" colors ".png"))
                                                (slurp-image (str "test/clj/sfsim/fixtures/planet/night.png"))])
         normals       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width 2 :height 2
                                                             :data (float-array (flatten (repeat 4 [nx ny nz])))})
-        transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+        water         (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                             #:sfsim.image{:width 2 :height 2 :data (byte-array (repeat 8 water))})]
+    (use-program program)
+    (uniform-sampler program "day_night" 0)
+    (uniform-sampler program "normals" 1)
+    (uniform-sampler program "water" 2)
+    {0 day-night 1 normals 2 water}))
+
+
+(defn make-lighting-textures
+  [program tr tg tb ar ag ab scatter size]
+  (let [transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width size :height size
                                                             :data (float-array (flatten (repeat (* size size) [tr tg tb])))})
-        ray-scatter   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                              #:sfsim.image{:width (* size size) :height (* size size)
-                                                            :data (float-array (repeat (* size size size size 3) s))})
-        mie-strength  (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                              #:sfsim.image{:width (* size size) :height (* size size)
-                                                            :data (float-array (repeat (* size size size size 3) 0))})
         radiance      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                               #:sfsim.image{:width size :height size
                                                             :data (float-array (flatten (repeat (* size size) [ar ag ab])))})
-        water         (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                             #:sfsim.image{:width 2 :height 2 :data (byte-array (repeat 8 water))})
-        worley-data   (float-array (repeat (* 2 2 2) 1.0))
-        worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
-                                             #:sfsim.image{:width 2 :height 2 :depth 2 :data worley-data})]
-    [day-night normals transmittance ray-scatter mie-strength radiance water worley]))
+        ray-scatter   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
+                                              #:sfsim.image{:width (* size size) :height (* size size)
+                                                            :data (float-array (repeat (* size size size size 3) scatter))})]
+    (use-program program)
+    (uniform-sampler program "transmittance" 0)
+    (uniform-sampler program "surface_radiance" 1)
+    (uniform-sampler program "ray_scatter" 2)
+    {0 transmittance 1 radiance 2 ray-scatter}))
 
 
-(tabular "Fragment shader to render planetary surface"
+(defn setup-planet-geometry-uniforms
+  [program camera-to-world distance reflectivity specular land-noise lx ly lz]
+  (let [world-to-camera (inverse camera-to-world)]
+    (clear)
+    (use-program program)
+    (uniform-float program "distance" (double distance))
+    (uniform-matrix4 program "world_to_camera" world-to-camera)
+    (uniform-matrix4 program "camera_to_world" camera-to-world)
+    (uniform-vector3 program "light_direction" (vec3 lx ly lz))
+    (uniform-float program "water_threshold" 0.5)
+    (uniform-vector3 program "water_color" (vec3 0.09 0.11 0.34))
+    (uniform-float program "reflectivity" reflectivity)
+    (uniform-float program "specular" specular)
+    (uniform-float program "land_noise_value" land-noise)
+    (uniform-float program "land_noise_scale" 1.0)
+    (uniform-float program "land_noise_strength" 0.5)
+    (uniform-float program "dawn_start" -0.05)
+    (uniform-float program "dawn_end" 0.05)))
+
+
+(defn setup-lighting-uniforms
+  [program camera-to-world radius albedo amplification shadow dist lx ly lz scatter clouds size]
+  (uniform-int program "height_size" size)
+  (uniform-int program "elevation_size" size)
+  (uniform-int program "light_elevation_size" size)
+  (uniform-int program "heading_size" size)
+  (uniform-int program "transmittance_height_size" size)
+  (uniform-int program "transmittance_elevation_size" size)
+  (uniform-int program "surface_height_size" size)
+  (uniform-int program "surface_sun_elevation_size" size)
+  (uniform-vector3 program "scatter" (vec3 0 0 0))
+  (uniform-float program "albedo" albedo)
+  (uniform-float program "amplification" amplification)
+  (uniform-float program "specular" 100.0)
+  (uniform-float program "shadow" shadow)
+  (uniform-float program "clouds" clouds)
+  (uniform-float program "radius" radius)
+  (uniform-float program "max_height" 100000.0)
+  (uniform-vector3 program "origin" (vec3 0 0 (+ radius dist)))
+  (uniform-matrix4 program "camera_to_world" camera-to-world)
+  (uniform-vector3 program "light_direction" (vec3 lx ly lz))
+  (uniform-vector3 program "scatter" (vec3 scatter scatter scatter)))
+
+
+(defn make-lighting-program
+  []
+  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                :sfsim.render/fragment [(lighting/fragment-lighting 0) shaders/phong shaders/ray-shell
+                                        fake-attenuation fake-transmittance fake-ray-scatter planet-and-cloud-shadows-mock
+                                        atmosphere/transmittance-point surface-radiance-function cloud-overlay-mock
+                                        shaders/is-above-horizon shaders/limit-interval (last atmosphere/attenuation-point)
+                                        (last atmosphere/attenuation-outer)
+                                        (last (clouds/environmental-shading 3)) (last (clouds/overall-shading 3 []))
+                                        (last atmosphere/attenuation-track)]))
+
+
+(defn make-planet-geometry-program
+  []
+  (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
+                :sfsim.render/fragment [(last (fragment-planet-geometry true)) land-noise-mock shaders/remap]))
+
+
+(defn make-planet-vertex-array-object
+  [geometry-program]
+  (let [variables ["point" 3 "colorcoord" 2 "surfacecoord" 2] ]
+    (make-vertex-array-object geometry-program planet-indices planet-vertices variables)))
+
+
+(tabular "Render geometry and lighting of planet surface"
          (fact
-           (offscreen-render 256 256
-                             (let [program   (make-mocked-planet-program)
-                                   variables ["point" 3 "colorcoord" 2 "surfacecoord" 2]
-                                   vao       (make-vertex-array-object program planet-indices planet-vertices variables)
-                                   radius    6378000
-                                   size      7
-                                   textures  (planet-textures ?colors ?nx ?ny ?nz ?tr ?tg ?tb ?s ?ar ?ag ?ab ?water size)]
-                               (clear (vec3 0 0 0))
-                               (setup-static-uniforms program)
-                               (setup-uniforms program size ?alb ?refl ?lnoise ?clouds ?shd radius ?dist ?lx ?ly ?lz ?a)
-                               (use-textures (zipmap (range) textures))
-                               (render-quads vao)
-                               (doseq [tex textures] (destroy-texture tex))
-                               (destroy-vertex-array-object vao)
-                               (destroy-program program)))
-           => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33))
-         ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist  ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "fragment"
-         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "colors"
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0.8 0   0.6 "normal"
-         "white"   0.9  1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "albedo"
-         "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "amplify"
-         "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "transmit"
-         "pattern" PI   1.0  1   1   1   0.2 0.3 0.5   0      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "ambient"
-         "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0  0.0  0.0     1.0  0   0   1   0   0   0   "water"
-         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5  0.0  0.0     1.0  0   0   1   0   0   1   "reflection1"
-         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5  0.0  0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
-         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5  0.0  0.0     1.0  0   0  -1   0   0   1   "reflection3"
-         "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0  0.0  0.0     1.0  0   0   1   0   0   1   "absorption"
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0.5 0.0  0.0  0.0     1.0  0   0   1   0   0   1   "scatter"
-         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.5     1.0  0   0   1   0   0   1   "clouds"
-         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0  0.0  0.0     0.5  0   0   1   0   0   1   "shadow"
-         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0  1.0  0.0     1.0  0   0   1   0   0   1   "noise")
+           (with-invisible-window
+             (let [geometry-program  (make-planet-geometry-program)
+                   vao               (make-planet-vertex-array-object geometry-program)
+                   camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
+                   geometry-buffers  (make-geometry-buffers 256 256)
+                   planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz ?water)
+                   lighting-program  (make-lighting-program)
+                   lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb ?ar ?ag ?ab ?s 7)]
+               (render-geometry geometry-buffers
+                                (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist ?refl 1000.0
+                                                                ?lnoise ?lx ?ly ?lz)
+                                (use-textures planet-textures)
+                                (render-quads vao))
+               (render-to-image 256 256 false
+                                (render-lighting geometry-buffers lighting-program (count lighting-textures)
+                                                 (setup-lighting-uniforms lighting-program camera-to-world radius ?alb
+                                                                          ?a ?shd ?dist ?lx ?ly ?lz ?s ?clouds size)
+                                                 (use-textures lighting-textures)))
+               => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
+               ; => (is-image (str "/tmp/" ?result ".png") 0.33)
+               (destroy-program lighting-program)
+               (destroy-geometry-buffers geometry-buffers)
+               (doseq [tex (vals planet-textures)] (destroy-texture tex))
+               (doseq [tex (vals lighting-textures)] (destroy-texture tex))
+               (destroy-vertex-array-object vao)
+               (destroy-program geometry-program))))
+         ?colors   ?alb ?a  ?tr ?tg ?tb ?ar ?ag ?ab ?water ?dist ?s  ?refl ?lnoise ?clouds ?shd ?lx ?ly ?lz ?nx ?ny ?nz ?result
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "fragment"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "colors"
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0.8 0   0.6 "normal"
+         "white"   0.9  1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "albedo"
+         "white"   0.9  2.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "amplify"
+         "white"   PI   1.0  1   0   0   0   0   0     0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "transmit"
+         "pattern" PI   1.0  1   1   1   0.2 0.3 0.5   0      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "ambient"
+         "white"   PI   1.0  1   1   1   0   0   0   220      100 0   0.0   0.0     0.0     1.0  0   0   1   0   0   0   "water"
+         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0   1   0   0   1   "reflection1"
+         "white"   PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0.6 0.8 0   0   1   "reflection2"
+         "pattern" PI   1.0  1   1   1   0   0   0   255      100 0   0.5   0.0     0.0     1.0  0   0  -1   0   0   1   "nightlights"
+         "white"   PI   1.0  1   1   1   0   0   0     0    10000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI   1.0  1   1   1   0   0   0     0   200000 0   0.0   0.0     0.0     1.0  0   0   1   0   0   1   "absorption"
+         "white"   PI   0.5  1   1   1   0   0   0     0      100 0.5 0.0   0.0     0.0     1.0  0   0   1   0   0   1   "scatter"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.5     1.0  0   0   1   0   0   1   "clouds"
+         "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     0.5  0   0   1   0   0   1   "shadow"
+         "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
 
 
 (def fragment-white-tree
-  "#version 450 core
+"#version 450 core
 in GEO_OUT
 {
   vec2 colorcoord;
@@ -624,7 +645,7 @@ void main()
                              (let [program    (make-program :sfsim.render/vertex [vertex-planet]
                                                             :sfsim.render/tess-control [tess-control-planet]
                                                             :sfsim.render/tess-evaluation [(tess-evaluation-planet 0)]
-                                                            :sfsim.render/geometry [(geometry-planet 0)]
+                                                            :sfsim.render/geometry [(geometry-planet-shading 0)]
                                                             :sfsim.render/fragment [fragment-white-tree])
                                    indices    [0 2 3 1]
                                    face       :sfsim.cubemap/face0
@@ -659,7 +680,7 @@ void main()
          false true  true  true   "tile-up.png"    1.07
          true  false true  true   "tile-left.png"  1.07
          true  true  false true   "tile-down.png"  1.07
-         true  true  true  false  "tile-right.png" 93.95)
+         true  true  true  false  "tile-right.png" 1.07)
 
 
 (defn render-tile-calls
@@ -717,21 +738,21 @@ void main()
                        matrix/projection-matrix (fn [w h _near _far fov]
                                                     (fact [w h fov] => #(contains? #{[320 240 0.5] [640 480 0.5]} %))
                                                     (diagonal 1 2 3 4))]
-           (:sfsim.render/origin (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => pos1
-           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (roughly 47.549 1e-3)
-           (:sfsim.render/z-near (make-planet-render-vars planet cloud render 640 480 pos2 o light opos o m-vars)) => 1.0
-           (:sfsim.render/z-far (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => 300.0
-           (:sfsim.render/camera-to-world (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (eye 4)
-           (:sfsim.render/projection (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => (diagonal 1 2 3 4)
-           (:sfsim.render/light-direction (make-planet-render-vars planet cloud render 640 480 pos1 o light opos o m-vars)) => light)))
+           (:sfsim.render/origin (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => pos1
+           (:sfsim.render/z-near (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => (roughly 47.549 1e-3)
+           (:sfsim.render/z-near (make-planet-render-vars2 planet cloud render 640 480 pos2 o light)) => 1.0
+           (:sfsim.render/z-far (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => 300.0
+           (:sfsim.render/camera-to-world (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => (eye 4)
+           (:sfsim.render/projection (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => (diagonal 1 2 3 4)
+           (:sfsim.render/light-direction (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => light)))
 
 
 (facts "Render planet geometry"
        (with-invisible-window
          (let [data             {:sfsim.planet/config {:sfsim.planet/tilesize 3}}
-               render-vars      #:sfsim.render{:overlay-projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+               render-vars      #:sfsim.render{:projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
-               renderer         (make-planet-geometry-renderer data)
+               renderer         (make-planet-geometry-renderer data false 0)
                indices          [0 2 3 1]
                vertices         (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
                vao              (make-vertex-array-object (:sfsim.planet/program renderer) indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
@@ -741,9 +762,9 @@ void main()
                surface          (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                         #:sfsim.image{:width 3 :height 3 :data (float-array data)})
                tree             {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 2)}
-               geometry         (clouds/render-cloud-geometry 160 120 (render-planet-geometry renderer render-vars tree))]
+               geometry         (clouds/render-cloud-geometry 160 120 (render-planet-geometry2 renderer render-vars false tree))]
            (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
-           => (roughly-vector (vec4 0.004 0.004 -1.0 0.0) 1e-3)
+           => (roughly-vector (vec4 0.011 0.011 -3.0 1.0) 1e-3)
            (get-float (float-texture-2d->floats (:sfsim.clouds/distance geometry)) 60 80)
            => (roughly 3.0 1e-3)
            (clouds/destroy-cloud-geometry geometry)
@@ -776,11 +797,9 @@ in VS_OUT
   vec4 camera_point;
 } fs_in;
 layout (location = 0) out vec4 camera_point;
-layout (location = 1) out float dist;
 void main()
 {
-  camera_point = vec4(normalize(fs_in.camera_point.xyz), 0.0);
-  dist = length(fs_in.camera_point.xyz);
+  camera_point = fs_in.camera_point;
 }")
 
 
@@ -812,16 +831,14 @@ void main()
 (def fragment-decal
 "#version 450 core
 uniform sampler2D camera_point;
-uniform sampler2D dist;
 uniform mat4 camera_to_object;
 out vec4 fragColor;
 void main()
 {
   vec2 uv = vec2(gl_FragCoord.x / 320, gl_FragCoord.y / 240);
-  float distance = texture(dist, uv).r;
   vec4 cam_point = texture(camera_point, uv);
-  vec4 point = camera_to_object * (cam_point * distance + vec4(0, 0, 0, 1));
-  if (abs(point.x) <= 0.5 && abs(point.y) <= 0.5) {
+  vec4 point = camera_to_object * cam_point;
+  if (point.w > 0.0 && abs(point.x) <= 0.5 && abs(point.y) <= 0.5) {
     fragColor = vec4(1, 1, 1, 1);
   } else
     discard;
@@ -851,7 +868,6 @@ void main()
 (fact "Render a decal"
       (with-invisible-window
         (let [point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 320 240)
-              distance-texture (make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 320 240)
               indices          [0 1 3 2]
               vertices         [-1.0 -1.0 0.0, +1.0 -1.0 0.0, -1.0  1.0 0.0, +1.0  1.0 0.0]
               projection       (projection-matrix 320 240 0.1 10.0 (to-radians -45))
@@ -859,7 +875,7 @@ void main()
               program-geometry (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-plane])
               program-plane    (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-grey])
               plane            (make-vertex-array-object program-geometry indices vertices ["point" 3])]
-          (framebuffer-render 320 240 :sfsim.render/cullback nil [point-texture distance-texture]
+          (framebuffer-render 320 240 :sfsim.render/cullback nil [point-texture]
                               (use-program program-geometry)
                               (uniform-matrix4 program-geometry "projection" projection)
                               (uniform-matrix4 program-geometry "object_to_camera" object-to-camera)
@@ -875,11 +891,10 @@ void main()
                                 (render-quads plane)
                                 (use-program program-decal)
                                 (uniform-sampler program-decal "camera_point" 0)
-                                (uniform-sampler program-decal "dist" 1)
                                 (uniform-matrix4 program-decal "projection" projection)
                                 (uniform-matrix4 program-decal "object_to_camera" object-to-camera)
                                 (uniform-matrix4 program-decal "camera_to_object" (inverse object-to-camera))
-                                (use-textures {0 point-texture 1 distance-texture})
+                                (use-textures {0 point-texture})
                                 (render-quads cube))
             (texture->image img) => (is-image "test/clj/sfsim/fixtures/planet/decal.png" 0.5)
             (destroy-texture img)
@@ -888,8 +903,106 @@ void main()
             (destroy-vertex-array-object plane)
             (destroy-program program-geometry)
             (destroy-program program-plane))
-          (destroy-texture point-texture)
-          (destroy-texture distance-texture))))
+          (destroy-texture point-texture))))
+
+
+(def fragment-darkgrey
+"#version 450 core
+in VS_OUT
+{
+  vec4 camera_point;
+} fs_in;
+out vec4 fragColor;
+void main()
+{
+  fragColor = vec4(0.1, 0.1, 0.1, 1.0);
+}")
+
+
+(def light-vertices
+  [-0.5 -0.5 -0.5
+    0.5 -0.5 -0.5
+   -0.5  0.5 -0.5
+    0.5  0.5 -0.5
+   -0.5 -0.5  0.5
+    0.5 -0.5  0.5
+   -0.5  0.5  0.5
+    0.5  0.5  0.5])
+
+
+(def light-positions
+  [(vec3 -0.5 -0.5 0.05)
+   (vec3  0.0 -0.5 0.05)
+   (vec3  0.5 -0.5 0.05)
+   (vec3 -0.5  0.5 0.05)
+   (vec3  0.0  0.5 0.05)
+   (vec3  0.5  0.5 0.05)
+   (vec3 -0.5  0.0 0.05)
+   (vec3  0.5  0.0 0.05)])
+
+
+(def fragment-light
+"#version 450 core
+uniform sampler2D camera_point;
+uniform mat4 object_to_camera;
+uniform mat4 camera_to_object;
+out vec4 fragColor;
+void main()
+{
+  vec2 uv = vec2(gl_FragCoord.x / 320, gl_FragCoord.y / 240);
+  vec4 cam_point = texture(camera_point, uv);
+  vec4 normal = vec4(0, 0, 1, 0);
+  vec4 point = camera_to_object * cam_point;
+  if (point.w > 0.0 && length(point.xyz) <= 0.5) {
+    float alpha = 0.05 * max(0, -dot(point.xyz, normal.xyz)) / dot(point.xyz, point.xyz);
+    fragColor = vec4(1, 1, 1, alpha);
+  } else
+    discard;
+}")
+
+
+(fact "Render localized light sources"
+      (with-invisible-window
+        (let [point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 320 240)
+              indices          [0 1 3 2]
+              vertices         [-1.0 -1.0 0.0, +1.0 -1.0 0.0, -1.0  1.0 0.0, +1.0  1.0 0.0]
+              projection       (projection-matrix 320 240 0.1 10.0 (to-radians -45))
+              object-to-camera (transformation-matrix (rotation-matrix-3d-x (to-radians 60.0)) (vec3 0 0 -4))
+              program-geometry (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-plane])
+              program-plane    (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-darkgrey])
+              plane            (make-vertex-array-object program-geometry indices vertices ["point" 3])]
+          (framebuffer-render 320 240 :sfsim.render/cullback nil [point-texture]
+                              (use-program program-geometry)
+                              (uniform-matrix4 program-geometry "projection" projection)
+                              (uniform-matrix4 program-geometry "object_to_camera" object-to-camera)
+                              (render-quads plane))
+          (let [program-decal (make-program :sfsim.render/vertex [vertex-decal] :sfsim.render/fragment [fragment-light])
+                cube          (make-vertex-array-object program-decal decal-indices light-vertices ["point" 3])
+                img           (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL11/GL_RGB8 320 240)]
+            (framebuffer-render 320 240 :sfsim.render/cullback nil [img]
+                                (clear (vec3 0 0 0))
+                                (use-program program-plane)
+                                (uniform-matrix4 program-plane "projection" projection)
+                                (uniform-matrix4 program-plane "object_to_camera" object-to-camera)
+                                (render-quads plane)
+                                (with-additive-blending
+                                  (use-program program-decal)
+                                  (uniform-sampler program-decal "camera_point" 0)
+                                  (uniform-matrix4 program-decal "projection" projection)
+                                  (use-textures {0 point-texture})
+                                  (doseq [light-pos light-positions]
+                                         (let [light-to-camera (mulm object-to-camera (translation-matrix light-pos))]
+                                           (uniform-matrix4 program-decal "object_to_camera" light-to-camera)
+                                           (uniform-matrix4 program-decal "camera_to_object" (inverse light-to-camera))
+                                           (render-quads cube)))))
+            (texture->image img) => (is-image "test/clj/sfsim/fixtures/planet/light.png" 0.5)
+            (destroy-texture img)
+            (destroy-vertex-array-object cube)
+            (destroy-program program-decal)
+            (destroy-vertex-array-object plane)
+            (destroy-program program-geometry)
+            (destroy-program program-plane))
+          (destroy-texture point-texture))))
 
 
 (GLFW/glfwTerminate)

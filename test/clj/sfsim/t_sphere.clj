@@ -25,12 +25,6 @@
        (height #:sfsim.sphere{:centre (vec3 2 0 0) :radius 10.0} (vec3 13 0 0)) => 1.0)
 
 
-(facts "Check ray for intersection with sphere"
-       (let [sphere #:sfsim.sphere{:centre (vec3 0 0 3) :radius 1.0}]
-         (ray-intersects-sphere? sphere #:sfsim.ray{:origin (vec3 -2 0 3) :direction (vec3 0 1 0)}) => false
-         (ray-intersects-sphere? sphere #:sfsim.ray{:origin (vec3 -2 0 3) :direction (vec3 1 0 0)}) => true))
-
-
 (facts "Compute intersection of line with sphere or closest point with sphere"
        (let [sphere #:sfsim.sphere{:centre (vec3 0 0 3) :radius 1.0}]
          (ray-sphere-intersection sphere #:sfsim.ray{:origin (vec3 -2 0 3) :direction (vec3 0 1 0)})
@@ -47,13 +41,6 @@
          => {:sfsim.intersection/distance 5.0 :sfsim.intersection/length 0.0}
          (ray-sphere-intersection sphere #:sfsim.ray{:origin (vec3  5 0 0) :direction (vec3 1 0 0)})
          => {:sfsim.intersection/distance 0.0 :sfsim.intersection/length 0.0}))
-
-
-(facts "Check ray pointing downwards"
-       (let [sphere #:sfsim.sphere{:centre (vec3 3 2 1) :radius 1.0}]
-         (ray-pointing-downwards sphere #:sfsim.ray {:origin (vec3 5 2 1) :direction (vec3 -1 0 0)}) => true
-         (ray-pointing-downwards sphere #:sfsim.ray {:origin (vec3 5 2 1) :direction (vec3  1 0 0)}) => false
-         (ray-pointing-downwards sphere #:sfsim.ray {:origin (vec3 2 2 1) :direction (vec3  1 0 0)}) => true))
 
 
 (facts "Integrate over a circle"

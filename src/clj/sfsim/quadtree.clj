@@ -90,15 +90,6 @@
 (def tile-info (m/schema [:map [::face :keyword] [::level N0] [::y N0] [::x N0]]))
 
 
-(defn sub-tiles-info
-  "Get metadata for sub tiles of cube map tile"
-  [^Keyword face ^long level ^long y ^long x]
-  [{::face face ::level (inc level) ::y (* 2 y)       ::x (* 2 x)}
-   {::face face ::level (inc level) ::y (* 2 y)       ::x (inc (* 2 x))}
-   {::face face ::level (inc level) ::y (inc (* 2 y)) ::x (* 2 x)}
-   {::face face ::level (inc level) ::y (inc (* 2 y)) ::x (inc (* 2 x))}])
-
-
 (defn load-tiles-data
   "Load a set of tiles"
   {:malli/schema [:=> [:cat [:sequential tile-info] :double] [:vector :any]]}
@@ -358,15 +349,6 @@
     {:tree (check (quadtree-add (quadtree-drop tree drop-list) load-list new-tiles))
      :drop (quadtree-extract tree drop-list)
      :load load-list}))
-
-
-(def coords
-  (m/schema [:map [::row :int]
-             [::column :int]
-             [::tile-y :int]
-             [::tile-x :int]
-             [::dy :double]
-             [::dx :double]]))
 
 
 (defn tile-coordinates

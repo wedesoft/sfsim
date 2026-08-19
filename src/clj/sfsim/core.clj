@@ -12,7 +12,6 @@
     [clojure.math :refer (PI to-radians)]
     [clojure.tools.logging :as log]
     [clojure.edn]
-    [clojure.pprint :refer (pprint)]
     [malli.dev :as dev]
     [malli.dev.pretty :as pretty]
     [fastmath.matrix :refer (inverse mulv mulm)]
@@ -26,7 +25,7 @@
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
     [sfsim.steam :as steam]
-    [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix get-translation get-translation get-translation)]
+    [sfsim.matrix :refer (rotation-matrix matrix->quaternion)]
     [sfsim.model :as model]
     [sfsim.planet :as planet]
     [sfsim.clock :refer (start-clock elapsed-time)]
@@ -35,7 +34,6 @@
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window onscreen-render quad-splits-orientations with-culling)]
     [sfsim.graphics :as graphics]
-    [sfsim.image :refer (spit-png)]
     [sfsim.audio :as audio]
     [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config process-events joysticks-poll ->InputHandler
                          char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback time-lapse-limit)])
@@ -43,8 +41,6 @@
     (org.lwjgl.glfw
       GLFW
       GLFWVidMode)
-    (org.lwjgl.opengl
-      GL11)
     (org.lwjgl.nuklear
       Nuklear)))
 
@@ -74,17 +70,15 @@
     (jolt/jolt-init)
     (jolt/set-gravity (vec3 0 0 0))
 
-    (let [playback            false
-          fix-fps             false
-          opacity-base        100.0
-          window-width        (:sfsim.render/window-width config/render-config)
+    (let [window-width        (:sfsim.render/window-width config/render-config)
           window-height       (:sfsim.render/window-height config/render-config)
           window              (make-window "sfsim" window-width window-height false)
-          graphics            (graphics/make-graphics ["data/models/venturestar.glb"] (:sfsim.model/object-radius config/model-config))
+          object-radius       (:sfsim.model/object-radius config/model-config)
+          graphics            (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
+                                                         :sfsim.graphics/object-radius object-radius}])
           gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic)
-          model               (first (:sfsim.graphics/models graphics))
+          model               (first (:sfsim.graphics/scenes graphics))
           convex-hulls        (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
-          bsp-tree            (update (model/get-bsp-tree model "BSP") :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
           tile-tree           (planet/make-tile-tree)
           split-orientations  (quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8)
           surface             (quadtree/distance-to-surface config/planet-config split-orientations)
@@ -143,7 +137,7 @@
         (jolt/set-restitution body 0.25)
         (jolt/optimize-broad-phase)
         (gui/nuklear-dark-style @gui)
-        (while (and (not (GLFW/glfwWindowShouldClose window)) (or (not playback) (< ^long @frame-counter (count @recording))))
+        (while (not (GLFW/glfwWindowShouldClose window))
                (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @state :gui :sfsim.gui/fullscreen))
                  (let [fullscreen     (-> @state :input :sfsim.input/fullscreen)
                        monitor        (GLFW/glfwGetPrimaryMonitor)
@@ -169,7 +163,7 @@
                  (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
                  (swap! state assoc-in [:gui :sfsim.gui/window-width] (aget w 0))
                  (swap! state assoc-in [:gui :sfsim.gui/window-height] (aget h 0)))
-               (let [dt              (if fix-fps (elapsed-time (/ 1.0 ^double fix-fps) (/ 1.0 ^double fix-fps)) (elapsed-time))
+               (let [dt              (elapsed-time)
                      earth-radius    (:sfsim.planet/radius config/planet-config)
                      object-position (physics/get-position :sfsim.physics/surface (:physics @state))
                      height          (- (mag object-position) ^double earth-radius)
@@ -178,24 +172,20 @@
                      time-lapse      (min ^long time-lapse-sel (time-lapse-limit height throttle))
                      window-width    (-> @state :gui :sfsim.gui/window-width)
                      window-height   (-> @state :gui :sfsim.gui/window-height)]
-                 (planet/update-tile-tree (:sfsim.graphics/planet-renderer graphics) tile-tree window-width
+                 (planet/update-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
+                                                 :sfsim.planet/config config/planet-config) tile-tree window-width
                                           (physics/get-position :sfsim.physics/surface (:physics @state)))
                  (if (-> @state :input :sfsim.input/menu)
                    (swap! state update-in [:gui :sfsim.gui/menu] #(or % gui/main-dialog))
                    (swap! state assoc-in [:gui :sfsim.gui/menu] nil))
-                 (if playback
-                   (let [frame (nth @recording @frame-counter)]
-                     (swap! state update :physics physics/load-state (:physics frame))
-                     (swap! state assoc :camera (:camera frame)))
-                   (do
-                     (when (not (-> @state :input :sfsim.input/pause))
-                       (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls)
-                              (* ^double dt ^long time-lapse) config/planet-config split-orientations thrust))
-                     (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
-                     (swap! state update :audio audio/update-state (:physics @state) (:input @state) (:camera @state))
-                     (when (and @recording (not (-> @state :input :sfsim.input/pause)))
-                       (let [frame {:physics (physics/save-state (:physics @state)) :camera (:camera @state)}]
-                         (swap! recording conj frame)))))
+                 (when (not (-> @state :input :sfsim.input/pause))
+                   (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls)
+                          (* ^double dt ^long time-lapse) config/planet-config split-orientations thrust))
+                 (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
+                 (swap! state update :audio audio/update-state (:physics @state) (:input @state) (:camera @state))
+                 (when (and @recording (not (-> @state :input :sfsim.input/pause)))
+                   (let [frame {:physics (physics/save-state (:physics @state)) :camera (:camera @state)}]
+                     (swap! recording conj frame)))
                  (let [object-position    (physics/get-position :sfsim.physics/surface (:physics @state))
                        height             (- (mag object-position) ^double earth-radius)
                        pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
@@ -208,11 +198,6 @@
                        light-direction    (normalize (mulv icrs-to-earth sun-pos))
                        model-vars         (model/make-model-vars (:sfsim.physics/offset-seconds (:physics @state)) pressure
                                                                  (:sfsim.physics/throttle (:physics @state)))
-                       camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) origin)
-                       world-to-object    (inverse (transformation-matrix (quaternion->matrix object-orientation) object-position))
-                       camera-to-object   (mulm world-to-object camera-to-world)
-                       object-origin      (get-translation camera-to-object)
-                       plume-transforms   (physics/active-rcs-transforms (:physics @state) (model/bsp-render-order bsp-tree object-origin))
                        wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
                                                                      (physics/get-wheel-angles (:physics @state)))
                                                 gear-animation
@@ -233,34 +218,32 @@
                                                  "WheelLeft" (nth wheel-animation 0)
                                                  "WheelRight" (nth wheel-animation 1)
                                                  "WheelFront" (nth wheel-animation 2)})))
-                       frame              (graphics/prepare-frame (assoc graphics :sfsim.graphics/scenes [wheels-scene]) model-vars
-                                                                  (planet/get-current-tree tile-tree) window-width window-height
-                                                                  origin camera-orientation light-direction object-position
-                                                                  object-orientation plume-transforms opacity-base)]
+                       tree               (planet/get-current-tree tile-tree)
+                       graphics           (assoc-in graphics [:sfsim.graphics/scenes 0] wheels-scene)
+                       frame              (-> (graphics/make-frame graphics
+                                                                   window-width window-height origin camera-orientation
+                                                                   light-direction
+                                                                   [{:sfsim.graphics/object-position object-position
+                                                                     :sfsim.graphics/object-orientation (q/* object-orientation
+                                                                                                             (matrix->quaternion aerodynamics/gltf-to-aerodynamic))}]
+                                                                   model-vars)
+                                              (graphics/render-shadows graphics tree)
+                                              (graphics/render-scene-shadows graphics)
+                                              (graphics/render-cloud-geometry graphics tree)
+                                              (graphics/render-clouds graphics (physics/active-rcs (:physics @state)))
+                                              (graphics/render-geometry graphics tree))]
                    (onscreen-render window
-                                    (graphics/render-frame graphics frame (planet/get-current-tree tile-tree))
+                                    (graphics/render-lighting frame graphics)
                                     (with-culling :sfsim.render/noculling
                                       (let [menu (-> @state :gui :sfsim.gui/menu)]
                                         (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR
                                                                (if menu GLFW/GLFW_CURSOR_NORMAL GLFW/GLFW_CURSOR_HIDDEN))
                                         (when menu (swap! state menu @gui window-width window-height)))
-                                      (when (not playback)
-                                        (let [controls (-> @state :input :sfsim.input/controls)]
-                                          (gui/flight-controls-display controls @gui)
-                                          (gui/information-display @gui window-width window-height @state @frametime time-lapse)))
+                                      (let [controls (-> @state :input :sfsim.input/controls)]
+                                        (gui/flight-controls-display controls @gui)
+                                        (gui/information-display @gui window-width window-height @state @frametime time-lapse))
                                       (gui/render-nuklear-gui @gui window-width window-height)))
-                   (graphics/finalise-frame frame)
-                   (when playback
-                     (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 ^long window-width ^long window-height))
-                           data   (byte-array (* 4 ^long window-width ^long window-height))]
-                       (GL11/glFlush)
-                       (GL11/glFinish)
-                       (GL11/glReadPixels 0 0 ^long window-width ^long window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
-                       (.get buffer data)
-                       (spit-png (format "frame%06d.png" @frame-counter) {:sfsim.image/data data
-                                                                          :sfsim.image/width window-width
-                                                                          :sfsim.image/height window-height
-                                                                          :sfsim.image/channels 4} true))))
+                   (graphics/destroy-frame frame))
                  (Nuklear/nk_input_begin (:sfsim.gui/context @gui))
                  (GLFW/glfwPollEvents)
                  (swap! event-buffer joysticks-poll)
@@ -273,16 +256,14 @@
                  (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                  (swap! frame-counter inc)))
         (planet/destroy-tile-tree tile-tree)
-        (graphics/destroy-graphics graphics)
+        (graphics/destroy-graphics2 graphics)
         (audio/destroy-audio-state audio-state)
         (gui/destroy-navball @gui)
         (gui/destroy-nuklear-gui-with-font @gui)
         (destroy-window window)
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
-        (when user-stats (steam/destroy))
-        (when (and (not playback) @recording)
-          (spit "recording.edn" (with-out-str (pprint @recording))))))
+        (when user-stats (steam/destroy))))
   (catch Exception e
          (log/error e "Exception in main function")
          (log/info "aborting sfsim" version)

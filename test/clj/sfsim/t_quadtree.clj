@@ -73,15 +73,6 @@
          :sfsim.quadtree/center :tile-center)
 
 
-(tabular "Get information for loading sub tiles"
-         (fact (nth (sub-tiles-info face3 2 2 1) ?i) => ?result)
-         ?i ?result
-         0  #:sfsim.quadtree{:face face3 :level 3 :y 4 :x 2}
-         1  #:sfsim.quadtree{:face face3 :level 3 :y 4 :x 3}
-         2  #:sfsim.quadtree{:face face3 :level 3 :y 5 :x 2}
-         3  #:sfsim.quadtree{:face face3 :level 3 :y 5 :x 3})
-
-
 (fact "Load multiple tiles"
       (load-tiles-data [#:sfsim.quadtree{:face face3 :level 2 :y 3 :x 1} #:sfsim.quadtree{:face face2 :level 3 :y 1 :x 0}] 6378000.0)
       => [:data-a :data-b]
