@@ -13,7 +13,7 @@
     [fastmath.vector :refer (mag)]
     [malli.core :as m]
     [sfsim.config :as config]
-    [sfsim.atmosphere :refer (attenuation-point cloud-overlay setup-atmosphere-uniforms atmosphere-luts)]
+    [sfsim.atmosphere :refer (attenuation-point cloud-overlay)]
     [sfsim.clouds :refer (overall-shading overall-shading-parameters)]
     [sfsim.plume :refer (model-vars)]
     [sfsim.cubemap :refer (cube-map-corners project-onto-cube determine-face cube-j cube-i tile-center)]
@@ -24,8 +24,7 @@
     [sfsim.jolt :as jolt]
     [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
-                          destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps
-                          setup-shadow-and-opacity-maps use-textures render-vars diagonal-field-of-view make-render-vars make-render-vars2)
+                          destroy-vertex-array-object vertex-array-object setup-shadow-and-opacity-maps use-textures render-vars diagonal-field-of-view make-render-vars make-render-vars2)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
@@ -68,11 +67,6 @@
   {:malli/schema [:=> [:cat N0] render/shaders]}
   [num-scene-shadows]
   [(template/eval (slurp "resources/shaders/planet/tess-evaluation.glsl") {:num-scene-shadows num-scene-shadows})])
-
-
-(def tess-evaluation-planet-geometry
-  "Tessellation evaluation shader to generate output points of tessellated quads"
-  (slurp "resources/shaders/planet/tess-evaluation-geometry.glsl"))
 
 
 (def tess-evaluation-planet-shadow

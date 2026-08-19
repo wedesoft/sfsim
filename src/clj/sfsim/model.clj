@@ -577,20 +577,6 @@
   [(boolean color-texture-index) (boolean normal-texture-index)])
 
 
-(def vertex-scene (template/fn [textured bump num-scene-shadows] (slurp "resources/shaders/model/vertex.glsl")))
-
-
-(defn fragment-scene
-  "Fragment shader for rendering scene in atmosphere"
-  {:malli/schema [:=> [:cat :boolean :boolean N N0] render/shaders]}
-  [textured bump num-steps num-scene-shadows]
-  [(overall-shading num-steps (overall-shading-parameters num-scene-shadows))
-   (percentage-closer-filtering "average_scene_shadow" "scene_shadow_lookup" "scene_shadow_size" [["sampler2DShadow" "shadow_map"]])
-   (shadow-lookup "scene_shadow_lookup" "scene_shadow_size") phong attenuation-point surface-radiance-function cloud-overlay
-   (template/eval (slurp "resources/shaders/model/fragment.glsl")
-                  {:textured textured :bump bump :num-scene-shadows num-scene-shadows})])
-
-
 (def data
   (m/schema [:map [:sfsim.opacity/data [:map [:sfsim.opacity/num-steps N]
                                              [:sfsim.opacity/scene-shadow-counts [:vector N0]]]]
@@ -608,34 +594,6 @@
       (uniform-sampler program "colors" (+ ^long texture-offset ^long num-scene-shadows))
       (when bump (uniform-sampler program "normals" (+ ^long texture-offset ^long num-scene-shadows 1))))
     (when bump (uniform-sampler program "normals" (+ ^long texture-offset ^long num-scene-shadows)))))
-
-
-(defn setup-scene-static-uniforms
-  "Set up static uniforms of scene rendering program"
-  {:malli/schema [:=> [:cat :int :int :int :boolean :boolean data] :nil]}
-  [program texture-offset num-scene-shadows textured bump data]
-  (let [render-config   (:sfsim.render/config data)
-        planet-config   (:sfsim.planet/config data)
-        atmosphere-luts (:sfsim.atmosphere/luts data)
-        cloud-data      (:sfsim.clouds/data data)
-        shadow-data     (:sfsim.opacity/data data)]
-    (use-program program)
-    (setup-atmosphere-uniforms program atmosphere-luts 0 true)
-    (uniform-sampler program "clouds" 4)
-    (uniform-sampler program "dist" 5)
-    (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
-    (uniform-int program "scene_shadow_size" (:sfsim.opacity/scene-shadow-size shadow-data))
-    (uniform-float program "shadow_bias" (:sfsim.opacity/shadow-bias shadow-data))
-    (doseq [i (range num-scene-shadows)]
-      (uniform-sampler program (str "scene_shadow_map_" (inc ^long i)) (+ ^long i 6)))
-    (setup-shadow-and-opacity-maps program shadow-data (+ 6 ^long num-scene-shadows))
-    (setup-scene-samplers program texture-offset num-scene-shadows textured bump)
-    (uniform-int program "cloud_subsampling" (:sfsim.render/cloud-subsampling render-config))
-    (uniform-float program "depth_sigma" (:sfsim.clouds/depth-sigma cloud-data))
-    (uniform-float program "min_depth_exponent" (:sfsim.clouds/min-depth-exponent cloud-data))
-    (uniform-float program "radius" (:sfsim.planet/radius planet-config))
-    (uniform-float program "albedo" (:sfsim.planet/albedo planet-config))
-    (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
 
 
 (defn- remove-empty-children
@@ -895,10 +853,6 @@
   (let [variations (for [textured [false true] bump [false true]] [textured bump])
         programs   (mapv #(make-scene-geometry-program (first %) (second %) full) variations)]
     {::programs (zipmap variations programs)}))
-
-
-(def geometry-render-vars
-  (m/schema [:map [:sfsim.render/camera-to-world fmat4] [:sfsim.render/overlay-projection fmat4]]))
 
 
 (def geometry-render-vars2
