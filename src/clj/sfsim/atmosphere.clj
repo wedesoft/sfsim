@@ -683,17 +683,6 @@
   (destroy-program program))
 
 
-(defn render-atmosphere-geometry
-  "Render atmospheric direction vectors for output to a geometry buffer"
-  [{::keys [program vao]} render-vars]
-  (let [projection (:sfsim.render/overlay-projection render-vars)
-        z-far      (:sfsim.render/z-far render-vars)]
-    (use-program program)
-    (uniform-matrix4 program "inverse_projection" (inverse projection))
-    (uniform-float program "z_far" z-far)
-    (render-quads vao)))
-
-
 (defn render-atmosphere-geometry2
   "Render atmospheric direction vectors for output to a geometry buffer"
   [{::keys [program vao]} render-vars]

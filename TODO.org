@@ -23,7 +23,7 @@
     - [X] handle case where model and planet use different projection matrices (both geometry and cloud geometry)
     - [X] integration test for different projection matrices
     - [X] switch game over to multi-pass rendering
-    - [ ] remove unused single-pass rendering code and tests (use clj -M:carve)
+    - [ ] remove unused single-pass rendering code and tests (use clj -M:carve --interactive --paths src)
     - [ ] merge into main
     - [ ] add rcs state to model vars?
     - [ ] move wheel animation and state into model-vars?
