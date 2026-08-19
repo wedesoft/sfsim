@@ -1,6 +1,14 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] mvp game loop
+  - Note taken on [2026-08-19 Mi 22:44] \\
+    How engine overhaul just unlocked dynamic, multi-light spaceport runways.
+    Also unlocks dense station and space craft lighting.
+    Add draft rendering of runway.
+    Side-by-side view showing albedo, normals, depth, roughness with explanation.
+    Runway strip with lot of glowing point lights.
+    Steam news and Discord with mp4 showing runway lights turning on sequentially.
+    This backend shift lets you place hundreds of dynamic, real-time lights on ships and stations without hurting performance.
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
   - [X] Steam page, mp4 files under 12 seconds, 780px
