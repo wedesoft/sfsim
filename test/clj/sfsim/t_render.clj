@@ -784,44 +784,6 @@ void main(void)
            (destroy-texture depth))))
 
 
-(def lod-texture-1d
-  "#version 450 core
-in vec2 uv_fragment;
-out vec3 fragColor;
-uniform sampler1D tex;
-uniform float lod;
-void main()
-{
-  float value = textureLod(tex, uv_fragment.x, lod).r;
-  fragColor = vec3(value, value, value);
-}")
-
-
-(tabular "1D mipmaps (disabled because crashes on Ubuntu 22.04)"
-         (future-fact
-           (offscreen-render 64 64
-                             (let [indices  [0 1 3 2]
-                                   vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-                                   program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [lod-texture-1d])
-                                   vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
-                                   data     (flatten (repeat 8 [0 0 1 1]))
-                                   tex      (make-float-texture-1d :sfsim.texture/linear :sfsim.texture/clamp (float-array data))]
-                               (generate-mipmap tex)
-                               (clear (vec3 0.0 0.0 0.0))
-                               (use-program program)
-                               (uniform-sampler program "tex" 0)
-                               (uniform-float program "lod" ?lod)
-                               (use-textures {0 tex})
-                               (render-quads vao)
-                               (destroy-texture tex)
-                               (destroy-vertex-array-object vao)
-                               (destroy-program program))) => (is-image (str "test/clj/sfsim/fixtures/render/" ?result ".png") 0.0))
-         ?lod ?result
-         0.0  "lod-1d-0"
-         1.0  "lod-1d-1"
-         2.0  "lod-1d-2")
-
-
 (def alpha-probe
   (template/fn [alpha]
     "#version 450 core
