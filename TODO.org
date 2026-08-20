@@ -26,6 +26,7 @@
     - [ ] use texture arrays for albedo, normal map, roughness map
     - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
     - [ ] introduce a geometry buffer for shadows
+  - [ ] script to add high-res aerial orthoimagery from earthexplorer
   - [-] use modern rendering pipeline
     - [X] emissive or ambient buffer
     - [X] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth

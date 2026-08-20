@@ -636,9 +636,6 @@
   (extract-hulls (::root scene)))
 
 
-(def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
-
-
 (defn setup-camera-world-and-shadow-matrices
   {:malli/schema [:=> [:cat :int fmat4 fmat4 fmat4 [:vector fmat4]] :nil]}
   [program transform internal-transform camera-to-world scene-shadow-matrices]
