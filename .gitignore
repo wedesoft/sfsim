@@ -8,6 +8,7 @@ tmp
 recording.edn
 venturestar.glb
 .cache
+.carve
 .clj-kondo/metosin
 .clj-kondo/imports
 .cpcache
