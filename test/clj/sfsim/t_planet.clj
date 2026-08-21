@@ -623,6 +623,121 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
 
 
+(defn fragment-planet-geometry-runway
+  [full overlay]
+  (template/eval
+"#version 450 core
+
+<% (if full %>
+uniform sampler2DArray day_night;
+uniform sampler2D normals;
+uniform sampler2D water;
+uniform vec3 light_direction;
+uniform float water_threshold;
+uniform vec3 water_color;
+uniform float reflectivity;
+uniform float specular;
+uniform float land_noise_scale;
+uniform float land_noise_strength;
+uniform float dawn_start;
+uniform float dawn_end;
+uniform mat4 world_to_camera;
+<% ) %>
+
+in GEO_OUT
+{
+  vec2 colorcoord;
+  vec3 point;
+  vec4 camera_point;
+} fs_in;
+
+layout (location = 0) out vec4 camera_point;
+<% (if (not full) %>
+layout (location = 1) out float dist;
+<% ) %>
+<% (if full %>
+layout (location = 1) out vec4 camera_normal;
+layout (location = 2) out vec4 diffuse_material;
+layout (location = 3) out float metallic_material;
+layout (location = 4) out float specular_material;
+layout (location = 5) out vec4 emissive_material;
+<% ) %>
+
+<% (if full %>
+float land_noise(vec3 point);
+float remap(float value, float original_min, float original_max, float new_min, float new_max);
+<% ) %>
+
+void main()
+{
+  camera_point = fs_in.camera_point;
+<% (when (not full) %>
+  dist = length(camera_point.xyz);
+<% ) %>
+<% (when full %>
+  float wet = texture(water, fs_in.colorcoord).r >= water_threshold ? 1.0 : 0.0;
+  vec3 world_point = fs_in.point;
+  vec3 water_normal = normalize(world_point);
+  vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
+  vec3 normal = mix(land_normal, water_normal, wet);
+  camera_normal = world_to_camera * vec4(normal, 0);
+  float land_modulation = 1.0 - land_noise_strength * land_noise(world_point / land_noise_scale);
+  vec3 day_color = texture(day_night, vec3(fs_in.colorcoord, 0.25)).rgb * land_modulation;
+  vec3 color = mix(day_color, water_color, wet);
+  diffuse_material = vec4(color, 1.0);
+<% (when overlay %>
+  if (camera_point.x >= -5 && camera_point.x <= 5 && camera_point.y >= -40 && camera_point.y <= 40) {
+    diffuse_material = vec4(0.5, 0.5, 0.5, 1.0);
+  };
+<% ) %>
+  metallic_material = wet * reflectivity;
+  specular_material = specular;
+  vec3 night_color = max(texture(day_night, vec3(fs_in.colorcoord, 0.75)).rgb - 0.3, 0.0) / 0.7;
+  vec3 emissive = clamp(remap(dot(light_direction, water_normal), dawn_start, dawn_end, 1.0, 0.0), 0.0, 1.0) * night_color;
+  emissive_material = vec4(emissive, 0.0);
+<% ) %>
+}" {:full full :overlay overlay}))
+
+
+(defn make-planet-geometry-program-runway
+  [overlay]
+  (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
+                :sfsim.render/fragment [(fragment-planet-geometry-runway true overlay) land-noise-mock shaders/remap]))
+
+
+(tabular "Render overlay on planet surface"
+         (fact
+           (with-invisible-window
+             (let [geometry-program  (make-planet-geometry-program-runway ?overlay)
+                   vao               (make-planet-vertex-array-object geometry-program)
+                   camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
+                   geometry-buffers  (make-geometry-buffers 256 256)
+                   planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz 0)
+                   overlay-to-world  (transformation-matrix (eye 3) (vec3 -5 -40 radius))
+                   lighting-program  (make-lighting-program)
+                   lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb 0 0 0 ?s 7)]
+               (render-geometry geometry-buffers
+                                (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist 0.0 1000.0
+                                                                0.0 ?lx ?ly ?lz)
+                                (use-textures planet-textures)
+                                (render-quads vao))
+               (render-to-image 256 256 false
+                                (render-lighting geometry-buffers lighting-program (count lighting-textures)
+                                                 (setup-lighting-uniforms lighting-program camera-to-world radius ?alb
+                                                                          ?a 1.0 ?dist ?lx ?ly ?lz ?s 0.0 size)
+                                                 (use-textures lighting-textures)))
+               => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
+               (destroy-program lighting-program)
+               (destroy-geometry-buffers geometry-buffers)
+               (doseq [tex (vals planet-textures)] (destroy-texture tex))
+               (doseq [tex (vals lighting-textures)] (destroy-texture tex))
+               (destroy-vertex-array-object vao)
+               (destroy-program geometry-program))))
+         ?colors   ?alb ?a  ?tr ?tg ?tb ?dist ?s  ?lx ?ly ?lz ?nx ?ny ?nz ?overlay ?result
+         "white"   PI   1.0  1   1   1     100 0   0   0   1   0   0   1  false    "fragment"
+         "white"   PI   1.0  1   1   1     100 0   0   0   1   0   0   1  true     "overlay")
+
+
 (def fragment-white-tree
 "#version 450 core
 in GEO_OUT
