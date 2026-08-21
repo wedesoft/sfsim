@@ -466,7 +466,7 @@ out GEO_OUT
 void main()
 {
   vs_out.colorcoord = colorcoord;
-  vec4 camera_point = vec4(0, 0, -distance, 1);
+  vec4 camera_point = vec4(point.xy * distance, -distance, 1);
   vs_out.camera_point = camera_point;
   vs_out.point = (camera_to_world * camera_point).xyz;
   gl_Position = vec4(point, 1);
