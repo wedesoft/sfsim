@@ -623,7 +623,7 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
 
 
-(defn fragment-planet-geometry-runway
+(defn fragment-planet-geometry-overlay
   [full overlay]
   (template/eval
 "#version 450 core
@@ -642,6 +642,11 @@ uniform float land_noise_strength;
 uniform float dawn_start;
 uniform float dawn_end;
 uniform mat4 world_to_camera;
+<% ) %>
+<% (when overlay %>
+uniform mat4 camera_to_overlay;
+uniform float overlay_dx;
+uniform float overlay_dy;
 <% ) %>
 
 in GEO_OUT
@@ -672,7 +677,7 @@ void main()
 {
   camera_point = fs_in.camera_point;
 <% (when (not full) %>
-  dist = length(camera_point.xyz);
+  dist = length(fs_in.camera_point.xyz);
 <% ) %>
 <% (when full %>
   float wet = texture(water, fs_in.colorcoord).r >= water_threshold ? 1.0 : 0.0;
@@ -686,7 +691,8 @@ void main()
   vec3 color = mix(day_color, water_color, wet);
   diffuse_material = vec4(color, 1.0);
 <% (when overlay %>
-  if (camera_point.x >= -5 && camera_point.x <= 5 && camera_point.y >= -40 && camera_point.y <= 40) {
+  vec4 overlay_point = camera_to_overlay * fs_in.camera_point;
+  if (overlay_point.x >= 0 && overlay_point.x <= overlay_dx && overlay_point.y >= 0 && overlay_point.y <= overlay_dy) {
     diffuse_material = vec4(0.5, 0.5, 0.5, 1.0);
   };
 <% ) %>
@@ -699,26 +705,32 @@ void main()
 }" {:full full :overlay overlay}))
 
 
-(defn make-planet-geometry-program-runway
+(defn make-planet-geometry-program-overlay
   [overlay]
   (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
-                :sfsim.render/fragment [(fragment-planet-geometry-runway true overlay) land-noise-mock shaders/remap]))
+                :sfsim.render/fragment [(fragment-planet-geometry-overlay true overlay) land-noise-mock shaders/remap]))
 
 
 (tabular "Render overlay on planet surface"
          (fact
            (with-invisible-window
-             (let [geometry-program  (make-planet-geometry-program-runway ?overlay)
+             (let [geometry-program  (make-planet-geometry-program-overlay ?overlay)
                    vao               (make-planet-vertex-array-object geometry-program)
                    camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
                    geometry-buffers  (make-geometry-buffers 256 256)
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz 0)
-                   overlay-to-world  (transformation-matrix (eye 3) (vec3 -5 -40 radius))
+                   overlay-to-world  (transformation-matrix (eye 3) (vec3 -25 -1675 radius))
+                   camera-to-overlay (mulm (inverse overlay-to-world) camera-to-world)
+                   overlay-dx        50.0
+                   overlay-dy        3350.0
                    lighting-program  (make-lighting-program)
                    lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb 0 0 0 ?s 7)]
                (render-geometry geometry-buffers
                                 (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist 0.0 1000.0
                                                                 0.0 ?lx ?ly ?lz)
+                                (uniform-matrix4 geometry-program "camera_to_overlay" camera-to-overlay)
+                                (uniform-float geometry-program "overlay_dx" overlay-dx)
+                                (uniform-float geometry-program "overlay_dy" overlay-dy)
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
@@ -735,7 +747,7 @@ void main()
                (destroy-program geometry-program))))
          ?colors   ?alb ?a  ?tr ?tg ?tb ?dist ?s  ?lx ?ly ?lz ?nx ?ny ?nz ?overlay ?result
          "white"   PI   1.0  1   1   1     100 0   0   0   1   0   0   1  false    "fragment"
-         "white"   PI   1.0  1   1   1     100 0   0   0   1   0   0   1  true     "overlay")
+         "white"   PI   1.0  1   1   1    4000 0   0   0   1   0   0   1  true     "overlay")
 
 
 (def fragment-white-tree
