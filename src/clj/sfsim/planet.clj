@@ -301,9 +301,9 @@
 
 
 (defn fragment-planet-geometry
-  [full]
+  [full overlay]
   [(shaders/lookup-3d "land_noise" "worley") shaders/remap
-   (template/eval (slurp "resources/shaders/planet/fragment-geometry.glsl") {:full full})])
+   (template/eval (slurp "resources/shaders/planet/fragment-geometry.glsl") {:full full :overlay overlay})])
 
 
 (def planet-data
@@ -322,7 +322,7 @@
                                     :sfsim.render/tess-control [tess-control-planet]
                                     :sfsim.render/tess-evaluation [(tess-evaluation-planet num-scene-shadows)]
                                     :sfsim.render/geometry [(geometry-planet-shading num-scene-shadows)]
-                                    :sfsim.render/fragment [(fragment-planet-geometry full)])
+                                    :sfsim.render/fragment [(fragment-planet-geometry full false)])
         config        (::config data)
         tilesize      (::tilesize config)
         worley-floats (slurp-floats (::worley-data config))
