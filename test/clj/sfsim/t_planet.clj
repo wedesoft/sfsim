@@ -623,6 +623,25 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
 
 
+(def overlay-shader
+"#version 450 core
+
+uniform mat4 camera_to_overlay;
+uniform float overlay_dx;
+uniform float overlay_dy;
+
+vec4 overlay_color(vec4 camera_point)
+{
+  vec4 overlay_point = camera_to_overlay * camera_point;
+  if (overlay_point.x >= 0 && overlay_point.x <= overlay_dx && overlay_point.y >= 0 && overlay_point.y <= overlay_dy) {
+    return vec4(0.5, 0.5, 0.5, 1.0);
+  } else {
+    return vec4(0.0, 0.0, 0.0, 0.0);
+  };
+}
+")
+
+
 (defn fragment-planet-geometry-overlay
   [full overlay]
   (template/eval
@@ -644,9 +663,7 @@ uniform float dawn_end;
 uniform mat4 world_to_camera;
 <% ) %>
 <% (when overlay %>
-uniform mat4 camera_to_overlay;
-uniform float overlay_dx;
-uniform float overlay_dy;
+vec4 overlay_color(vec4 camera_point);
 <% ) %>
 
 in GEO_OUT
@@ -691,10 +708,8 @@ void main()
   vec3 color = mix(day_color, water_color, wet);
   diffuse_material = vec4(color, 1.0);
 <% (when overlay %>
-  vec4 overlay_point = camera_to_overlay * fs_in.camera_point;
-  if (overlay_point.x >= 0 && overlay_point.x <= overlay_dx && overlay_point.y >= 0 && overlay_point.y <= overlay_dy) {
-    diffuse_material = vec4(0.5, 0.5, 0.5, 1.0);
-  };
+  vec4 overlay_color = overlay_color(fs_in.camera_point);
+  diffuse_material = mix(diffuse_material, overlay_color, overlay_color.a);
 <% ) %>
   metallic_material = wet * reflectivity;
   specular_material = specular;
@@ -708,7 +723,18 @@ void main()
 (defn make-planet-geometry-program-overlay
   [overlay]
   (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
-                :sfsim.render/fragment [(fragment-planet-geometry-overlay true overlay) land-noise-mock shaders/remap]))
+                :sfsim.render/fragment [(fragment-planet-geometry-overlay true overlay) overlay-shader land-noise-mock shaders/remap]))
+
+
+(defn setup-overlay-uniforms
+  [program overlay camera-to-world]
+  (let [overlay-to-world  (:sfsim.planet/overlay-to-world overlay)
+        overlay-dx        (:sfsim.planet/overlay-dx overlay)
+        overlay-dy        (:sfsim.planet/overlay-dy overlay)
+        camera-to-overlay (mulm (inverse overlay-to-world) camera-to-world)]
+    (uniform-matrix4 program "camera_to_overlay" camera-to-overlay)
+    (uniform-float program "overlay_dx" overlay-dx)
+    (uniform-float program "overlay_dy" overlay-dy)))
 
 
 (tabular "Render overlay on planet surface"
@@ -719,18 +745,15 @@ void main()
                    camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
                    geometry-buffers  (make-geometry-buffers 256 256)
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz 0)
-                   overlay-to-world  (transformation-matrix (eye 3) (vec3 -25 -1675 radius))
-                   camera-to-overlay (mulm (inverse overlay-to-world) camera-to-world)
-                   overlay-dx        50.0
-                   overlay-dy        3350.0
+                   overlay           {:sfsim.planet/overlay-to-world (transformation-matrix (eye 3) (vec3 -25 -1675 radius))
+                                      :sfsim.planet/overlay-dx 50.0
+                                      :sfsim.planet/overlay-dy 3350.0}
                    lighting-program  (make-lighting-program)
                    lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb 0 0 0 ?s 7)]
                (render-geometry geometry-buffers
                                 (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist 0.0 1000.0
                                                                 0.0 ?lx ?ly ?lz)
-                                (uniform-matrix4 geometry-program "camera_to_overlay" camera-to-overlay)
-                                (uniform-float geometry-program "overlay_dx" overlay-dx)
-                                (uniform-float geometry-program "overlay_dy" overlay-dy)
+                                (setup-overlay-uniforms geometry-program overlay camera-to-world)
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
