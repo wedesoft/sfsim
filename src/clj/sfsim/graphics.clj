@@ -35,7 +35,7 @@
 
 
 (defn make-graphics2
-  [models]
+  [models overlays]
   (let [cloud-data              (clouds/make-cloud-data config/cloud-config)
         opacity-data            (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
         atmosphere-luts         (atmosphere/make-atmosphere-luts config/max-height)
@@ -52,7 +52,8 @@
                                                              :sfsim.clouds/data cloud-data
                                                              :sfsim.atmosphere/luts atmosphere-luts})
         cloud-geometry-renderer (model/make-joined-geometry-renderer {:sfsim.planet/config config/planet-config} 0)
-        planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
+        have-overlay            (> (count overlays) 0)
+        planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0 have-overlay)
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
         scene-renderer          (model/make-scene-geometry-renderer true)
         object-radius           (or (::object-radius (first models)) (:sfsim.model/object-radius config/model-config))
@@ -85,7 +86,8 @@
      ::lighting-renderer lighting-renderer
      ::bsp-tree bsp-tree
      ::thruster-transforms thruster-transforms
-     ::scenes opengl-scenes}))
+     ::scenes opengl-scenes
+     ::overlays overlays}))
 
 
 (defn destroy-graphics2

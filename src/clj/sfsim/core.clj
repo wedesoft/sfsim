@@ -75,7 +75,8 @@
           window              (make-window "sfsim" window-width window-height false)
           object-radius       (:sfsim.model/object-radius config/model-config)
           graphics            (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
-                                                         :sfsim.graphics/object-radius object-radius}])
+                                                         :sfsim.graphics/object-radius object-radius}]
+                                                       [])
           gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic)
           model               (first (:sfsim.graphics/scenes graphics))
           convex-hulls        (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %))

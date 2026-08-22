@@ -800,7 +800,7 @@ void main()
                                                        :sfsim.planet/worley-size 8}}
                render-vars      #:sfsim.render{:projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
-               renderer         (make-planet-geometry-renderer data false 0)
+               renderer         (make-planet-geometry-renderer data false 0 false)
                indices          [0 2 3 1]
                vertices         (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
                vao              (make-vertex-array-object (:sfsim.planet/program renderer) indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])

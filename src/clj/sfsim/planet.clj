@@ -334,13 +334,13 @@ vec4 overlay_color(vec4 camera_point)
 
 (defn make-planet-geometry-renderer
   "Create renderer for rendering planet points in camera coordinate system"
-  {:malli/schema [:=> [:cat planet-data :boolean :int] planet-geometry-renderer]}
-  [data full num-scene-shadows]
+  {:malli/schema [:=> [:cat planet-data :boolean :int :boolean] planet-geometry-renderer]}
+  [data full num-scene-shadows overlay]
   (let [program       (make-program :sfsim.render/vertex [vertex-planet]
                                     :sfsim.render/tess-control [tess-control-planet]
                                     :sfsim.render/tess-evaluation [(tess-evaluation-planet num-scene-shadows)]
                                     :sfsim.render/geometry [(geometry-planet-shading num-scene-shadows)]
-                                    :sfsim.render/fragment [(fragment-planet-geometry full false)])
+                                    :sfsim.render/fragment [(fragment-planet-geometry full overlay)])
         config        (::config data)
         tilesize      (::tilesize config)
         worley-floats (slurp-floats (::worley-data config))
