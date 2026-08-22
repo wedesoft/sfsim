@@ -300,9 +300,27 @@
     (make-render-vars2 render-config window-width window-height camera-position camera-orientation light-direction z-near z-far)))
 
 
+(def overlay-shader
+"#version 450 core
+
+uniform mat4 camera_to_overlay;
+uniform float overlay_dx;
+uniform float overlay_dy;
+
+vec4 overlay_color(vec4 camera_point)
+{
+  vec4 overlay_point = camera_to_overlay * camera_point;
+  if (overlay_point.x >= 0 && overlay_point.x <= overlay_dx && overlay_point.y >= 0 && overlay_point.y <= overlay_dy) {
+    return vec4(0.5, 0.5, 0.5, 1.0);
+  } else {
+    return vec4(0.0, 0.0, 0.0, 0.0);
+  };
+}")
+
+
 (defn fragment-planet-geometry
   [full overlay]
-  [(shaders/lookup-3d "land_noise" "worley") shaders/remap
+  [(shaders/lookup-3d "land_noise" "worley") shaders/remap overlay-shader
    (template/eval (slurp "resources/shaders/planet/fragment-geometry.glsl") {:full full :overlay overlay})])
 
 

@@ -565,9 +565,9 @@ void main()
 
 
 (defn make-planet-geometry-program
-  []
+  [overlay]
   (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
-                :sfsim.render/fragment [(last (fragment-planet-geometry true false)) land-noise-mock shaders/remap]))
+                :sfsim.render/fragment [(last (fragment-planet-geometry true overlay)) overlay-shader land-noise-mock shaders/remap]))
 
 
 (defn make-planet-vertex-array-object
@@ -579,7 +579,7 @@ void main()
 (tabular "Render geometry and lighting of planet surface"
          (fact
            (with-invisible-window
-             (let [geometry-program  (make-planet-geometry-program)
+             (let [geometry-program  (make-planet-geometry-program false)
                    vao               (make-planet-vertex-array-object geometry-program)
                    camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
                    geometry-buffers  (make-geometry-buffers 256 256)
@@ -623,31 +623,6 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
 
 
-(def overlay-shader
-"#version 450 core
-
-uniform mat4 camera_to_overlay;
-uniform float overlay_dx;
-uniform float overlay_dy;
-
-vec4 overlay_color(vec4 camera_point)
-{
-  vec4 overlay_point = camera_to_overlay * camera_point;
-  if (overlay_point.x >= 0 && overlay_point.x <= overlay_dx && overlay_point.y >= 0 && overlay_point.y <= overlay_dy) {
-    return vec4(0.5, 0.5, 0.5, 1.0);
-  } else {
-    return vec4(0.0, 0.0, 0.0, 0.0);
-  };
-}
-")
-
-
-(defn make-planet-geometry-program-overlay
-  [overlay]
-  (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
-                :sfsim.render/fragment [(last (fragment-planet-geometry true overlay)) overlay-shader land-noise-mock shaders/remap]))
-
-
 (defn setup-overlay-uniforms
   [program overlay camera-to-world]
   (let [overlay-to-world  (:sfsim.planet/overlay-to-world overlay)
@@ -662,7 +637,7 @@ vec4 overlay_color(vec4 camera_point)
 (tabular "Render overlay on planet surface"
          (fact
            (with-invisible-window
-             (let [geometry-program  (make-planet-geometry-program-overlay ?overlay)
+             (let [geometry-program  (make-planet-geometry-program ?overlay)
                    vao               (make-planet-vertex-array-object geometry-program)
                    camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
                    geometry-buffers  (make-geometry-buffers 256 256)
