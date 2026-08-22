@@ -17,7 +17,9 @@
     - [X] flying through clouds
     - [X] landing
   - [ ] runway with lights and glide slope indicator
+    - [ ] ground does not hide spacecraft any more
     - [ ] integration for runway
+    - [ ] put runway only on one side of planet
     - [ ] render cube mesh backfaces without depth writing but leave depth testing on
     - [ ] render geometry and shadow information (full resolution) and use in subsequent pass
     - [ ] need to convert distance into camera coordinates and then into decal coordinates

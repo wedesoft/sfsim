@@ -311,7 +311,7 @@ vec4 overlay_color(vec4 camera_point)
 {
   vec4 overlay_point = camera_to_overlay * camera_point;
   if (overlay_point.x >= 0 && overlay_point.x <= overlay_dx && overlay_point.y >= 0 && overlay_point.y <= overlay_dy) {
-    return vec4(0.5, 0.5, 0.5, 1.0);
+    return vec4(0.1, 0.1, 0.1, 1.0);
   } else {
     return vec4(0.0, 0.0, 0.0, 0.0);
   };
