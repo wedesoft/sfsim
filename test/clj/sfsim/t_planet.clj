@@ -623,17 +623,6 @@ void main()
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
 
 
-(defn setup-overlay-uniforms
-  [program overlay camera-to-world]
-  (let [overlay-to-world  (:sfsim.planet/overlay-to-world overlay)
-        overlay-dx        (:sfsim.planet/overlay-dx overlay)
-        overlay-dy        (:sfsim.planet/overlay-dy overlay)
-        camera-to-overlay (mulm (inverse overlay-to-world) camera-to-world)]
-    (uniform-matrix4 program "camera_to_overlay" camera-to-overlay)
-    (uniform-float program "overlay_dx" overlay-dx)
-    (uniform-float program "overlay_dy" overlay-dy)))
-
-
 (tabular "Render overlay on planet surface"
          (fact
            (with-invisible-window
@@ -800,7 +789,7 @@ void main()
                                                        :sfsim.planet/worley-size 8}}
                render-vars      #:sfsim.render{:projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
-               renderer         (make-planet-geometry-renderer data false 0 false)
+               renderer         (make-planet-geometry-renderer data false 0 [])
                indices          [0 2 3 1]
                vertices         (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
                vao              (make-vertex-array-object (:sfsim.planet/program renderer) indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])

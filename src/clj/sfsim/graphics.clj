@@ -52,8 +52,7 @@
                                                              :sfsim.clouds/data cloud-data
                                                              :sfsim.atmosphere/luts atmosphere-luts})
         cloud-geometry-renderer (model/make-joined-geometry-renderer {:sfsim.planet/config config/planet-config} 0)
-        have-overlay            (> (count overlays) 0)
-        planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0 have-overlay)
+        planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0 overlays)
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
         scene-renderer          (model/make-scene-geometry-renderer true)
         object-radius           (or (::object-radius (first models)) (:sfsim.model/object-radius config/model-config))
@@ -86,8 +85,7 @@
      ::lighting-renderer lighting-renderer
      ::bsp-tree bsp-tree
      ::thruster-transforms thruster-transforms
-     ::scenes opengl-scenes
-     ::overlays overlays}))
+     ::scenes opengl-scenes}))
 
 
 (defn destroy-graphics2

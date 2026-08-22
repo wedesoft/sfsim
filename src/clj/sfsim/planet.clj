@@ -318,6 +318,17 @@ vec4 overlay_color(vec4 camera_point)
 }")
 
 
+(defn setup-overlay-uniforms
+  [program overlay camera-to-world]
+  (let [overlay-to-world  (:sfsim.planet/overlay-to-world overlay)
+        overlay-dx        (:sfsim.planet/overlay-dx overlay)
+        overlay-dy        (:sfsim.planet/overlay-dy overlay)
+        camera-to-overlay (mulm (inverse overlay-to-world) camera-to-world)]
+    (uniform-matrix4 program "camera_to_overlay" camera-to-overlay)
+    (uniform-float program "overlay_dx" overlay-dx)
+    (uniform-float program "overlay_dy" overlay-dy)))
+
+
 (defn fragment-planet-geometry
   [full overlay]
   [(shaders/lookup-3d "land_noise" "worley") shaders/remap overlay-shader
@@ -334,13 +345,14 @@ vec4 overlay_color(vec4 camera_point)
 
 (defn make-planet-geometry-renderer
   "Create renderer for rendering planet points in camera coordinate system"
-  {:malli/schema [:=> [:cat planet-data :boolean :int :boolean] planet-geometry-renderer]}
-  [data full num-scene-shadows overlay]
-  (let [program       (make-program :sfsim.render/vertex [vertex-planet]
+  {:malli/schema [:=> [:cat planet-data :boolean :int [:vector :some]] planet-geometry-renderer]}
+  [data full num-scene-shadows overlays]
+  (let [have-overlay  (> (count overlays) 0)
+        program       (make-program :sfsim.render/vertex [vertex-planet]
                                     :sfsim.render/tess-control [tess-control-planet]
                                     :sfsim.render/tess-evaluation [(tess-evaluation-planet num-scene-shadows)]
                                     :sfsim.render/geometry [(geometry-planet-shading num-scene-shadows)]
-                                    :sfsim.render/fragment [(fragment-planet-geometry full overlay)])
+                                    :sfsim.render/fragment [(fragment-planet-geometry full have-overlay)])
         config        (::config data)
         tilesize      (::tilesize config)
         worley-floats (slurp-floats (::worley-data config))
@@ -367,7 +379,7 @@ vec4 overlay_color(vec4 camera_point)
       (uniform-float program "land_noise_strength" (::land-noise-strength config))
       (uniform-float program "water_threshold" (::water-threshold config))
       (uniform-vector3 program "water_color" (::water-color config)))
-    {::program program ::worley worley}))
+    {::program program ::worley worley ::overlays overlays}))
 
 
 (defn destroy-planet-geometry-renderer
@@ -379,14 +391,17 @@ vec4 overlay_color(vec4 camera_point)
 
 (defn render-planet-geometry2
   "Render geometry (planet points and distances)"
-  [{::keys [program worley]} render-vars full tree]
-  (let [world-to-camera (inverse (:sfsim.render/camera-to-world render-vars))]
+  [{::keys [program worley overlays]} render-vars full tree]
+  (let [camera-to-world (:sfsim.render/camera-to-world render-vars)
+        world-to-camera (inverse camera-to-world)]
     (use-program program)
     (uniform-matrix4 program "projection" (:sfsim.render/projection render-vars))
     (uniform-matrix4 program "world_to_camera" world-to-camera)
     (when full
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (use-textures {4 worley}))
+    (doseq [overlay overlays]
+          (setup-overlay-uniforms program overlay camera-to-world))
     (render-tree program tree world-to-camera [] (if full [::surf-tex ::day-night-tex ::normal-tex ::water-tex] [::surf-tex]))))
 
 
