@@ -239,14 +239,14 @@
         camera-to-world              (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
         planet-render-vars           (::planet-render-vars frame)
         scene-render-vars            (::scene-render-vars frame)
-        scene-projection             (if scene-render-vars
+        model-covers-planet?         (when scene-render-vars
+                                       (< ^double (:sfsim.render/z-near scene-render-vars)
+                                          ^double (:sfsim.render/z-near planet-render-vars)))
+        scene-projection             (if model-covers-planet?
                                        (:sfsim.render/projection scene-render-vars)
                                        (:sfsim.render/projection planet-render-vars))
         atmosphere-render-vars       (::atmosphere-render-vars frame)
-        geometry-buffers             (::geometry-buffers frame)
-        model-covers-planet?         (when scene-render-vars
-                                       (< ^double (:sfsim.render/z-near scene-render-vars)
-                                          ^double (:sfsim.render/z-near planet-render-vars)))]
+        geometry-buffers             (::geometry-buffers frame)]
     (model/render-geometry
       geometry-buffers
       ;; Clear color, depth, and stencil buffer
