@@ -306,12 +306,15 @@
 uniform mat4 camera_to_overlay;
 uniform float overlay_dx;
 uniform float overlay_dy;
+uniform sampler2D diffuse_tex;
 
 vec4 overlay_color(vec4 camera_point)
 {
   vec4 overlay_point = camera_to_overlay * camera_point;
   if (overlay_point.x >= 0 && overlay_point.x <= overlay_dx && overlay_point.y >= 0 && overlay_point.y <= overlay_dy) {
-    return vec4(0.1, 0.1, 0.1, 1.0);
+    float scale = 1.0 / overlay_dx;
+    vec2 uv = vec2(overlay_point.x * scale, overlay_point.y * scale);
+    return vec4(texture(diffuse_tex, uv).rgb, 1.0);
   } else {
     return vec4(0.0, 0.0, 0.0, 0.0);
   };
@@ -319,14 +322,18 @@ vec4 overlay_color(vec4 camera_point)
 
 
 (defn setup-overlay-uniforms
-  [program overlay camera-to-world]
+  [program overlay camera-to-world texture-offset]
   (let [overlay-to-world  (:sfsim.planet/overlay-to-world overlay)
         overlay-dx        (:sfsim.planet/overlay-dx overlay)
         overlay-dy        (:sfsim.planet/overlay-dy overlay)
+        diffuse-tex       (:sfsim.planet/diffuse-tex overlay)
         camera-to-overlay (mulm (inverse overlay-to-world) camera-to-world)]
+    (use-program program)
+    (uniform-sampler program "diffuse_tex" texture-offset)
     (uniform-matrix4 program "camera_to_overlay" camera-to-overlay)
     (uniform-float program "overlay_dx" overlay-dx)
-    (uniform-float program "overlay_dy" overlay-dy)))
+    (uniform-float program "overlay_dy" overlay-dy)
+    (use-textures {texture-offset diffuse-tex})))
 
 
 (defn fragment-planet-geometry
@@ -401,7 +408,7 @@ vec4 overlay_color(vec4 camera_point)
       (uniform-vector3 program "light_direction" (:sfsim.render/light-direction render-vars))
       (use-textures {4 worley}))
     (doseq [overlay overlays]
-          (setup-overlay-uniforms program overlay camera-to-world))
+          (setup-overlay-uniforms program overlay camera-to-world 5))
     (render-tree program tree world-to-camera [] (if full [::surf-tex ::day-night-tex ::normal-tex ::water-tex] [::surf-tex]))))
 
 

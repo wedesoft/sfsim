@@ -633,13 +633,15 @@ void main()
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz 0)
                    overlay           {:sfsim.planet/overlay-to-world (transformation-matrix (eye 3) (vec3 -25 -1675 radius))
                                       :sfsim.planet/overlay-dx 50.0
-                                      :sfsim.planet/overlay-dy 3350.0}
+                                      :sfsim.planet/overlay-dy 3350.0
+                                      :sfsim.planet/diffuse-tex (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
+                                                                                  (slurp-image "test/clj/sfsim/fixtures/planet/asphalt-diffuse.png"))}
                    lighting-program  (make-lighting-program)
                    lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb 0 0 0 ?s 7)]
                (render-geometry geometry-buffers
                                 (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist 0.0 1000.0
                                                                 0.0 ?lx ?ly ?lz)
-                                (setup-overlay-uniforms geometry-program overlay camera-to-world)
+                                (setup-overlay-uniforms geometry-program overlay camera-to-world 3)
                                 (use-textures planet-textures)
                                 (render-quads vao))
                (render-to-image 256 256 false
@@ -650,6 +652,7 @@ void main()
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
                (destroy-program lighting-program)
                (destroy-geometry-buffers geometry-buffers)
+               (destroy-texture (:sfsim.planet/diffuse-tex overlay))
                (doseq [tex (vals planet-textures)] (destroy-texture tex))
                (doseq [tex (vals lighting-textures)] (destroy-texture tex))
                (destroy-vertex-array-object vao)
