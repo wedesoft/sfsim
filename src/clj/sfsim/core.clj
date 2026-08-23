@@ -34,6 +34,8 @@
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window onscreen-render quad-splits-orientations with-culling)]
     [sfsim.graphics :as graphics]
+    [sfsim.texture :as texture]
+    [sfsim.image :as image]
     [sfsim.audio :as audio]
     [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config process-events joysticks-poll ->InputHandler
                          char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback time-lapse-limit)])
@@ -83,7 +85,9 @@
                                                                        (rotation-matrix (rotation-matrix-3d-z (/ PI 2)))
                                                                        (transformation-matrix (eye 3) (vec3 -25 -50 earth-radius))])
                                :sfsim.planet/overlay-dx 50.0
-                               :sfsim.planet/overlay-dy 3350.0}
+                               :sfsim.planet/overlay-dy 3350.0
+                               :sfsim.planet/diffuse-tex (texture/make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
+                                                                                   (image/slurp-image "data/texture/asphalt-diffuse.png"))}
           height              0.0
           object-radius       (:sfsim.model/object-radius config/model-config)
           graphics            (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
@@ -97,6 +101,8 @@
           surface             (quadtree/distance-to-surface config/planet-config split-orientations)
           event-buffer        (atom (make-event-buffer))
           user-stats          (steam/initialize)]
+
+      (texture/generate-mipmap (:sfsim.planet/diffuse-tex overlay))
 
       ; (when user-stats
       ;   (steam/debug-reset-all-achievements! user-stats))
@@ -265,6 +271,7 @@
                    (steam/run-callbacks))
                  (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                  (swap! frame-counter inc)))
+        (texture/destroy-texture (:sfsim.planet/diffuse-tex overlay))
         (planet/destroy-tile-tree tile-tree)
         (graphics/destroy-graphics2 graphics)
         (audio/destroy-audio-state audio-state)
