@@ -50,6 +50,12 @@
     - [ ] use texture arrays for albedo, normal map, roughness map
     - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
     - [ ] introduce a geometry buffer for shadows
+  - [ ] use self-centering surfaces
+    - [ ] Deflection Rate: Ramp control surface deflection from 0% to 100% over 0.15-0.25 seconds on keypress to eliminate harsh snapping.
+    - [ ] Centering Speed: Return the surface to neutral slightly faster than it deflects (0.10–0.15 seconds) to model real airflow pushing the surface flat.
+    - [ ] Use [ and ] for pitch trim.
+  - [ ] add controls widget or tutorial
+  - [ ] use mid-air spawn to make flying easier or use tutorial
   - [ ] script to add high-res aerial orthoimagery from earthexplorer
   - [-] use modern rendering pipeline
     - [X] emissive or ambient buffer

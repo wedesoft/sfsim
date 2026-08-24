@@ -9,7 +9,7 @@
     [clojure.math :refer (PI exp pow to-radians)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye diagonal inverse mulm rotation-matrix-3d-x)]
-    [fastmath.vector :refer (vec3 vec4 dot mag)]
+    [fastmath.vector :refer (vec3 vec4 dot mag normalize)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -548,7 +548,7 @@ void main()
   (uniform-float program "max_height" 100000.0)
   (uniform-vector3 program "origin" (vec3 0 0 (+ radius dist)))
   (uniform-matrix4 program "camera_to_world" camera-to-world)
-  (uniform-vector3 program "light_direction" (vec3 lx ly lz))
+  (uniform-vector3 program "light_direction" (normalize (vec3 lx ly lz)))
   (uniform-vector3 program "scatter" (vec3 scatter scatter scatter)))
 
 
@@ -631,13 +631,18 @@ void main()
                    camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
                    geometry-buffers  (make-geometry-buffers 256 256)
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz 0)
-                   overlay           {:sfsim.planet/overlay-to-world (transformation-matrix (eye 3) (vec3 -25 -1675 radius))
-                                      :sfsim.planet/overlay-dx 50.0
-                                      :sfsim.planet/overlay-dy 3350.0
+                   diffuse-image     (slurp-image (str "test/clj/sfsim/fixtures/planet/" ?diffuse ".png"))
+                   normal-image      (when ?normal (slurp-image (str "test/clj/sfsim/fixtures/planet/" ?normal ".png")))
+                   overlay           {:sfsim.planet/overlay-to-world (transformation-matrix (eye 3) (vec3 -1675 -1675 radius))
+                                      :sfsim.planet/overlay-dx ?dx
+                                      :sfsim.planet/overlay-dy ?dy
                                       :sfsim.planet/diffuse-tex (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
-                                                                                  (slurp-image "test/clj/sfsim/fixtures/planet/asphalt-diffuse.png"))}
+                                                                                  diffuse-image)
+                                      :sfsim.planet/normal-tex (when ?normal
+                                                                 (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
+                                                                                   normal-image))}
                    lighting-program  (make-lighting-program)
-                   lighting-textures (make-lighting-textures lighting-program ?tr ?tg ?tb 0 0 0 ?s 7)]
+                   lighting-textures (make-lighting-textures lighting-program 1 1 1 0 0 0 ?s 7)]
                (render-geometry geometry-buffers
                                 (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist 0.0 1000.0
                                                                 0.0 ?lx ?ly ?lz)
@@ -647,19 +652,21 @@ void main()
                (render-to-image 256 256 false
                                 (render-lighting geometry-buffers lighting-program (count lighting-textures)
                                                  (setup-lighting-uniforms lighting-program camera-to-world radius ?alb
-                                                                          ?a 1.0 ?dist ?lx ?ly ?lz ?s 0.0 size)
+                                                                          1.0 1.0 ?dist ?lx ?ly ?lz ?s 0.0 size)
                                                  (use-textures lighting-textures)))
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
                (destroy-program lighting-program)
                (destroy-geometry-buffers geometry-buffers)
+               (when ?normal (destroy-texture (:sfsim.planet/normal-tex overlay)))
                (destroy-texture (:sfsim.planet/diffuse-tex overlay))
                (doseq [tex (vals planet-textures)] (destroy-texture tex))
                (doseq [tex (vals lighting-textures)] (destroy-texture tex))
                (destroy-vertex-array-object vao)
                (destroy-program geometry-program))))
-         ?colors   ?alb ?a  ?tr ?tg ?tb ?dist ?s  ?lx ?ly ?lz ?nx ?ny ?nz ?overlay ?result
-         "white"   PI   1.0  1   1   1     100 0   0   0   1   0   0   1  false    "fragment"
-         "white"   PI   1.0  1   1   1    4000 0   0   0   1   0   0   1  true     "overlay")
+         ?colors   ?alb ?dist ?s    ?dx    ?dy ?diffuse          ?normal  ?lx ?ly ?lz ?nx ?ny ?nz ?overlay ?result
+         "white"   PI     100  0   50.0 3350.0 "asphalt-diffuse" nil       0   0   1   0   0   1  false    "fragment"
+         "white"   PI    4000  0   50.0 3350.0 "asphalt-diffuse" nil       0   0   1   0   0   1  true     "overlay"
+         "green"   PI    4000  0 3350.0 3350.0 "white"           "normals" 1   0   1   0   0   1  true     "hill")
 
 
 (def fragment-white-tree
