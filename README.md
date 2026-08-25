@@ -157,6 +157,8 @@ The Blender model can be converted to GLB as follows:
 * export to GLB with baking animations enabled (animation mode "NLA track"!)
 * exit Blender without overwriting model
 
+Note that when baking normal maps, you need to use +X, -Y, and +Z for R, G, and B.
+
 ## External Links
 
 * Sfsim

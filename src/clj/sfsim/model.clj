@@ -636,9 +636,6 @@
   (extract-hulls (::root scene)))
 
 
-(def gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic))
-
-
 (defn setup-camera-world-and-shadow-matrices
   {:malli/schema [:=> [:cat :int fmat4 fmat4 fmat4 [:vector fmat4]] :nil]}
   [program transform internal-transform camera-to-world scene-shadow-matrices]
@@ -868,7 +865,7 @@
   {:malli/schema [:=> [:cat planet-data :int] joined-geometry-renderer]}
   [data num-scene-shadows]
   (let [scene-renderer (make-scene-geometry-renderer false)
-        planet-renderer (make-planet-geometry-renderer data false num-scene-shadows)
+        planet-renderer (make-planet-geometry-renderer data false num-scene-shadows [])
         atmosphere-renderer (make-atmosphere-geometry-renderer false)]
     {::scene-renderer scene-renderer
      ::planet-renderer planet-renderer

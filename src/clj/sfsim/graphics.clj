@@ -35,7 +35,7 @@
 
 
 (defn make-graphics2
-  [models]
+  [models overlays]
   (let [cloud-data              (clouds/make-cloud-data config/cloud-config)
         opacity-data            (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
         atmosphere-luts         (atmosphere/make-atmosphere-luts config/max-height)
@@ -52,7 +52,7 @@
                                                              :sfsim.clouds/data cloud-data
                                                              :sfsim.atmosphere/luts atmosphere-luts})
         cloud-geometry-renderer (model/make-joined-geometry-renderer {:sfsim.planet/config config/planet-config} 0)
-        planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0)
+        planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0 overlays)
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
         scene-renderer          (model/make-scene-geometry-renderer true)
         object-radius           (or (::object-radius (first models)) (:sfsim.model/object-radius config/model-config))
@@ -239,14 +239,14 @@
         camera-to-world              (matrix/transformation-matrix (matrix/quaternion->matrix camera-orientation) camera-position)
         planet-render-vars           (::planet-render-vars frame)
         scene-render-vars            (::scene-render-vars frame)
-        scene-projection             (if scene-render-vars
+        model-covers-planet?         (when scene-render-vars
+                                       (< ^double (:sfsim.render/z-near scene-render-vars)
+                                          ^double (:sfsim.render/z-near planet-render-vars)))
+        scene-projection             (if model-covers-planet?
                                        (:sfsim.render/projection scene-render-vars)
                                        (:sfsim.render/projection planet-render-vars))
         atmosphere-render-vars       (::atmosphere-render-vars frame)
-        geometry-buffers             (::geometry-buffers frame)
-        model-covers-planet?         (when scene-render-vars
-                                       (< ^double (:sfsim.render/z-near scene-render-vars)
-                                          ^double (:sfsim.render/z-near planet-render-vars)))]
+        geometry-buffers             (::geometry-buffers frame)]
     (model/render-geometry
       geometry-buffers
       ;; Clear color, depth, and stencil buffer
