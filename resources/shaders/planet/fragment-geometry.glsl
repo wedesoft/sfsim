@@ -1,6 +1,6 @@
 #version 450 core
 
-<% (if full %>
+<% (when full %>
 uniform sampler2DArray day_night;
 uniform sampler2D normals;
 uniform sampler2D water;
@@ -15,6 +15,10 @@ uniform float dawn_start;
 uniform float dawn_end;
 uniform mat4 world_to_camera;
 <% ) %>
+<% (when overlay %>
+vec4 overlay_color(vec4 camera_point);
+vec4 overlay_normal(vec4 camera_point);
+<% ) %>
 
 in GEO_OUT
 {
@@ -24,10 +28,10 @@ in GEO_OUT
 } fs_in;
 
 layout (location = 0) out vec4 camera_point;
-<% (if (not full) %>
+<% (when (not full) %>
 layout (location = 1) out float dist;
 <% ) %>
-<% (if full %>
+<% (when full %>
 layout (location = 1) out vec4 camera_normal;
 layout (location = 2) out vec4 diffuse_material;
 layout (location = 3) out float metallic_material;
@@ -35,7 +39,7 @@ layout (location = 4) out float specular_material;
 layout (location = 5) out vec4 emissive_material;
 <% ) %>
 
-<% (if full %>
+<% (when full %>
 float land_noise(vec3 point);
 float remap(float value, float original_min, float original_max, float new_min, float new_max);
 <% ) %>
@@ -46,7 +50,7 @@ void main()
 <% (if (not full) %>
   dist = length(camera_point.xyz);
 <% ) %>
-<% (if full %>
+<% (when full %>
   float wet = texture(water, fs_in.colorcoord).r >= water_threshold ? 1.0 : 0.0;
   vec3 world_point = fs_in.point;
   vec3 water_normal = normalize(world_point);
@@ -57,6 +61,12 @@ void main()
   vec3 day_color = texture(day_night, vec3(fs_in.colorcoord, 0.25)).rgb * land_modulation;
   vec3 color = mix(day_color, water_color, wet);
   diffuse_material = vec4(color, 1.0);
+<% (when overlay %>
+  vec4 overlay_color = overlay_color(fs_in.camera_point);
+  diffuse_material = mix(diffuse_material, overlay_color, overlay_color.a);
+  vec4 overlay_normal = overlay_normal(fs_in.camera_point);
+  camera_normal = mix(camera_normal, overlay_normal, overlay_color.a);
+<% ) %>
   metallic_material = wet * reflectivity;
   specular_material = specular;
   vec3 night_color = max(texture(day_night, vec3(fs_in.colorcoord, 0.75)).rgb - 0.3, 0.0) / 0.7;

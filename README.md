@@ -79,6 +79,7 @@ You can take the data folder of a Steam playtest build instead.
 
 * Download space ship model: `clj -T:build download-spaceship`
 * Download audio files: `clj -T:build download-audio`
+* Download texture files: `clj -T:build download-textures`
 * Volumetric clouds
   * Build Worley noise: `clj -T:build worley`
   * Build Perlin noise: `clj -T:build perlin`
@@ -156,6 +157,8 @@ The Blender model can be converted to GLB as follows:
 * delete invisible objects used for object differences
 * export to GLB with baking animations enabled (animation mode "NLA track"!)
 * exit Blender without overwriting model
+
+Note that when baking normal maps, you need to use +X, -Y, and +Z for R, G, and B.
 
 ## External Links
 
@@ -235,6 +238,7 @@ The Blender model can be converted to GLB as follows:
 * Data
   * [NASA CGI moon toolkit](https://svs.gsfc.nasa.gov/4720/)
   * [International Space Station 3D Model](https://science.nasa.gov/resource/international-space-station-3d-model/)
+  * [Asphalt track](https://polyhaven.com/a/asphalt_track)
 
 ## License
 

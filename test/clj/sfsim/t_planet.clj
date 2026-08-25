@@ -8,8 +8,8 @@
   (:require
     [clojure.math :refer (PI exp pow to-radians)]
     [comb.template :as template]
-    [fastmath.matrix :refer (eye diagonal inverse mulm rotation-matrix-3d-x)]
-    [fastmath.vector :refer (vec3 vec4 dot mag)]
+    [fastmath.matrix :refer (eye diagonal inverse mulm rotation-matrix-3d-x rotation-matrix-3d-z)]
+    [fastmath.vector :refer (vec3 vec4 dot mag normalize)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -466,7 +466,7 @@ out GEO_OUT
 void main()
 {
   vs_out.colorcoord = colorcoord;
-  vec4 camera_point = vec4(0, 0, -distance, 1);
+  vec4 camera_point = vec4(point.xy * distance, -distance, 1);
   vs_out.camera_point = camera_point;
   vs_out.point = (camera_to_world * camera_point).xyz;
   gl_Position = vec4(point, 1);
@@ -548,7 +548,7 @@ void main()
   (uniform-float program "max_height" 100000.0)
   (uniform-vector3 program "origin" (vec3 0 0 (+ radius dist)))
   (uniform-matrix4 program "camera_to_world" camera-to-world)
-  (uniform-vector3 program "light_direction" (vec3 lx ly lz))
+  (uniform-vector3 program "light_direction" (normalize (vec3 lx ly lz)))
   (uniform-vector3 program "scatter" (vec3 scatter scatter scatter)))
 
 
@@ -565,9 +565,9 @@ void main()
 
 
 (defn make-planet-geometry-program
-  []
+  [overlay]
   (make-program :sfsim.render/vertex [vertex-geometry-planet-mock]
-                :sfsim.render/fragment [(last (fragment-planet-geometry true)) land-noise-mock shaders/remap]))
+                :sfsim.render/fragment [(last (fragment-planet-geometry true overlay)) overlay-shader land-noise-mock shaders/remap]))
 
 
 (defn make-planet-vertex-array-object
@@ -579,7 +579,7 @@ void main()
 (tabular "Render geometry and lighting of planet surface"
          (fact
            (with-invisible-window
-             (let [geometry-program  (make-planet-geometry-program)
+             (let [geometry-program  (make-planet-geometry-program false)
                    vao               (make-planet-vertex-array-object geometry-program)
                    camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
                    geometry-buffers  (make-geometry-buffers 256 256)
@@ -597,7 +597,6 @@ void main()
                                                                           ?a ?shd ?dist ?lx ?ly ?lz ?s ?clouds size)
                                                  (use-textures lighting-textures)))
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
-               ; => (is-image (str "/tmp/" ?result ".png") 0.33)
                (destroy-program lighting-program)
                (destroy-geometry-buffers geometry-buffers)
                (doseq [tex (vals planet-textures)] (destroy-texture tex))
@@ -622,6 +621,54 @@ void main()
          "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.5     1.0  0   0   1   0   0   1   "clouds"
          "pattern" PI   1.0  1   1   1   0   0   0     0      100 0   0.0   0.0     0.0     0.5  0   0   1   0   0   1   "shadow"
          "white"   PI   1.0  1   1   1   0   0   0     0      100 0   0.0   1.0     0.0     1.0  0   0   1   0   0   1   "noise")
+
+
+(tabular "Render overlay on planet surface"
+         (fact
+           (with-invisible-window
+             (let [geometry-program  (make-planet-geometry-program ?overlay)
+                   vao               (make-planet-vertex-array-object geometry-program)
+                   camera-to-world   (transformation-matrix (eye 3)
+                                                            (vec3 0 0 (+ radius ?dist)))
+                   geometry-buffers  (make-geometry-buffers 256 256)
+                   planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz 0)
+                   diffuse-image     (slurp-image (str "test/clj/sfsim/fixtures/planet/" ?diffuse ".png"))
+                   normal-image      (slurp-image (str "test/clj/sfsim/fixtures/planet/" ?normal ".png"))
+                   overlay           {:sfsim.planet/overlay-to-world (mulm (rotation-matrix (rotation-matrix-3d-z (to-radians ?rotate)))
+                                                                           (translation-matrix (vec3 -1675 -1675 radius)))
+                                      :sfsim.planet/overlay-dx ?dx
+                                      :sfsim.planet/overlay-dy ?dy
+                                      :sfsim.planet/diffuse-tex (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
+                                                                                  diffuse-image)
+                                      :sfsim.planet/normal-tex (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
+                                                                                 normal-image)}
+                   lighting-program  (make-lighting-program)
+                   lighting-textures (make-lighting-textures lighting-program 1 1 1 0 0 0 ?s 7)]
+               (render-geometry geometry-buffers
+                                (setup-planet-geometry-uniforms geometry-program camera-to-world ?dist 0.0 1000.0
+                                                                0.0 ?lx ?ly ?lz)
+                                (setup-overlay-uniforms geometry-program overlay camera-to-world 3)
+                                (use-textures planet-textures)
+                                (render-quads vao))
+               (render-to-image 256 256 false
+                                (render-lighting geometry-buffers lighting-program (count lighting-textures)
+                                                 (setup-lighting-uniforms lighting-program camera-to-world radius ?alb
+                                                                          1.0 1.0 ?dist ?lx ?ly ?lz ?s 0.0 size)
+                                                 (use-textures lighting-textures)))
+               => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
+               (destroy-program lighting-program)
+               (destroy-geometry-buffers geometry-buffers)
+               (destroy-texture (:sfsim.planet/normal-tex overlay))
+               (destroy-texture (:sfsim.planet/diffuse-tex overlay))
+               (doseq [tex (vals planet-textures)] (destroy-texture tex))
+               (doseq [tex (vals lighting-textures)] (destroy-texture tex))
+               (destroy-vertex-array-object vao)
+               (destroy-program geometry-program))))
+         ?colors   ?alb ?dist ?s    ?dx    ?dy ?rotate ?diffuse  ?normal  ?lx ?ly ?lz ?nx ?ny ?nz ?overlay ?result
+         "white"   PI     100  0   50.0 3350.0  0.0    "white"   "flat"    0   0   1   0   0   1  false    "fragment"
+         "green"   PI    4000  0   50.0 3350.0  0.0    "white"   "flat"    0   0   1   0   0   1  true     "overlay"
+         "green"   PI    4000  0 3350.0 3350.0  0.0    "white"   "normals" 1   0   1   0   0   1  true     "hill"
+         "green"   PI    4000  0 3350.0 3350.0 30.0    "white"   "normals" 1   0   1   0   0   1  true     "hillrotate")
 
 
 (def fragment-white-tree
@@ -754,7 +801,7 @@ void main()
                                                        :sfsim.planet/worley-size 8}}
                render-vars      #:sfsim.render{:projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
-               renderer         (make-planet-geometry-renderer data false 0)
+               renderer         (make-planet-geometry-renderer data false 0 [])
                indices          [0 2 3 1]
                vertices         (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
                vao              (make-vertex-array-object (:sfsim.planet/program renderer) indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
@@ -805,19 +852,6 @@ void main()
 }")
 
 
-(def fragment-grey
-"#version 450 core
-in VS_OUT
-{
-  vec4 camera_point;
-} fs_in;
-out vec4 fragColor;
-void main()
-{
-  fragColor = vec4(0.5, 0.5, 0.5, 1.0);
-}")
-
-
 (def vertex-decal
 "#version 450 core
 uniform mat4 projection;
@@ -830,23 +864,6 @@ void main()
 }")
 
 
-(def fragment-decal
-"#version 450 core
-uniform sampler2D camera_point;
-uniform mat4 camera_to_object;
-out vec4 fragColor;
-void main()
-{
-  vec2 uv = vec2(gl_FragCoord.x / 320, gl_FragCoord.y / 240);
-  vec4 cam_point = texture(camera_point, uv);
-  vec4 point = camera_to_object * cam_point;
-  if (point.w > 0.0 && abs(point.x) <= 0.5 && abs(point.y) <= 0.5) {
-    fragColor = vec4(1, 1, 1, 1);
-  } else
-    discard;
-}")
-
-
 (def decal-indices
   [4 5 7 6    ; front (+z)
    1 0 2 3    ; back  (-z)
@@ -855,57 +872,6 @@ void main()
    2 6 7 3    ; top   (+y)
    0 1 5 4])  ; bottom (-y)
 
-
-(def decal-vertices
-  [-0.5 -0.5 -0.2
-    0.5 -0.5 -0.2
-   -0.5  0.5 -0.2
-    0.5  0.5 -0.2
-   -0.5 -0.5  0.2
-    0.5 -0.5  0.2
-   -0.5  0.5  0.2
-    0.5  0.5  0.2])
-
-
-(fact "Render a decal"
-      (with-invisible-window
-        (let [point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 320 240)
-              indices          [0 1 3 2]
-              vertices         [-1.0 -1.0 0.0, +1.0 -1.0 0.0, -1.0  1.0 0.0, +1.0  1.0 0.0]
-              projection       (projection-matrix 320 240 0.1 10.0 (to-radians -45))
-              object-to-camera (transformation-matrix (rotation-matrix-3d-x (to-radians 60.0)) (vec3 0 0 -4))
-              program-geometry (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-plane])
-              program-plane    (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-grey])
-              plane            (make-vertex-array-object program-geometry indices vertices ["point" 3])]
-          (framebuffer-render 320 240 :sfsim.render/cullback nil [point-texture]
-                              (use-program program-geometry)
-                              (uniform-matrix4 program-geometry "projection" projection)
-                              (uniform-matrix4 program-geometry "object_to_camera" object-to-camera)
-                              (render-quads plane))
-          (let [program-decal (make-program :sfsim.render/vertex [vertex-decal] :sfsim.render/fragment [fragment-decal])
-                cube          (make-vertex-array-object program-decal decal-indices decal-vertices ["point" 3])
-                img           (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL11/GL_RGB8 320 240)]
-            (framebuffer-render 320 240 :sfsim.render/cullback nil [img]
-                                (clear (vec3 0 0 0))
-                                (use-program program-plane)
-                                (uniform-matrix4 program-plane "projection" projection)
-                                (uniform-matrix4 program-plane "object_to_camera" object-to-camera)
-                                (render-quads plane)
-                                (use-program program-decal)
-                                (uniform-sampler program-decal "camera_point" 0)
-                                (uniform-matrix4 program-decal "projection" projection)
-                                (uniform-matrix4 program-decal "object_to_camera" object-to-camera)
-                                (uniform-matrix4 program-decal "camera_to_object" (inverse object-to-camera))
-                                (use-textures {0 point-texture})
-                                (render-quads cube))
-            (texture->image img) => (is-image "test/clj/sfsim/fixtures/planet/decal.png" 0.5)
-            (destroy-texture img)
-            (destroy-vertex-array-object cube)
-            (destroy-program program-decal)
-            (destroy-vertex-array-object plane)
-            (destroy-program program-geometry)
-            (destroy-program program-plane))
-          (destroy-texture point-texture))))
 
 
 (def fragment-darkgrey

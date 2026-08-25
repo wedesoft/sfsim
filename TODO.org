@@ -1,6 +1,36 @@
 #+TITLE: TODO
 #+AUTHOR: Jan Wedekind
 * TODO [#A] mvp game loop
+  - Note taken on [2026-08-23 So 22:50] \\
+    If you do not already have tangents, you can compute them per-fragment using `dFdx/dFdy`.
+    Since you have:
+    - position: `fs_in.point`
+    - UV: `fs_in.colorcoord`
+    you can do:
+    ```glsl
+    vec3 dp1 = dFdx(fs_in.point);
+    vec3 dp2 = dFdy(fs_in.point);
+    vec2 duv1 = dFdx(fs_in.colorcoord);
+    vec2 duv2 = dFdy(fs_in.colorcoord);
+    vec3 N = normalize(fs_in.point); // or your actual geometric normal
+    vec3 T = normalize(dp1 * duv2.y - dp2 * duv1.y);
+    vec3 B = normalize(-dp1 * duv2.x + dp2 * duv1.x);
+    mat3 TBN = mat3(T, B, N);
+    ```
+    Then:
+    ```glsl
+    vec3 n_tangent = texture(normals, fs_in.colorcoord).xyz * 2.0 - 1.0;
+    vec3 land_normal = normalize(TBN * n_tangent);
+    ```
+    This is often the easiest method when tangents are unavailable.
+  - Note taken on [2026-08-19 Mi 22:44] \\
+    How engine overhaul just unlocked dynamic, multi-light spaceport runways.
+    Also unlocks dense station and space craft lighting.
+    Add draft rendering of runway.
+    Side-by-side view showing albedo, normals, depth, roughness with explanation.
+    Runway strip with lot of glowing point lights.
+    Steam news and Discord with mp4 showing runway lights turning on sequentially.
+    This backend shift lets you place hundreds of dynamic, real-time lights on ships and stations without hurting performance.
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
   - [X] Steam page, mp4 files under 12 seconds, 780px
@@ -8,6 +38,25 @@
     - [X] RCS action
     - [X] flying through clouds
     - [X] landing
+  - [ ] runway with lights and glide slope indicator
+    - [ ] integration for runway
+    - [ ] put runway only on one side of planet
+    - [ ] render cube mesh backfaces without depth writing but leave depth testing on
+    - [ ] render geometry and shadow information (full resolution) and use in subsequent pass
+    - [ ] need to convert distance into camera coordinates and then into decal coordinates
+    - [ ] look at depth buffer in fragment shader
+    - [ ] calculate world position
+    - [ ] transform to texture coordinate
+    - [ ] use texture arrays for albedo, normal map, roughness map
+    - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
+    - [ ] introduce a geometry buffer for shadows
+  - [ ] use self-centering surfaces
+    - [ ] Deflection Rate: Ramp control surface deflection from 0% to 100% over 0.15-0.25 seconds on keypress to eliminate harsh snapping.
+    - [ ] Centering Speed: Return the surface to neutral slightly faster than it deflects (0.10–0.15 seconds) to model real airflow pushing the surface flat.
+    - [ ] Use [ and ] for pitch trim.
+  - [ ] add controls widget or tutorial
+  - [ ] use mid-air spawn to make flying easier or use tutorial
+  - [ ] script to add high-res aerial orthoimagery from earthexplorer
   - [-] use modern rendering pipeline
     - [X] emissive or ambient buffer
     - [X] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
@@ -24,14 +73,14 @@
     - [X] integration test for different projection matrices
     - [X] switch game over to multi-pass rendering
     - [X] remove unused single-pass rendering code and tests (use clj -M:carve --interactive --paths src)
-    - [ ] merge into main
+    - [X] merge into main
     - [ ] add rcs state to model vars?
     - [ ] move wheel animation and state into model-vars?
     - [ ] stencil handling of controls (draw first)
     - [ ] refactor plume code, duplication of plume rcs stuff in graphics module and physics module (move code into model module?)
     - [ ] use separate uniforms set up for plume shader and cloud shader
     - [ ] render-scene-geometry, render-scene-geometry2, render-joined-geometry, render-joined-geometry2, render-joined-geometry3, graphics/render-geometry
-    - [ ] remove object_to_scene matrix
+    - [X] remove object_to_scene matrix
     - [ ] cloud render vars for when no object being rendered?
     - [ ] update schemas for render-vars, planet-render-vars, model-render-vars, cloud ...
     - [ ] move lighting code into separate module (remove from model module)
@@ -45,16 +94,6 @@
     - [ ] remove texture-offset and scene-shadow-matrices from render-scene
     - [ ] make RCS thrusters and main engine light sources
     - [ ] add specular lighting to space craft
-  - [ ] runway with lights and glide slope indicator
-    - [ ] render cube mesh backfaces without depth writing but leave depth testing on
-    - [ ] render geometry and shadow information (full resolution) and use in subsequent pass
-    - [ ] need to convert distance into camera coordinates and then into decal coordinates
-    - [ ] look at depth buffer in fragment shader
-    - [ ] calculate world position
-    - [ ] transform to texture coordinate
-    - [ ] use texture arrays for albedo, normal map, roughness map
-    - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
-    - [ ] introduce a geometry buffer for shadows
   - [ ] stars
   - [ ] specular material for space ship
   - [ ] new steam capsule with better font, glare, thruster, and stars (add build script to render it)

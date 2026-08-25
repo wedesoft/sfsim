@@ -14,7 +14,7 @@
     [clojure.edn]
     [malli.dev :as dev]
     [malli.dev.pretty :as pretty]
-    [fastmath.matrix :refer (inverse mulv mulm)]
+    [fastmath.matrix :refer (inverse mulv mulm eye rotation-matrix-3d-y rotation-matrix-3d-z)]
     [fastmath.vector :refer (vec3 mag sub normalize)]
     [sfsim.astro :as astro]
     [sfsim.atmosphere :as atmosphere]
@@ -25,7 +25,7 @@
     [sfsim.gui :as gui]
     [sfsim.jolt :as jolt]
     [sfsim.steam :as steam]
-    [sfsim.matrix :refer (rotation-matrix matrix->quaternion)]
+    [sfsim.matrix :refer (rotation-matrix matrix->quaternion transformation-matrix)]
     [sfsim.model :as model]
     [sfsim.planet :as planet]
     [sfsim.clock :refer (start-clock elapsed-time)]
@@ -34,6 +34,8 @@
     [sfsim.quaternion :as q]
     [sfsim.render :refer (make-window destroy-window onscreen-render quad-splits-orientations with-culling)]
     [sfsim.graphics :as graphics]
+    [sfsim.texture :as texture]
+    [sfsim.image :as image]
     [sfsim.audio :as audio]
     [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config process-events joysticks-poll ->InputHandler
                          char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback time-lapse-limit)])
@@ -73,9 +75,26 @@
     (let [window-width        (:sfsim.render/window-width config/render-config)
           window-height       (:sfsim.render/window-height config/render-config)
           window              (make-window "sfsim" window-width window-height false)
+          longitude           (to-radians -1.3747)
+          latitude            (to-radians 50.9672)
+          earth-radius        (:sfsim.planet/radius config/planet-config)
+          overlay             {:sfsim.planet/overlay-to-world (reduce mulm
+                                                                      [(rotation-matrix (rotation-matrix-3d-z longitude))
+                                                                       (rotation-matrix (rotation-matrix-3d-y (- latitude)))
+                                                                       (rotation-matrix (rotation-matrix-3d-y (/ PI 2)))
+                                                                       (rotation-matrix (rotation-matrix-3d-z (/ PI 2)))
+                                                                       (transformation-matrix (eye 3) (vec3 -25 -50 earth-radius))])
+                               :sfsim.planet/overlay-dx 50.0
+                               :sfsim.planet/overlay-dy 3350.0
+                               :sfsim.planet/diffuse-tex (texture/make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
+                                                                                   (image/slurp-image "data/texture/asphalt-diffuse.png"))
+                               :sfsim.planet/normal-tex (texture/make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
+                                                                                  (image/slurp-image "data/texture/asphalt-normals.png"))}
+          height              0.0
           object-radius       (:sfsim.model/object-radius config/model-config)
           graphics            (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
-                                                         :sfsim.graphics/object-radius object-radius}])
+                                                         :sfsim.graphics/object-radius object-radius}]
+                                                       [overlay])
           gltf-to-aerodynamic (rotation-matrix aerodynamics/gltf-to-aerodynamic)
           model               (first (:sfsim.graphics/scenes graphics))
           convex-hulls        (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
@@ -84,6 +103,9 @@
           surface             (quadtree/distance-to-surface config/planet-config split-orientations)
           event-buffer        (atom (make-event-buffer))
           user-stats          (steam/initialize)]
+
+      (texture/generate-mipmap (:sfsim.planet/diffuse-tex overlay))
+      (texture/generate-mipmap (:sfsim.planet/normal-tex overlay))
 
       ; (when user-stats
       ;   (steam/debug-reset-all-achievements! user-stats))
@@ -102,9 +124,6 @@
             barycenter-earth    (astro/make-spk-segment-interpolator spk 0 3)
             earth-sun           (fn [jd-ut] (sub (barycenter-sun jd-ut) (barycenter-earth jd-ut)))
             jd-ut               {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
-            longitude           (to-radians -1.3747)
-            latitude            (to-radians 50.9672)
-            height              0.0
             input-state         (-> (make-initial-state) read-joystick-config)
             convex-hulls-join   (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25))
             body                (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
@@ -255,6 +274,8 @@
                    (steam/run-callbacks))
                  (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                  (swap! frame-counter inc)))
+        (texture/destroy-texture (:sfsim.planet/normal-tex overlay))
+        (texture/destroy-texture (:sfsim.planet/diffuse-tex overlay))
         (planet/destroy-tile-tree tile-tree)
         (graphics/destroy-graphics2 graphics)
         (audio/destroy-audio-state audio-state)
