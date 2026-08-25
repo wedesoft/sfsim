@@ -55,18 +55,17 @@ void main()
   vec3 world_point = fs_in.point;
   vec3 water_normal = normalize(world_point);
   vec3 land_normal = texture(normals, fs_in.colorcoord).xyz;
-  vec4 normal = world_to_camera * vec4(mix(land_normal, water_normal, wet), 0);
+  vec3 normal = mix(land_normal, water_normal, wet);
+  camera_normal = world_to_camera * vec4(normal, 0);
   float land_modulation = 1.0 - land_noise_strength * land_noise(world_point / land_noise_scale);
   vec3 day_color = texture(day_night, vec3(fs_in.colorcoord, 0.25)).rgb * land_modulation;
   vec3 color = mix(day_color, water_color, wet);
-<% (if overlay %>
+  diffuse_material = vec4(color, 1.0);
+<% (when overlay %>
   vec4 overlay_color = overlay_color(fs_in.camera_point);
   diffuse_material = mix(diffuse_material, overlay_color, overlay_color.a);
   vec4 overlay_normal = overlay_normal(fs_in.camera_point);
-  camera_normal = mix(normal, overlay_normal, overlay_color.a);
-<% %>
-  diffuse_material = vec4(color, 1.0);
-  camera_normal = normal;
+  camera_normal = mix(camera_normal, overlay_normal, overlay_color.a);
 <% ) %>
   metallic_material = wet * reflectivity;
   specular_material = specular;
