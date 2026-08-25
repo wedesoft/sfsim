@@ -79,6 +79,7 @@ You can take the data folder of a Steam playtest build instead.
 
 * Download space ship model: `clj -T:build download-spaceship`
 * Download audio files: `clj -T:build download-audio`
+* Download texture files: `clj -T:build download-textures`
 * Volumetric clouds
   * Build Worley noise: `clj -T:build worley`
   * Build Perlin noise: `clj -T:build perlin`

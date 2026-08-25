@@ -367,11 +367,22 @@
                     "drag.ogg"
                     "tyre-skid.ogg"
                     "sonic-boom.ogg"]]
-         (let [url      (str "https://www.wedesoft.de/downloads/" filename)]
+         (let [url (str "https://www.wedesoft.de/downloads/" filename)]
            (.println *err* (str "Downloading " url " ..."))
            (io/copy
              (io/input-stream url)
              (io/file (str "data/audio/" filename))))))
+
+(defn download-textures
+  "Download Spaceship model"
+  [& _]
+  (doseq [filename ["asphalt-diffuse.png"
+                    "asphalt-normals.png"]]
+         (let [url (str "https://www.wedesoft.de/downloads/" filename)]
+           (.println *err* (str "Downloading " url " ..."))
+           (io/copy
+             (io/input-stream url)
+             (io/file (str "data/texture/" filename))))))
 
 (defn download-ephemeris
   "Download NASA JPL planet ephemeris data from https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/"
@@ -493,6 +504,7 @@
   (cloud-cover)
   (download-spaceship)
   (download-audio)
+  (download-textures)
   (download-bluemarble)
   (download-blackmarble)
   (download-elevation)
