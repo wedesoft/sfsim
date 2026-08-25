@@ -237,6 +237,7 @@ Note that when baking normal maps, you need to use +X, -Y, and +Z for R, G, and 
 * Data
   * [NASA CGI moon toolkit](https://svs.gsfc.nasa.gov/4720/)
   * [International Space Station 3D Model](https://science.nasa.gov/resource/international-space-station-3d-model/)
+  * [Asphalt track](https://polyhaven.com/a/asphalt_track)
 
 ## License
 
