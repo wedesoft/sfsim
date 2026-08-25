@@ -663,10 +663,10 @@ void main()
                (doseq [tex (vals lighting-textures)] (destroy-texture tex))
                (destroy-vertex-array-object vao)
                (destroy-program geometry-program))))
-         ?colors   ?alb ?dist ?s    ?dx    ?dy ?diffuse          ?normal  ?lx ?ly ?lz ?nx ?ny ?nz ?overlay ?result
-         "white"   PI     100  0   50.0 3350.0 "asphalt-diffuse" nil       0   0   1   0   0   1  false    "fragment"
-         "white"   PI    4000  0   50.0 3350.0 "asphalt-diffuse" nil       0   0   1   0   0   1  true     "overlay"
-         "green"   PI    4000  0 3350.0 3350.0 "white"           "normals" 1   0   1   0   0   1  true     "hill")
+         ?colors   ?alb ?dist ?s    ?dx    ?dy ?diffuse  ?normal  ?lx ?ly ?lz ?nx ?ny ?nz ?overlay ?result
+         "white"   PI     100  0   50.0 3350.0 "white"   nil       0   0   1   0   0   1  false    "fragment"
+         "green"   PI    4000  0   50.0 3350.0 "white"   nil       0   0   1   0   0   1  true     "overlay"
+         "green"   PI    4000  0 3350.0 3350.0 "white"   "normals" 1   0   1   0   0   1  true     "hill")
 
 
 (def fragment-white-tree
