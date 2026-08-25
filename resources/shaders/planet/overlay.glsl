@@ -4,6 +4,7 @@ uniform mat4 camera_to_overlay;
 uniform float overlay_dx;
 uniform float overlay_dy;
 uniform sampler2D diffuse_tex;
+uniform sampler2D normal_tex;
 
 vec4 overlay_color(vec4 camera_point)
 {
