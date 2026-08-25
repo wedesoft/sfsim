@@ -628,13 +628,14 @@ void main()
            (with-invisible-window
              (let [geometry-program  (make-planet-geometry-program ?overlay)
                    vao               (make-planet-vertex-array-object geometry-program)
-                   camera-to-world   (transformation-matrix (rotation-matrix-3d-z (to-radians ?rotate))
+                   camera-to-world   (transformation-matrix (eye 3)
                                                             (vec3 0 0 (+ radius ?dist)))
                    geometry-buffers  (make-geometry-buffers 256 256)
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz 0)
                    diffuse-image     (slurp-image (str "test/clj/sfsim/fixtures/planet/" ?diffuse ".png"))
                    normal-image      (slurp-image (str "test/clj/sfsim/fixtures/planet/" ?normal ".png"))
-                   overlay           {:sfsim.planet/overlay-to-world (transformation-matrix (eye 3) (vec3 -1675 -1675 radius))
+                   overlay           {:sfsim.planet/overlay-to-world (mulm (rotation-matrix (rotation-matrix-3d-z (to-radians ?rotate)))
+                                                                           (translation-matrix (vec3 -1675 -1675 radius)))
                                       :sfsim.planet/overlay-dx ?dx
                                       :sfsim.planet/overlay-dy ?dy
                                       :sfsim.planet/diffuse-tex (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
