@@ -17,3 +17,11 @@ vec4 overlay_color(vec4 camera_point)
     return vec4(0.0, 0.0, 0.0, 0.0);
   };
 }
+
+vec4 overlay_normal(vec4 camera_point)
+{
+  vec3 dp1 = dFdx(camera_point.xyz);
+  vec3 dp2 = dFdy(camera_point.xyz);
+  vec3 n = normalize(cross(dp1, dp2));
+  return vec4(n, 0);
+}
