@@ -440,7 +440,7 @@
                        "org.lwjgl/lwjgl-stb"
                        "org.lwjgl/lwjgl-stb$natives-linux"}
         add-deps     [{:name "jrouwe/joltphysics"
-                       :version "5.5.0"
+                       :version "5.6.0"
                        :license {:name "MIT License"
                                  :url "https://github.com/jrouwe/JoltPhysics/blob/master/LICENSE"}}]
         url-subst    (fn [project url]
