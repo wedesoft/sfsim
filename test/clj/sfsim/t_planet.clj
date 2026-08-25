@@ -632,15 +632,14 @@ void main()
                    geometry-buffers  (make-geometry-buffers 256 256)
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz 0)
                    diffuse-image     (slurp-image (str "test/clj/sfsim/fixtures/planet/" ?diffuse ".png"))
-                   normal-image      (when ?normal (slurp-image (str "test/clj/sfsim/fixtures/planet/" ?normal ".png")))
+                   normal-image      (slurp-image (str "test/clj/sfsim/fixtures/planet/" ?normal ".png"))
                    overlay           {:sfsim.planet/overlay-to-world (transformation-matrix (eye 3) (vec3 -1675 -1675 radius))
                                       :sfsim.planet/overlay-dx ?dx
                                       :sfsim.planet/overlay-dy ?dy
                                       :sfsim.planet/diffuse-tex (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
                                                                                   diffuse-image)
-                                      :sfsim.planet/normal-tex (when ?normal
-                                                                 (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
-                                                                                   normal-image))}
+                                      :sfsim.planet/normal-tex (make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
+                                                                                 normal-image)}
                    lighting-program  (make-lighting-program)
                    lighting-textures (make-lighting-textures lighting-program 1 1 1 0 0 0 ?s 7)]
                (render-geometry geometry-buffers
@@ -657,15 +656,15 @@ void main()
                => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result ".png") 0.33)
                (destroy-program lighting-program)
                (destroy-geometry-buffers geometry-buffers)
-               (when ?normal (destroy-texture (:sfsim.planet/normal-tex overlay)))
+               (destroy-texture (:sfsim.planet/normal-tex overlay))
                (destroy-texture (:sfsim.planet/diffuse-tex overlay))
                (doseq [tex (vals planet-textures)] (destroy-texture tex))
                (doseq [tex (vals lighting-textures)] (destroy-texture tex))
                (destroy-vertex-array-object vao)
                (destroy-program geometry-program))))
          ?colors   ?alb ?dist ?s    ?dx    ?dy ?diffuse  ?normal  ?lx ?ly ?lz ?nx ?ny ?nz ?overlay ?result
-         "white"   PI     100  0   50.0 3350.0 "white"   nil       0   0   1   0   0   1  false    "fragment"
-         "green"   PI    4000  0   50.0 3350.0 "white"   nil       0   0   1   0   0   1  true     "overlay"
+         "white"   PI     100  0   50.0 3350.0 "white"   "flat"    0   0   1   0   0   1  false    "fragment"
+         "green"   PI    4000  0   50.0 3350.0 "white"   "flat"    0   0   1   0   0   1  true     "overlay"
          "green"   PI    4000  0 3350.0 3350.0 "white"   "normals" 1   0   1   0   0   1  true     "hill")
 
 
