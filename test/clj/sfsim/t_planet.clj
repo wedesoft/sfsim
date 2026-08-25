@@ -8,7 +8,7 @@
   (:require
     [clojure.math :refer (PI exp pow to-radians)]
     [comb.template :as template]
-    [fastmath.matrix :refer (eye diagonal inverse mulm rotation-matrix-3d-x)]
+    [fastmath.matrix :refer (eye diagonal inverse mulm rotation-matrix-3d-x rotation-matrix-3d-z)]
     [fastmath.vector :refer (vec3 vec4 dot mag normalize)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -628,7 +628,8 @@ void main()
            (with-invisible-window
              (let [geometry-program  (make-planet-geometry-program ?overlay)
                    vao               (make-planet-vertex-array-object geometry-program)
-                   camera-to-world   (transformation-matrix (eye 3) (vec3 0 0 (+ radius ?dist)))
+                   camera-to-world   (transformation-matrix (rotation-matrix-3d-z (to-radians ?rotate))
+                                                            (vec3 0 0 (+ radius ?dist)))
                    geometry-buffers  (make-geometry-buffers 256 256)
                    planet-textures   (make-planet-geometry-textures geometry-program ?colors ?nx ?ny ?nz 0)
                    diffuse-image     (slurp-image (str "test/clj/sfsim/fixtures/planet/" ?diffuse ".png"))
@@ -662,10 +663,11 @@ void main()
                (doseq [tex (vals lighting-textures)] (destroy-texture tex))
                (destroy-vertex-array-object vao)
                (destroy-program geometry-program))))
-         ?colors   ?alb ?dist ?s    ?dx    ?dy ?diffuse  ?normal  ?lx ?ly ?lz ?nx ?ny ?nz ?overlay ?result
-         "white"   PI     100  0   50.0 3350.0 "white"   "flat"    0   0   1   0   0   1  false    "fragment"
-         "green"   PI    4000  0   50.0 3350.0 "white"   "flat"    0   0   1   0   0   1  true     "overlay"
-         "green"   PI    4000  0 3350.0 3350.0 "white"   "normals" 1   0   1   0   0   1  true     "hill")
+         ?colors   ?alb ?dist ?s    ?dx    ?dy ?rotate ?diffuse  ?normal  ?lx ?ly ?lz ?nx ?ny ?nz ?overlay ?result
+         "white"   PI     100  0   50.0 3350.0  0.0    "white"   "flat"    0   0   1   0   0   1  false    "fragment"
+         "green"   PI    4000  0   50.0 3350.0  0.0    "white"   "flat"    0   0   1   0   0   1  true     "overlay"
+         "green"   PI    4000  0 3350.0 3350.0  0.0    "white"   "normals" 1   0   1   0   0   1  true     "hill"
+         "green"   PI    4000  0 3350.0 3350.0 30.0    "white"   "normals" 1   0   1   0   0   1  true     "hillrotate")
 
 
 (def fragment-white-tree

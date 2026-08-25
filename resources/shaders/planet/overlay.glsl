@@ -27,8 +27,8 @@ vec4 overlay_normal(vec4 camera_point)
   vec3 dp2 = dFdy(camera_point.xyz);
   vec2 duv1 = dFdx(uv);
   vec2 duv2 = dFdy(uv);
-  vec3 T = normalize(dp1);
-  vec3 B = normalize(dp2);
+  vec3 T = normalize(duv2.y * dp1 - duv1.y * dp2);
+  vec3 B = normalize(duv1.x * dp2 - duv2.x * dp1);
   vec3 N = normalize(cross(T, B));
   mat3 TBN = mat3(T, B, N);
   vec3 normal = 2.0 * texture(normal_tex, uv).rgb - 1;
