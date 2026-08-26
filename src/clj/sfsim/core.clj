@@ -87,7 +87,7 @@
                                :sfsim.planet/overlay-dx 50.0
                                :sfsim.planet/overlay-dy 3350.0
                                :sfsim.planet/diffuse-tex (texture/make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
-                                                                                   (image/slurp-image "data/texture/asphalt-diffuse.png"))
+                                                                                   (image/slurp-image "data/texture/asphalt-diffuse.jpg"))
                                :sfsim.planet/normal-tex (texture/make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
                                                                                   (image/slurp-image "data/texture/asphalt-normals.png"))}
           height              0.0

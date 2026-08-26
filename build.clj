@@ -376,7 +376,7 @@
 (defn download-textures
   "Download Spaceship model"
   [& _]
-  (doseq [filename ["asphalt-diffuse.png"
+  (doseq [filename ["asphalt-diffuse.jpg"
                     "asphalt-normals.png"]]
          (let [url (str "https://www.wedesoft.de/downloads/" filename)]
            (.println *err* (str "Downloading " url " ..."))
