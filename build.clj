@@ -425,7 +425,7 @@
 (defn runway-markings
   [& _]
   (GLFW/glfwInit)
-  (img/spit-png "/tmp/runway-markings.png" (gui/runway-markings) true)
+  (img/spit-png "data/texture/runway-markings.png" (gui/runway-markings) true)
   (GLFW/glfwTerminate))
 
 
