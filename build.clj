@@ -422,6 +422,13 @@
   (GLFW/glfwTerminate))
 
 
+(defn runway-markings
+  [& _]
+  (GLFW/glfwInit)
+  (img/spit-png "/tmp/runway-markings.png" (gui/runway-markings) true)
+  (GLFW/glfwTerminate))
+
+
 (defn licenses
   [& _]
   (let [
@@ -520,5 +527,6 @@
   (cube-maps)
   (atmosphere-lut)
   (navball-orbit)
+  (runway-markings)
   (licenses)
   (quit))

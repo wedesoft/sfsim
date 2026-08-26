@@ -5,7 +5,7 @@ Aim is to simulate take off, space station docking, and moon landing with a futu
 Requires OpenGL 4.5 (glClipControl for reversed-z rendering)
 See [sfsim homepage][1] for more details.
 
-**[Warning: Only download sfsim binary releases via Steam and not from other sources!][2]**
+**[Note: Official binary releases are strictly distributed through Steam. Do not download sfsim binaries from third-party sources!][3]**
 
 [![Aerodynamic prototype](https://i.ytimg.com/vi/bbmusPm7QZc/hqdefault.jpg)](https://www.youtube.com/watch?v=bbmusPm7QZc)
 
@@ -105,7 +105,10 @@ You can take the data folder of a Steam playtest build instead.
 * Atmospheric lookup tables (this takes hours to compute)
   * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
   * Perform all build steps above: `clj -T:build all`
-* Make navball texture: `clj -T:build navball-orbit`
+* Make textures
+  * `clj -T:build navball-orbit`
+  * `clj -T:build runway-markings`
+
 
 ## Run
 
