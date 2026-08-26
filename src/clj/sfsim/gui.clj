@@ -1634,22 +1634,22 @@
                                     gui canvas canvas-rect
                                     (with-colors
                                       [black   0   0   0
-                                       white 255 255 255]
+                                       mark  200 200 200]
                                       (with-rect rect 0 0 w h (fill-rect canvas rect 0.0 black))
-                                      (with-rect rect 0 0 w 4 (fill-rect canvas rect 0.0 white))
-                                      (with-rect rect 0 (- h 4) w 4 (fill-rect canvas rect 0.0 white))
-                                      (with-rect rect 0 0 2 h (fill-rect canvas rect 0.0 white))
-                                      (with-rect rect 72 0 2 h (fill-rect canvas rect 0.0 white))
+                                      (with-rect rect 0 0 w 4 (fill-rect canvas rect 0.0 mark))
+                                      (with-rect rect 0 (- h 4) w 4 (fill-rect canvas rect 0.0 mark))
+                                      (with-rect rect 0 0 2 h (fill-rect canvas rect 0.0 mark))
+                                      (with-rect rect 72 0 2 h (fill-rect canvas rect 0.0 mark))
                                       (doseq [x (concat (range 5 35 5) (range 37 72 5)) y [12 (- h 12 37)]]
-                                             (with-rect rect x y 3 37 (fill-rect canvas rect 0.0 white)))
+                                             (with-rect rect x y 3 37 (fill-rect canvas rect 0.0 mark)))
                                       (doseq [y [512 (- h 512 56)] x [9 (- w 9 7)]]
-                                             (with-rect rect x y 7 56 (fill-rect canvas rect 0.0 white)))
-                                      (doseq [y (range 0 1288 184) x [19 (- w 19 5)]]
+                                             (with-rect rect x y 7 56 (fill-rect canvas rect 0.0 mark)))
+                                      (doseq [y (range 184 1288 184) x [19 (- w 19 5)]]
                                              (when (not= y 552)
                                                (doseq [y [y (- h 28 y)]]
-                                                      (with-rect rect x y 5 28 (fill-rect canvas rect 0.0 white)))))
+                                                      (with-rect rect x y 5 28 (fill-rect canvas rect 0.0 mark)))))
                                       (doseq [y (range 87 4009 74)]
-                                             (with-rect rect 36 (+ y 18) 2 38 (fill-rect canvas rect 0.0 white))))))
+                                             (with-rect rect 36 (+ y 18) 2 38 (fill-rect canvas rect 0.0 mark))))))
                                 (render-nuklear-gui gui w h)
                                 (destroy-nuklear-gui-with-font gui))))
         (let [img (texture->image tex)]
