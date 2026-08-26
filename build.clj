@@ -376,7 +376,7 @@
 (defn download-textures
   "Download Spaceship model"
   [& _]
-  (doseq [filename ["asphalt-diffuse.png"
+  (doseq [filename ["asphalt-diffuse.jpg"
                     "asphalt-normals.png"]]
          (let [url (str "https://www.wedesoft.de/downloads/" filename)]
            (.println *err* (str "Downloading " url " ..."))
@@ -419,6 +419,13 @@
   (GLFW/glfwInit)
   (img/spit-png "tmp/navball-orbit.png" (gui/navball-orbit) true)
   (sh "convert" "tmp/navball-orbit.png" "-rotate" "270" "data/texture/navball-orbit.png")
+  (GLFW/glfwTerminate))
+
+
+(defn runway-markings
+  [& _]
+  (GLFW/glfwInit)
+  (img/spit-png "data/texture/runway-markings.png" (gui/runway-markings) true)
   (GLFW/glfwTerminate))
 
 
@@ -520,5 +527,6 @@
   (cube-maps)
   (atmosphere-lut)
   (navball-orbit)
+  (runway-markings)
   (licenses)
   (quit))
