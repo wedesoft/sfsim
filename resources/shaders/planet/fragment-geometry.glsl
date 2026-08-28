@@ -17,6 +17,7 @@ uniform mat4 world_to_camera;
 <% ) %>
 <% (when overlay %>
 vec4 overlay_color(vec4 camera_point);
+vec4 overlay_normal(vec4 camera_point);
 <% ) %>
 
 in GEO_OUT
@@ -63,6 +64,8 @@ void main()
 <% (when overlay %>
   vec4 overlay_color = overlay_color(fs_in.camera_point);
   diffuse_material = mix(diffuse_material, overlay_color, overlay_color.a);
+  vec4 overlay_normal = overlay_normal(fs_in.camera_point);
+  camera_normal = mix(camera_normal, overlay_normal, overlay_color.a);
 <% ) %>
   metallic_material = wet * reflectivity;
   specular_material = specular;

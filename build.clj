@@ -367,11 +367,22 @@
                     "drag.ogg"
                     "tyre-skid.ogg"
                     "sonic-boom.ogg"]]
-         (let [url      (str "https://www.wedesoft.de/downloads/" filename)]
+         (let [url (str "https://www.wedesoft.de/downloads/" filename)]
            (.println *err* (str "Downloading " url " ..."))
            (io/copy
              (io/input-stream url)
              (io/file (str "data/audio/" filename))))))
+
+(defn download-textures
+  "Download Spaceship model"
+  [& _]
+  (doseq [filename ["asphalt-diffuse.jpg"
+                    "asphalt-normals.png"]]
+         (let [url (str "https://www.wedesoft.de/downloads/" filename)]
+           (.println *err* (str "Downloading " url " ..."))
+           (io/copy
+             (io/input-stream url)
+             (io/file (str "data/texture/" filename))))))
 
 (defn download-ephemeris
   "Download NASA JPL planet ephemeris data from https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/"
@@ -411,6 +422,13 @@
   (GLFW/glfwTerminate))
 
 
+(defn runway-markings
+  [& _]
+  (GLFW/glfwInit)
+  (img/spit-png "data/texture/runway-markings.png" (gui/runway-markings) true)
+  (GLFW/glfwTerminate))
+
+
 (defn licenses
   [& _]
   (let [
@@ -429,7 +447,7 @@
                        "org.lwjgl/lwjgl-stb"
                        "org.lwjgl/lwjgl-stb$natives-linux"}
         add-deps     [{:name "jrouwe/joltphysics"
-                       :version "5.5.0"
+                       :version "5.6.0"
                        :license {:name "MIT License"
                                  :url "https://github.com/jrouwe/JoltPhysics/blob/master/LICENSE"}}]
         url-subst    (fn [project url]
@@ -493,6 +511,7 @@
   (cloud-cover)
   (download-spaceship)
   (download-audio)
+  (download-textures)
   (download-bluemarble)
   (download-blackmarble)
   (download-elevation)
@@ -508,5 +527,6 @@
   (cube-maps)
   (atmosphere-lut)
   (navball-orbit)
+  (runway-markings)
   (licenses)
   (quit))

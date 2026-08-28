@@ -5,7 +5,7 @@ Aim is to simulate take off, space station docking, and moon landing with a futu
 Requires OpenGL 4.5 (glClipControl for reversed-z rendering)
 See [sfsim homepage][1] for more details.
 
-**[Warning: Only download sfsim binary releases via Steam and not from other sources!][2]**
+**[Note: Official binary releases are strictly distributed through Steam. Do not download sfsim binaries from third-party sources!][3]**
 
 [![Aerodynamic prototype](https://i.ytimg.com/vi/bbmusPm7QZc/hqdefault.jpg)](https://www.youtube.com/watch?v=bbmusPm7QZc)
 
@@ -23,14 +23,14 @@ See [sfsim homepage][1] for more details.
 
 ### Install JoltPhysics
 
-Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.5.0 and build it as follows.
+Get [JoltPhysics](https://github.com/jrouwe/JoltPhysics) 5.6.0 and build it as follows.
 Note you might have to install glslc if you already have Vulkan installed.
 
 #### GCC/Linux
 
 ```Shell
 cd Build
-./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
+./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF -DJPH_USE_DX12=OFF -DJPH_USE_VK=OFF -DJPH_USE_MTL=OFF -DJPH_USE_CPU_COMPUTE=OFF
 cd Linux_Release
 make -j `nproc`
 sudo make install
@@ -41,7 +41,7 @@ cd ../..
 
 ```Shell
 cd Build
-./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
+./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF -DJPH_USE_DX12=OFF -DJPH_USE_VK=OFF -DJPH_USE_MTL=OFF -DJPH_USE_CPU_COMPUTE=OFF
 cmake --build MinGW_Release -j `nproc`
 cmake --install MinGW_Release --prefix /usr/local
 cd ..
@@ -79,6 +79,7 @@ You can take the data folder of a Steam playtest build instead.
 
 * Download space ship model: `clj -T:build download-spaceship`
 * Download audio files: `clj -T:build download-audio`
+* Download texture files: `clj -T:build download-textures`
 * Volumetric clouds
   * Build Worley noise: `clj -T:build worley`
   * Build Perlin noise: `clj -T:build perlin`
@@ -104,7 +105,10 @@ You can take the data folder of a Steam playtest build instead.
 * Atmospheric lookup tables (this takes hours to compute)
   * Build atmosphere lookup tables: `clj -T:build atmosphere-lut`
   * Perform all build steps above: `clj -T:build all`
-* Make navball texture: `clj -T:build navball-orbit`
+* Make textures
+  * `clj -T:build navball-orbit`
+  * `clj -T:build runway-markings`
+
 
 ## Run
 
@@ -237,6 +241,7 @@ Note that when baking normal maps, you need to use +X, -Y, and +Z for R, G, and 
 * Data
   * [NASA CGI moon toolkit](https://svs.gsfc.nasa.gov/4720/)
   * [International Space Station 3D Model](https://science.nasa.gov/resource/international-space-station-3d-model/)
+  * [Asphalt track](https://polyhaven.com/a/asphalt_track)
 
 ## License
 

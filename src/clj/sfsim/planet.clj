@@ -310,13 +310,19 @@
         overlay-dx        (:sfsim.planet/overlay-dx overlay)
         overlay-dy        (:sfsim.planet/overlay-dy overlay)
         diffuse-tex       (:sfsim.planet/diffuse-tex overlay)
+        normal-tex        (:sfsim.planet/normal-tex overlay)
+        markings-tex      (:sfsim.planet/markings-tex overlay)
         camera-to-overlay (mulm (inverse overlay-to-world) camera-to-world)]
     (use-program program)
     (uniform-sampler program "diffuse_tex" texture-offset)
+    (uniform-sampler program "normal_tex" (inc ^long texture-offset))
+    (uniform-sampler program "markings_tex" (+ 2 ^long texture-offset))
     (uniform-matrix4 program "camera_to_overlay" camera-to-overlay)
     (uniform-float program "overlay_dx" overlay-dx)
     (uniform-float program "overlay_dy" overlay-dy)
-    (use-textures {texture-offset diffuse-tex})))
+    (use-textures {texture-offset diffuse-tex
+                   (inc ^long texture-offset) normal-tex
+                   (+ 2 ^long texture-offset) markings-tex})))
 
 
 (defn fragment-planet-geometry

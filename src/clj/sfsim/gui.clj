@@ -11,7 +11,7 @@
     [clojure.string :refer (trim)]
     [fastmath.vector :refer (vec2 vec3)]
     [fastmath.matrix :as fm]
-    [sfsim.image :refer (white-image-with-alpha slurp-image)]
+    [sfsim.image :refer (white-image-with-alpha slurp-image spit-png)]
     [sfsim.config :as config]
     [sfsim.version :refer (version)]
     [sfsim.physics :as physics]
@@ -1613,6 +1613,45 @@
                                                (stroke-line canvas (+ x (if five 15 10)) y (+ x 3) y (if five 1.0 0.3) color)))))))
                               (render-nuklear-gui gui w h)
                               (destroy-nuklear-gui-with-font gui)))
+        (let [img (texture->image tex)]
+          (destroy-texture tex)
+          img)))))
+
+
+(defn runway-markings
+  []
+  (let [w 74 h 4096]
+    (with-invisible-window
+      (let [tex (make-empty-texture-2d :sfsim.texture/linear :sfsim.texture/clamp GL11/GL_RGB8 w h)]
+        (framebuffer-render w h :sfsim.render/noculling nil [tex]
+                            (let [gui (make-nuklear-gui-with-font 1.0)]
+                              (nuklear-dark-style gui)
+                              (without-window-padding gui
+                                (nuklear-window
+                                  gui "runway markings" 0 0 w h :widget
+                                  (layout-row-dynamic gui (double w) 1)
+                                  (widget
+                                    gui canvas canvas-rect
+                                    (with-colors
+                                      [black   0   0   0
+                                       mark  200 200 200]
+                                      (with-rect rect 0 0 w h (fill-rect canvas rect 0.0 black))
+                                      (with-rect rect 0 0 w 4 (fill-rect canvas rect 0.0 mark))
+                                      (with-rect rect 0 (- h 4) w 4 (fill-rect canvas rect 0.0 mark))
+                                      (with-rect rect 0 0 2 h (fill-rect canvas rect 0.0 mark))
+                                      (with-rect rect 72 0 2 h (fill-rect canvas rect 0.0 mark))
+                                      (doseq [x (concat (range 5 35 5) (range 37 72 5)) y [12 (- h 12 37)]]
+                                             (with-rect rect x y 3 37 (fill-rect canvas rect 0.0 mark)))
+                                      (doseq [y [512 (- h 512 56)] x [9 (- w 9 7)]]
+                                             (with-rect rect x y 7 56 (fill-rect canvas rect 0.0 mark)))
+                                      (doseq [y (range 184 1288 184) x [19 (- w 19 5)]]
+                                             (when (not= y 552)
+                                               (doseq [y [y (- h 28 y)]]
+                                                      (with-rect rect x y 5 28 (fill-rect canvas rect 0.0 mark)))))
+                                      (doseq [y (range 87 4009 74)]
+                                             (with-rect rect 36 (+ y 18) 2 38 (fill-rect canvas rect 0.0 mark))))))
+                                (render-nuklear-gui gui w h)
+                                (destroy-nuklear-gui-with-font gui))))
         (let [img (texture->image tex)]
           (destroy-texture tex)
           img)))))

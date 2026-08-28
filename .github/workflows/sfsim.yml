@@ -18,7 +18,7 @@ jobs:
         uses: actions/cache@v6.1.0
         with:
           path: libjolt.so
-          key: ${{ runner.os }}-libjolt-5.5.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
+          key: ${{ runner.os }}-libjolt-5.6.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
       - name: Cache Maven packages
         uses: actions/cache@v6.1.0
         with:
@@ -47,21 +47,21 @@ jobs:
         name: Download JoltPhysics
         run: |
           cd ~
-          curl -L -o JoltPhysics-5.5.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.5.0.tar.gz
-          tar xzf JoltPhysics-5.5.0.tar.gz
+          curl -L -o JoltPhysics-5.6.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.6.0.tar.gz
+          tar xzf JoltPhysics-5.6.0.tar.gz
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
         name: Build JoltPhysics
         run: |
           cd ~
-          cd JoltPhysics-5.5.0/Build
-          ./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
+          cd JoltPhysics-5.6.0/Build
+          ./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF -DJPH_USE_DX12=OFF -DJPH_USE_VK=OFF -DJPH_USE_MTL=OFF -DJPH_USE_CPU_COMPUTE=OFF
           cd Linux_Release
           make
           cd ../../..
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
         name: Install JoltPhysics
         run: |
-          cd ~/JoltPhysics-5.5.0/Build/Linux_Release
+          cd ~/JoltPhysics-5.6.0/Build/Linux_Release
           sudo make install
           cd ../../..
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
@@ -75,7 +75,7 @@ jobs:
         run: |
           pip install --index-url https://download.pytorch.org/whl/cpu torch==2.11.0 numpy==2.4.3
       - name: Install Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: '26.0.1'
@@ -110,7 +110,7 @@ jobs:
         uses: actions/cache@v6.1.0
         with:
           path: libjolt.dll
-          key: ${{ runner.os }}-libjolt-5.5.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
+          key: ${{ runner.os }}-libjolt-5.6.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
       - name: Cache Maven packages
         uses: actions/cache@v6.1.0
         with:
@@ -138,15 +138,15 @@ jobs:
         shell: msys2 {0}
         run: |
           cd ~
-          curl -L -o JoltPhysics-5.5.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.5.0.tar.gz
-          tar xzf JoltPhysics-5.5.0.tar.gz
+          curl -L -o JoltPhysics-5.6.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.6.0.tar.gz
+          tar xzf JoltPhysics-5.6.0.tar.gz
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
         name: Build JoltPhysics
         shell: msys2 {0}
         run: |
           cd ~
-          cd JoltPhysics-5.5.0/Build
-          ./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
+          cd JoltPhysics-5.6.0/Build
+          ./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF -DJPH_USE_DX12=OFF -DJPH_USE_VK=OFF -DJPH_USE_MTL=OFF -DJPH_USE_CPU_COMPUTE=OFF
           cmake --build MinGW_Release -j `nproc`
           cmake --install MinGW_Release --prefix $MINGW_PREFIX
           cd ..
@@ -155,7 +155,7 @@ jobs:
         shell: msys2 {0}
         run: mingw32-make
       - name: Install Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: '26.0.1'

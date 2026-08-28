@@ -87,7 +87,11 @@
                                :sfsim.planet/overlay-dx 50.0
                                :sfsim.planet/overlay-dy 3350.0
                                :sfsim.planet/diffuse-tex (texture/make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
-                                                                                   (image/slurp-image "data/texture/asphalt-diffuse.png"))}
+                                                                                   (image/slurp-image "data/texture/asphalt-diffuse.jpg"))
+                               :sfsim.planet/normal-tex (texture/make-rgb-texture :sfsim.texture/linear :sfsim.texture/repeat
+                                                                                  (image/slurp-image "data/texture/asphalt-normals.png"))
+                               :sfsim.planet/markings-tex (texture/make-rgb-texture :sfsim.texture/nearest :sfsim.texture/clamp
+                                                                                    (image/slurp-image "data/texture/runway-markings.png"))}
           height              0.0
           object-radius       (:sfsim.model/object-radius config/model-config)
           graphics            (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
@@ -103,6 +107,7 @@
           user-stats          (steam/initialize)]
 
       (texture/generate-mipmap (:sfsim.planet/diffuse-tex overlay))
+      (texture/generate-mipmap (:sfsim.planet/normal-tex overlay))
 
       ; (when user-stats
       ;   (steam/debug-reset-all-achievements! user-stats))
@@ -271,6 +276,7 @@
                    (steam/run-callbacks))
                  (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
                  (swap! frame-counter inc)))
+        (texture/destroy-texture (:sfsim.planet/normal-tex overlay))
         (texture/destroy-texture (:sfsim.planet/diffuse-tex overlay))
         (planet/destroy-tile-tree tile-tree)
         (graphics/destroy-graphics2 graphics)
