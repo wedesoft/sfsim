@@ -78,7 +78,7 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
-          java-version: '26.0.1'
+          java-version: '26.0.2'
       - name: Print JAVA_HOME
         run: echo $JAVA_HOME
       - name: Install Clojure
@@ -158,7 +158,7 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
-          java-version: '26.0.1'
+          java-version: '26.0.2'
       - name: Print JAVA_HOME
         run: echo $env:JAVA_HOME
       - name: Install Clojure
