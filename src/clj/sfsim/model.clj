@@ -18,7 +18,7 @@
     [sfsim.plume :refer (model-data model-vars)]
     [sfsim.image :refer (image)]
     [sfsim.matrix :refer (transformation-matrix quaternion->matrix shadow-patch-matrices shadow-patch vec3->vec4 vec4->vec3
-                          fvec3 fmat4 rotation-matrix get-translation get-translation)]
+                          fvec3 fmat4 get-translation get-translation)]
     [sfsim.planet :refer (make-planet-geometry-renderer destroy-planet-geometry-renderer
                           render-planet-geometry2 planet-data planet-geometry-renderer)]
     [sfsim.quaternion :refer (->Quaternion quaternion) :as q]
