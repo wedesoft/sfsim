@@ -30,7 +30,6 @@
     [sfsim.shaders :refer (shrink-shadow-index)]
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d
                            make-empty-depth-stencil-texture-2d)]
-    [sfsim.aerodynamics :as aerodynamics]
     [sfsim.util :refer (N0 N)])
   (:import
     (java.nio

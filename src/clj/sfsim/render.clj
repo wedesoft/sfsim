@@ -716,7 +716,6 @@
         z-offset           1.0
         overlay-width     (quot ^long window-width ^long cloud-subsampling)
         overlay-height    (quot ^long window-height ^long cloud-subsampling)
-        cloud-subsampling (::cloud-subsampling render-config)
         projection        (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) fov)]
     (assoc render-vars
            ::window-width overlay-width
