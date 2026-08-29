@@ -11,7 +11,7 @@
     [clojure.string :refer (trim)]
     [fastmath.vector :refer (vec2 vec3)]
     [fastmath.matrix :as fm]
-    [sfsim.image :refer (white-image-with-alpha slurp-image spit-png)]
+    [sfsim.image :refer (white-image-with-alpha slurp-image)]
     [sfsim.config :as config]
     [sfsim.version :refer (version)]
     [sfsim.physics :as physics]

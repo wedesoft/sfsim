@@ -38,22 +38,21 @@
     - [X] RCS action
     - [X] flying through clouds
     - [X] landing
-  - [ ] runway with lights and glide slope indicator
-    - [ ] integration for runway
+  - [X] cloud shadow issue
+  - [-] runway with lights and glide slope indicator https://www.bristol.gs/know-your-runways/
+    - [X] integration for runway
     - [ ] put runway only on one side of planet
-    - [ ] render cube mesh backfaces without depth writing but leave depth testing on
-    - [ ] render geometry and shadow information (full resolution) and use in subsequent pass
-    - [ ] need to convert distance into camera coordinates and then into decal coordinates
-    - [ ] look at depth buffer in fragment shader
-    - [ ] calculate world position
-    - [ ] transform to texture coordinate
-    - [ ] use texture arrays for albedo, normal map, roughness map
-    - [ ] decal box also gets a layer index (texture array index) to allow instanced drawing
-    - [ ] introduce a geometry buffer for shadows
+    - [X] render geometry and shadow information (full resolution) and use in subsequent pass
+    - [X] need to convert distance into camera coordinates and then into decal coordinates
+    - [X] look at depth buffer in fragment shader
+    - [X] calculate world position
+    - [X] transform to texture coordinate
+    - [X] use texture arrays for albedo, normal map, roughness map
   - [ ] use self-centering surfaces
     - [ ] Deflection Rate: Ramp control surface deflection from 0% to 100% over 0.15-0.25 seconds on keypress to eliminate harsh snapping.
     - [ ] Centering Speed: Return the surface to neutral slightly faster than it deflects (0.10–0.15 seconds) to model real airflow pushing the surface flat.
     - [ ] Use [ and ] for pitch trim.
+  - [ ] check for undefined uniforms, optional check for unused uniforms
   - [ ] add controls widget or tutorial
   - [ ] use mid-air spawn to make flying easier or use tutorial
   - [ ] script to add high-res aerial orthoimagery from earthexplorer
