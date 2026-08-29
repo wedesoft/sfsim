@@ -39,7 +39,7 @@
     - [X] flying through clouds
     - [X] landing
   - [ ] cloud shadow issue
-  - [-] runway with lights and glide slope indicator
+  - [-] runway with lights and glide slope indicator https://www.bristol.gs/know-your-runways/
     - [X] integration for runway
     - [ ] put runway only on one side of planet
     - [X] render geometry and shadow information (full resolution) and use in subsequent pass
@@ -52,6 +52,7 @@
     - [ ] Deflection Rate: Ramp control surface deflection from 0% to 100% over 0.15-0.25 seconds on keypress to eliminate harsh snapping.
     - [ ] Centering Speed: Return the surface to neutral slightly faster than it deflects (0.10–0.15 seconds) to model real airflow pushing the surface flat.
     - [ ] Use [ and ] for pitch trim.
+  - [ ] check for undefined uniforms, optional check for unused uniforms
   - [ ] add controls widget or tutorial
   - [ ] use mid-air spawn to make flying easier or use tutorial
   - [ ] script to add high-res aerial orthoimagery from earthexplorer

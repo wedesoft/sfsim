@@ -8,7 +8,7 @@
     "Shaders and methods for lighting pass"
     (:require
       [comb.template :as template]
-      [fastmath.matrix :refer (mulm)]
+      [fastmath.matrix :refer (mulm inverse)]
       [sfsim.render :refer (make-program destroy-program setup-shadow-and-opacity-maps uniform-sampler uniform-float uniform-int
                             use-program uniform-matrix4 uniform-vector3 setup-shadow-matrices use-textures)]
       [sfsim.shaders :as shaders]
@@ -56,7 +56,9 @@
         albedo              (:sfsim.planet/albedo planet-config)
         cloud-subsampling   (:sfsim.render/cloud-subsampling render-config)
         depth-sigma         (:sfsim.clouds/depth-sigma cloud-data)
-        min-depth-exponent  (:sfsim.clouds/min-depth-exponent cloud-data)]
+        min-depth-exponent  (:sfsim.clouds/min-depth-exponent cloud-data)
+        num-opacity-layers  (:sfsim.opacity/num-opacity-layers shadow-data)
+        shadow-size         (:sfsim.opacity/shadow-size shadow-data)]
     (use-program program)
     (uniform-sampler program "clouds" 0)
     (uniform-sampler program "dist" 1)
@@ -67,6 +69,8 @@
     (uniform-float program "amplification" amplification)
     (uniform-float program "radius" radius)
     (uniform-int program "cloud_subsampling" cloud-subsampling)
+    (uniform-float program "nump_opacity_layers" num-opacity-layers)
+    (uniform-float program "shadow_size" shadow-size)
     (uniform-float program "depth_sigma" depth-sigma)
     (uniform-float program "min_depth_exponent" min-depth-exponent)))
 
@@ -99,16 +103,19 @@
         z-far             (:sfsim.render/z-far planet-render-vars)
         overlay-width     (:sfsim.render/overlay-width cloud-render-vars)
         overlay-height    (:sfsim.render/overlay-height cloud-render-vars)
+        opacity-step      (:sfsim.opacity/opacity-step shadow-vars)
         num-scene-shadows (count object-shadows)]
     (setup-shadow-matrices program shadow-vars)
     (uniform-int program "width" width)
     (uniform-int program "height" height)
     (uniform-matrix4 program "camera_to_world" camera-to-world)
+    (uniform-matrix4 program "world_to_camera" (inverse camera-to-world))
     (uniform-vector3 program "origin" camera-position)
     (uniform-vector3 program "light_direction" light-direction)
     (uniform-float program "z_far" z-far)
     (uniform-int program "overlay_width" overlay-width)
     (uniform-int program "overlay_height" overlay-height)
+    (uniform-float program "opacity_step" opacity-step)
     (doseq [i (range num-scene-shadows)]
            (let [matrices         (:sfsim.model/matrices (nth object-shadows i))
                  world-to-object  (:sfsim.matrix/world-to-object matrices)
