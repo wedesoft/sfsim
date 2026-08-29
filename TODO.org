@@ -38,7 +38,7 @@
     - [X] RCS action
     - [X] flying through clouds
     - [X] landing
-  - [ ] cloud shadow issue
+  - [X] cloud shadow issue
   - [-] runway with lights and glide slope indicator https://www.bristol.gs/know-your-runways/
     - [X] integration for runway
     - [ ] put runway only on one side of planet
