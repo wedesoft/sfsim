@@ -582,7 +582,7 @@
                   k        (GL20/glGetActiveUniform program i size-buf type-buf)
                   size     (.get size-buf 0)
                   gl-type  (.get type-buf 0)
-                  location (GL20/glGetUniformLocation program ^String k)]
+                  location (GL20/glGetUniformLocation ^long program ^String k)]
               {:key k :value (when (not= -1 location) (get-uniform program location gl-type size))}))
           (range num-uniforms))))
 
