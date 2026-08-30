@@ -48,6 +48,8 @@
     - [X] calculate world position
     - [X] transform to texture coordinate
     - [X] use texture arrays for albedo, normal map, roughness map
+  - [ ] reentry flame [[https://gemini.google.com/app/d411b76be00c0e27]]
+    - [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
   - [ ] use self-centering surfaces
     - [ ] Deflection Rate: Ramp control surface deflection from 0% to 100% over 0.15-0.25 seconds on keypress to eliminate harsh snapping.
     - [ ] Centering Speed: Return the surface to neutral slightly faster than it deflects (0.10–0.15 seconds) to model real airflow pushing the surface flat.
@@ -174,14 +176,12 @@
     - [[https://www.shadertoy.com/view/XsVSDW][flame thrower]]
     - [[https://www.shadertoy.com/view/wdjGRz][launching rocket with mach diamonds]]
     - [[https://www.shadertoy.com/view/WdGBDc][mach diamonds with vibration]]
-    - [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
     - [[https://blender.stackexchange.com/questions/290145/how-to-create-vacuum-rocket-engine-plume][blender cone]]
     - volumetric engine exhaust?
     - [[https://www.youtube.com/watch?v=qfI9j92CUso][blender animation]]
     - [[https://blog.kuula.co/virtual-tour-space-shuttle][space shuttle virtual tour]]
     - [[https://www.spaceflighthistories.com/post/x-33-venturestar][X-33 Venturestar]]
     - [[https://github.com/HappyEnte/DreamChaser][Dreamchaser]]
-    - [[https://www.youtube.com/watch?v=UuKKeMgAgjU][KSA volumetric exhaust]]
     - [[https://freesound.org/people/craigsmith/sounds/479498/]]
     - use [[https://learnopengl.com/Advanced-Lighting/Deferred-Shading][deferred rendering]] and depth-aware upsampling,
       also see [[https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/]]
