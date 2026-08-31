@@ -39,6 +39,8 @@
     - [X] flying through clouds
     - [X] landing
   - [X] cloud shadow issue
+    - [ ] reuse part of shadow and opacity map
+  - [ ] rare stack overflow in neighbour tile code
   - [-] runway with lights and glide slope indicator https://www.bristol.gs/know-your-runways/
     - [X] integration for runway
     - [ ] put runway only on one side of planet
@@ -389,7 +391,7 @@
      - [[https://learnopengl.com/Advanced-Lighting/Bloom][Bloom]]
      - [[https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom][Bloom]]
      - [[http://blog.chrismdp.com/2015/06/how-to-quickly-add-bloom-to-your-engine/][Bloom]]
-   - [ ] HDR bloom (separable convolution), Add blurred overflow
+   - [ ] HDR rendering, HDR bloom (separable convolution), Add blurred overflow
    - [ ] multisampling
    - [ ] adapt shadow map size to object distance
    - [ ] integration test powder function
