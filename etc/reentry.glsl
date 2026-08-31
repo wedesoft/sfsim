@@ -14,16 +14,24 @@ vec2 getSphereNormal(vec2 p) {
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
-  vec2 uv = (fragCoord - 0.5 * iResolution.xy) / iResolution.y;
+  vec2 uv = 3 * (fragCoord - 0.5 * iResolution.xy) / iResolution.y;
   float aa = fwidth(uv.y);
   // Billig's model
   // https://share.gemini.google/kvJVQsbTIRqJ
+  vec2 windSource = vec2(1, 0);
   float sphereRadius = 0.22;
   float apex = 0.1;
   float layer = 0.025;
+  float curvature = 1.0 / sphereRadius;
   float dSphere = sdSphere(uv, sphereRadius);
+  vec2 n = getSphereNormal(uv);
   float sphereMask = smoothstep(aa, 0.0, dSphere);
-  float shockWave = dSphere - apex;
+  float machAngle = iMouse.x / iResolution.x;
+  float k = tan(machAngle) * tan(machAngle);
+  float sinT = uv.y / length(uv);
+  float cosT = uv.x / length(uv);
+  float x0 = sphereRadius + apex + curvature;
+  float shockWave = (x0 * x0 - curvature * curvature) / (x0 * cosT + sqrt(curvature * curvature * cosT * cosT + k * (x0 * x0 - curvature * curvature) * sinT * sinT)) - dSphere;
   float shockMask = max(0, layer - abs(shockWave)) / layer;
   vec3 col = vec3(clamp(sphereMask + shockMask, 0.0, 1.0));
   fragColor = vec4(col, 1.0);
