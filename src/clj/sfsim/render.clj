@@ -8,8 +8,8 @@
   "Functions for doing OpenGL rendering"
   (:require
     [clojure.math :refer (sin asin hypot)]
-    [fastmath.matrix :refer (mulm inverse mat->float-array)]
-    [fastmath.vector :refer (vec3 mag)]
+    [fastmath.matrix :refer (mulm inverse mat->float-array mat3x3 mat4x4)]
+    [fastmath.vector :refer (vec2 vec3 vec4 mag)]
     [malli.core :as m]
     [sfsim.image :refer (get-pixel)]
     [sfsim.matrix :refer (fvec2 fvec3 fvec4 fmat3 fmat4 shadow-box transformation-matrix quaternion->matrix projection-matrix
@@ -20,6 +20,8 @@
                                            make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)]
     [sfsim.util :refer (N)])
   (:import
+    (org.lwjgl
+      BufferUtils)
     (org.lwjgl.glfw
       GLFW)
     (org.lwjgl.opengl
@@ -484,6 +486,107 @@
   (GL20/glUniform1i (uniform-location program k) value))
 
 
+(defn- float-vec
+  [^long program ^long location ^long n]
+  (let [buf (BufferUtils/createFloatBuffer n)]
+    (GL20/glGetUniformfv program location buf)
+    (vec (map #(.get buf %) (range n)))))
+
+
+(defn- int-vec
+  [^long program ^long location ^long n]
+  (let [buf (BufferUtils/createIntBuffer n)]
+    (GL20/glGetUniformiv program location buf)
+    (vec (map #(.get buf %) (range n)))))
+
+
+(defmulti get-uniform
+  "Read a uniform value from a linked program."
+  (fn [_program _location gl-type _size] (long gl-type)))
+
+
+(defmethod get-uniform :default
+  [_program _location gl-type _size]
+  {:unsupported-type gl-type})
+
+
+(defmethod get-uniform GL11/GL_INT
+  [program location _gl-type _size]
+  (first (int-vec program location 1)))
+
+
+(defmethod get-uniform GL11/GL_FLOAT
+  [program location _gl-type _size]
+  (first (float-vec program location 1)))
+
+
+(defmethod get-uniform GL20/GL_FLOAT_VEC2
+  [program location _gl-type _size]
+  (apply vec2 (float-vec program location 2)))
+
+
+(defmethod get-uniform GL20/GL_FLOAT_VEC3
+  [program location _gl-type _size]
+  (apply vec3 (float-vec program location 3)))
+
+
+(defmethod get-uniform GL20/GL_FLOAT_VEC4
+  [program location _gl-type _size]
+  (apply vec4 (float-vec program location 4)))
+
+
+(defmethod get-uniform GL20/GL_FLOAT_MAT3
+  [program location _gl-type _size]
+  (apply mat3x3 (float-vec program location 9)))
+
+
+(defmethod get-uniform GL20/GL_FLOAT_MAT4
+  [program location _gl-type _size]
+  (apply mat4x4 (float-vec program location 16)))
+
+
+(defmethod get-uniform GL20/GL_SAMPLER_1D
+  [program location _gl-type _size]
+  (first (int-vec program location 1)))
+
+
+(defmethod get-uniform GL20/GL_SAMPLER_2D
+  [program location _gl-type _size]
+  (first (int-vec program location 1)))
+
+
+(defmethod get-uniform GL20/GL_SAMPLER_3D
+  [program location _gl-type _size]
+  (first (int-vec program location 1)))
+
+
+(defmethod get-uniform GL20/GL_SAMPLER_CUBE
+  [program location _gl-type _size]
+  (first (int-vec program location 1)))
+
+
+(defmethod get-uniform GL20/GL_SAMPLER_2D_SHADOW
+  [program location _gl-type _size]
+  (first (int-vec program location 1)))
+
+
+(defn program-uniforms
+  "Return all active uniforms of a linked program as maps:
+   {:name string :type int :size int :location int :value any}"
+  {:malli/schema [:=> [:cat :int] [:sequential :map]]}
+  [program]
+  (let [num-uniforms (GL20/glGetProgrami program GL20/GL_ACTIVE_UNIFORMS)]
+    (mapv (fn [i]
+            (let [size-buf (BufferUtils/createIntBuffer 1)
+                  type-buf (BufferUtils/createIntBuffer 1)
+                  k        (GL20/glGetActiveUniform program i size-buf type-buf)
+                  size     (.get size-buf 0)
+                  gl-type  (.get type-buf 0)
+                  location (GL20/glGetUniformLocation ^long program ^String k)]
+              {:key k :value (when (not= -1 location) (get-uniform program location gl-type size))}))
+          (range num-uniforms))))
+
+
 (definline use-texture
   "Set texture with specified index"
   {:malli/schema [:=> [:cat [:int {:min 0 :max 15}] texture] :nil]}
@@ -716,7 +819,6 @@
         z-offset           1.0
         overlay-width     (quot ^long window-width ^long cloud-subsampling)
         overlay-height    (quot ^long window-height ^long cloud-subsampling)
-        cloud-subsampling (::cloud-subsampling render-config)
         projection        (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) fov)]
     (assoc render-vars
            ::window-width overlay-width

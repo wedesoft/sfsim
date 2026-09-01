@@ -1,3 +1,15 @@
+sfsim (0.31-1)
+
+  * Fixed undefined world to camera matrix causing cloud shadow issues
+	* Update minor Java version
+
+sfsim (0.30-1)
+
+	* Implemented deferred rendering
+  * Added runway
+
+-- Jan Wedekind <jan@wedesoft.de>  Thu, 27 Aug 2026 00:06:00 +0100
+
 sfsim (0.29-1)
 
   * Use metallic and roughness value from Blender

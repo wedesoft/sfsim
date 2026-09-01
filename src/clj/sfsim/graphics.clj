@@ -12,7 +12,6 @@
       [sfsim.config :as config]
       [sfsim.clouds :as clouds]
       [sfsim.atmosphere :as atmosphere]
-      [sfsim.aerodynamics :as aerodynamics]
       [sfsim.planet :as planet]
       [sfsim.model :as model]
       [sfsim.render :as render]

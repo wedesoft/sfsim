@@ -16,10 +16,7 @@
     [sfsim.matrix :refer (fvec3)]
     [sfsim.plane :refer (points->plane ray-plane-intersection-parameter)]
     [sfsim.util :refer (cube-tar cube-file-name slurp-floats-gz-tar slurp-bytes-gz-tar dissoc-in untar tar-close
-                        make-lru-cache N N0)])
-  (:import
-    [clojure.lang
-     Keyword]))
+                        make-lru-cache N N0)]))
 
 
 (set! *unchecked-math* :warn-on-boxed)
