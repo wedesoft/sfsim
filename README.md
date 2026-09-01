@@ -169,6 +169,7 @@ Note that when baking normal maps, you need to use +X, -Y, and +Z for R, G, and 
   * [Sfsim homepage](https://wedesoft.github.io/sfsim/)
   * [Sfsim Discord](https://discord.gg/EJEE6QNHra)
   * [Sfsim on Steam](https://store.steampowered.com/app/3687560/sfsim/)
+  * [Sfsim on IGDB](//www.igdb.com/games/sfsim)
   * [Sfsim on IndieDB](https://www.indiedb.com/games/sfsim)
   * [Sfsim on Impress](https://impress.games/press-kit/jan-wedekind/sfsim)
   * [Sfsim on Github](https://github.com/wedesoft/sfsim)
