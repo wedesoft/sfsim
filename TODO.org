@@ -25,7 +25,7 @@
     - [X] use texture arrays for albedo, normal map, roughness map
   - [ ] reentry flame [[https://gemini.google.com/app/d411b76be00c0e27]]
     - [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
-    - [[https://share.gemini.google/UOqFQ0mJdZuL][propagate shockwave]]
+    - [[https://share.gemini.google/UOqFQ0mJdZuL][propagate shockwave in similar way to 2D distance transform]]
   - [ ] use self-centering surfaces
     - [ ] Deflection Rate: Ramp control surface deflection from 0% to 100% over 0.15-0.25 seconds on keypress to eliminate harsh snapping.
     - [ ] Centering Speed: Return the surface to neutral slightly faster than it deflects (0.10–0.15 seconds) to model real airflow pushing the surface flat.
