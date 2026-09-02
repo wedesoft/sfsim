@@ -490,14 +490,14 @@
   [^long program ^long location ^long n]
   (let [buf (BufferUtils/createFloatBuffer n)]
     (GL20/glGetUniformfv program location buf)
-    (vec (map #(.get buf %) (range n)))))
+    (vec (map #(.get buf ^long %) (range n)))))
 
 
 (defn- int-vec
   [^long program ^long location ^long n]
   (let [buf (BufferUtils/createIntBuffer n)]
     (GL20/glGetUniformiv program location buf)
-    (vec (map #(.get buf %) (range n)))))
+    (vec (map #(.get buf ^long %) (range n)))))
 
 
 (defmulti get-uniform
