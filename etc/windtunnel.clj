@@ -99,7 +99,9 @@ void main()
                              (graphics/render-clouds graphics [])
                              (graphics/render-geometry graphics nil))
              wind-shadow (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
-                                                 wind-from (first (graphics/get-moved-scenes frame graphics)))]
+                                                 wind-from
+                                                 (first (graphics/get-moved-scenes frame graphics))
+                                                 :sfsim.render/cullback)]
          (render/onscreen-render window
                                  (render/clear (vec3 0 1 0) 0.0)
                                  (graphics/render-lighting frame graphics))
