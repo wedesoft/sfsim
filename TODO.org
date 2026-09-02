@@ -11,18 +11,11 @@
     This backend shift lets you place hundreds of dynamic, real-time lights on ships and stations without hurting performance.
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [ ] remove old trailers and screenshots, add new
-  - [ ] reuse part of shadow and opacity map
+  - [ ] add new screenshots and trailer
   - [ ] rare stack overflow in neighbour tile code
   - [-] runway with lights and glide slope indicator https://www.bristol.gs/know-your-runways/
-    - [X] integration for runway
     - [ ] put runway only on one side of planet
-    - [X] render geometry and shadow information (full resolution) and use in subsequent pass
-    - [X] need to convert distance into camera coordinates and then into decal coordinates
-    - [X] look at depth buffer in fragment shader
-    - [X] calculate world position
-    - [X] transform to texture coordinate
-    - [X] use texture arrays for albedo, normal map, roughness map
+    - [ ] add lights
   - [ ] reentry flame [[https://gemini.google.com/app/d411b76be00c0e27]]
     - [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
     - [[https://share.gemini.google/UOqFQ0mJdZuL][propagate shockwave in similar way to 2D distance transform]]
@@ -35,29 +28,12 @@
   - [ ] use mid-air spawn to make flying easier or use tutorial
   - [ ] script to add high-res aerial orthoimagery from earthexplorer
   - [-] use modern rendering pipeline
-    - [X] emissive or ambient buffer
-    - [X] g-buffer geometry pass renders terrain and models: albedo, normals, roughness, depth
-    - [X] multi-pass rendering for atmosphere
-    - [X] merge lighting shaders into one
-    - [X] switch integration tests over to multi-pass rendering
-      - [X] make planet geometry renderer
-      - [X] make model geometry renderer
-      - [X] handle model shadows
-      - [X] handle metallic
-      - [X] handle roughness
-      - [X] unify render-geometry-mesh and render-mesh-geometry
-    - [X] handle case where model and planet use different projection matrices (both geometry and cloud geometry)
-    - [X] integration test for different projection matrices
-    - [X] switch game over to multi-pass rendering
-    - [X] remove unused single-pass rendering code and tests (use clj -M:carve --interactive --paths src)
-    - [X] merge into main
     - [ ] add rcs state to model vars?
     - [ ] move wheel animation and state into model-vars?
     - [ ] stencil handling of controls (draw first)
     - [ ] refactor plume code, duplication of plume rcs stuff in graphics module and physics module (move code into model module?)
     - [ ] use separate uniforms set up for plume shader and cloud shader
     - [ ] render-scene-geometry, render-scene-geometry2, render-joined-geometry, render-joined-geometry2, render-joined-geometry3, graphics/render-geometry
-    - [X] remove object_to_scene matrix
     - [ ] cloud render vars for when no object being rendered?
     - [ ] update schemas for render-vars, planet-render-vars, model-render-vars, cloud ...
     - [ ] move lighting code into separate module (remove from model module)
@@ -417,6 +393,7 @@
     * Voice over
     * Visual effects
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
+  - [ ] reuse part of shadow and opacity map
   - [ ] thrust vectoring
   - [ ] tutorial explaining ApA, ...
   - [ ] replikativ/raster (Christian Weilbach) defvalue erzeugt Vallhalla Valuetypes, die sind Stack alloziert.
