@@ -815,7 +815,7 @@ void main()
 
 (fact "Render empty depth map"
       (with-invisible-window
-        (let [tex (texture-render-depth 10 10 (clear))]
+        (let [tex (texture-render-depth 10 10 :sfsim.render/cullfront (clear))]
           (get-float (depth-texture->floats tex) 0 0) => 0.0
           (destroy-texture tex))))
 
@@ -826,7 +826,7 @@ void main()
                  vertices [-1.0 -1.0 ?z, 1.0 -1.0 ?z, -1.0 1.0 ?z, 1.0 1.0 ?z]
                  program  (make-program :sfsim.render/vertex [vertex-passthrough] :sfsim.render/fragment [fragment-noop])
                  vao      (make-vertex-array-object program indices vertices ["point" 3])
-                 tex      (texture-render-depth 10 10 (clear) (use-program program) (render-quads vao))]
+                 tex      (texture-render-depth 10 10 :sfsim.render/cullfront (clear) (use-program program) (render-quads vao))]
              (get-float (depth-texture->floats tex) 5 5) => ?z
              (destroy-texture tex)
              (destroy-vertex-array-object vao)
@@ -903,7 +903,7 @@ void main(void)
                                                                     (s/shadow-lookup "shadow_lookup" "shadow_size")])
               vao             (make-vertex-array-object program-main indices vertices ["point" 3])
               shadow-map      (texture-render-depth
-                                128 128
+                                128 128 :sfsim.render/cullfront
                                 (clear)
                                 (use-program program-shadow)
                                 (uniform-matrix4 program-shadow "world_to_shadow_ndc" (:sfsim.matrix/world-to-shadow-ndc shadow-mat))

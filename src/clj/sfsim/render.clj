@@ -725,9 +725,9 @@
 
 (defmacro texture-render-depth
   "Macro to create shadow map"
-  [width height & body]
+  [width height culling & body]
   `(let [tex# (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)]
-     (framebuffer-render ~width ~height ::cullfront tex# [] ~@body tex#)))
+     (framebuffer-render ~width ~height ~culling tex# [] ~@body tex#)))
 
 
 (defn shadow-cascade
@@ -737,7 +737,7 @@
   (mapv
     (fn render-shadow-segment
       [shadow-level]
-      (texture-render-depth size size
+      (texture-render-depth size size ::cullfront
                             (clear)
                             (use-program program)
                             (fun (:sfsim.matrix/world-to-shadow-ndc shadow-level))))
