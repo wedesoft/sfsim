@@ -4,10 +4,10 @@
          '[sfsim.quaternion :as q]
          '[sfsim.model :as model]
          '[sfsim.render :as render]
+         '[sfsim.texture :as texture]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
-        '[org.lwjgl.opengl GL GL11 GL15 GL20 GL30]
-        '[org.lwjgl BufferUtils])
+        '[org.lwjgl.opengl GL])
 
 (GLFW/glfwInit)
 
@@ -72,11 +72,29 @@ void main()
   fragColor = vec3(depth, depth, depth);
 }")
 
+(def fragment-jump-flood
+"#version 450 core
+in vec2 uv_fragment;
+uniform sampler2D tex;
+layout (location = 0) out float depth;
+void main()
+{
+  float d = 16.0 / 512.0;
+  float depth1 = texture(tex, uv_fragment + vec2(-d, -d)).r;
+  float depth2 = texture(tex, uv_fragment + vec2(+d, -d)).r;
+  float depth3 = texture(tex, uv_fragment + vec2(-d, +d)).r;
+  float depth4 = texture(tex, uv_fragment + vec2(+d, +d)).r;
+  depth = max(depth1, max(depth2, max(depth3, depth4)));
+}")
+
 (GLFW/glfwMakeContextCurrent window2)
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
-(def indices  [0 1 3 2])
-(def program  (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d]))
-(def vao      (render/make-vertex-array-object program indices vertices ["point" 3 "uv" 2]))
+(def indices [0 1 3 2])
+(def program-texture  (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d]))
+(def vao-texture (render/make-vertex-array-object program-texture indices vertices ["point" 3 "uv" 2]))
+
+(def program-jump-flood (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-jump-flood]))
+(def vao-jump-flood (render/make-vertex-array-object program-jump-flood indices vertices ["point" 3 "uv" 2]))
 
 (while (and (not (GLFW/glfwWindowShouldClose window)) (not (GLFW/glfwWindowShouldClose window2)))
        (GLFW/glfwMakeContextCurrent window)
@@ -101,23 +119,32 @@ void main()
              wind-shadow (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                  wind-from
                                                  (first (graphics/get-moved-scenes frame graphics))
-                                                 :sfsim.render/cullback)]
+                                                 :sfsim.render/cullback)
+             flood       (texture/make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 512 512)]
          (render/onscreen-render window
                                  (render/clear (vec3 0 1 0) 0.0)
                                  (graphics/render-lighting frame graphics))
          (GLFW/glfwMakeContextCurrent window2)
+         (render/framebuffer-render 512 512 :sfsim.render/noculling nil [flood]
+                                    (render/use-program program-jump-flood)
+                                    (render/uniform-sampler program-texture "tex" 0)
+                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)})
+                                    (render/render-quads vao-jump-flood))
          (render/onscreen-render window2
-                                 (render/clear (vec3 0 0 0) 0.0)
-                                 (render/use-program program)
-                                 (render/uniform-sampler program "tex" 0)
-                                 (render/use-textures {0 (:sfsim.model/shadows wind-shadow)})
-                                 (render/render-quads vao))
+                                 (render/use-program program-texture)
+                                 (render/uniform-sampler program-texture "tex" 0)
+                                 (render/use-textures {0 flood})
+                                 (render/render-quads vao-texture))
+         (texture/destroy-texture flood)
          (model/destroy-scene-shadow-map wind-shadow)
          (graphics/destroy-frame frame)
          (GLFW/glfwPollEvents)))
 
-(render/destroy-vertex-array-object vao)
-(render/destroy-program program)
+(render/destroy-vertex-array-object vao-jump-flood)
+(render/destroy-program program-jump-flood)
+
+(render/destroy-vertex-array-object vao-texture)
+(render/destroy-program program-texture)
 
 (graphics/destroy-graphics2 graphics)
 
