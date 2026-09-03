@@ -72,19 +72,27 @@ void main()
   fragColor = vec3(depth, depth, depth);
 }")
 
-(def fragment-jump-flood
+;; https://en.wikipedia.org/wiki/Jump_flooding_algorithm
+
+(def fragment-jump-flooding
 "#version 450 core
 in vec2 uv_fragment;
 uniform sampler2D tex;
+uniform int step;
 layout (location = 0) out float depth;
 void main()
 {
-  float d = 16.0 / 512.0;
-  float depth1 = texture(tex, uv_fragment + vec2(-d, -d)).r;
-  float depth2 = texture(tex, uv_fragment + vec2(+d, -d)).r;
-  float depth3 = texture(tex, uv_fragment + vec2(-d, +d)).r;
-  float depth4 = texture(tex, uv_fragment + vec2(+d, +d)).r;
-  depth = max(depth1, max(depth2, max(depth3, depth4)));
+  float d = float(step) / 512.0;
+  float depth1 = texture(tex, uv_fragment + vec2(-d, -d)).r - length(vec2(-d, -d));
+  float depth2 = texture(tex, uv_fragment + vec2( 0, -d)).r - length(vec2( 0, -d));
+  float depth3 = texture(tex, uv_fragment + vec2(+d, -d)).r - length(vec2(+d, -d));
+  float depth4 = texture(tex, uv_fragment + vec2(-d,  0)).r - length(vec2(-d,  0));
+  float depth5 = texture(tex, uv_fragment + vec2( 0,  0)).r - length(vec2( 0,  0));
+  float depth6 = texture(tex, uv_fragment + vec2(+d,  0)).r - length(vec2(+d,  0));
+  float depth7 = texture(tex, uv_fragment + vec2(-d, +d)).r - length(vec2(-d, +d));
+  float depth8 = texture(tex, uv_fragment + vec2( 0, +d)).r - length(vec2( 0, +d));
+  float depth9 = texture(tex, uv_fragment + vec2(+d, +d)).r - length(vec2(+d, +d));
+  depth = max(depth1, max(depth2, max(depth3, max(depth4, max(depth5, max(depth6, max(depth7, max(depth8, depth9))))))));
 }")
 
 (GLFW/glfwMakeContextCurrent window2)
@@ -93,8 +101,22 @@ void main()
 (def program-texture  (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d]))
 (def vao-texture (render/make-vertex-array-object program-texture indices vertices ["point" 3 "uv" 2]))
 
-(def program-jump-flood (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-jump-flood]))
-(def vao-jump-flood (render/make-vertex-array-object program-jump-flood indices vertices ["point" 3 "uv" 2]))
+(def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-jump-flooding]))
+(def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
+
+(defn jump-flooding-step
+  [wind-shadow step]
+  (let [previous (:sfsim.model/shadows wind-shadow)
+        flood    (texture/make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/zero 512 512)]
+    (render/framebuffer-render 512 512 :sfsim.render/noculling nil [flood]
+                               (render/use-program program-jump-flooding)
+                               (render/uniform-sampler program-texture "tex" 0)
+                               (render/uniform-int program-jump-flooding "step" step)
+                               (render/use-textures {0 previous})
+                               (render/render-quads vao-jump-flooding))
+    (texture/destroy-texture previous)
+    (assoc wind-shadow :sfsim.model/shadows flood)))
+
 
 (while (and (not (GLFW/glfwWindowShouldClose window)) (not (GLFW/glfwWindowShouldClose window2)))
        (GLFW/glfwMakeContextCurrent window)
@@ -119,29 +141,23 @@ void main()
              wind-shadow (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                  wind-from
                                                  (first (graphics/get-moved-scenes frame graphics))
-                                                 :sfsim.render/cullback)
-             flood       (texture/make-empty-float-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp 512 512)]
+                                                 :sfsim.render/cullback)]
          (render/onscreen-render window
                                  (render/clear (vec3 0 1 0) 0.0)
                                  (graphics/render-lighting frame graphics))
          (GLFW/glfwMakeContextCurrent window2)
-         (render/framebuffer-render 512 512 :sfsim.render/noculling nil [flood]
-                                    (render/use-program program-jump-flood)
-                                    (render/uniform-sampler program-texture "tex" 0)
-                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)})
-                                    (render/render-quads vao-jump-flood))
-         (render/onscreen-render window2
-                                 (render/use-program program-texture)
-                                 (render/uniform-sampler program-texture "tex" 0)
-                                 (render/use-textures {0 flood})
-                                 (render/render-quads vao-texture))
-         (texture/destroy-texture flood)
+         (let [flood (reduce jump-flooding-step wind-shadow [256 128 64 32 16 8 4 2 1 2 1])]
+           (render/onscreen-render window2
+                                   (render/use-program program-texture)
+                                   (render/uniform-sampler program-texture "tex" 0)
+                                   (render/use-textures {0 (:sfsim.model/shadows flood)})
+                                   (render/render-quads vao-texture)))
          (model/destroy-scene-shadow-map wind-shadow)
          (graphics/destroy-frame frame)
          (GLFW/glfwPollEvents)))
 
-(render/destroy-vertex-array-object vao-jump-flood)
-(render/destroy-program program-jump-flood)
+(render/destroy-vertex-array-object vao-jump-flooding)
+(render/destroy-program program-jump-flooding)
 
 (render/destroy-vertex-array-object vao-texture)
 (render/destroy-program program-texture)

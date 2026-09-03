@@ -726,7 +726,7 @@
 (defmacro texture-render-depth
   "Macro to create shadow map"
   [width height culling & body]
-  `(let [tex# (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)]
+  `(let [tex# (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/zero ~width ~height)]
      (framebuffer-render ~width ~height ~culling tex# [] ~@body tex#)))
 
 
