@@ -5,7 +5,7 @@ Aim is to simulate take off, space station docking, and moon landing with a futu
 Requires OpenGL 4.5 (glClipControl for reversed-z rendering)
 See [sfsim homepage][1] for more details.
 
-**[Note: Official binary releases are strictly distributed through Steam. Do not download sfsim binaries from third-party sources!][3]**
+**[Note: Official binary releases are strictly distributed through Steam. Do not download sfsim binaries from third-party sources!](https://store.steampowered.com/app/3687560/sfsim/)**
 
 [![Aerodynamic prototype](https://i.ytimg.com/vi/bbmusPm7QZc/hqdefault.jpg)](https://www.youtube.com/watch?v=bbmusPm7QZc)
 
