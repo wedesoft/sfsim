@@ -11,15 +11,22 @@
     This backend shift lets you place hundreds of dynamic, real-time lights on ships and stations without hurting performance.
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [ ] add new screenshots and trailer
   - [ ] rationale for using Clojure
+    - macros
+    - multimethods with dispatch function
+    - immutable and efficient hashmaps, vectors, and sets
+    - dynamically typed
+    - strong concurrency support
+    - REPL
+  - [ ] reentry flame [[https://gemini.google.com/app/d411b76be00c0e27]]
+    - [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
+    - [[https://share.gemini.google/UOqFQ0mJdZuL][propagate shockwave in similar way to 2D distance transform]]
+  - [ ] add new screenshots and trailer
+  - [ ] improve logo
   - [ ] rare stack overflow in neighbour tile code
   - [-] runway with lights and glide slope indicator https://www.bristol.gs/know-your-runways/
     - [ ] put runway only on one side of planet
     - [ ] add lights
-  - [ ] reentry flame [[https://gemini.google.com/app/d411b76be00c0e27]]
-    - [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
-    - [[https://share.gemini.google/UOqFQ0mJdZuL][propagate shockwave in similar way to 2D distance transform]]
   - [ ] use self-centering surfaces
     - [ ] Deflection Rate: Ramp control surface deflection from 0% to 100% over 0.15-0.25 seconds on keypress to eliminate harsh snapping.
     - [ ] Centering Speed: Return the surface to neutral slightly faster than it deflects (0.10–0.15 seconds) to model real airflow pushing the surface flat.

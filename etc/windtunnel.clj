@@ -1,9 +1,12 @@
 (require '[clojure.math :refer (PI)]
          '[fastmath.vector :refer (vec3 normalize)]
+         '[fastmath.matrix :refer (mulm inverse)]
          '[sfsim.config :as config]
          '[sfsim.quaternion :as q]
+         '[sfsim.matrix :as matrix]
          '[sfsim.model :as model]
          '[sfsim.render :as render]
+         '[sfsim.plume :as plume]
          '[sfsim.texture :as texture]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
@@ -126,6 +129,51 @@ void main()
 }")
 
 
+(def vertex-shockwave
+"#version 450 core
+uniform mat4 projection;
+uniform mat4 ndc_to_camera;
+uniform float object_radius;
+in vec3 point;
+void main()
+{
+  gl_Position = projection * ndc_to_camera * vec4(point, 1);
+}")
+
+
+(def fragment-shockwave
+"#version 450 core
+out vec4 fragColor;
+void main()
+{
+  fragColor = vec4(0.3, 0.3, 0.3, 0.3);
+}")
+
+(def shockwave-indices
+  [4 5 7 6    ; front (+z)
+   1 0 2 3    ; back  (-z)
+   0 4 6 2    ; left  (-x)
+   5 1 3 7    ; right (+x)
+   2 6 7 3    ; top   (+y)
+   0 1 5 4])  ; bottom (-y)
+
+
+(def shockwave-vertices
+  [-1.0 -1.0  0.0
+    1.0 -1.0  0.0
+   -1.0  1.0  0.0
+    1.0  1.0  0.0
+   -1.0 -1.0  1.0
+    1.0 -1.0  1.0
+   -1.0  1.0  1.0
+    1.0  1.0  1.0])
+
+
+(GLFW/glfwMakeContextCurrent window)
+(def program-shockwave (render/make-program :sfsim.render/vertex [vertex-shockwave] :sfsim.render/fragment [fragment-shockwave]))
+(def vao-shockwave (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3]))
+
+
 (GLFW/glfwMakeContextCurrent window2)
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
 (def indices [0 1 3 2])
@@ -153,7 +201,7 @@ void main()
 (while (and (not (GLFW/glfwWindowShouldClose window)) (not (GLFW/glfwWindowShouldClose window2)))
        (GLFW/glfwMakeContextCurrent window)
        (let [dist        (* 2 6378000)
-             origin      (vec3 dist 0 100)
+             origin      (vec3 dist 0 150)
              orientation (q/->Quaternion 1 0 0 0)
              light       (normalize (vec3 1 1 1))
              wind-from   (vec3 1 0 0)
@@ -176,7 +224,19 @@ void main()
              wind-shadow (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                  wind-from
                                                  (first (graphics/get-moved-scenes frame graphics))
-                                                 :sfsim.render/cullback)]
+                                                 :sfsim.render/cullback)
+             projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
+             matrices             (:sfsim.model/matrices wind-shadow)
+             camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
+             world-to-object      (:sfsim.matrix/world-to-object matrices)
+             object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
+             ndc-to-camera        (mulm (inverse camera-to-world) (mulm (inverse world-to-object) (inverse object-to-shadow-ndc)))]
+         (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
+                                    (render/use-program program-shockwave)
+                                    (render/uniform-float program-shockwave "object_radius" 2.0)
+                                    (render/uniform-matrix4 program-shockwave "projection" projection)
+                                    (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
+                                    (render/render-quads vao-shockwave))
          (render/onscreen-render window
                                  (render/clear (vec3 0 1 0) 0.0)
                                  (graphics/render-lighting frame graphics))
@@ -199,6 +259,9 @@ void main()
          (model/destroy-scene-shadow-map wind-shadow)
          (graphics/destroy-frame frame)
          (GLFW/glfwPollEvents)))
+
+(render/destroy-vertex-array-object vao-shockwave)
+(render/destroy-program program-shockwave)
 
 (render/destroy-vertex-array-object vao-init)
 (render/destroy-program program-init)
