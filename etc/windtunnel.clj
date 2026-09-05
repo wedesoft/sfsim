@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (PI)]
+(require '[clojure.math :refer (PI to-radians)]
          '[fastmath.vector :refer (vec3 normalize)]
          '[fastmath.matrix :refer (mulm inverse)]
          '[sfsim.config :as config]
@@ -7,7 +7,6 @@
          '[sfsim.model :as model]
          '[sfsim.render :as render]
          '[sfsim.shaders :as shaders]
-         '[sfsim.plume :as plume]
          '[sfsim.texture :as texture]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
@@ -47,7 +46,7 @@
       (reset! mouse-button (= action GLFW/GLFW_PRESS)))))
 
 (GLFW/glfwMakeContextCurrent window)
-(def object-radius (:sfsim.model/object-radius config/model-config))
+(def object-radius (* 2.0 (:sfsim.model/object-radius config/model-config)))
 (def graphics (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
                                          :sfsim.graphics/object-radius object-radius}]
                                        []))
@@ -65,17 +64,26 @@ void main()
 }")
 
 
+(def shockfront
+"#version 450 core
+float shockfront(float distance)
+{
+  return 4.0 * distance * distance;
+}")
+
+
 (def fragment-texture-2d
 "#version 450 core
 in vec2 uv_fragment;
 out vec3 fragColor;
 uniform sampler2D tex;
 uniform sampler2D wind;
+float shockfront(float distance);
 void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / 512.0;
   vec3 point = texture(tex, uv_fragment).xyz;
-  float depth = point.z - 2 * length(point.xy - uv_fragment);
+  float depth = point.z - shockfront(length(point.xy - uv_fragment));
   if (texture(wind, uv_fragment).r > 0.0)
     fragColor = vec3(1.0, depth, depth);
   else
@@ -134,23 +142,23 @@ void main()
 "#version 450 core
 uniform mat4 projection;
 uniform mat4 ndc_to_camera;
-uniform float object_radius;
 in vec3 point;
 void main()
 {
   gl_Position = projection * ndc_to_camera * vec4(point, 1);
 }")
 
-;; TODO: do not use NDC for this because the space is scaled differently in z-direction
 (def fragment-shockwave
 "#version 450 core
 uniform sampler2D points;
+uniform sampler2D flood;
 uniform mat4 camera_to_ndc;
 uniform int width;
 uniform int height;
 uniform float step;
 out vec4 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
+float shockfront(float distance);
 void main()
 {
   vec2 uv = gl_FragCoord.xy / vec2(width, height);
@@ -158,7 +166,7 @@ void main()
   vec4 point = texture(points, uv);
   vec3 direction = (camera_to_ndc * vec4(point.xyz, 0)).xyz;
   direction = normalize(direction * vec3(1, 1, 2)) / vec3(1, 1, 2);
-  vec2 segment = ray_box(vec3(-1, -1, 0), vec3(1, 1, 1), origin, direction);
+  vec2 segment = ray_box(vec3(-1, -1, 0.05), vec3(1, 1, 1), origin, direction);
   if (point.w > 0.0) {
     vec4 surface = camera_to_ndc * point;
     float dist = length(surface.xyz - origin) / length(direction);
@@ -166,12 +174,23 @@ void main()
       segment.y = dist - segment.x;
     };
   };
+  float emission = 0.0;
   float x = segment.x;
   while (x < segment.x + segment.y) {
     vec3 p = origin + x * direction;
+    vec2 uv_fragment = p.xy * 0.5 + 0.5;
+    vec3 point = texture(flood, uv_fragment).xyz;
+    float l = length(point.xy - uv_fragment);
+    float depth = point.z - shockfront(l);
+    if (p.z <= depth + 0.05 && p.z >= depth) {
+      emission += 0.01 * (1.0 - smoothstep(0.0, 0.3, l));
+    };
+    // if (p.z < 0.1) {
+    //   emission += step * p.z;
+    // };
     x += step;
   };
-  fragColor = vec4(vec3(segment.t / 4.0), 0.3);
+  fragColor = vec4(vec3(emission), 0.0);
   // fragColor = vec4(point.xyz, 0.3);
   // if (point.w > 0.0)
   //   fragColor = vec4(0.5, 0.0, 0.0, 0.3);
@@ -201,7 +220,7 @@ void main()
 
 (GLFW/glfwMakeContextCurrent window)
 (def program-shockwave (render/make-program :sfsim.render/vertex [vertex-shockwave]
-                                            :sfsim.render/fragment [shaders/ray-box fragment-shockwave]))
+                                            :sfsim.render/fragment [shaders/ray-box shockfront fragment-shockwave]))
 (def vao-shockwave (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3]))
 
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
@@ -212,7 +231,8 @@ void main()
 (def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-jump-flooding]))
 (def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
 
-(def program-texture  (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d]))
+(def program-texture  (render/make-program :sfsim.render/vertex [vertex-texture]
+                                           :sfsim.render/fragment [shockfront fragment-texture-2d]))
 (def vao-texture (render/make-vertex-array-object program-texture indices vertices ["point" 3 "uv" 2]))
 
 (defn jump-flooding-step
@@ -228,7 +248,8 @@ void main()
     result))
 
 (GLFW/glfwMakeContextCurrent window2)
-(def program-display  (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d]))
+(def program-display  (render/make-program :sfsim.render/vertex [vertex-texture]
+                                           :sfsim.render/fragment [shockfront fragment-texture-2d]))
 (def vao-display (render/make-vertex-array-object program-texture indices vertices ["point" 3 "uv" 2]))
 
 (while (and (not (GLFW/glfwWindowShouldClose window)) (not (GLFW/glfwWindowShouldClose window2)))
@@ -237,7 +258,7 @@ void main()
              origin               (vec3 dist 0 150)
              orientation          (q/->Quaternion 1 0 0 0)
              light                (normalize (vec3 1 1 1))
-             wind-from            (vec3 1 0 0)
+             wind-from            (q/rotate-vector (q/rotation (to-radians -60.0) (vec3 0 1 0)) (vec3 1 0 0))
              yaw                  (* 4 PI (/ (@mouse-pos 0) (double width)))
              pitch                (* PI (- (/ (@mouse-pos 1) (double height)) 0.5))
              obj-orient           (q/* (q/rotation yaw (vec3 0 1 0)) (q/rotation pitch (vec3 0 0 1)))
@@ -278,14 +299,15 @@ void main()
              (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                                         (render/use-program program-shockwave)
                                         (render/uniform-sampler program-shockwave "points" 0)
-                                        (render/uniform-float program-shockwave "object_radius" 2.0)
+                                        (render/uniform-sampler program-shockwave "flood" 1)
                                         (render/uniform-int program-shockwave "width" (/ width 2))
                                         (render/uniform-int program-shockwave "height" (/ height 2))
                                         (render/uniform-float program-shockwave "step" 0.01)
                                         (render/uniform-matrix4 program-shockwave "projection" projection)
                                         (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
                                         (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
-                                        (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))})
+                                        (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
+                                                              1 flood})
                                         (render/render-quads vao-shockwave))
              ;; Compose render of model
              (render/onscreen-render window

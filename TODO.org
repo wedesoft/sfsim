@@ -401,6 +401,7 @@
     * Voice over
     * Visual effects
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
+  - Pushin getting CI using Gitea and later Firecracker VM https://news.ycombinator.com/item?id=49579232
   - [ ] reuse part of shadow and opacity map
   - [ ] thrust vectoring
   - [ ] tutorial explaining ApA, ...
