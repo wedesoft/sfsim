@@ -173,17 +173,16 @@ void main()
 (def program-shockwave (render/make-program :sfsim.render/vertex [vertex-shockwave] :sfsim.render/fragment [fragment-shockwave]))
 (def vao-shockwave (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3]))
 
-
-(GLFW/glfwMakeContextCurrent window2)
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
 (def indices [0 1 3 2])
-(def program-texture  (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d]))
-(def vao-texture (render/make-vertex-array-object program-texture indices vertices ["point" 3 "uv" 2]))
 
 (def program-init (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-init]))
 (def vao-init (render/make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2]))
 (def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-jump-flooding]))
 (def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
+
+(def program-texture  (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d]))
+(def vao-texture (render/make-vertex-array-object program-texture indices vertices ["point" 3 "uv" 2]))
 
 (defn jump-flooding-step
   [flood step]
@@ -197,50 +196,45 @@ void main()
     (texture/destroy-texture flood)
     result))
 
+(GLFW/glfwMakeContextCurrent window2)
+(def program-display  (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d]))
+(def vao-display (render/make-vertex-array-object program-texture indices vertices ["point" 3 "uv" 2]))
 
 (while (and (not (GLFW/glfwWindowShouldClose window)) (not (GLFW/glfwWindowShouldClose window2)))
        (GLFW/glfwMakeContextCurrent window)
-       (let [dist        (* 2 6378000)
-             origin      (vec3 dist 0 150)
-             orientation (q/->Quaternion 1 0 0 0)
-             light       (normalize (vec3 1 1 1))
-             wind-from   (vec3 1 0 0)
-             yaw         (* 4 PI (/ (@mouse-pos 0) (double width)))
-             pitch       (* PI (- (/ (@mouse-pos 1) (double height)) 0.5))
-             obj-orient  (q/* (q/rotation yaw (vec3 0 1 0)) (q/rotation pitch (vec3 0 0 1)))
-             model-vars  (model/make-model-vars (GLFW/glfwGetTime) 0.0 (:sfsim.physics/throttle 0.0))
-             model       (first (:sfsim.graphics/scenes graphics))
-             model-gears (model/apply-transforms model (model/animations-frame model {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
-             graphics    (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
-             object      [{:sfsim.graphics/object-position (vec3 dist 0 0)
-                           :sfsim.graphics/object-orientation obj-orient}]
-             frame       (-> (graphics/make-frame graphics width height origin orientation
-                                                  light object model-vars)
-                             (graphics/render-shadows graphics nil)
-                             (graphics/render-scene-shadows graphics)
-                             (graphics/render-cloud-geometry graphics nil)
-                             (graphics/render-clouds graphics [])
-                             (graphics/render-geometry graphics nil))
-             wind-shadow (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
-                                                 wind-from
-                                                 (first (graphics/get-moved-scenes frame graphics))
-                                                 :sfsim.render/cullback)
+       (let [dist                 (* 2 6378000)
+             origin               (vec3 dist 0 150)
+             orientation          (q/->Quaternion 1 0 0 0)
+             light                (normalize (vec3 1 1 1))
+             wind-from            (vec3 1 0 0)
+             yaw                  (* 4 PI (/ (@mouse-pos 0) (double width)))
+             pitch                (* PI (- (/ (@mouse-pos 1) (double height)) 0.5))
+             obj-orient           (q/* (q/rotation yaw (vec3 0 1 0)) (q/rotation pitch (vec3 0 0 1)))
+             model-vars           (model/make-model-vars (GLFW/glfwGetTime) 0.0 (:sfsim.physics/throttle 0.0))
+             model                (first (:sfsim.graphics/scenes graphics))
+             model-gears          (model/apply-transforms
+                                    model (model/animations-frame model {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
+             graphics             (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
+             object               [{:sfsim.graphics/object-position (vec3 dist 0 0)
+                                    :sfsim.graphics/object-orientation obj-orient}]
+             frame                (-> (graphics/make-frame graphics width height origin orientation
+                                                           light object model-vars)
+                                      (graphics/render-shadows graphics nil)
+                                      (graphics/render-scene-shadows graphics)
+                                      (graphics/render-cloud-geometry graphics nil)
+                                      (graphics/render-clouds graphics [])
+                                      (graphics/render-geometry graphics nil))
+             wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
+                                                          wind-from
+                                                          (first (graphics/get-moved-scenes frame graphics))
+                                                          :sfsim.render/cullback)
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
              matrices             (:sfsim.model/matrices wind-shadow)
              camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
              world-to-object      (:sfsim.matrix/world-to-object matrices)
              object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
              ndc-to-camera        (mulm (inverse camera-to-world) (mulm (inverse world-to-object) (inverse object-to-shadow-ndc)))]
-         (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
-                                    (render/use-program program-shockwave)
-                                    (render/uniform-float program-shockwave "object_radius" 2.0)
-                                    (render/uniform-matrix4 program-shockwave "projection" projection)
-                                    (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
-                                    (render/render-quads vao-shockwave))
-         (render/onscreen-render window
-                                 (render/clear (vec3 0 1 0) 0.0)
-                                 (graphics/render-lighting frame graphics))
-         (GLFW/glfwMakeContextCurrent window2)
+         ;; Perform Jump Flooding Algorithm
          (let [flood (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F 512 512)]
            (render/framebuffer-render 512 512 :sfsim.render/noculling nil [flood]
                                    (render/use-program program-init)
@@ -248,18 +242,36 @@ void main()
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)})
                                    (render/render-quads vao-init))
            (let [flood (reduce jump-flooding-step flood [256 128 64 32 16 8 4 2 1])]
+             ;; Render shockwave
+             (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
+                                        (render/use-program program-shockwave)
+                                        (render/uniform-float program-shockwave "object_radius" 2.0)
+                                        (render/uniform-matrix4 program-shockwave "projection" projection)
+                                        (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
+                                        (render/render-quads vao-shockwave))
+             ;; Compose render of model
+             (render/onscreen-render window
+                                     (render/clear (vec3 0 1 0) 0.0)
+                                     (graphics/render-lighting frame graphics))
+             ;; Render JFA result
+             (GLFW/glfwMakeContextCurrent window2)
              (render/onscreen-render window2
                                    (render/clear (vec3 0 1 0) 0.0)
-                                   (render/use-program program-texture)
-                                   (render/uniform-sampler program-texture "tex" 0)
-                                   (render/uniform-int program-texture "wind" 1)
+                                   (render/use-program program-display)
+                                   (render/uniform-sampler program-display "tex" 0)
+                                   (render/uniform-int program-display "wind" 1)
                                    (render/use-textures {0 flood 1 (:sfsim.model/shadows wind-shadow)})
-                                   (render/render-quads vao-texture)))
+                                   (render/render-quads vao-display)))
            (texture/destroy-texture flood))
          (model/destroy-scene-shadow-map wind-shadow)
          (graphics/destroy-frame frame)
          (GLFW/glfwPollEvents)))
 
+(GLFW/glfwMakeContextCurrent window2)
+(render/destroy-vertex-array-object vao-display)
+(render/destroy-program program-display)
+
+(GLFW/glfwMakeContextCurrent window)
 (render/destroy-vertex-array-object vao-shockwave)
 (render/destroy-program program-shockwave)
 
