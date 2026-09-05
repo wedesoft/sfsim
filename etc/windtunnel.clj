@@ -6,6 +6,7 @@
          '[sfsim.matrix :as matrix]
          '[sfsim.model :as model]
          '[sfsim.render :as render]
+         '[sfsim.shaders :as shaders]
          '[sfsim.plume :as plume]
          '[sfsim.texture :as texture]
          '[sfsim.graphics :as graphics])
@@ -140,22 +141,42 @@ void main()
   gl_Position = projection * ndc_to_camera * vec4(point, 1);
 }")
 
-
+;; TODO: do not use NDC for this because the space is scaled differently in z-direction
 (def fragment-shockwave
 "#version 450 core
+uniform sampler2D points;
+uniform mat4 camera_to_ndc;
 uniform int width;
 uniform int height;
-uniform sampler2D points;
+uniform float step;
 out vec4 fragColor;
+vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 void main()
 {
   vec2 uv = gl_FragCoord.xy / vec2(width, height);
+  vec3 origin = (camera_to_ndc * vec4(0, 0, 0, 1)).xyz;
   vec4 point = texture(points, uv);
+  vec3 direction = (camera_to_ndc * vec4(point.xyz, 0)).xyz;
+  direction = normalize(direction * vec3(1, 1, 2)) / vec3(1, 1, 2);
+  vec2 segment = ray_box(vec3(-1, -1, 0), vec3(1, 1, 1), origin, direction);
+  if (point.w > 0.0) {
+    vec4 surface = camera_to_ndc * point;
+    float dist = length(surface.xyz - origin) / length(direction);
+    if (segment.x + segment.y > dist) {
+      segment.y = dist - segment.x;
+    };
+  };
+  float x = segment.x;
+  while (x < segment.x + segment.y) {
+    vec3 p = origin + x * direction;
+    x += step;
+  };
+  fragColor = vec4(vec3(segment.t / 4.0), 0.3);
   // fragColor = vec4(point.xyz, 0.3);
-  if (point.w > 0.0)
-    fragColor = vec4(0.5, 0.0, 0.0, 0.3);
-  else
-    fragColor = vec4(0.0, 0.5, 0.0, 0.3);
+  // if (point.w > 0.0)
+  //   fragColor = vec4(0.5, 0.0, 0.0, 0.3);
+  // else
+  //   fragColor = vec4(0.0, 0.5, 0.0, 0.3);
 }")
 
 (def shockwave-indices
@@ -179,7 +200,8 @@ void main()
 
 
 (GLFW/glfwMakeContextCurrent window)
-(def program-shockwave (render/make-program :sfsim.render/vertex [vertex-shockwave] :sfsim.render/fragment [fragment-shockwave]))
+(def program-shockwave (render/make-program :sfsim.render/vertex [vertex-shockwave]
+                                            :sfsim.render/fragment [shaders/ray-box fragment-shockwave]))
 (def vao-shockwave (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3]))
 
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
@@ -242,7 +264,8 @@ void main()
              camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
              world-to-object      (:sfsim.matrix/world-to-object matrices)
              object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
-             ndc-to-camera        (mulm (inverse camera-to-world) (mulm (inverse world-to-object) (inverse object-to-shadow-ndc)))]
+             camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
+             ndc-to-camera        (inverse camera-to-ndc)]
          ;; Perform Jump Flooding Algorithm
          (let [flood (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F 512 512)]
            (render/framebuffer-render 512 512 :sfsim.render/noculling nil [flood]
@@ -258,8 +281,10 @@ void main()
                                         (render/uniform-float program-shockwave "object_radius" 2.0)
                                         (render/uniform-int program-shockwave "width" (/ width 2))
                                         (render/uniform-int program-shockwave "height" (/ height 2))
+                                        (render/uniform-float program-shockwave "step" 0.01)
                                         (render/uniform-matrix4 program-shockwave "projection" projection)
                                         (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
+                                        (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
                                         (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))})
                                         (render/render-quads vao-shockwave))
              ;; Compose render of model
