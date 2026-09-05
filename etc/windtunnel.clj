@@ -143,10 +143,19 @@ void main()
 
 (def fragment-shockwave
 "#version 450 core
+uniform int width;
+uniform int height;
+uniform sampler2D points;
 out vec4 fragColor;
 void main()
 {
-  fragColor = vec4(0.3, 0.3, 0.3, 0.3);
+  vec2 uv = gl_FragCoord.xy / vec2(width, height);
+  vec4 point = texture(points, uv);
+  // fragColor = vec4(point.xyz, 0.3);
+  if (point.w > 0.0)
+    fragColor = vec4(0.5, 0.0, 0.0, 0.3);
+  else
+    fragColor = vec4(0.0, 0.5, 0.0, 0.3);
 }")
 
 (def shockwave-indices
@@ -245,9 +254,13 @@ void main()
              ;; Render shockwave
              (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                                         (render/use-program program-shockwave)
+                                        (render/uniform-sampler program-shockwave "points" 0)
                                         (render/uniform-float program-shockwave "object_radius" 2.0)
+                                        (render/uniform-int program-shockwave "width" (/ width 2))
+                                        (render/uniform-int program-shockwave "height" (/ height 2))
                                         (render/uniform-matrix4 program-shockwave "projection" projection)
                                         (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
+                                        (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))})
                                         (render/render-quads vao-shockwave))
              ;; Compose render of model
              (render/onscreen-render window
