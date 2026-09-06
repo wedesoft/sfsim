@@ -119,6 +119,8 @@ I later came to appreciate Clojure's immutable data structures, concurrency prim
 
 Also by being a hosted language, it has access to the many Java libraries as well as Java's foreign function and memory interface.
 
+You can try [Clojure in this online REPL](https://tryclojure.org/).
+
 [1]: https://store.steampowered.com/app/3687560/sfsim/
 [2]: https://github.com/wedesoft/sfsim
 [3]: https://www.eclipse.org/legal/epl/epl-v10.html
