@@ -200,8 +200,8 @@ void main()
     vec3 point = texture(flood, uv_fragment).xyz;
     float l = length(point.xy - uv_fragment);
     float depth = point.z - shockfront(l);
-    if (p.z <= depth + apex && p.z >= depth) {
-      emission += 10.0 * step * (1.0 - smoothstep(0.0, 0.3, l));
+    if (p.z <= depth + apex) {
+      emission += 2.0 * step * exp(100.0 * (p.z - depth - apex)) * (1.0 - smoothstep(0.0, 0.3, l));
     };
     x += step;
   };
@@ -323,7 +323,7 @@ void main()
                                         (render/uniform-int program-shockwave "height" (/ height 2))
                                         (render/uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
                                         (render/uniform-float program-shockwave "object_radius" object-radius)
-                                        (render/uniform-float program-shockwave "step" 0.002)
+                                        (render/uniform-float program-shockwave "step" 0.01)
                                         (render/uniform-float program-shockwave "apex" (/ (* 1.2 0.143 (exp (/ 3.24 M M))) object-radius))
                                         (render/uniform-matrix4 program-shockwave "projection" projection)
                                         (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
