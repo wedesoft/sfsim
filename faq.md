@@ -112,6 +112,13 @@ The first commit to the [sfsim repository][16] happened in September 2020.
 There is also prior work on model rendering in 2017.
 Also I made two attempts at implementing a physics engine using sequential impulses in 2017 and 2020.
 
+### Why are you using Clojure
+After C++ and Ruby, I switched to GNU/Guile (a Scheme dialect), because I wanted a language with dynamic typing, hygienic macros, multiple dispatch, simple native interface, and fast start up. I eventually switched to Clojure, because it has more flexible multi methods and fast hash maps, vectors, and sets.
+
+I later came to appreciate Clojure's immutable data structures, concurrency primitives (atoms, refs, and agents), and early method binding (fast method calls).
+
+Also by being a hosted language, it has access to the many Java libraries as well as Java's foreign function and memory interface.
+
 [1]: https://store.steampowered.com/app/3687560/sfsim/
 [2]: https://github.com/wedesoft/sfsim
 [3]: https://www.eclipse.org/legal/epl/epl-v10.html
