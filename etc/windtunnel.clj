@@ -7,6 +7,7 @@
          '[sfsim.model :as model]
          '[sfsim.render :as render]
          '[sfsim.shaders :as shaders]
+         '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
@@ -175,6 +176,7 @@ uniform float apex;
 out vec4 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float shockfront(float distance);
+float sampling_offset();
 void main()
 {
   vec2 uv = gl_FragCoord.xy / vec2(width, height);
@@ -191,7 +193,7 @@ void main()
     };
   };
   float emission = 0.0;
-  float x = segment.x;
+  float x = segment.x + step * sampling_offset();
   while (x < segment.x + segment.y) {
     vec3 p = origin + x * direction;
     vec2 uv_fragment = p.xy * 0.5 + 0.5;
@@ -199,7 +201,7 @@ void main()
     float l = length(point.xy - uv_fragment);
     float depth = point.z - shockfront(l);
     if (p.z <= depth + apex && p.z >= depth) {
-      emission += 0.05 * (1.0 - smoothstep(0.0, 0.3, l));
+      emission += 10.0 * step * (1.0 - smoothstep(0.0, 0.3, l));
     };
     x += step;
   };
@@ -233,7 +235,7 @@ void main()
 
 (GLFW/glfwMakeContextCurrent window)
 (def program-shockwave (render/make-program :sfsim.render/vertex [vertex-shockwave]
-                                            :sfsim.render/fragment [shaders/ray-box shockfront fragment-shockwave]))
+                                            :sfsim.render/fragment [shaders/ray-box shockfront fragment-shockwave bluenoise/sampling-offset]))
 (def vao-shockwave (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3]))
 
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
@@ -309,22 +311,26 @@ void main()
                                    (render/uniform-sampler program-init "tex" 0)
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)})
                                    (render/render-quads vao-init))
-           (let [flood (reduce jump-flooding-step flood [256 128 64 32 16 8 4 2 1])]
+           (let [flood     (reduce jump-flooding-step flood [256 128 64 32 16 8 4 2 1])
+                 bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
              ;; Render shockwave
              (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                                         (render/use-program program-shockwave)
                                         (render/uniform-sampler program-shockwave "points" 0)
                                         (render/uniform-sampler program-shockwave "flood" 1)
+                                        (render/uniform-sampler program-shockwave "bluenoise" 2)
                                         (render/uniform-int program-shockwave "width" (/ width 2))
                                         (render/uniform-int program-shockwave "height" (/ height 2))
+                                        (render/uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
                                         (render/uniform-float program-shockwave "object_radius" object-radius)
-                                        (render/uniform-float program-shockwave "step" 0.005)
+                                        (render/uniform-float program-shockwave "step" 0.002)
                                         (render/uniform-float program-shockwave "apex" (/ (* 1.2 0.143 (exp (/ 3.24 M M))) object-radius))
                                         (render/uniform-matrix4 program-shockwave "projection" projection)
                                         (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
                                         (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
                                         (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
-                                                              1 flood})
+                                                              1 flood
+                                                              2 bluenoise})
                                         (render/render-quads vao-shockwave))
              ;; Compose render of model
              (render/onscreen-render window
