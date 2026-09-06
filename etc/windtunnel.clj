@@ -68,7 +68,7 @@ void main()
 "#version 450 core
 float shockfront(float distance)
 {
-  return 4.0 * distance * distance;
+  return 8.0 * distance * distance;
 }")
 
 
@@ -110,11 +110,12 @@ in vec2 uv_fragment;
 uniform sampler2D tex;
 uniform int step;
 layout (location = 0) out vec3 point;
+float shockfront(float distance);
 vec3 nearest(vec3 result, vec2 uv_fragment, vec2 dpos)
 {
   vec3 point = texture(tex, uv_fragment + dpos).xyz;
-  float current = result.z - 2 * length(result.xy - uv_fragment);
-  float candidate = point.z - 2 * length(point.xy - uv_fragment);
+  float current = result.z - shockfront(length(result.xy - uv_fragment));
+  float candidate = point.z - shockfront(length(point.xy - uv_fragment));
   if (candidate > current)
     return point;
   else
@@ -156,6 +157,7 @@ uniform mat4 camera_to_ndc;
 uniform int width;
 uniform int height;
 uniform float step;
+uniform float apex;
 out vec4 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float shockfront(float distance);
@@ -166,7 +168,7 @@ void main()
   vec4 point = texture(points, uv);
   vec3 direction = (camera_to_ndc * vec4(point.xyz, 0)).xyz;
   direction = normalize(direction * vec3(1, 1, 2)) / vec3(1, 1, 2);
-  vec2 segment = ray_box(vec3(-1, -1, 0.05), vec3(1, 1, 1), origin, direction);
+  vec2 segment = ray_box(vec3(-1, -1, apex), vec3(1, 1, 1), origin, direction);
   if (point.w > 0.0) {
     vec4 surface = camera_to_ndc * point;
     float dist = length(surface.xyz - origin) / length(direction);
@@ -182,12 +184,9 @@ void main()
     vec3 point = texture(flood, uv_fragment).xyz;
     float l = length(point.xy - uv_fragment);
     float depth = point.z - shockfront(l);
-    if (p.z <= depth + 0.05 && p.z >= depth) {
+    if (p.z <= depth + apex && p.z >= depth) {
       emission += 0.01 * (1.0 - smoothstep(0.0, 0.3, l));
     };
-    // if (p.z < 0.1) {
-    //   emission += step * p.z;
-    // };
     x += step;
   };
   fragColor = vec4(vec3(emission), 0.0);
@@ -228,7 +227,8 @@ void main()
 
 (def program-init (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-init]))
 (def vao-init (render/make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2]))
-(def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-jump-flooding]))
+(def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-texture]
+                                                :sfsim.render/fragment [shockfront fragment-jump-flooding]))
 (def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
 
 (def program-texture  (render/make-program :sfsim.render/vertex [vertex-texture]
@@ -303,6 +303,7 @@ void main()
                                         (render/uniform-int program-shockwave "width" (/ width 2))
                                         (render/uniform-int program-shockwave "height" (/ height 2))
                                         (render/uniform-float program-shockwave "step" 0.01)
+                                        (render/uniform-float program-shockwave "apex" 0.02)
                                         (render/uniform-matrix4 program-shockwave "projection" projection)
                                         (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
                                         (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
