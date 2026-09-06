@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (PI to-radians)]
+(require '[clojure.math :refer (PI to-radians exp)]
          '[fastmath.vector :refer (vec3 normalize)]
          '[fastmath.matrix :refer (mulm inverse)]
          '[sfsim.config :as config]
@@ -63,12 +63,26 @@ void main()
   uv_fragment = uv;
 }")
 
+(def Rn 1.2)
+(def M 10.0)
 
 (def shockfront
 "#version 450 core
-float shockfront(float distance)
+#define Rn 1.2
+#define M 10.0
+uniform float object_radius;
+float cot(float angle) {
+  return 1.0 / tan(angle);
+}
+float shockfront(float y)
 {
-  return 8.0 * distance * distance;
+  // shockfront offset applied in other shader
+  // float Delta = Rn * 0.143 * exp(3.24 / (M * M));
+  y = y * object_radius;
+  float beta = asin(1 / M);
+  float k = tan(beta) * tan(beta);
+  float x = (-Rn + sqrt(Rn * Rn + k * y * y)) / k; // - Delta
+  return x / (2 * object_radius);
 }")
 
 
@@ -185,7 +199,7 @@ void main()
     float l = length(point.xy - uv_fragment);
     float depth = point.z - shockfront(l);
     if (p.z <= depth + apex && p.z >= depth) {
-      emission += 0.01 * (1.0 - smoothstep(0.0, 0.3, l));
+      emission += 0.05 * (1.0 - smoothstep(0.0, 0.3, l));
     };
     x += step;
   };
@@ -240,8 +254,9 @@ void main()
   (let [result (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F 512 512)]
     (render/framebuffer-render 512 512 :sfsim.render/noculling nil [result]
                                (render/use-program program-jump-flooding)
-                               (render/uniform-sampler program-texture "tex" 0)
+                               (render/uniform-sampler program-jump-flooding "tex" 0)
                                (render/uniform-int program-jump-flooding "step" step)
+                               (render/uniform-float program-jump-flooding "object_radius" object-radius)
                                (render/use-textures {0 flood})
                                (render/render-quads vao-jump-flooding))
     (texture/destroy-texture flood)
@@ -302,8 +317,9 @@ void main()
                                         (render/uniform-sampler program-shockwave "flood" 1)
                                         (render/uniform-int program-shockwave "width" (/ width 2))
                                         (render/uniform-int program-shockwave "height" (/ height 2))
-                                        (render/uniform-float program-shockwave "step" 0.01)
-                                        (render/uniform-float program-shockwave "apex" 0.02)
+                                        (render/uniform-float program-shockwave "object_radius" object-radius)
+                                        (render/uniform-float program-shockwave "step" 0.005)
+                                        (render/uniform-float program-shockwave "apex" (/ (* 1.2 0.143 (exp (/ 3.24 M M))) object-radius))
                                         (render/uniform-matrix4 program-shockwave "projection" projection)
                                         (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
                                         (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
@@ -321,6 +337,7 @@ void main()
                                    (render/use-program program-display)
                                    (render/uniform-sampler program-display "tex" 0)
                                    (render/uniform-int program-display "wind" 1)
+                                   (render/uniform-float program-display "object_radius" object-radius)
                                    (render/use-textures {0 flood 1 (:sfsim.model/shadows wind-shadow)})
                                    (render/render-quads vao-display)))
            (texture/destroy-texture flood))
