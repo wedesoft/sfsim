@@ -731,14 +731,14 @@
 
 
 (defn make-scene-shadow-program
-  {:malli/schema [:=> [:cat :boolean :boolean] :int]}
-  [textured bump]
+  {:malli/schema [:=> [:cat :boolean :boolean :boolean] :int]}
+  [textured bump normals]
   (make-program :sfsim.render/vertex [(vertex-shadow-scene textured bump)]
                 :sfsim.render/fragment [fragment-shadow-scene]))
 
 
 (def scene-shadow-renderer
-  (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean] :int]]
+  (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean :boolean] :int]]
              [::size N]
              [::object-radius :double]]))
 
@@ -747,8 +747,8 @@
   "Create renderer for rendering scene-shadows"
   {:malli/schema [:=> [:cat N :double] scene-shadow-renderer]}
   [size object-radius]
-  (let [variations (for [textured [false true] bump [false true]] [textured bump])
-        programs   (mapv #(make-scene-shadow-program (first %) (second %)) variations)]
+  (let [variations (for [textured [false true] bump [false true] normals [false true]] [textured bump normals])
+        programs   (mapv #(apply make-scene-shadow-program %) variations)]
     {::programs      (zipmap variations programs)
      ::size          size
      ::object-radius object-radius}))
@@ -764,17 +764,18 @@
 
 (defn render-shadow-map
   "Render shadow map for an object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer :map scene :keyword] texture-2d]}
+  {:malli/schema [:=> [:cat scene-shadow-renderer :map scene :keyword] [:map [::shadows texture-2d]]]}
   [renderer shadow-vars scene culling]
   (let [size           (::size renderer)
         centered-scene (assoc-in scene [::root ::transform] (eye 4))]
     (doseq [program (vals (::programs renderer))]
-      (use-program program)
-      (uniform-int program "shadow_size" size))
-    (texture-render-depth size size [] culling
-                          (clear)
-                          (render-scene (comp (::programs renderer) material-type) 0 shadow-vars [] centered-scene
-                                        render-depth))))
+           (use-program program)
+           (uniform-int program "shadow_size" size))
+    {::shadows
+     (texture-render-depth size size [] culling
+                           (clear)
+                           (render-scene (comp (::programs renderer) #(conj % false) material-type) 0 shadow-vars [] centered-scene
+                                         render-depth))}))
 
 
 (defn scene-shadow-map
@@ -785,8 +786,7 @@
         object-radius   (::object-radius renderer)
         shadow-matrices (shadow-patch-matrices object-to-world light-direction object-radius)
         shadow-map      (render-shadow-map renderer shadow-matrices scene culling)]
-    {::matrices shadow-matrices
-     ::shadows  shadow-map}))
+    (assoc shadow-map ::matrices shadow-matrices)))
 
 
 (defn destroy-scene-shadow-map

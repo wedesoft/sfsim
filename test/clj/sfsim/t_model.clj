@@ -724,7 +724,8 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
            (with-invisible-window
              (let [renderer        (make-scene-shadow-renderer 256 ?object-radius)
                    light-direction (vec3 0 0 1)
-                   scene           (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-type) ?model)
+                   scene           (load-scene-into-opengl (comp (:sfsim.model/programs renderer) #(conj % false) material-type)
+                                                           ?model)
                    object-to-world (transformation-matrix (mulm (rotation-matrix-3d-x ?angle-x) (rotation-matrix-3d-y ?angle-y))
                                                           (vec3 100 200 300))
                    moved-scene     (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
@@ -741,6 +742,26 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
          bump   1.75           0.5      -0.4     "shadow-map-bump.png"
          bricks 1.75           0.5      -0.4     "shadow-map-bricks.png"
          cubes  4.0            0.1      -1.0     "shadow-map-cubes.png")
+
+
+(comment (tabular "Render normals for an object"
+         (fact
+           (with-invisible-window
+             (let [renderer        (make-scene-shadow-renderer 256 ?object-radius)
+                   light-direction (vec3 0 0 1)
+                   scene           (load-scene-into-opengl (comp (:sfsim.model/programs renderer) #(conj % true) material-type)
+                                                           ?model)
+                   object-to-world (transformation-matrix (mulm (rotation-matrix-3d-x ?angle-x) (rotation-matrix-3d-y ?angle-y))
+                                                          (vec3 100 200 300))
+                   moved-scene     (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
+                   object-shadow   (scene-shadow-map renderer light-direction moved-scene :sfsim.render/cullfront)
+                   img             (texture->image (:sfsim.model/normals object-shadow))]
+               (destroy-scene-shadow-map object-shadow)
+               (destroy-scene scene)
+               (destroy-scene-shadow-renderer renderer)
+               img)) => (is-image (str "test/clj/sfsim/fixtures/model/" ?result) 0.01))
+         ?model ?object-radius ?angle-x ?angle-y ?result
+         cube   1.75           0.5      -0.4     "normals-cube.png"))
 
 
 (def torus (read-gltf "test/clj/sfsim/fixtures/model/torus.gltf"))
