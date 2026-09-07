@@ -690,7 +690,7 @@
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
 
 
-(def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
+(def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d] [::normals [:maybe texture-2d]]]))
 
 
 (defn make-model-vars
@@ -722,19 +722,24 @@
 
 (defn vertex-shadow-scene
   "Vertex shader for rendering scene shadow maps"
-  {:malli/schema [:=> [:cat :boolean :boolean] [:vector :string]]}
-  [textured bump]
-  [shrink-shadow-index (template/eval (slurp "resources/shaders/model/vertex-shadow.glsl") {:textured textured :bump bump})])
+  {:malli/schema [:=> [:cat :boolean :boolean :boolean] [:vector :string]]}
+  [textured bump normals]
+  [shrink-shadow-index (template/eval (slurp "resources/shaders/model/vertex-shadow.glsl")
+                                      {:textured textured :bump bump :normals normals})])
 
 
-(def fragment-shadow-scene (slurp "resources/shaders/model/fragment-shadow.glsl"))
+(defn fragment-shadow-scene
+  "Fragment shader for rendering scene shadowe maps and optional normals"
+  {:malli/schema [:=> [:cat :boolean] :string]}
+  [normals]
+  (template/eval (slurp "resources/shaders/model/fragment-shadow.glsl") {:normals normals}))
 
 
 (defn make-scene-shadow-program
   {:malli/schema [:=> [:cat :boolean :boolean :boolean] :int]}
   [textured bump normals]
-  (make-program :sfsim.render/vertex [(vertex-shadow-scene textured bump)]
-                :sfsim.render/fragment [fragment-shadow-scene]))
+  (make-program :sfsim.render/vertex [(vertex-shadow-scene textured bump normals)]
+                :sfsim.render/fragment [(fragment-shadow-scene normals)]))
 
 
 (def scene-shadow-renderer
@@ -759,40 +764,47 @@
   {:malli/schema [:=> [:cat material mesh-vars] :nil]}
   [_material {::keys [program transform] :as render-vars}]
   (use-program program)
-  (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/object-to-shadow-ndc render-vars) transform)))
+  (uniform-matrix4 program "object_to_shadow_ndc" (mulm (:sfsim.matrix/object-to-shadow-ndc render-vars) transform))
+  (println (mulm (:sfsim.matrix/object-to-light render-vars) transform))
+  (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/object-to-light render-vars) transform)))
 
 
 (defn render-shadow-map
   "Render shadow map for an object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer :map scene :keyword] [:map [::shadows texture-2d]]]}
-  [renderer shadow-vars scene culling]
+  {:malli/schema [:=> [:cat scene-shadow-renderer :map scene :keyword :boolean]
+                      [:map [::shadows texture-2d] [::normals [:maybe texture-2d]]]]}
+  [renderer shadow-vars scene culling normals]
   (let [size           (::size renderer)
-        centered-scene (assoc-in scene [::root ::transform] (eye 4))]
+        centered-scene (assoc-in scene [::root ::transform] (eye 4))
+        normal-tex     (when normals
+                         (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size))]
     (doseq [program (vals (::programs renderer))]
            (use-program program)
            (uniform-int program "shadow_size" size))
-    {::shadows
-     (texture-render-depth size size [] culling
-                           (clear)
-                           (render-scene (comp (::programs renderer) #(conj % false) material-type) 0 shadow-vars [] centered-scene
-                                         render-depth))}))
+    {::shadows (texture-render-depth
+                 size size (if normals [normal-tex] []) culling
+                 (clear)
+                 (render-scene (comp (::programs renderer) #(conj % normals) material-type) 0 shadow-vars [] centered-scene
+                               render-depth))
+     ::normals normal-tex}))
 
 
 (defn scene-shadow-map
   "Determine shadow matrices and render shadow map for object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene :keyword] scene-shadow]}
-  [renderer light-direction scene culling]
+  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene :keyword :boolean] scene-shadow]}
+  [renderer light-direction scene culling normals]
   (let [object-to-world (get-in scene [::root ::transform])
         object-radius   (::object-radius renderer)
         shadow-matrices (shadow-patch-matrices object-to-world light-direction object-radius)
-        shadow-map      (render-shadow-map renderer shadow-matrices scene culling)]
+        shadow-map      (render-shadow-map renderer shadow-matrices scene culling normals)]
     (assoc shadow-map ::matrices shadow-matrices)))
 
 
 (defn destroy-scene-shadow-map
   "Delete scene shadow map texture"
   {:malli/schema [:=> [:cat scene-shadow] :nil]}
-  [{::keys [shadows]}]
+  [{::keys [shadows normals]}]
+  (when normals (destroy-texture normals))
   (destroy-texture shadows))
 
 

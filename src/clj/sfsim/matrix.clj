@@ -339,6 +339,7 @@
     {::object-to-shadow-ndc (fm/mulm shadow-ndc light-matrix)
      ::object-to-shadow-map (fm/mulm shadow-map light-matrix)
      ::world-to-object      world-to-object
+     ::object-to-light      light-matrix
      ::scale                (* 2.0 object-radius)
      ::depth                (* 2.0 object-radius)}))
 

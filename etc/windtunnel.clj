@@ -296,7 +296,8 @@ void main()
              wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                           wind-from
                                                           (first (graphics/get-moved-scenes frame graphics))
-                                                          :sfsim.render/cullback)
+                                                          :sfsim.render/cullback
+                                                          true)
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
              matrices             (:sfsim.model/matrices wind-shadow)
              camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
