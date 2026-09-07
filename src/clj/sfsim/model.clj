@@ -771,7 +771,7 @@
     (doseq [program (vals (::programs renderer))]
       (use-program program)
       (uniform-int program "shadow_size" size))
-    (texture-render-depth size size culling
+    (texture-render-depth size size [] culling
                           (clear)
                           (render-scene (comp (::programs renderer) material-type) 0 shadow-vars [] centered-scene
                                         render-depth))))
