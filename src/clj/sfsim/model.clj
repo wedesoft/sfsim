@@ -779,16 +779,14 @@
 
 (defn scene-shadow-map
   "Determine shadow matrices and render shadow map for object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene [:? :keyword]] scene-shadow]}
-  ([renderer light-direction scene]
-   (scene-shadow-map renderer light-direction scene :sfsim.render/cullfront))
-  ([renderer light-direction scene culling]
-   (let [object-to-world (get-in scene [::root ::transform])
-         object-radius   (::object-radius renderer)
-         shadow-matrices (shadow-patch-matrices object-to-world light-direction object-radius)
-         shadow-map      (render-shadow-map renderer shadow-matrices scene culling)]
-     {::matrices shadow-matrices
-      ::shadows  shadow-map})))
+  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene :keyword] scene-shadow]}
+  [renderer light-direction scene culling]
+  (let [object-to-world (get-in scene [::root ::transform])
+        object-radius   (::object-radius renderer)
+        shadow-matrices (shadow-patch-matrices object-to-world light-direction object-radius)
+        shadow-map      (render-shadow-map renderer shadow-matrices scene culling)]
+    {::matrices shadow-matrices
+     ::shadows  shadow-map}))
 
 
 (defn destroy-scene-shadow-map
