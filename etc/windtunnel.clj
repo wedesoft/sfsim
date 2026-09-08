@@ -74,13 +74,14 @@ void main()
 uniform float M;
 uniform int size;
 uniform float object_radius;
+uniform float max_radius;
 float curvature(vec3 N)
 {
   float h = (2.0 * object_radius) / size;
   vec3 dNdx = dFdx(N) / h;
   vec3 dNdy = dFdy(N) / h;
   float k = sqrt(max(dot(dNdx, dNdx), dot(dNdy, dNdy)));
-  return 1.0 / max(k, 1.0 / object_radius);
+  return 1.0 / max(k, 1.0 / max_radius);
 }")
 
 
@@ -138,15 +139,18 @@ void main()
 
 (def fragment-init
 "#version 450 core
-#define Rn 1.2
 uniform sampler2D depth;
 uniform sampler2D normals;
 uniform int size;
+uniform float max_radius;
 in vec2 uv_fragment;
 layout (location = 0) out vec4 point;
+float curvature(vec3 N);
 void main()
 {
   float d = texture(depth, uv_fragment).r;
+  vec4 N = texture(normals, uv_fragment);
+  float Rn = curvature(N.xyz);
   point = vec4(gl_FragCoord.xy / size, d, Rn);
 }")
 
@@ -268,7 +272,7 @@ void main()
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
 (def indices [0 1 3 2])
 
-(def program-init (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-init]))
+(def program-init (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-init curvature]))
 (def vao-init (render/make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2]))
 (def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-texture]
                                                 :sfsim.render/fragment [shockfront fragment-jump-flooding]))
@@ -335,7 +339,10 @@ void main()
                                    (render/use-program program-init)
                                    (render/uniform-sampler program-init "depth" 0)
                                    (render/uniform-sampler program-init "normals" 1)
+                                   (render/uniform-float program-init "M" M)
                                    (render/uniform-int program-init "size" size)
+                                   (render/uniform-float program-init "object_radius" object-radius)
+                                   (render/uniform-float program-init "max_radius" 3.0)
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                          1 (:sfsim.model/normals wind-shadow)})
                                    (render/render-quads vao-init))
