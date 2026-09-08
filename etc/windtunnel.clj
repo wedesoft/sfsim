@@ -91,19 +91,32 @@ float shockfront(float y)
 (def fragment-texture-2d
 "#version 450 core
 uniform int size;
+uniform float object_radius;
 uniform sampler2D flood;
 uniform sampler2D normals;
 uniform sampler2D wind;
 in vec2 uv_fragment;
 out vec3 fragColor;
 float shockfront(float distance);
+float curvature(vec3 N)
+{
+    float h = (2.0 * object_radius) / size;
+    vec3 dNdx = dFdx(N) / h;
+    vec3 dNdy = dFdy(N) / h;
+    float k = sqrt(min(dot(dNdx, dNdx), dot(dNdy, dNdy)));
+    return 1.0 / max(k, 0.1);
+}
 void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
   vec3 point = texture(flood, uv_fragment).xyz;
   float depth = point.z - shockfront(length(point.xy - uv_fragment));
+  vec4 N = texture(normals, uv_fragment);
+  float c = curvature(N.xyz) / 20.0;
+  if (N.w <= 0.0)
+    c = 0.0;
   if (texture(wind, uv_fragment).r > 0.0)
-    fragColor = vec3(1.0, depth, depth);
+    fragColor = vec3(1.0, c, c);
   else
     fragColor = vec3(0.0, depth, depth);
 }")
@@ -113,13 +126,13 @@ void main()
 (def fragment-init
 "#version 450 core
 in vec2 uv_fragment;
-uniform sampler2D tex;
+uniform sampler2D depth;
 uniform int size;
 layout (location = 0) out vec3 point;
 void main()
 {
-  float depth = texture(tex, uv_fragment).r;
-  point = vec3(gl_FragCoord.xy / size, depth);
+  float d = texture(depth, uv_fragment).r;
+  point = vec3(gl_FragCoord.xy / size, d);
 }")
 
 
@@ -305,7 +318,7 @@ void main()
          (let [flood (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F size size)]
            (render/framebuffer-render size size :sfsim.render/noculling nil [flood]
                                    (render/use-program program-init)
-                                   (render/uniform-sampler program-init "tex" 0)
+                                   (render/uniform-sampler program-init "depth" 0)
                                    (render/uniform-int program-init "size" size)
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)})
                                    (render/render-quads vao-init))
