@@ -72,6 +72,7 @@ void main()
 #define Rn 1.2
 #define M 10.0
 uniform float object_radius;
+uniform float apex;
 float cot(float angle) {
   return 1.0 / tan(angle);
 }
@@ -83,7 +84,7 @@ float shockfront(float y)
   float beta = asin(1 / M);
   float k = tan(beta) * tan(beta);
   float x = (-Rn + sqrt(Rn * Rn + k * y * y)) / k; // - Delta
-  return x / (2 * object_radius);
+  return x / (2 * object_radius) + apex;
 }")
 
 
@@ -184,7 +185,7 @@ void main()
   vec4 point = texture(points, uv);
   vec3 direction = (camera_to_ndc * vec4(point.xyz, 0)).xyz;
   direction = normalize(direction * vec3(1, 1, 2)) / vec3(1, 1, 2);
-  vec2 segment = ray_box(vec3(-1, -1, apex), vec3(1, 1, 1), origin, direction);
+  vec2 segment = ray_box(vec3(-1, -1, 0), vec3(1, 1, 1), origin, direction);
   if (point.w > 0.0) {
     vec4 surface = camera_to_ndc * point;
     float dist = length(surface.xyz - origin) / length(direction);
@@ -200,17 +201,12 @@ void main()
     vec3 point = texture(flood, uv_fragment).xyz;
     float l = length(point.xy - uv_fragment);
     float depth = point.z - shockfront(l);
-    if (p.z <= depth + apex) {
-      emission += 2.0 * step * exp(100.0 * (p.z - depth - apex)) * (1.0 - smoothstep(0.0, 0.3, l));
+    if (p.z <= depth) {
+      emission += 2.0 * step * exp(100.0 * (p.z - depth)) * (1.0 - smoothstep(0.0, 0.3, l));
     };
     x += step;
   };
   fragColor = vec4(vec3(emission), 0.0);
-  // fragColor = vec4(point.xyz, 0.3);
-  // if (point.w > 0.0)
-  //   fragColor = vec4(0.5, 0.0, 0.0, 0.3);
-  // else
-  //   fragColor = vec4(0.0, 0.5, 0.0, 0.3);
 }")
 
 (def shockwave-indices
