@@ -84,16 +84,20 @@ float curvature(vec3 N)
 }")
 
 
+(def cot
+"#version 450 core
+float cot(float x)
+{
+  return cos(x) / sin(x);
+}")
+
+
 (def shockfront
 "#version 450 core
 #define M 10.0
 uniform float object_radius;
-float cot(float angle) {
-  return 1.0 / tan(angle);
-}
 float shockfront(float y, float Rn)
 {
-  // shockfront offset applied in other shader
   float apex = Rn * 0.143 * exp(3.24 / (M * M));
   y = y * object_radius;
   float beta = asin(1 / M);
