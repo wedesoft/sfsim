@@ -66,6 +66,7 @@ void main()
 }")
 
 
+(def max-radius 1.2)
 (def M 10.0)
 
 
@@ -75,13 +76,17 @@ uniform float M;
 uniform int size;
 uniform float object_radius;
 uniform float max_radius;
-float curvature(vec3 N)
+float curvature(vec4 N)
 {
   float h = (2.0 * object_radius) / size;
-  vec3 dNdx = dFdx(N) / h;
-  vec3 dNdy = dFdy(N) / h;
+  vec3 dNdx = dFdx(N.xyz) / h;
+  vec3 dNdy = dFdy(N.xyz) / h;
+  float dw = max(abs(dFdx(N.w)), abs(dFdy(N.w)));
   float k = sqrt(max(dot(dNdx, dNdx), dot(dNdy, dNdy)));
-  return 1.0 / max(k, 1.0 / max_radius);
+  if (dw > 0.0)
+    return 0.01;
+  else
+    return 1.0 / max(k, 1.0 / max_radius);
 }")
 
 
@@ -95,7 +100,7 @@ float cot(float x)
 
 (def shockfront
 "#version 450 core
-#define M 10.0
+uniform float M;
 uniform float object_radius;
 float shockfront(float y, float Rn)
 {
@@ -103,7 +108,7 @@ float shockfront(float y, float Rn)
   y = y * object_radius;
   float beta = asin(1 / M);
   float k = tan(beta) * tan(beta);
-  float x = (-Rn + sqrt(Rn * Rn + k * y * y)) / k + apex;
+  float x = (-Rn + sqrt(Rn * Rn + k * y * y)) / k - apex;
   return x / (2 * object_radius);
 }")
 
@@ -119,14 +124,14 @@ uniform float max_radius;
 in vec2 uv_fragment;
 out vec3 fragColor;
 float shockfront(float distance, float Rn);
-float curvature(vec3 N);
+float curvature(vec4 N);
 void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
   vec4 point = texture(flood, uv_fragment);
   float depth = point.z - shockfront(length(point.xy - uv_fragment), point.w);
   vec4 N = texture(normals, uv_fragment);
-  float c = curvature(N.xyz) / max_radius;
+  float c = curvature(N) / max_radius;
   if (N.w <= 0.0)
     c = 0.0;
   if (texture(wind, uv_fragment).r > 0.0)
@@ -145,12 +150,12 @@ uniform int size;
 uniform float max_radius;
 in vec2 uv_fragment;
 layout (location = 0) out vec4 point;
-float curvature(vec3 N);
+float curvature(vec4 N);
 void main()
 {
   float d = texture(depth, uv_fragment).r;
   vec4 N = texture(normals, uv_fragment);
-  float Rn = curvature(N.xyz);
+  float Rn = curvature(N);
   point = vec4(gl_FragCoord.xy / size, d, Rn);
 }")
 
@@ -237,11 +242,11 @@ void main()
     float l = length(point.xy - uv_fragment);
     float depth = point.z - shockfront(l, point.w);
     if (p.z <= depth) {
-      emission += 2.0 * step * exp(100.0 * (p.z - depth)) * (1.0 - smoothstep(0.0, 0.3, l));
+      emission += 4.0 * step * exp(100.0 * (p.z - depth)) * (1.0 - smoothstep(0.0, 0.3, l));
     };
     x += step;
   };
-  fragColor = vec4(vec3(emission), 0.0);
+  fragColor = vec4(vec3(emission, emission, 0.0), 0.0);
 }")
 
 (def shockwave-indices
@@ -280,13 +285,14 @@ void main()
 
 (defn jump-flooding-step
   [flood step]
-  (let [result (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F size size)]
+  (let [result (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
     (render/framebuffer-render size size :sfsim.render/noculling nil [result]
                                (render/use-program program-jump-flooding)
                                (render/uniform-sampler program-jump-flooding "flood" 0)
                                (render/uniform-int program-jump-flooding "size" size)
                                (render/uniform-int program-jump-flooding "step" step)
                                (render/uniform-float program-jump-flooding "object_radius" object-radius)
+                               (render/uniform-float program-jump-flooding "M" M)
                                (render/use-textures {0 flood})
                                (render/render-quads vao-jump-flooding))
     (texture/destroy-texture flood)
@@ -342,7 +348,7 @@ void main()
                                    (render/uniform-float program-init "M" M)
                                    (render/uniform-int program-init "size" size)
                                    (render/uniform-float program-init "object_radius" object-radius)
-                                   (render/uniform-float program-init "max_radius" 3.0)
+                                   (render/uniform-float program-init "max_radius" max-radius)
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                          1 (:sfsim.model/normals wind-shadow)})
                                    (render/render-quads vao-init))
@@ -381,7 +387,7 @@ void main()
                                    (render/uniform-int program-display "normals" 2)
                                    (render/uniform-int program-display "size" size)
                                    (render/uniform-float program-display "M" M)
-                                   (render/uniform-float program-display "max_radius" 3.0)
+                                   (render/uniform-float program-display "max_radius" max-radius)
                                    (render/uniform-float program-display "object_radius" object-radius)
                                    (render/use-textures {0 flood
                                                          1 (:sfsim.model/shadows wind-shadow)
