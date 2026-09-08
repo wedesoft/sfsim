@@ -70,13 +70,12 @@ void main()
 
 (def shockfront
 "#version 450 core
-#define Rn 1.2
 #define M 10.0
 uniform float object_radius;
 float cot(float angle) {
   return 1.0 / tan(angle);
 }
-float shockfront(float y)
+float shockfront(float y, float Rn)
 {
   // shockfront offset applied in other shader
   float apex = Rn * 0.143 * exp(3.24 / (M * M));
@@ -98,7 +97,7 @@ uniform sampler2D wind;
 uniform float max_radius;
 in vec2 uv_fragment;
 out vec3 fragColor;
-float shockfront(float distance);
+float shockfront(float distance, float Rn);
 float curvature(vec3 N)
 {
     float h = (2.0 * object_radius) / size;
@@ -110,8 +109,8 @@ float curvature(vec3 N)
 void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
-  vec3 point = texture(flood, uv_fragment).xyz;
-  float depth = point.z - shockfront(length(point.xy - uv_fragment));
+  vec4 point = texture(flood, uv_fragment);
+  float depth = point.z - shockfront(length(point.xy - uv_fragment), point.w);
   vec4 N = texture(normals, uv_fragment);
   float c = curvature(N.xyz) / max_radius;
   if (N.w <= 0.0)
@@ -126,14 +125,16 @@ void main()
 
 (def fragment-init
 "#version 450 core
-in vec2 uv_fragment;
+#define Rn 1.2
 uniform sampler2D depth;
+uniform sampler2D normals;
 uniform int size;
-layout (location = 0) out vec3 point;
+in vec2 uv_fragment;
+layout (location = 0) out vec4 point;
 void main()
 {
   float d = texture(depth, uv_fragment).r;
-  point = vec3(gl_FragCoord.xy / size, d);
+  point = vec4(gl_FragCoord.xy / size, d, Rn);
 }")
 
 
@@ -143,13 +144,13 @@ in vec2 uv_fragment;
 uniform sampler2D flood;
 uniform int step;
 uniform int size;
-layout (location = 0) out vec3 point;
-float shockfront(float distance);
-vec3 nearest(vec3 result, vec2 uv_fragment, vec2 dpos)
+layout (location = 0) out vec4 point;
+float shockfront(float distance, float Rn);
+vec4 nearest(vec4 result, vec2 uv_fragment, vec2 dpos)
 {
-  vec3 point = texture(flood, uv_fragment + dpos).xyz;
-  float current = result.z - shockfront(length(result.xy - uv_fragment));
-  float candidate = point.z - shockfront(length(point.xy - uv_fragment));
+  vec4 point = texture(flood, uv_fragment + dpos);
+  float current = result.z - shockfront(length(result.xy - uv_fragment), result.w);
+  float candidate = point.z - shockfront(length(point.xy - uv_fragment), point.w);
   if (candidate > current)
     return point;
   else
@@ -159,7 +160,7 @@ void main()
 {
   float delta = float(step) / size;
   vec2 uv_fragment = gl_FragCoord.xy / size;
-  vec3 result = texture(flood, uv_fragment).xyz;
+  vec4 result = texture(flood, uv_fragment);
   result = nearest(result, uv_fragment, vec2(-delta, -delta));
   result = nearest(result, uv_fragment, vec2(     0, -delta));
   result = nearest(result, uv_fragment, vec2(+delta, -delta));
@@ -193,7 +194,7 @@ uniform int height;
 uniform float step;
 out vec4 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float shockfront(float distance);
+float shockfront(float distance, float Rn);
 float sampling_offset();
 void main()
 {
@@ -215,9 +216,9 @@ void main()
   while (x < segment.x + segment.y) {
     vec3 p = origin + x * direction;
     vec2 uv_fragment = p.xy * 0.5 + 0.5;
-    vec3 point = texture(flood, uv_fragment).xyz;
+    vec4 point = texture(flood, uv_fragment);
     float l = length(point.xy - uv_fragment);
-    float depth = point.z - shockfront(l);
+    float depth = point.z - shockfront(l, point.w);
     if (p.z <= depth) {
       emission += 2.0 * step * exp(100.0 * (p.z - depth)) * (1.0 - smoothstep(0.0, 0.3, l));
     };
@@ -316,12 +317,14 @@ void main()
              camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
              ndc-to-camera        (inverse camera-to-ndc)]
          ;; Perform Jump Flooding Algorithm
-         (let [flood (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F size size)]
+         (let [flood (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
            (render/framebuffer-render size size :sfsim.render/noculling nil [flood]
                                    (render/use-program program-init)
                                    (render/uniform-sampler program-init "depth" 0)
+                                   (render/uniform-sampler program-init "normals" 1)
                                    (render/uniform-int program-init "size" size)
-                                   (render/use-textures {0 (:sfsim.model/shadows wind-shadow)})
+                                   (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
+                                                         1 (:sfsim.model/normals wind-shadow)})
                                    (render/render-quads vao-init))
            (let [flood     (reduce jump-flooding-step flood [256 128 64 32 16 8 4 2 1])
                  bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
