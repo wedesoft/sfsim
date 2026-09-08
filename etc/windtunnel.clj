@@ -18,6 +18,7 @@
 (GLFW/glfwDefaultWindowHints)
 (def width 1280)
 (def height 720)
+(def size 512)
 (def window (GLFW/glfwCreateWindow width height "Windtunnel" 0 0))
 (GLFW/glfwSwapInterval 1)
 (def mouse-pos (atom [0.0 0.0]))
@@ -27,7 +28,7 @@
 (GLFW/glfwShowWindow window)
 (GL/createCapabilities)
 
-(def window2 (GLFW/glfwCreateWindow 512 512 "Wind-Shadow" 0 window))
+(def window2 (GLFW/glfwCreateWindow size size "Wind-Shadow" 0 window))
 (GLFW/glfwMakeContextCurrent window2)
 (GLFW/glfwShowWindow window2)
 (GL/createCapabilities)
@@ -89,14 +90,16 @@ float shockfront(float y)
 
 (def fragment-texture-2d
 "#version 450 core
+uniform int size;
+uniform sampler2D flood;
+uniform sampler2D normals;
+uniform sampler2D wind;
 in vec2 uv_fragment;
 out vec3 fragColor;
-uniform sampler2D flood;
-uniform sampler2D wind;
 float shockfront(float distance);
 void main()
 {
-  vec2 uv_fragment = gl_FragCoord.xy / 512.0;
+  vec2 uv_fragment = gl_FragCoord.xy / size;
   vec3 point = texture(flood, uv_fragment).xyz;
   float depth = point.z - shockfront(length(point.xy - uv_fragment));
   if (texture(wind, uv_fragment).r > 0.0)
@@ -111,11 +114,12 @@ void main()
 "#version 450 core
 in vec2 uv_fragment;
 uniform sampler2D tex;
+uniform int size;
 layout (location = 0) out vec3 point;
 void main()
 {
   float depth = texture(tex, uv_fragment).r;
-  point = vec3(gl_FragCoord.xy / 512.0, depth);
+  point = vec3(gl_FragCoord.xy / size, depth);
 }")
 
 
@@ -124,6 +128,7 @@ void main()
 in vec2 uv_fragment;
 uniform sampler2D flood;
 uniform int step;
+uniform int size;
 layout (location = 0) out vec3 point;
 float shockfront(float distance);
 vec3 nearest(vec3 result, vec2 uv_fragment, vec2 dpos)
@@ -138,8 +143,8 @@ vec3 nearest(vec3 result, vec2 uv_fragment, vec2 dpos)
 }
 void main()
 {
-  float delta = float(step) / 512.0;
-  vec2 uv_fragment = gl_FragCoord.xy / 512.0;
+  float delta = float(step) / size;
+  vec2 uv_fragment = gl_FragCoord.xy / size;
   vec3 result = texture(flood, uv_fragment).xyz;
   result = nearest(result, uv_fragment, vec2(-delta, -delta));
   result = nearest(result, uv_fragment, vec2(     0, -delta));
@@ -241,16 +246,13 @@ void main()
                                                 :sfsim.render/fragment [shockfront fragment-jump-flooding]))
 (def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
 
-(def program-texture  (render/make-program :sfsim.render/vertex [vertex-texture]
-                                           :sfsim.render/fragment [shockfront fragment-texture-2d]))
-(def vao-texture (render/make-vertex-array-object program-texture indices vertices ["point" 3 "uv" 2]))
-
 (defn jump-flooding-step
   [flood step]
-  (let [result (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F 512 512)]
-    (render/framebuffer-render 512 512 :sfsim.render/noculling nil [result]
+  (let [result (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F size size)]
+    (render/framebuffer-render size size :sfsim.render/noculling nil [result]
                                (render/use-program program-jump-flooding)
                                (render/uniform-sampler program-jump-flooding "flood" 0)
+                               (render/uniform-int program-jump-flooding "size" size)
                                (render/uniform-int program-jump-flooding "step" step)
                                (render/uniform-float program-jump-flooding "object_radius" object-radius)
                                (render/use-textures {0 flood})
@@ -261,7 +263,7 @@ void main()
 (GLFW/glfwMakeContextCurrent window2)
 (def program-display  (render/make-program :sfsim.render/vertex [vertex-texture]
                                            :sfsim.render/fragment [shockfront fragment-texture-2d]))
-(def vao-display (render/make-vertex-array-object program-texture indices vertices ["point" 3 "uv" 2]))
+(def vao-display (render/make-vertex-array-object program-display indices vertices ["point" 3 "uv" 2]))
 
 (while (and (not (GLFW/glfwWindowShouldClose window)) (not (GLFW/glfwWindowShouldClose window2)))
        (GLFW/glfwMakeContextCurrent window)
@@ -300,10 +302,11 @@ void main()
              camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
              ndc-to-camera        (inverse camera-to-ndc)]
          ;; Perform Jump Flooding Algorithm
-         (let [flood (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F 512 512)]
-           (render/framebuffer-render 512 512 :sfsim.render/noculling nil [flood]
+         (let [flood (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F size size)]
+           (render/framebuffer-render size size :sfsim.render/noculling nil [flood]
                                    (render/use-program program-init)
                                    (render/uniform-sampler program-init "tex" 0)
+                                   (render/uniform-int program-init "size" size)
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)})
                                    (render/render-quads vao-init))
            (let [flood     (reduce jump-flooding-step flood [256 128 64 32 16 8 4 2 1])
@@ -338,8 +341,12 @@ void main()
                                    (render/use-program program-display)
                                    (render/uniform-sampler program-display "flood" 0)
                                    (render/uniform-int program-display "wind" 1)
+                                   (render/uniform-int program-display "normals" 2)
+                                   (render/uniform-int program-display "size" size)
                                    (render/uniform-float program-display "object_radius" object-radius)
-                                   (render/use-textures {0 flood 1 (:sfsim.model/shadows wind-shadow)})
+                                   (render/use-textures {0 flood
+                                                         1 (:sfsim.model/shadows wind-shadow)
+                                                         2 (:sfsim.model/normals wind-shadow)})
                                    (render/render-quads vao-display)))
            (texture/destroy-texture flood))
          (model/destroy-scene-shadow-map wind-shadow)
@@ -359,9 +366,6 @@ void main()
 
 (render/destroy-vertex-array-object vao-jump-flooding)
 (render/destroy-program program-jump-flooding)
-
-(render/destroy-vertex-array-object vao-texture)
-(render/destroy-program program-texture)
 
 (graphics/destroy-graphics2 graphics)
 
