@@ -72,19 +72,18 @@ void main()
 #define Rn 1.2
 #define M 10.0
 uniform float object_radius;
-uniform float apex;
 float cot(float angle) {
   return 1.0 / tan(angle);
 }
 float shockfront(float y)
 {
   // shockfront offset applied in other shader
-  // float Delta = Rn * 0.143 * exp(3.24 / (M * M));
+  float apex = Rn * 0.143 * exp(3.24 / (M * M));
   y = y * object_radius;
   float beta = asin(1 / M);
   float k = tan(beta) * tan(beta);
-  float x = (-Rn + sqrt(Rn * Rn + k * y * y)) / k; // - Delta
-  return x / (2 * object_radius) + apex;
+  float x = (-Rn + sqrt(Rn * Rn + k * y * y)) / k + apex;
+  return x / (2 * object_radius);
 }")
 
 
@@ -173,7 +172,6 @@ uniform mat4 camera_to_ndc;
 uniform int width;
 uniform int height;
 uniform float step;
-uniform float apex;
 out vec4 fragColor;
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float shockfront(float distance);
@@ -321,7 +319,7 @@ void main()
                                         (render/uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
                                         (render/uniform-float program-shockwave "object_radius" object-radius)
                                         (render/uniform-float program-shockwave "step" 0.01)
-                                        (render/uniform-float program-shockwave "apex" (/ (* 1.2 0.143 (exp (/ 3.24 M M))) object-radius))
+                                        (render/uniform-float program-shockwave "M" M)
                                         (render/uniform-matrix4 program-shockwave "projection" projection)
                                         (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
                                         (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
