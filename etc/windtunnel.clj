@@ -65,8 +65,24 @@ void main()
   uv_fragment = uv;
 }")
 
-(def Rn 1.2)
+
 (def M 10.0)
+
+
+(def curvature
+"#version 450 core
+uniform float M;
+uniform int size;
+uniform float object_radius;
+float curvature(vec3 N)
+{
+  float h = (2.0 * object_radius) / size;
+  vec3 dNdx = dFdx(N) / h;
+  vec3 dNdy = dFdy(N) / h;
+  float k = sqrt(max(dot(dNdx, dNdx), dot(dNdy, dNdy)));
+  return 1.0 / max(k, 1.0 / object_radius);
+}")
+
 
 (def shockfront
 "#version 450 core
@@ -98,14 +114,7 @@ uniform float max_radius;
 in vec2 uv_fragment;
 out vec3 fragColor;
 float shockfront(float distance, float Rn);
-float curvature(vec3 N)
-{
-    float h = (2.0 * object_radius) / size;
-    vec3 dNdx = dFdx(N) / h;
-    vec3 dNdy = dFdy(N) / h;
-    float k = sqrt(max(dot(dNdx, dNdx), dot(dNdy, dNdy)));
-    return 1.0 / max(k, 1.0 / max_radius);
-}
+float curvature(vec3 N);
 void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
@@ -277,7 +286,7 @@ void main()
 
 (GLFW/glfwMakeContextCurrent window2)
 (def program-display  (render/make-program :sfsim.render/vertex [vertex-texture]
-                                           :sfsim.render/fragment [shockfront fragment-texture-2d]))
+                                           :sfsim.render/fragment [shockfront fragment-texture-2d curvature]))
 (def vao-display (render/make-vertex-array-object program-display indices vertices ["point" 3 "uv" 2]))
 
 (while (and (not (GLFW/glfwWindowShouldClose window)) (not (GLFW/glfwWindowShouldClose window2)))
@@ -360,6 +369,7 @@ void main()
                                    (render/uniform-int program-display "wind" 1)
                                    (render/uniform-int program-display "normals" 2)
                                    (render/uniform-int program-display "size" size)
+                                   (render/uniform-float program-display "M" M)
                                    (render/uniform-float program-display "max_radius" 3.0)
                                    (render/uniform-float program-display "object_radius" object-radius)
                                    (render/use-textures {0 flood
