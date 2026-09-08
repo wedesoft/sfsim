@@ -91,13 +91,13 @@ float shockfront(float y)
 "#version 450 core
 in vec2 uv_fragment;
 out vec3 fragColor;
-uniform sampler2D tex;
+uniform sampler2D flood;
 uniform sampler2D wind;
 float shockfront(float distance);
 void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / 512.0;
-  vec3 point = texture(tex, uv_fragment).xyz;
+  vec3 point = texture(flood, uv_fragment).xyz;
   float depth = point.z - shockfront(length(point.xy - uv_fragment));
   if (texture(wind, uv_fragment).r > 0.0)
     fragColor = vec3(1.0, depth, depth);
@@ -122,13 +122,13 @@ void main()
 (def fragment-jump-flooding
 "#version 450 core
 in vec2 uv_fragment;
-uniform sampler2D tex;
+uniform sampler2D flood;
 uniform int step;
 layout (location = 0) out vec3 point;
 float shockfront(float distance);
 vec3 nearest(vec3 result, vec2 uv_fragment, vec2 dpos)
 {
-  vec3 point = texture(tex, uv_fragment + dpos).xyz;
+  vec3 point = texture(flood, uv_fragment + dpos).xyz;
   float current = result.z - shockfront(length(result.xy - uv_fragment));
   float candidate = point.z - shockfront(length(point.xy - uv_fragment));
   if (candidate > current)
@@ -140,7 +140,7 @@ void main()
 {
   float delta = float(step) / 512.0;
   vec2 uv_fragment = gl_FragCoord.xy / 512.0;
-  vec3 result = texture(tex, uv_fragment).xyz;
+  vec3 result = texture(flood, uv_fragment).xyz;
   result = nearest(result, uv_fragment, vec2(-delta, -delta));
   result = nearest(result, uv_fragment, vec2(     0, -delta));
   result = nearest(result, uv_fragment, vec2(+delta, -delta));
@@ -250,7 +250,7 @@ void main()
   (let [result (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGB32F 512 512)]
     (render/framebuffer-render 512 512 :sfsim.render/noculling nil [result]
                                (render/use-program program-jump-flooding)
-                               (render/uniform-sampler program-jump-flooding "tex" 0)
+                               (render/uniform-sampler program-jump-flooding "flood" 0)
                                (render/uniform-int program-jump-flooding "step" step)
                                (render/uniform-float program-jump-flooding "object_radius" object-radius)
                                (render/use-textures {0 flood})
@@ -336,7 +336,7 @@ void main()
              (render/onscreen-render window2
                                    (render/clear (vec3 0 1 0) 0.0)
                                    (render/use-program program-display)
-                                   (render/uniform-sampler program-display "tex" 0)
+                                   (render/uniform-sampler program-display "flood" 0)
                                    (render/uniform-int program-display "wind" 1)
                                    (render/uniform-float program-display "object_radius" object-radius)
                                    (render/use-textures {0 flood 1 (:sfsim.model/shadows wind-shadow)})
