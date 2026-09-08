@@ -95,6 +95,7 @@ uniform float object_radius;
 uniform sampler2D flood;
 uniform sampler2D normals;
 uniform sampler2D wind;
+uniform float max_radius;
 in vec2 uv_fragment;
 out vec3 fragColor;
 float shockfront(float distance);
@@ -103,8 +104,8 @@ float curvature(vec3 N)
     float h = (2.0 * object_radius) / size;
     vec3 dNdx = dFdx(N) / h;
     vec3 dNdy = dFdy(N) / h;
-    float k = sqrt(min(dot(dNdx, dNdx), dot(dNdy, dNdy)));
-    return 1.0 / max(k, 0.1);
+    float k = sqrt(max(dot(dNdx, dNdx), dot(dNdy, dNdy)));
+    return 1.0 / max(k, 1.0 / max_radius);
 }
 void main()
 {
@@ -112,7 +113,7 @@ void main()
   vec3 point = texture(flood, uv_fragment).xyz;
   float depth = point.z - shockfront(length(point.xy - uv_fragment));
   vec4 N = texture(normals, uv_fragment);
-  float c = curvature(N.xyz) / 20.0;
+  float c = curvature(N.xyz) / max_radius;
   if (N.w <= 0.0)
     c = 0.0;
   if (texture(wind, uv_fragment).r > 0.0)
@@ -356,6 +357,7 @@ void main()
                                    (render/uniform-int program-display "wind" 1)
                                    (render/uniform-int program-display "normals" 2)
                                    (render/uniform-int program-display "size" size)
+                                   (render/uniform-float program-display "max_radius" 3.0)
                                    (render/uniform-float program-display "object_radius" object-radius)
                                    (render/use-textures {0 flood
                                                          1 (:sfsim.model/shadows wind-shadow)
