@@ -765,7 +765,6 @@
   [_material {::keys [program transform] :as render-vars}]
   (use-program program)
   (uniform-matrix4 program "object_to_shadow_ndc" (mulm (:sfsim.matrix/object-to-shadow-ndc render-vars) transform))
-  (println (mulm (:sfsim.matrix/object-to-light render-vars) transform))
   (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/object-to-light render-vars) transform)))
 
 
