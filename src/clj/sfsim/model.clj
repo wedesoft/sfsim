@@ -142,9 +142,9 @@
           [^long i]
           (concat
             (decode-vector3 (.get vertices i))
+            (decode-vector3 (.get normals i))
             (if has-normal-texture (decode-vector3 (.get tangents i)) [])
             (if has-normal-texture (decode-vector3 (.get bitangents i)) [])
-            (decode-vector3 (.get normals i))
             (if (or has-color-texture has-normal-texture) (decode-vector2 (.get texcoords i)) [])))
         (range (.mNumVertices mesh))))))
 
@@ -225,7 +225,7 @@
     {::indices             (decode-indices mesh)
      ::vertices            (decode-vertices mesh has-color-texture has-normal-texture)
      ::attributes          (if has-normal-texture
-                             ["vertex" 3 "tangent" 3 "bitangent" 3 "normal" 3 "texcoord" 2]
+                             ["vertex" 3 "normal" 3 "tangent" 3 "bitangent" 3 "texcoord" 2]
                              (if has-color-texture
                                ["vertex" 3 "normal" 3 "texcoord" 2]
                                ["vertex" 3 "normal" 3]))

@@ -5,12 +5,12 @@ uniform mat4 object_to_light;
 uniform int shadow_size;
 
 in vec3 vertex;
-<% (if bump %>
+in vec3 normal;
+<% (when bump %>
 in vec3 tangent;
 in vec3 bitangent;
 <% ) %>
-in vec3 normal;
-<% (if (or textured bump) %>
+<% (when (or textured bump) %>
 in vec2 texcoord;
 <% ) %>
 

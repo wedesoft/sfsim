@@ -18,7 +18,8 @@
 (GLFW/glfwDefaultWindowHints)
 (def width 1280)
 (def height 720)
-(def size 512)
+(def size 2048)
+(def wsize 1024)
 (def window (GLFW/glfwCreateWindow width height "Windtunnel" 0 0))
 (GLFW/glfwSwapInterval 1)
 (def mouse-pos (atom [0.0 0.0]))
@@ -28,7 +29,7 @@
 (GLFW/glfwShowWindow window)
 (GL/createCapabilities)
 
-(def window2 (GLFW/glfwCreateWindow size size "Wind-Shadow" 0 window))
+(def window2 (GLFW/glfwCreateWindow wsize wsize "Wind-Shadow" 0 window))
 (GLFW/glfwMakeContextCurrent window2)
 (GLFW/glfwShowWindow window2)
 (GL/createCapabilities)
@@ -84,10 +85,7 @@ float curvature(vec4 N)
   float dw = max(abs(dFdx(N.w)), abs(dFdy(N.w)));
   float k = sqrt(max(dot(dNdx, dNdx), dot(dNdy, dNdy)));
   float scale_radius = N.z * N.z;
-  if (dw > 0.0)
-    return 0.01;
-  else
-    return scale_radius / max(k, 1.0 / max_radius);
+  return scale_radius / max(k, 1.0 / max_radius);
 }")
 
 
@@ -133,10 +131,8 @@ void main()
   float depth = point.z - shockfront(length(point.xy - uv_fragment), point.w);
   vec4 N = texture(normals, uv_fragment);
   float c = curvature(N) / max_radius;
-  if (N.w <= 0.0)
-    c = 0.0;
   if (texture(wind, uv_fragment).r > 0.0)
-    fragColor = vec3(1.0, c, c);
+    fragColor = vec3(c, c, 0);
   else
     fragColor = vec3(0.0, depth, depth);
 }")
@@ -175,8 +171,7 @@ vec4 nearest(vec4 result, vec2 uv_fragment, vec2 dpos)
   vec4 point = texture(flood, uv_fragment + dpos);
   float current = result.z - shockfront(length(result.xy - uv_fragment), result.w);
   float candidate = point.z - shockfront(length(point.xy - uv_fragment), point.w);
-  float facing = dot(texture(normals, point.xy).xy, point.xy - uv_fragment);
-  if (candidate > current && facing > 0.0)
+  if (candidate > current)
     return point;
   else
     return result;
@@ -390,7 +385,7 @@ void main()
                                      (render/uniform-sampler program-display "flood" 0)
                                      (render/uniform-int program-display "wind" 1)
                                      (render/uniform-int program-display "normals" 2)
-                                     (render/uniform-int program-display "size" size)
+                                     (render/uniform-int program-display "size" wsize)
                                      (render/uniform-float program-display "M" M)
                                      (render/uniform-float program-display "max_radius" max-radius)
                                      (render/uniform-float program-display "object_radius" object-radius)

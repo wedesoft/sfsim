@@ -3,11 +3,11 @@ uniform mat4 projection;
 uniform mat4 object_to_camera;
 
 in vec3 vertex;
+in vec3 normal;
 <% (when bump %>
 in vec3 tangent;
 in vec3 bitangent;
 <% ) %>
-in vec3 normal;
 <% (when (or textured bump) %>
 in vec2 texcoord;
 <% ) %>

@@ -14,6 +14,6 @@ layout (location = 0) out vec4 normals;
 void main()
 {
 <% (when normals %>
-  normals = vec4(fs_in.normal.xyz, 1.0);
+  normals = fs_in.normal;
 <% ) %>
 }

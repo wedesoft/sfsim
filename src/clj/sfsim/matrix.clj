@@ -322,6 +322,7 @@
   (m/schema [:map [::object-to-shadow-ndc fmat4]
              [::object-to-shadow-map fmat4]
              [::world-to-object fmat4]
+             [::object-to-light fmat4]
              [::scale :double]
              [::depth :double]]))
 
