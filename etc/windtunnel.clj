@@ -165,6 +165,7 @@ void main()
 "#version 450 core
 in vec2 uv_fragment;
 uniform sampler2D flood;
+uniform sampler2D normals;
 uniform int step;
 uniform int size;
 layout (location = 0) out vec4 point;
@@ -174,7 +175,8 @@ vec4 nearest(vec4 result, vec2 uv_fragment, vec2 dpos)
   vec4 point = texture(flood, uv_fragment + dpos);
   float current = result.z - shockfront(length(result.xy - uv_fragment), result.w);
   float candidate = point.z - shockfront(length(point.xy - uv_fragment), point.w);
-  if (candidate > current)
+  float facing = dot(texture(normals, point.xy).xy, point.xy - uv_fragment);
+  if (candidate > current && facing > 0.0)
     return point;
   else
     return result;
@@ -285,16 +287,17 @@ void main()
 (def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
 
 (defn jump-flooding-step
-  [flood step]
+  [normals flood step]
   (let [result (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
     (render/framebuffer-render size size :sfsim.render/noculling nil [result]
                                (render/use-program program-jump-flooding)
                                (render/uniform-sampler program-jump-flooding "flood" 0)
+                               (render/uniform-sampler program-jump-flooding "normals" 1)
                                (render/uniform-int program-jump-flooding "size" size)
                                (render/uniform-int program-jump-flooding "step" step)
                                (render/uniform-float program-jump-flooding "object_radius" object-radius)
                                (render/uniform-float program-jump-flooding "M" M)
-                               (render/use-textures {0 flood})
+                               (render/use-textures {0 flood 1 normals})
                                (render/render-quads vao-jump-flooding))
     (texture/destroy-texture flood)
     result))
@@ -353,7 +356,8 @@ void main()
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                          1 (:sfsim.model/normals wind-shadow)})
                                    (render/render-quads vao-init))
-           (let [flood     (reduce jump-flooding-step flood [256 128 64 32 16 8 4 2 1])
+           (let [flood     (reduce (partial jump-flooding-step (:sfsim.model/normals wind-shadow))
+                                   flood [256 128 64 32 16 8 4 2 1])
                  bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
              ;; Render shockwave
              (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
@@ -381,20 +385,21 @@ void main()
              ;; Render JFA result
              (GLFW/glfwMakeContextCurrent window2)
              (render/onscreen-render window2
-                                   (render/clear (vec3 0 1 0) 0.0)
-                                   (render/use-program program-display)
-                                   (render/uniform-sampler program-display "flood" 0)
-                                   (render/uniform-int program-display "wind" 1)
-                                   (render/uniform-int program-display "normals" 2)
-                                   (render/uniform-int program-display "size" size)
-                                   (render/uniform-float program-display "M" M)
-                                   (render/uniform-float program-display "max_radius" max-radius)
-                                   (render/uniform-float program-display "object_radius" object-radius)
-                                   (render/use-textures {0 flood
-                                                         1 (:sfsim.model/shadows wind-shadow)
-                                                         2 (:sfsim.model/normals wind-shadow)})
-                                   (render/render-quads vao-display)))
-           (texture/destroy-texture flood))
+                                     (render/clear (vec3 0 1 0) 0.0)
+                                     (render/use-program program-display)
+                                     (render/uniform-sampler program-display "flood" 0)
+                                     (render/uniform-int program-display "wind" 1)
+                                     (render/uniform-int program-display "normals" 2)
+                                     (render/uniform-int program-display "size" size)
+                                     (render/uniform-float program-display "M" M)
+                                     (render/uniform-float program-display "max_radius" max-radius)
+                                     (render/uniform-float program-display "object_radius" object-radius)
+                                     (render/use-textures {0 flood
+                                                           1 (:sfsim.model/shadows wind-shadow)
+                                                           2 (:sfsim.model/normals wind-shadow)})
+                                     (render/render-quads vao-display))
+             (GLFW/glfwMakeContextCurrent window)
+             (texture/destroy-texture flood)))
          (model/destroy-scene-shadow-map wind-shadow)
          (graphics/destroy-frame frame)
          (GLFW/glfwPollEvents)))
