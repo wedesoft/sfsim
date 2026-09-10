@@ -112,7 +112,7 @@ void main()
 (def indices-buffer (make-int-buffer indices))
 (GL15/glBufferData GL15/GL_ELEMENT_ARRAY_BUFFER indices-buffer GL15/GL_STATIC_DRAW)
 
-(GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point"   ) 3 GL11/GL_FLOAT false (* 3 Float/BYTES) (* 0 Float/BYTES))
+(GL20/glVertexAttribPointer (GL20/glGetAttribLocation program "point") 3 GL11/GL_FLOAT false (* 3 Float/BYTES) (* 0 Float/BYTES))
 (GL20/glEnableVertexAttribArray 0)
 
 (GL20/glUseProgram program)

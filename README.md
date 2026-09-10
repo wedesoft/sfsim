@@ -5,7 +5,7 @@ Aim is to simulate take off, space station docking, and moon landing with a futu
 Requires OpenGL 4.5 (glClipControl for reversed-z rendering)
 See [sfsim homepage][1] for more details.
 
-**[Note: Official binary releases are strictly distributed through Steam. Do not download sfsim binaries from third-party sources!][3]**
+**[Note: Official binary releases are strictly distributed through Steam. Do not download sfsim binaries from third-party sources!](https://store.steampowered.com/app/3687560/sfsim/)**
 
 [![Aerodynamic prototype](https://i.ytimg.com/vi/bbmusPm7QZc/hqdefault.jpg)](https://www.youtube.com/watch?v=bbmusPm7QZc)
 
@@ -169,12 +169,15 @@ Note that when baking normal maps, you need to use +X, -Y, and +Z for R, G, and 
   * [Sfsim homepage](https://wedesoft.github.io/sfsim/)
   * [Sfsim Discord](https://discord.gg/EJEE6QNHra)
   * [Sfsim on Steam](https://store.steampowered.com/app/3687560/sfsim/)
+  * [Sfsim on IGDB](https://www.igdb.com/games/sfsim)
+  * [Sfsim on Twitch](https://www.twitch.tv/directory/category/sfsim)
   * [Sfsim on IndieDB](https://www.indiedb.com/games/sfsim)
   * [Sfsim on Impress](https://impress.games/press-kit/jan-wedekind/sfsim)
   * [Sfsim on Github](https://github.com/wedesoft/sfsim)
   * [Sfsim on Gitlab](https://gitlab.com/wedesoft/sfsim)
   * [Sfsim on Bitbucket](https://bitbucket.org/wedesoft/sfsim/)
   * [Sfsim on Codeberg](https://codeberg.org/wedesoft/sfsim)
+  * [Sfsim on Pushin](https://pushin.eu/wedesoft/sfsim)
 * Simulators
   * [Orbiter 2016](https://github.com/mschweiger/orbiter)
   * [Open Orbiter Sim](https://openorbiter.space/)

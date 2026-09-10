@@ -142,9 +142,9 @@
           [^long i]
           (concat
             (decode-vector3 (.get vertices i))
+            (decode-vector3 (.get normals i))
             (if has-normal-texture (decode-vector3 (.get tangents i)) [])
             (if has-normal-texture (decode-vector3 (.get bitangents i)) [])
-            (decode-vector3 (.get normals i))
             (if (or has-color-texture has-normal-texture) (decode-vector2 (.get texcoords i)) [])))
         (range (.mNumVertices mesh))))))
 
@@ -225,7 +225,7 @@
     {::indices             (decode-indices mesh)
      ::vertices            (decode-vertices mesh has-color-texture has-normal-texture)
      ::attributes          (if has-normal-texture
-                             ["vertex" 3 "tangent" 3 "bitangent" 3 "normal" 3 "texcoord" 2]
+                             ["vertex" 3 "normal" 3 "tangent" 3 "bitangent" 3 "texcoord" 2]
                              (if has-color-texture
                                ["vertex" 3 "normal" 3 "texcoord" 2]
                                ["vertex" 3 "normal" 3]))
@@ -690,7 +690,7 @@
   (use-textures {texture-offset colors (inc ^long texture-offset) normals}))
 
 
-(def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d]]))
+(def scene-shadow (m/schema [:map [::matrices shadow-patch] [::shadows texture-2d] [::normals [:maybe texture-2d]]]))
 
 
 (defn make-model-vars
@@ -722,23 +722,28 @@
 
 (defn vertex-shadow-scene
   "Vertex shader for rendering scene shadow maps"
-  {:malli/schema [:=> [:cat :boolean :boolean] [:vector :string]]}
-  [textured bump]
-  [shrink-shadow-index (template/eval (slurp "resources/shaders/model/vertex-shadow.glsl") {:textured textured :bump bump})])
+  {:malli/schema [:=> [:cat :boolean :boolean :boolean] [:vector :string]]}
+  [textured bump normals]
+  [shrink-shadow-index (template/eval (slurp "resources/shaders/model/vertex-shadow.glsl")
+                                      {:textured textured :bump bump :normals normals})])
 
 
-(def fragment-shadow-scene (slurp "resources/shaders/model/fragment-shadow.glsl"))
+(defn fragment-shadow-scene
+  "Fragment shader for rendering scene shadowe maps and optional normals"
+  {:malli/schema [:=> [:cat :boolean] :string]}
+  [normals]
+  (template/eval (slurp "resources/shaders/model/fragment-shadow.glsl") {:normals normals}))
 
 
 (defn make-scene-shadow-program
-  {:malli/schema [:=> [:cat :boolean :boolean] :int]}
-  [textured bump]
-  (make-program :sfsim.render/vertex [(vertex-shadow-scene textured bump)]
-                :sfsim.render/fragment [fragment-shadow-scene]))
+  {:malli/schema [:=> [:cat :boolean :boolean :boolean] :int]}
+  [textured bump normals]
+  (make-program :sfsim.render/vertex [(vertex-shadow-scene textured bump normals)]
+                :sfsim.render/fragment [(fragment-shadow-scene normals)]))
 
 
 (def scene-shadow-renderer
-  (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean] :int]]
+  (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean :boolean] :int]]
              [::size N]
              [::object-radius :double]]))
 
@@ -747,8 +752,8 @@
   "Create renderer for rendering scene-shadows"
   {:malli/schema [:=> [:cat N :double] scene-shadow-renderer]}
   [size object-radius]
-  (let [variations (for [textured [false true] bump [false true]] [textured bump])
-        programs   (mapv #(make-scene-shadow-program (first %) (second %)) variations)]
+  (let [variations (for [textured [false true] bump [false true] normals [false true]] [textured bump normals])
+        programs   (mapv #(apply make-scene-shadow-program %) variations)]
     {::programs      (zipmap variations programs)
      ::size          size
      ::object-radius object-radius}))
@@ -759,40 +764,46 @@
   {:malli/schema [:=> [:cat material mesh-vars] :nil]}
   [_material {::keys [program transform] :as render-vars}]
   (use-program program)
-  (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/object-to-shadow-ndc render-vars) transform)))
+  (uniform-matrix4 program "object_to_shadow_ndc" (mulm (:sfsim.matrix/object-to-shadow-ndc render-vars) transform))
+  (uniform-matrix4 program "object_to_light" (mulm (:sfsim.matrix/object-to-light render-vars) transform)))
 
 
 (defn render-shadow-map
   "Render shadow map for an object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer :map scene] texture-2d]}
-  [renderer shadow-vars scene]
+  {:malli/schema [:=> [:cat scene-shadow-renderer :map scene :keyword :boolean]
+                      [:map [::shadows texture-2d] [::normals [:maybe texture-2d]]]]}
+  [renderer shadow-vars scene culling normals]
   (let [size           (::size renderer)
-        centered-scene (assoc-in scene [::root ::transform] (eye 4))]
+        centered-scene (assoc-in scene [::root ::transform] (eye 4))
+        normal-tex     (when normals
+                         (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size))]
     (doseq [program (vals (::programs renderer))]
-      (use-program program)
-      (uniform-int program "shadow_size" size))
-    (texture-render-depth size size
-                          (clear)
-                          (render-scene (comp (::programs renderer) material-type) 0 shadow-vars [] centered-scene
-                                        render-depth))))
+           (use-program program)
+           (uniform-int program "shadow_size" size))
+    {::shadows (texture-render-depth
+                 size size (if normals [normal-tex] []) culling
+                 (clear)
+                 (render-scene (comp (::programs renderer) #(conj % normals) material-type) 0 shadow-vars [] centered-scene
+                               render-depth))
+     ::normals normal-tex}))
 
 
 (defn scene-shadow-map
   "Determine shadow matrices and render shadow map for object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene] scene-shadow]}
-  [renderer light-direction scene]
+  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene :keyword :boolean] scene-shadow]}
+  [renderer light-direction scene culling normals]
   (let [object-to-world (get-in scene [::root ::transform])
         object-radius   (::object-radius renderer)
         shadow-matrices (shadow-patch-matrices object-to-world light-direction object-radius)
-        shadow-map      (render-shadow-map renderer shadow-matrices scene)]
-    {::matrices shadow-matrices
-     ::shadows  shadow-map}))
+        shadow-map      (render-shadow-map renderer shadow-matrices scene culling normals)]
+    (assoc shadow-map ::matrices shadow-matrices)))
 
 
 (defn destroy-scene-shadow-map
   "Delete scene shadow map texture"
   {:malli/schema [:=> [:cat scene-shadow] :nil]}
-  [{::keys [shadows]}]
+  [{::keys [shadows normals]}]
+  (when normals (destroy-texture normals))
   (destroy-texture shadows))
 
 

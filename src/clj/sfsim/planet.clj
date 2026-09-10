@@ -255,8 +255,8 @@
   [planet-renderer {:keys [tree changes]} width position]
   (when (realized? @changes)
     (let [data @@changes]
-      (unload-tiles-from-opengl (:drop data))
       (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
+      (unload-tiles-from-opengl (:drop data))
       (reset! changes (future (background-tree-update planet-renderer @tree width position))))))
 
 

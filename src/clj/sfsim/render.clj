@@ -490,14 +490,14 @@
   [^long program ^long location ^long n]
   (let [buf (BufferUtils/createFloatBuffer n)]
     (GL20/glGetUniformfv program location buf)
-    (vec (map #(.get buf %) (range n)))))
+    (vec (map #(.get buf ^long %) (range n)))))
 
 
 (defn- int-vec
   [^long program ^long location ^long n]
   (let [buf (BufferUtils/createIntBuffer n)]
     (GL20/glGetUniformiv program location buf)
-    (vec (map #(.get buf %) (range n)))))
+    (vec (map #(.get buf ^long %) (range n)))))
 
 
 (defmulti get-uniform
@@ -582,7 +582,7 @@
                   k        (GL20/glGetActiveUniform program i size-buf type-buf)
                   size     (.get size-buf 0)
                   gl-type  (.get type-buf 0)
-                  location (GL20/glGetUniformLocation program ^String k)]
+                  location (GL20/glGetUniformLocation ^long program ^String k)]
               {:key k :value (when (not= -1 location) (get-uniform program location gl-type size))}))
           (range num-uniforms))))
 
@@ -725,9 +725,9 @@
 
 (defmacro texture-render-depth
   "Macro to create shadow map"
-  [width height & body]
-  `(let [tex# (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/clamp ~width ~height)]
-     (framebuffer-render ~width ~height ::cullfront tex# [] ~@body tex#)))
+  [width height color-textures culling & body]
+  `(let [tex# (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/zero ~width ~height)]
+     (framebuffer-render ~width ~height ~culling tex# ~color-textures ~@body tex#)))
 
 
 (defn shadow-cascade
@@ -737,7 +737,7 @@
   (mapv
     (fn render-shadow-segment
       [shadow-level]
-      (texture-render-depth size size
+      (texture-render-depth size size [] ::cullfront
                             (clear)
                             (use-program program)
                             (fun (:sfsim.matrix/world-to-shadow-ndc shadow-level))))

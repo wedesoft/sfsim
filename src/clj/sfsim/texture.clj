@@ -116,7 +116,7 @@
   (GL11/glTexParameteri target GL11/GL_TEXTURE_MAG_FILTER GL11/GL_LINEAR))
 
 
-(def boundary (m/schema [:enum ::clamp ::repeat]))
+(def boundary (m/schema [:enum ::clamp ::repeat ::zero]))
 
 (defmulti setup-boundary-1d
   "Configure different types of boundary threatment for 1D texture"
@@ -133,6 +133,13 @@
 (defmethod setup-boundary-1d ::repeat
   [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT))
+
+
+(defmethod setup-boundary-1d ::zero
+  [_boundary]
+  (GL11/glTexParameteri GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_WRAP_S GL13/GL_CLAMP_TO_BORDER)
+  (GL11/glTexParameterfv GL11/GL_TEXTURE_1D GL11/GL_TEXTURE_BORDER_COLOR
+                         ^java.nio.DirectFloatBufferU (make-float-buffer (float-array [0.0 0.0 0.0 0.0]))))
 
 
 (defmacro create-texture-1d
@@ -162,6 +169,14 @@
   [_boundary]
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
   (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT))
+
+
+(defmethod setup-boundary-2d ::zero
+  [_boundary]
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_S GL13/GL_CLAMP_TO_BORDER)
+  (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_WRAP_T GL13/GL_CLAMP_TO_BORDER)
+  (GL11/glTexParameterfv GL11/GL_TEXTURE_2D GL11/GL_TEXTURE_BORDER_COLOR
+                         ^java.nio.DirectFloatBufferU (make-float-buffer (float-array [0.0 0.0 0.0 0.0]))))
 
 
 (defmacro create-texture-2d
@@ -202,6 +217,15 @@
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL11/GL_REPEAT)
   (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL11/GL_REPEAT)
   (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL11/GL_REPEAT))
+
+
+(defmethod setup-boundary-3d ::zero
+  [target _boundary]
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_S GL13/GL_CLAMP_TO_BORDER)
+  (GL11/glTexParameteri target GL11/GL_TEXTURE_WRAP_T GL13/GL_CLAMP_TO_BORDER)
+  (GL11/glTexParameteri target GL12/GL_TEXTURE_WRAP_R GL13/GL_CLAMP_TO_BORDER)
+  (GL11/glTexParameterfv ^long target GL11/GL_TEXTURE_BORDER_COLOR
+                         ^java.nio.DirectFloatBufferU (make-float-buffer (float-array [0.0 0.0 0.0 0.0]))))
 
 
 (defmacro create-texture-3d

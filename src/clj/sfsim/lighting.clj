@@ -69,8 +69,6 @@
     (uniform-float program "amplification" amplification)
     (uniform-float program "radius" radius)
     (uniform-int program "cloud_subsampling" cloud-subsampling)
-    (uniform-float program "nump_opacity_layers" num-opacity-layers)
-    (uniform-float program "shadow_size" shadow-size)
     (uniform-float program "depth_sigma" depth-sigma)
     (uniform-float program "min_depth_exponent" min-depth-exponent)))
 

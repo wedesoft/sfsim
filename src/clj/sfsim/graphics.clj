@@ -223,7 +223,8 @@
   (let [scene-shadow-renderer (::scene-shadow-renderer graphics)
         light-direction       (::light-direction frame)
         moved-scenes          (get-moved-scenes frame graphics)
-        object-shadows        (mapv #(model/scene-shadow-map scene-shadow-renderer light-direction %) moved-scenes)]
+        object-shadows        (mapv #(model/scene-shadow-map scene-shadow-renderer light-direction % :sfsim.render/cullfront false)
+                                    moved-scenes)]
     (assoc frame ::object-shadows object-shadows)))
 
 
