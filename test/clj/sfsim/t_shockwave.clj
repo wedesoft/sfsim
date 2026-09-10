@@ -43,7 +43,12 @@ void main()
 (tabular "Shockfront shape depending on curvature radius"
          (fact (first (shockfront-test [?mach] [?y ?radius])) => (roughly ?result 1e-6))
          ?mach    ?y  ?radius ?result
-         (sqrt 2) 0.0 1.0     (* 0.143 (exp (/ 3.24 2))))
+         (sqrt 2) 0.0 1.0     0.722592
+         (sqrt 2) 1.0 1.0     0.630982
+         (sqrt 2) 2.0 1.0     0.364871
+         10.0     0.0 1.0     0.147709
+         10.0     1.0 1.0    -0.272397
+         10.0     2.0 1.0    -1.523827)
 
 
 (GLFW/glfwTerminate)
