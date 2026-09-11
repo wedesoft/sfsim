@@ -44,7 +44,7 @@ Future work includes taking into account the surface slope and curvature to get 
 
 Let me know any feedback and comments in the [sfsim playtest discussion forum][3] or one of the social channels below.
 
-{% youtube.html id="iogoPzst3KU" %}
+{% include youtube.html id="iogoPzst3KU" %}
 
 [1]: https://wedesoft.github.io/sfsim/
 [2]: https://en.wikipedia.org/wiki/Jump_flooding_algorithm
