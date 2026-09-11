@@ -75,17 +75,12 @@ void main()
 
 (def curvature
 "#version 450 core
-uniform int size;
-uniform float object_radius;
-uniform float max_radius;
-float curvature(vec4 N)
+float curvature(vec4 N, float max_result)
 {
-  float h = (2.0 * object_radius) / size;
-  vec3 dNdx = dFdx(N.xyz) / h;
-  vec3 dNdy = dFdy(N.xyz) / h;
+  vec3 dNdx = dFdx(N.xyz);
+  vec3 dNdy = dFdy(N.xyz);
   float k = sqrt(max(dot(dNdx, dNdx), dot(dNdy, dNdy)));
-  float scale_radius = N.z;
-  return scale_radius / max(k, 1.0 / max_radius);
+  return N.z / max(k, 1.0 / max_result);
 }")
 
 
@@ -104,7 +99,6 @@ uniform float object_radius;
 uniform sampler2D flood;
 uniform sampler2D normals;
 uniform sampler2D wind;
-uniform float max_radius;
 in vec2 uv_fragment;
 out vec3 fragColor;
 float shockfront(float distance, float Rn);
@@ -128,15 +122,17 @@ void main()
 uniform sampler2D depth;
 uniform sampler2D normals;
 uniform int size;
+uniform float object_radius;
 uniform float max_radius;
 in vec2 uv_fragment;
 layout (location = 0) out vec4 point;
-float curvature(vec4 N);
+float curvature(vec4 N, float max_result);
 void main()
 {
   float d = texture(depth, uv_fragment).r;
   vec4 N = texture(normals, uv_fragment);
-  float Rn = curvature(N);
+  float h = (2.0 * object_radius) / size;
+  float Rn = curvature(N, max_radius * h) / h;
   point = vec4(gl_FragCoord.xy / size, d, Rn);
 }")
 
