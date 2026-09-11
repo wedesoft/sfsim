@@ -9,7 +9,7 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront)]
+         '[sfsim.shockwave :refer (shockfront curvature)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL GL30])
@@ -71,25 +71,6 @@ void main()
 
 (def max-radius 1.2)
 (def M 10.0)
-
-
-(def curvature
-"#version 450 core
-float curvature(vec4 N, float max_result)
-{
-  vec3 dNdx = dFdx(N.xyz);
-  vec3 dNdy = dFdy(N.xyz);
-  float k = sqrt(max(dot(dNdx, dNdx), dot(dNdy, dNdy)));
-  return N.z / max(k, 1.0 / max_result);
-}")
-
-
-(def cot
-"#version 450 core
-float cot(float x)
-{
-  return cos(x) / sin(x);
-}")
 
 
 (def fragment-texture-2d
