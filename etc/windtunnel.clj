@@ -84,7 +84,7 @@ float curvature(vec4 N)
   vec3 dNdx = dFdx(N.xyz) / h;
   vec3 dNdy = dFdy(N.xyz) / h;
   float k = sqrt(max(dot(dNdx, dNdx), dot(dNdy, dNdy)));
-  float scale_radius = N.z * N.z;
+  float scale_radius = N.z;
   return scale_radius / max(k, 1.0 / max_radius);
 }")
 
