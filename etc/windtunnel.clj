@@ -108,14 +108,13 @@ uniform float max_radius;
 in vec2 uv_fragment;
 out vec3 fragColor;
 float shockfront(float distance, float Rn);
-float curvature(vec4 N);
 void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
   vec4 point = texture(flood, uv_fragment);
   float depth = point.z + shockfront(object_radius * length(point.xy - uv_fragment), point.w) / (2 * object_radius);
   vec4 N = texture(normals, uv_fragment);
-  float c = curvature(N) / max_radius;
+  float c = N.z;
   if (texture(wind, uv_fragment).r > 0.0)
     fragColor = vec3(c, c, 0);
   else
@@ -286,7 +285,7 @@ void main()
 
 (GLFW/glfwMakeContextCurrent window2)
 (def program-display  (render/make-program :sfsim.render/vertex [vertex-texture]
-                                           :sfsim.render/fragment [shockfront fragment-texture-2d curvature]))
+                                           :sfsim.render/fragment [shockfront fragment-texture-2d]))
 (def vao-display (render/make-vertex-array-object program-display indices vertices ["point" 3 "uv" 2]))
 
 (while (and (not (GLFW/glfwWindowShouldClose window)) (not (GLFW/glfwWindowShouldClose window2)))
