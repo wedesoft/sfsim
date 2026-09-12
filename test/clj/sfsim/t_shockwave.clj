@@ -69,6 +69,18 @@ vec4 normal(vec2 uv)
 }")
 
 
+(def sphere-depth
+"#version 450 core
+float depth(vec2 uv)
+{
+  vec2 offset = uv * 2.0 - 1.0;
+  if (length(offset) < 1.0)
+    return sqrt(1.0 - length(offset));
+  else
+    return -1.0;
+}")
+
+
 (def fragment-curvature
 "#version 450 core
 #define MAX_RADIUS 1.0
@@ -101,11 +113,37 @@ void main()
           (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/shockwave/curvature.png" 0.1))
 
 
+(def vertex-texture
+"#version 450 core
+in vec3 point;
+in vec2 uv;
+out vec2 uv_fragment;
+void main()
+{
+  gl_Position = vec4(point, 1);
+  uv_fragment = uv;
+}")
+
+
+(def jump-flooding-init-fragment
+"#version 450 core
+in vec2 uv_fragment;
+float depth(vec2 uv);
+vec4 normal(vec2 uv);
+layout (location = 0) out vec4 point;
+float curvature(vec4 N, float max_result);
+void main()
+{
+  point = vec4(0, 0, 0, 0);
+}")
+
 (facts "Initial step of Jump Flooding Algorithm"
        (with-invisible-window
          (let [size 256
-               tex  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)]
-
+               tex  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)
+               program (make-program :sfsim.render/vertex [vertex-texture]
+                                     :sfsim.render/fragment [jump-flooding-init-fragment sphere-depth sphere-normal curvature])]
+           (destroy-program program)
            (destroy-texture tex))))
 
 
