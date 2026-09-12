@@ -110,11 +110,11 @@ layout (location = 0) out vec4 point;
 float curvature(vec4 N, float max_result);
 void main()
 {
-  float d = texture(depth, uv_fragment).r;
+  float depth_ = texture(depth, uv_fragment).r;
   vec4 N = texture(normals, uv_fragment);
   float h = (2.0 * object_radius) / size;
   float Rn = curvature(N, max_radius * h) / h;
-  point = vec4(gl_FragCoord.xy / size, d, Rn);
+  point = vec4(gl_FragCoord.xy / size, depth_, Rn);
 }")
 
 
