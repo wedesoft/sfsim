@@ -10,12 +10,13 @@
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [midje.sweet :refer :all]
-      [fastmath.vector :refer (vec3)]
+      [fastmath.vector :refer (vec3 vec4)]
       [comb.template :as template]
       [sfsim.conftest :refer (roughly-vector shader-test is-image)]
       [sfsim.render :refer (offscreen-render make-program uniform-float make-vertex-array-object clear use-program uniform-int
-                            render-quads destroy-vertex-array-object destroy-program with-invisible-window)]
-      [sfsim.texture :refer (make-empty-texture-2d destroy-texture)]
+                            render-quads destroy-vertex-array-object destroy-program with-invisible-window framebuffer-render)]
+      [sfsim.texture :refer (make-empty-texture-2d destroy-texture rgba-texture->vectors4)]
+      [sfsim.image :refer (get-vector4)]
       [sfsim.shaders :refer (vertex-passthrough)]
       [sfsim.shockwave :refer :all])
     (:import
@@ -92,7 +93,8 @@ void main()
 {
   vec2 uv = gl_FragCoord.xy / size;
   vec4 N = normal(uv);
-  float c = curvature(N, MAX_RADIUS / size) * size;
+  float scale = 2.0 / size;
+  float c = curvature(N, MAX_RADIUS * scale) / scale;
   fragColor = vec3(c);
 }")
 
@@ -127,6 +129,9 @@ void main()
 
 (def jump-flooding-init-fragment
 "#version 450 core
+uniform float scale;
+uniform float max_curvature_radius;
+uniform int size;
 in vec2 uv_fragment;
 float depth(vec2 uv);
 vec4 normal(vec2 uv);
@@ -134,15 +139,33 @@ layout (location = 0) out vec4 point;
 float curvature(vec4 N, float max_result);
 void main()
 {
-  point = vec4(0, 0, 0, 0);
+  vec2 position = (gl_FragCoord.xy - 0.5 * size) * scale;
+  float depth_ = depth(uv_fragment);
+  vec4 normal_ = normal(uv_fragment);
+  float curvature_ = curvature(normal_, max_curvature_radius * scale) / scale;
+  point = vec4(position, depth_, curvature_);
 }")
 
 (facts "Initial step of Jump Flooding Algorithm"
        (with-invisible-window
-         (let [size 256
-               tex  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)
-               program (make-program :sfsim.render/vertex [vertex-texture]
-                                     :sfsim.render/fragment [jump-flooding-init-fragment sphere-depth sphere-normal curvature])]
+         (let [size     256
+               tex      (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)
+               program  (make-program :sfsim.render/vertex [vertex-texture]
+                                      :sfsim.render/fragment [jump-flooding-init-fragment sphere-depth sphere-normal curvature])
+               indices  [0 1 3 2]
+               vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
+               vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]
+           (framebuffer-render size size :sfsim.render/cullback nil [tex]
+                               (use-program program)
+                               (uniform-int program "size" size)
+                               (uniform-float program "scale" (/ 2.0 size))
+                               (uniform-float program "max_curvature_radius" 2.0)
+                               (uniform-float program "max_curvature_radius" 1.0)
+                               (render-quads vao))
+           (let [img (rgba-texture->vectors4 tex)]
+             (get-vector4 img 128 128) => (roughly-vector (vec4  0.0  0.0  1.0 1.0) 1e-2)
+             (get-vector4 img   0   0) => (roughly-vector (vec4 -1.0 -1.0 -1.0 0.0) 1e-2))
+           (destroy-vertex-array-object vao)
            (destroy-program program)
            (destroy-texture tex))))
 
