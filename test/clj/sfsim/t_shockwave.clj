@@ -127,31 +127,12 @@ void main()
 }")
 
 
-(def jump-flooding-init-fragment
-"#version 450 core
-uniform float scale;
-uniform float max_curvature_radius;
-uniform int size;
-in vec2 uv_fragment;
-float depth_source(vec2 uv);
-vec4 normal_source(vec2 uv);
-layout (location = 0) out vec4 point;
-float curvature(vec4 normal, float max_result);
-void main()
-{
-  vec2 position = (gl_FragCoord.xy) * scale;
-  float depth = depth_source(uv_fragment);
-  vec4 normal = normal_source(uv_fragment);
-  float curvature_ = curvature(normal, max_curvature_radius * scale) / scale;
-  point = vec4(position, depth, curvature_);
-}")
-
 (facts "Initial step of Jump Flooding Algorithm"
        (with-invisible-window
          (let [size     256
                tex      (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)
                program  (make-program :sfsim.render/vertex [vertex-texture]
-                                      :sfsim.render/fragment [jump-flooding-init-fragment sphere-depth sphere-normal curvature])
+                                      :sfsim.render/fragment [fragment-jump-flooding-init sphere-depth sphere-normal curvature])
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
                vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]

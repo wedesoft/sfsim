@@ -11,3 +11,6 @@
 
 
 (def curvature (slurp "resources/shaders/shockwave/curvature.glsl"))
+
+
+(def fragment-jump-flooding-init (slurp "resources/shaders/shockwave/fragment-jump-flooding-init.glsl"))

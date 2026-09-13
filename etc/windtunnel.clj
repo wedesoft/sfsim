@@ -9,7 +9,7 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront curvature)]
+         '[sfsim.shockwave :refer (shockfront curvature fragment-jump-flooding-init)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL GL30])
@@ -115,25 +115,6 @@ uniform sampler2D normals;
 vec4 normal_source(vec2 uv)
 {
   return texture(normals, uv);
-}")
-
-
-(def fragment-init
-"#version 450 core
-uniform float scale;
-uniform float max_curvature_radius;
-uniform int size;
-in vec2 uv_fragment;
-float depth_source(vec2 uv);
-vec4 normal_source(vec2 uv);
-layout (location = 0) out vec4 point;
-float curvature(vec4 normal, float max_result);
-void main()
-{
-  float depth_ = depth_source(uv_fragment);
-  vec4 normal = normal_source(uv_fragment);
-  float Rn = curvature(normal, max_curvature_radius * scale) / scale;
-  point = vec4(gl_FragCoord.xy * scale, depth_, Rn);
 }")
 
 
@@ -260,7 +241,7 @@ void main()
 (def indices [0 1 3 2])
 
 (def program-init (render/make-program :sfsim.render/vertex [vertex-texture]
-                                       :sfsim.render/fragment [fragment-init curvature depth-source normal-source]))
+                                       :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source]))
 (def vao-init (render/make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2]))
 (def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-texture]
                                                 :sfsim.render/fragment [shockfront fragment-jump-flooding]))
