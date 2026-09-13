@@ -69,7 +69,7 @@ void main()
 }")
 
 
-(def max-radius 1.2)
+(def max-curvature-radius 1.2)
 (def M 10.0)
 
 
@@ -104,7 +104,7 @@ uniform sampler2D depth;
 uniform sampler2D normals;
 uniform int size;
 uniform float shockwave_radius;
-uniform float max_radius;
+uniform float max_curvature_radius;
 in vec2 uv_fragment;
 layout (location = 0) out vec4 point;
 float curvature(vec4 N, float max_result);
@@ -113,7 +113,7 @@ void main()
   float depth_ = texture(depth, uv_fragment).r;
   vec4 N = texture(normals, uv_fragment);
   float h = (2.0 * shockwave_radius) / size;
-  float Rn = curvature(N, max_radius * h) / h;
+  float Rn = curvature(N, max_curvature_radius * h) / h;
   point = vec4(gl_FragCoord.xy / size, depth_, Rn);
 }")
 
@@ -311,7 +311,7 @@ void main()
                                    (render/uniform-float program-init "mach" M)
                                    (render/uniform-int program-init "size" size)
                                    (render/uniform-float program-init "shockwave_radius" shockwave-radius)
-                                   (render/uniform-float program-init "max_radius" max-radius)
+                                   (render/uniform-float program-init "max_curvature_radius" max-curvature-radius)
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                          1 (:sfsim.model/normals wind-shadow)})
                                    (render/render-quads vao-init))
@@ -351,7 +351,7 @@ void main()
                                      (render/uniform-int program-display "normals" 2)
                                      (render/uniform-int program-display "size" wsize)
                                      (render/uniform-float program-display "mach" M)
-                                     (render/uniform-float program-display "max_radius" max-radius)
+                                     (render/uniform-float program-display "max_curvature_radius" max-curvature-radius)
                                      (render/uniform-float program-display "shockwave_radius" shockwave-radius)
                                      (render/use-textures {0 flood
                                                            1 (:sfsim.model/shadows wind-shadow)
