@@ -136,7 +136,7 @@ in vec2 uv_fragment;
 float depth_source(vec2 uv);
 vec4 normal_source(vec2 uv);
 layout (location = 0) out vec4 point;
-float curvature(vec4 N, float max_result);
+float curvature(vec4 normal, float max_result);
 void main()
 {
   vec2 position = (gl_FragCoord.xy) * scale;
