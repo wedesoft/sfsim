@@ -103,7 +103,7 @@ void main()
 uniform sampler2D depth;
 uniform sampler2D normals;
 uniform int size;
-uniform float shockwave_radius;
+uniform float scale;
 uniform float max_curvature_radius;
 in vec2 uv_fragment;
 layout (location = 0) out vec4 point;
@@ -112,8 +112,7 @@ void main()
 {
   float depth_ = texture(depth, uv_fragment).r;
   vec4 N = texture(normals, uv_fragment);
-  float h = (2.0 * shockwave_radius) / size;
-  float Rn = curvature(N, max_curvature_radius * h) / h;
+  float Rn = curvature(N, max_curvature_radius * scale) / scale;
   point = vec4(gl_FragCoord.xy / size, depth_, Rn);
 }")
 
@@ -310,7 +309,7 @@ void main()
                                    (render/uniform-sampler program-init "normals" 1)
                                    (render/uniform-float program-init "mach" M)
                                    (render/uniform-int program-init "size" size)
-                                   (render/uniform-float program-init "shockwave_radius" shockwave-radius)
+                                   (render/uniform-float program-init "scale" (/ (* 2.0 shockwave-radius) size))
                                    (render/uniform-float program-init "max_curvature_radius" max-curvature-radius)
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                          1 (:sfsim.model/normals wind-shadow)})
