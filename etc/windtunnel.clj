@@ -202,10 +202,10 @@ void main()
     vec3 p = origin + x * direction;
     vec2 uv_fragment = p.xy * 0.5 + 0.5;
     vec4 point = texture(flood, uv_fragment);
-    float l = length(point.xy / (2.0 * shockwave_radius) - uv_fragment);
-    float depth = point.z + shockfront(2 * shockwave_radius * l, point.w) / (2 * shockwave_radius);
+    float l = length(point.xy - uv_fragment * 2.0 * shockwave_radius);
+    float depth = point.z + shockfront(l, point.w) / (2 * shockwave_radius);
     if (p.z <= depth) {
-      emission += 4.0 * step * exp(100.0 * (p.z - depth)) * (1.0 - smoothstep(0.0, 0.3, l));
+      emission += 4.0 * step * exp(100.0 * (p.z - depth)) * (1.0 - smoothstep(0.0, 0.5 * shockwave_radius, l));
     };
     x += step;
   };
