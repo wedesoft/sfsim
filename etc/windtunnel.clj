@@ -51,9 +51,9 @@
       (reset! mouse-button (= action GLFW/GLFW_PRESS)))))
 
 (GLFW/glfwMakeContextCurrent window)
-(def object-radius (* 2.0 (:sfsim.model/object-radius config/model-config)))
+(def shockwave-radius (* 2.0 (:sfsim.model/object-radius config/model-config)))
 (def graphics (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
-                                         :sfsim.graphics/object-radius object-radius}]
+                                         :sfsim.graphics/object-radius (:sfsim.model/object-radius config/model-config)}]
                                        []))
 
 
@@ -76,7 +76,7 @@ void main()
 (def fragment-texture-2d
 "#version 450 core
 uniform int size;
-uniform float object_radius;
+uniform float shockwave_radius;
 uniform sampler2D flood;
 uniform sampler2D normals;
 uniform sampler2D wind;
@@ -87,7 +87,7 @@ void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
   vec4 point = texture(flood, uv_fragment);
-  float depth = point.z + shockfront(object_radius * length(point.xy - uv_fragment), point.w) / (2 * object_radius);
+  float depth = point.z + shockfront(shockwave_radius * length(point.xy - uv_fragment), point.w) / (2 * shockwave_radius);
   vec4 N = texture(normals, uv_fragment);
   float c = N.z;
   if (texture(wind, uv_fragment).r > 0.0)
@@ -103,7 +103,7 @@ void main()
 uniform sampler2D depth;
 uniform sampler2D normals;
 uniform int size;
-uniform float object_radius;
+uniform float shockwave_radius;
 uniform float max_radius;
 in vec2 uv_fragment;
 layout (location = 0) out vec4 point;
@@ -112,7 +112,7 @@ void main()
 {
   float depth_ = texture(depth, uv_fragment).r;
   vec4 N = texture(normals, uv_fragment);
-  float h = (2.0 * object_radius) / size;
+  float h = (2.0 * shockwave_radius) / size;
   float Rn = curvature(N, max_radius * h) / h;
   point = vec4(gl_FragCoord.xy / size, depth_, Rn);
 }")
@@ -125,14 +125,14 @@ uniform sampler2D flood;
 uniform sampler2D normals;
 uniform int step;
 uniform int size;
-uniform float object_radius;
+uniform float shockwave_radius;
 layout (location = 0) out vec4 point;
 float shockfront(float distance, float Rn);
 vec4 nearest(vec4 result, vec2 uv_fragment, vec2 dpos)
 {
   vec4 point = texture(flood, uv_fragment + dpos);
-  float current = result.z + shockfront(object_radius * length(result.xy - uv_fragment), result.w) / (2 * object_radius);
-  float candidate = point.z + shockfront(object_radius * length(point.xy - uv_fragment), point.w) / (2 * object_radius);
+  float current = result.z + shockfront(shockwave_radius * length(result.xy - uv_fragment), result.w) / (2 * shockwave_radius);
+  float candidate = point.z + shockfront(shockwave_radius * length(point.xy - uv_fragment), point.w) / (2 * shockwave_radius);
   if (candidate > current)
     return point;
   else
@@ -171,7 +171,7 @@ void main()
 uniform sampler2D points;
 uniform sampler2D flood;
 uniform mat4 camera_to_ndc;
-uniform float object_radius;
+uniform float shockwave_radius;
 uniform int width;
 uniform int height;
 uniform float step;
@@ -201,7 +201,7 @@ void main()
     vec2 uv_fragment = p.xy * 0.5 + 0.5;
     vec4 point = texture(flood, uv_fragment);
     float l = length(point.xy - uv_fragment);
-    float depth = point.z + shockfront(object_radius * l, point.w) / (2 * object_radius);
+    float depth = point.z + shockfront(shockwave_radius * l, point.w) / (2 * shockwave_radius);
     if (p.z <= depth) {
       emission += 4.0 * step * exp(100.0 * (p.z - depth)) * (1.0 - smoothstep(0.0, 0.3, l));
     };
@@ -253,7 +253,7 @@ void main()
                                (render/uniform-sampler program-jump-flooding "normals" 1)
                                (render/uniform-int program-jump-flooding "size" size)
                                (render/uniform-int program-jump-flooding "step" step)
-                               (render/uniform-float program-jump-flooding "object_radius" object-radius)
+                               (render/uniform-float program-jump-flooding "shockwave_radius" shockwave-radius)
                                (render/uniform-float program-jump-flooding "mach" M)
                                (render/use-textures {0 flood 1 normals})
                                (render/render-quads vao-jump-flooding))
@@ -289,7 +289,8 @@ void main()
                                       (graphics/render-cloud-geometry graphics nil)
                                       (graphics/render-clouds graphics [])
                                       (graphics/render-geometry graphics nil))
-             wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
+             wind-shadow          (model/scene-shadow-map (assoc (:sfsim.graphics/scene-shadow-renderer graphics)
+                                                                 :sfsim.model/object-radius shockwave-radius)
                                                           wind-from
                                                           (first (graphics/get-moved-scenes frame graphics))
                                                           :sfsim.render/cullback
@@ -309,7 +310,7 @@ void main()
                                    (render/uniform-sampler program-init "normals" 1)
                                    (render/uniform-float program-init "mach" M)
                                    (render/uniform-int program-init "size" size)
-                                   (render/uniform-float program-init "object_radius" object-radius)
+                                   (render/uniform-float program-init "shockwave_radius" shockwave-radius)
                                    (render/uniform-float program-init "max_radius" max-radius)
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                          1 (:sfsim.model/normals wind-shadow)})
@@ -326,7 +327,7 @@ void main()
                                         (render/uniform-int program-shockwave "width" (/ width 2))
                                         (render/uniform-int program-shockwave "height" (/ height 2))
                                         (render/uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
-                                        (render/uniform-float program-shockwave "object_radius" object-radius)
+                                        (render/uniform-float program-shockwave "shockwave_radius" shockwave-radius)
                                         (render/uniform-float program-shockwave "step" 0.01)
                                         (render/uniform-float program-shockwave "mach" M)
                                         (render/uniform-matrix4 program-shockwave "projection" projection)
@@ -351,7 +352,7 @@ void main()
                                      (render/uniform-int program-display "size" wsize)
                                      (render/uniform-float program-display "mach" M)
                                      (render/uniform-float program-display "max_radius" max-radius)
-                                     (render/uniform-float program-display "object_radius" object-radius)
+                                     (render/uniform-float program-display "shockwave_radius" shockwave-radius)
                                      (render/use-textures {0 flood
                                                            1 (:sfsim.model/shadows wind-shadow)
                                                            2 (:sfsim.model/normals wind-shadow)})
