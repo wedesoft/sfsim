@@ -8,3 +8,9 @@
 
 
 (def shockfront (slurp "resources/shaders/shockwave/shockfront.glsl"))
+
+
+(def curvature (slurp "resources/shaders/shockwave/curvature.glsl"))
+
+
+(def fragment-jump-flooding-init (slurp "resources/shaders/shockwave/fragment-jump-flooding-init.glsl"))

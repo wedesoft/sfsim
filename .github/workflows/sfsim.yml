@@ -82,7 +82,7 @@ jobs:
       - name: Print JAVA_HOME
         run: echo $JAVA_HOME
       - name: Install Clojure
-        uses: DeLaGuardo/setup-clojure@13.6.1
+        uses: DeLaGuardo/setup-clojure@13.7.0
         with:
           cli: 1.12.6.1673
       - name: Run tests
@@ -162,7 +162,7 @@ jobs:
       - name: Print JAVA_HOME
         run: echo $env:JAVA_HOME
       - name: Install Clojure
-        uses: DeLaGuardo/setup-clojure@13.6.1
+        uses: DeLaGuardo/setup-clojure@13.7.0
         with:
           cli: 1.12.6.1673
     # Windows tests not working and fail with:
