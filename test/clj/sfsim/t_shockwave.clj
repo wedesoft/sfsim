@@ -60,7 +60,7 @@ void main()
 
 (def sphere-normal
 "#version 450 core
-vec4 normal(vec2 uv)
+vec4 normal_source(vec2 uv)
 {
   vec2 offset = uv * 2.0 - 1.0;
   if (length(offset) < 1.0)
@@ -72,7 +72,7 @@ vec4 normal(vec2 uv)
 
 (def sphere-depth
 "#version 450 core
-float depth(vec2 uv)
+float depth_source(vec2 uv)
 {
   vec2 offset = uv * 2.0 - 1.0;
   if (length(offset) < 1.0)
@@ -87,14 +87,14 @@ float depth(vec2 uv)
 #define MAX_RADIUS 1.0
 out vec3 fragColor;
 uniform int size;
-vec4 normal(vec2 uv);
+vec4 normal_source(vec2 uv);
 float curvature(vec4 normal, float max_result);
 void main()
 {
   vec2 uv = gl_FragCoord.xy / size;
-  vec4 N = normal(uv);
+  vec4 normal = normal_source(uv);
   float scale = 2.0 / size;
-  float c = curvature(N, MAX_RADIUS * scale) / scale;
+  float c = curvature(normal, MAX_RADIUS * scale) / scale;
   fragColor = vec3(c);
 }")
 
@@ -133,17 +133,17 @@ uniform float scale;
 uniform float max_curvature_radius;
 uniform int size;
 in vec2 uv_fragment;
-float depth(vec2 uv);
-vec4 normal(vec2 uv);
+float depth_source(vec2 uv);
+vec4 normal_source(vec2 uv);
 layout (location = 0) out vec4 point;
 float curvature(vec4 N, float max_result);
 void main()
 {
-  vec2 position = (gl_FragCoord.xy - 0.5 * size) * scale;
-  float depth_ = depth(uv_fragment);
-  vec4 normal_ = normal(uv_fragment);
-  float curvature_ = curvature(normal_, max_curvature_radius * scale) / scale;
-  point = vec4(position, depth_, curvature_);
+  vec2 position = (gl_FragCoord.xy) * scale;
+  float depth = depth_source(uv_fragment);
+  vec4 normal = normal_source(uv_fragment);
+  float curvature_ = curvature(normal, max_curvature_radius * scale) / scale;
+  point = vec4(position, depth, curvature_);
 }")
 
 (facts "Initial step of Jump Flooding Algorithm"
@@ -163,10 +163,10 @@ void main()
                                (uniform-float program "max_curvature_radius" 1.0)
                                (render-quads vao))
            (let [img (rgba-texture->vectors4 tex)]
-             (get-vector4 img 128 128) => (roughly-vector (vec4  0.0  0.0  1.0  1.0) 1e-2)
-             (get-vector4 img   0   0) => (roughly-vector (vec4 -1.0 -1.0 -1.0  0.0) 1e-2)
-             (get-vector4 img  64 128) => (roughly-vector (vec4  0.0 -0.5  0.71 0.71) 1e-2)
-             (get-vector4 img 128  64) => (roughly-vector (vec4 -0.5  0.0  0.71 0.71) 1e-2))
+             (get-vector4 img 128 128) => (roughly-vector (vec4  1.0  1.0  1.0  1.0) 1e-2)
+             (get-vector4 img   0   0) => (roughly-vector (vec4  0.0  0.0 -1.0  0.0) 1e-2)
+             (get-vector4 img  64 128) => (roughly-vector (vec4  1.0  0.5  0.71 0.71) 1e-2)
+             (get-vector4 img 128  64) => (roughly-vector (vec4  0.5  1.0  0.71 0.71) 1e-2))
            (destroy-vertex-array-object vao)
            (destroy-program program)
            (destroy-texture tex))))

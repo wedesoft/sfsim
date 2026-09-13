@@ -99,20 +99,39 @@ void main()
 
 ;; https://en.wikipedia.org/wiki/Jump_flooding_algorithm
 
-(def fragment-init
+
+(def depth-source
 "#version 450 core
 uniform sampler2D depth;
+float depth_source(vec2 uv)
+{
+  return texture(depth, uv).r;
+}")
+
+
+(def normal-source
+"#version 450 core
 uniform sampler2D normals;
-uniform int size;
+vec4 normal_source(vec2 uv)
+{
+  return texture(normals, uv);
+}")
+
+
+(def fragment-init
+"#version 450 core
 uniform float scale;
 uniform float max_curvature_radius;
+uniform int size;
 in vec2 uv_fragment;
+float depth_source(vec2 uv);
+vec4 normal_source(vec2 uv);
 layout (location = 0) out vec4 point;
 float curvature(vec4 N, float max_result);
 void main()
 {
-  float depth_ = texture(depth, uv_fragment).r;
-  vec4 N = texture(normals, uv_fragment);
+  float depth_ = depth_source(uv_fragment);
+  vec4 N = normal_source(uv_fragment);
   float Rn = curvature(N, max_curvature_radius * scale) / scale;
   point = vec4(gl_FragCoord.xy * scale, depth_, Rn);
 }")
@@ -240,7 +259,8 @@ void main()
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
 (def indices [0 1 3 2])
 
-(def program-init (render/make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-init curvature]))
+(def program-init (render/make-program :sfsim.render/vertex [vertex-texture]
+                                       :sfsim.render/fragment [fragment-init curvature depth-source normal-source]))
 (def vao-init (render/make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2]))
 (def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-texture]
                                                 :sfsim.render/fragment [shockfront fragment-jump-flooding]))
