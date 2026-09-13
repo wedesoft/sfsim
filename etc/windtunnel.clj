@@ -76,6 +76,7 @@ void main()
 (def fragment-texture-2d
 "#version 450 core
 uniform int size;
+uniform float scale;
 uniform float shockwave_radius;
 uniform sampler2D flood;
 uniform sampler2D normals;
@@ -125,6 +126,7 @@ uniform sampler2D normals;
 uniform int step;
 uniform int size;
 uniform float shockwave_radius;
+uniform float scale;
 layout (location = 0) out vec4 point;
 float shockfront(float distance, float Rn);
 vec4 nearest(vec4 result, vec2 uv_fragment, vec2 dpos)
@@ -171,6 +173,7 @@ uniform sampler2D points;
 uniform sampler2D flood;
 uniform mat4 camera_to_ndc;
 uniform float shockwave_radius;
+uniform float scale;
 uniform int width;
 uniform int height;
 uniform float step;
@@ -253,6 +256,7 @@ void main()
                                (render/uniform-int program-jump-flooding "size" size)
                                (render/uniform-int program-jump-flooding "step" step)
                                (render/uniform-float program-jump-flooding "shockwave_radius" shockwave-radius)
+                               (render/uniform-float program-jump-flooding "scale" (/ (* 2.0 shockwave-radius) size))
                                (render/uniform-float program-jump-flooding "mach" M)
                                (render/use-textures {0 flood 1 normals})
                                (render/render-quads vao-jump-flooding))
@@ -327,6 +331,7 @@ void main()
                                         (render/uniform-int program-shockwave "height" (/ height 2))
                                         (render/uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
                                         (render/uniform-float program-shockwave "shockwave_radius" shockwave-radius)
+                                        (render/uniform-float program-shockwave "scale" (/ (* 2.0 shockwave-radius) size))
                                         (render/uniform-float program-shockwave "step" 0.01)
                                         (render/uniform-float program-shockwave "mach" M)
                                         (render/uniform-matrix4 program-shockwave "projection" projection)
@@ -350,6 +355,7 @@ void main()
                                      (render/uniform-int program-display "normals" 2)
                                      (render/uniform-int program-display "size" wsize)
                                      (render/uniform-float program-display "mach" M)
+                                     (render/uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) size))
                                      (render/uniform-float program-display "max_curvature_radius" max-curvature-radius)
                                      (render/uniform-float program-display "shockwave_radius" shockwave-radius)
                                      (render/use-textures {0 flood
