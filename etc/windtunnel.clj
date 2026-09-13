@@ -69,7 +69,7 @@ void main()
 }")
 
 
-(def max-curvature-radius 1.2)
+(def max-curvature-radius 3.0)
 (def M 10.0)
 
 
@@ -87,7 +87,7 @@ void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
   vec4 point = texture(flood, uv_fragment);
-  float depth = point.z + shockfront(shockwave_radius * length(point.xy - uv_fragment), point.w) / (2 * shockwave_radius);
+  float depth = point.z + shockfront(2 * shockwave_radius * length(point.xy - uv_fragment), point.w) / (2 * shockwave_radius);
   vec4 N = texture(normals, uv_fragment);
   float c = N.z;
   if (texture(wind, uv_fragment).r > 0.0)
@@ -131,8 +131,8 @@ float shockfront(float distance, float Rn);
 vec4 nearest(vec4 result, vec2 uv_fragment, vec2 dpos)
 {
   vec4 point = texture(flood, uv_fragment + dpos);
-  float current = result.z + shockfront(shockwave_radius * length(result.xy - uv_fragment), result.w) / (2 * shockwave_radius);
-  float candidate = point.z + shockfront(shockwave_radius * length(point.xy - uv_fragment), point.w) / (2 * shockwave_radius);
+  float current = result.z + shockfront(2 * shockwave_radius * length(result.xy - uv_fragment), result.w) / (2 * shockwave_radius);
+  float candidate = point.z + shockfront(2 * shockwave_radius * length(point.xy - uv_fragment), point.w) / (2 * shockwave_radius);
   if (candidate > current)
     return point;
   else
@@ -201,7 +201,7 @@ void main()
     vec2 uv_fragment = p.xy * 0.5 + 0.5;
     vec4 point = texture(flood, uv_fragment);
     float l = length(point.xy - uv_fragment);
-    float depth = point.z + shockfront(shockwave_radius * l, point.w) / (2 * shockwave_radius);
+    float depth = point.z + shockfront(2 * shockwave_radius * l, point.w) / (2 * shockwave_radius);
     if (p.z <= depth) {
       emission += 4.0 * step * exp(100.0 * (p.z - depth)) * (1.0 - smoothstep(0.0, 0.3, l));
     };

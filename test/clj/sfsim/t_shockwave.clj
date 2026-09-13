@@ -82,7 +82,7 @@ float depth(vec2 uv)
 }")
 
 
-(def fragment-curvature
+(def fragment-curvature-test
 "#version 450 core
 #define MAX_RADIUS 1.0
 out vec3 fragColor;
@@ -105,7 +105,7 @@ void main()
         (let [indices  [0 1 3 2]
               vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
               program  (make-program :sfsim.render/vertex [vertex-passthrough]
-                                     :sfsim.render/fragment [fragment-curvature curvature sphere-normal])
+                                     :sfsim.render/fragment [fragment-curvature-test curvature sphere-normal])
               vao      (make-vertex-array-object program indices vertices ["point" 3])]
           (clear (vec3 0.0 0.0 0.0))
           (use-program program)
