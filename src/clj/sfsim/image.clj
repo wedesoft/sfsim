@@ -26,7 +26,7 @@
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
-(def image (m/schema [:map [::width N] [::height N] [::channels N] [::data bytes?]]))
+(def image (m/schema [:map [::width N] [::height N] [::channels N] [::data seqable?]]))
 (def byte-image (m/schema [:map [::width N] [::height N] [::data bytes?]]))
 (def float-image-2d (m/schema [:map [::width N] [::height N] [::data seqable?]]))
 (def float-image-3d (m/schema [:map [::width N] [::height N] [::depth N] [::data seqable?]]))

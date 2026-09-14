@@ -259,7 +259,7 @@
                                           ^long (:sfsim.image/height image) 0 ^long format_ ^long type_ ^java.nio.DirectByteBuffer buffer))))
 
 
-(defn- make-float-texture-2d-base
+(defn make-float-texture-2d-base
   "Initialise a 2D texture"
   {:malli/schema [:=> [:cat image interpolation boundary :int :int :int] texture-2d]}
   [image interpolation boundary internalformat format_ type_]

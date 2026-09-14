@@ -15,15 +15,15 @@
       [sfsim.conftest :refer (roughly-vector shader-test is-image)]
       [sfsim.render :refer (offscreen-render make-program uniform-float make-vertex-array-object clear use-program uniform-int
                             render-quads destroy-vertex-array-object destroy-program with-invisible-window framebuffer-render)]
-      [sfsim.texture :refer (make-empty-texture-2d destroy-texture rgba-texture->vectors4)]
-      [sfsim.image :refer (get-vector4)]
+      [sfsim.texture :refer (make-empty-texture-2d destroy-texture rgba-texture->vectors4 make-float-texture-2d-base)]
+      [sfsim.image :refer (get-vector4 set-vector4!)]
       [sfsim.shaders :refer (vertex-passthrough)]
       [sfsim.shockwave :refer :all])
     (:import
       (org.lwjgl.glfw
         GLFW)
       (org.lwjgl.opengl
-        GL30)))
+        GL11 GL12 GL30)))
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
@@ -151,6 +151,30 @@ void main()
            (destroy-vertex-array-object vao)
            (destroy-program program)
            (destroy-texture tex))))
+
+
+(def shockfront-test
+"#version 450 core
+float shockfront(float distance, float curvature)
+{
+  return -distance * curvature;
+}")
+
+
+(facts "Jump flood algorithm"
+       (with-invisible-window
+         (let [size  256
+               image {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data (float-array (* size size 4))
+                      :sfsim.image/channels 4}]
+           (set-vector4! image 128  64 (vec4 0.5 1.0 1.0 1.0))
+           (set-vector4! image 128 192 (vec4 1.5 1.0 1.0 1.0))
+           (let [flood  (make-float-texture-2d-base image :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F GL12/GL_RGBA GL11/GL_FLOAT)
+                 result (rgba-texture->vectors4 flood)]
+             (get-vector4 result 128  64) => (vec4 0.5 1.0 1.0 1.0)
+             (get-vector4 result 128 192) => (vec4 1.5 1.0 1.0 1.0)
+             ; (get-vector4 result 128  96) => (vec4 0.5 1.0 1.0 1.0)
+             ; (get-vector4 result 128 160) => (vec4 1.5 1.0 1.0 1.0)
+             (destroy-texture flood)))))
 
 
 (GLFW/glfwTerminate)
