@@ -140,7 +140,7 @@ void main()
                                (use-program program)
                                (uniform-int program "size" size)
                                (uniform-float program "scale" (/ 2.0 size))
-                               (uniform-float program "max_curvature_radius" 2.0)
+                               (uniform-float program "shockwave_radius" 1.0)
                                (uniform-float program "max_curvature_radius" 1.0)
                                (render-quads vao))
            (let [img (rgba-texture->vectors4 tex)]

@@ -88,7 +88,7 @@ void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
   vec4 point = texture(flood, uv_fragment);
-  float depth = point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w) / (2 * shockwave_radius);
+  float depth = (point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w)) / shockwave_radius;
   vec4 N = texture(normals, uv_fragment);
   float c = N.z;
   if (texture(wind, uv_fragment).r > 0.0)
@@ -132,8 +132,8 @@ float shockfront(float distance, float Rn);
 vec4 nearest(vec4 result, vec2 uv_fragment, vec2 dpos)
 {
   vec4 point = texture(flood, uv_fragment + dpos);
-  float current = result.z + shockfront(length(result.xy - gl_FragCoord.xy * scale), result.w) / (2 * shockwave_radius);
-  float candidate = point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w) / (2 * shockwave_radius);
+  float current = result.z + shockfront(length(result.xy - gl_FragCoord.xy * scale), result.w);
+  float candidate = point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w);
   if (candidate > current)
     return point;
   else
@@ -203,9 +203,9 @@ void main()
     vec2 uv_fragment = p.xy * 0.5 + 0.5;
     vec4 point = texture(flood, uv_fragment);
     float l = length(point.xy - uv_fragment * 2.0 * shockwave_radius);
-    float depth = point.z + shockfront(l, point.w) / (2 * shockwave_radius);
-    if (p.z <= depth) {
-      emission += 4.0 * step * exp(100.0 * (p.z - depth)) * (1.0 - smoothstep(0.0, 0.5 * shockwave_radius, l));
+    float depth = point.z + shockfront(l, point.w);
+    if (p.z * shockwave_radius <= depth) {
+      emission += 4.0 * step * exp(1.0 * (p.z * shockwave_radius - depth)) * (1.0 - smoothstep(0.0, 0.5 * shockwave_radius, l));
     };
     x += step;
   };
@@ -315,6 +315,7 @@ void main()
                                    (render/uniform-float program-init "mach" M)
                                    (render/uniform-int program-init "size" size)
                                    (render/uniform-float program-init "scale" (/ (* 2.0 shockwave-radius) size))
+                                   (render/uniform-float program-init "shockwave_radius" shockwave-radius)
                                    (render/uniform-float program-init "max_curvature_radius" max-curvature-radius)
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                          1 (:sfsim.model/normals wind-shadow)})
