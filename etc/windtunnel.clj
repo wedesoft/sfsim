@@ -9,7 +9,7 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront curvature fragment-jump-flooding-init)]
+         '[sfsim.shockwave :refer (shockfront curvature fragment-jump-flooding-init fragment-jump-flooding-step)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL GL30])
@@ -118,44 +118,6 @@ vec4 normal_source(vec2 uv)
 }")
 
 
-(def fragment-jump-flooding
-"#version 450 core
-in vec2 uv_fragment;
-uniform sampler2D flood;
-uniform sampler2D normals;
-uniform int step;
-uniform int size;
-uniform float scale;
-layout (location = 0) out vec4 point;
-float shockfront(float distance, float Rn);
-vec4 nearest(vec4 result, vec2 uv_fragment, vec2 dpos)
-{
-  vec4 point = texture(flood, uv_fragment + dpos);
-  float current = result.z + shockfront(length(result.xy - gl_FragCoord.xy * scale), result.w);
-  float candidate = point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w);
-  if (candidate > current)
-    return point;
-  else
-    return result;
-}
-void main()
-{
-  float delta = float(step) / size;
-  vec2 uv_fragment = gl_FragCoord.xy / size;
-  vec4 result = texture(flood, uv_fragment);
-  result = nearest(result, uv_fragment, vec2(-delta, -delta));
-  result = nearest(result, uv_fragment, vec2(     0, -delta));
-  result = nearest(result, uv_fragment, vec2(+delta, -delta));
-  result = nearest(result, uv_fragment, vec2(-delta,      0));
-  result = nearest(result, uv_fragment, vec2(     0,      0));
-  result = nearest(result, uv_fragment, vec2(+delta,      0));
-  result = nearest(result, uv_fragment, vec2(-delta, +delta));
-  result = nearest(result, uv_fragment, vec2(     0, +delta));
-  result = nearest(result, uv_fragment, vec2(+delta, +delta));
-  point = result;
-}")
-
-
 (def vertex-shockwave
 "#version 450 core
 uniform mat4 projection;
@@ -211,6 +173,7 @@ void main()
   fragColor = vec4(vec3(emission, emission, 0.0), 0.0);
 }")
 
+
 (def shockwave-indices
   [4 5 7 6    ; front (+z)
    1 0 2 3    ; back  (-z)
@@ -243,7 +206,7 @@ void main()
                                        :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source]))
 (def vao-init (render/make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2]))
 (def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-texture]
-                                                :sfsim.render/fragment [shockfront fragment-jump-flooding]))
+                                                :sfsim.render/fragment [shockfront fragment-jump-flooding-step]))
 (def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
 
 (defn jump-flooding-step
@@ -317,7 +280,7 @@ void main()
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                          1 (:sfsim.model/normals wind-shadow)})
                                    (render/render-quads vao-init))
-           (let [flood     (reduce jump-flooding-step flood [256 128 64 32 16 8 4 2 1])
+           (let [flood     (reduce jump-flooding-step flood [128 64 32 16 8 4 2 1])
                  bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
              ;; Render shockwave
              (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]

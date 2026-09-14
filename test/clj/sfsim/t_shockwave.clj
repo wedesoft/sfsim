@@ -14,7 +14,8 @@
       [comb.template :as template]
       [sfsim.conftest :refer (roughly-vector shader-test is-image)]
       [sfsim.render :refer (offscreen-render make-program uniform-float make-vertex-array-object clear use-program uniform-int
-                            render-quads destroy-vertex-array-object destroy-program with-invisible-window framebuffer-render)]
+                            render-quads destroy-vertex-array-object destroy-program with-invisible-window framebuffer-render
+                            uniform-sampler use-textures)]
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture rgba-texture->vectors4 make-float-texture-2d-base)]
       [sfsim.image :refer (get-vector4 set-vector4!)]
       [sfsim.shaders :refer (vertex-passthrough)]
@@ -58,7 +59,7 @@ void main()
          10.0     0.1 0.0    -0.994987)
 
 
-(def sphere-normal
+(def normal-mock
 "#version 450 core
 vec4 normal_source(vec2 uv)
 {
@@ -70,7 +71,7 @@ vec4 normal_source(vec2 uv)
 }")
 
 
-(def sphere-depth
+(def depth-mock
 "#version 450 core
 float depth_source(vec2 uv)
 {
@@ -105,7 +106,7 @@ void main()
         (let [indices  [0 1 3 2]
               vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
               program  (make-program :sfsim.render/vertex [vertex-passthrough]
-                                     :sfsim.render/fragment [fragment-curvature-test curvature sphere-normal])
+                                     :sfsim.render/fragment [fragment-curvature-test curvature normal-mock])
               vao      (make-vertex-array-object program indices vertices ["point" 3])]
           (clear (vec3 0.0 0.0 0.0))
           (use-program program)
@@ -132,7 +133,7 @@ void main()
          (let [size     256
                tex      (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)
                program  (make-program :sfsim.render/vertex [vertex-texture]
-                                      :sfsim.render/fragment [fragment-jump-flooding-init sphere-depth sphere-normal curvature])
+                                      :sfsim.render/fragment [fragment-jump-flooding-init depth-mock normal-mock curvature])
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
                vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]
@@ -153,28 +154,51 @@ void main()
            (destroy-texture tex))))
 
 
-(def shockfront-test
+(def shockfront-mock
 "#version 450 core
-float shockfront(float distance, float curvature)
+float shockfront(float radial_distance, float curvature_radius)
 {
-  return -distance * curvature;
+  return -radial_distance * curvature_radius;
 }")
+
+
+(defn jump-flooding-step
+  [program vao size flood step]
+  (let [result (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
+    (framebuffer-render size size :sfsim.render/noculling nil [result]
+                        (use-program program)
+                        (uniform-sampler program "flood" 0)
+                        (uniform-int program "size" size)
+                        (uniform-int program "step" step)
+                        (uniform-float program "scale" (/ 2.0 size))
+                        (use-textures {0 flood})
+                        (render-quads vao))
+    (destroy-texture flood)
+    result))
 
 
 (facts "Jump flood algorithm"
        (with-invisible-window
-         (let [size  256
-               image {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data (float-array (* size size 4))
-                      :sfsim.image/channels 4}]
+         (let [size     256
+               image    {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data (float-array (* size size 4))
+                         :sfsim.image/channels 4}
+               indices  [0 1 3 2]
+               vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
+               program  (make-program :sfsim.render/vertex [vertex-texture]
+                                      :sfsim.render/fragment [fragment-jump-flooding-step shockfront-mock])
+               vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]
            (set-vector4! image 128  64 (vec4 0.5 1.0 1.0 1.0))
            (set-vector4! image 128 192 (vec4 1.5 1.0 1.0 1.0))
            (let [flood  (make-float-texture-2d-base image :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F GL12/GL_RGBA GL11/GL_FLOAT)
+                 flood  (reduce (partial jump-flooding-step program vao size) flood [128 64 32 16 8 4 2 1])
                  result (rgba-texture->vectors4 flood)]
              (get-vector4 result 128  64) => (vec4 0.5 1.0 1.0 1.0)
              (get-vector4 result 128 192) => (vec4 1.5 1.0 1.0 1.0)
-             ; (get-vector4 result 128  96) => (vec4 0.5 1.0 1.0 1.0)
-             ; (get-vector4 result 128 160) => (vec4 1.5 1.0 1.0 1.0)
-             (destroy-texture flood)))))
+             (get-vector4 result 128  96) => (vec4 0.5 1.0 1.0 1.0)
+             (get-vector4 result 128 160) => (vec4 1.5 1.0 1.0 1.0)
+             (destroy-texture flood)
+             (destroy-vertex-array-object vao)
+             (destroy-program program)))))
 
 
 (GLFW/glfwTerminate)
