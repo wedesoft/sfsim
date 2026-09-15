@@ -1,4 +1,4 @@
-(require '[clojure.math :refer (PI to-radians exp)]
+(require '[clojure.math :refer (PI to-radians)]
          '[fastmath.vector :refer (vec3 normalize)]
          '[fastmath.matrix :refer (mulm inverse)]
          '[sfsim.config :as config]
@@ -9,7 +9,8 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront curvature vertex-quad fragment-jump-flooding-init fragment-jump-flooding-step)]
+         '[sfsim.shockwave :refer (shockfront curvature vertex-quad fragment-jump-flooding-init fragment-jump-flooding-step
+                                   jump-flooding-step)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL GL30])
@@ -197,20 +198,20 @@ void main()
                                                 :sfsim.render/fragment [shockfront fragment-jump-flooding-step]))
 (def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
 
-(defn jump-flooding-step
-  [flood step]
-  (let [result (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
-    (render/framebuffer-render size size :sfsim.render/noculling nil [result]
-                               (render/use-program program-jump-flooding)
-                               (render/uniform-sampler program-jump-flooding "flood" 0)
-                               (render/uniform-int program-jump-flooding "size" size)
-                               (render/uniform-int program-jump-flooding "step" step)
-                               (render/uniform-float program-jump-flooding "scale" (/ (* 2.0 shockwave-radius) size))
-                               (render/uniform-float program-jump-flooding "mach" M)
-                               (render/use-textures {0 flood})
-                               (render/render-quads vao-jump-flooding))
-    (texture/destroy-texture flood)
-    result))
+; (defn jump-flooding-step
+;   [flood step]
+;   (let [result (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
+;     (render/framebuffer-render size size :sfsim.render/noculling nil [result]
+;                                (render/use-program program-jump-flooding)
+;                                (render/uniform-sampler program-jump-flooding "flood" 0)
+;                                (render/uniform-int program-jump-flooding "size" size)
+;                                (render/uniform-int program-jump-flooding "step" step)
+;                                (render/uniform-float program-jump-flooding "scale" (/ (* 2.0 shockwave-radius) size))
+;                                (render/uniform-float program-jump-flooding "mach" M)
+;                                (render/use-textures {0 flood})
+;                                (render/render-quads vao-jump-flooding))
+;     (texture/destroy-texture flood)
+;     result))
 
 (GLFW/glfwMakeContextCurrent window2)
 (def program-display  (render/make-program :sfsim.render/vertex [vertex-quad]
@@ -268,7 +269,9 @@ void main()
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                          1 (:sfsim.model/normals wind-shadow)})
                                    (render/render-quads vao-init))
-           (let [flood     (reduce jump-flooding-step flood [128 64 32 16 8 4 2 1])
+           (let [flood     (reduce (jump-flooding-step program-jump-flooding vao-jump-flooding shockwave-radius size
+                                                       (render/uniform-float program-jump-flooding "mach" M))
+                                   flood [128 64 32 16 8 4 2 1])
                  bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
              ;; Render shockwave
              (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]

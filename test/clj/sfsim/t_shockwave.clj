@@ -150,21 +150,6 @@ float shockfront(float radial_distance, float curvature_radius)
 }")
 
 
-(defn jump-flooding-step
-  [program vao size flood step]
-  (let [result (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
-    (framebuffer-render size size :sfsim.render/noculling nil [result]
-                        (use-program program)
-                        (uniform-sampler program "flood" 0)
-                        (uniform-int program "size" size)
-                        (uniform-int program "step" step)
-                        (uniform-float program "scale" (/ 2.0 size))
-                        (use-textures {0 flood})
-                        (render-quads vao))
-    (destroy-texture flood)
-    result))
-
-
 (facts "Jump flood algorithm"
        (with-invisible-window
          (let [size     256
@@ -178,7 +163,7 @@ float shockfront(float radial_distance, float curvature_radius)
            (set-vector4! image 128  64 (vec4 0.5 1.0 1.0 1.0))
            (set-vector4! image 128 192 (vec4 1.5 1.0 1.0 1.0))
            (let [flood  (make-float-texture-2d-base image :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F GL12/GL_RGBA GL11/GL_FLOAT)
-                 flood  (reduce (partial jump-flooding-step program vao size) flood [128 64 32 16 8 4 2 1])
+                 flood  (reduce (jump-flooding-step program vao 1.0 size) flood [128 64 32 16 8 4 2 1])
                  result (rgba-texture->vectors4 flood)]
              (get-vector4 result 128  64) => (vec4 0.5 1.0 1.0 1.0)
              (get-vector4 result 128 192) => (vec4 1.5 1.0 1.0 1.0)
