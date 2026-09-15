@@ -241,10 +241,10 @@ void main()
                                       (graphics/render-cloud-geometry graphics nil)
                                       (graphics/render-clouds graphics [])
                                       (graphics/render-geometry graphics nil))
-             wind-shadow          (model/scene-shadow-map (assoc (:sfsim.graphics/scene-shadow-renderer graphics)
-                                                                 :sfsim.model/object-radius shockwave-radius)
+             wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                           wind-from
-                                                          (first (graphics/get-moved-scenes frame graphics))
+                                                          (assoc (first (graphics/get-moved-scenes frame graphics))
+                                                                 :sfsim.model/object-radius shockwave-radius)
                                                           :sfsim.render/cullback
                                                           true)
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))

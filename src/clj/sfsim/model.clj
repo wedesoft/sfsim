@@ -743,20 +743,17 @@
 
 
 (def scene-shadow-renderer
-  (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean :boolean] :int]]
-             [::size N]
-             [::object-radius :double]]))
+  (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean :boolean] :int]] [::size N]]))
 
 
 (defn make-scene-shadow-renderer
   "Create renderer for rendering scene-shadows"
-  {:malli/schema [:=> [:cat N :double] scene-shadow-renderer]}
-  [size object-radius]
+  {:malli/schema [:=> [:cat N] scene-shadow-renderer]}
+  [size]
   (let [variations (for [textured [false true] bump [false true] normals [false true]] [textured bump normals])
         programs   (mapv #(apply make-scene-shadow-program %) variations)]
     {::programs      (zipmap variations programs)
-     ::size          size
-     ::object-radius object-radius}))
+     ::size          size}))
 
 
 (defn render-depth
@@ -793,7 +790,7 @@
   {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene :keyword :boolean] scene-shadow]}
   [renderer light-direction scene culling normals]
   (let [object-to-world (get-in scene [::root ::transform])
-        object-radius   (::object-radius renderer)
+        object-radius   (::object-radius scene)
         shadow-matrices (shadow-patch-matrices object-to-world light-direction object-radius)
         shadow-map      (render-shadow-map renderer shadow-matrices scene culling normals)]
     (assoc shadow-map ::matrices shadow-matrices)))
