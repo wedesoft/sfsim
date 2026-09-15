@@ -134,7 +134,7 @@ void main()
                               vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                               data      [0.25 0.5 0.75 1.0]
                               bluenoise (make-float-texture-2d :sfsim.texture/nearest :sfsim.texture/repeat
-                                                               #:sfsim.image{:width 2 :height 2 :data (float-array data)})
+                                                               #:sfsim.image{:width 2 :height 2 :data (float-array data) :channels 1})
                               program   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                                       :sfsim.render/fragment [fragment-noise sampling-offset])
                               vao       (make-vertex-array-object program indices vertices ["point" 3])]
