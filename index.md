@@ -62,12 +62,15 @@ After some half-hearted attempts, I decided to start the project for real in 202
 I worked on the tough issues first and I finally managed to get to a point where I felt confident to create a Steam page showcasing early results.
 Progress is slow as this is only a hobby project, but I hope to release a demo soon!
 
-{% include youtube.html id="bbmusPm7QZc" %}
+{% include youtube.html id="Oh6of7vEmu0" %}
 
-The beautiful ambient music used in the trailer was made by [Andrewkn][2]!
+The beautiful music used in the trailer was made by [The Orchestra Tsumugi][4].
+
+<!-- The beautiful ambient music used in the trailer was made by [Andrewkn][2]! -->
 
 # News
 
 [1]: https://wedesoft.github.io/sfsim/
 [2]: https://freesound.org/people/Andrewkn/
 [3]: https://store.steampowered.com/app/3687560/sfsim/
+[4]: https://www.classicals.de/strauss-2-blue-danube
