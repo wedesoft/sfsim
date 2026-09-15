@@ -34,19 +34,19 @@
 (defn make-image
   "Create an empty RGBA image"
   [^long width ^long height]
-  {::width width ::height height ::channels 4 ::data (byte-array (* width height 4))})
+  {::width width ::height height ::data (byte-array (* width height 4)) ::channels 4})
 
 
 (defn make-byte-image
   "Create an empty byte image"
   [^long width ^long height]
-  {::width width ::height height ::data (byte-array (* width height))})
+  {::width width ::height height ::data (byte-array (* width height)) ::channels 1})
 
 
 (defn make-vector-image
   "Create an empty vector image"
   [^long width ^long height]
-  {::width width ::height height ::data (float-array (* width height 3))})
+  {::width width ::height height ::data (float-array (* width height 3)) ::channels 3})
 
 
 (defn slurp-image
@@ -153,7 +153,7 @@
     (STBImage/stbi_image_free ^DirectByteBuffer buffer)
     (doseq [i (range (count data))]
       (aset-float ^floats data ^long i ^float (/ (+ (aget ^bytes byte-data ^long i) 0.5) 127.5)))
-    {::width width ::height height ::data data}))
+    {::width width ::height height ::data data ::channels 3}))
 
 
 (defn slurp-normals-tar
@@ -176,7 +176,7 @@
       (STBImage/stbi_image_free ^DirectByteBuffer buffer)
       (doseq [i (range (count data))]
              (aset-float ^floats data ^long i ^float (/ (+ (aget ^bytes byte-data ^long i) 0.5) 127.5)))
-      {::width (aget width 0) ::height (aget height 0) ::data data})))
+      {::width (aget width 0) ::height (aget height 0) ::data data ::channels 3})))
 
 
 (defn get-pixel

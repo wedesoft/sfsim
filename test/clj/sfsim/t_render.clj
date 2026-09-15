@@ -427,7 +427,7 @@ void main()
                                    program  (make-program :sfsim.render/vertex [vertex-texture]
                                                           :sfsim.render/fragment [fragment-texture-2d])
                                    vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
-                                   img      #:sfsim.image{:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0])}
+                                   img      #:sfsim.image{:width 2 :height 2 :data (float-array [0.0 0.25 0.5 1.0]) :channels 1}
                                    tex      (make-float-texture-2d ?interpolation ?boundary img)]
                                (clear (vec3 0.0 0.0 0.0))
                                (use-program program)
@@ -452,7 +452,8 @@ void main()
                               program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d])
                               vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                               tex      (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                              #:sfsim.image{:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])})]
+                                                              #:sfsim.image{:width 2 :height 2 :data (byte-array [0 64 0 0 127 255 0 0])
+                                                                            :channels 1})]
                           (clear (vec3 0.0 0.0 0.0))
                           (use-program program)
                           (uniform-sampler program "tex" 0)
@@ -470,7 +471,8 @@ void main()
                               program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-texture-2d])
                               vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                               tex      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                               #:sfsim.image{:width 2 :height 2 :data (float-array [0 0 0 1 0 0 0 1 0 1 1 1])})]
+                                                               #:sfsim.image{:width 2 :height 2 :data (float-array [0 0 0 1 0 0 0 1 0 1 1 1])
+                                                                             :channels 3})]
                           (clear (vec3 0.0 0.0 0.0))
                           (use-program program)
                           (uniform-sampler program "tex" 0)
@@ -512,7 +514,7 @@ void main(void)
                                                      :sfsim.render/fragment [fragment-sample-shadow])
                               vao      (make-vertex-array-object program indices vertices ["point" 3])
                               data     [0.4 0.4 0.4 0.4, 0.4 0.6 0.6 0.4, 0.4 0.6 0.6 0.4, 0.4 0.4 0.4 0.4]
-                              depth    (make-depth-texture :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width 4 :height 4 :data (float-array data)})]
+                              depth    (make-depth-texture :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width 4 :height 4 :data (float-array data) :channels 1})]
                           (clear (vec3 1.0 0.0 0.0))
                           (use-program program)
                           (uniform-sampler program "shadow_map" 0)
@@ -545,7 +547,7 @@ void main()
                                    vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                                    data     [0 0.125 0.25 0.375 0.5 0.625 0.75 0.875]
                                    tex      (make-float-texture-3d ?interpolation ?boundary
-                                                                   #:sfsim.image{:width 2 :height 2 :depth 2 :data (float-array data)})]
+                                                                   #:sfsim.image{:width 2 :height 2 :depth 2 :data (float-array data) :channels 1})]
                                (clear (vec3 0.0 0.0 0.0))
                                (use-program program)
                                (uniform-sampler program "tex" 0)
@@ -584,9 +586,11 @@ void main()
                               program  (make-program :sfsim.render/vertex [vertex-texture] :sfsim.render/fragment [fragment-two-textures])
                               vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])
                               tex1     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                               #:sfsim.image{:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])})
+                                                               #:sfsim.image{:width 2 :height 2 :data (float-array [0 0 0 0 0 0 0 0 0 0 0 0])
+                                                                             :channels 3})
                               tex2     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                               #:sfsim.image{:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])})]
+                                                               #:sfsim.image{:width 2 :height 2 :data (float-array [1 1 1 1 1 1 1 1 1 1 1 1])
+                                                                             :channels 3})]
                           (clear (vec3 0.0 0.0 0.0))
                           (use-program program)
                           (uniform-sampler program "tex1" 0)
