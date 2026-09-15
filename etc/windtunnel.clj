@@ -9,7 +9,7 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront curvature fragment-jump-flooding-init fragment-jump-flooding-step)]
+         '[sfsim.shockwave :refer (shockfront curvature vertex-quad fragment-jump-flooding-init fragment-jump-flooding-step)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL GL30])
@@ -55,18 +55,6 @@
 (def graphics (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
                                          :sfsim.graphics/object-radius (:sfsim.model/object-radius config/model-config)}]
                                        []))
-
-
-(def vertex-texture
-"#version 450 core
-in vec3 point;
-in vec2 uv;
-out vec2 uv_fragment;
-void main()
-{
-  gl_Position = vec4(point, 1);
-  uv_fragment = uv;
-}")
 
 
 (def max-curvature-radius 3.0)
@@ -202,10 +190,10 @@ void main()
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
 (def indices [0 1 3 2])
 
-(def program-init (render/make-program :sfsim.render/vertex [vertex-texture]
+(def program-init (render/make-program :sfsim.render/vertex [vertex-quad]
                                        :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source]))
 (def vao-init (render/make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2]))
-(def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-texture]
+(def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-quad]
                                                 :sfsim.render/fragment [shockfront fragment-jump-flooding-step]))
 (def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
 
@@ -225,7 +213,7 @@ void main()
     result))
 
 (GLFW/glfwMakeContextCurrent window2)
-(def program-display  (render/make-program :sfsim.render/vertex [vertex-texture]
+(def program-display  (render/make-program :sfsim.render/vertex [vertex-quad]
                                            :sfsim.render/fragment [shockfront fragment-texture-2d]))
 (def vao-display (render/make-vertex-array-object program-display indices vertices ["point" 3 "uv" 2]))
 

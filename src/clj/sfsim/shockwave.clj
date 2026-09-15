@@ -13,6 +13,9 @@
 (def curvature (slurp "resources/shaders/shockwave/curvature.glsl"))
 
 
+(def vertex-quad (slurp "resources/shaders/shockwave/vertex-quad.glsl"))
+
+
 (def fragment-jump-flooding-init (slurp "resources/shaders/shockwave/fragment-jump-flooding-init.glsl"))
 
 

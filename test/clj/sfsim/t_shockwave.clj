@@ -116,23 +116,11 @@ void main()
           (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/shockwave/curvature.png" 0.1))
 
 
-(def vertex-texture
-"#version 450 core
-in vec3 point;
-in vec2 uv;
-out vec2 uv_fragment;
-void main()
-{
-  gl_Position = vec4(point, 1);
-  uv_fragment = uv;
-}")
-
-
 (facts "Initial step of Jump Flooding Algorithm"
        (with-invisible-window
          (let [size     256
                tex      (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)
-               program  (make-program :sfsim.render/vertex [vertex-texture]
+               program  (make-program :sfsim.render/vertex [vertex-quad]
                                       :sfsim.render/fragment [fragment-jump-flooding-init depth-mock normal-mock curvature])
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
@@ -184,7 +172,7 @@ float shockfront(float radial_distance, float curvature_radius)
                          :sfsim.image/channels 4}
                indices  [0 1 3 2]
                vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-               program  (make-program :sfsim.render/vertex [vertex-texture]
+               program  (make-program :sfsim.render/vertex [vertex-quad]
                                       :sfsim.render/fragment [fragment-jump-flooding-step shockfront-mock])
                vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]
            (set-vector4! image 128  64 (vec4 0.5 1.0 1.0 1.0))
