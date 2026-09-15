@@ -827,11 +827,11 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
                    geometry-buffers  (make-geometry-buffers 256 256)
                    lighting-program  (make-lighting-program ?cloud)
                    transmittance     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                             #:sfsim.image{:width size :height size :data T})
+                                                             #:sfsim.image{:width size :height size :data T :channels 1})
                    ray-scatter       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                             #:sfsim.image{:width (* size size) :height (* size size) :data S})
+                                                             #:sfsim.image{:width (* size size) :height (* size size) :data S :channels 1})
                    mie-strength      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                             #:sfsim.image{:width (* size size) :height (* size size) :data M})
+                                                             #:sfsim.image{:width (* size size) :height (* size size) :data M :channels 1})
                    lighting-textures {0 transmittance 1 ray-scatter 2 mie-strength}]
                (render-geometry geometry-buffers
                                 (use-program geometry-program)
