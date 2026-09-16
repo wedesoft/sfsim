@@ -145,7 +145,7 @@ float shockfront(float radial_distance, float curvature_radius)
            (set-vector4! image 128  64 (vec4 0.5 1.0 1.0 1.0))
            (set-vector4! image 128 192 (vec4 1.5 1.0 1.0 1.0))
            (let [flood  (make-vector-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp image)
-                 flood  (reduce (jump-flooding-step renderer 1.0 size) flood [128 64 32 16 8 4 2 1])
+                 flood  (reduce (jump-flooding-step renderer) flood [128 64 32 16 8 4 2 1])
                  result (rgba-texture->vectors4 flood)]
              (get-vector4 result 128  64) => (vec4 0.5 1.0 1.0 1.0)
              (get-vector4 result 128 192) => (vec4 1.5 1.0 1.0 1.0)

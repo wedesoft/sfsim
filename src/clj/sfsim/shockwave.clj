@@ -75,17 +75,19 @@
 
 
 (defmacro jump-flooding-step
-  [renderer shockwave-radius size & body]
+  [renderer & body]
   `(fn [flood# step#]
-       (let [program# (::program-step ~renderer)
-             vao#     (::vao ~renderer)
-             result#  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F ~size ~size)]
-         (framebuffer-render ~size ~size :sfsim.render/noculling nil [result#]
+       (let [program#          (::program-step ~renderer)
+             vao#              (::vao ~renderer)
+             size#             (::size ~renderer)
+             shockwave-radius# (::shockwave-radius ~renderer)
+             result#           (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size# size#)]
+         (framebuffer-render size# size# :sfsim.render/noculling nil [result#]
                              (use-program program#)
                              (uniform-sampler program# "flood" 0)
-                             (uniform-int program# "size" ~size)
+                             (uniform-int program# "size" size#)
                              (uniform-int program# "step" step#)
-                             (uniform-float program# "scale" (/ (* 2.0 ~shockwave-radius) ~size))
+                             (uniform-float program# "scale" (/ (* 2.0 shockwave-radius#) size#))
                              ~@body
                              (use-textures {0 flood#})
                              (render-quads vao#))
