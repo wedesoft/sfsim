@@ -14,9 +14,8 @@
       [comb.template :as template]
       [sfsim.conftest :refer (roughly-vector shader-test is-image)]
       [sfsim.render :refer (offscreen-render make-program uniform-float make-vertex-array-object clear use-program uniform-int
-                            render-quads destroy-vertex-array-object destroy-program with-invisible-window framebuffer-render
-                            uniform-sampler use-textures)]
-      [sfsim.texture :refer (make-empty-texture-2d destroy-texture rgba-texture->vectors4 make-float-texture-2d-base)]
+                            render-quads destroy-vertex-array-object destroy-program with-invisible-window framebuffer-render)]
+      [sfsim.texture :refer (make-empty-texture-2d destroy-texture rgba-texture->vectors4 make-vector-texture-2d)]
       [sfsim.image :refer (get-vector4 set-vector4!)]
       [sfsim.shaders :refer (vertex-passthrough)]
       [sfsim.shockwave :refer :all])
@@ -145,7 +144,7 @@ float shockfront(float radial_distance, float curvature_radius)
                renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 1.0 1.0)]
            (set-vector4! image 128  64 (vec4 0.5 1.0 1.0 1.0))
            (set-vector4! image 128 192 (vec4 1.5 1.0 1.0 1.0))
-           (let [flood  (make-float-texture-2d-base image :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F GL12/GL_RGBA GL11/GL_FLOAT)
+           (let [flood  (make-vector-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp image)
                  flood  (reduce (jump-flooding-step renderer 1.0 size) flood [128 64 32 16 8 4 2 1])
                  result (rgba-texture->vectors4 flood)]
              (get-vector4 result 128  64) => (vec4 0.5 1.0 1.0 1.0)
