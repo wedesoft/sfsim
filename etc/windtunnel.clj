@@ -18,11 +18,11 @@
 (GLFW/glfwInit)
 
 (GLFW/glfwDefaultWindowHints)
-(def width (- 2560 512))
-(def height 1440)
-(def size 1024)
-(def wsize 512)
-(GLFW/glfwWindowHint GLFW/GLFW_DECORATED GLFW/GLFW_FALSE)
+(def width 1024)
+(def height 768)
+(def size 512)
+(def wsize 256)
+(GLFW/glfwWindowHint GLFW/GLFW_DECORATED GLFW/GLFW_TRUE)
 (def window (GLFW/glfwCreateWindow width height "Windtunnel" 0 0))
 (GLFW/glfwSwapInterval 1)
 (def mouse-pos (atom [0.0 0.0]))
@@ -197,21 +197,6 @@ void main()
 (def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-quad]
                                                 :sfsim.render/fragment [shockfront fragment-jump-flooding-step]))
 (def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
-
-; (defn jump-flooding-step
-;   [flood step]
-;   (let [result (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
-;     (render/framebuffer-render size size :sfsim.render/noculling nil [result]
-;                                (render/use-program program-jump-flooding)
-;                                (render/uniform-sampler program-jump-flooding "flood" 0)
-;                                (render/uniform-int program-jump-flooding "size" size)
-;                                (render/uniform-int program-jump-flooding "step" step)
-;                                (render/uniform-float program-jump-flooding "scale" (/ (* 2.0 shockwave-radius) size))
-;                                (render/uniform-float program-jump-flooding "mach" M)
-;                                (render/use-textures {0 flood})
-;                                (render/render-quads vao-jump-flooding))
-;     (texture/destroy-texture flood)
-;     result))
 
 (GLFW/glfwMakeContextCurrent window2)
 (def program-display  (render/make-program :sfsim.render/vertex [vertex-quad]
