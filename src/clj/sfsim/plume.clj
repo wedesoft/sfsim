@@ -12,7 +12,7 @@
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]
-      [sfsim.render :refer (uniform-float uniform-float)]))
+      [sfsim.render :refer (uniform-float)]))
 
 
 (def plume-phase

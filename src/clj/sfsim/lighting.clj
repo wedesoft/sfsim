@@ -56,9 +56,7 @@
         albedo              (:sfsim.planet/albedo planet-config)
         cloud-subsampling   (:sfsim.render/cloud-subsampling render-config)
         depth-sigma         (:sfsim.clouds/depth-sigma cloud-data)
-        min-depth-exponent  (:sfsim.clouds/min-depth-exponent cloud-data)
-        num-opacity-layers  (:sfsim.opacity/num-opacity-layers shadow-data)
-        shadow-size         (:sfsim.opacity/shadow-size shadow-data)]
+        min-depth-exponent  (:sfsim.clouds/min-depth-exponent cloud-data)]
     (use-program program)
     (uniform-sampler program "clouds" 0)
     (uniform-sampler program "dist" 1)
