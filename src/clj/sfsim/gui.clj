@@ -21,7 +21,7 @@
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                           destroy-vertex-array-object with-invisible-window framebuffer-render make-vertex-array-object
-                          destroy-vertex-array-object uniform-sampler uniform-matrix3 use-textures clear render-quads
+                          uniform-sampler uniform-matrix3 use-textures clear render-quads
                           uniform-vector2)]
     [sfsim.texture :refer (make-rgba-texture make-rgb-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
                            texture->image generate-mipmap)]
