@@ -116,15 +116,30 @@ void main()
           (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/shockwave/curvature.png" 0.1))
 
 
+(defn make-shockwave-renderer
+  [depth-source normal-source]
+  (let [indices      [0 1 3 2]
+        vertices     [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
+        program-init (make-program :sfsim.render/vertex [vertex-quad]
+                                   :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source])
+        vao-init     (make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2])]
+    {::program-init program-init
+     ::vao-init     vao-init}))
+
+
+(defn destroy-shockwave-renderer
+  [{::keys [program-init vao-init]}]
+  (destroy-vertex-array-object vao-init)
+  (destroy-program program-init))
+
+
 (facts "Initial step of Jump Flooding Algorithm"
        (with-invisible-window
          (let [size     256
+               renderer (make-shockwave-renderer depth-mock normal-mock)
                tex      (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)
-               program  (make-program :sfsim.render/vertex [vertex-quad]
-                                      :sfsim.render/fragment [fragment-jump-flooding-init depth-mock normal-mock curvature])
-               indices  [0 1 3 2]
-               vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-               vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]
+               program  (::program-init renderer)
+               vao      (::vao-init renderer)]
            (framebuffer-render size size :sfsim.render/cullback nil [tex]
                                (use-program program)
                                (uniform-int program "size" size)
@@ -137,8 +152,7 @@ void main()
              (get-vector4 img   0   0) => (roughly-vector (vec4  0.0  0.0 -1.0  0.0) 1e-2)
              (get-vector4 img  64 128) => (roughly-vector (vec4  1.0  0.5  0.71 0.71) 1e-2)
              (get-vector4 img 128  64) => (roughly-vector (vec4  0.5  1.0  0.71 0.71) 1e-2))
-           (destroy-vertex-array-object vao)
-           (destroy-program program)
+           (destroy-shockwave-renderer renderer)
            (destroy-texture tex))))
 
 
