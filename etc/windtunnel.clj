@@ -254,7 +254,10 @@ void main()
                                    (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                          1 (:sfsim.model/normals wind-shadow)})
                                    (render/render-quads vao-init))
-           (let [flood     (reduce (jump-flooding-step program-jump-flooding vao-jump-flooding shockwave-radius size
+           (let [flood     (reduce (jump-flooding-step #:sfsim.shockwave{:program-step program-jump-flooding
+                                                                         :vao vao-jump-flooding
+                                                                         :shockwave-radius shockwave-radius
+                                                                         :size size}
                                                        (render/uniform-float program-jump-flooding "mach" M))
                                    flood [128 64 32 16 8 4 2 1])
                  bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
