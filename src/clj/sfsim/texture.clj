@@ -380,7 +380,8 @@
   "Load floating point 2D array of 3D vectors into OpenGL texture"
   {:malli/schema [:=> [:cat interpolation boundary float-image-2d] texture-2d]}
   [interpolation boundary image]
-  (make-float-texture-2d-base image interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
+  (let [internalformat (case (long (:sfsim.image/channels image)) 3 GL30/GL_RGB32F 4 GL30/GL_RGBA32F)]
+    (make-float-texture-2d-base image interpolation boundary internalformat GL12/GL_RGB GL11/GL_FLOAT)))
 
 
 (defn make-float-texture-3d

@@ -38,51 +38,57 @@
 
 
 (defn make-shockwave-renderer
-  [depth-source normal-source size shockwave-radius max-curvature-radius]
+  [depth-source normal-source shockfront size shockwave-radius max-curvature-radius]
   (let [indices      [0 1 3 2]
         vertices     [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
         program-init (make-program :sfsim.render/vertex [vertex-quad]
                                    :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source])
-        vao-init     (make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2])]
+        program-step (make-program :sfsim.render/vertex [vertex-quad]
+                                   :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
+        vao          (make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2])]
     {::size                 size
      ::shockwave-radius     shockwave-radius
      ::max-curvature-radius max-curvature-radius
      ::program-init         program-init
-     ::vao-init             vao-init}))
+     ::program-step         program-step
+     ::vao                  vao}))
 
 
 (defn destroy-shockwave-renderer
-  [{::keys [program-init vao-init]}]
-  (destroy-vertex-array-object vao-init)
+  [{::keys [program-init program-step vao]}]
+  (destroy-vertex-array-object vao)
+  (destroy-program program-step)
   (destroy-program program-init))
 
 
-(defn jump-flood-initialisation
-  [{::keys [size shockwave-radius max-curvature-radius program-init vao-init]}]
-  (let [tex (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)]
-    (framebuffer-render size size :sfsim.render/cullback nil [tex]
+(defn jump-flooding-initialisation
+  [{::keys [size shockwave-radius max-curvature-radius program-init vao]}]
+  (let [flood (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)]
+    (framebuffer-render size size :sfsim.render/cullback nil [flood]
                         (use-program program-init)
                         (uniform-int program-init "size" size)
                         (uniform-float program-init "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
                         (uniform-float program-init "shockwave_radius" shockwave-radius)
                         (uniform-float program-init "max_curvature_radius" max-curvature-radius)
-                        (render-quads vao-init))
-    tex))
+                        (render-quads vao))
+    flood))
 
 
 (defmacro jump-flooding-step
-  [program vao shockwave-radius size & body]
+  [renderer shockwave-radius size & body]
   `(fn [flood# step#]
-       (let [result# (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F ~size ~size)]
+       (let [program# (::program-step ~renderer)
+             vao#     (::vao ~renderer)
+             result#  (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F ~size ~size)]
          (framebuffer-render ~size ~size :sfsim.render/noculling nil [result#]
-                             (use-program ~program)
-                             (uniform-sampler ~program "flood" 0)
-                             (uniform-int ~program "size" ~size)
-                             (uniform-int ~program "step" step#)
-                             (uniform-float ~program "scale" (/ (* 2.0 ~shockwave-radius) ~size))
+                             (use-program program#)
+                             (uniform-sampler program# "flood" 0)
+                             (uniform-int program# "size" ~size)
+                             (uniform-int program# "step" step#)
+                             (uniform-float program# "scale" (/ (* 2.0 ~shockwave-radius) ~size))
                              ~@body
                              (use-textures {0 flood#})
-                             (render-quads ~vao))
+                             (render-quads vao#))
          (destroy-texture flood#)
          result#)))
 

@@ -100,6 +100,14 @@ void main()
 }")
 
 
+(def shockfront-mock
+"#version 450 core
+float shockfront(float radial_distance, float curvature_radius)
+{
+  return -radial_distance * curvature_radius;
+}")
+
+
 (fact "Estimate curvature off surface given normals"
       (offscreen-render
         256 256
@@ -118,8 +126,8 @@ void main()
 
 (facts "Initial step of Jump Flooding Algorithm"
        (with-invisible-window
-         (let [renderer (make-shockwave-renderer depth-mock normal-mock 256 1.0 1.0)
-               tex      (jump-flood-initialisation renderer)]
+         (let [renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 1.0 1.0)
+               tex      (jump-flooding-initialisation renderer)]
            (let [img (rgba-texture->vectors4 tex)]
              (get-vector4 img 128 128) => (roughly-vector (vec4  1.0  1.0  1.0  1.0) 1e-2)
              (get-vector4 img   0   0) => (roughly-vector (vec4  0.0  0.0 -1.0  0.0) 1e-2)
@@ -129,36 +137,23 @@ void main()
            (destroy-shockwave-renderer renderer))))
 
 
-(def shockfront-mock
-"#version 450 core
-float shockfront(float radial_distance, float curvature_radius)
-{
-  return -radial_distance * curvature_radius;
-}")
-
-
 (facts "Jump flood algorithm"
        (with-invisible-window
          (let [size     256
                image    {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data (float-array (* size size 4))
                          :sfsim.image/channels 4}
-               indices  [0 1 3 2]
-               vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-               program  (make-program :sfsim.render/vertex [vertex-quad]
-                                      :sfsim.render/fragment [fragment-jump-flooding-step shockfront-mock])
-               vao      (make-vertex-array-object program indices vertices ["point" 3 "uv" 2])]
+               renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 1.0 1.0)]
            (set-vector4! image 128  64 (vec4 0.5 1.0 1.0 1.0))
            (set-vector4! image 128 192 (vec4 1.5 1.0 1.0 1.0))
            (let [flood  (make-float-texture-2d-base image :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F GL12/GL_RGBA GL11/GL_FLOAT)
-                 flood  (reduce (jump-flooding-step program vao 1.0 size) flood [128 64 32 16 8 4 2 1])
+                 flood  (reduce (jump-flooding-step renderer 1.0 size) flood [128 64 32 16 8 4 2 1])
                  result (rgba-texture->vectors4 flood)]
              (get-vector4 result 128  64) => (vec4 0.5 1.0 1.0 1.0)
              (get-vector4 result 128 192) => (vec4 1.5 1.0 1.0 1.0)
              (get-vector4 result 128  96) => (vec4 0.5 1.0 1.0 1.0)
              (get-vector4 result 128 160) => (vec4 1.5 1.0 1.0 1.0)
              (destroy-texture flood)
-             (destroy-vertex-array-object vao)
-             (destroy-program program)))))
+             (destroy-shockwave-renderer renderer)))))
 
 
 (GLFW/glfwTerminate)

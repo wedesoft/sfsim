@@ -584,7 +584,7 @@
     (with-invisible-window
       (let [indices       [0 1 3 2]
             vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-            transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width size :height size :data T :channels 1})
+            transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width size :height size :data T :channels 3})
             program       (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                         :sfsim.render/fragment (conj shaders (apply probe args)))
             vao           (make-vertex-array-object program indices vertices ["point" 3])
@@ -712,11 +712,11 @@ void main()
       (let [indices       [0 1 3 2]
             vertices      [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
             transmittance (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                  #:sfsim.image{:width size :height size :data T :channels 1})
+                                                  #:sfsim.image{:width size :height size :data T :channels 3})
             ray-scatter   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                  #:sfsim.image{:width (* size size) :height (* size size) :data S :channels 1})
+                                                  #:sfsim.image{:width (* size size) :height (* size size) :data S :channels 3})
             mie-strength  (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                  #:sfsim.image{:width (* size size) :height (* size size) :data M :channels 1})
+                                                  #:sfsim.image{:width (* size size) :height (* size size) :data M :channels 3})
             program       (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                         :sfsim.render/fragment (conj shaders (apply probe args)))
             vao           (make-vertex-array-object program indices vertices ["point" 3])
@@ -827,11 +827,11 @@ vec3 surface_radiance_function(vec3 point, vec3 light_direction)
                    geometry-buffers  (make-geometry-buffers 256 256)
                    lighting-program  (make-lighting-program ?cloud)
                    transmittance     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                             #:sfsim.image{:width size :height size :data T :channels 1})
+                                                             #:sfsim.image{:width size :height size :data T :channels 3})
                    ray-scatter       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                             #:sfsim.image{:width (* size size) :height (* size size) :data S :channels 1})
+                                                             #:sfsim.image{:width (* size size) :height (* size size) :data S :channels 3})
                    mie-strength      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                             #:sfsim.image{:width (* size size) :height (* size size) :data M :channels 1})
+                                                             #:sfsim.image{:width (* size size) :height (* size size) :data M :channels 3})
                    lighting-textures {0 transmittance 1 ray-scatter 2 mie-strength}]
                (render-geometry geometry-buffers
                                 (use-program geometry-program)
