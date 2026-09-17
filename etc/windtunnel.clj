@@ -251,10 +251,7 @@ void main()
                                                        (render/uniform-float program-init "mach" M)
                                                        (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                                              1 (:sfsim.model/normals wind-shadow)})))
-               flood     (reduce (jump-flooding-step #:sfsim.shockwave{:program-step program-jump-flooding
-                                                                       :vao vao-jump-flooding
-                                                                       :shockwave-radius shockwave-radius
-                                                                       :size size}
+               flood     (reduce (jump-flooding-step shockwave-renderer
                                                      (fn [program-step]
                                                          (render/uniform-float program-step "mach" M)))
                                  flood [128 64 32 16 8 4 2 1])
