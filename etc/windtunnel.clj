@@ -242,10 +242,10 @@ void main()
                                                        (render/uniform-float program-init "mach" M)
                                                        (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
                                                                              1 (:sfsim.model/normals wind-shadow)})))
-               flood     (reduce (jump-flooding-step shockwave-renderer
-                                                     (fn [program-step]
-                                                         (render/uniform-float program-step "mach" M)))
-                                 flood (halving size))
+               flood (reduce (jump-flooding-step shockwave-renderer
+                                                 (fn [program-step]
+                                                     (render/uniform-float program-step "mach" M)))
+                             flood (halving size))
                bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
            ;; Render shockwave
            (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
@@ -277,8 +277,8 @@ void main()
                                    (render/clear (vec3 0 1 0) 0.0)
                                    (render/use-program program-display)
                                    (render/uniform-sampler program-display "flood" 0)
-                                   (render/uniform-int program-display "wind" 1)
-                                   (render/uniform-int program-display "normals" 2)
+                                   (render/uniform-sampler program-display "wind" 1)
+                                   (render/uniform-sampler program-display "normals" 2)
                                    (render/uniform-int program-display "size" wsize)
                                    (render/uniform-float program-display "mach" M)
                                    (render/uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) wsize))
