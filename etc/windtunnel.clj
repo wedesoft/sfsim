@@ -186,7 +186,7 @@ void main()
                                             :sfsim.render/fragment [shaders/ray-box shockfront fragment-shockwave bluenoise/sampling-offset]))
 (def vao-shockwave (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3]))
 
-(def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
+(def vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5])
 (def indices [0 1 3 2])
 
 (def shockwave-renderer (make-shockwave-renderer depth-source normal-source shockfront size shockwave-radius max-curvature-radius))
@@ -194,7 +194,7 @@ void main()
 (GLFW/glfwMakeContextCurrent window2)
 (def program-display  (render/make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                            :sfsim.render/fragment [shockfront fragment-texture-2d]))
-(def vao-display (render/make-vertex-array-object program-display indices vertices ["point" 3 "uv" 2]))
+(def vao-display (render/make-vertex-array-object program-display indices vertices ["point" 3]))
 
 (while (and (not (GLFW/glfwWindowShouldClose window)) (not (GLFW/glfwWindowShouldClose window2)))
        (GLFW/glfwMakeContextCurrent window)
