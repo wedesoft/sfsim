@@ -10,7 +10,8 @@
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
          '[sfsim.shockwave :refer (shockfront curvature vertex-quad fragment-jump-flooding-init fragment-jump-flooding-step
-                                   jump-flooding-initialisation jump-flooding-step)]
+                                   jump-flooding-initialisation jump-flooding-step make-shockwave-renderer
+                                   destroy-shockwave-renderer)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL])
@@ -198,6 +199,8 @@ void main()
                                                 :sfsim.render/fragment [shockfront fragment-jump-flooding-step]))
 (def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
 
+(def shockwave-renderer (make-shockwave-renderer depth-source normal-source shockfront size shockwave-radius max-curvature-radius))
+
 (GLFW/glfwMakeContextCurrent window2)
 (def program-display  (render/make-program :sfsim.render/vertex [vertex-quad]
                                            :sfsim.render/fragment [shockfront fragment-texture-2d]))
@@ -241,11 +244,7 @@ void main()
              camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
              ndc-to-camera        (inverse camera-to-ndc)]
          ;; Perform Jump Flooding Algorithm
-         (let [flood (jump-flooding-initialisation #:sfsim.shockwave{:program-init program-init
-                                                                     :vao vao-init
-                                                                     :shockwave-radius shockwave-radius
-                                                                     :size size
-                                                                     :max-curvature-radius max-curvature-radius}
+         (let [flood (jump-flooding-initialisation shockwave-renderer
                                                    (fn [program-init]
                                                        (render/uniform-sampler program-init "depth" 0)
                                                        (render/uniform-sampler program-init "normals" 1)
@@ -310,6 +309,8 @@ void main()
 (GLFW/glfwMakeContextCurrent window2)
 (render/destroy-vertex-array-object vao-display)
 (render/destroy-program program-display)
+
+(destroy-shockwave-renderer shockwave-renderer)
 
 (GLFW/glfwMakeContextCurrent window)
 (render/destroy-vertex-array-object vao-shockwave)
