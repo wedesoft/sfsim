@@ -246,16 +246,18 @@ void main()
                                                                      :shockwave-radius shockwave-radius
                                                                      :size size
                                                                      :max-curvature-radius max-curvature-radius}
-                                                   (render/uniform-sampler program-init "depth" 0)
-                                                   (render/uniform-sampler program-init "normals" 1)
-                                                   (render/uniform-float program-init "mach" M)
-                                                   (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
-                                                                         1 (:sfsim.model/normals wind-shadow)}))
+                                                   (fn [program-init]
+                                                       (render/uniform-sampler program-init "depth" 0)
+                                                       (render/uniform-sampler program-init "normals" 1)
+                                                       (render/uniform-float program-init "mach" M)
+                                                       (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
+                                                                             1 (:sfsim.model/normals wind-shadow)})))
                flood     (reduce (jump-flooding-step #:sfsim.shockwave{:program-step program-jump-flooding
                                                                        :vao vao-jump-flooding
                                                                        :shockwave-radius shockwave-radius
                                                                        :size size}
-                                                     (render/uniform-float program-jump-flooding "mach" M))
+                                                     (fn [program-step]
+                                                         (render/uniform-float program-step "mach" M)))
                                  flood [128 64 32 16 8 4 2 1])
                bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
            ;; Render shockwave

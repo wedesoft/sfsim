@@ -126,7 +126,7 @@ float shockfront(float radial_distance, float curvature_radius)
 (facts "Initial step of Jump Flooding Algorithm"
        (with-invisible-window
          (let [renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 1.0 1.0)
-               tex      (jump-flooding-initialisation renderer)]
+               tex      (jump-flooding-initialisation renderer identity)]
            (let [img (rgba-texture->vectors4 tex)]
              (get-vector4 img 128 128) => (roughly-vector (vec4  1.0  1.0  1.0  1.0) 1e-2)
              (get-vector4 img   0   0) => (roughly-vector (vec4  0.0  0.0 -1.0  0.0) 1e-2)
@@ -145,7 +145,7 @@ float shockfront(float radial_distance, float curvature_radius)
            (set-vector4! image 128  64 (vec4 0.5 1.0 1.0 1.0))
            (set-vector4! image 128 192 (vec4 1.5 1.0 1.0 1.0))
            (let [flood  (make-vector-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp image)
-                 flood  (reduce (jump-flooding-step renderer) flood [128 64 32 16 8 4 2 1])
+                 flood  (reduce (jump-flooding-step renderer identity) flood [128 64 32 16 8 4 2 1])
                  result (rgba-texture->vectors4 flood)]
              (get-vector4 result 128  64) => (vec4 0.5 1.0 1.0 1.0)
              (get-vector4 result 128 192) => (vec4 1.5 1.0 1.0 1.0)
