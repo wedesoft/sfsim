@@ -5,8 +5,6 @@ uniform int step;
 uniform int size;
 uniform float scale;
 
-in vec2 uv_fragment;
-
 layout (location = 0) out vec4 point;
 
 float shockfront(float radial_distance, float curvature_radius);

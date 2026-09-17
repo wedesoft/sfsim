@@ -8,7 +8,7 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront vertex-quad jump-flooding-initialisation jump-flooding-step
+         '[sfsim.shockwave :refer (shockfront jump-flooding-initialisation jump-flooding-step
                                    make-shockwave-renderer destroy-shockwave-renderer halving)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
@@ -69,7 +69,6 @@ uniform float shockwave_radius;
 uniform sampler2D flood;
 uniform sampler2D normals;
 uniform sampler2D wind;
-in vec2 uv_fragment;
 out vec3 fragColor;
 float shockfront(float distance, float Rn);
 void main()
@@ -193,7 +192,7 @@ void main()
 (def shockwave-renderer (make-shockwave-renderer depth-source normal-source shockfront size shockwave-radius max-curvature-radius))
 
 (GLFW/glfwMakeContextCurrent window2)
-(def program-display  (render/make-program :sfsim.render/vertex [vertex-quad]
+(def program-display  (render/make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                            :sfsim.render/fragment [shockfront fragment-texture-2d]))
 (def vao-display (render/make-vertex-array-object program-display indices vertices ["point" 3 "uv" 2]))
 

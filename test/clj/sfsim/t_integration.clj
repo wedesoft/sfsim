@@ -9,7 +9,7 @@
     [clojure.java.io :as io]
     [clojure.math :refer (PI to-radians)]
     [fastmath.matrix :refer (mat3x3 mulm mulv rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z inverse)]
-    [fastmath.vector :refer (vec2 vec3 vec4 add div sub)]
+    [fastmath.vector :refer (vec2 vec3 add div sub)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -19,7 +19,6 @@
     [sfsim.conftest :refer (roughly-vector roughly-matrix is-image)]
     [sfsim.matrix :refer (transformation-matrix rotation-matrix quaternion->matrix matrix->quaternion vec4->vec3) :as matrix]
     [sfsim.model :as model]
-    [sfsim.lighting :as lighting]
     [sfsim.graphics :as graphics]
     [sfsim.planet :as planet]
     [sfsim.plume :as plume]
@@ -27,6 +26,8 @@
     [sfsim.quadtree :refer :all]
     [sfsim.quaternion :as q]
     [sfsim.render :refer :all]
+    [sfsim.shaders :as shaders]
+    [sfsim.shockwave :as shockwave]
     [sfsim.texture :refer :all])
   (:import
     (org.lwjgl.glfw
@@ -293,6 +294,82 @@ void main()
         (graphics/destroy-frame frame)
         (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
         (graphics/destroy-graphics2 graphics)))))
+
+
+(def depth-source
+"#version 450 core
+uniform sampler2D depth;
+float depth_source(vec2 uv)
+{
+  return texture(depth, uv).r;
+}")
+
+
+(def normal-source
+"#version 450 core
+uniform sampler2D normals;
+vec4 normal_source(vec2 uv)
+{
+  return texture(normals, uv);
+}")
+
+
+(def fragment-texture-2d
+"#version 450 core
+uniform int size;
+uniform float scale;
+uniform float shockwave_radius;
+uniform sampler2D flood;
+out vec3 fragColor;
+float shockfront(float distance, float Rn);
+void main()
+{
+  vec2 uv_fragment = gl_FragCoord.xy / size;
+  vec4 point = texture(flood, uv_fragment);
+  float depth = (point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w)) / shockwave_radius;
+  fragColor = vec3(depth);
+}")
+
+
+(fact "Test shockwave shape rendering"
+      (with-invisible-window
+        (let [size                 256
+              object-radius        1.4
+              shockwave-radius     4.0
+              max-curvature-radius 3.0
+              M                    10.0
+              wind-from            (vec3 1 0 0)
+              graphics             (graphics/make-graphics2
+                                     [{:sfsim.graphics/model-file (str "test/clj/sfsim/fixtures/model/cube.glb")
+                                       :sfsim.graphics/object-radius object-radius}]
+                                     [])
+              program-display      (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                 :sfsim.render/fragment [shockwave/shockfront fragment-texture-2d])
+              wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
+                                                           wind-from
+                                                           (assoc (first (:sfsim.graphics/scenes graphics))
+                                                                  :sfsim.model/object-radius shockwave-radius)
+                                                           :sfsim.render/cullback
+                                                           true)
+              shockwave-renderer   (shockwave/make-shockwave-renderer depth-source normal-source shockwave/shockfront size
+                                                                      shockwave-radius max-curvature-radius)
+              flood                (shockwave/jump-flooding-initialisation
+                                     shockwave-renderer
+                                     (fn [program-init]
+                                         (uniform-sampler program-init "depth" 0)
+                                         (uniform-sampler program-init "normals" 1)
+                                         (uniform-float program-init "mach" M)
+                                         (use-textures {0 (:sfsim.model/shadows wind-shadow)
+                                                        1 (:sfsim.model/normals wind-shadow)})))
+              flood                (reduce (shockwave/jump-flooding-step shockwave-renderer
+                                                                         (fn [program-step]
+                                                                             (uniform-float program-step "mach" M)))
+                                           flood (shockwave/halving size))]
+          (destroy-texture flood)
+          (model/destroy-scene-shadow-map wind-shadow)
+          (shockwave/destroy-shockwave-renderer shockwave-renderer)
+          (destroy-program program-display)
+          (graphics/destroy-graphics2 graphics))))
 
 
 (when (.exists (io/file ".integration"))

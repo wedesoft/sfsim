@@ -12,7 +12,7 @@
       [sfsim.render :refer (uniform-float use-program uniform-int render-quads framebuffer-render uniform-sampler use-textures
                             make-program destroy-program make-vertex-array-object destroy-vertex-array-object)]
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture)]
-      )
+      [sfsim.shaders :refer (vertex-passthrough)])
     (:import
       (org.lwjgl.opengl
         GL30)))
@@ -28,9 +28,6 @@
 (def curvature (slurp "resources/shaders/shockwave/curvature.glsl"))
 
 
-(def vertex-quad (slurp "resources/shaders/shockwave/vertex-quad.glsl"))
-
-
 (def fragment-jump-flooding-init (slurp "resources/shaders/shockwave/fragment-jump-flooding-init.glsl"))
 
 
@@ -41,9 +38,9 @@
   [depth-source normal-source shockfront size shockwave-radius max-curvature-radius]
   (let [indices      [0 1 3 2]
         vertices     [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0]
-        program-init (make-program :sfsim.render/vertex [vertex-quad]
+        program-init (make-program :sfsim.render/vertex [vertex-passthrough]
                                    :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source])
-        program-step (make-program :sfsim.render/vertex [vertex-quad]
+        program-step (make-program :sfsim.render/vertex [vertex-passthrough]
                                    :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
         vao          (make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2])]
     {::size                 size
