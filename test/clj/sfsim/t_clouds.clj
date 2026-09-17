@@ -1487,7 +1487,7 @@ void main()
                                         -1  0 0, 0  0 0, 1  0 0,
                                         -1 -1 0, 0 -1 0, 1 -1 0]
                    surface             (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                                               #:sfsim.image{:width 3 :height 3 :data (float-array data)})
+                                                               #:sfsim.image{:width 3 :height 3 :data (float-array data) :channels 3})
                    tree                {:sfsim.planet/vao vao
                                         :sfsim.planet/surf-tex surface
                                         :sfsim.quadtree/center (vec3 0 0 (or ?planet 0))}

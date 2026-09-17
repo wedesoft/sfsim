@@ -259,7 +259,7 @@
                                           ^long (:sfsim.image/height image) 0 ^long format_ ^long type_ ^java.nio.DirectByteBuffer buffer))))
 
 
-(defn- make-float-texture-2d-base
+(defn make-float-texture-2d-base
   "Initialise a 2D texture"
   {:malli/schema [:=> [:cat image interpolation boundary :int :int :int] texture-2d]}
   [image interpolation boundary internalformat format_ type_]
@@ -380,7 +380,9 @@
   "Load floating point 2D array of 3D vectors into OpenGL texture"
   {:malli/schema [:=> [:cat interpolation boundary float-image-2d] texture-2d]}
   [interpolation boundary image]
-  (make-float-texture-2d-base image interpolation boundary GL30/GL_RGB32F GL12/GL_RGB GL11/GL_FLOAT))
+  (let [internalformat (case (long (:sfsim.image/channels image)) 3 GL30/GL_RGB32F 4 GL30/GL_RGBA32F)
+        format_        (case (long (:sfsim.image/channels image)) 3 GL12/GL_RGB GL12/GL_RGBA)]
+    (make-float-texture-2d-base image interpolation boundary internalformat format_ GL11/GL_FLOAT)))
 
 
 (defn make-float-texture-3d

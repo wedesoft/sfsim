@@ -196,10 +196,12 @@
         vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
         day-night-tex  (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp [(::day tile) (::night tile)])
         surf-tex       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                               #:sfsim.image{:width tilesize :height tilesize :data (::surface tile)})
+                                               #:sfsim.image{:width tilesize :height tilesize :data (::surface tile)
+                                                             :channels 3})
         normal-tex     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp (::normals tile))
         water-tex      (make-ubyte-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                              #:sfsim.image{:width color-tilesize :height color-tilesize :data (::water tile)})]
+                                              #:sfsim.image{:width color-tilesize :height color-tilesize :data (::water tile)
+                                                            :channels 1})]
     (assoc (dissoc tile ::day ::night ::surface ::normals ::water)
            ::vao vao ::day-night-tex day-night-tex ::surf-tex surf-tex ::normal-tex normal-tex ::water-tex water-tex)))
 
@@ -353,7 +355,7 @@
         tilesize      (::tilesize config)
         worley-floats (slurp-floats (::worley-data config))
         worley-size   (::worley-size config)
-        worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
+        worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats :channels 1}
         worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)]
     (use-program program)
     (uniform-sampler program "surface" 0)

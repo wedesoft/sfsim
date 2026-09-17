@@ -282,7 +282,7 @@ void main()
     (let [indices   [0 1 3 2]
           vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           data      (repeat 4 shadow-depth)
-          shadows   (make-depth-texture :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width 2 :height 2 :data (float-array data)})
+          shadows   (make-depth-texture :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width 2 :height 2 :data (float-array data) :channels 1})
           program   (make-program :sfsim.render/vertex [vertex-passthrough]
                                   :sfsim.render/fragment [(shadow-lookup-probe lookup-depth)
                                                           (shadow-lookup "shadow_lookup" "shadow_size")])
@@ -347,7 +347,7 @@ void main()
                                                                 (shadow-cascade-lookup n "shadow_lookup") shadow-lookup-mock])
           vao                (make-vertex-array-object program indices vertices ["point" 3])
           shadow-texs     (map #(make-depth-texture :sfsim.texture/linear :sfsim.texture/clamp
-                                                    #:sfsim.image{:width 1 :height 1 :data (float-array [%])})
+                                                    #:sfsim.image{:width 1 :height 1 :data (float-array [%]) :channels 1})
                                shadows)
           tex             (texture-render-color 1 1 true
                                                 (use-program program)
@@ -470,7 +470,7 @@ void main()
           data-2d   [[1 2] [3 4] [5 6]]
           data-flat (flatten (map (partial repeat 3) (flatten data-2d)))
           table     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
-                                            #:sfsim.image{:width 2 :height 3 :data (float-array data-flat)})
+                                            #:sfsim.image{:width 2 :height 3 :data (float-array data-flat) :channels 3})
           program   (make-program :sfsim.render/vertex [vertex-passthrough]
                                   :sfsim.render/fragment [(interpolate-2d-probe x y) interpolate-2d])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
@@ -517,7 +517,7 @@ void main()
           vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           data-3d   (range (* 2 3 4))
           table     (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/clamp
-                                           #:sfsim.image{:width 4 :height 3 :depth 2 :data (float-array data-3d)})
+                                           #:sfsim.image{:width 4 :height 3 :depth 2 :data (float-array data-3d) :channels 1})
           program   (make-program :sfsim.render/vertex [vertex-passthrough]
                                   :sfsim.render/fragment [(interpolate-3d-probe x y z) interpolate-3d])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
@@ -566,7 +566,7 @@ void main()
     (let [indices     [0 1 3 2]
           vertices    [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           datas       [[0 1 0 1] [2 2 2 2] [3 3 3 3] [4 4 4 4] [5 5 5 5] [6 6 6 6]]
-          data->image (fn [data] #:sfsim.image{:width 2 :height 2 :data (float-array data)})
+          data->image (fn [data] #:sfsim.image{:width 2 :height 2 :data (float-array data) :channels 1})
           cube        (make-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp (mapv data->image datas))
           program     (make-program :sfsim.render/vertex [vertex-passthrough]
                                     :sfsim.render/fragment [(interpolate-cubemap-probe method selector x y z)
@@ -616,7 +616,7 @@ void main()
           vertices  [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
           data-4d   [[[[1 2] [3 4]] [[5 6] [7 8]]] [[[9 10] [11 12]] [[13 14] [15 16]]]]
           data-flat (flatten (map (partial repeat 3) (flatten (convert-4d-to-2d data-4d))))
-          table     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width 4 :height 4 :data (float-array data-flat)})
+          table     (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp #:sfsim.image{:width 4 :height 4 :data (float-array data-flat) :channels 3})
           program   (make-program :sfsim.render/vertex [vertex-passthrough]
                                   :sfsim.render/fragment [(interpolate-4d-probe x y z w) interpolate-4d])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
@@ -695,7 +695,7 @@ void main()
           data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
           data-flat (flatten data-3d)
           table     (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
-                                           #:sfsim.image{:width 2 :height 2 :depth 2 :data (float-array data-flat)})
+                                           #:sfsim.image{:width 2 :height 2 :depth 2 :data (float-array data-flat) :channels 1})
           program   (make-program :sfsim.render/vertex [vertex-passthrough]
                                   :sfsim.render/fragment [(lookup-3d-probe x y z) (lookup-3d "lookup_3d" "table")])
           vao       (make-vertex-array-object program indices vertices ["point" 3])
@@ -742,7 +742,7 @@ void main()
           data-3d   [[[1 2] [3 4]] [[5 6] [7 8]]]
           data-flat (flatten data-3d)
           table     (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat
-                                           #:sfsim.image{:width 2 :height 2 :depth 2 :data (float-array data-flat)})
+                                           #:sfsim.image{:width 2 :height 2 :depth 2 :data (float-array data-flat) :channels 1})
           program   (make-program :sfsim.render/vertex [vertex-passthrough]
                                   :sfsim.render/fragment [(lookup-3d-lod-probe x y z lod)
                                                           (lookup-3d-lod "lookup_3d_lod" "table")])

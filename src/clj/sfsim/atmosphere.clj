@@ -592,26 +592,30 @@
         transmittance         (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                       #:sfsim.image{:width transmittance-elevation-size
                                                                     :height transmittance-height-size
-                                                                    :data transmittance-data})
+                                                                    :data transmittance-data
+                                                                    :channels 3})
         scatter-data          (slurp-floats "data/atmosphere/ray-scatter.scatter")
         scatter               (make-vector-texture-4d :sfsim.texture/linear :sfsim.texture/clamp
                                                       #:sfsim.image{:width heading-size
                                                                     :height light-elevation-size
                                                                     :depth elevation-size
                                                                     :hyperdepth height-size
-                                                                    :data scatter-data})
+                                                                    :data scatter-data
+                                                                    :channels 3})
         mie-data              (slurp-floats "data/atmosphere/mie-strength.scatter")
         mie                   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                       #:sfsim.image{:width heading-size
                                                                     :height light-elevation-size
                                                                     :depth elevation-size
                                                                     :hyperdepth height-size
-                                                                    :data mie-data})
+                                                                    :data mie-data
+                                                                    :channels 3})
         surface-radiance-data (slurp-floats "data/atmosphere/surface-radiance.scatter")
         surface-radiance      (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                       #:sfsim.image{:width surface-sun-elevation-size
                                                                     :height surface-height-size
-                                                                    :data surface-radiance-data})]
+                                                                    :data surface-radiance-data
+                                                                    :channels 3})]
     {::transmittance transmittance
      ::scatter scatter
      ::mie mie

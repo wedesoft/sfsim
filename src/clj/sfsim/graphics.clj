@@ -54,18 +54,21 @@
         planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0 overlays)
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
         scene-renderer          (model/make-scene-geometry-renderer true)
-        object-radius           (or (::object-radius (first models)) (:sfsim.model/object-radius config/model-config))
-        scene-shadow-renderer   (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config)
-                                                                  object-radius)
+        scene-shadow-renderer   (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config))
         lighting-renderer       (lighting/make-lighting-renderer {:sfsim.render/config config/render-config
                                                                   :sfsim.planet/config config/planet-config
                                                                   :sfsim.opacity/data opacity-data
                                                                   :sfsim.clouds/data cloud-data
                                                                   :sfsim.atmosphere/luts atmosphere-luts})
         scenes                  (mapv (comp model/read-gltf ::model-file) models)
+        object-radii            (mapv ::object-radius models)
         bsp-tree                (some-> (first scenes) (model/get-bsp-tree "BSP"))
         thruster-transforms     (some-> (first scenes) (get-thruster-transforms (physics/all-rcs)))
-        opengl-scenes           (mapv (partial model/load-scene-into-opengl (model/geometry-program-selection scene-renderer)) scenes)]
+        opengl-scenes           (mapv (fn [model object-radius]
+                                          (assoc
+                                            (model/load-scene-into-opengl (model/geometry-program-selection scene-renderer) model)
+                                            :sfsim.model/object-radius object-radius))
+                                      scenes object-radii)]
     {:sfsim.render/config config/render-config
      :sfsim.planet/config config/planet-config
      :sfsim.clouds/config config/cloud-config

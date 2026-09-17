@@ -372,19 +372,22 @@
   [cloud-config]
   (let [worley-floats        (slurp-floats "data/clouds/worley-cover.raw")
         perlin-floats        (slurp-floats "data/clouds/perlin.raw")
-        worley-data          #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats}
+        worley-data          #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data worley-floats
+                                           :channels 1}
         worley               (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat worley-data)
         perlin-worley-floats (float-array (mapv #(+ (* 0.3 ^double %1) (* 0.7 ^double %2)) perlin-floats worley-floats))
-        perlin-worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data perlin-worley-floats}
+        perlin-worley-data   #:sfsim.image{:width worley-size :height worley-size :depth worley-size :data perlin-worley-floats
+                                           :channels 1}
         perlin-worley        (make-float-texture-3d :sfsim.texture/linear :sfsim.texture/repeat perlin-worley-data)
         cover-floats-list    (mapv (fn load-cloud-cubemap-face [i] (slurp-floats (str "data/clouds/cover" i ".raw"))) (range 6))
         cover-data           (mapv (fn make-cloud-cover-image
                                      [cover-floats]
-                                     #:sfsim.image{:width cover-size :height cover-size :data cover-floats})
+                                     #:sfsim.image{:width cover-size :height cover-size :data cover-floats
+                                                   :channels 1})
                                    cover-floats-list)
         cloud-cover          (make-float-cubemap :sfsim.texture/linear :sfsim.texture/clamp cover-data)
         bluenoise-floats     (slurp-floats "data/bluenoise.raw")
-        bluenoise-data       #:sfsim.image{:width noise-size :height noise-size :data bluenoise-floats}
+        bluenoise-data       #:sfsim.image{:width noise-size :height noise-size :data bluenoise-floats :channels 1}
         bluenoise            (make-float-texture-2d :sfsim.texture/nearest :sfsim.texture/repeat bluenoise-data)]
     (generate-mipmap worley)
     (assoc cloud-config
