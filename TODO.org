@@ -323,6 +323,7 @@
     [[https://glitch.fun/publishers/release_dates][best release time]]
   - Note taken on [2026-04-30 Do 21:37] \\
     [[https://www.reddit.com/r/gamedev/comments/1s6x2m7/what_ive_learned_from_playtesting_22_indie_games/][What I've learned from playtesting 22+ indie games]]
+  - GameTrailers youtube channel
   - streamers
     - Scott Manley
     - Space Game Junkie

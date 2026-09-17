@@ -155,4 +155,11 @@ float shockfront(float radial_distance, float curvature_radius)
              (destroy-shockwave-renderer renderer)))))
 
 
+(facts "Test halving sequence"
+       (halving 1) => []
+       (halving 2) => [1]
+       (halving 4) => [2 1]
+       (halving 8) => [4 2 1])
+
+
 (GLFW/glfwTerminate)

@@ -1,5 +1,4 @@
-(require '[clojure.math :refer (PI to-radians)]
-         '[fastmath.vector :refer (vec3 normalize)]
+(require '[clojure.math :refer (PI to-radians)] '[fastmath.vector :refer (vec3 normalize)]
          '[fastmath.matrix :refer (mulm inverse)]
          '[sfsim.config :as config]
          '[sfsim.quaternion :as q]
@@ -9,9 +8,8 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront curvature vertex-quad fragment-jump-flooding-init fragment-jump-flooding-step
-                                   jump-flooding-initialisation jump-flooding-step make-shockwave-renderer
-                                   destroy-shockwave-renderer)]
+         '[sfsim.shockwave :refer (shockfront vertex-quad jump-flooding-initialisation jump-flooding-step
+                                   make-shockwave-renderer destroy-shockwave-renderer halving)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL])
@@ -247,7 +245,7 @@ void main()
                flood     (reduce (jump-flooding-step shockwave-renderer
                                                      (fn [program-step]
                                                          (render/uniform-float program-step "mach" M)))
-                                 flood [128 64 32 16 8 4 2 1])
+                                 flood (halving size))
                bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
            ;; Render shockwave
            (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]

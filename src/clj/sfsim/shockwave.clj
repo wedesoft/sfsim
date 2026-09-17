@@ -92,5 +92,11 @@
         result)))
 
 
+(defn halving
+  "Generate halving sequence of integers"
+  [size]
+  (rest (take-while pos? (iterate #(bit-shift-right % 1) size))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
