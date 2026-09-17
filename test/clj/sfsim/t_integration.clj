@@ -331,45 +331,62 @@ void main()
 }")
 
 
-(fact "Test shockwave shape rendering"
-      (with-invisible-window
-        (let [size                 256
-              object-radius        1.4
-              shockwave-radius     4.0
-              max-curvature-radius 3.0
-              M                    10.0
-              wind-from            (vec3 1 0 0)
-              graphics             (graphics/make-graphics2
-                                     [{:sfsim.graphics/model-file (str "test/clj/sfsim/fixtures/model/cube.glb")
-                                       :sfsim.graphics/object-radius object-radius}]
-                                     [])
-              program-display      (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                 :sfsim.render/fragment [shockwave/shockfront fragment-texture-2d])
-              wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
-                                                           wind-from
-                                                           (assoc (first (:sfsim.graphics/scenes graphics))
-                                                                  :sfsim.model/object-radius shockwave-radius)
-                                                           :sfsim.render/cullback
-                                                           true)
-              shockwave-renderer   (shockwave/make-shockwave-renderer depth-source normal-source shockwave/shockfront size
-                                                                      shockwave-radius max-curvature-radius)
-              flood                (shockwave/jump-flooding-initialisation
-                                     shockwave-renderer
-                                     (fn [program-init]
-                                         (uniform-sampler program-init "depth" 0)
-                                         (uniform-sampler program-init "normals" 1)
-                                         (uniform-float program-init "mach" M)
-                                         (use-textures {0 (:sfsim.model/shadows wind-shadow)
-                                                        1 (:sfsim.model/normals wind-shadow)})))
-              flood                (reduce (shockwave/jump-flooding-step shockwave-renderer
-                                                                         (fn [program-step]
-                                                                             (uniform-float program-step "mach" M)))
-                                           flood (shockwave/halving size))]
-          (destroy-texture flood)
-          (model/destroy-scene-shadow-map wind-shadow)
-          (shockwave/destroy-shockwave-renderer shockwave-renderer)
-          (destroy-program program-display)
-          (graphics/destroy-graphics2 graphics))))
+(when (.exists (io/file ".integration"))
+  (fact "Test shockwave shape rendering"
+        (with-invisible-window
+          (let [size                 256
+                object-radius        1.4
+                shockwave-radius     2.8
+                max-curvature-radius 3.0
+                M                    10.0
+                wind-from            (vec3 1 0 0)
+                graphics             (graphics/make-graphics2
+                                       [{:sfsim.graphics/model-file (str "test/clj/sfsim/fixtures/model/cube.glb")
+                                         :sfsim.graphics/object-radius object-radius}]
+                                       [])
+                vertices             [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+                indices              [0 1 3 2]
+                program-display      (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                   :sfsim.render/fragment [shockwave/shockfront fragment-texture-2d])
+                vao-display          (make-vertex-array-object program-display indices vertices ["point" 3])
+                wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
+                                                             wind-from
+                                                             (assoc (first (:sfsim.graphics/scenes graphics))
+                                                                    :sfsim.model/object-radius shockwave-radius)
+                                                             :sfsim.render/cullback
+                                                             true)
+                shockwave-renderer   (shockwave/make-shockwave-renderer depth-source normal-source shockwave/shockfront size
+                                                                        shockwave-radius max-curvature-radius)
+                flood                (shockwave/jump-flooding-initialisation
+                                       shockwave-renderer
+                                       (fn [program-init]
+                                           (uniform-sampler program-init "depth" 0)
+                                           (uniform-sampler program-init "normals" 1)
+                                           (uniform-float program-init "mach" M)
+                                           (use-textures {0 (:sfsim.model/shadows wind-shadow)
+                                                          1 (:sfsim.model/normals wind-shadow)})))
+                flood                (reduce (shockwave/jump-flooding-step shockwave-renderer
+                                                                           (fn [program-step]
+                                                                               (uniform-float program-step "mach" M)))
+                                             flood (shockwave/halving size))]
+            (render-to-image size size false
+                             (clear (vec3 0 1 0) 0.0)
+                             (use-program program-display)
+                             (uniform-sampler program-display "flood" 0)
+                             (uniform-int program-display "size" size)
+                             (uniform-float program-display "mach" M)
+                             (uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) size))
+                             (uniform-float program-display "max_curvature_radius" max-curvature-radius)
+                             (uniform-float program-display "shockwave_radius" shockwave-radius)
+                             (use-textures {0 flood})
+                             (render-quads vao-display))
+            => (is-image (str "test/clj/sfsim/fixtures/integration/jump-flooding-algorithm.png") 1.0)
+            (destroy-texture flood)
+            (model/destroy-scene-shadow-map wind-shadow)
+            (shockwave/destroy-shockwave-renderer shockwave-renderer)
+            (destroy-vertex-array-object vao-display)
+            (destroy-program program-display)
+            (graphics/destroy-graphics2 graphics)))))
 
 
 (when (.exists (io/file ".integration"))
