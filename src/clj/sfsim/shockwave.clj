@@ -61,17 +61,23 @@
   (destroy-program program-init))
 
 
-(defn jump-flooding-initialisation
-  [{::keys [size shockwave-radius max-curvature-radius program-init vao]}]
-  (let [flood (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size)]
-    (framebuffer-render size size :sfsim.render/cullback nil [flood]
-                        (use-program program-init)
-                        (uniform-int program-init "size" size)
-                        (uniform-float program-init "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
-                        (uniform-float program-init "shockwave_radius" shockwave-radius)
-                        (uniform-float program-init "max_curvature_radius" max-curvature-radius)
-                        (render-quads vao))
-    flood))
+(defmacro jump-flooding-initialisation
+  [renderer & body]
+  `(let [program#              (::program-init ~renderer)
+         vao#                  (::vao ~renderer)
+         size#                 (::size ~renderer)
+         shockwave-radius#     (::shockwave-radius ~renderer)
+         max-curvature-radius# (::max-curvature-radius ~renderer)
+         flood#                (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size# size#)]
+     (framebuffer-render size# size# :sfsim.render/cullback nil [flood#]
+                         (use-program program#)
+                         (uniform-int program# "size" size#)
+                         (uniform-float program# "scale" (/ (* 2.0 shockwave-radius#) size#))
+                         (uniform-float program# "shockwave_radius" shockwave-radius#)
+                         (uniform-float program# "max_curvature_radius" max-curvature-radius#)
+                         ~@body
+                         (render-quads vao#))
+     flood#))
 
 
 (defmacro jump-flooding-step

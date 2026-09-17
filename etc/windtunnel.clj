@@ -10,10 +10,10 @@
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
          '[sfsim.shockwave :refer (shockfront curvature vertex-quad fragment-jump-flooding-init fragment-jump-flooding-step
-                                   jump-flooding-step)]
+                                   jump-flooding-initialisation jump-flooding-step)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
-        '[org.lwjgl.opengl GL GL30])
+        '[org.lwjgl.opengl GL])
 
 (GLFW/glfwInit)
 
@@ -241,69 +241,66 @@ void main()
              camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
              ndc-to-camera        (inverse camera-to-ndc)]
          ;; Perform Jump Flooding Algorithm
-         (let [flood (texture/make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
-           (render/framebuffer-render size size :sfsim.render/noculling nil [flood]
-                                   (render/use-program program-init)
-                                   (render/uniform-sampler program-init "depth" 0)
-                                   (render/uniform-sampler program-init "normals" 1)
-                                   (render/uniform-float program-init "mach" M)
-                                   (render/uniform-int program-init "size" size)
-                                   (render/uniform-float program-init "scale" (/ (* 2.0 shockwave-radius) size))
-                                   (render/uniform-float program-init "shockwave_radius" shockwave-radius)
-                                   (render/uniform-float program-init "max_curvature_radius" max-curvature-radius)
-                                   (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
-                                                         1 (:sfsim.model/normals wind-shadow)})
-                                   (render/render-quads vao-init))
-           (let [flood     (reduce (jump-flooding-step #:sfsim.shockwave{:program-step program-jump-flooding
-                                                                         :vao vao-jump-flooding
-                                                                         :shockwave-radius shockwave-radius
-                                                                         :size size}
-                                                       (render/uniform-float program-jump-flooding "mach" M))
-                                   flood [128 64 32 16 8 4 2 1])
-                 bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
-             ;; Render shockwave
-             (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
-                                        (render/use-program program-shockwave)
-                                        (render/uniform-sampler program-shockwave "points" 0)
-                                        (render/uniform-sampler program-shockwave "flood" 1)
-                                        (render/uniform-sampler program-shockwave "bluenoise" 2)
-                                        (render/uniform-int program-shockwave "width" (/ width 2))
-                                        (render/uniform-int program-shockwave "height" (/ height 2))
-                                        (render/uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
-                                        (render/uniform-float program-shockwave "shockwave_radius" shockwave-radius)
-                                        (render/uniform-float program-shockwave "scale" (/ (* 2.0 shockwave-radius) size))
-                                        (render/uniform-float program-shockwave "step" 0.01)
-                                        (render/uniform-float program-shockwave "mach" M)
-                                        (render/uniform-matrix4 program-shockwave "projection" projection)
-                                        (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
-                                        (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
-                                        (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
-                                                              1 flood
-                                                              2 bluenoise})
-                                        (render/render-quads vao-shockwave))
-             ;; Compose render of model
-             (render/onscreen-render window
-                                     (render/clear (vec3 0 1 0) 0.0)
-                                     (graphics/render-lighting frame graphics))
-             ;; Render JFA result
-             (GLFW/glfwMakeContextCurrent window2)
-             (render/onscreen-render window2
-                                     (render/clear (vec3 0 1 0) 0.0)
-                                     (render/use-program program-display)
-                                     (render/uniform-sampler program-display "flood" 0)
-                                     (render/uniform-int program-display "wind" 1)
-                                     (render/uniform-int program-display "normals" 2)
-                                     (render/uniform-int program-display "size" wsize)
-                                     (render/uniform-float program-display "mach" M)
-                                     (render/uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) wsize))
-                                     (render/uniform-float program-display "max_curvature_radius" max-curvature-radius)
-                                     (render/uniform-float program-display "shockwave_radius" shockwave-radius)
-                                     (render/use-textures {0 flood
-                                                           1 (:sfsim.model/shadows wind-shadow)
-                                                           2 (:sfsim.model/normals wind-shadow)})
-                                     (render/render-quads vao-display))
-             (GLFW/glfwMakeContextCurrent window)
-             (texture/destroy-texture flood)))
+         (let [flood (jump-flooding-initialisation #:sfsim.shockwave{:program-init program-init
+                                                                     :vao vao-init
+                                                                     :shockwave-radius shockwave-radius
+                                                                     :size size
+                                                                     :max-curvature-radius max-curvature-radius}
+                                                   (render/uniform-sampler program-init "depth" 0)
+                                                   (render/uniform-sampler program-init "normals" 1)
+                                                   (render/uniform-float program-init "mach" M)
+                                                   (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
+                                                                         1 (:sfsim.model/normals wind-shadow)}))
+               flood     (reduce (jump-flooding-step #:sfsim.shockwave{:program-step program-jump-flooding
+                                                                       :vao vao-jump-flooding
+                                                                       :shockwave-radius shockwave-radius
+                                                                       :size size}
+                                                     (render/uniform-float program-jump-flooding "mach" M))
+                                 flood [128 64 32 16 8 4 2 1])
+               bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
+           ;; Render shockwave
+           (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
+                                      (render/use-program program-shockwave)
+                                      (render/uniform-sampler program-shockwave "points" 0)
+                                      (render/uniform-sampler program-shockwave "flood" 1)
+                                      (render/uniform-sampler program-shockwave "bluenoise" 2)
+                                      (render/uniform-int program-shockwave "width" (/ width 2))
+                                      (render/uniform-int program-shockwave "height" (/ height 2))
+                                      (render/uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
+                                      (render/uniform-float program-shockwave "shockwave_radius" shockwave-radius)
+                                      (render/uniform-float program-shockwave "scale" (/ (* 2.0 shockwave-radius) size))
+                                      (render/uniform-float program-shockwave "step" 0.01)
+                                      (render/uniform-float program-shockwave "mach" M)
+                                      (render/uniform-matrix4 program-shockwave "projection" projection)
+                                      (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
+                                      (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
+                                      (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
+                                                            1 flood
+                                                            2 bluenoise})
+                                      (render/render-quads vao-shockwave))
+           ;; Compose render of model
+           (render/onscreen-render window
+                                   (render/clear (vec3 0 1 0) 0.0)
+                                   (graphics/render-lighting frame graphics))
+           ;; Render JFA result
+           (GLFW/glfwMakeContextCurrent window2)
+           (render/onscreen-render window2
+                                   (render/clear (vec3 0 1 0) 0.0)
+                                   (render/use-program program-display)
+                                   (render/uniform-sampler program-display "flood" 0)
+                                   (render/uniform-int program-display "wind" 1)
+                                   (render/uniform-int program-display "normals" 2)
+                                   (render/uniform-int program-display "size" wsize)
+                                   (render/uniform-float program-display "mach" M)
+                                   (render/uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) wsize))
+                                   (render/uniform-float program-display "max_curvature_radius" max-curvature-radius)
+                                   (render/uniform-float program-display "shockwave_radius" shockwave-radius)
+                                   (render/use-textures {0 flood
+                                                         1 (:sfsim.model/shadows wind-shadow)
+                                                         2 (:sfsim.model/normals wind-shadow)})
+                                   (render/render-quads vao-display))
+           (GLFW/glfwMakeContextCurrent window)
+           (texture/destroy-texture flood))
          (model/destroy-scene-shadow-map wind-shadow)
          (graphics/destroy-frame frame)
          (GLFW/glfwPollEvents)))
