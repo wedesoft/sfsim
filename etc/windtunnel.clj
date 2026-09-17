@@ -192,13 +192,6 @@ void main()
 (def vertices [-1.0 -1.0 0.5 0.0 0.0, 1.0 -1.0 0.5 1.0 0.0, -1.0 1.0 0.5 0.0 1.0, 1.0 1.0 0.5 1.0 1.0])
 (def indices [0 1 3 2])
 
-(def program-init (render/make-program :sfsim.render/vertex [vertex-quad]
-                                       :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source]))
-(def vao-init (render/make-vertex-array-object program-init indices vertices ["point" 3 "uv" 2]))
-(def program-jump-flooding (render/make-program :sfsim.render/vertex [vertex-quad]
-                                                :sfsim.render/fragment [shockfront fragment-jump-flooding-step]))
-(def vao-jump-flooding (render/make-vertex-array-object program-jump-flooding indices vertices ["point" 3 "uv" 2]))
-
 (def shockwave-renderer (make-shockwave-renderer depth-source normal-source shockfront size shockwave-radius max-curvature-radius))
 
 (GLFW/glfwMakeContextCurrent window2)
@@ -312,12 +305,6 @@ void main()
 (GLFW/glfwMakeContextCurrent window)
 (render/destroy-vertex-array-object vao-shockwave)
 (render/destroy-program program-shockwave)
-
-(render/destroy-vertex-array-object vao-init)
-(render/destroy-program program-init)
-
-(render/destroy-vertex-array-object vao-jump-flooding)
-(render/destroy-program program-jump-flooding)
 
 (graphics/destroy-graphics2 graphics)
 
