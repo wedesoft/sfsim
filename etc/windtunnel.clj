@@ -8,8 +8,8 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront jump-flooding-initialisation jump-flooding-step
-                                   make-shockwave-renderer destroy-shockwave-renderer halving)]
+         '[sfsim.shockwave :refer (shockfront jump-flooding-initialisation jump-flooding-step make-shockwave-renderer
+                                   jump-flooding-algorithm destroy-shockwave-renderer halving)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL])
@@ -234,17 +234,7 @@ void main()
              camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
              ndc-to-camera        (inverse camera-to-ndc)]
          ;; Perform Jump Flooding Algorithm
-         (let [flood (jump-flooding-initialisation shockwave-renderer
-                                                   (fn [program-init]
-                                                       (render/uniform-sampler program-init "depth" 0)
-                                                       (render/uniform-sampler program-init "normals" 1)
-                                                       (render/uniform-float program-init "mach" M)
-                                                       (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
-                                                                             1 (:sfsim.model/normals wind-shadow)})))
-               flood (reduce (jump-flooding-step shockwave-renderer
-                                                 (fn [program-step]
-                                                     (render/uniform-float program-step "mach" M)))
-                             flood (halving size))
+         (let [flood (jump-flooding-algorithm shockwave-renderer wind-shadow M)
                bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
            ;; Render shockwave
            (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
