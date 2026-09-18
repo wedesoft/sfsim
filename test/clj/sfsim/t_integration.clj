@@ -340,18 +340,7 @@ void main()
                 shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
                                                                         shockwave/shockfront size shockwave-radius
                                                                         max-curvature-radius)
-                flood                (shockwave/jump-flooding-initialisation
-                                       shockwave-renderer
-                                       (fn [program-init]
-                                           (uniform-sampler program-init "depth" 0)
-                                           (uniform-sampler program-init "normals" 1)
-                                           (uniform-float program-init "mach" M)
-                                           (use-textures {0 (:sfsim.model/shadows wind-shadow)
-                                                          1 (:sfsim.model/normals wind-shadow)})))
-                flood                (reduce (shockwave/jump-flooding-step shockwave-renderer
-                                                                           (fn [program-step]
-                                                                               (uniform-float program-step "mach" M)))
-                                             flood (shockwave/halving size))]
+                flood                (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow M)]
             (render-to-image size size false
                              (clear (vec3 0 1 0) 0.0)
                              (use-program program-display)
