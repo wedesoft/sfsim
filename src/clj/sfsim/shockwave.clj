@@ -95,5 +95,23 @@
   (rest (take-while pos? (iterate #(bit-shift-right ^long % 1) size))))
 
 
+(def depth-source
+"#version 450 core
+uniform sampler2D depth;
+float depth_source(vec2 uv)
+{
+  return texture(depth, uv).r;
+}")
+
+
+(def normal-source
+"#version 450 core
+uniform sampler2D normals;
+vec4 normal_source(vec2 uv)
+{
+  return texture(normals, uv);
+}")
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

@@ -296,24 +296,6 @@ void main()
         (graphics/destroy-graphics2 graphics)))))
 
 
-(def depth-source
-"#version 450 core
-uniform sampler2D depth;
-float depth_source(vec2 uv)
-{
-  return texture(depth, uv).r;
-}")
-
-
-(def normal-source
-"#version 450 core
-uniform sampler2D normals;
-vec4 normal_source(vec2 uv)
-{
-  return texture(normals, uv);
-}")
-
-
 (def fragment-texture-2d
 "#version 450 core
 uniform int size;
@@ -355,8 +337,9 @@ void main()
                                                                     :sfsim.model/object-radius shockwave-radius)
                                                              :sfsim.render/cullback
                                                              true)
-                shockwave-renderer   (shockwave/make-shockwave-renderer depth-source normal-source shockwave/shockfront size
-                                                                        shockwave-radius max-curvature-radius)
+                shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
+                                                                        shockwave/shockfront size shockwave-radius
+                                                                        max-curvature-radius)
                 flood                (shockwave/jump-flooding-initialisation
                                        shockwave-renderer
                                        (fn [program-init]
