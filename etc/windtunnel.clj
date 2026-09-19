@@ -205,7 +205,7 @@ void main()
              yaw                  (* 4 PI (/ (@mouse-pos 0) (double width)))
              pitch                (* PI (- (/ (@mouse-pos 1) (double height)) 0.5))
              obj-orient           (q/* (q/rotation yaw (vec3 0 1 0)) (q/rotation pitch (vec3 0 0 1)))
-             model-vars           (model/make-model-vars (GLFW/glfwGetTime) 0.0 (:sfsim.physics/throttle 0.0))
+             model-vars           (model/make-model-vars (GLFW/glfwGetTime) 0.0 0.0)
              model                (first (:sfsim.graphics/scenes graphics))
              model-gears          (model/apply-transforms
                                     model (model/animations-frame model {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))

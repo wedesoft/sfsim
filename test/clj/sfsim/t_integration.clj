@@ -9,7 +9,7 @@
     [clojure.java.io :as io]
     [clojure.math :refer (PI to-radians)]
     [fastmath.matrix :refer (mat3x3 mulm mulv rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z inverse)]
-    [fastmath.vector :refer (vec2 vec3 add div sub)]
+    [fastmath.vector :refer (vec2 vec3 add div sub normalize)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
@@ -314,7 +314,7 @@ void main()
 
 
 (when (.exists (io/file ".integration"))
-  (fact "Test shockwave shape rendering"
+  (fact "Test shockwave shape estimation"
         (with-invisible-window
           (let [size                 256
                 object-radius        1.4
@@ -359,6 +359,50 @@ void main()
             (destroy-vertex-array-object vao-display)
             (destroy-program program-display)
             (graphics/destroy-graphics2 graphics)))))
+
+
+(when (.exists (io/file ".integration2"))
+  (fact "Test rendering of model with shockwave"
+    (with-invisible-window
+      (let [width               320
+            height              240
+            level               5
+            object-radius       (:sfsim.model/object-radius config/model-config)
+            light-direction     (normalize (vec3 1 0 2))
+            wind-from           (vec3 1 0 0)
+            graphics            (graphics/make-graphics2
+                                  [{:sfsim.graphics/model-file "data/models/venturestar.glb"
+                                    :sfsim.graphics/object-radius object-radius}]
+                                  [])
+            model               (first (:sfsim.graphics/scenes graphics))
+            model-gears         (model/apply-transforms
+                                  model (model/animations-frame model {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
+            graphics            (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
+            position            (vec3 0 0 (+ 60000.0 6378000.0))
+            orientation         (q/rotation (to-radians 90.0) (vec3 1 0 0))
+            object-position     (add position (q/rotate-vector orientation (vec3 0 0 -100)))
+            object-orientation  (matrix->quaternion (mulm (rotation-matrix-3d-y (* -0.15 PI))
+                                                          (rotation-matrix-3d-x (* 0.5 PI))))
+            tree                (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
+                                                       :sfsim.planet/config config/planet-config
+                                                       :sfsim.planet/programs [(:sfsim.planet/program
+                                                                                 (:sfsim.graphics/planet-geometry-renderer graphics))])
+                                                {} width position level)
+            frame               (-> (graphics/make-frame graphics width height position orientation light-direction
+                                                         [{:sfsim.graphics/object-position object-position
+                                                           :sfsim.graphics/object-orientation object-orientation}]
+                                                         (model/make-model-vars 0.0 0.0 0.0))
+                                    (graphics/render-shadows graphics tree)
+                                    (graphics/render-scene-shadows graphics)
+                                    (graphics/render-cloud-geometry graphics tree)
+                                    (graphics/render-clouds graphics [])
+                                    (graphics/render-geometry graphics tree))]
+        (render-to-image width height false
+                         (graphics/render-lighting frame graphics))
+        => (is-image "test/clj/sfsim/fixtures/integration/model-with-shockwave.png" 0.5)
+        (graphics/destroy-frame frame)
+        (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
+        (graphics/destroy-graphics2 graphics)))))
 
 
 (when (.exists (io/file ".integration"))
