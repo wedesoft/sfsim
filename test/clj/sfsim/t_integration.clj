@@ -333,8 +333,8 @@ void main()
                 vao-display          (make-vertex-array-object program-display indices vertices ["point" 3])
                 wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                              wind-from
-                                                             (assoc (first (:sfsim.graphics/scenes graphics))
-                                                                    :sfsim.model/object-radius shockwave-radius)
+                                                             (first (:sfsim.graphics/scenes graphics))
+                                                             shockwave-radius
                                                              :sfsim.render/cullback
                                                              true)
                 shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
