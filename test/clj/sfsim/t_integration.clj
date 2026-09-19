@@ -368,6 +368,7 @@ void main()
             height              240
             level               5
             object-radius       (:sfsim.model/object-radius config/model-config)
+            shockwave-radius    (* 2.0 object-radius)
             light-direction     (normalize (vec3 1 0 2))
             wind-from           (vec3 1 0 0)
             graphics            (graphics/make-graphics2
@@ -396,10 +397,17 @@ void main()
                                     (graphics/render-scene-shadows graphics)
                                     (graphics/render-cloud-geometry graphics tree)
                                     (graphics/render-clouds graphics [])
-                                    (graphics/render-geometry graphics tree))]
+                                    (graphics/render-geometry graphics tree))
+            wind-shadow         (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
+                                                        wind-from
+                                                        (first (graphics/get-moved-scenes frame graphics))
+                                                        shockwave-radius
+                                                        :sfsim.render/cullback
+                                                        true)]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics))
         => (is-image "test/clj/sfsim/fixtures/integration/model-with-shockwave.png" 0.5)
+        (model/destroy-scene-shadow-map wind-shadow)
         (graphics/destroy-frame frame)
         (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
         (graphics/destroy-graphics2 graphics)))))
