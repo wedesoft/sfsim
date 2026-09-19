@@ -58,7 +58,7 @@
 
 
 (def max-curvature-radius 3.0)
-(def M 10.0)
+(def mach 10.0)
 
 
 (def fragment-texture-2d
@@ -233,7 +233,7 @@ void main()
              camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
              ndc-to-camera        (inverse camera-to-ndc)]
          ;; Perform Jump Flooding Algorithm
-         (let [flood (jump-flooding-algorithm shockwave-renderer wind-shadow M)
+         (let [flood (jump-flooding-algorithm shockwave-renderer wind-shadow mach)
                bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
            ;; Render shockwave
            (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
@@ -247,7 +247,7 @@ void main()
                                       (render/uniform-float program-shockwave "shockwave_radius" shockwave-radius)
                                       (render/uniform-float program-shockwave "scale" (/ (* 2.0 shockwave-radius) size))
                                       (render/uniform-float program-shockwave "step" 0.01)
-                                      (render/uniform-float program-shockwave "mach" M)
+                                      (render/uniform-float program-shockwave "mach" mach)
                                       (render/uniform-matrix4 program-shockwave "projection" projection)
                                       (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
                                       (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
@@ -268,7 +268,7 @@ void main()
                                    (render/uniform-sampler program-display "wind" 1)
                                    (render/uniform-sampler program-display "normals" 2)
                                    (render/uniform-int program-display "size" wsize)
-                                   (render/uniform-float program-display "mach" M)
+                                   (render/uniform-float program-display "mach" mach)
                                    (render/uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) wsize))
                                    (render/uniform-float program-display "max_curvature_radius" max-curvature-radius)
                                    (render/uniform-float program-display "shockwave_radius" shockwave-radius)
