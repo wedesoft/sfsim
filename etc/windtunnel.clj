@@ -148,9 +148,8 @@ void main()
   float x = segment.x + step * sampling_offset();
   while (x < segment.x + segment.y) {
     vec3 p = origin + x * direction;
-    vec2 uv_fragment = p.xy * 0.5 + 0.5;
-    vec4 point = texture(flood, uv_fragment);
-    float l = length(point.xy - uv_fragment * 2.0 * shockwave_radius);
+    vec4 point = texture(flood, (p.xy + 1.0) / 2.0);
+    float l = length(point.xy - (p.xy + 1.0) * shockwave_radius);
     float depth = point.z + shockfront(l, point.w);
     if (p.z * shockwave_radius <= depth) {
       emission += 4.0 * step * exp(1.0 * (p.z * shockwave_radius - depth)) * (1.0 - smoothstep(0.0, 0.25 * shockwave_radius, l));
