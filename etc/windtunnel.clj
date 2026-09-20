@@ -1,15 +1,17 @@
-(require '[clojure.math :refer (PI to-radians)] '[fastmath.vector :refer (vec3 normalize)]
-         '[fastmath.matrix :refer (mulm inverse)]
+(require '[clojure.math :refer (PI to-radians)]
+         '[fastmath.vector :refer (vec3 normalize add)]
+         '[fastmath.matrix :refer (mulm inverse rotation-matrix-3d-x rotation-matrix-3d-y)]
          '[sfsim.config :as config]
          '[sfsim.quaternion :as q]
          '[sfsim.matrix :as matrix]
          '[sfsim.model :as model]
+         '[sfsim.planet :as planet]
          '[sfsim.render :as render]
+         '[sfsim.quadtree :as quadtree]
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront jump-flooding-initialisation jump-flooding-step make-shockwave-renderer
-                                   jump-flooding-algorithm destroy-shockwave-renderer halving)]
+         '[sfsim.shockwave :refer (shockfront make-shockwave-renderer jump-flooding-algorithm destroy-shockwave-renderer)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL])
@@ -17,13 +19,11 @@
 (GLFW/glfwInit)
 
 (GLFW/glfwDefaultWindowHints)
-(def width 1024)
-(def height 768)
+(def width 320)
+(def height 240)
 (def size 512)
-(def wsize 256)
-(GLFW/glfwWindowHint GLFW/GLFW_DECORATED GLFW/GLFW_TRUE)
+(def level 5)
 (def window (GLFW/glfwCreateWindow width height "Windtunnel" 0 0))
-(GLFW/glfwSwapInterval 1)
 (def mouse-pos (atom [0.0 0.0]))
 (def mouse-button (atom false))
 
@@ -45,12 +45,21 @@
       [_this _window _button action _mods]
       (reset! mouse-button (= action GLFW/GLFW_PRESS)))))
 
+(defn load-tile-tree
+  [planet-renderer tree width position n]
+  (if (zero? n)
+    tree
+    (let [data (planet/background-tree-update planet-renderer tree width position)
+          tree (planet/load-tiles-into-opengl planet-renderer (:tree data) (:load data))]
+      (load-tile-tree planet-renderer tree width position (dec n)))))
+
+
+
 (GLFW/glfwMakeContextCurrent window)
 (def shockwave-radius (* 2.0 (:sfsim.model/object-radius config/model-config)))
 (def graphics (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
                                          :sfsim.graphics/object-radius (:sfsim.model/object-radius config/model-config)}]
                                        []))
-
 
 (def max-curvature-radius 3.0)
 (def mach 10.0)
@@ -161,34 +170,39 @@ void main()
 
 (while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwMakeContextCurrent window)
-       (let [dist                 (* 2 6378000)
-             origin               (vec3 dist 0 150)
-             orientation          (q/->Quaternion 1 0 0 0)
+       (let [dist                 (+ 600000.0 6378000.0)
+             offset               100
+             origin               (vec3 0 0 dist)
+             orientation          (q/rotation (to-radians 90.0) (vec3 1 0 0))
              light                (normalize (vec3 1 1 1))
-             wind-from            (q/rotate-vector (q/rotation (to-radians -60.0) (vec3 0 1 0)) (vec3 1 0 0))
-             yaw                  (* 4 PI (/ (@mouse-pos 0) (double width)))
-             pitch                (* PI (- (/ (@mouse-pos 1) (double height)) 0.5))
-             obj-orient           (q/* (q/rotation yaw (vec3 0 1 0)) (q/rotation pitch (vec3 0 0 1)))
+             wind-from            (vec3 1 0 0)
+             object-orientation   (matrix/matrix->quaternion (mulm (rotation-matrix-3d-y (* -0.15 PI))
+                                                                   (rotation-matrix-3d-x (* 0.5 PI))))
              model-vars           (model/make-model-vars (GLFW/glfwGetTime) 0.0 0.0)
              model                (first (:sfsim.graphics/scenes graphics))
              model-gears          (model/apply-transforms
                                     model (model/animations-frame model {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
              graphics             (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
-             object               [{:sfsim.graphics/object-position (vec3 dist 0 0)
-                                    :sfsim.graphics/object-orientation obj-orient}]
+             tree                 (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
+                                                         :sfsim.planet/config config/planet-config
+                                                         :sfsim.planet/programs [(:sfsim.planet/program
+                                                                                   (:sfsim.graphics/planet-geometry-renderer graphics))])
+                                                  {} width origin level)
+             object               [{:sfsim.graphics/object-position (add origin (q/rotate-vector orientation (vec3 0 0 (- offset))))
+                                    :sfsim.graphics/object-orientation object-orientation}]
              frame                (-> (graphics/make-frame graphics width height origin orientation
                                                            light object model-vars)
-                                      (graphics/render-shadows graphics nil)
+                                      (graphics/render-shadows graphics tree)
                                       (graphics/render-scene-shadows graphics)
-                                      (graphics/render-cloud-geometry graphics nil)
+                                      (graphics/render-cloud-geometry graphics tree)
                                       (graphics/render-clouds graphics [])
-                                      (graphics/render-geometry graphics nil))
+                                      (graphics/render-geometry graphics tree))
              wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                           wind-from
                                                           (first (graphics/get-moved-scenes frame graphics))
                                                           shockwave-radius
                                                           :sfsim.render/cullback
-                                                          true)
+                                                          true)  ;; TODO: render smaller wind shadow
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
              matrices             (:sfsim.model/matrices wind-shadow)
              camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
@@ -199,7 +213,7 @@ void main()
          ;; Perform Jump Flooding Algorithm
          (let [flood (jump-flooding-algorithm shockwave-renderer wind-shadow mach)
                bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
-           ;; Render shockwave
+           ;; Render shockwave  TODO: don't overwrite clouds
            (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                                       (render/use-program program-shockwave)
                                       (render/uniform-sampler program-shockwave "points" 0)
@@ -227,6 +241,7 @@ void main()
            (texture/destroy-texture flood))
          (model/destroy-scene-shadow-map wind-shadow)
          (graphics/destroy-frame frame)
+         (planet/unload-tiles-from-opengl (quadtree/quadtree-extract tree (quadtree/tiles-path-list tree)))
          (GLFW/glfwPollEvents)))
 
 (destroy-shockwave-renderer shockwave-renderer)
