@@ -15,15 +15,9 @@
          '[sfsim.shockwave :refer (shockfront make-shockwave-renderer jump-flooding-algorithm destroy-shockwave-renderer
                                    normal-source depth-source)]
          '[sfsim.graphics :as graphics])
-(import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
-        '[org.lwjgl.opengl GL])
+(import '[org.lwjgl.glfw GLFW])
 
 (GLFW/glfwInit)
-
-(def width 320)
-(def height 240)
-(def size 512)
-(def level 5)
 
 (defn load-tile-tree
   [planet-renderer tree width position n]
@@ -111,7 +105,11 @@ void main()
 
 
 (render/with-invisible-window
-  (let [dist                 (+ 600000.0 6378000.0)
+  (let [width                320
+        height               240
+        size                 512
+        level                5
+        dist                 (+ 600000.0 6378000.0)
         offset               100
         origin               (vec3 0 0 dist)
         orientation          (q/rotation (to-radians 90.0) (vec3 1 0 0))
