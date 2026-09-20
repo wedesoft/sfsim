@@ -27,6 +27,7 @@
     [sfsim.quaternion :as q]
     [sfsim.render :refer (with-invisible-window render-to-image) :as render]
     [sfsim.texture :as texture]
+    [sfsim.image :as image]
     [sfsim.shaders :as shaders]
     [sfsim.bluenoise :as bluenoise]
     [sfsim.shockwave :as shockwave]
@@ -441,18 +442,14 @@ void main()
 uniform int size;
 uniform float scale;
 uniform float shockwave_radius;
-uniform sampler2D shadows;
-uniform sampler2D normals;
-// uniform sampler2D flood;
+uniform sampler2D flood;
 out vec3 fragColor;
 float shockfront(float distance, float Rn);
 void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
-  vec3 N = texture(normals, uv_fragment).xyz;
-  float depth = texture(shadows, uv_fragment).r;
-  // vec4 point = texture(flood, uv_fragment);
-  // float depth = (point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w)) / shockwave_radius;
+  vec4 point = texture(flood, uv_fragment);
+  float depth = (point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w)) / shockwave_radius;
   fragColor = vec3(depth);
 }")
 
@@ -462,7 +459,7 @@ void main()
     (with-invisible-window
       (let [width                320
             height               240
-            size                 256
+            size                 256 ; must match scene-shadow-size at the moment
             level                5
             dist                 (+ 60000.0 6378000.0)
             offset               100
@@ -481,8 +478,8 @@ void main()
                                    [{:sfsim.graphics/model-file "data/models/venturestar.glb"
                                      :sfsim.graphics/object-radius object-radius}]
                                    [])
-            ; shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
-            ;                                                         shockwave/shockfront size shockwave-radius max-curvature-radius)
+            shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
+                                                                    shockwave/shockfront size shockwave-radius max-curvature-radius)
             ; program-shockwave    (render/make-program :sfsim.render/vertex [vertex-shockwave]
             ;                                           :sfsim.render/fragment [shaders/ray-box shockwave/shockfront fragment-shockwave
             ;                                                                   bluenoise/sampling-offset])
@@ -512,7 +509,8 @@ vao-display          (render/make-vertex-array-object program-display indices ve
                                                          shockwave-radius
                                                          :sfsim.render/cullback
                                                          true)
-            ; flood                (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
+            flood                (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
+            _ (println flood)
             ; bluenoise            (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))
             ; projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
             ; matrices             (:sfsim.model/matrices wind-shadow)
@@ -544,22 +542,20 @@ vao-display          (render/make-vertex-array-object program-display indices ve
 (render-to-image size size false
                  (render/clear (vec3 0 1 0) 0.0)
                  (render/use-program program-display)
-                 ; (render/uniform-sampler program-display "flood" 0)
-                 (render/uniform-sampler program-display "shadows" 0)
-                 (render/uniform-sampler program-display "normals" 1)
+                 (render/uniform-sampler program-display "flood" 0)
                  (render/uniform-int program-display "size" size)
                  (render/uniform-float program-display "mach" mach)
                  (render/uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) size))
                  (render/uniform-float program-display "max_curvature_radius" max-curvature-radius)
                  (render/uniform-float program-display "shockwave_radius" shockwave-radius)
-                 (render/use-textures {0 (:sfsim.model/shadows wind-shadow) ; flood
-                                       1 (:sfsim.model/normals wind-shadow)})
+                 (render/use-textures {0 flood})
                  (render/render-quads vao-display))
 => (is-image "/tmp/shockwave.png" 1.0)
-        ; (render-to-image width height false
-        ;                  (graphics/render-lighting frame graphics))
-        ; => (is-image "test/clj/sfsim/fixtures/integration/model-with-shockwave.png" 0.5)
-        ; (texture/destroy-texture flood)
+(println (image/get-float (texture/depth-texture->floats flood) 128 128))
+        (render-to-image width height false
+                         (graphics/render-lighting frame graphics))
+        => (is-image "test/clj/sfsim/fixtures/integration/model-with-shockwave.png" 0.5)
+        (texture/destroy-texture flood)
         (model/destroy-scene-shadow-map wind-shadow)
         (graphics/destroy-frame frame)
         (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
@@ -567,7 +563,7 @@ vao-display          (render/make-vertex-array-object program-display indices ve
         ; (render/destroy-program program-shockwave)
             (render/destroy-vertex-array-object vao-display)
             (render/destroy-program program-display)
-        ; (shockwave/destroy-shockwave-renderer shockwave-renderer)
+        (shockwave/destroy-shockwave-renderer shockwave-renderer)
         (graphics/destroy-graphics2 graphics)))))
 
 
