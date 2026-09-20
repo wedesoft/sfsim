@@ -12,8 +12,7 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront make-shockwave-renderer jump-flooding-algorithm destroy-shockwave-renderer
-                                   normal-source depth-source)]
+         '[sfsim.shockwave :as shockwave]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW])
 
@@ -129,9 +128,10 @@ void main()
                                model (model/animations-frame model
                                                              {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
         graphics             (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
-        shockwave-renderer   (make-shockwave-renderer depth-source normal-source shockfront size shockwave-radius max-curvature-radius)
+        shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source shockwave/shockfront
+                                                                size shockwave-radius max-curvature-radius)
         program-shockwave     (render/make-program :sfsim.render/vertex [vertex-shockwave]
-                                                   :sfsim.render/fragment [shaders/ray-box shockfront fragment-shockwave bluenoise/sampling-offset])
+                                                   :sfsim.render/fragment [shaders/ray-box shockwave/shockfront fragment-shockwave bluenoise/sampling-offset])
         vao-shockwave        (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3])
         tree                 (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                     :sfsim.planet/config config/planet-config
@@ -161,7 +161,7 @@ void main()
         camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
         ndc-to-camera        (inverse camera-to-ndc)]
     ;; Perform Jump Flooding Algorithm
-    (let [flood (jump-flooding-algorithm shockwave-renderer wind-shadow mach)
+    (let [flood (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
           bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
       ;; Render shockwave  TODO: don't overwrite clouds
       (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
@@ -187,15 +187,16 @@ void main()
       (image/spit-png "/tmp/test.png"
                       (render/render-to-image width height false
                                               (render/clear (vec3 0 1 0) 0.0)
-                                              (graphics/render-lighting frame graphics)) true)
+                                              (graphics/render-lighting frame graphics))
+                      true)
       (texture/destroy-texture flood))
     (model/destroy-scene-shadow-map wind-shadow)
     (graphics/destroy-frame frame)
     (render/destroy-vertex-array-object vao-shockwave)
+    (planet/unload-tiles-from-opengl (quadtree/quadtree-extract tree (quadtree/tiles-path-list tree)))
     (graphics/destroy-graphics2 graphics)
     (render/destroy-program program-shockwave)
-    (destroy-shockwave-renderer shockwave-renderer)
-    (planet/unload-tiles-from-opengl (quadtree/quadtree-extract tree (quadtree/tiles-path-list tree)))))
+    (shockwave/destroy-shockwave-renderer shockwave-renderer)))
 
 
 (GLFW/glfwTerminate)
