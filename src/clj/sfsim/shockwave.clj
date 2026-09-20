@@ -90,8 +90,9 @@
 
 
 (defn setup-shockwave-shape
-  [program mach]
-  (uniform-float program "mach" mach))
+  [mach]
+  (fn [program]
+      (uniform-float program "mach" mach)))
 
 
 (defn setup-shockwave-sources
@@ -99,7 +100,7 @@
   (fn [program]
       (uniform-sampler program "depth" 0)
       (uniform-sampler program "normals" 1)
-      (setup-shockwave-shape program mach)
+      ((setup-shockwave-shape mach) program)
       (use-textures {0 (:sfsim.model/shadows wind-shadow)
                      1 (:sfsim.model/normals wind-shadow)})))
 
@@ -131,7 +132,7 @@ vec4 normal_source(vec2 uv)
 (defn jump-flooding-algorithm
   [{::keys [size] :as shockwave-renderer} wind-shadow mach]
   (let [initial-shockwave (jump-flooding-initialisation shockwave-renderer (setup-shockwave-sources wind-shadow mach))]
-    (reduce (jump-flooding-step shockwave-renderer (setup-shockwave-sources wind-shadow mach)) initial-shockwave (halving size))))
+    (reduce (jump-flooding-step shockwave-renderer (setup-shockwave-shape mach)) initial-shockwave (halving size))))
 
 
 (set! *warn-on-reflection* false)
