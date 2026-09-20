@@ -31,11 +31,6 @@
 (GLFW/glfwShowWindow window)
 (GL/createCapabilities)
 
-(def window2 (GLFW/glfwCreateWindow wsize wsize "Wind-Shadow" 0 window))
-(GLFW/glfwMakeContextCurrent window2)
-(GLFW/glfwShowWindow window2)
-(GL/createCapabilities)
-
 (GLFW/glfwSetCursorPosCallback
   window
   (reify GLFWCursorPosCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
@@ -59,32 +54,6 @@
 
 (def max-curvature-radius 3.0)
 (def mach 10.0)
-
-
-(def fragment-texture-2d
-"#version 450 core
-uniform int size;
-uniform float scale;
-uniform float shockwave_radius;
-uniform sampler2D flood;
-uniform sampler2D normals;
-uniform sampler2D wind;
-out vec3 fragColor;
-float shockfront(float distance, float Rn);
-void main()
-{
-  vec2 uv_fragment = gl_FragCoord.xy / size;
-  vec4 point = texture(flood, uv_fragment);
-  float depth = (point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w)) / shockwave_radius;
-  vec4 N = texture(normals, uv_fragment);
-  float c = N.z;
-  if (texture(wind, uv_fragment).r > 0.0)
-    fragColor = vec3(c, c, 0);
-  else
-    fragColor = vec3(0.0, depth, depth);
-}")
-
-;; https://en.wikipedia.org/wiki/Jump_flooding_algorithm
 
 
 (def depth-source
@@ -190,12 +159,7 @@ void main()
 
 (def shockwave-renderer (make-shockwave-renderer depth-source normal-source shockfront size shockwave-radius max-curvature-radius))
 
-(GLFW/glfwMakeContextCurrent window2)
-(def program-display  (render/make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                           :sfsim.render/fragment [shockfront fragment-texture-2d]))
-(def vao-display (render/make-vertex-array-object program-display indices vertices ["point" 3]))
-
-(while (and (not (GLFW/glfwWindowShouldClose window)) (not (GLFW/glfwWindowShouldClose window2)))
+(while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwMakeContextCurrent window)
        (let [dist                 (* 2 6378000)
              origin               (vec3 dist 0 150)
@@ -259,32 +223,11 @@ void main()
            (render/onscreen-render window
                                    (render/clear (vec3 0 1 0) 0.0)
                                    (graphics/render-lighting frame graphics))
-           ;; Render JFA result
-           (GLFW/glfwMakeContextCurrent window2)
-           (render/onscreen-render window2
-                                   (render/clear (vec3 0 1 0) 0.0)
-                                   (render/use-program program-display)
-                                   (render/uniform-sampler program-display "flood" 0)
-                                   (render/uniform-sampler program-display "wind" 1)
-                                   (render/uniform-sampler program-display "normals" 2)
-                                   (render/uniform-int program-display "size" wsize)
-                                   (render/uniform-float program-display "mach" mach)
-                                   (render/uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) wsize))
-                                   (render/uniform-float program-display "max_curvature_radius" max-curvature-radius)
-                                   (render/uniform-float program-display "shockwave_radius" shockwave-radius)
-                                   (render/use-textures {0 flood
-                                                         1 (:sfsim.model/shadows wind-shadow)
-                                                         2 (:sfsim.model/normals wind-shadow)})
-                                   (render/render-quads vao-display))
            (GLFW/glfwMakeContextCurrent window)
            (texture/destroy-texture flood))
          (model/destroy-scene-shadow-map wind-shadow)
          (graphics/destroy-frame frame)
          (GLFW/glfwPollEvents)))
-
-(GLFW/glfwMakeContextCurrent window2)
-(render/destroy-vertex-array-object vao-display)
-(render/destroy-program program-display)
 
 (destroy-shockwave-renderer shockwave-renderer)
 
@@ -294,7 +237,6 @@ void main()
 
 (graphics/destroy-graphics2 graphics)
 
-(GLFW/glfwDestroyWindow window2)
 (GLFW/glfwDestroyWindow window)
 
 (GLFW/glfwTerminate)
