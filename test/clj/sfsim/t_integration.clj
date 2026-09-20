@@ -441,9 +441,9 @@ void main()
 (when (.exists (io/file ".integration2"))
   (fact "Test rendering of model with shockwave"
         (render/with-invisible-window
-          (let [width                320
-                height               240
-                size                 512
+          (let [width                1024  ;; 320
+                height               768  ;; 240
+                size                 1024
                 level                5
                 dist                 (+ 600000.0 6378000.0)
                 offset               100
