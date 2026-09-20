@@ -321,7 +321,7 @@ void main()
         (with-invisible-window
           (let [size                 256
                 object-radius        1.4
-                shockwave-radius     2.8
+                shockwave-radius     (* 5 1.4)
                 max-curvature-radius 3.0
                 M                    10.0
                 wind-from            (vec3 1 0 0)
@@ -499,9 +499,6 @@ void main()
                 object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
                 camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
                 ndc-to-camera        (inverse camera-to-ndc)]
-            (let [tex (:sfsim.model/shadows wind-shadow)]
-              (with-texture (:sfsim.texture/target tex) (:sfsim.texture/texture tex)
-                (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_MODE GL11/GL_NONE)))
             ;; Perform Jump Flooding Algorithm
             (let [flood (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
                   bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]

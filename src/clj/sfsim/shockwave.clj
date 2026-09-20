@@ -8,7 +8,7 @@
     (:require
       [sfsim.render :refer (uniform-float use-program uniform-int render-quads framebuffer-render uniform-sampler use-textures
                             make-program destroy-program make-vertex-array-object destroy-vertex-array-object)]
-      [sfsim.texture :refer (make-empty-texture-2d destroy-texture)]
+      [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
       [sfsim.shaders :refer (vertex-passthrough)])
     (:import
       (org.lwjgl.opengl
@@ -98,6 +98,7 @@
       (uniform-sampler program "depth" 0)
       (uniform-sampler program "normals" 1)
       ((setup-shockwave-shape mach) program)
+      (disable-compare-mode (:sfsim.model/shadows wind-shadow))
       (use-textures {0 (:sfsim.model/shadows wind-shadow)
                      1 (:sfsim.model/normals wind-shadow)})))
 
