@@ -11,7 +11,8 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront make-shockwave-renderer jump-flooding-algorithm destroy-shockwave-renderer)]
+         '[sfsim.shockwave :refer (shockfront make-shockwave-renderer jump-flooding-algorithm destroy-shockwave-renderer
+                                   normal-source depth-source)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL])
@@ -63,24 +64,6 @@
 
 (def max-curvature-radius 3.0)
 (def mach 10.0)
-
-
-(def depth-source
-"#version 450 core
-uniform sampler2D depth;
-float depth_source(vec2 uv)
-{
-  return texture(depth, uv).r;
-}")
-
-
-(def normal-source
-"#version 450 core
-uniform sampler2D normals;
-vec4 normal_source(vec2 uv)
-{
-  return texture(normals, uv);
-}")
 
 
 (def vertex-shockwave
