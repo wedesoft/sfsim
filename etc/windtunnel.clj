@@ -41,10 +41,6 @@
 
 
 (GLFW/glfwMakeContextCurrent window)
-(def shockwave-radius (* 2.0 (:sfsim.model/object-radius config/model-config)))
-(def graphics (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
-                                         :sfsim.graphics/object-radius (:sfsim.model/object-radius config/model-config)}]
-                                       []))
 
 (def max-curvature-radius 3.0)
 (def mach 10.0)
@@ -126,14 +122,6 @@ void main()
 
 
 (GLFW/glfwMakeContextCurrent window)
-(def program-shockwave (render/make-program :sfsim.render/vertex [vertex-shockwave]
-                                            :sfsim.render/fragment [shaders/ray-box shockfront fragment-shockwave bluenoise/sampling-offset]))
-(def vao-shockwave (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3]))
-
-(def vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5])
-(def indices [0 1 3 2])
-
-(def shockwave-renderer (make-shockwave-renderer depth-source normal-source shockfront size shockwave-radius max-curvature-radius))
 
 (while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwMakeContextCurrent window)
@@ -146,10 +134,19 @@ void main()
              object-orientation   (matrix/matrix->quaternion (mulm (rotation-matrix-3d-y (* -0.15 PI))
                                                                    (rotation-matrix-3d-x (* 0.5 PI))))
              model-vars           (model/make-model-vars (GLFW/glfwGetTime) 0.0 0.0)
+             shockwave-radius     (* 2.0 (:sfsim.model/object-radius config/model-config))
+             graphics             (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
+                                                             :sfsim.graphics/object-radius (:sfsim.model/object-radius config/model-config)}]
+                                                           [])
              model                (first (:sfsim.graphics/scenes graphics))
              model-gears          (model/apply-transforms
-                                    model (model/animations-frame model {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
+                                    model (model/animations-frame model
+                                                                  {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
              graphics             (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
+             shockwave-renderer   (make-shockwave-renderer depth-source normal-source shockfront size shockwave-radius max-curvature-radius)
+             program-shockwave     (render/make-program :sfsim.render/vertex [vertex-shockwave]
+                                                        :sfsim.render/fragment [shaders/ray-box shockfront fragment-shockwave bluenoise/sampling-offset])
+             vao-shockwave        (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3])
              tree                 (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                          :sfsim.planet/config config/planet-config
                                                          :sfsim.planet/programs [(:sfsim.planet/program
@@ -208,16 +205,16 @@ void main()
            (texture/destroy-texture flood))
          (model/destroy-scene-shadow-map wind-shadow)
          (graphics/destroy-frame frame)
+         (render/destroy-vertex-array-object vao-shockwave)
+         (graphics/destroy-graphics2 graphics)
+         (render/destroy-program program-shockwave)
+         (destroy-shockwave-renderer shockwave-renderer)
          (planet/unload-tiles-from-opengl (quadtree/quadtree-extract tree (quadtree/tiles-path-list tree)))
          (GLFW/glfwPollEvents)))
 
-(destroy-shockwave-renderer shockwave-renderer)
 
 (GLFW/glfwMakeContextCurrent window)
-(render/destroy-vertex-array-object vao-shockwave)
-(render/destroy-program program-shockwave)
 
-(graphics/destroy-graphics2 graphics)
 
 (GLFW/glfwDestroyWindow window)
 
