@@ -455,7 +455,7 @@ void main()
                 wind-from            (vec3 1 0 0)
                 object-orientation   (matrix/matrix->quaternion (mulm (rotation-matrix-3d-y (* -0.15 PI))
                                                                       (rotation-matrix-3d-x (* 0.5 PI))))
-                model-vars           (model/make-model-vars (GLFW/glfwGetTime) 0.0 0.0)
+                model-vars           (model/make-model-vars 0.0 0.0 0.0)
                 shockwave-radius     (* 2.0 (:sfsim.model/object-radius config/model-config))
                 graphics             (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
                                                                 :sfsim.graphics/object-radius (:sfsim.model/object-radius config/model-config)}]
