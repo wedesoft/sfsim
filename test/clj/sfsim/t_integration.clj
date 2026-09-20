@@ -33,6 +33,8 @@
     [sfsim.shockwave :as shockwave]
     [sfsim.texture :refer :all])
   (:import
+    (org.lwjgl.opengl
+      GL11 GL14)
     (org.lwjgl.glfw
       GLFW)))
 
@@ -438,11 +440,11 @@ void main()
     1.0  1.0  1.0])
 
 
-(when (.exists (io/file ".integration2"))
+(when (.exists (io/file ".integration"))
   (fact "Test rendering of model with shockwave"
         (render/with-invisible-window
-          (let [width                1024  ;; 320
-                height               768  ;; 240
+          (let [width                320
+                height               240
                 size                 1024
                 level                5
                 dist                 (+ 600000.0 6378000.0)
@@ -497,6 +499,9 @@ void main()
                 object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
                 camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
                 ndc-to-camera        (inverse camera-to-ndc)]
+            (let [tex (:sfsim.model/shadows wind-shadow)]
+              (with-texture (:sfsim.texture/target tex) (:sfsim.texture/texture tex)
+                (GL11/glTexParameteri GL11/GL_TEXTURE_2D GL14/GL_TEXTURE_COMPARE_MODE GL11/GL_NONE)))
             ;; Perform Jump Flooding Algorithm
             (let [flood (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
                   bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
@@ -521,11 +526,10 @@ void main()
                                                                2 bluenoise})
                                          (render/render-quads vao-shockwave))
               ;; Compose render of model
-              (image/spit-png "/tmp/test.png"
-                              (render/render-to-image width height false
+              (render/render-to-image width height false
                                       (render/clear (vec3 0 1 0) 0.0)
                                       (graphics/render-lighting frame graphics))
-                              true)
+              => (is-image (str "test/clj/sfsim/fixtures/integration/model-with-shockwave.png") 1.0)
               (texture/destroy-texture flood))
             (model/destroy-scene-shadow-map wind-shadow)
             (graphics/destroy-frame frame)

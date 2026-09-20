@@ -6,9 +6,6 @@
 
 (ns sfsim.shockwave
     (:require
-      [clojure.math :refer (sqrt exp)]
-      [malli.dev.pretty :as pretty]
-      [malli.instrument :as mi]
       [sfsim.render :refer (uniform-float use-program uniform-int render-quads framebuffer-render uniform-sampler use-textures
                             make-program destroy-program make-vertex-array-object destroy-vertex-array-object)]
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture)]
