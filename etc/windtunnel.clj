@@ -25,26 +25,10 @@
 (def size 512)
 (def level 5)
 (def window (GLFW/glfwCreateWindow width height "Windtunnel" 0 0))
-(def mouse-pos (atom [0.0 0.0]))
-(def mouse-button (atom false))
 
 (GLFW/glfwMakeContextCurrent window)
 (GLFW/glfwShowWindow window)
 (GL/createCapabilities)
-
-(GLFW/glfwSetCursorPosCallback
-  window
-  (reify GLFWCursorPosCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
-    (invoke
-      [_this _window xpos ypos]
-      (reset! mouse-pos [xpos (- height ypos 1)]))))
-
-(GLFW/glfwSetMouseButtonCallback
-  window
-  (reify GLFWMouseButtonCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
-    (invoke
-      [_this _window _button action _mods]
-      (reset! mouse-button (= action GLFW/GLFW_PRESS)))))
 
 (defn load-tile-tree
   [planet-renderer tree width position n]
