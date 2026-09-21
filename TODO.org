@@ -16,7 +16,7 @@
     - [ ] align shockwave vertex shader with plume vertex shader (allowing to choose box parameters)
     - [ ] do not overwrite clouds
     - [ ] create mixed shader for plume and shockwave
-      - [ ] use common bounding box for plume and shockwave
+      - [ ] use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
   - [ ] rare stack overflow in neighbour tile code
   - [-] runway with lights and glide slope indicator https://www.bristol.gs/know-your-runways/
     - [ ] put runway only on one side of planet

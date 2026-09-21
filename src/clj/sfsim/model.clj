@@ -743,17 +743,16 @@
 
 
 (def scene-shadow-renderer
-  (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean :boolean] :int]] [::size N]]))
+  (m/schema [:map [::programs [:map-of [:tuple :boolean :boolean :boolean] :int]]]))
 
 
 (defn make-scene-shadow-renderer
   "Create renderer for rendering scene-shadows"
-  {:malli/schema [:=> [:cat N] scene-shadow-renderer]}
-  [size]
+  {:malli/schema [:=> [:cat] scene-shadow-renderer]}
+  []
   (let [variations (for [textured [false true] bump [false true] normals [false true]] [textured bump normals])
         programs   (mapv #(apply make-scene-shadow-program %) variations)]
-    {::programs      (zipmap variations programs)
-     ::size          size}))
+    {::programs      (zipmap variations programs)}))
 
 
 (defn render-depth
@@ -767,11 +766,10 @@
 
 (defn render-shadow-map
   "Render shadow map for an object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer :map scene :keyword :boolean]
+  {:malli/schema [:=> [:cat scene-shadow-renderer :map scene :int :keyword :boolean]
                       [:map [::shadows texture-2d] [::normals [:maybe texture-2d]]]]}
-  [renderer shadow-vars scene culling normals]
-  (let [size           (::size renderer)
-        centered-scene (assoc-in scene [::root ::transform] (eye 4))
+  [renderer shadow-vars scene size culling normals]
+  (let [centered-scene (assoc-in scene [::root ::transform] (eye 4))
         normal-tex     (when normals
                          (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size))]
     (doseq [program (vals (::programs renderer))]
@@ -787,11 +785,11 @@
 
 (defn scene-shadow-map
   "Determine shadow matrices and render shadow map for object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene :float :keyword :boolean] scene-shadow]}
-  [renderer light-direction scene shadow-radius culling normals]
+  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene :int :float :keyword :boolean] scene-shadow]}
+  [renderer light-direction scene size shadow-radius culling normals]
   (let [object-to-world (get-in scene [::root ::transform])
         shadow-matrices (shadow-patch-matrices object-to-world light-direction shadow-radius)
-        shadow-map      (render-shadow-map renderer shadow-matrices scene culling normals)]
+        shadow-map      (render-shadow-map renderer shadow-matrices scene size culling normals)]
     (assoc shadow-map ::matrices shadow-matrices)))
 
 

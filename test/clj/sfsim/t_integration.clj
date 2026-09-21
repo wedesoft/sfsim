@@ -337,6 +337,7 @@ void main()
                 wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                              wind-from
                                                              (first (:sfsim.graphics/scenes graphics))
+                                                             size
                                                              shockwave-radius
                                                              :sfsim.render/cullback
                                                              true)
@@ -435,9 +436,10 @@ void main()
                 wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                              wind-from
                                                              (first (graphics/get-moved-scenes frame graphics))
+                                                             size
                                                              shockwave-radius
                                                              :sfsim.render/cullback
-                                                             true)  ;; TODO: render smaller wind shadow
+                                                             true)
                 projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
                 matrices             (:sfsim.model/matrices wind-shadow)
                 camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
@@ -448,7 +450,6 @@ void main()
             ;; Perform Jump Flooding Algorithm
             (let [flood (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
                   bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
-              ;; Render shockwave  TODO: don't overwrite clouds
               (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                                          (render/use-program program-shockwave)
                                          (render/uniform-sampler program-shockwave "points" 0)
