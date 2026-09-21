@@ -137,5 +137,8 @@ vec4 normal_source(vec2 uv)
 (def vertex-shockwave (slurp "resources/shaders/shockwave/vertex.glsl"))
 
 
+(def fragment-shockwave (slurp "resources/shaders/shockwave/fragment.glsl"))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
