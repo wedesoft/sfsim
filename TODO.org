@@ -231,7 +231,8 @@
     [[https://pixabay.com/sound-effects/technology-air-conditioner-running-return-vent-391936/]]
     [[https://pixabay.com/sound-effects/film-special-effects-car-brake-325519/]]
     [[https://pixabay.com/sound-effects/film-special-effects-breaking-the-sound-barrier-77353/]]
-  - [ ] beep-beep sound, paraglider audio?
+  - [ ] wheel brakes sound
+  - [ ] beep-beep sound, paraglider audio? chime like in Odyssey 2000
   - [ ] ambient sounds (ventilation unit, hum of fan)
   - [ ] thrusters sounds, gear sounds when inside space craft
   - [X] play different game music depending on situation
