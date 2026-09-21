@@ -98,6 +98,7 @@
       (uniform-sampler program "depth" 0)
       (uniform-sampler program "normals" 1)
       ((setup-shockwave-shape mach) program)
+      ;; Have to disable compare mode for the depth texture, otherwise it cannot be used as a sampler2D texture!
       (disable-compare-mode (:sfsim.model/shadows wind-shadow))
       (use-textures {0 (:sfsim.model/shadows wind-shadow)
                      1 (:sfsim.model/normals wind-shadow)})))
