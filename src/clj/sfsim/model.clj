@@ -787,11 +787,10 @@
 
 (defn scene-shadow-map
   "Determine shadow matrices and render shadow map for object"
-  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene :keyword :boolean] scene-shadow]}
-  [renderer light-direction scene culling normals]
+  {:malli/schema [:=> [:cat scene-shadow-renderer fvec3 scene :float :keyword :boolean] scene-shadow]}
+  [renderer light-direction scene shadow-radius culling normals]
   (let [object-to-world (get-in scene [::root ::transform])
-        object-radius   (::object-radius scene)
-        shadow-matrices (shadow-patch-matrices object-to-world light-direction object-radius)
+        shadow-matrices (shadow-patch-matrices object-to-world light-direction shadow-radius)
         shadow-map      (render-shadow-map renderer shadow-matrices scene culling normals)]
     (assoc shadow-map ::matrices shadow-matrices)))
 

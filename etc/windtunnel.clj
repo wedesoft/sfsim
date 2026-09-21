@@ -8,8 +8,8 @@
          '[sfsim.shaders :as shaders]
          '[sfsim.bluenoise :as bluenoise]
          '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront jump-flooding-initialisation jump-flooding-step
-                                   make-shockwave-renderer destroy-shockwave-renderer halving)]
+         '[sfsim.shockwave :refer (shockfront jump-flooding-initialisation jump-flooding-step make-shockwave-renderer
+                                   jump-flooding-algorithm destroy-shockwave-renderer halving)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL])
@@ -58,7 +58,7 @@
 
 
 (def max-curvature-radius 3.0)
-(def M 10.0)
+(def mach 10.0)
 
 
 (def fragment-texture-2d
@@ -148,9 +148,8 @@ void main()
   float x = segment.x + step * sampling_offset();
   while (x < segment.x + segment.y) {
     vec3 p = origin + x * direction;
-    vec2 uv_fragment = p.xy * 0.5 + 0.5;
-    vec4 point = texture(flood, uv_fragment);
-    float l = length(point.xy - uv_fragment * 2.0 * shockwave_radius);
+    vec4 point = texture(flood, (p.xy + 1.0) / 2.0);
+    float l = length(point.xy - (p.xy + 1.0) * shockwave_radius);
     float depth = point.z + shockfront(l, point.w);
     if (p.z * shockwave_radius <= depth) {
       emission += 4.0 * step * exp(1.0 * (p.z * shockwave_radius - depth)) * (1.0 - smoothstep(0.0, 0.25 * shockwave_radius, l));
@@ -206,7 +205,7 @@ void main()
              yaw                  (* 4 PI (/ (@mouse-pos 0) (double width)))
              pitch                (* PI (- (/ (@mouse-pos 1) (double height)) 0.5))
              obj-orient           (q/* (q/rotation yaw (vec3 0 1 0)) (q/rotation pitch (vec3 0 0 1)))
-             model-vars           (model/make-model-vars (GLFW/glfwGetTime) 0.0 (:sfsim.physics/throttle 0.0))
+             model-vars           (model/make-model-vars (GLFW/glfwGetTime) 0.0 0.0)
              model                (first (:sfsim.graphics/scenes graphics))
              model-gears          (model/apply-transforms
                                     model (model/animations-frame model {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
@@ -222,8 +221,8 @@ void main()
                                       (graphics/render-geometry graphics nil))
              wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                           wind-from
-                                                          (assoc (first (graphics/get-moved-scenes frame graphics))
-                                                                 :sfsim.model/object-radius shockwave-radius)
+                                                          (first (graphics/get-moved-scenes frame graphics))
+                                                          shockwave-radius
                                                           :sfsim.render/cullback
                                                           true)
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
@@ -234,17 +233,7 @@ void main()
              camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
              ndc-to-camera        (inverse camera-to-ndc)]
          ;; Perform Jump Flooding Algorithm
-         (let [flood (jump-flooding-initialisation shockwave-renderer
-                                                   (fn [program-init]
-                                                       (render/uniform-sampler program-init "depth" 0)
-                                                       (render/uniform-sampler program-init "normals" 1)
-                                                       (render/uniform-float program-init "mach" M)
-                                                       (render/use-textures {0 (:sfsim.model/shadows wind-shadow)
-                                                                             1 (:sfsim.model/normals wind-shadow)})))
-               flood (reduce (jump-flooding-step shockwave-renderer
-                                                 (fn [program-step]
-                                                     (render/uniform-float program-step "mach" M)))
-                             flood (halving size))
+         (let [flood (jump-flooding-algorithm shockwave-renderer wind-shadow mach)
                bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
            ;; Render shockwave
            (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
@@ -258,7 +247,7 @@ void main()
                                       (render/uniform-float program-shockwave "shockwave_radius" shockwave-radius)
                                       (render/uniform-float program-shockwave "scale" (/ (* 2.0 shockwave-radius) size))
                                       (render/uniform-float program-shockwave "step" 0.01)
-                                      (render/uniform-float program-shockwave "mach" M)
+                                      (render/uniform-float program-shockwave "mach" mach)
                                       (render/uniform-matrix4 program-shockwave "projection" projection)
                                       (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
                                       (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
@@ -279,7 +268,7 @@ void main()
                                    (render/uniform-sampler program-display "wind" 1)
                                    (render/uniform-sampler program-display "normals" 2)
                                    (render/uniform-int program-display "size" wsize)
-                                   (render/uniform-float program-display "mach" M)
+                                   (render/uniform-float program-display "mach" mach)
                                    (render/uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) wsize))
                                    (render/uniform-float program-display "max_curvature_radius" max-curvature-radius)
                                    (render/uniform-float program-display "shockwave_radius" shockwave-radius)

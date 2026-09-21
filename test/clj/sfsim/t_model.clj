@@ -725,12 +725,12 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
              (let [renderer          (make-scene-shadow-renderer 256)
                    light-direction   (vec3 0 0 1)
                    program-selection (comp (:sfsim.model/programs renderer) #(conj % false) material-type)
-                   scene             (assoc (load-scene-into-opengl program-selection ?model)
-                                            :sfsim.model/object-radius ?object-radius)
+                   scene             (load-scene-into-opengl program-selection ?model)
                    object-to-world   (transformation-matrix (mulm (rotation-matrix-3d-x ?angle-x) (rotation-matrix-3d-y ?angle-y))
                                                             (vec3 100 200 300))
                    moved-scene       (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-                   object-shadow     (scene-shadow-map renderer light-direction moved-scene :sfsim.render/cullfront false)
+                   object-shadow     (scene-shadow-map renderer light-direction moved-scene ?object-radius
+                                                       :sfsim.render/cullfront false)
                    depth             (depth-texture->floats (:sfsim.model/shadows object-shadow))
                    img               (floats->image depth)]
                (destroy-scene-shadow-map object-shadow)
@@ -750,11 +750,12 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
          (let [renderer          (make-scene-shadow-renderer 256)
                light-direction   (vec3 0 0 1)
                program-selection (comp (:sfsim.model/programs renderer) #(conj % true) material-type)
-               scene             (assoc (load-scene-into-opengl program-selection cube) :sfsim.model/object-radius 1.75)
+               scene             (load-scene-into-opengl program-selection cube)
                object-to-world   (transformation-matrix (mulm (rotation-matrix-3d-x 0.5) (rotation-matrix-3d-y -0.4))
                                                         (vec3 100 200 300))
                moved-scene       (assoc-in scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
-               object-shadow     (scene-shadow-map renderer light-direction moved-scene :sfsim.render/cullback true)
+               object-shadow     (scene-shadow-map renderer light-direction moved-scene 1.75
+                                                   :sfsim.render/cullback true)
                depth-floats      (depth-texture->floats (:sfsim.model/shadows object-shadow))
                depth             (floats->image depth-floats)
                normals           (texture->image (:sfsim.model/normals object-shadow))]
@@ -793,14 +794,14 @@ vec4 cloud_overlay(float depth)
          (fact
            (with-invisible-window
              (let [geometry-renderer    (make-scene-geometry-renderer true)
-                   opengl-scene         (assoc (load-scene-into-opengl (geometry-program-selection geometry-renderer) ?model)
-                                               :sfsim.model/object-radius ?object-radius)
+                   opengl-scene         (load-scene-into-opengl (geometry-program-selection geometry-renderer) ?model)
                    camera-to-world      (inverse (transformation-matrix (mulm (rotation-matrix-3d-x 0.5) (rotation-matrix-3d-y -0.4))
                                                                         (vec3 0 0 (- ?distance))))
                    light-direction      (normalize (vec3 5 2 1))
                    shadow-size          64
                    shadow-renderer      (make-scene-shadow-renderer shadow-size)
-                   object-shadow        (scene-shadow-map shadow-renderer light-direction opengl-scene :sfsim.render/cullfront false)
+                   object-shadow        (scene-shadow-map shadow-renderer light-direction opengl-scene
+                                                          ?object-radius :sfsim.render/cullfront false)
                    world-to-object      (-> object-shadow :sfsim.model/matrices :sfsim.matrix/world-to-object)
                    object-to-shadow-map (-> object-shadow :sfsim.model/matrices :sfsim.matrix/object-to-shadow-map)
                    geometry-buffers     (make-geometry-buffers 160 120)
@@ -872,14 +873,14 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
              (let [shadow-size          256
                    object-radius        4.0
                    geometry-renderer    (make-scene-geometry-renderer true)
-                   opengl-scene         (assoc (load-scene-into-opengl (geometry-program-selection geometry-renderer) ?model)
-                                               :sfsim.model/object-radius object-radius)
+                   opengl-scene         (load-scene-into-opengl (geometry-program-selection geometry-renderer) ?model)
                    camera-to-world      (transformation-matrix (eye 3) (vec3 1 0 0))
                    object-to-world      (transformation-matrix (mulm (rotation-matrix-3d-x ?angle-x) (rotation-matrix-3d-y ?angle-y)) (vec3 1 0 (- ?dist)))
                    moved-scene          (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform] object-to-world)
                    light-direction      (normalize (mulv (get-rotation object-to-world) (vec3 5 2 1)))
                    shadow-renderer      (make-scene-shadow-renderer shadow-size)
-                   object-shadow        (scene-shadow-map shadow-renderer light-direction moved-scene :sfsim.render/cullfront false)
+                   object-shadow        (scene-shadow-map shadow-renderer light-direction moved-scene
+                                                          object-radius :sfsim.render/cullfront false)
                    world-to-object      (-> object-shadow :sfsim.model/matrices :sfsim.matrix/world-to-object)
                    object-to-shadow-map (-> object-shadow :sfsim.model/matrices :sfsim.matrix/object-to-shadow-map)
                    geometry-buffers     (make-geometry-buffers 160 120)

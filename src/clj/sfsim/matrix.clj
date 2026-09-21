@@ -329,9 +329,9 @@
 
 (defn shadow-patch-matrices
   "Shadow matrices for an object mapping object coordinates to shadow coordinates"
-  [^Mat4x4 object-to-world ^Vec3 light-direction ^double object-radius]
-  (let [a               (- object-radius)
-        b               (+ object-radius)
+  [^Mat4x4 object-to-world ^Vec3 light-direction ^double shadow-radius]
+  (let [a               (- shadow-radius)
+        b               (+ shadow-radius)
         bounding-box    {:bottomleftnear (fv/vec3 a a b) :toprightfar (fv/vec3 b b a)}
         shadow-ndc      (shadow-box-to-ndc bounding-box)
         shadow-map      (shadow-box-to-map bounding-box)
@@ -341,8 +341,8 @@
      ::object-to-shadow-map (fm/mulm shadow-map light-matrix)
      ::world-to-object      world-to-object
      ::object-to-light      light-matrix
-     ::scale                (* 2.0 object-radius)
-     ::depth                (* 2.0 object-radius)}))
+     ::scale                (* 2.0 shadow-radius)
+     ::depth                (* 2.0 shadow-radius)}))
 
 
 (set! *warn-on-reflection* false)
