@@ -364,17 +364,6 @@ void main()
             (graphics/destroy-graphics2 graphics)))))
 
 
-(def vertex-shockwave
-"#version 450 core
-uniform mat4 projection;
-uniform mat4 ndc_to_camera;
-in vec3 point;
-void main()
-{
-  gl_Position = projection * ndc_to_camera * vec4(point, 1);
-}")
-
-
 (def fragment-shockwave
 "#version 450 core
 uniform sampler2D points;
@@ -469,7 +458,7 @@ void main()
                 graphics             (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
                 shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source shockwave/shockfront
                                                                         size shockwave-radius max-curvature-radius)
-                program-shockwave     (render/make-program :sfsim.render/vertex [vertex-shockwave]
+                program-shockwave     (render/make-program :sfsim.render/vertex [shockwave/vertex-shockwave]
                                                            :sfsim.render/fragment [shaders/ray-box shockwave/shockfront fragment-shockwave bluenoise/sampling-offset])
                 vao-shockwave        (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3])
                 tree                 (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)

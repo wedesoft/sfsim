@@ -134,5 +134,8 @@ vec4 normal_source(vec2 uv)
     (reduce (jump-flooding-step shockwave-renderer (setup-shockwave-shape mach)) initial-shockwave (halving size))))
 
 
+(def vertex-shockwave (slurp "resources/shaders/shockwave/vertex.glsl"))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
