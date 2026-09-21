@@ -19,10 +19,14 @@
     - strong concurrency support
     - REPL
   - [ ] reentry flame [[https://gemini.google.com/app/d411b76be00c0e27]]
-    - [[https://www.shadertoy.com/view/XX3fDH][reentry flame]]
-    - [[https://share.gemini.google/UOqFQ0mJdZuL][propagate shockwave in similar way to 2D distance transform]]
-  - [ ] add new screenshots and trailer
-  - [ ] improve logo
+    - [ ] heating of tiles
+  - [ ] Immediate Focus
+    - [ ] Finish the runway and reentry flames.
+    - [ ] Cockpit Polish
+      - [ ] Add an artificial horizon
+      - [ ] vertical speed indicator
+      - [ ] fuel gauge
+    - [ ] autorudder
   - [ ] rare stack overflow in neighbour tile code
   - [-] runway with lights and glide slope indicator https://www.bristol.gs/know-your-runways/
     - [ ] put runway only on one side of planet
@@ -324,6 +328,8 @@
   - Note taken on [2026-04-30 Do 21:37] \\
     [[https://www.reddit.com/r/gamedev/comments/1s6x2m7/what_ive_learned_from_playtesting_22_indie_games/][What I've learned from playtesting 22+ indie games]]
   - GameTrailers youtube channel
+    - Show atmospheric reentry, close calls, and thruster mechanics. Clip 10-second videos of launches, landings, or dramatic crashes.
+    - Ensure your primary trailer and lead GIF show dynamic cockpit action or takeoff motion within the first two seconds.
   - streamers
     - Scott Manley
     - Space Game Junkie
