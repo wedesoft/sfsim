@@ -450,26 +450,27 @@ void main()
             ;; Perform Jump Flooding Algorithm
             (let [flood (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
                   bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
-              (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
-                                         (render/use-program program-shockwave)
-                                         (render/uniform-sampler program-shockwave "points" 0)
-                                         (render/uniform-sampler program-shockwave "flood" 1)
-                                         (render/uniform-sampler program-shockwave "bluenoise" 2)
-                                         (render/uniform-int program-shockwave "width" (/ width 2))
-                                         (render/uniform-int program-shockwave "height" (/ height 2))
-                                         (render/uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
-                                         (render/uniform-float program-shockwave "shockwave_radius" shockwave-radius)
-                                         (render/uniform-float program-shockwave "scale" (/ (* 2.0 shockwave-radius) size))
-                                         (render/uniform-float program-shockwave "step" 0.01)
-                                         (render/uniform-float program-shockwave "mach" mach)
-                                         (render/uniform-matrix4 program-shockwave "projection" projection)
-                                         (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
-                                         (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
-                                         (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
-                                                               1 flood
-                                                               2 bluenoise})
-                                         (render/render-quads vao-shockwave)
-                                         (texture/destroy-texture flood)))
+              (render/with-underlay-blending
+                (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
+                                           (render/use-program program-shockwave)
+                                           (render/uniform-sampler program-shockwave "points" 0)
+                                           (render/uniform-sampler program-shockwave "flood" 1)
+                                           (render/uniform-sampler program-shockwave "bluenoise" 2)
+                                           (render/uniform-int program-shockwave "width" (/ width 2))
+                                           (render/uniform-int program-shockwave "height" (/ height 2))
+                                           (render/uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
+                                           (render/uniform-float program-shockwave "shockwave_radius" shockwave-radius)
+                                           (render/uniform-float program-shockwave "scale" (/ (* 2.0 shockwave-radius) size))
+                                           (render/uniform-float program-shockwave "step" 0.01)
+                                           (render/uniform-float program-shockwave "mach" mach)
+                                           (render/uniform-matrix4 program-shockwave "projection" projection)
+                                           (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
+                                           (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
+                                           (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
+                                                                 1 flood
+                                                                 2 bluenoise})
+                                           (render/render-quads vao-shockwave)
+                                           (texture/destroy-texture flood))))
                      ;; Compose render of model
                      (render/render-to-image width height false
                                              (render/clear (vec3 0 1 0) 0.0)
