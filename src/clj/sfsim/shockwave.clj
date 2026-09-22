@@ -6,12 +6,9 @@
 
 (ns sfsim.shockwave
     (:require
-      [clojure.math :refer (sqrt exp)]
-      [malli.dev.pretty :as pretty]
-      [malli.instrument :as mi]
       [sfsim.render :refer (uniform-float use-program uniform-int render-quads framebuffer-render uniform-sampler use-textures
                             make-program destroy-program make-vertex-array-object destroy-vertex-array-object)]
-      [sfsim.texture :refer (make-empty-texture-2d destroy-texture)]
+      [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
       [sfsim.shaders :refer (vertex-passthrough)])
     (:import
       (org.lwjgl.opengl
@@ -90,8 +87,9 @@
 
 
 (defn setup-shockwave-shape
-  [program mach]
-  (uniform-float program "mach" mach))
+  [mach]
+  (fn [program]
+      (uniform-float program "mach" mach)))
 
 
 (defn setup-shockwave-sources
@@ -99,7 +97,9 @@
   (fn [program]
       (uniform-sampler program "depth" 0)
       (uniform-sampler program "normals" 1)
-      (setup-shockwave-shape program mach)
+      ((setup-shockwave-shape mach) program)
+      ;; Have to disable compare mode for the depth texture, otherwise it cannot be used as a sampler2D texture!
+      (disable-compare-mode (:sfsim.model/shadows wind-shadow))
       (use-textures {0 (:sfsim.model/shadows wind-shadow)
                      1 (:sfsim.model/normals wind-shadow)})))
 
@@ -131,7 +131,13 @@ vec4 normal_source(vec2 uv)
 (defn jump-flooding-algorithm
   [{::keys [size] :as shockwave-renderer} wind-shadow mach]
   (let [initial-shockwave (jump-flooding-initialisation shockwave-renderer (setup-shockwave-sources wind-shadow mach))]
-    (reduce (jump-flooding-step shockwave-renderer (setup-shockwave-sources wind-shadow mach)) initial-shockwave (halving size))))
+    (reduce (jump-flooding-step shockwave-renderer (setup-shockwave-shape mach)) initial-shockwave (halving size))))
+
+
+(def vertex-shockwave (slurp "resources/shaders/shockwave/vertex.glsl"))
+
+
+(def fragment-shockwave (slurp "resources/shaders/shockwave/fragment.glsl"))
 
 
 (set! *warn-on-reflection* false)

@@ -11,13 +11,6 @@
     This backend shift lets you place hundreds of dynamic, real-time lights on ships and stations without hurting performance.
   - Note taken on [2026-05-09 Sa 21:25] \\
     focus on launch, orbit and reentry
-  - [ ] rationale for using Clojure
-    - macros
-    - multimethods with dispatch function
-    - immutable and efficient hashmaps, vectors, and sets
-    - dynamically typed
-    - strong concurrency support
-    - REPL
   - [ ] reentry flame [[https://gemini.google.com/app/d411b76be00c0e27]]
     - [ ] heating of tiles
   - [ ] Immediate Focus
@@ -27,6 +20,11 @@
       - [ ] vertical speed indicator
       - [ ] fuel gauge
     - [ ] autorudder
+  - [ ] shockwave shader
+    - [ ] align shockwave vertex shader with plume vertex shader (allowing to choose box parameters)
+    - [ ] do not overwrite clouds
+    - [ ] create mixed shader for plume and shockwave
+      - [ ] use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
   - [ ] rare stack overflow in neighbour tile code
   - [-] runway with lights and glide slope indicator https://www.bristol.gs/know-your-runways/
     - [ ] put runway only on one side of planet

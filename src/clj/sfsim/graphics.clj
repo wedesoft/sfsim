@@ -54,7 +54,7 @@
         planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0 overlays)
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
         scene-renderer          (model/make-scene-geometry-renderer true)
-        scene-shadow-renderer   (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config))
+        scene-shadow-renderer   (model/make-scene-shadow-renderer)
         lighting-renderer       (lighting/make-lighting-renderer {:sfsim.render/config config/render-config
                                                                   :sfsim.planet/config config/planet-config
                                                                   :sfsim.opacity/data opacity-data
@@ -224,11 +224,13 @@
 (defn render-scene-shadows
   [frame graphics]
   (let [scene-shadow-renderer (::scene-shadow-renderer graphics)
+        shadow-size           (:sfsim.opacity/scene-shadow-size config/shadow-config)
         light-direction       (::light-direction frame)
         moved-scenes          (get-moved-scenes frame graphics)
         object-shadows        (mapv #(model/scene-shadow-map scene-shadow-renderer light-direction %
-                                                            (:sfsim.model/object-radius %)
-                                                            :sfsim.render/cullfront false)
+                                                             shadow-size
+                                                             (:sfsim.model/object-radius %)
+                                                             :sfsim.render/cullfront false)
                                     moved-scenes)]
     (assoc frame ::object-shadows object-shadows)))
 

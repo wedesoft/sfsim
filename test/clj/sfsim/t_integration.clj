@@ -25,11 +25,16 @@
     [sfsim.physics :as physics]
     [sfsim.quadtree :refer :all]
     [sfsim.quaternion :as q]
-    [sfsim.render :refer :all]
+    [sfsim.render :refer (with-invisible-window render-to-image) :as render]
+    [sfsim.texture :as texture]
+    [sfsim.image :as image]
     [sfsim.shaders :as shaders]
+    [sfsim.bluenoise :as bluenoise]
     [sfsim.shockwave :as shockwave]
     [sfsim.texture :refer :all])
   (:import
+    (org.lwjgl.opengl
+      GL11 GL14)
     (org.lwjgl.glfw
       GLFW)))
 
@@ -233,27 +238,25 @@ void main()
                 height 240
                 indices  [0 1 3 2]
                 vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
-                program (make-program :sfsim.render/vertex [vertex-plume]
-                                      :sfsim.render/fragment [fragment-plume (plume/sample-plume-segment true)])
-                vao     (make-vertex-array-object program indices vertices ["point" 3])]
-            (use-program program)
-            (uniform-vector2 program "resolution" (vec2 width height))
-            (uniform-float program "plume_nozzle" 2.7549)
-            (uniform-float program "plume_min_limit" 1.2)
-            (uniform-float program "plume_max_slope" 1.0)
-            (uniform-float program "omega_factor" 0.2)
-            (uniform-float program "diamond_strength" 0.2)
-            (uniform-float program "plume_step" 0.2)
-            (uniform-float program "pressure" 1.0)
-            (uniform-float program "plume_throttle" 1.0)
-            (uniform-float program "time" 0.0)
-            (let [tex (texture-render-color width height true
-                                            (clear (vec3 0 0 0))
-                                            (render-quads vao))]
+                program (render/make-program :sfsim.render/vertex [vertex-plume]
+                                             :sfsim.render/fragment [fragment-plume (plume/sample-plume-segment true)])
+                vao     (render/make-vertex-array-object program indices vertices ["point" 3])]
+            (render/use-program program)
+            (render/uniform-vector2 program "resolution" (vec2 width height))
+            (render/uniform-float program "plume_nozzle" 2.7549)
+            (render/uniform-float program "plume_min_limit" 1.2)
+            (render/uniform-float program "plume_max_slope" 1.0)
+            (render/uniform-float program "omega_factor" 0.2)
+            (render/uniform-float program "diamond_strength" 0.2)
+            (render/uniform-float program "plume_step" 0.2)
+            (render/uniform-float program "pressure" 1.0)
+            (render/uniform-float program "plume_throttle" 1.0)
+            (render/uniform-float program "time" 0.0)
+            (let [tex (render/texture-render-color width height true (render/clear (vec3 0 0 0)) (render/render-quads vao))]
               (texture->image tex) => (is-image "test/clj/sfsim/fixtures/integration/plume.png" 0.0)
               (destroy-texture tex))
-            (destroy-vertex-array-object vao)
-            (destroy-program program)))))
+            (render/destroy-vertex-array-object vao)
+            (render/destroy-program program)))))
 
 
 (when (.exists (io/file ".integration"))
@@ -318,7 +321,7 @@ void main()
         (with-invisible-window
           (let [size                 256
                 object-radius        1.4
-                shockwave-radius     2.8
+                shockwave-radius     (* 5 1.4)
                 max-curvature-radius 3.0
                 M                    10.0
                 wind-from            (vec3 1 0 0)
@@ -328,12 +331,13 @@ void main()
                                        [])
                 vertices             [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
                 indices              [0 1 3 2]
-                program-display      (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
-                                                   :sfsim.render/fragment [shockwave/shockfront fragment-texture-2d])
-                vao-display          (make-vertex-array-object program-display indices vertices ["point" 3])
+                program-display      (render/make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                                          :sfsim.render/fragment [shockwave/shockfront fragment-texture-2d])
+                vao-display          (render/make-vertex-array-object program-display indices vertices ["point" 3])
                 wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
                                                              wind-from
                                                              (first (:sfsim.graphics/scenes graphics))
+                                                             size
                                                              shockwave-radius
                                                              :sfsim.render/cullback
                                                              true)
@@ -342,75 +346,142 @@ void main()
                                                                         max-curvature-radius)
                 flood                (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow M)]
             (render-to-image size size false
-                             (clear (vec3 0 1 0) 0.0)
-                             (use-program program-display)
-                             (uniform-sampler program-display "flood" 0)
-                             (uniform-int program-display "size" size)
-                             (uniform-float program-display "mach" M)
-                             (uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) size))
-                             (uniform-float program-display "max_curvature_radius" max-curvature-radius)
-                             (uniform-float program-display "shockwave_radius" shockwave-radius)
-                             (use-textures {0 flood})
-                             (render-quads vao-display))
+                             (render/clear (vec3 0 1 0) 0.0)
+                             (render/use-program program-display)
+                             (render/uniform-sampler program-display "flood" 0)
+                             (render/uniform-int program-display "size" size)
+                             (render/uniform-float program-display "mach" M)
+                             (render/uniform-float program-display "scale" (/ (* 2.0 shockwave-radius) size))
+                             (render/uniform-float program-display "max_curvature_radius" max-curvature-radius)
+                             (render/uniform-float program-display "shockwave_radius" shockwave-radius)
+                             (render/use-textures {0 flood})
+                             (render/render-quads vao-display))
             => (is-image (str "test/clj/sfsim/fixtures/integration/jump-flooding-algorithm.png") 1.0)
             (destroy-texture flood)
             (model/destroy-scene-shadow-map wind-shadow)
             (shockwave/destroy-shockwave-renderer shockwave-renderer)
-            (destroy-vertex-array-object vao-display)
-            (destroy-program program-display)
+            (render/destroy-vertex-array-object vao-display)
+            (render/destroy-program program-display)
             (graphics/destroy-graphics2 graphics)))))
+
+
+(def shockwave-indices
+  [4 5 7 6    ; front (+z)
+   1 0 2 3    ; back  (-z)
+   0 4 6 2    ; left  (-x)
+   5 1 3 7    ; right (+x)
+   2 6 7 3    ; top   (+y)
+   0 1 5 4])  ; bottom (-y)
+
+
+(def shockwave-vertices
+  [-1.0 -1.0  0.0
+    1.0 -1.0  0.0
+   -1.0  1.0  0.0
+    1.0  1.0  0.0
+   -1.0 -1.0  1.0
+    1.0 -1.0  1.0
+   -1.0  1.0  1.0
+    1.0  1.0  1.0])
 
 
 (when (.exists (io/file ".integration"))
   (fact "Test rendering of model with shockwave"
-    (with-invisible-window
-      (let [width               320
-            height              240
-            level               5
-            object-radius       (:sfsim.model/object-radius config/model-config)
-            shockwave-radius    (* 2.0 object-radius)
-            light-direction     (normalize (vec3 1 0 2))
-            wind-from           (vec3 1 0 0)
-            graphics            (graphics/make-graphics2
-                                  [{:sfsim.graphics/model-file "data/models/venturestar.glb"
-                                    :sfsim.graphics/object-radius object-radius}]
-                                  [])
-            model               (first (:sfsim.graphics/scenes graphics))
-            model-gears         (model/apply-transforms
-                                  model (model/animations-frame model {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
-            graphics            (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
-            position            (vec3 0 0 (+ 60000.0 6378000.0))
-            orientation         (q/rotation (to-radians 90.0) (vec3 1 0 0))
-            object-position     (add position (q/rotate-vector orientation (vec3 0 0 -100)))
-            object-orientation  (matrix->quaternion (mulm (rotation-matrix-3d-y (* -0.15 PI))
-                                                          (rotation-matrix-3d-x (* 0.5 PI))))
-            tree                (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
-                                                       :sfsim.planet/config config/planet-config
-                                                       :sfsim.planet/programs [(:sfsim.planet/program
-                                                                                 (:sfsim.graphics/planet-geometry-renderer graphics))])
-                                                {} width position level)
-            frame               (-> (graphics/make-frame graphics width height position orientation light-direction
-                                                         [{:sfsim.graphics/object-position object-position
-                                                           :sfsim.graphics/object-orientation object-orientation}]
-                                                         (model/make-model-vars 0.0 0.0 0.0))
-                                    (graphics/render-shadows graphics tree)
-                                    (graphics/render-scene-shadows graphics)
-                                    (graphics/render-cloud-geometry graphics tree)
-                                    (graphics/render-clouds graphics [])
-                                    (graphics/render-geometry graphics tree))
-            wind-shadow         (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
-                                                        wind-from
-                                                        (first (graphics/get-moved-scenes frame graphics))
-                                                        shockwave-radius
-                                                        :sfsim.render/cullback
-                                                        true)]
-        (render-to-image width height false
-                         (graphics/render-lighting frame graphics))
-        => (is-image "test/clj/sfsim/fixtures/integration/model-with-shockwave.png" 0.5)
-        (model/destroy-scene-shadow-map wind-shadow)
-        (graphics/destroy-frame frame)
-        (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
-        (graphics/destroy-graphics2 graphics)))))
+        (render/with-invisible-window
+          (let [width                320
+                height               240
+                size                 1024
+                level                5
+                dist                 (+ 600000.0 6378000.0)
+                offset               100
+                origin               (vec3 0 0 dist)
+                orientation          (q/rotation (to-radians 90.0) (vec3 1 0 0))
+                max-curvature-radius 3.0
+                mach                 10.0
+                light                (normalize (vec3 1 1 1))
+                wind-from            (vec3 1 0 0)
+                object-orientation   (matrix/matrix->quaternion (mulm (rotation-matrix-3d-y (* -0.15 PI))
+                                                                      (rotation-matrix-3d-x (* 0.5 PI))))
+                model-vars           (model/make-model-vars 0.0 0.0 0.0)
+                shockwave-radius     (* 2.0 (:sfsim.model/object-radius config/model-config))
+                graphics             (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
+                                                                :sfsim.graphics/object-radius (:sfsim.model/object-radius config/model-config)}]
+                                                              [])
+                model                (first (:sfsim.graphics/scenes graphics))
+                model-gears          (model/apply-transforms
+                                       model (model/animations-frame model
+                                                                     {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
+                graphics             (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
+                shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source shockwave/shockfront
+                                                                        size shockwave-radius max-curvature-radius)
+                program-shockwave     (render/make-program :sfsim.render/vertex [shockwave/vertex-shockwave]
+                                                           :sfsim.render/fragment [shaders/ray-box shockwave/shockfront
+                                                                                   shockwave/fragment-shockwave
+                                                                                   bluenoise/sampling-offset])
+                vao-shockwave        (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3])
+                tree                 (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
+                                                            :sfsim.planet/config config/planet-config
+                                                            :sfsim.planet/programs [(:sfsim.planet/program
+                                                                                      (:sfsim.graphics/planet-geometry-renderer graphics))])
+                                                     {} width origin level)
+                object               [{:sfsim.graphics/object-position (add origin (q/rotate-vector orientation (vec3 0 0 (- offset))))
+                                       :sfsim.graphics/object-orientation object-orientation}]
+                frame                (-> (graphics/make-frame graphics width height origin orientation
+                                                              light object model-vars)
+                                         (graphics/render-shadows graphics tree)
+                                         (graphics/render-scene-shadows graphics)
+                                         (graphics/render-cloud-geometry graphics tree)
+                                         (graphics/render-clouds graphics [])
+                                         (graphics/render-geometry graphics tree))
+                wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
+                                                             wind-from
+                                                             (first (graphics/get-moved-scenes frame graphics))
+                                                             size
+                                                             shockwave-radius
+                                                             :sfsim.render/cullback
+                                                             true)
+                projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
+                matrices             (:sfsim.model/matrices wind-shadow)
+                camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
+                world-to-object      (:sfsim.matrix/world-to-object matrices)
+                object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
+                camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
+                ndc-to-camera        (inverse camera-to-ndc)]
+            ;; Perform Jump Flooding Algorithm
+            (let [flood (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
+                  bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
+              (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
+                                         (render/use-program program-shockwave)
+                                         (render/uniform-sampler program-shockwave "points" 0)
+                                         (render/uniform-sampler program-shockwave "flood" 1)
+                                         (render/uniform-sampler program-shockwave "bluenoise" 2)
+                                         (render/uniform-int program-shockwave "width" (/ width 2))
+                                         (render/uniform-int program-shockwave "height" (/ height 2))
+                                         (render/uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
+                                         (render/uniform-float program-shockwave "shockwave_radius" shockwave-radius)
+                                         (render/uniform-float program-shockwave "scale" (/ (* 2.0 shockwave-radius) size))
+                                         (render/uniform-float program-shockwave "step" 0.01)
+                                         (render/uniform-float program-shockwave "mach" mach)
+                                         (render/uniform-matrix4 program-shockwave "projection" projection)
+                                         (render/uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
+                                         (render/uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
+                                         (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
+                                                               1 flood
+                                                               2 bluenoise})
+                                         (render/render-quads vao-shockwave))
+              ;; Compose render of model
+              (render/render-to-image width height false
+                                      (render/clear (vec3 0 1 0) 0.0)
+                                      (graphics/render-lighting frame graphics))
+              => (is-image (str "test/clj/sfsim/fixtures/integration/model-with-shockwave.png") 1.0)
+              (texture/destroy-texture flood))
+            (model/destroy-scene-shadow-map wind-shadow)
+            (graphics/destroy-frame frame)
+            (render/destroy-vertex-array-object vao-shockwave)
+            (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
+            (graphics/destroy-graphics2 graphics)
+            (render/destroy-program program-shockwave)
+            (shockwave/destroy-shockwave-renderer shockwave-renderer)))))
 
 
 (when (.exists (io/file ".integration"))
