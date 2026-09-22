@@ -392,7 +392,7 @@ void main()
                 height               240
                 size                 1024
                 level                5
-                dist                 (+ 600000.0 6378000.0)
+                dist                 (+ 60000.0 6378000.0)
                 offset               100
                 origin               (vec3 0 0 dist)
                 orientation          (q/rotation (to-radians 90.0) (vec3 1 0 0))
@@ -468,13 +468,13 @@ void main()
                                          (render/use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
                                                                1 flood
                                                                2 bluenoise})
-                                         (render/render-quads vao-shockwave))
-              ;; Compose render of model
-              (render/render-to-image width height false
-                                      (render/clear (vec3 0 1 0) 0.0)
-                                      (graphics/render-lighting frame graphics))
-              => (is-image (str "test/clj/sfsim/fixtures/integration/model-with-shockwave.png") 1.0)
-              (texture/destroy-texture flood))
+                                         (render/render-quads vao-shockwave)
+                                         (texture/destroy-texture flood)))
+                     ;; Compose render of model
+                     (render/render-to-image width height false
+                                             (render/clear (vec3 0 1 0) 0.0)
+                                             (graphics/render-lighting frame graphics))
+                     => (is-image (str "test/clj/sfsim/fixtures/integration/model-with-shockwave.png") 1.0)
             (model/destroy-scene-shadow-map wind-shadow)
             (graphics/destroy-frame frame)
             (render/destroy-vertex-array-object vao-shockwave)
