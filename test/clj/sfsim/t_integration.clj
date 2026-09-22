@@ -361,7 +361,7 @@ void main()
             (graphics/destroy-graphics2 graphics)))))
 
 
-(when (.exists (io/file ".integration2"))
+(when (.exists (io/file ".integration"))
   (fact "Test rendering of model with shockwave"
     (with-invisible-window
       (let [width               320
