@@ -365,26 +365,6 @@ void main()
             (graphics/destroy-graphics2 graphics)))))
 
 
-(def shockwave-indices
-  [4 5 7 6    ; front (+z)
-   1 0 2 3    ; back  (-z)
-   0 4 6 2    ; left  (-x)
-   5 1 3 7    ; right (+x)
-   2 6 7 3    ; top   (+y)
-   0 1 5 4])  ; bottom (-y)
-
-
-(def shockwave-vertices
-  [-1.0 -1.0  0.0
-    1.0 -1.0  0.0
-   -1.0  1.0  0.0
-    1.0  1.0  0.0
-   -1.0 -1.0  1.0
-    1.0 -1.0  1.0
-   -1.0  1.0  1.0
-    1.0  1.0  1.0])
-
-
 (when (.exists (io/file ".integration"))
   (fact "Test rendering of model with shockwave"
         (render/with-invisible-window
@@ -414,11 +394,6 @@ void main()
                 graphics             (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
                 shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source shockwave/shockfront
                                                                         size shockwave-radius max-curvature-radius)
-                program-shockwave     (render/make-program :sfsim.render/vertex [shockwave/vertex-shockwave]
-                                                           :sfsim.render/fragment [shaders/ray-box shockwave/shockfront
-                                                                                   shockwave/fragment-shockwave
-                                                                                   bluenoise/sampling-offset])
-                vao-shockwave        (render/make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3])
                 tree                 (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                             :sfsim.planet/config config/planet-config
                                                             :sfsim.planet/programs [(:sfsim.planet/program
@@ -453,7 +428,7 @@ void main()
               (render/framebuffer-render
                 (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                 (render/with-underlay-blending
-                  (shockwave/render-shockwave-overlay program-shockwave vao-shockwave flood bluenoise (/ width 2) (/ height 2)
+                  (shockwave/render-shockwave-overlay shockwave-renderer flood bluenoise (/ width 2) (/ height 2)
                                                       shockwave-radius size mach projection ndc-to-camera camera-to-ndc frame))))
                      ;; Compose render of model
                      (render/render-to-image width height false
@@ -462,10 +437,8 @@ void main()
                      => (is-image (str "test/clj/sfsim/fixtures/integration/model-with-shockwave.png") 1.0)
             (model/destroy-scene-shadow-map wind-shadow)
             (graphics/destroy-frame frame)
-            (render/destroy-vertex-array-object vao-shockwave)
             (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
             (graphics/destroy-graphics2 graphics)
-            (render/destroy-program program-shockwave)
             (shockwave/destroy-shockwave-renderer shockwave-renderer)))))
 
 
