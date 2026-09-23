@@ -171,7 +171,7 @@ vec4 normal_source(vec2 uv)
 
 
 (defn render-shockwave-overlay
-  [{::keys [program-shockwave vao-shockwave bluenoise]} flood overlay-width overlay-height shockwave-radius size mach projection
+  [{::keys [program-shockwave vao-shockwave bluenoise shockwave-radius]} flood overlay-width overlay-height size mach projection
    ndc-to-camera camera-to-ndc frame]
   (use-program program-shockwave)
   (uniform-sampler program-shockwave "points" 0)

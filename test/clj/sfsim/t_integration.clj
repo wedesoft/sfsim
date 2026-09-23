@@ -431,7 +431,7 @@ void main()
                 (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                 (render/with-underlay-blending
                   (shockwave/render-shockwave-overlay shockwave-renderer flood (/ width 2) (/ height 2)
-                                                      shockwave-radius size mach projection ndc-to-camera camera-to-ndc frame))))
+                                                      size mach projection ndc-to-camera camera-to-ndc frame))))
                      ;; Compose render of model
                      (render/render-to-image width height false
                                              (render/clear (vec3 0 1 0) 0.0)
