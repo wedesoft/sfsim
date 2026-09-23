@@ -59,7 +59,7 @@
 
 
 (defn make-shockwave-renderer
-  [depth-source normal-source shockfront size shockwave-radius max-curvature-radius]
+  [depth-source normal-source shockfront size bluenoise shockwave-radius max-curvature-radius]
   (let [indices           [0 1 3 2]
         vertices          [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
         program-init      (make-program :sfsim.render/vertex [vertex-passthrough]
@@ -72,6 +72,7 @@
                                                                 bluenoise/sampling-offset])
         vao-shockwave     (make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3])]
     {::size                 size
+     ::bluenoise            bluenoise
      ::shockwave-radius     shockwave-radius
      ::max-curvature-radius max-curvature-radius
      ::program-init         program-init
@@ -170,7 +171,7 @@ vec4 normal_source(vec2 uv)
 
 
 (defn render-shockwave-overlay
-  [{::keys [program-shockwave vao-shockwave]} flood bluenoise overlay-width overlay-height shockwave-radius size mach projection
+  [{::keys [program-shockwave vao-shockwave bluenoise]} flood overlay-width overlay-height shockwave-radius size mach projection
    ndc-to-camera camera-to-ndc frame]
   (use-program program-shockwave)
   (uniform-sampler program-shockwave "points" 0)

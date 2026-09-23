@@ -341,8 +341,9 @@ void main()
                                                              shockwave-radius
                                                              :sfsim.render/cullback
                                                              true)
+                bluenoise            (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))
                 shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
-                                                                        shockwave/shockfront size shockwave-radius
+                                                                        shockwave/shockfront size bluenoise shockwave-radius
                                                                         max-curvature-radius)
                 flood                (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow M)]
             (render-to-image size size false
@@ -392,8 +393,10 @@ void main()
                                        model (model/animations-frame model
                                                                      {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
                 graphics             (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
-                shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source shockwave/shockfront
-                                                                        size shockwave-radius max-curvature-radius)
+                bluenoise            (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))
+                shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source  shockwave/normal-source
+                                                                        shockwave/shockfront size bluenoise shockwave-radius
+                                                                        max-curvature-radius)
                 tree                 (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                             :sfsim.planet/config config/planet-config
                                                             :sfsim.planet/programs [(:sfsim.planet/program
@@ -423,12 +426,11 @@ void main()
                 camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
                 ndc-to-camera        (inverse camera-to-ndc)]
             ;; Perform Jump Flooding Algorithm
-            (let [flood (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
-                  bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))]
+            (let [flood (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)]
               (render/framebuffer-render
                 (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                 (render/with-underlay-blending
-                  (shockwave/render-shockwave-overlay shockwave-renderer flood bluenoise (/ width 2) (/ height 2)
+                  (shockwave/render-shockwave-overlay shockwave-renderer flood (/ width 2) (/ height 2)
                                                       shockwave-radius size mach projection ndc-to-camera camera-to-ndc frame))))
                      ;; Compose render of model
                      (render/render-to-image width height false
