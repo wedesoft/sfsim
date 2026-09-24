@@ -396,7 +396,6 @@
     * Visual effects
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
   - Pushin getting CI using Gitea and later Firecracker VM https://news.ycombinator.com/item?id=49579232
-  - [ ] reuse part of shadow and opacity map
   - [ ] tutorial explaining ApA, ...
   - [ ] replikativ/raster (Christian Weilbach) defvalue erzeugt Vallhalla Valuetypes, die sind Stack alloziert.
     Auf älteren JDKs ist es ein defrecord.
@@ -422,13 +421,12 @@
   - [ ] Crash
     - [ ] bent hulk with scorched textures
     - [ ] explosion (expands fast in space, fire in atmosphere)
-    - [ ] detach parts if force passes threshold)
+    - [ ] detach parts if force passes threshold
   - [ ] use dtype-next instead of aget, aset
   - [ ] borderless fullscreen support
   - [X] Need to change keyboard bindings for camera because some users don't have a numpad.
   - [ ] configurable key controls
   - [ ] joystick hat to control camera
-  - [ ] limit dt or pause
   - [ ] shadows and opacity maps are set up in three places (search :sfsim.opacity/shadows)
   - [ ] add object radius to object?
   - [ ] fix planet tessellation tests
@@ -452,3 +450,5 @@
   - [ ] free camera (move around camera freely)
   - [ ] eclipse
   - [ ] weather
+* TODO [#D] nice to haves
+  - [ ] reuse part of shadow and opacity map
