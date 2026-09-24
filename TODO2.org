@@ -97,6 +97,7 @@
 
 ** TODO [#A] Core bugs and blockers                                       :bug:
 *** TODO Rare stack overflow in neighbour tile code
+**** TODO Consider whether resolution level difference could be more than one
 *** DONE Out-of-bounds exception when exceeding Mach 30
 
 ** TODO [#A] Rendering pipeline modernization                             :graphics:rendering:
@@ -120,7 +121,7 @@
 **** TODO load-tile-into-opengl should use program instead of programs
 **** TODO Decal pass: overwrite/blend colors and normals
 **** TODO Render localized lights using blending
-**** TODO Bloom for sun
+**** TODO Bloom or glare for sun
 **** TODO Investigate cloud color / shadowing for distant clouds
 **** TODO Move object shadow-map position computation into scene-shadow code
 **** TODO Remove texture-offset and scene-shadow-matrices from render-scene
@@ -157,6 +158,8 @@
 *** TODO Keyboard shortcut customization
 *** TODO Add keyboard mapping help page
 *** TODO Borderless fullscreen support
+*** TODO Saving and loading of game
+*** TODO Default audio at 50 percent
 
 ** TODO [#B] Steam/demo materials                                         :marketing:
 *** TODO New Steam capsule
@@ -169,7 +172,7 @@
 ** TODO [#C] 3D cockpit                                                   :cockpit:interface:
 *** TODO F-35 style glass cockpit
 *** TODO Render cockpit first using stencil/mask, then render planet
-*** TODO Ground slope warning
+*** TODO Terrain layer in MFD
 *** TODO Frontal and side view of moon lander, altitude visualization
 *** TODO Cockpit and scene rendering looking downward with horizon in upper half
 *** TODO EF2000-like cockpit controls / quick access views
@@ -189,7 +192,7 @@
 **** TODO Warnings / status display
 **** TODO Attitude autopilot with roll reversal and angle-of-attack hold
 **** TODO Auto-rudder
-**** TODO Autopilot on/off, autothrottle, AoA hold, bank hold
+**** TODO Autopilot on/off, autothrottle, AoA hold, bank hold, reverse bank hold
 **** TODO Autopilot kill rotation, prograde, retrograde, orbit normal +/-, radial in/out
 **** TODO RCS mode: off / rotation / translation
 **** TODO Flight-control-surface mode: off / pitch / on
@@ -216,9 +219,14 @@
 **** TODO Cameras
 **** TODO Heat display
 **** TODO Deorbit MFD
+**** TODO Base MFD
 **** TODO ILS
 **** TODO Map MFD
 **** TODO Earth/Moon map
+***** TODO target location
+***** TODO cross-track error
+***** TODO orbit
+***** TODO orbit-surface intersection
 **** TODO Hull temperature
 **** TODO Align orbit plane
 **** TODO Orbit
@@ -259,7 +267,7 @@
 **** TODO Hover thrusters
 **** TODO Hover thruster locations
 *** TODO Docking physics
-*** TODO Safe time lapse inside and outside the atmosphere
+*** DONE Safe time lapse inside and outside the atmosphere
 *** TODO Nav lights, strobe lights, landing lights, beacon/position lights
 *** TODO Cockpit warning for wing stress
 *** TODO Simulate crash
@@ -291,8 +299,8 @@
 
 ** TODO [#C] Graphics improvements                                       :graphics:
 *** TODO General quality
+**** TODO FXAA
 **** TODO HDR rendering and HDR bloom
-**** TODO Multisampling
 **** TODO Adapt shadow-map size to object distance
 **** TODO Integration test for powder function
 **** TODO Investigate low FPS at 100 km
@@ -301,7 +309,7 @@
 **** TODO Use icosahedron for mapping 2D microtextures
 ***** TODO Unroll icosahedron manually
 ***** TODO Find smallest cross product of vector with sum of corner vectors
-***** TODO Use inverse corners matrix to get linear combination
+***** TODO Use inverse corners matrix to get linear combination of corner vectors and normalise sum to one
 ***** TODO Determine u and v
 ***** TODO Add microtexture normal maps / bump maps
 ***** TODO Consider multitextures for land detail
@@ -314,7 +322,7 @@
 **** TODO Add moon light
 **** TODO Volumetric clouds
 **** TODO Uniform random offsets for Worley noise
-**** TODO Point sprites for stars with atmospheric flicker
+**** TODO Point sprite arrays for stars with atmospheric flicker
 **** TODO Implement stars
 **** TODO Introduce variation to cloud height
 ***** TODO Heating of tiles
@@ -322,16 +330,15 @@
 **** TODO Water and waves
 *** TODO Materials and reflections
 **** TODO Create windows using blending / reflections
-*** TODO Misc cleanup
-**** TODO Peek faster than last on vectors
-**** TODO Use :let, :while, :when in loops
-**** TODO Use anisotropic mipmapping
 
 ** TODO [#C] Marketing and progression                                   :marketing:
 *** TODO Missions and high scores
 *** TODO Targeted game description
 **** TODO Describe game four layers deep: genre, sub-genre, combat, setting/theme
 **** TODO Break down into five concrete player tasks
+*** TODO GameTrailers youtube channel
+*** TODO Gamespress
+*** TODO Demo for Steam Next Fest
 *** TODO Streamer outreach
 **** TODO Scott Manley
 **** TODO Space Game Junkie
@@ -360,17 +367,20 @@
 ** TODO Free camera                                                      :feature:
 ** TODO Eclipse                                                          :feature:
 ** TODO Weather                                                          :feature:
+*** TODO uniform random offsets for Worley noises to generate different cloud cover for each game
 ** TODO Winter daytime is too dark                                       :bug:
 ** TODO Common playtest issues                                           :playtest:
 *** DONE Audio too loud
 *** TODO Tutorial
-*** TODO Scale UI according to screen resolution
-*** TODO Feedback for player accomplishments
-*** TODO Keyboard bindings customization
-*** TODO Difficulty spikes
-*** TODO Clear objectives
-*** TODO Camera problems
-
+**** TODO Take off
+**** TODO Orbital parameters
+*** TODO Eliminate common playtest errors
+**** TODO Scale UI according to screen resolution
+**** TODO Feedback for player accomplishments
+**** TODO Keyboard bindings customization
+**** TODO No difficulty spikes
+**** TODO Clear objectives
+**** TODO Camera problems
 * REFERENCE
 
 ** Physics notes
@@ -423,10 +433,10 @@
 - [[https://www.youtube.com/watch?v=qfI9j92CUso]]
 - [[https://samdriver.xyz/article/decal-render-intro]]
 - [[https://aerosavvy.com/airport-lights]]
-- [[https://www.reddit.com/r/opengl/comments/10rwgy7/what_is_currently_the_best_method_to_render_roads/]]
 - [[https://blog.maximeheckel.com/posts/on-rendering-the-sky-sunsets-and-planets/]]
 - [[https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-16-accurate-atmospheric-scattering]]
 - [[https://github.com/takram-design-engineering/three-geospatial/tree/main/packages/atmosphere]]
+- s2016-pbs-frostbite-sky-clouds-new.pdf page 28
 
 ** Cockpit / UI references
 - [[https://uxdesign.cc/how-i-recreated-crew-dragons-ui-15877eddf3ed]]
