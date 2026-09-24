@@ -165,7 +165,6 @@
   - [ ] finish tidying up core
   - [ ] simplify recording and playback code
   - [ ] allow setting of heading in location dialog
-  - [ ] thrust vectoring
   - [ ] cloud segment with full attenuation and cutoff (take front layer rgba "incoming"?)
   - [ ] copy alpha values for up-to-date cut off, use correct cutoff for all rendered layers when rendering front to back
   - [ ] animate control surfaces and air brake
@@ -398,7 +397,6 @@
     * bloom https://www.youtube.com/watch?v=ml-5OGZC7vE
   - Pushin getting CI using Gitea and later Firecracker VM https://news.ycombinator.com/item?id=49579232
   - [ ] reuse part of shadow and opacity map
-  - [ ] thrust vectoring
   - [ ] tutorial explaining ApA, ...
   - [ ] replikativ/raster (Christian Weilbach) defvalue erzeugt Vallhalla Valuetypes, die sind Stack alloziert.
     Auf älteren JDKs ist es ein defrecord.
