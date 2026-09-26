@@ -7,7 +7,8 @@ uniform float shockwave_radius;
 uniform float scale;
 uniform int width;
 uniform int height;
-uniform float step;
+uniform float shockwave_strength;
+uniform float shockwave_step;
 
 out vec4 fragColor;
 
@@ -21,7 +22,7 @@ vec4 shockwave_transfer(vec3 p, float shockwave_step, vec4 shockwave_scatter)
   float l = length(point.xy - (p.xy + 1.0) * shockwave_radius);
   float depth = point.z + shockfront(l, point.w);
   if (p.z * shockwave_radius <= depth) {
-    float emission = 4.0 * step * exp(1.0 * (p.z * shockwave_radius - depth)) * (1.0 - smoothstep(0.0, 0.25 * shockwave_radius, l));
+    float emission = shockwave_strength * shockwave_step * exp(1.0 * (p.z * shockwave_radius - depth)) * (1.0 - smoothstep(0.0, 0.25 * shockwave_radius, l));
     shockwave_scatter += vec4(emission, emission, 0, 0);
   };
   return shockwave_scatter;
@@ -43,11 +44,11 @@ void main()
     };
   };
   vec4 shockwave_scatter = vec4(0, 0, 0, 0);
-  float x = segment.x + step * sampling_offset();
+  float x = segment.x + shockwave_step * sampling_offset();
   while (x < segment.x + segment.y) {
     vec3 p = origin + x * direction;
-    shockwave_scatter = shockwave_transfer(p, step, shockwave_scatter);
-    x += step;
+    shockwave_scatter = shockwave_transfer(p, shockwave_step, shockwave_scatter);
+    x += shockwave_step;
   };
   fragColor = shockwave_scatter;
 }
