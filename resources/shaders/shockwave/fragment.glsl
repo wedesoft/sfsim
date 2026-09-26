@@ -1,32 +1,17 @@
 #version 450 core
 
 uniform sampler2D points;
-uniform sampler2D flood;
 uniform mat4 camera_to_ndc;
-uniform float shockwave_radius;
 uniform float scale;
 uniform int width;
 uniform int height;
-uniform float shockwave_strength;
 uniform float shockwave_step;
 
 out vec4 fragColor;
 
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float shockfront(float distance, float Rn);
 float sampling_offset();
-
-vec4 shockwave_transfer(vec3 p, float shockwave_step, vec4 shockwave_scatter)
-{
-  vec4 point = texture(flood, (p.xy + 1.0) / 2.0);
-  float l = length(point.xy - (p.xy + 1.0) * shockwave_radius);
-  float depth = point.z + shockfront(l, point.w);
-  if (p.z * shockwave_radius <= depth) {
-    float emission = shockwave_strength * shockwave_step * exp(1.0 * (p.z * shockwave_radius - depth)) * (1.0 - smoothstep(0.0, 0.25 * shockwave_radius, l));
-    shockwave_scatter += vec4(emission, emission, 0, 0);
-  };
-  return shockwave_scatter;
-};
+vec4 shockwave_transfer(vec3 p, float shockwave_step, vec4 shockwave_scatter);
 
 void main()
 {
@@ -46,8 +31,8 @@ void main()
   vec4 shockwave_scatter = vec4(0, 0, 0, 0);
   float x = segment.x + shockwave_step * sampling_offset();
   while (x < segment.x + segment.y) {
-    vec3 p = origin + x * direction;
-    shockwave_scatter = shockwave_transfer(p, shockwave_step, shockwave_scatter);
+    vec3 point = origin + x * direction;
+    shockwave_scatter = shockwave_transfer(point, shockwave_step, shockwave_scatter);
     x += shockwave_step;
   };
   fragColor = shockwave_scatter;

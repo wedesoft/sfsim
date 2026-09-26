@@ -23,6 +23,9 @@
 (def shockfront (slurp "resources/shaders/shockwave/shockfront.glsl"))
 
 
+(def shockwave-transfer (slurp "resources/shaders/shockwave/shockwave-transfer.glsl"))
+
+
 (def curvature (slurp "resources/shaders/shockwave/curvature.glsl"))
 
 
@@ -68,7 +71,7 @@
                                         :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
         vao               (make-vertex-array-object program-init indices vertices ["point" 3])
         program-shockwave (make-program :sfsim.render/vertex [vertex-shockwave]
-                                        :sfsim.render/fragment [ray-box shockfront fragment-shockwave
+                                        :sfsim.render/fragment [ray-box shockfront shockwave-transfer fragment-shockwave
                                                                 bluenoise/sampling-offset])
         vao-shockwave     (make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3])]
     {::size                 size
