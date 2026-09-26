@@ -15,6 +15,18 @@ vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
 float shockfront(float distance, float Rn);
 float sampling_offset();
 
+vec4 shockwave_transfer(vec3 p, float shockwave_step, vec4 shockwave_scatter)
+{
+  vec4 point = texture(flood, (p.xy + 1.0) / 2.0);
+  float l = length(point.xy - (p.xy + 1.0) * shockwave_radius);
+  float depth = point.z + shockfront(l, point.w);
+  if (p.z * shockwave_radius <= depth) {
+    float emission = 4.0 * step * exp(1.0 * (p.z * shockwave_radius - depth)) * (1.0 - smoothstep(0.0, 0.25 * shockwave_radius, l));
+    shockwave_scatter += vec4(emission, emission, 0, 0);
+  };
+  return shockwave_scatter;
+};
+
 void main()
 {
   vec2 uv = gl_FragCoord.xy / vec2(width, height);
@@ -30,17 +42,12 @@ void main()
       segment.y = dist - segment.x;
     };
   };
-  float emission = 0.0;
+  vec4 shockwave_scatter = vec4(0, 0, 0, 0);
   float x = segment.x + step * sampling_offset();
   while (x < segment.x + segment.y) {
     vec3 p = origin + x * direction;
-    vec4 point = texture(flood, (p.xy + 1.0) / 2.0);
-    float l = length(point.xy - (p.xy + 1.0) * shockwave_radius);
-    float depth = point.z + shockfront(l, point.w);
-    if (p.z * shockwave_radius <= depth) {
-      emission += 4.0 * step * exp(1.0 * (p.z * shockwave_radius - depth)) * (1.0 - smoothstep(0.0, 0.25 * shockwave_radius, l));
-    };
+    shockwave_scatter = shockwave_transfer(p, step, shockwave_scatter);
     x += step;
   };
-  fragColor = vec4(vec3(emission, emission, 0.0), 0.0);
+  fragColor = shockwave_scatter;
 }
