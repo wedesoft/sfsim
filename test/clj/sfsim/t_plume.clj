@@ -209,6 +209,44 @@ void main()
           0.25      1.0       0.0  0.0   0.0)
 
 
+(def plume-transfer-probe
+  (template/fn [x y z plume-step alpha]
+"#version 450 core
+out vec3 fragColor;
+vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter);
+void main()
+{
+  vec3 point = vec3(<%= x %>, <%= y %>, <%= z %>);
+  vec4 plume_scatter = vec4(0.0, 0.0, 0.0, <%= alpha %>);
+  float result = plume_transfer(point, <%= plume-step %>, plume_scatter).a;
+  fragColor = vec3(result, 0, 0);
+}"))
+
+
+(def plume-transfer-test (shader-test (fn [program]
+                                          (uniform-float program "plume_nozzle" 2.7549)
+                                          (uniform-float program "plume_min_limit" 1.2)
+                                          (uniform-float program "plume_max_slope" 1.0)
+                                          (uniform-float program "omega_factor" 0.2)
+                                          (uniform-float program "diamond_strength" 0.2)
+                                          (uniform-float program "plume_step" 0.2)
+                                          (uniform-float program "pressure" 1.0)
+                                          (uniform-float program "plume_throttle" 1.0)
+                                          (uniform-float program "time" 0.0))
+                                      plume-transfer-probe (plume-transfer 0.05)))
+
+
+(tabular "Shader function for light transfer in main engine plume"
+         (fact (first (plume-transfer-test [] [?x ?y ?z ?step ?alpha])) => (roughly ?result 1e-3))
+          ?x     ?y  ?z  ?step ?alpha ?result
+          0.0    0.0 0.0 1.0   1.0    0.326
+          3.6753 0.0 0.0 1.0   1.0    0.326
+         -30.0   0.0 0.0 1.0   1.0    0.860
+         -60.0   0.0 0.0 1.0   1.0    1.0
+         -80.0   0.0 0.0 1.0   1.0    1.0
+          5.0    0.0 0.0 1.0   1.0    1.0)
+
+
 (def rcs-transfer-probe
   (template/fn [x y step value alpha radius noise]
 "#version 450 core

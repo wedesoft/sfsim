@@ -55,7 +55,7 @@ float sdf_engine(vec2 cylinder1_base, vec2 cylinder2_base, vec3 p) {
 
 vec4 plume_transfer(vec3 point, float plume_step, vec4 plume_scatter)
 {
-  if (plume_throttle > 0.0) {
+  if (plume_throttle > 0.0 && point.x <= START - SPIKE) {
     float transition = clamp((plume_limit(pressure) - min_limit) / (plume_nozzle - min_limit), 0.0, 1.0);
     vec2 envelope = envelope(pressure, START - point.x - mix(ENGINE_SIZE, 0.0, transition), START - point.x - ENGINE_SIZE);
     float engine_pos = clamp((START - point.x) / ENGINE_SIZE, 0.0, 1.0);
