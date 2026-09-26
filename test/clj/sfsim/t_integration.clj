@@ -431,12 +431,13 @@ void main()
                 (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                 (render/with-underlay-blending
                   (shockwave/render-shockwave-overlay shockwave-renderer flood (/ width 2) (/ height 2)
-                                                      mach projection ndc-to-camera camera-to-ndc frame))))
-                     ;; Compose render of model
-                     (render/render-to-image width height false
-                                             (render/clear (vec3 0 1 0) 0.0)
-                                             (graphics/render-lighting frame graphics))
-                     => (is-image (str "test/clj/sfsim/fixtures/integration/model-with-shockwave.png") 1.0)
+                                                      mach projection ndc-to-camera camera-to-ndc frame)))
+              (destroy-texture flood))
+            ;; Compose render of model
+            (render/render-to-image width height false
+                                    (render/clear (vec3 0 1 0) 0.0)
+                                    (graphics/render-lighting frame graphics))
+            => (is-image (str "test/clj/sfsim/fixtures/integration/model-with-shockwave.png") 1.0)
             (model/destroy-scene-shadow-map wind-shadow)
             (graphics/destroy-frame frame)
             (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
