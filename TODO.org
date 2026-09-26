@@ -356,14 +356,12 @@
 
 ** TODO Shadows and opacity maps are set up in three places              :techdebt:
 ** TODO Add object radius to object                                      :techdebt:
-** TODO Fix planet tessellation tests                                    :bug:
+** DONE Fix planet tessellation tests                                    :bug:
 ** TODO Improve quaternion performance                                   :perf:
 ** TODO Use dtype-next instead of aget/aset                              :techdebt:
 ** TODO Extendability / modding                                          :architecture:
 ** TODO Put parameters like max-height, power, specular, radius into config files
 ** TODO Separate atmosphere from environmental shadow code
-** TODO Integrate object shadows into direct-light shader
-*** TODO Combine local shadow map with planet/cloud shadows
 ** TODO Free camera                                                      :feature:
 ** TODO Eclipse                                                          :feature:
 ** TODO Weather                                                          :feature:
