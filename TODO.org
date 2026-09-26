@@ -3,6 +3,28 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
+** TODO [#A] Reentry                                                      :flight:physics:graphics:
+*** TODO Reentry flame
+    [[https://gemini.google.com/app/d411b76be00c0e27]]
+**** TODO Shockwave shader
+***** TODO Create mixed shader for plume and shockwave
+****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
+***** TODO Do not overwrite clouds
+*** TODO Reentry MFD
+**** TODO PPO agent outputs high-level guidance (bank angle and angle of attack)
+**** TODO Use down-range and cross-range; add Coriolis and centrifugal acceleration to observations
+**** TODO Use velocity, flight path angle, altitude
+**** TODO Final entry window and heading alignment cylinder
+*** TODO Cockpit warning for heat
+*** TODO Simulate burning up / reentry heating effects
+*** TODO Reentry physics improvements
+**** DONE Can still use small simulation steps but large control steps
+**** TODO Start-state curriculum: begin near landing site
+**** TODO Reward agent for following a reference energy profile
+**** TODO Reentry flame / burning up references
+     - [[https://www.shadertoy.com/view/XX3fDH]]
+     - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
+
 ** TODO [#A] Launch and ascent                                           :flight:guidance:
 *** TODO Launch guidance indicators
 *** TODO Reinforcement-learning launch physics
@@ -20,28 +42,6 @@
 **** TODO Simulate Earth rotation
 *** TODO Add starting positions and times to menu
 **** TODO Unlock orbit and related scenarios
-
-** TODO [#A] Reentry                                                      :flight:physics:graphics:
-*** TODO Reentry flame
-    [[https://gemini.google.com/app/d411b76be00c0e27]]
-**** TODO Shockwave shader
-***** TODO Do not overwrite clouds
-***** TODO Create mixed shader for plume and shockwave
-****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
-*** TODO Reentry MFD
-**** TODO PPO agent outputs high-level guidance (bank angle and angle of attack)
-**** TODO Use down-range and cross-range; add Coriolis and centrifugal acceleration to observations
-**** TODO Use velocity, flight path angle, altitude
-**** TODO Final entry window and heading alignment cylinder
-*** TODO Cockpit warning for heat
-*** TODO Simulate burning up / reentry heating effects
-*** TODO Reentry physics improvements
-**** DONE Can still use small simulation steps but large control steps
-**** TODO Start-state curriculum: begin near landing site
-**** TODO Reward agent for following a reference energy profile
-**** TODO Reentry flame / burning up references
-     - [[https://www.shadertoy.com/view/XX3fDH]]
-     - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
 
 ** TODO [#A] Landing and runway                                           :flight:scenery:
 *** TODO Runway and approach system
