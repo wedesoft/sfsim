@@ -8,7 +8,6 @@
   "Rendering of clouds"
   (:require
     [clojure.math :refer (tan pow log)]
-    [clojure.string :refer (split)]
     [comb.template :as template]
     [fastmath.vector :refer (vec3 mag)]
     [fastmath.matrix :refer (mulm inverse)]
@@ -19,9 +18,10 @@
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
-                          with-underlay-blending setup-shadow-matrices without-depth-test with-culling) :as render]
+                          with-underlay-blending setup-shadow-matrices without-depth-test) :as render]
     [sfsim.shaders :as shaders]
-    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size rcs-outer rcs-point rcs-box-size)
+    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size rcs-outer rcs-point rcs-box-size
+                         render-plume-overlay)
                  :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
@@ -647,40 +647,6 @@
     (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
     (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))))
-
-
-(defmulti render-plume-overlay (fn [_cloud-renderer plume-name _model-vars _transform] (first (split plume-name #" "))))
-
-
-(defn render-plume-overlay-basic
-  [program-outer program-point plume-vao transform throttle]
-  (with-culling :sfsim.render/cullfront
-    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-      (use-program program-outer)
-      (uniform-matrix4 program-outer "plume_to_object" transform)
-      (uniform-matrix4 program-outer "object_to_plume" (inverse transform))
-      (uniform-float program-outer "plume_throttle" throttle)
-      (render-quads plume-vao))
-    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-      (use-program program-point)
-      (uniform-matrix4 program-point "plume_to_object" transform)
-      (uniform-matrix4 program-point "object_to_plume" (inverse transform))
-      (uniform-float program-point "plume_throttle" throttle)
-      (render-quads plume-vao))
-    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-      (use-program program-point)
-      (render-quads plume-vao))))
-
-
-(defmethod render-plume-overlay "Plume"
-  [{:sfsim.clouds/keys [programs plume-vao]} _plume-name model-vars transform]
-  (render-plume-overlay-basic (:sfsim.clouds/plume-outer programs) (:sfsim.clouds/plume-point programs) plume-vao transform
-                              (:sfsim.model/throttle model-vars)))
-
-
-(defmethod render-plume-overlay "RCS"
-  [{:sfsim.clouds/keys [programs plume-vao]} _plume-name _model-vars transform]
-  (render-plume-overlay-basic (:sfsim.clouds/rcs-outer programs) (:sfsim.clouds/rcs-point programs) plume-vao transform 1.0))
 
 
 (defn render-cloud-front

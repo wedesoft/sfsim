@@ -7,12 +7,17 @@
 (ns sfsim.plume
     "Module with shader functions for plume rendering"
     (:require
+      [clojure.string :refer (split)]
       [malli.core :as m]
       [comb.template :as template]
+      [fastmath.matrix :refer (inverse)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]
-      [sfsim.render :refer (uniform-float)]))
+      [sfsim.render :refer (use-program uniform-matrix4 uniform-float with-culling with-stencil-op-ref-and-mask render-quads)])
+    (:import
+      (org.lwjgl.opengl
+        GL11)))
 
 
 (def plume-phase
@@ -181,3 +186,37 @@
     1.0 -1.0  1.0
    -1.0  1.0  1.0
     1.0  1.0  1.0])
+
+
+(defn render-plume-overlay-basic
+  [program-outer program-point plume-vao transform throttle]
+  (with-culling :sfsim.render/cullfront
+    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+      (use-program program-outer)
+      (uniform-matrix4 program-outer "plume_to_object" transform)
+      (uniform-matrix4 program-outer "object_to_plume" (inverse transform))
+      (uniform-float program-outer "plume_throttle" throttle)
+      (render-quads plume-vao))
+    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+      (use-program program-point)
+      (uniform-matrix4 program-point "plume_to_object" transform)
+      (uniform-matrix4 program-point "object_to_plume" (inverse transform))
+      (uniform-float program-point "plume_throttle" throttle)
+      (render-quads plume-vao))
+    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+      (use-program program-point)
+      (render-quads plume-vao))))
+
+
+(defmulti render-plume-overlay (fn [_cloud-renderer plume-name _model-vars _transform] (first (split plume-name #" "))))
+
+
+(defmethod render-plume-overlay "Plume"
+  [{:sfsim.clouds/keys [programs plume-vao]} _plume-name model-vars transform]
+  (render-plume-overlay-basic (:sfsim.clouds/plume-outer programs) (:sfsim.clouds/plume-point programs) plume-vao transform
+                              (:sfsim.model/throttle model-vars)))
+
+
+(defmethod render-plume-overlay "RCS"
+  [{:sfsim.clouds/keys [programs plume-vao]} _plume-name _model-vars transform]
+  (render-plume-overlay-basic (:sfsim.clouds/rcs-outer programs) (:sfsim.clouds/rcs-point programs) plume-vao transform 1.0))
