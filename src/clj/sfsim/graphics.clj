@@ -152,6 +152,8 @@
 
 (defn destroy-frame
   [frame]
+  (when-let [flood (::flood frame)]
+            (texture/destroy-texture flood))
   (when-let [wind-shadow (::wind-shadow frame)]
             (model/destroy-scene-shadow-map wind-shadow))
   (doseq [object-shadow (::object-shadows frame)]
@@ -247,8 +249,9 @@
 
 
 (defn render-shockwave-geometry
-  [frame graphics wind-from shockwave-radius]
+  [frame graphics wind-from mach shockwave-radius]
   (let [scene-shadow-renderer   (::scene-shadow-renderer graphics)
+        shockwave-renderer      (::shockwave-renderer graphics)
         shadow-size             (:sfsim.opacity/scene-shadow-size config/shadow-config)
         wind-shadow             (model/scene-shadow-map scene-shadow-renderer
                                             wind-from
@@ -257,9 +260,10 @@
                                             shockwave-radius
                                             :sfsim.render/cullback
                                             true)
-        ; flood                   (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
-        ]
-    (assoc frame ::wind-shadow wind-shadow)))
+        flood                   (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)]
+    (assoc frame
+           ::wind-shadow wind-shadow
+           ::flood flood)))
 
 
 (defn render-geometry

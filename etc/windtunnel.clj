@@ -74,12 +74,13 @@
                                                            light object model-vars)
                                       (graphics/render-shadows graphics nil)
                                       (graphics/render-scene-shadows graphics)
-                                      (graphics/render-shockwave-geometry graphics wind-from shockwave-radius)
+                                      (graphics/render-shockwave-geometry graphics wind-from mach shockwave-radius)
                                       (graphics/render-cloud-geometry graphics nil)
                                       (graphics/render-clouds graphics [])
                                       (graphics/render-geometry graphics nil))
              shockwave-renderer   (:sfsim.graphics/shockwave-renderer graphics)
              wind-shadow          (:sfsim.graphics/wind-shadow frame)
+             flood                (:sfsim.graphics/flood frame)
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
              matrices             (:sfsim.model/matrices wind-shadow)
              camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
@@ -87,19 +88,15 @@
              object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
              camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
              ndc-to-camera        (inverse camera-to-ndc)]
-         ;; Perform Jump Flooding Algorithm
-         (let [flood (jump-flooding-algorithm shockwave-renderer wind-shadow mach)]
-           ;; Render shockwave
-           (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
-                                      (render/with-underlay-blending
-                                        (render-shockwave-overlay shockwave-renderer flood (/ width 2) (/ height 2)
-                                                                  mach projection ndc-to-camera camera-to-ndc frame)))
-           ;; Compose render of model
-           (render/onscreen-render window
-                                   (render/clear (vec3 0 1 0) 0.0)
-                                   (graphics/render-lighting frame graphics))
-           (texture/destroy-texture flood))
-         (model/destroy-scene-shadow-map wind-shadow)
+         ;; Render shockwave
+         (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
+                                    (render/with-underlay-blending
+                                      (render-shockwave-overlay shockwave-renderer flood (/ width 2) (/ height 2)
+                                                                mach projection ndc-to-camera camera-to-ndc frame)))
+         ;; Compose render of model
+         (render/onscreen-render window
+                                 (render/clear (vec3 0 1 0) 0.0)
+                                 (graphics/render-lighting frame graphics))
          (graphics/destroy-frame frame)
          (GLFW/glfwPollEvents)))
 

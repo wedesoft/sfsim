@@ -714,7 +714,7 @@
 (defn render-cloud-overlay
   ([cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms geometry]
    (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms geometry true true))
-  ([{:sfsim.clouds/keys [programs] :as other} cloud-render-vars model-vars shadow-vars plume-transforms geometry
+  ([{:sfsim.clouds/keys [programs] :as cloud-renderer} cloud-render-vars model-vars shadow-vars plume-transforms geometry
     front back]
    (let [overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
          overlay-height  (:sfsim.render/overlay-height cloud-render-vars)
@@ -730,11 +730,11 @@
                          (clear (vec3 0.0 0.0 0.0) 0.0)
                          (without-depth-test
                            (with-stencils
-                             (when front (render-cloud-front other cloud-render-vars shadow-vars))
+                             (when front (render-cloud-front cloud-renderer cloud-render-vars shadow-vars))
                              (with-underlay-blending
                                (doseq [[thruster transform] plume-transforms]
-                                      (render-plume-overlay other thruster model-vars transform))
-                               (when back (render-cloud-back other cloud-render-vars shadow-vars))))))
+                                      (render-plume-overlay cloud-renderer thruster model-vars transform))
+                               (when back (render-cloud-back cloud-renderer cloud-render-vars shadow-vars))))))
      overlay)))
 
 
