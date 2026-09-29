@@ -7,6 +7,8 @@
 *** TODO Reentry flame
     [[https://gemini.google.com/app/d411b76be00c0e27]]
 **** TODO Shockwave shader
+***** DOING Use real coordinates instead of NDC when sampling shockwave
+***** DOING Have x point in wind direction, y and z arbitrary to align with plume box
 ***** TODO Create mixed shader for plume and shockwave
 ****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
 ***** TODO Do not overwrite clouds
