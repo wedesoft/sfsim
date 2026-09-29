@@ -6,6 +6,7 @@
 
 (ns sfsim.shockwave
     (:require
+      [fastmath.matrix :refer (mulm inverse)]
       [sfsim.render :refer (uniform-float use-program uniform-int render-quads framebuffer-render uniform-sampler use-textures
                             make-program destroy-program make-vertex-array-object destroy-vertex-array-object uniform-matrix4)]
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
@@ -174,28 +175,33 @@ vec4 normal_source(vec2 uv)
 
 
 (defn render-shockwave-overlay
-  [{::keys [program-shockwave vao-shockwave bluenoise shockwave-radius size]} flood overlay-width overlay-height mach projection
-   ndc-to-camera camera-to-ndc frame]
-  (use-program program-shockwave)
-  (uniform-sampler program-shockwave "points" 0)
-  (uniform-sampler program-shockwave "flood" 1)
-  (uniform-sampler program-shockwave "bluenoise" 2)
-  (uniform-int program-shockwave "width" overlay-width)
-  (uniform-int program-shockwave "height" overlay-height)
-  (uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
-  (uniform-float program-shockwave "shockwave_radius" shockwave-radius)
-  (uniform-float program-shockwave "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
-  (uniform-float program-shockwave "shockwave_step" 0.01)
-  (uniform-float program-shockwave "shockwave_strength" 4.0)
-  (uniform-float program-shockwave "mach" mach)
-  (uniform-matrix4 program-shockwave "projection" projection)
-  (uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
-  (uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
-  (use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
-                 1 flood
-                 2 bluenoise})
-  (render-quads vao-shockwave)
-  (destroy-texture flood))
+  [{::keys [program-shockwave vao-shockwave bluenoise shockwave-radius size]} wind-shadow flood overlay-width overlay-height mach
+   camera-to-world projection frame]
+  (let [matrices             (:sfsim.model/matrices wind-shadow)
+        world-to-object      (:sfsim.matrix/world-to-object matrices)
+        object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
+        camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
+        ndc-to-camera        (inverse camera-to-ndc)]
+    (use-program program-shockwave)
+    (uniform-sampler program-shockwave "points" 0)
+    (uniform-sampler program-shockwave "flood" 1)
+    (uniform-sampler program-shockwave "bluenoise" 2)
+    (uniform-int program-shockwave "width" overlay-width)
+    (uniform-int program-shockwave "height" overlay-height)
+    (uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
+    (uniform-float program-shockwave "shockwave_radius" shockwave-radius)
+    (uniform-float program-shockwave "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
+    (uniform-float program-shockwave "shockwave_step" 0.01)
+    (uniform-float program-shockwave "shockwave_strength" 4.0)
+    (uniform-float program-shockwave "mach" mach)
+    (uniform-matrix4 program-shockwave "projection" projection)
+    (uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
+    (uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
+    (use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
+                   1 flood
+                   2 bluenoise})
+    (render-quads vao-shockwave)
+    (destroy-texture flood)))
 
 
 (set! *warn-on-reflection* false)

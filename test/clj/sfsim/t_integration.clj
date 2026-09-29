@@ -8,7 +8,7 @@
   (:require
     [clojure.java.io :as io]
     [clojure.math :refer (PI to-radians)]
-    [fastmath.matrix :refer (mat3x3 mulm mulv rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z inverse)]
+    [fastmath.matrix :refer (mat3x3 mulm mulv rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z)]
     [fastmath.vector :refer (vec2 vec3 add div sub normalize)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -26,15 +26,10 @@
     [sfsim.quadtree :refer :all]
     [sfsim.quaternion :as q]
     [sfsim.render :refer (with-invisible-window render-to-image) :as render]
-    [sfsim.texture :as texture]
-    [sfsim.image :as image]
     [sfsim.shaders :as shaders]
-    [sfsim.bluenoise :as bluenoise]
     [sfsim.shockwave :as shockwave]
-    [sfsim.texture :refer :all])
+    [sfsim.texture :refer (destroy-texture texture->image)])
   (:import
-    (org.lwjgl.opengl
-      GL11 GL14)
     (org.lwjgl.glfw
       GLFW)))
 
@@ -411,19 +406,12 @@ void main()
                 wind-shadow          (:sfsim.graphics/wind-shadow frame)
                 flood                (:sfsim.graphics/flood frame)
                 projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
-                matrices             (:sfsim.model/matrices wind-shadow)
-                camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
-                world-to-object      (:sfsim.matrix/world-to-object matrices)
-                object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
-                camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
-                ndc-to-camera        (inverse camera-to-ndc)]
-            ;; Perform Jump Flooding Algorithm
-            (let [flood (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)]
-              (render/framebuffer-render
-                (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
-                (render/with-underlay-blending
-                  (shockwave/render-shockwave-overlay shockwave-renderer flood (/ width 2) (/ height 2)
-                                                      mach projection ndc-to-camera camera-to-ndc frame))))
+                camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)]
+            (render/framebuffer-render
+              (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
+              (render/with-underlay-blending
+                (shockwave/render-shockwave-overlay shockwave-renderer wind-shadow flood (/ width 2) (/ height 2)
+                                                    mach camera-to-world projection frame)))
             (render/render-to-image width height false
                                     (render/clear (vec3 0 1 0) 0.0)
                                     (graphics/render-lighting frame graphics))

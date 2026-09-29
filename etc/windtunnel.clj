@@ -1,15 +1,10 @@
 (require '[clojure.math :refer (PI to-radians)] '[fastmath.vector :refer (vec3 normalize)]
-         '[fastmath.matrix :refer (mulm inverse)]
          '[sfsim.config :as config]
          '[sfsim.quaternion :as q]
          '[sfsim.matrix :as matrix]
          '[sfsim.model :as model]
          '[sfsim.render :as render]
-         '[sfsim.shaders :as shaders]
-         '[sfsim.bluenoise :as bluenoise]
-         '[sfsim.texture :as texture]
-         '[sfsim.shockwave :refer (shockfront make-shockwave-renderer jump-flooding-algorithm destroy-shockwave-renderer
-                                   depth-source normal-source render-shockwave-overlay)]
+         '[sfsim.shockwave :refer (render-shockwave-overlay)]
          '[sfsim.graphics :as graphics])
 (import '[org.lwjgl.glfw GLFW GLFWCursorPosCallbackI GLFWMouseButtonCallbackI]
         '[org.lwjgl.opengl GL])
@@ -82,17 +77,12 @@
              wind-shadow          (:sfsim.graphics/wind-shadow frame)
              flood                (:sfsim.graphics/flood frame)
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
-             matrices             (:sfsim.model/matrices wind-shadow)
-             camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
-             world-to-object      (:sfsim.matrix/world-to-object matrices)
-             object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
-             camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
-             ndc-to-camera        (inverse camera-to-ndc)]
+             camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)]
          ;; Render shockwave
          (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                                     (render/with-underlay-blending
-                                      (render-shockwave-overlay shockwave-renderer flood (/ width 2) (/ height 2)
-                                                                mach projection ndc-to-camera camera-to-ndc frame)))
+                                      (render-shockwave-overlay shockwave-renderer wind-shadow flood (/ width 2) (/ height 2) mach
+                                                                camera-to-world projection frame)))
          ;; Compose render of model
          (render/onscreen-render window
                                  (render/clear (vec3 0 1 0) 0.0)
