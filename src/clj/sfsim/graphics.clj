@@ -143,6 +143,8 @@
 
 (defn destroy-frame
   [frame]
+  (when-let [wind-shadow (::wind-shadow frame)]
+            (model/destroy-scene-shadow-map wind-shadow))
   (doseq [object-shadow (::object-shadows frame)]
          (model/destroy-scene-shadow-map object-shadow))
   (texture/destroy-texture (::clouds frame))
@@ -233,6 +235,20 @@
                                                              :sfsim.render/cullfront false)
                                     moved-scenes)]
     (assoc frame ::object-shadows object-shadows)))
+
+
+(defn render-shockwave-geometry
+  [frame graphics wind-from shockwave-radius]
+  (let [scene-shadow-renderer   (::scene-shadow-renderer graphics)
+        shadow-size             (:sfsim.opacity/scene-shadow-size config/shadow-config)
+        wind-shadow             (model/scene-shadow-map scene-shadow-renderer
+                                            wind-from
+                                            (first (get-moved-scenes frame graphics))
+                                            shadow-size
+                                            shockwave-radius
+                                            :sfsim.render/cullback
+                                            true)]
+    (assoc frame ::wind-shadow wind-shadow)))
 
 
 (defn render-geometry

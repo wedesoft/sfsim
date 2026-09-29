@@ -77,16 +77,11 @@
                                                            light object model-vars)
                                       (graphics/render-shadows graphics nil)
                                       (graphics/render-scene-shadows graphics)
+                                      (graphics/render-shockwave-geometry graphics wind-from shockwave-radius)
                                       (graphics/render-cloud-geometry graphics nil)
                                       (graphics/render-clouds graphics [])
                                       (graphics/render-geometry graphics nil))
-             wind-shadow          (model/scene-shadow-map (:sfsim.graphics/scene-shadow-renderer graphics)
-                                                          wind-from
-                                                          (first (graphics/get-moved-scenes frame graphics))
-                                                          size
-                                                          shockwave-radius
-                                                          :sfsim.render/cullback
-                                                          true)
+             wind-shadow          (:sfsim.graphics/wind-shadow frame)
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
              matrices             (:sfsim.model/matrices wind-shadow)
              camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)
