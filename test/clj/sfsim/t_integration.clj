@@ -407,11 +407,13 @@ void main()
                 flood                (:sfsim.graphics/flood frame)
                 projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
                 points               (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
+                overlay-width        (:sfsim.render/overlay-width (:sfsim.graphics/cloud-render-vars frame))
+                overlay-height       (:sfsim.render/overlay-height (:sfsim.graphics/cloud-render-vars frame))
                 camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)]
             (render/framebuffer-render
-              (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
+              overlay-width overlay-height :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
               (render/with-underlay-blending
-                (shockwave/render-shockwave-overlay shockwave-renderer points wind-shadow flood (/ width 2) (/ height 2)
+                (shockwave/render-shockwave-overlay shockwave-renderer points wind-shadow flood overlay-width overlay-height
                                                     mach camera-to-world projection)))
             (render/render-to-image width height false
                                     (render/clear (vec3 0 1 0) 0.0)
