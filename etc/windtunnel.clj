@@ -114,8 +114,6 @@
 (destroy-shockwave-renderer shockwave-renderer)
 
 (GLFW/glfwMakeContextCurrent window)
-(render/destroy-vertex-array-object vao-shockwave)
-(render/destroy-program program-shockwave)
 
 (graphics/destroy-graphics2 graphics)
 
