@@ -175,8 +175,8 @@ vec4 normal_source(vec2 uv)
 
 
 (defn render-shockwave-overlay
-  [{::keys [program-shockwave vao-shockwave bluenoise shockwave-radius size]} wind-shadow flood overlay-width overlay-height mach
-   camera-to-world projection frame]
+  [{::keys [program-shockwave vao-shockwave bluenoise shockwave-radius size]} points wind-shadow flood
+   overlay-width overlay-height mach camera-to-world projection]
   (let [matrices             (:sfsim.model/matrices wind-shadow)
         world-to-object      (:sfsim.matrix/world-to-object matrices)
         object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
@@ -197,7 +197,7 @@ vec4 normal_source(vec2 uv)
     (uniform-matrix4 program-shockwave "projection" projection)
     (uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
     (uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
-    (use-textures {0 (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
+    (use-textures {0 points
                    1 flood
                    2 bluenoise})
     (render-quads vao-shockwave)

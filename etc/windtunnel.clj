@@ -76,13 +76,14 @@
              shockwave-renderer   (:sfsim.graphics/shockwave-renderer graphics)
              wind-shadow          (:sfsim.graphics/wind-shadow frame)
              flood                (:sfsim.graphics/flood frame)
+             points               (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
              camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)]
          ;; Render shockwave
          (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                                     (render/with-underlay-blending
-                                      (render-shockwave-overlay shockwave-renderer wind-shadow flood (/ width 2) (/ height 2) mach
-                                                                camera-to-world projection frame)))
+                                      (render-shockwave-overlay shockwave-renderer points wind-shadow flood
+                                                                (/ width 2) (/ height 2) mach camera-to-world projection)))
          ;; Compose render of model
          (render/onscreen-render window
                                  (render/clear (vec3 0 1 0) 0.0)
