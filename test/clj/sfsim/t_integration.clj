@@ -341,10 +341,10 @@ void main()
                                                              shockwave-radius
                                                              :sfsim.render/cullback
                                                              true)
-                bluenoise            (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))
-                shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
-                                                                        shockwave/shockfront size bluenoise shockwave-radius
-                                                                        max-curvature-radius)
+                shockwave-renderer   (assoc (:sfsim.graphics/shockwave-renderer graphics)
+                                            :sfsim.shockwave/size size
+                                            :sfsim.shockwave/shockwave-radius shockwave-radius
+                                            :sfsim.shockwave/max-curvature-radius max-curvature-radius)
                 flood                (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow M)]
             (render-to-image size size false
                              (render/clear (vec3 0 1 0) 0.0)
@@ -360,7 +360,6 @@ void main()
             => (is-image (str "test/clj/sfsim/fixtures/integration/jump-flooding-algorithm.png") 1.0)
             (destroy-texture flood)
             (model/destroy-scene-shadow-map wind-shadow)
-            (shockwave/destroy-shockwave-renderer shockwave-renderer)
             (render/destroy-vertex-array-object vao-display)
             (render/destroy-program program-display)
             (graphics/destroy-graphics2 graphics)))))
@@ -393,10 +392,7 @@ void main()
                                        model (model/animations-frame model
                                                                      {"GearLeft" 2.0 "GearRight" 2.0 "GearFront" 3.0}))
                 graphics             (assoc-in graphics [:sfsim.graphics/scenes 0] model-gears)
-                bluenoise            (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics))
-                shockwave-renderer   (shockwave/make-shockwave-renderer shockwave/depth-source  shockwave/normal-source
-                                                                        shockwave/shockfront size bluenoise shockwave-radius
-                                                                        max-curvature-radius)
+                shockwave-renderer   (:sfsim.graphics/shockwave-renderer graphics)
                 tree                 (load-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                             :sfsim.planet/config config/planet-config
                                                             :sfsim.planet/programs [(:sfsim.planet/program
@@ -433,11 +429,9 @@ void main()
                                     (render/clear (vec3 0 1 0) 0.0)
                                     (graphics/render-lighting frame graphics))
             => (is-image (str "test/clj/sfsim/fixtures/integration/model-with-shockwave.png") 1.0)
-            (model/destroy-scene-shadow-map wind-shadow)
             (graphics/destroy-frame frame)
             (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
-            (graphics/destroy-graphics2 graphics)
-            (shockwave/destroy-shockwave-renderer shockwave-renderer)))))
+            (graphics/destroy-graphics2 graphics)))))
 
 
 (when (.exists (io/file ".integration"))

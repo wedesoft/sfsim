@@ -61,6 +61,10 @@
                                       :mix 0.6
                                       :shadow-bias 1e-6}
 
+ :sfsim.shockwave-config #:sfsim.shockwave{:shockwave-size 1024
+                                           :shockwave-radius 60.0
+                                           :max-curvature-radius 3.0}
+
  :sfsim.model-config #:sfsim.model{:object-radius 30.0  ; includes size of expanding plume
                                    :elevation 9.0
                                    :plume-nozzle 2.7549

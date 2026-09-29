@@ -53,9 +53,6 @@
 (def max-curvature-radius 3.0)
 (def mach 10.0)
 
-(def bluenoise (:sfsim.clouds/bluenoise (:sfsim.clouds/data graphics)))
-(def shockwave-renderer (make-shockwave-renderer depth-source normal-source shockfront size bluenoise shockwave-radius max-curvature-radius))
-
 (while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwMakeContextCurrent window)
        (let [dist                 (* 2 6378000)
@@ -81,6 +78,7 @@
                                       (graphics/render-cloud-geometry graphics nil)
                                       (graphics/render-clouds graphics [])
                                       (graphics/render-geometry graphics nil))
+             shockwave-renderer   (:sfsim.graphics/shockwave-renderer graphics)
              wind-shadow          (:sfsim.graphics/wind-shadow frame)
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
              matrices             (:sfsim.model/matrices wind-shadow)
@@ -90,8 +88,7 @@
              camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
              ndc-to-camera        (inverse camera-to-ndc)]
          ;; Perform Jump Flooding Algorithm
-         (let [flood (jump-flooding-algorithm shockwave-renderer wind-shadow mach)
-               ]
+         (let [flood (jump-flooding-algorithm shockwave-renderer wind-shadow mach)]
            ;; Render shockwave
            (render/framebuffer-render (/ width 2) (/ height 2) :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                                       (render/with-underlay-blending
@@ -105,8 +102,6 @@
          (model/destroy-scene-shadow-map wind-shadow)
          (graphics/destroy-frame frame)
          (GLFW/glfwPollEvents)))
-
-(destroy-shockwave-renderer shockwave-renderer)
 
 (GLFW/glfwMakeContextCurrent window)
 

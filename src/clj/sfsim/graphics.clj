@@ -15,6 +15,7 @@
       [sfsim.planet :as planet]
       [sfsim.model :as model]
       [sfsim.render :as render]
+      [sfsim.shockwave :as shockwave]
       [sfsim.physics :as physics]
       [sfsim.lighting :as lighting]
       [sfsim.texture :as texture]
@@ -55,6 +56,12 @@
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
         scene-renderer          (model/make-scene-geometry-renderer true)
         scene-shadow-renderer   (model/make-scene-shadow-renderer)
+        shockwave-renderer      (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
+                                                                   shockwave/shockfront
+                                                                   (:sfsim.shockwave/shockwave-size config/shockwave-config)
+                                                                   (:sfsim.clouds/bluenoise cloud-data)
+                                                                   (:sfsim.shockwave/shockwave-radius config/shockwave-config)
+                                                                   (:sfsim.shockwave/max-curvature-radius config/shockwave-config))
         lighting-renderer       (lighting/make-lighting-renderer {:sfsim.render/config config/render-config
                                                                   :sfsim.planet/config config/planet-config
                                                                   :sfsim.opacity/data opacity-data
@@ -84,6 +91,7 @@
      ::atmosphere-geometry-renderer atmosphere-renderer
      ::scene-geometry-renderer scene-renderer
      ::scene-shadow-renderer scene-shadow-renderer
+     ::shockwave-renderer shockwave-renderer
      ::lighting-renderer lighting-renderer
      ::bsp-tree bsp-tree
      ::thruster-transforms thruster-transforms
@@ -94,6 +102,7 @@
   [graphics]
   (doseq [scene (::scenes graphics)] (model/destroy-scene scene))
   (lighting/destroy-lighting-renderer (::lighting-renderer graphics))
+  (shockwave/destroy-shockwave-renderer (::shockwave-renderer graphics))
   (model/destroy-scene-shadow-renderer (::scene-shadow-renderer graphics))
   (model/destroy-scene-geometry-renderer (::scene-geometry-renderer graphics))
   (atmosphere/destroy-atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics))
@@ -247,7 +256,9 @@
                                             shadow-size
                                             shockwave-radius
                                             :sfsim.render/cullback
-                                            true)]
+                                            true)
+        ; flood                   (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)
+        ]
     (assoc frame ::wind-shadow wind-shadow)))
 
 
