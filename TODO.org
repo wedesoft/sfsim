@@ -7,7 +7,8 @@
 *** TODO Reentry flame
     [[https://gemini.google.com/app/d411b76be00c0e27]]
 **** TODO Shockwave shader
-***** DOING Move wind shadow calls into shockwave module
+***** DONE Move wind shadow calls into shockwave module
+***** TODO Separate plume renderer from cloud renderer?
 ***** TODO Use real coordinates instead of NDC when sampling shockwave
 ***** TODO Have x point in wind direction, y and z arbitrary to align with plume box
 ***** TODO Create mixed shader for plume and shockwave
