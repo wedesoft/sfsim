@@ -20,8 +20,7 @@
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
                           with-underlay-blending setup-shadow-matrices without-depth-test) :as render]
     [sfsim.shaders :as shaders]
-    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size rcs-outer rcs-point rcs-box-size
-                         render-plume-overlay)
+    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size rcs-outer rcs-point rcs-box-size)
                  :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
@@ -572,7 +571,7 @@
         model-data      (:sfsim.model/data other)
         planet-config   (:sfsim.planet/config other)
         shadow-data     (:sfsim.opacity/data other)
-        data            (:sfsim.clouds/data other)]
+        data            (::data other)]
     (use-program program)
     (uniform-sampler program "camera_point" 0)
     (uniform-sampler program "dist" 1)
@@ -588,11 +587,11 @@
 (defn make-cloud-renderer
   [data]
   (let [shadow-config    (:sfsim.opacity/data data)
-        cloud-config     (:sfsim.clouds/data data)
+        cloud-config     (::data data)
         render-config    (:sfsim.render/config data)
         num-steps        (:sfsim.opacity/num-steps shadow-config)
-        cloud-octaves    (:sfsim.clouds/cloud-octaves cloud-config)
-        perlin-octaves   (:sfsim.clouds/perlin-octaves cloud-config)
+        cloud-octaves    (::cloud-octaves cloud-config)
+        perlin-octaves   (::perlin-octaves cloud-config)
         atmosphere-luts  (:sfsim.atmosphere/luts data)
         programs         (into {} (map (fn [[k shaders]] [k (apply make-cloud-program shaders)])
                                        (cloud-fragment-shaders num-steps perlin-octaves cloud-octaves)))
@@ -601,16 +600,16 @@
         vao              (make-vertex-array-object (::atmosphere-front programs) indices vertices ["point" 3])
         plume-vao        (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-geometry-uniforms program data))
-    {:sfsim.clouds/programs programs
+    {::programs programs
      :sfsim.atmosphere/luts atmosphere-luts
      :sfsim.render/config render-config
-     :sfsim.clouds/data cloud-config
-     :sfsim.clouds/vao vao
-     :sfsim.clouds/plume-vao plume-vao}))
+     ::data cloud-config
+     ::vao vao
+     ::plume-vao plume-vao}))
 
 
 (defn destroy-cloud-renderer
-  [{:sfsim.clouds/keys [programs vao plume-vao]}]
+  [{::keys [programs vao plume-vao]}]
   (destroy-vertex-array-object vao)
   (destroy-vertex-array-object plume-vao)
   (doseq [program (vals programs)] (destroy-program program)))
@@ -619,15 +618,15 @@
 (defn setup-dynamic-cloud-uniforms
   [program other cloud-render-vars shadow-vars]
   (let [render-config   (:sfsim.render/config other)
-        cloud-data      (:sfsim.clouds/data other)
+        cloud-data      (::data other)
         atmosphere-luts (:sfsim.atmosphere/luts other)]
     (uniform-float program "lod_offset" (lod-offset render-config cloud-data cloud-render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
     (setup-shadow-matrices program shadow-vars)
     (use-textures {2 (:sfsim.atmosphere/transmittance atmosphere-luts) 3 (:sfsim.atmosphere/scatter atmosphere-luts)
-                   4 (:sfsim.atmosphere/mie atmosphere-luts) 5 (:sfsim.clouds/worley cloud-data) 6 (:sfsim.clouds/perlin-worley cloud-data)
-                   7 (:sfsim.clouds/cloud-cover cloud-data) 8 (:sfsim.clouds/bluenoise cloud-data)})
+                   4 (:sfsim.atmosphere/mie atmosphere-luts) 5 (::worley cloud-data) 6 (::perlin-worley cloud-data)
+                   7 (::cloud-cover cloud-data) 8 (::bluenoise cloud-data)})
     (use-textures (zipmap (drop 9 (range))
                           (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))))
 
@@ -650,58 +649,50 @@
 
 
 (defn render-cloud-front
-  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars shadow-vars]
+  [{::keys [programs vao] :as other} cloud-render-vars shadow-vars]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-    (use-program (:sfsim.clouds/atmosphere-front programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-front programs) other cloud-render-vars shadow-vars)
+    (use-program (::atmosphere-front programs))
+    (setup-dynamic-cloud-uniforms (::atmosphere-front programs) other cloud-render-vars shadow-vars)
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-    (use-program (:sfsim.clouds/planet-front programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-front programs) other cloud-render-vars shadow-vars)
+    (use-program (::planet-front programs))
+    (setup-dynamic-cloud-uniforms (::planet-front programs) other cloud-render-vars shadow-vars)
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-    (use-program (:sfsim.clouds/scene-front programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/scene-front programs) other cloud-render-vars shadow-vars)
+    (use-program (::scene-front programs))
+    (setup-dynamic-cloud-uniforms (::scene-front programs) other cloud-render-vars shadow-vars)
     (render-quads vao)))
 
 
 (defn render-cloud-back
-  [{:sfsim.clouds/keys [programs vao] :as other} cloud-render-vars shadow-vars]
+  [{::keys [programs vao] :as other} cloud-render-vars shadow-vars]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-    (use-program (:sfsim.clouds/atmosphere-back programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/atmosphere-back programs) other cloud-render-vars shadow-vars)
+    (use-program (::atmosphere-back programs))
+    (setup-dynamic-cloud-uniforms (::atmosphere-back programs) other cloud-render-vars shadow-vars)
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-    (use-program (:sfsim.clouds/planet-back programs))
-    (setup-dynamic-cloud-uniforms (:sfsim.clouds/planet-back programs) other cloud-render-vars shadow-vars)
+    (use-program (::planet-back programs))
+    (setup-dynamic-cloud-uniforms (::planet-back programs) other cloud-render-vars shadow-vars)
     (render-quads vao)))
 
 
-(defn render-cloud-overlay
-  ([cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms geometry]
-   (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms geometry true true))
-  ([{:sfsim.clouds/keys [programs] :as cloud-renderer} cloud-render-vars model-vars shadow-vars plume-transforms geometry
-    front back]
-   (let [overlay-width   (:sfsim.render/overlay-width cloud-render-vars)
-         overlay-height  (:sfsim.render/overlay-height cloud-render-vars)
-         overlay         (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
-                                                overlay-width overlay-height)]
-     (doseq [program (vals programs)]
-            (use-program program)
-            (setup-dynamic-overlay-uniforms program cloud-render-vars)
-            (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
-            (uniform-float program "time" (:sfsim.model/time model-vars))
-            (use-textures {0  (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
-     (framebuffer-render overlay-width overlay-height :sfsim.render/cullback (:sfsim.clouds/depth-stencil geometry) [overlay]
+(defmacro render-cloud-overlay
+  [cloud-renderer cloud-render-vars model-vars geometry & body]
+  `(let [overlay-width#  (:sfsim.render/overlay-width ~cloud-render-vars)
+         overlay-height# (:sfsim.render/overlay-height ~cloud-render-vars)
+         overlay#        (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
+                                                overlay-width# overlay-height#)
+         programs#       (::programs ~cloud-renderer)]
+     (doseq [program# (vals programs#)]
+            (use-program program#)
+            (setup-dynamic-overlay-uniforms program# ~cloud-render-vars)
+            (uniform-float program# "pressure" (:sfsim.model/pressure ~model-vars))
+            (uniform-float program# "time" (:sfsim.model/time ~model-vars))
+            (use-textures {0  (::points ~geometry) 1 (::distance ~geometry)}))
+     (framebuffer-render overlay-width# overlay-height# :sfsim.render/cullback (::depth-stencil ~geometry) [overlay#]
                          (clear (vec3 0.0 0.0 0.0) 0.0)
-                         (without-depth-test
-                           (with-stencils
-                             (when front (render-cloud-front cloud-renderer cloud-render-vars shadow-vars))
-                             (with-underlay-blending
-                               (doseq [[thruster transform] plume-transforms]
-                                      (render-plume-overlay cloud-renderer thruster model-vars transform))
-                               (when back (render-cloud-back cloud-renderer cloud-render-vars shadow-vars))))))
-     overlay)))
+                         ~@body)
+     overlay#))
 
 
 (set! *warn-on-reflection* false)

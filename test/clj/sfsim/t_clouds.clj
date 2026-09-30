@@ -1625,8 +1625,16 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                      cloud-render-vars  (make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 0)
                                                                 (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
                                                                 (q/->Quaternion 1 0 0 0))
-                     overlay            (render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars
-                                                              (if ?plume [["Plume" (eye 4)]] []) geometry ?front ?back)]
+                     plume-transforms   (if ?plume [["Plume" (eye 4)]] [])
+                     overlay            (render-cloud-overlay
+                                          cloud-renderer cloud-render-vars model-vars geometry
+                                          (without-depth-test
+                                            (with-stencils
+                                              (when ?front (render-cloud-front cloud-renderer cloud-render-vars shadow-vars))
+                                              (with-underlay-blending
+                                                (doseq [[thruster transform] plume-transforms]
+                                                       (plume/render-plume-overlay cloud-renderer thruster model-vars transform))
+                                                (when ?back (render-cloud-back cloud-renderer cloud-render-vars shadow-vars))))))]
                  (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)

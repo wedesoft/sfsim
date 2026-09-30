@@ -14,6 +14,7 @@
       [sfsim.atmosphere :as atmosphere]
       [sfsim.planet :as planet]
       [sfsim.model :as model]
+      [sfsim.plume :as plume]
       [sfsim.render :as render]
       [sfsim.shockwave :as shockwave]
       [sfsim.physics :as physics]
@@ -230,8 +231,16 @@
         shadow-vars         (::shadow-vars frame)
         cloud-geometry      (::cloud-geometry frame)
         plume-transforms    (if (::bsp-tree graphics) (plume-transforms frame graphics rcs-names) [])]
-    (assoc frame ::clouds (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms
-                                                       cloud-geometry))))
+    (assoc frame
+           ::clouds (clouds/render-cloud-overlay
+                      cloud-renderer cloud-render-vars model-vars cloud-geometry
+                      (render/without-depth-test
+                        (render/with-stencils
+                          (clouds/render-cloud-front cloud-renderer cloud-render-vars shadow-vars)
+                          (render/with-underlay-blending
+                            (doseq [[thruster transform] plume-transforms]
+                                   (plume/render-plume-overlay cloud-renderer thruster model-vars transform))
+                            (clouds/render-cloud-back cloud-renderer cloud-render-vars shadow-vars))))))))
 
 
 (defn render-scene-shadows
