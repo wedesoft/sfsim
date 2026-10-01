@@ -671,14 +671,18 @@
 
 
 (defn render-cloud-back
-  [{::keys [programs vao] :as other} cloud-render-vars shadow-vars]
+  [{::keys [programs vao] :as other} cloud-render-vars shadow-vars geometry]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
     (use-program (::atmosphere-back programs))
+    (setup-dynamic-overlay-uniforms (::atmosphere-back programs) cloud-render-vars)
     (setup-dynamic-cloud-uniforms (::atmosphere-back programs) other cloud-render-vars shadow-vars)
+    (use-textures {0  (::points geometry) 1 (::distance geometry)})
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
     (use-program (::planet-back programs))
+    (setup-dynamic-overlay-uniforms (::planet-back programs) cloud-render-vars)
     (setup-dynamic-cloud-uniforms (::planet-back programs) other cloud-render-vars shadow-vars)
+    (use-textures {0  (::points geometry) 1 (::distance geometry)})
     (render-quads vao)))
 
 
@@ -689,8 +693,7 @@
          overlay#        (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
                                                 overlay-width# overlay-height#)
          programs#       (::programs ~cloud-renderer)]
-     (doseq [program# [(::atmosphere-back programs#) (::planet-back programs#) (::plume-outer programs#)
-                       (::plume-point programs#) (::rcs-outer programs#) (::rcs-point programs#)]]
+     (doseq [program# [(::plume-outer programs#) (::plume-point programs#) (::rcs-outer programs#) (::rcs-point programs#)]]
             (use-program program#)
             (setup-dynamic-overlay-uniforms program# ~cloud-render-vars)
             (uniform-float program# "pressure" (:sfsim.model/pressure ~model-vars))

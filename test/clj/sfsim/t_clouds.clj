@@ -1636,7 +1636,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                                                 (doseq [[thruster transform] plume-transforms]
                                                        (plume/render-plume-overlay cloud-renderer thruster model-vars transform))
                                                 (when ?back
-                                                  (render-cloud-back cloud-renderer cloud-render-vars shadow-vars))))))]
+                                                  (render-cloud-back cloud-renderer cloud-render-vars shadow-vars geometry))))))]
                  (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)

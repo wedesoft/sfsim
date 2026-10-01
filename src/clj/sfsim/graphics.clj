@@ -240,7 +240,7 @@
                           (render/with-underlay-blending
                             (doseq [[thruster transform] plume-transforms]
                                    (plume/render-plume-overlay cloud-renderer thruster model-vars transform))
-                            (clouds/render-cloud-back cloud-renderer cloud-render-vars shadow-vars))))))))
+                            (clouds/render-cloud-back cloud-renderer cloud-render-vars shadow-vars cloud-geometry))))))))
 
 
 (defn render-scene-shadows
