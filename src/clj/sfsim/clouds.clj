@@ -671,7 +671,7 @@
 
 
 (defmacro render-cloud-overlay
-  [cloud-renderer cloud-render-vars model-vars geometry & body]
+  [cloud-render-vars geometry & body]
   `(let [overlay-width#  (:sfsim.render/overlay-width ~cloud-render-vars)
          overlay-height# (:sfsim.render/overlay-height ~cloud-render-vars)
          overlay#        (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F

@@ -233,7 +233,7 @@
         plume-transforms    (if (::bsp-tree graphics) (plume-transforms frame graphics rcs-names) [])]
     (assoc frame
            ::clouds (clouds/render-cloud-overlay
-                      cloud-renderer cloud-render-vars model-vars cloud-geometry
+                      cloud-render-vars cloud-geometry
                       (render/without-depth-test
                         (render/with-stencils
                           (clouds/render-cloud-front cloud-renderer cloud-render-vars shadow-vars cloud-geometry)

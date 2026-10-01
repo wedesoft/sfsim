@@ -1627,7 +1627,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                                                                 (q/->Quaternion 1 0 0 0))
                      plume-transforms   (if ?plume [["Plume" (eye 4)]] [])
                      overlay            (render-cloud-overlay
-                                          cloud-renderer cloud-render-vars model-vars geometry
+                                          cloud-render-vars geometry
                                           (without-depth-test
                                             (with-stencils
                                               (when ?front
