@@ -17,7 +17,7 @@
     [sfsim.quaternion :refer (quaternion)]
     [sfsim.shaders :refer (vertex-passthrough)]
     [sfsim.texture :refer (make-int-buffer make-float-buffer make-empty-texture-2d make-empty-depth-texture-2d
-                                           make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)]
+                           make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)]
     [sfsim.util :refer (N)])
   (:import
     (org.lwjgl
@@ -238,6 +238,12 @@
    (GL11/glStencilMask 0xff)
    (GL11/glClearStencil stencil)
    (GL11/glClear (bit-or GL11/GL_COLOR_BUFFER_BIT GL11/GL_DEPTH_BUFFER_BIT GL11/GL_STENCIL_BUFFER_BIT))))
+
+
+(defn clear-buffer
+  "Clear specified color attachement when doing framebuffer rendering"
+  [index]
+  (GL30/glClearBufferfv GL11/GL_COLOR ^long index ^java.nio.DirectFloatBufferU (make-float-buffer (float-array [0.0 0.0 0.0 0.0]))))
 
 
 (defn make-shader

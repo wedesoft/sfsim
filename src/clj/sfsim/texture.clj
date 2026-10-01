@@ -295,6 +295,16 @@
          :stencil false))
 
 
+(defn disable-compare-mode
+  "Disable compare mode to use a depth texture as a normal floating-point texture"
+  {:malli/schema [:=> [:cat texture-2d] :any]}
+  [tex]
+  (let [target  (::target tex)
+        texture (::texture tex)]
+    (with-texture target texture
+      (GL11/glTexParameteri target GL14/GL_TEXTURE_COMPARE_MODE GL11/GL_NONE))))
+
+
 (defn make-empty-texture-2d
   "Create 2D texture with specified format and allocate storage"
   {:malli/schema [:=> [:cat interpolation boundary :int N N] texture-2d]}

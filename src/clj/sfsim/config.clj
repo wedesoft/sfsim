@@ -30,6 +30,7 @@
 (def planet-config (immuconf/get config :sfsim.planet-config))
 (def cloud-config (immuconf/get config :sfsim.cloud-config))
 (def shadow-config (immuconf/get config :sfsim.shadow-config))
+(def shockwave-config (immuconf/get config :sfsim.shockwave-config))
 (def model-config (immuconf/get config :sfsim.model-config))
 
 

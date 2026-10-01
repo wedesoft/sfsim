@@ -14,7 +14,9 @@
       [sfsim.atmosphere :as atmosphere]
       [sfsim.planet :as planet]
       [sfsim.model :as model]
+      [sfsim.plume :as plume]
       [sfsim.render :as render]
+      [sfsim.shockwave :as shockwave]
       [sfsim.physics :as physics]
       [sfsim.lighting :as lighting]
       [sfsim.texture :as texture]
@@ -54,7 +56,13 @@
         planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0 overlays)
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
         scene-renderer          (model/make-scene-geometry-renderer true)
-        scene-shadow-renderer   (model/make-scene-shadow-renderer (:sfsim.opacity/scene-shadow-size config/shadow-config))
+        scene-shadow-renderer   (model/make-scene-shadow-renderer)
+        shockwave-renderer      (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
+                                                                   shockwave/shockfront
+                                                                   (:sfsim.shockwave/shockwave-size config/shockwave-config)
+                                                                   (:sfsim.clouds/bluenoise cloud-data)
+                                                                   (:sfsim.shockwave/shockwave-radius config/shockwave-config)
+                                                                   (:sfsim.shockwave/max-curvature-radius config/shockwave-config))
         lighting-renderer       (lighting/make-lighting-renderer {:sfsim.render/config config/render-config
                                                                   :sfsim.planet/config config/planet-config
                                                                   :sfsim.opacity/data opacity-data
@@ -84,6 +92,7 @@
      ::atmosphere-geometry-renderer atmosphere-renderer
      ::scene-geometry-renderer scene-renderer
      ::scene-shadow-renderer scene-shadow-renderer
+     ::shockwave-renderer shockwave-renderer
      ::lighting-renderer lighting-renderer
      ::bsp-tree bsp-tree
      ::thruster-transforms thruster-transforms
@@ -94,6 +103,7 @@
   [graphics]
   (doseq [scene (::scenes graphics)] (model/destroy-scene scene))
   (lighting/destroy-lighting-renderer (::lighting-renderer graphics))
+  (shockwave/destroy-shockwave-renderer (::shockwave-renderer graphics))
   (model/destroy-scene-shadow-renderer (::scene-shadow-renderer graphics))
   (model/destroy-scene-geometry-renderer (::scene-geometry-renderer graphics))
   (atmosphere/destroy-atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics))
@@ -143,6 +153,10 @@
 
 (defn destroy-frame
   [frame]
+  (when-let [flood (::flood frame)]
+            (texture/destroy-texture flood))
+  (when-let [wind-shadow (::wind-shadow frame)]
+            (model/destroy-scene-shadow-map wind-shadow))
   (doseq [object-shadow (::object-shadows frame)]
          (model/destroy-scene-shadow-map object-shadow))
   (texture/destroy-texture (::clouds frame))
@@ -217,20 +231,48 @@
         shadow-vars         (::shadow-vars frame)
         cloud-geometry      (::cloud-geometry frame)
         plume-transforms    (if (::bsp-tree graphics) (plume-transforms frame graphics rcs-names) [])]
-    (assoc frame ::clouds (clouds/render-cloud-overlay cloud-renderer cloud-render-vars model-vars shadow-vars plume-transforms
-                                                       cloud-geometry))))
+    (assoc frame
+           ::clouds (clouds/render-cloud-overlay
+                      cloud-render-vars cloud-geometry
+                      (render/without-depth-test
+                        (render/with-stencils
+                          (clouds/render-cloud-front cloud-renderer cloud-render-vars shadow-vars cloud-geometry)
+                          (render/with-underlay-blending
+                            (plume/render-plume-overlays cloud-renderer plume-transforms cloud-render-vars
+                                                         model-vars cloud-geometry)
+                            (clouds/render-cloud-back cloud-renderer cloud-render-vars shadow-vars cloud-geometry))))))))
 
 
 (defn render-scene-shadows
   [frame graphics]
   (let [scene-shadow-renderer (::scene-shadow-renderer graphics)
+        shadow-size           (:sfsim.opacity/scene-shadow-size config/shadow-config)
         light-direction       (::light-direction frame)
         moved-scenes          (get-moved-scenes frame graphics)
         object-shadows        (mapv #(model/scene-shadow-map scene-shadow-renderer light-direction %
-                                                            (:sfsim.model/object-radius %)
-                                                            :sfsim.render/cullfront false)
+                                                             shadow-size
+                                                             (:sfsim.model/object-radius %)
+                                                             :sfsim.render/cullfront false)
                                     moved-scenes)]
     (assoc frame ::object-shadows object-shadows)))
+
+
+(defn render-shockwave-geometry
+  [frame graphics wind-from mach shockwave-radius]
+  (let [scene-shadow-renderer   (::scene-shadow-renderer graphics)
+        shockwave-renderer      (::shockwave-renderer graphics)
+        shadow-size             (:sfsim.opacity/scene-shadow-size config/shadow-config)
+        wind-shadow             (model/scene-shadow-map scene-shadow-renderer
+                                            wind-from
+                                            (first (get-moved-scenes frame graphics))
+                                            shadow-size
+                                            shockwave-radius
+                                            :sfsim.render/cullback
+                                            true)
+        flood                   (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)]
+    (assoc frame
+           ::wind-shadow wind-shadow
+           ::flood flood)))
 
 
 (defn render-geometry
