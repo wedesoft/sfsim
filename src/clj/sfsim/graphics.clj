@@ -236,7 +236,7 @@
                       cloud-renderer cloud-render-vars model-vars cloud-geometry
                       (render/without-depth-test
                         (render/with-stencils
-                          (clouds/render-cloud-front cloud-renderer cloud-render-vars shadow-vars)
+                          (clouds/render-cloud-front cloud-renderer cloud-render-vars shadow-vars cloud-geometry)
                           (render/with-underlay-blending
                             (doseq [[thruster transform] plume-transforms]
                                    (plume/render-plume-overlay cloud-renderer thruster model-vars transform))
