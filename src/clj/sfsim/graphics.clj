@@ -238,8 +238,8 @@
                         (render/with-stencils
                           (clouds/render-cloud-front cloud-renderer cloud-render-vars shadow-vars cloud-geometry)
                           (render/with-underlay-blending
-                            (doseq [[thruster transform] plume-transforms]
-                                   (plume/render-plume-overlay cloud-renderer thruster model-vars transform))
+                            (plume/render-plume-overlays cloud-renderer plume-transforms cloud-render-vars
+                                                         model-vars cloud-geometry)
                             (clouds/render-cloud-back cloud-renderer cloud-render-vars shadow-vars cloud-geometry))))))))
 
 

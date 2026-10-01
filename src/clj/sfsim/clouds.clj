@@ -20,7 +20,8 @@
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
                           with-underlay-blending setup-shadow-matrices without-depth-test) :as render]
     [sfsim.shaders :as shaders]
-    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size rcs-outer rcs-point rcs-box-size)
+    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size rcs-outer rcs-point rcs-box-size
+                         setup-dynamic-overlay-uniforms)
                  :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
@@ -631,23 +632,6 @@
                           (concat (:sfsim.opacity/shadows shadow-vars) (:sfsim.opacity/opacities shadow-vars))))))
 
 
-(defn setup-dynamic-overlay-uniforms
-  [program cloud-render-vars]
-  (let [overlay-width  (:sfsim.render/overlay-width cloud-render-vars)
-        overlay-height (:sfsim.render/overlay-height cloud-render-vars)]
-    (uniform-int program "overlay_width" overlay-width)
-    (uniform-int program "overlay_height" overlay-height)
-    (uniform-vector3 program "origin" (:sfsim.render/origin cloud-render-vars))
-    (uniform-vector3 program "object_origin" (:sfsim.render/object-origin cloud-render-vars))
-    (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world cloud-render-vars))
-    (uniform-matrix4 program "world_to_camera" (inverse (:sfsim.render/camera-to-world cloud-render-vars)))
-    (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
-    (uniform-matrix4 program "object_to_camera" (inverse (:sfsim.render/camera-to-object cloud-render-vars)))
-    (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
-    (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
-    (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))))
-
-
 (defn render-cloud-front
   [{::keys [programs vao] :as other} cloud-render-vars shadow-vars geometry]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
@@ -691,14 +675,7 @@
   `(let [overlay-width#  (:sfsim.render/overlay-width ~cloud-render-vars)
          overlay-height# (:sfsim.render/overlay-height ~cloud-render-vars)
          overlay#        (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F
-                                                overlay-width# overlay-height#)
-         programs#       (::programs ~cloud-renderer)]
-     (doseq [program# [(::plume-outer programs#) (::plume-point programs#) (::rcs-outer programs#) (::rcs-point programs#)]]
-            (use-program program#)
-            (setup-dynamic-overlay-uniforms program# ~cloud-render-vars)
-            (uniform-float program# "pressure" (:sfsim.model/pressure ~model-vars))
-            (uniform-float program# "time" (:sfsim.model/time ~model-vars))
-            (use-textures {0  (::points ~geometry) 1 (::distance ~geometry)}))
+                                                overlay-width# overlay-height#)]
      (framebuffer-render overlay-width# overlay-height# :sfsim.render/cullback (::depth-stencil ~geometry) [overlay#]
                          (clear (vec3 0.0 0.0 0.0) 0.0)
                          ~@body)
