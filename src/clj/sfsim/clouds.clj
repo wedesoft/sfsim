@@ -591,17 +591,11 @@
 
 (defn make-plume-renderer
   [data]
-  (let [cloud-config     (::data data)
-        render-config    (:sfsim.render/config data)
-        atmosphere-luts  (:sfsim.atmosphere/luts data)
-        programs         (into {} (map (fn [[k shaders]] [k (apply make-cloud-program shaders)])
+  (let [programs         (into {} (map (fn [[k shaders]] [k (apply make-cloud-program shaders)])
                                        (plume-fragment-shaders)))
         plume-vao        (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-geometry-uniforms program data))
     {::programs programs
-     :sfsim.atmosphere/luts atmosphere-luts
-     :sfsim.render/config render-config
-     ::data cloud-config
      ::plume-vao plume-vao}))
 
 
@@ -661,19 +655,19 @@
     (use-program (::atmosphere-front programs))
     (setup-dynamic-overlay-uniforms (::atmosphere-front programs) cloud-render-vars)
     (setup-dynamic-cloud-uniforms (::atmosphere-front programs) other cloud-render-vars shadow-vars)
-    (use-textures {0  (::points geometry) 1 (::distance geometry)})
+    (use-textures {0 (::points geometry) 1 (::distance geometry)})
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
     (use-program (::planet-front programs))
     (setup-dynamic-overlay-uniforms (::planet-front programs) cloud-render-vars)
     (setup-dynamic-cloud-uniforms (::planet-front programs) other cloud-render-vars shadow-vars)
-    (use-textures {0  (::points geometry) 1 (::distance geometry)})
+    (use-textures {0 (::points geometry) 1 (::distance geometry)})
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
     (use-program (::scene-front programs))
     (setup-dynamic-overlay-uniforms (::scene-front programs) cloud-render-vars)
     (setup-dynamic-cloud-uniforms (::scene-front programs) other cloud-render-vars shadow-vars)
-    (use-textures {0  (::points geometry) 1 (::distance geometry)})
+    (use-textures {0 (::points geometry) 1 (::distance geometry)})
     (render-quads vao)))
 
 
@@ -683,13 +677,13 @@
     (use-program (::atmosphere-back programs))
     (setup-dynamic-overlay-uniforms (::atmosphere-back programs) cloud-render-vars)
     (setup-dynamic-cloud-uniforms (::atmosphere-back programs) other cloud-render-vars shadow-vars)
-    (use-textures {0  (::points geometry) 1 (::distance geometry)})
+    (use-textures {0 (::points geometry) 1 (::distance geometry)})
     (render-quads vao))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
     (use-program (::planet-back programs))
     (setup-dynamic-overlay-uniforms (::planet-back programs) cloud-render-vars)
     (setup-dynamic-cloud-uniforms (::planet-back programs) other cloud-render-vars shadow-vars)
-    (use-textures {0  (::points geometry) 1 (::distance geometry)})
+    (use-textures {0 (::points geometry) 1 (::distance geometry)})
     (render-quads vao)))
 
 

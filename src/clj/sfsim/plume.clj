@@ -249,6 +249,6 @@
            (setup-dynamic-overlay-uniforms program cloud-render-vars)
            (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
            (uniform-float program "time" (:sfsim.model/time model-vars))
-           (use-textures {0  (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+           (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
     (doseq [[thruster transform] plume-transforms]
            (render-plume-overlay plume-renderer thruster model-vars transform))))
