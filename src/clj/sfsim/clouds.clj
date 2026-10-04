@@ -609,22 +609,17 @@
         atmosphere-luts  (:sfsim.atmosphere/luts data)
         programs         (into {} (map (fn [[k shaders]] [k (apply make-cloud-program shaders)])
                                        (plume-fragment-shaders num-steps perlin-octaves cloud-octaves)))
-        indices          [0 1 3 2]
-        vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
-        vao              (make-vertex-array-object (::atmosphere-front programs) indices vertices ["point" 3])
         plume-vao        (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-geometry-uniforms program data))
     {::programs programs
      :sfsim.atmosphere/luts atmosphere-luts
      :sfsim.render/config render-config
      ::data cloud-config
-     ::vao vao
      ::plume-vao plume-vao}))
 
 
 (defn destroy-plume-renderer
-  [{::keys [programs vao plume-vao]}]
-  (destroy-vertex-array-object vao)
+  [{::keys [programs plume-vao]}]
   (destroy-vertex-array-object plume-vao)
   (doseq [program (vals programs)] (destroy-program program)))
 
