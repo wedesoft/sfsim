@@ -520,7 +520,7 @@
 
 
 (defn plume-fragment-shaders
-  [num-steps perlin-octaves cloud-octaves]
+  []
   {::plume-outer [vertex-plume (fragment-plume true)]
    ::plume-point [vertex-plume (fragment-plume false)]
    ::rcs-outer [vertex-rcs (fragment-rcs true)]
@@ -591,15 +591,11 @@
 
 (defn make-plume-renderer
   [data]
-  (let [shadow-config    (:sfsim.opacity/data data)
-        cloud-config     (::data data)
+  (let [cloud-config     (::data data)
         render-config    (:sfsim.render/config data)
-        num-steps        (:sfsim.opacity/num-steps shadow-config)
-        cloud-octaves    (::cloud-octaves cloud-config)
-        perlin-octaves   (::perlin-octaves cloud-config)
         atmosphere-luts  (:sfsim.atmosphere/luts data)
         programs         (into {} (map (fn [[k shaders]] [k (apply make-cloud-program shaders)])
-                                       (plume-fragment-shaders num-steps perlin-octaves cloud-octaves)))
+                                       (plume-fragment-shaders)))
         plume-vao        (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-geometry-uniforms program data))
     {::programs programs
