@@ -521,12 +521,7 @@
 
 (defn plume-fragment-shaders
   [num-steps perlin-octaves cloud-octaves]
-  {::atmosphere-front [shaders/vertex-passthrough (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true)]
-   ::atmosphere-back [shaders/vertex-passthrough (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false)]
-   ::planet-front [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true)]
-   ::planet-back [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false)]
-   ::scene-front [shaders/vertex-passthrough (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)]
-   ::plume-outer [vertex-plume (fragment-plume true)]
+  {::plume-outer [vertex-plume (fragment-plume true)]
    ::plume-point [vertex-plume (fragment-plume false)]
    ::rcs-outer [vertex-rcs (fragment-rcs true)]
    ::rcs-point [vertex-rcs (fragment-rcs false)]})
@@ -538,11 +533,7 @@
    ::atmosphere-back [shaders/vertex-passthrough (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false)]
    ::planet-front [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true)]
    ::planet-back [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false)]
-   ::scene-front [shaders/vertex-passthrough (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)]
-   ::plume-outer [vertex-plume (fragment-plume true)]
-   ::plume-point [vertex-plume (fragment-plume false)]
-   ::rcs-outer [vertex-rcs (fragment-rcs true)]
-   ::rcs-point [vertex-rcs (fragment-rcs false)]})
+   ::scene-front [shaders/vertex-passthrough (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)]})
 
 
 (defn make-cloud-render-vars
