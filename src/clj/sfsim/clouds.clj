@@ -19,7 +19,7 @@
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
                           uniform-vector3 uniform-matrix4 use-program clear with-stencils with-stencil-op-ref-and-mask
                           with-underlay-blending setup-shadow-matrices without-depth-test) :as render]
-    [sfsim.shaders :as shaders]
+    [sfsim.shaders :refer (vertex-passthrough) :as shaders]
     [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size rcs-outer rcs-point rcs-box-size
                          setup-dynamic-overlay-uniforms)
                  :as plume]
@@ -80,7 +80,7 @@
   (let [result   (make-empty-vector-cubemap :sfsim.texture/linear :sfsim.texture/clamp size)
         indices  [0 1 3 2]
         vertices [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-        program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+        program (make-program :sfsim.render/vertex [vertex-passthrough]
                               :sfsim.render/fragment [identity-cubemap-fragment])
         vao     (make-vertex-array-object program indices vertices ["point" 3])]
     (framebuffer-render size size :sfsim.render/cullback nil [result]
@@ -104,7 +104,7 @@
   "Create program to iteratively update cubemap warp vector field"
   {:malli/schema [:=> [:cat :string :string render/shaders] :int]}
   [current-name field-method-name shaders]
-  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+  (make-program :sfsim.render/vertex [vertex-passthrough]
                 :sfsim.render/fragment (conj shaders (iterate-cubemap-warp-fragment current-name field-method-name))))
 
 
@@ -138,7 +138,7 @@
   "Create program to look up values using a given cubemap warp vector field"
   {:malli/schema [:=> [:cat :string :string render/shaders] :int]}
   [current-name lookup-name shaders]
-  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+  (make-program :sfsim.render/vertex [vertex-passthrough]
                 :sfsim.render/fragment (conj shaders (cubemap-warp-fragment current-name lookup-name))))
 
 
@@ -519,23 +519,6 @@
    (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "rcs" :outer outer})])
 
 
-(defn plume-fragment-shaders
-  []
-  {::plume-outer [vertex-plume (fragment-plume true)]
-   ::plume-point [vertex-plume (fragment-plume false)]
-   ::rcs-outer [vertex-rcs (fragment-rcs true)]
-   ::rcs-point [vertex-rcs (fragment-rcs false)]})
-
-
-(defn cloud-fragment-shaders
-  [num-steps perlin-octaves cloud-octaves]
-  {::atmosphere-front [shaders/vertex-passthrough (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true)]
-   ::atmosphere-back [shaders/vertex-passthrough (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false)]
-   ::planet-front [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true)]
-   ::planet-back [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false)]
-   ::scene-front [shaders/vertex-passthrough (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)]})
-
-
 (defn make-cloud-render-vars
   [render-config planet-render-vars width height camera-position camera-orientation light-direction object-position object-orientation]
   (let [fov                (:sfsim.render/fov render-config)
@@ -591,8 +574,10 @@
 
 (defn make-plume-renderer
   [data]
-  (let [programs         (into {} (map (fn [[k shaders]] [k (apply make-cloud-program shaders)])
-                                       (plume-fragment-shaders)))
+  (let [programs          {::plume-outer (make-cloud-program vertex-plume (fragment-plume true))
+                           ::plume-point (make-cloud-program vertex-plume (fragment-plume false))
+                           ::rcs-outer (make-cloud-program vertex-rcs (fragment-rcs true))
+                           ::rcs-point (make-cloud-program vertex-rcs (fragment-rcs false))}
         plume-vao        (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-geometry-uniforms program data))
     {::programs programs
@@ -614,8 +599,21 @@
         cloud-octaves    (::cloud-octaves cloud-config)
         perlin-octaves   (::perlin-octaves cloud-config)
         atmosphere-luts  (:sfsim.atmosphere/luts data)
-        programs         (into {} (map (fn [[k shaders]] [k (apply make-cloud-program shaders)])
-                                       (cloud-fragment-shaders num-steps perlin-octaves cloud-octaves)))
+        programs         {::atmosphere-front
+                          (make-cloud-program vertex-passthrough
+                                              (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true))
+                          ::atmosphere-back
+                          (make-cloud-program vertex-passthrough
+                                              (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false))
+                          ::planet-front
+                          (make-cloud-program vertex-passthrough
+                                              (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true))
+                          ::planet-back
+                          (make-cloud-program vertex-passthrough
+                                              (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false))
+                          ::scene-front
+                          (make-cloud-program vertex-passthrough
+                                              (fragment-cloud-scene num-steps perlin-octaves cloud-octaves))}
         indices          [0 1 3 2]
         vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
         vao              (make-vertex-array-object (::atmosphere-front programs) indices vertices ["point" 3])]
