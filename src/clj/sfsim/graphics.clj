@@ -52,6 +52,12 @@
                                                              :sfsim.opacity/data opacity-data
                                                              :sfsim.clouds/data cloud-data
                                                              :sfsim.atmosphere/luts atmosphere-luts})
+        plume-renderer          (clouds/make-plume-renderer {:sfsim.render/config config/render-config
+                                                             :sfsim.planet/config config/planet-config
+                                                             :sfsim.model/data config/model-config
+                                                             :sfsim.opacity/data opacity-data
+                                                             :sfsim.clouds/data cloud-data
+                                                             :sfsim.atmosphere/luts atmosphere-luts})
         cloud-geometry-renderer (model/make-joined-geometry-renderer {:sfsim.planet/config config/planet-config} 0)
         planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0 overlays)
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
@@ -87,6 +93,7 @@
      ::planet-shadow-renderer planet-shadow-renderer
      ::opacity-renderer opacity-renderer
      ::cloud-renderer cloud-renderer
+     ::plume-renderer plume-renderer
      ::cloud-geometry-renderer cloud-geometry-renderer
      ::planet-geometry-renderer planet-renderer
      ::atmosphere-geometry-renderer atmosphere-renderer
@@ -109,6 +116,7 @@
   (atmosphere/destroy-atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics))
   (planet/destroy-planet-geometry-renderer (::planet-geometry-renderer graphics))
   (model/destroy-joined-geometry-renderer (::cloud-geometry-renderer graphics))
+  (clouds/destroy-plume-renderer (::plume-renderer graphics))
   (clouds/destroy-cloud-renderer (::cloud-renderer graphics))
   (opacity/destroy-opacity-renderer (::opacity-renderer graphics))
   (planet/destroy-planet-shadow-renderer (::planet-shadow-renderer graphics))
@@ -226,6 +234,7 @@
 (defn render-clouds
   [frame graphics rcs-names]
   (let [cloud-renderer      (::cloud-renderer graphics)
+        plume-renderer      (::plume-renderer graphics)
         cloud-render-vars   (::cloud-render-vars frame)
         model-vars          (::model-vars frame)
         shadow-vars         (::shadow-vars frame)
@@ -238,7 +247,7 @@
                         (render/with-stencils
                           (clouds/render-cloud-front cloud-renderer cloud-render-vars shadow-vars cloud-geometry)
                           (render/with-underlay-blending
-                            (plume/render-plume-overlays cloud-renderer plume-transforms cloud-render-vars
+                            (plume/render-plume-overlays plume-renderer plume-transforms cloud-render-vars
                                                          model-vars cloud-geometry)
                             (clouds/render-cloud-back cloud-renderer cloud-render-vars shadow-vars cloud-geometry))))))))
 

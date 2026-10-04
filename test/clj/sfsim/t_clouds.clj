@@ -1622,6 +1622,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                      model-vars         (make-model-vars 0.0 1.0 0.0)
                      shadow-vars        {}
                      cloud-renderer     (make-cloud-renderer data)
+                     plume-renderer     (make-plume-renderer data)
                      cloud-render-vars  (make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 0)
                                                                 (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
                                                                 (q/->Quaternion 1 0 0 0))
@@ -1633,7 +1634,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                                               (when ?front
                                                 (render-cloud-front cloud-renderer cloud-render-vars shadow-vars geometry))
                                               (with-underlay-blending
-                                                (plume/render-plume-overlays cloud-renderer plume-transforms cloud-render-vars
+                                                (plume/render-plume-overlays plume-renderer plume-transforms cloud-render-vars
                                                                              model-vars geometry)
                                                 (when ?back
                                                   (render-cloud-back cloud-renderer cloud-render-vars shadow-vars geometry))))))]
@@ -1641,6 +1642,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)
                  (destroy-cloud-geometry geometry)
+                 (destroy-plume-renderer plume-renderer)
                  (destroy-cloud-renderer cloud-renderer)))))
          ?stencil ?x  ?y  ?z  ?front ?plume ?back ?obj-dist ?r    ?g    ?b  ?a
          0x1      1.0 0.0 0.0 false  false  false 2.0       0.0   0.0   0.0 0.0
