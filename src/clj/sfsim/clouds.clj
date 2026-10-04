@@ -519,17 +519,21 @@
    (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "rcs" :outer outer})])
 
 
+(defn plume-fragment-shaders
+  []
+  {::plume-outer [vertex-plume (fragment-plume true)]
+   ::plume-point [vertex-plume (fragment-plume false)]
+   ::rcs-outer [vertex-rcs (fragment-rcs true)]
+   ::rcs-point [vertex-rcs (fragment-rcs false)]})
+
+
 (defn cloud-fragment-shaders
   [num-steps perlin-octaves cloud-octaves]
   {::atmosphere-front [shaders/vertex-passthrough (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true)]
    ::atmosphere-back [shaders/vertex-passthrough (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false)]
    ::planet-front [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true)]
    ::planet-back [shaders/vertex-passthrough (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false)]
-   ::scene-front [shaders/vertex-passthrough (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)]
-   ::plume-outer [vertex-plume (fragment-plume true)]
-   ::plume-point [vertex-plume (fragment-plume false)]
-   ::rcs-outer [vertex-rcs (fragment-rcs true)]
-   ::rcs-point [vertex-rcs (fragment-rcs false)]})
+   ::scene-front [shaders/vertex-passthrough (fragment-cloud-scene num-steps perlin-octaves cloud-octaves)]})
 
 
 (defn make-cloud-render-vars
@@ -585,6 +589,21 @@
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
 
 
+(defn make-plume-renderer
+  []
+  (let [programs  (into {} (map (fn [[k shaders]] [k (apply make-cloud-program shaders)])
+                                (plume-fragment-shaders)))
+        plume-vao (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
+    {::programs programs
+     ::plume-vao plume-vao}))
+
+
+(defn destroy-plume-renderer
+  [{::keys [programs plume-vao]}]
+  (destroy-vertex-array-object plume-vao)
+  (doseq [program (vals programs)] (destroy-program program)))
+
+
 (defn make-cloud-renderer
   [data]
   (let [shadow-config    (:sfsim.opacity/data data)
@@ -598,21 +617,18 @@
                                        (cloud-fragment-shaders num-steps perlin-octaves cloud-octaves)))
         indices          [0 1 3 2]
         vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
-        vao              (make-vertex-array-object (::atmosphere-front programs) indices vertices ["point" 3])
-        plume-vao        (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
+        vao              (make-vertex-array-object (::atmosphere-front programs) indices vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-geometry-uniforms program data))
     {::programs programs
      :sfsim.atmosphere/luts atmosphere-luts
      :sfsim.render/config render-config
      ::data cloud-config
-     ::vao vao
-     ::plume-vao plume-vao}))
+     ::vao vao}))
 
 
 (defn destroy-cloud-renderer
-  [{::keys [programs vao plume-vao]}]
+  [{::keys [programs vao]}]
   (destroy-vertex-array-object vao)
-  (destroy-vertex-array-object plume-vao)
   (doseq [program (vals programs)] (destroy-program program)))
 
 
