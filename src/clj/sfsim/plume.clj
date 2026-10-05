@@ -258,52 +258,52 @@
                          ::plume-point (make-cloud-program vertex-plume (fragment-plume false))
                          ::rcs-outer (make-cloud-program vertex-rcs (fragment-rcs true))
                          ::rcs-point (make-cloud-program vertex-rcs (fragment-rcs false))}
-        plume-vao       (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
+        vao             (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-plume-geometry-uniforms program data))
     {::programs programs
-     ::plume-vao plume-vao
+     ::vao vao
      :sfsim.atmosphere/luts atmosphere-luts
      :sfsim.clouds/data cloud-config}))
 
 
 (defn destroy-plume-renderer
-  [{::keys [programs plume-vao]}]
-  (destroy-vertex-array-object plume-vao)
+  [{::keys [programs vao]}]
+  (destroy-vertex-array-object vao)
   (doseq [program (vals programs)] (destroy-program program)))
 
 
 (defn render-plume-overlay-basic
-  [program-outer program-point plume-vao transform throttle]
+  [program-outer program-point vao transform throttle]
   (with-culling :sfsim.render/cullfront
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
       (use-program program-outer)
       (uniform-matrix4 program-outer "plume_to_object" transform)
       (uniform-matrix4 program-outer "object_to_plume" (inverse transform))
       (uniform-float program-outer "plume_throttle" throttle)
-      (render-quads plume-vao))
+      (render-quads vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
       (use-program program-point)
       (uniform-matrix4 program-point "plume_to_object" transform)
       (uniform-matrix4 program-point "object_to_plume" (inverse transform))
       (uniform-float program-point "plume_throttle" throttle)
-      (render-quads plume-vao))
+      (render-quads vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
       (use-program program-point)
-      (render-quads plume-vao))))
+      (render-quads vao))))
 
 
 (defmulti render-plume-overlay (fn [_plume-renderer plume-name _model-vars _transform] (first (split plume-name #" "))))
 
 
 (defmethod render-plume-overlay "Plume"
-  [{::keys [programs plume-vao]} _plume-name model-vars transform]
-  (render-plume-overlay-basic (::plume-outer programs) (::plume-point programs) plume-vao transform
+  [{::keys [programs vao]} _plume-name model-vars transform]
+  (render-plume-overlay-basic (::plume-outer programs) (::plume-point programs) vao transform
                               (:sfsim.model/throttle model-vars)))
 
 
 (defmethod render-plume-overlay "RCS"
-  [{::keys [programs plume-vao]} _plume-name _model-vars transform]
-  (render-plume-overlay-basic (::rcs-outer programs) (::rcs-point programs) plume-vao transform 1.0))
+  [{::keys [programs vao]} _plume-name _model-vars transform]
+  (render-plume-overlay-basic (::rcs-outer programs) (::rcs-point programs) vao transform 1.0))
 
 
 (defn setup-dynamic-overlay-uniforms
