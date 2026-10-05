@@ -254,20 +254,20 @@
   [data]
   (let [cloud-config    (:sfsim.clouds/data data)
         atmosphere-luts (:sfsim.atmosphere/luts data)
-        programs        {:sfsim.clouds/plume-outer (make-cloud-program vertex-plume (fragment-plume true))
-                         :sfsim.clouds/plume-point (make-cloud-program vertex-plume (fragment-plume false))
-                         :sfsim.clouds/rcs-outer (make-cloud-program vertex-rcs (fragment-rcs true))
-                         :sfsim.clouds/rcs-point (make-cloud-program vertex-rcs (fragment-rcs false))}
-        plume-vao       (make-vertex-array-object (:sfsim.clouds/plume-point programs) plume-indices plume-vertices ["point" 3])]
+        programs        {::plume-outer (make-cloud-program vertex-plume (fragment-plume true))
+                         ::plume-point (make-cloud-program vertex-plume (fragment-plume false))
+                         ::rcs-outer (make-cloud-program vertex-rcs (fragment-rcs true))
+                         ::rcs-point (make-cloud-program vertex-rcs (fragment-rcs false))}
+        plume-vao       (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-plume-geometry-uniforms program data))
-    {:sfsim.clouds/programs programs
-     :sfsim.clouds/plume-vao plume-vao
+    {::programs programs
+     ::plume-vao plume-vao
      :sfsim.atmosphere/luts atmosphere-luts
      :sfsim.clouds/data cloud-config}))
 
 
 (defn destroy-plume-renderer
-  [{:sfsim.clouds/keys [programs plume-vao]}]
+  [{::keys [programs plume-vao]}]
   (destroy-vertex-array-object plume-vao)
   (doseq [program (vals programs)] (destroy-program program)))
 
@@ -296,14 +296,14 @@
 
 
 (defmethod render-plume-overlay "Plume"
-  [{:sfsim.clouds/keys [programs plume-vao]} _plume-name model-vars transform]
-  (render-plume-overlay-basic (:sfsim.clouds/plume-outer programs) (:sfsim.clouds/plume-point programs) plume-vao transform
+  [{::keys [programs plume-vao]} _plume-name model-vars transform]
+  (render-plume-overlay-basic (::plume-outer programs) (::plume-point programs) plume-vao transform
                               (:sfsim.model/throttle model-vars)))
 
 
 (defmethod render-plume-overlay "RCS"
-  [{:sfsim.clouds/keys [programs plume-vao]} _plume-name _model-vars transform]
-  (render-plume-overlay-basic (:sfsim.clouds/rcs-outer programs) (:sfsim.clouds/rcs-point programs) plume-vao transform 1.0))
+  [{::keys [programs plume-vao]} _plume-name _model-vars transform]
+  (render-plume-overlay-basic (::rcs-outer programs) (::rcs-point programs) plume-vao transform 1.0))
 
 
 (defn setup-dynamic-overlay-uniforms
@@ -336,9 +336,9 @@
 
 (defn render-plume-overlays
   [plume-renderer plume-transforms cloud-render-vars model-vars geometry]
-  (let [programs (:sfsim.clouds/programs plume-renderer)]
-    (doseq [program [(:sfsim.clouds/plume-outer programs) (:sfsim.clouds/plume-point programs)
-                     (:sfsim.clouds/rcs-outer programs) (:sfsim.clouds/rcs-point programs)]]
+  (let [programs (::programs plume-renderer)]
+    (doseq [program [(::plume-outer programs) (::plume-point programs)
+                     (::rcs-outer programs) (::rcs-point programs)]]
            (use-program program)
            (setup-dynamic-overlay-uniforms program cloud-render-vars)
            (setup-dynamic-plume-uniforms program plume-renderer model-vars geometry)
