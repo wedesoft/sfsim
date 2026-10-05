@@ -15,7 +15,8 @@
       [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]
       [sfsim.render :refer (use-program uniform-matrix4 uniform-float with-culling with-stencil-op-ref-and-mask render-quads
-                            uniform-int uniform-vector3 use-textures uniform-sampler)])
+                            uniform-int uniform-vector3 use-textures uniform-sampler make-program make-vertex-array-object
+                            destroy-vertex-array-object destroy-program)])
     (:import
       (org.lwjgl.opengl
         GL11)))
@@ -189,6 +190,40 @@
     1.0  1.0  1.0])
 
 
+(defn make-cloud-program
+  [vertex-shader fragment-shader]
+  (make-program :sfsim.render/vertex [vertex-shader]
+                :sfsim.render/fragment [fragment-shader]))
+
+
+(def geometry-point
+  (slurp "resources/shaders/clouds/geometry-point.glsl"))
+
+
+(def geometry-distance
+  (slurp "resources/shaders/clouds/geometry-distance.glsl"))
+
+
+(def vertex-plume
+  [plume-box-size (template/eval (slurp "resources/shaders/plume/vertex.glsl") {:type "plume"})])
+
+
+(defn fragment-plume
+  [outer]
+  [geometry-distance geometry-point plume-outer plume-point
+   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "plume" :outer outer})])
+
+
+(def vertex-rcs
+  [rcs-box-size (template/eval (slurp "resources/shaders/plume/vertex.glsl") {:type "rcs"})])
+
+
+(defn fragment-rcs
+  [outer]
+  [geometry-distance geometry-point rcs-outer rcs-point
+   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "rcs" :outer outer})])
+
+
 (defn setup-cloud-sampling-uniforms
   "Method to set up uniform variables for sampling clouds"
   {:malli/schema [:=> [:cat :int :map :int] :nil]}
@@ -213,6 +248,28 @@
     (setup-cloud-sampling-uniforms program data 5)
     (setup-static-plume-uniforms program model-data)
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
+
+
+(defn make-plume-renderer
+  [data]
+  (let [cloud-config    (:sfsim.clouds/data data)
+        atmosphere-luts (:sfsim.atmosphere/luts data)
+        programs        {:sfsim.clouds/plume-outer (make-cloud-program vertex-plume (fragment-plume true))
+                         :sfsim.clouds/plume-point (make-cloud-program vertex-plume (fragment-plume false))
+                         :sfsim.clouds/rcs-outer (make-cloud-program vertex-rcs (fragment-rcs true))
+                         :sfsim.clouds/rcs-point (make-cloud-program vertex-rcs (fragment-rcs false))}
+        plume-vao       (make-vertex-array-object (:sfsim.clouds/plume-point programs) plume-indices plume-vertices ["point" 3])]
+    (doseq [program (vals programs)] (setup-plume-geometry-uniforms program data))
+    {:sfsim.clouds/programs programs
+     :sfsim.clouds/plume-vao plume-vao
+     :sfsim.atmosphere/luts atmosphere-luts
+     :sfsim.clouds/data cloud-config}))
+
+
+(defn destroy-plume-renderer
+  [{:sfsim.clouds/keys [programs plume-vao]}]
+  (destroy-vertex-array-object plume-vao)
+  (doseq [program (vals programs)] (destroy-program program)))
 
 
 (defn render-plume-overlay-basic

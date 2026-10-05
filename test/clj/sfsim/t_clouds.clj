@@ -1617,7 +1617,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
 
 (tabular "Use geometry buffer to render clouds"
          (facts
-           (with-redefs [clouds/make-cloud-program make-mock-cloud-program
+           (with-redefs [plume/make-cloud-program make-mock-cloud-program
                          clouds/setup-geometry-uniforms mock-setup-geometry-uniforms
                          plume/setup-plume-geometry-uniforms mock-setup-geometry-uniforms
                          clouds/setup-dynamic-cloud-uniforms mock-setup-dynamic-cloud-uniforms
@@ -1634,7 +1634,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                      model-vars         (make-model-vars 0.0 1.0 0.0)
                      shadow-vars        {}
                      cloud-renderer     (make-cloud-renderer data)
-                     plume-renderer     (make-plume-renderer data)
+                     plume-renderer     (plume/make-plume-renderer data)
                      cloud-render-vars  (make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 0)
                                                                 (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
                                                                 (q/->Quaternion 1 0 0 0))
@@ -1654,7 +1654,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)
                  (destroy-cloud-geometry geometry)
-                 (destroy-plume-renderer plume-renderer)
+                 (plume/destroy-plume-renderer plume-renderer)
                  (destroy-cloud-renderer cloud-renderer)))))
          ?stencil ?x  ?y  ?z  ?front ?plume ?back ?obj-dist ?r    ?g    ?b  ?a
          0x1      1.0 0.0 0.0 false  false  false 2.0       0.0   0.0   0.0 0.0

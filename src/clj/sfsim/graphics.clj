@@ -52,12 +52,12 @@
                                                              :sfsim.opacity/data opacity-data
                                                              :sfsim.clouds/data cloud-data
                                                              :sfsim.atmosphere/luts atmosphere-luts})
-        plume-renderer          (clouds/make-plume-renderer {:sfsim.render/config config/render-config
-                                                             :sfsim.planet/config config/planet-config
-                                                             :sfsim.model/data config/model-config
-                                                             :sfsim.opacity/data opacity-data
-                                                             :sfsim.clouds/data cloud-data
-                                                             :sfsim.atmosphere/luts atmosphere-luts})
+        plume-renderer          (plume/make-plume-renderer {:sfsim.render/config config/render-config
+                                                            :sfsim.planet/config config/planet-config
+                                                            :sfsim.model/data config/model-config
+                                                            :sfsim.opacity/data opacity-data
+                                                            :sfsim.clouds/data cloud-data
+                                                            :sfsim.atmosphere/luts atmosphere-luts})
         cloud-geometry-renderer (model/make-joined-geometry-renderer {:sfsim.planet/config config/planet-config} 0)
         planet-renderer         (planet/make-planet-geometry-renderer {:sfsim.planet/config config/planet-config} true 0 overlays)
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
@@ -116,7 +116,7 @@
   (atmosphere/destroy-atmosphere-geometry-renderer (::atmosphere-geometry-renderer graphics))
   (planet/destroy-planet-geometry-renderer (::planet-geometry-renderer graphics))
   (model/destroy-joined-geometry-renderer (::cloud-geometry-renderer graphics))
-  (clouds/destroy-plume-renderer (::plume-renderer graphics))
+  (plume/destroy-plume-renderer (::plume-renderer graphics))
   (clouds/destroy-cloud-renderer (::cloud-renderer graphics))
   (opacity/destroy-opacity-renderer (::opacity-renderer graphics))
   (planet/destroy-planet-shadow-renderer (::planet-shadow-renderer graphics))

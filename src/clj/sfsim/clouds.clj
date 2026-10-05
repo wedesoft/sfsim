@@ -19,9 +19,8 @@
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
                           uniform-matrix4 use-program clear with-stencil-op-ref-and-mask setup-shadow-matrices) :as render]
     [sfsim.shaders :refer (vertex-passthrough) :as shaders]
-    [sfsim.plume :refer (plume-outer plume-point plume-indices plume-vertices plume-box-size rcs-outer rcs-point rcs-box-size
-                         setup-dynamic-overlay-uniforms setup-cloud-sampling-uniforms)
-                 :as plume]
+    [sfsim.plume :refer (setup-dynamic-overlay-uniforms setup-cloud-sampling-uniforms make-cloud-program geometry-point
+                         geometry-distance) :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
                            texture-2d make-empty-texture-2d make-empty-float-texture-2d make-empty-depth-stencil-texture-2d)]
@@ -461,14 +460,6 @@
   (destroy-texture points))
 
 
-(def geometry-point
-  (slurp "resources/shaders/clouds/geometry-point.glsl"))
-
-
-(def geometry-distance
-  (slurp "resources/shaders/clouds/geometry-distance.glsl"))
-
-
 (defn fragment-cloud-atmosphere
   [num-steps perlin-octaves cloud-octaves front]
   [geometry-point (cloud-point num-steps perlin-octaves cloud-octaves) (cloud-outer num-steps perlin-octaves cloud-octaves)
@@ -485,26 +476,6 @@
   [num-steps perlin-octaves cloud-octaves]
   [geometry-distance geometry-point (cloud-point num-steps perlin-octaves cloud-octaves)
    (slurp "resources/shaders/clouds/fragment-cloud-scene.glsl")])
-
-
-(def vertex-plume
-  [plume-box-size (template/eval (slurp "resources/shaders/plume/vertex.glsl") {:type "plume"})])
-
-
-(defn fragment-plume
-  [outer]
-  [geometry-distance geometry-point plume-outer plume-point
-   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "plume" :outer outer})])
-
-
-(def vertex-rcs
-  [rcs-box-size (template/eval (slurp "resources/shaders/plume/vertex.glsl") {:type "rcs"})])
-
-
-(defn fragment-rcs
-  [outer]
-  [geometry-distance geometry-point rcs-outer rcs-point
-   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "rcs" :outer outer})])
 
 
 (defn make-cloud-render-vars
@@ -534,12 +505,6 @@
      :sfsim.render/object-distance (mag object-origin)}))
 
 
-(defn make-cloud-program
-  [vertex-shader fragment-shader]
-  (make-program :sfsim.render/vertex [vertex-shader]
-                :sfsim.render/fragment [fragment-shader]))
-
-
 (defn setup-geometry-uniforms
   [program other]
   (let [render-config   (:sfsim.render/config other)
@@ -556,28 +521,6 @@
     (render/setup-shadow-and-opacity-maps program shadow-data 9)
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
-
-
-(defn make-plume-renderer
-  [data]
-  (let [cloud-config    (::data data)
-        atmosphere-luts (:sfsim.atmosphere/luts data)
-        programs        {::plume-outer (make-cloud-program vertex-plume (fragment-plume true))
-                         ::plume-point (make-cloud-program vertex-plume (fragment-plume false))
-                         ::rcs-outer (make-cloud-program vertex-rcs (fragment-rcs true))
-                         ::rcs-point (make-cloud-program vertex-rcs (fragment-rcs false))}
-        plume-vao       (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
-    (doseq [program (vals programs)] (plume/setup-plume-geometry-uniforms program data))
-    {::programs programs
-     ::plume-vao plume-vao
-     :sfsim.atmosphere/luts atmosphere-luts
-     ::data cloud-config}))
-
-
-(defn destroy-plume-renderer
-  [{::keys [programs plume-vao]}]
-  (destroy-vertex-array-object plume-vao)
-  (doseq [program (vals programs)] (destroy-program program)))
 
 
 (defn make-cloud-renderer
