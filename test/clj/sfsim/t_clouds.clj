@@ -1605,11 +1605,23 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                 :sfsim.render/fragment [cloud-shader-mock (last fragment-shader)]))
 
 
+(defn mock-setup-dynamic-cloud-uniforms
+  [_program _other _cloud-render-vars _shadow-vars geometry]
+  (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+
+
+(defn mock-setup-dynamic-plume-uniforms
+  [_program _other _model-vars geometry]
+  (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+
+
 (tabular "Use geometry buffer to render clouds"
          (facts
            (with-redefs [clouds/make-cloud-program make-mock-cloud-program
                          clouds/setup-geometry-uniforms mock-setup-geometry-uniforms
-                         clouds/setup-dynamic-cloud-uniforms (fn [_program _other _cloud-render-vars _shadow-vars])
+                         plume/setup-plume-geometry-uniforms mock-setup-geometry-uniforms
+                         clouds/setup-dynamic-cloud-uniforms mock-setup-dynamic-cloud-uniforms
+                         plume/setup-dynamic-plume-uniforms mock-setup-dynamic-plume-uniforms
                          plume/plume-indices [2 3 1 0]
                          plume/plume-vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]]
              (with-invisible-window

@@ -8,7 +8,7 @@
     [[https://gemini.google.com/app/d411b76be00c0e27]]
 **** TODO Shockwave shader
 ***** DONE Move wind shadow calls into shockwave module
-***** TODO Separate plume renderer from cloud renderer
+***** DOING Separate plume renderer from cloud renderer
 ***** TODO Dependency inversion for render-cloud-overlay
 ***** TODO Use render-cloud-overlay with shockwave
 ***** TODO Use real coordinates instead of NDC when sampling shockwave

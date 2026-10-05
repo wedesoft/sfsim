@@ -15,7 +15,7 @@
       [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]
       [sfsim.render :refer (use-program uniform-matrix4 uniform-float with-culling with-stencil-op-ref-and-mask render-quads
-                            uniform-int uniform-vector3 use-textures)])
+                            uniform-int uniform-vector3 use-textures uniform-sampler)])
     (:import
       (org.lwjgl.opengl
         GL11)))
@@ -189,6 +189,32 @@
     1.0  1.0  1.0])
 
 
+(defn setup-cloud-sampling-uniforms
+  "Method to set up uniform variables for sampling clouds"
+  {:malli/schema [:=> [:cat :int :map :int] :nil]}
+  [program cloud-data sampler-offset]
+  (uniform-sampler program "bluenoise" sampler-offset)
+  (uniform-int program "noise_size" (:sfsim.texture/width (:sfsim.clouds/bluenoise cloud-data)))
+  (uniform-float program "anisotropic" (:sfsim.clouds/anisotropic cloud-data))
+  (uniform-float program "cloud_step" (:sfsim.clouds/cloud-step cloud-data))
+  (uniform-float program "opacity_cutoff" (:sfsim.clouds/opacity-cutoff cloud-data)))
+
+
+(defn setup-plume-geometry-uniforms
+  [program other]
+  (let [render-config   (:sfsim.render/config other)
+        atmosphere-luts (:sfsim.atmosphere/luts other)
+        model-data      (:sfsim.model/data other)
+        data            (:sfsim.clouds/data other)]
+    (use-program program)
+    (uniform-sampler program "camera_point" 0)
+    (uniform-sampler program "dist" 1)
+    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 2 false)
+    (setup-cloud-sampling-uniforms program data 5)
+    (setup-static-plume-uniforms program model-data)
+    (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
+
+
 (defn render-plume-overlay-basic
   [program-outer program-point plume-vao transform throttle]
   (with-culling :sfsim.render/cullfront
@@ -240,6 +266,17 @@
     (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))))
 
 
+(defn setup-dynamic-plume-uniforms
+  [program plume-renderer model-vars geometry]
+  (let [cloud-data      (:sfsim.clouds/data plume-renderer)
+        atmosphere-luts (:sfsim.atmosphere/luts plume-renderer)]
+    (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
+    (uniform-float program "time" (:sfsim.model/time model-vars))
+    (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)
+                   2 (:sfsim.atmosphere/transmittance atmosphere-luts) 3 (:sfsim.atmosphere/scatter atmosphere-luts)
+                   4 (:sfsim.atmosphere/mie atmosphere-luts) 5 (:sfsim.clouds/bluenoise cloud-data)})))
+
+
 (defn render-plume-overlays
   [plume-renderer plume-transforms cloud-render-vars model-vars geometry]
   (let [programs (:sfsim.clouds/programs plume-renderer)]
@@ -247,6 +284,7 @@
                      (:sfsim.clouds/rcs-outer programs) (:sfsim.clouds/rcs-point programs)]]
            (use-program program)
            (setup-dynamic-overlay-uniforms program cloud-render-vars)
+           (setup-dynamic-plume-uniforms program plume-renderer model-vars geometry)
            (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
            (uniform-float program "time" (:sfsim.model/time model-vars))
            (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
