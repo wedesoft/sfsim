@@ -17,9 +17,10 @@
     [sfsim.bluenoise :refer (noise-size) :as bluenoise]
     [sfsim.render :refer (destroy-program destroy-vertex-array-object framebuffer-render make-program use-textures
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
-                          uniform-matrix4 use-program clear with-stencil-op-ref-and-mask setup-shadow-matrices) :as render]
+                          uniform-matrix4 use-program clear with-stencil-op-ref-and-mask setup-shadow-matrices
+                          uniform-vector3) :as render]
     [sfsim.shaders :refer (vertex-passthrough) :as shaders]
-    [sfsim.plume :refer (setup-dynamic-overlay-uniforms setup-cloud-sampling-uniforms geometry-point
+    [sfsim.plume :refer (setup-dynamic-overlay-uniforms setup-bluenoise-uniforms geometry-point
                          geometry-distance) :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
@@ -505,7 +506,7 @@
      :sfsim.render/object-distance (mag object-origin)}))
 
 
-(defn setup-geometry-uniforms
+(defn setup-static-cloud-uniforms
   [program other]
   (let [render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
@@ -517,7 +518,7 @@
     (uniform-sampler program "dist" 1)
     (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 2 false)
     (setup-cloud-render-uniforms program data 5)
-    (setup-cloud-sampling-uniforms program data 8)
+    (setup-bluenoise-uniforms program data 8)
     (render/setup-shadow-and-opacity-maps program shadow-data 9)
     (uniform-float program "radius" (:sfsim.planet/radius planet-config))
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
@@ -551,7 +552,7 @@
         indices          [0 1 3 2]
         vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
         vao              (make-vertex-array-object (::atmosphere-front programs) indices vertices ["point" 3])]
-    (doseq [program (vals programs)] (setup-geometry-uniforms program data))
+    (doseq [program (vals programs)] (setup-static-cloud-uniforms program data))
     {::programs programs
      :sfsim.atmosphere/luts atmosphere-luts
      :sfsim.render/config render-config
@@ -573,6 +574,10 @@
     (uniform-float program "lod_offset" (lod-offset render-config cloud-data cloud-render-vars))
     (uniform-float program "opacity_step" (:sfsim.opacity/opacity-step shadow-vars))
     (uniform-float program "opacity_cutoff" (:sfsim.opacity/opacity-cutoff shadow-vars))
+    (uniform-float program "anisotropic" (:sfsim.clouds/anisotropic cloud-data))
+    (uniform-float program "cloud_step" (:sfsim.clouds/cloud-step cloud-data))
+    (uniform-float program "opacity_cutoff" (:sfsim.clouds/opacity-cutoff cloud-data))
+    (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))
     (setup-shadow-matrices program shadow-vars)
     (use-textures {0 (::points geometry) 1 (::distance geometry)
                    2 (:sfsim.atmosphere/transmittance atmosphere-luts) 3 (:sfsim.atmosphere/scatter atmosphere-luts)

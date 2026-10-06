@@ -150,7 +150,7 @@
                   [:sfsim.model/plume-step :double]]))
 
 
-(defn setup-static-plume-uniforms
+(defn setup-plume-uniforms
   {:malli/schema [:=> [:cat :int model-data] :nil]}
   [program model-data]
   (uniform-float program "plume_nozzle" (:sfsim.model/plume-nozzle model-data))
@@ -218,18 +218,15 @@
    (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "rcs" :outer outer})])
 
 
-(defn setup-cloud-sampling-uniforms
+(defn setup-bluenoise-uniforms
   "Method to set up uniform variables for sampling clouds"
   {:malli/schema [:=> [:cat :int :map :int] :nil]}
   [program cloud-data sampler-offset]
   (uniform-sampler program "bluenoise" sampler-offset)
-  (uniform-int program "noise_size" (:sfsim.texture/width (:sfsim.clouds/bluenoise cloud-data)))
-  (uniform-float program "anisotropic" (:sfsim.clouds/anisotropic cloud-data))
-  (uniform-float program "cloud_step" (:sfsim.clouds/cloud-step cloud-data))
-  (uniform-float program "opacity_cutoff" (:sfsim.clouds/opacity-cutoff cloud-data)))
+  (uniform-int program "noise_size" (:sfsim.texture/width (:sfsim.clouds/bluenoise cloud-data))))
 
 
-(defn setup-plume-geometry-uniforms
+(defn setup-static-plume-uniforms
   [program other]
   (let [render-config   (:sfsim.render/config other)
         atmosphere-luts (:sfsim.atmosphere/luts other)
@@ -239,8 +236,8 @@
     (uniform-sampler program "camera_point" 0)
     (uniform-sampler program "dist" 1)
     (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 2 false)
-    (setup-cloud-sampling-uniforms program data 5)
-    (setup-static-plume-uniforms program model-data)
+    (setup-bluenoise-uniforms program data 5)
+    (setup-plume-uniforms program model-data)
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
 
 
@@ -259,7 +256,7 @@
                          ::rcs-outer (make-plume-program vertex-rcs (fragment-rcs true))
                          ::rcs-point (make-plume-program vertex-rcs (fragment-rcs false))}
         vao             (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
-    (doseq [program (vals programs)] (setup-plume-geometry-uniforms program data))
+    (doseq [program (vals programs)] (setup-static-plume-uniforms program data))
     {::programs programs
      ::vao vao
      :sfsim.atmosphere/luts atmosphere-luts
@@ -319,8 +316,7 @@
     (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
     (uniform-matrix4 program "object_to_camera" (inverse (:sfsim.render/camera-to-object cloud-render-vars)))
     (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
-    (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
-    (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))))
+    (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))))
 
 
 (defn setup-dynamic-plume-uniforms

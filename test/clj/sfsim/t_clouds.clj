@@ -1625,8 +1625,8 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
          (facts
            (with-redefs [clouds/make-cloud-program make-mock-cloud-program
                          plume/make-plume-program make-mock-plume-program
-                         clouds/setup-geometry-uniforms mock-setup-geometry-uniforms
-                         plume/setup-plume-geometry-uniforms mock-setup-geometry-uniforms
+                         clouds/setup-static-cloud-uniforms mock-setup-geometry-uniforms
+                         plume/setup-static-plume-uniforms mock-setup-geometry-uniforms
                          clouds/setup-dynamic-cloud-uniforms mock-setup-dynamic-cloud-uniforms
                          plume/setup-dynamic-plume-uniforms mock-setup-dynamic-plume-uniforms
                          plume/plume-indices [2 3 1 0]
@@ -1683,7 +1683,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
 
 (fact "Test completeness of cloud render programs"
       (with-invisible-window
-        (with-redefs [clouds/setup-geometry-uniforms (fn [_program _other])]
+        (with-redefs [clouds/setup-static-cloud-uniforms (fn [_program _other])]
           (let [data           {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
                                 :sfsim.clouds/data  {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
                                                      :sfsim.clouds/perlin-octaves [0.57 0.28 0.15]}}
