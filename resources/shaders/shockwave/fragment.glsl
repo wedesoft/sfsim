@@ -17,7 +17,8 @@ vec4 geometry_point();
 
 void main()
 {
-  vec3 origin = (camera_to_ndc * vec4(0, 0, 0, 1)).xyz * vec3(shockwave_radius, shockwave_radius, 2 * shockwave_radius);
+  vec3 scale = vec3(shockwave_radius, shockwave_radius, 2 * shockwave_radius);
+  vec3 origin = (camera_to_ndc * vec4(0, 0, 0, 1)).xyz * scale;
   vec4 point = geometry_point();
   vec3 direction = (camera_to_ndc * vec4(point.xyz, 0)).xyz;
   direction = normalize(direction * vec3(1, 1, 2));
@@ -35,8 +36,7 @@ void main()
   float x = segment.x + shockwave_step * shockwave_radius * sampling_offset();
   while (x < segment.x + segment.y) {
     vec3 point = origin + x * direction;
-    vec3 scale = vec3(1.0 / shockwave_radius, 1.0 / shockwave_radius, 0.5 / shockwave_radius);
-    shockwave_scatter = shockwave_transfer(point * scale, shockwave_step, shockwave_scatter);
+    shockwave_scatter = shockwave_transfer(point, shockwave_step, shockwave_scatter);
     x += shockwave_step * shockwave_radius;
   };
   fragColor = shockwave_scatter;

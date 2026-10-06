@@ -128,10 +128,10 @@ float shockfront(float radial_distance, float curvature_radius)
          (let [renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 nil 1.0 1.0)
                tex      (jump-flooding-initialisation renderer identity)]
            (let [img (rgba-texture->vectors4 tex)]
-             (get-vector4 img 128 128) => (roughly-vector (vec4  1.0  1.0  1.0  1.0) 1e-2)
-             (get-vector4 img   0   0) => (roughly-vector (vec4  0.0  0.0 -1.0  0.0) 1e-2)
-             (get-vector4 img  64 128) => (roughly-vector (vec4  1.0  0.5  0.71 0.71) 1e-2)
-             (get-vector4 img 128  64) => (roughly-vector (vec4  0.5  1.0  0.71 0.71) 1e-2))
+             (get-vector4 img 128 128) => (roughly-vector (vec4  1.0  1.0  2.0  1.0) 1e-2)
+             (get-vector4 img   0   0) => (roughly-vector (vec4  0.0  0.0 -2.0  0.0) 1e-2)
+             (get-vector4 img  64 128) => (roughly-vector (vec4  1.0  0.5  1.42 0.71) 1e-2)
+             (get-vector4 img 128  64) => (roughly-vector (vec4  0.5  1.0  1.42 0.71) 1e-2))
            (destroy-texture tex)
            (destroy-shockwave-renderer renderer))))
 
