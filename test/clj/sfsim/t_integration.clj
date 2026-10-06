@@ -365,13 +365,11 @@ void main()
         (render/with-invisible-window
           (let [width                320
                 height               240
-                size                 1024
                 level                5
                 dist                 (+ 60000.0 6378000.0)
                 offset               100
                 origin               (vec3 0 0 dist)
                 orientation          (q/rotation (to-radians 90.0) (vec3 1 0 0))
-                max-curvature-radius 3.0
                 mach                 10.0
                 light                (normalize (vec3 1 1 1))
                 wind-from            (vec3 1 0 0)
