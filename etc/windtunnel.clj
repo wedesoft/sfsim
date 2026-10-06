@@ -39,7 +39,7 @@
       (reset! mouse-button (= action GLFW/GLFW_PRESS)))))
 
 (GLFW/glfwMakeContextCurrent window)
-(def shockwave-radius (* 2.0 (:sfsim.model/object-radius config/model-config)))
+(def shockwave-radius (:sfsim.shockwave/shockwave-radius config/shockwave-config))
 (def graphics (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
                                          :sfsim.graphics/object-radius (:sfsim.model/object-radius config/model-config)}]
                                        []))
