@@ -1600,6 +1600,12 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
 
 
 (defn make-mock-cloud-program
+  [fragment-shader]
+  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                :sfsim.render/fragment [cloud-shader-mock (last fragment-shader)]))
+
+
+(defn make-mock-plume-program
   [_vertex-shader fragment-shader]
   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                 :sfsim.render/fragment [cloud-shader-mock (last fragment-shader)]))
@@ -1617,7 +1623,8 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
 
 (tabular "Use geometry buffer to render clouds"
          (facts
-           (with-redefs [plume/make-cloud-program make-mock-cloud-program
+           (with-redefs [clouds/make-cloud-program make-mock-cloud-program
+                         plume/make-plume-program make-mock-plume-program
                          clouds/setup-geometry-uniforms mock-setup-geometry-uniforms
                          plume/setup-plume-geometry-uniforms mock-setup-geometry-uniforms
                          clouds/setup-dynamic-cloud-uniforms mock-setup-dynamic-cloud-uniforms

@@ -190,12 +190,6 @@
     1.0  1.0  1.0])
 
 
-(defn make-cloud-program
-  [vertex-shader fragment-shader]
-  (make-program :sfsim.render/vertex [vertex-shader]
-                :sfsim.render/fragment [fragment-shader]))
-
-
 (def geometry-point
   (slurp "resources/shaders/clouds/geometry-point.glsl"))
 
@@ -250,14 +244,20 @@
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
 
 
+(defn make-plume-program
+  [vertex-shader fragment-shader]
+  (make-program :sfsim.render/vertex [vertex-shader]
+                :sfsim.render/fragment [fragment-shader]))
+
+
 (defn make-plume-renderer
   [data]
   (let [cloud-config    (:sfsim.clouds/data data)
         atmosphere-luts (:sfsim.atmosphere/luts data)
-        programs        {::plume-outer (make-cloud-program vertex-plume (fragment-plume true))
-                         ::plume-point (make-cloud-program vertex-plume (fragment-plume false))
-                         ::rcs-outer (make-cloud-program vertex-rcs (fragment-rcs true))
-                         ::rcs-point (make-cloud-program vertex-rcs (fragment-rcs false))}
+        programs        {::plume-outer (make-plume-program vertex-plume (fragment-plume true))
+                         ::plume-point (make-plume-program vertex-plume (fragment-plume false))
+                         ::rcs-outer (make-plume-program vertex-rcs (fragment-rcs true))
+                         ::rcs-point (make-plume-program vertex-rcs (fragment-rcs false))}
         vao             (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
     (doseq [program (vals programs)] (setup-plume-geometry-uniforms program data))
     {::programs programs

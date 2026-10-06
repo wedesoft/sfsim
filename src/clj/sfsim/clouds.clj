@@ -19,7 +19,7 @@
                           make-vertex-array-object render-quads uniform-float uniform-int uniform-sampler
                           uniform-matrix4 use-program clear with-stencil-op-ref-and-mask setup-shadow-matrices) :as render]
     [sfsim.shaders :refer (vertex-passthrough) :as shaders]
-    [sfsim.plume :refer (setup-dynamic-overlay-uniforms setup-cloud-sampling-uniforms make-cloud-program geometry-point
+    [sfsim.plume :refer (setup-dynamic-overlay-uniforms setup-cloud-sampling-uniforms geometry-point
                          geometry-distance) :as plume]
     [sfsim.texture :refer (make-empty-float-cubemap make-empty-vector-cubemap make-float-texture-2d make-float-texture-3d
                            make-empty-float-texture-3d generate-mipmap make-float-cubemap destroy-texture texture-3d
@@ -523,6 +523,12 @@
     (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
 
 
+(defn make-cloud-program
+  [fragment-shader]
+  (make-program :sfsim.render/vertex [vertex-passthrough]
+                :sfsim.render/fragment [fragment-shader]))
+
+
 (defn make-cloud-renderer
   [data]
   (let [shadow-config    (:sfsim.opacity/data data)
@@ -533,20 +539,15 @@
         perlin-octaves   (::perlin-octaves cloud-config)
         atmosphere-luts  (:sfsim.atmosphere/luts data)
         programs         {::atmosphere-front
-                          (make-cloud-program vertex-passthrough
-                                              (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true))
+                          (make-cloud-program (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves true))
                           ::atmosphere-back
-                          (make-cloud-program vertex-passthrough
-                                              (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false))
+                          (make-cloud-program (fragment-cloud-atmosphere num-steps perlin-octaves cloud-octaves false))
                           ::planet-front
-                          (make-cloud-program vertex-passthrough
-                                              (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true))
+                          (make-cloud-program (fragment-cloud-planet num-steps perlin-octaves cloud-octaves true))
                           ::planet-back
-                          (make-cloud-program vertex-passthrough
-                                              (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false))
+                          (make-cloud-program (fragment-cloud-planet num-steps perlin-octaves cloud-octaves false))
                           ::scene-front
-                          (make-cloud-program vertex-passthrough
-                                              (fragment-cloud-scene num-steps perlin-octaves cloud-octaves))}
+                          (make-cloud-program (fragment-cloud-scene num-steps perlin-octaves cloud-octaves))}
         indices          [0 1 3 2]
         vertices         [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
         vao              (make-vertex-array-object (::atmosphere-front programs) indices vertices ["point" 3])]
