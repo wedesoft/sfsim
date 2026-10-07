@@ -11,6 +11,7 @@
 ***** DONE Separate plume renderer from cloud renderer
 ***** DONE Dependency inversion for render-cloud-overlay
 ***** DOING Use real coordinates centered around axis instead of NDC when sampling shockwave
+***** TODO Test object-to-shadow matrix returned by shadow-patch-matrices
 ***** TODO Align shader code with cloud shader to use shockwave_point and shockwave_outer
 ***** TODO Use render-cloud-overlay with shockwave
 ***** TODO Create mixed shader for plume and shockwave
