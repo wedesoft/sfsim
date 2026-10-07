@@ -95,7 +95,7 @@ jobs:
       - name: Create Linux executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json
       - name: upload
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: out-linux
           path: out-linux/
@@ -194,7 +194,7 @@ jobs:
       - name: Create Windows executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json
       - name: upload
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: out-windows
           path: out-windows/
