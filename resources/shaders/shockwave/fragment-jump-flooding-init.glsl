@@ -17,5 +17,5 @@ void main()
   float depth = depth_source(uv_fragment) * 2.0 * shockwave_radius;
   vec4 normal = normal_source(uv_fragment);
   float curvature_ = curvature(normal, max_curvature_radius / scale) * scale;
-  point = vec4(gl_FragCoord.xy * scale, depth, curvature_);
+  point = vec4((gl_FragCoord.xy - 0.5 * size) * scale, depth, curvature_);
 }

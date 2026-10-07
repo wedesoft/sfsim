@@ -128,10 +128,10 @@ float shockfront(float radial_distance, float curvature_radius)
          (let [renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 nil 1.0 1.0)
                tex      (jump-flooding-initialisation renderer identity)]
            (let [img (rgba-texture->vectors4 tex)]
-             (get-vector4 img 128 128) => (roughly-vector (vec4  1.0  1.0  2.0  0.91) 1e-2)
-             (get-vector4 img   0   0) => (roughly-vector (vec4  0.0  0.0 -2.0  0.0 ) 1e-2)
-             (get-vector4 img  64 128) => (roughly-vector (vec4  1.0  0.5  1.42 0.58) 1e-2)
-             (get-vector4 img 128  64) => (roughly-vector (vec4  0.5  1.0  1.42 0.58) 1e-2))
+             (get-vector4 img 128 128) => (roughly-vector (vec4  0.0  0.0  2.0  0.91) 1e-2)
+             (get-vector4 img   0   0) => (roughly-vector (vec4 -1.0 -1.0 -2.0  0.0 ) 1e-2)
+             (get-vector4 img  64 128) => (roughly-vector (vec4  0.0 -0.5  1.42 0.58) 1e-2)
+             (get-vector4 img 128  64) => (roughly-vector (vec4 -0.5  0.0  1.42 0.58) 1e-2))
            (destroy-texture tex)
            (destroy-shockwave-renderer renderer))))
 
@@ -142,15 +142,15 @@ float shockfront(float radial_distance, float curvature_radius)
                image    {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data (float-array (* size size 4))
                          :sfsim.image/channels 4}
                renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 nil 1.0 1.0)]
-           (set-vector4! image 128  64 (vec4 0.5 1.0 1.0 1.0))
-           (set-vector4! image 128 192 (vec4 1.5 1.0 1.0 1.0))
+           (set-vector4! image 128  64 (vec4 -0.5 0.0 1.0 1.0))
+           (set-vector4! image 128 192 (vec4  0.5 0.0 1.0 1.0))
            (let [flood  (make-vector-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp image)
                  flood  (reduce (jump-flooding-step renderer identity) flood [128 64 32 16 8 4 2 1])
                  result (rgba-texture->vectors4 flood)]
-             (get-vector4 result 128  64) => (vec4 0.5 1.0 1.0 1.0)
-             (get-vector4 result 128 192) => (vec4 1.5 1.0 1.0 1.0)
-             (get-vector4 result 128  96) => (vec4 0.5 1.0 1.0 1.0)
-             (get-vector4 result 128 160) => (vec4 1.5 1.0 1.0 1.0)
+             (get-vector4 result 128  64) => (vec4 -0.5 0.0 1.0 1.0)
+             (get-vector4 result 128 192) => (vec4  0.5 0.0 1.0 1.0)
+             (get-vector4 result 128  96) => (vec4 -0.5 0.0 1.0 1.0)
+             (get-vector4 result 128 160) => (vec4  0.5 0.0 1.0 1.0)
              (destroy-texture flood)
              (destroy-shockwave-renderer renderer)))))
 
