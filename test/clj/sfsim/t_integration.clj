@@ -306,7 +306,7 @@ void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
   vec4 point = texture(flood, uv_fragment);
-  float depth = (point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w)) / (2.0 * shockwave_radius);
+  float depth = (point.z + shockfront(length(point.xy - (gl_FragCoord.xy - 0.5 * size) * scale), point.w)) / (2.0 * shockwave_radius);
   fragColor = vec3(depth);
 }")
 
