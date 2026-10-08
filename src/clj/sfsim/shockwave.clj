@@ -12,7 +12,7 @@
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
       [sfsim.bluenoise :as bluenoise]
       [sfsim.plume :refer (geometry-point)]
-      [sfsim.shaders :refer (vertex-passthrough ray-box)])
+      [sfsim.shaders :refer (vertex-passthrough ray-box limit-interval)])
     (:import
       (org.lwjgl.opengl
         GL30)))
@@ -25,7 +25,8 @@
 (def shockfront (slurp "resources/shaders/shockwave/shockfront.glsl"))
 
 
-(def shockwave-transfer (slurp "resources/shaders/shockwave/shockwave-transfer.glsl"))
+(def shockwave-transfer
+  [shockfront (slurp "resources/shaders/shockwave/shockwave-transfer.glsl")])
 
 
 (def curvature (slurp "resources/shaders/shockwave/curvature.glsl"))
@@ -40,7 +41,9 @@
 (def vertex-shockwave (slurp "resources/shaders/shockwave/vertex.glsl"))
 
 
-(def fragment-shockwave (slurp "resources/shaders/shockwave/fragment.glsl"))
+(def fragment-shockwave
+  [ray-box shockwave-transfer bluenoise/sampling-offset geometry-point limit-interval
+   (slurp "resources/shaders/shockwave/fragment.glsl")])
 
 
 (def shockwave-indices
@@ -73,8 +76,7 @@
                                         :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
         vao               (make-vertex-array-object program-init indices vertices ["point" 3])
         program-shockwave (make-program :sfsim.render/vertex [vertex-shockwave]
-                                        :sfsim.render/fragment [ray-box shockfront shockwave-transfer fragment-shockwave
-                                                                bluenoise/sampling-offset geometry-point])
+                                        :sfsim.render/fragment [fragment-shockwave])
         vao-shockwave     (make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3])]
     {::size                 size
      ::bluenoise            bluenoise

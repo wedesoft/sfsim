@@ -11,9 +11,10 @@ uniform float shockwave_radius;
 out vec4 fragColor;
 
 vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-float sampling_offset();
 vec4 shockwave_transfer(vec3 p, float shockwave_step, vec4 shockwave_scatter);
 vec4 geometry_point();
+float sampling_offset();
+vec2 limit_interval(vec2 interval, float limit);
 
 void main()
 {
@@ -27,9 +28,7 @@ void main()
   if (point.w > 0.0) {
     vec3 surface = (camera_to_shadow * point).xyz;
     float dist = length(surface - origin);
-    if (segment.x + segment.y > dist) {
-      segment.y = dist - segment.x;
-    };
+    segment = limit_interval(segment, dist);
   };
   vec4 shockwave_scatter = vec4(0, 0, 0, 0);
   float x = segment.x + shockwave_step * shockwave_radius * sampling_offset();
