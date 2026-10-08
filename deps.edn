@@ -1,5 +1,5 @@
 {:deps {org.clojure/clojure {:mvn/version "1.12.6"}
-        metosin/malli {:mvn/version "0.20.2"}
+        metosin/malli {:mvn/version "0.20.3"}
         levand/immuconf {:mvn/version "0.1.0"}
         org.clojure/core.memoize {:mvn/version "1.2.281"}
         comb/comb {:mvn/version "1.0.0"}
