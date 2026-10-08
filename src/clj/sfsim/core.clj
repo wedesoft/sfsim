@@ -251,7 +251,7 @@
                                               (graphics/render-shadows graphics tree)
                                               (graphics/render-scene-shadows graphics)
                                               (graphics/render-cloud-geometry graphics tree)
-                                              (graphics/render-clouds graphics (physics/active-rcs (:physics @state)))
+                                              (graphics/render-clouds-and-plume graphics (physics/active-rcs (:physics @state)))
                                               (graphics/render-geometry graphics tree))]
                    (onscreen-render window
                                     (graphics/render-lighting frame graphics)

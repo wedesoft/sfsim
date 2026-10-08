@@ -231,25 +231,63 @@
     (map (fn [thruster] [thruster (thruster-transforms thruster)]) (filter (set rcs-names) render-order))))
 
 
-(defn render-clouds
-  [frame graphics rcs-names]
+(defmacro render-clouds-basic
+  [frame graphics & body]
+  `(let [cloud-renderer#    (::cloud-renderer ~graphics)
+         cloud-render-vars# (::cloud-render-vars ~frame)
+         cloud-geometry#    (::cloud-geometry ~frame)]
+     (assoc ~frame
+            ::clouds (clouds/render-cloud-overlay
+                       cloud-render-vars# cloud-geometry#
+                       (render/without-depth-test
+                         (render/with-stencils
+                           ~@body))))))
+
+
+(defn render-cloud-front
+  [frame graphics]
   (let [cloud-renderer      (::cloud-renderer graphics)
-        plume-renderer      (::plume-renderer graphics)
+        cloud-render-vars   (::cloud-render-vars frame)
+        shadow-vars         (::shadow-vars frame)
+        cloud-geometry      (::cloud-geometry frame)]
+    (clouds/render-cloud-front cloud-renderer cloud-render-vars shadow-vars cloud-geometry)))
+
+
+(defn render-cloud-back
+  [frame graphics]
+  (let [cloud-renderer      (::cloud-renderer graphics)
+        cloud-render-vars   (::cloud-render-vars frame)
+        shadow-vars         (::shadow-vars frame)
+        cloud-geometry      (::cloud-geometry frame)]
+    (clouds/render-cloud-back cloud-renderer cloud-render-vars shadow-vars cloud-geometry)))
+
+
+(defn render-plume-overlays
+  [frame graphics rcs-names]
+  (let [plume-renderer      (::plume-renderer graphics)
         cloud-render-vars   (::cloud-render-vars frame)
         model-vars          (::model-vars frame)
-        shadow-vars         (::shadow-vars frame)
         cloud-geometry      (::cloud-geometry frame)
         plume-transforms    (if (::bsp-tree graphics) (plume-transforms frame graphics rcs-names) [])]
-    (assoc frame
-           ::clouds (clouds/render-cloud-overlay
-                      cloud-render-vars cloud-geometry
-                      (render/without-depth-test
-                        (render/with-stencils
-                          (clouds/render-cloud-front cloud-renderer cloud-render-vars shadow-vars cloud-geometry)
-                          (render/with-underlay-blending
-                            (plume/render-plume-overlays plume-renderer plume-transforms cloud-render-vars
-                                                         model-vars cloud-geometry)
-                            (clouds/render-cloud-back cloud-renderer cloud-render-vars shadow-vars cloud-geometry))))))))
+    (plume/render-plume-overlays plume-renderer plume-transforms cloud-render-vars
+                                 model-vars cloud-geometry)))
+
+
+(defn render-clouds
+  [frame graphics]
+  (render-clouds-basic frame graphics
+                       (render-cloud-front frame graphics)
+                       (render/with-underlay-blending
+                         (render-cloud-back frame graphics))))
+
+
+(defn render-clouds-and-plume
+  [frame graphics rcs-names]
+  (render-clouds-basic frame graphics
+                       (render-cloud-front frame graphics)
+                       (render/with-underlay-blending
+                         (render-plume-overlays frame graphics rcs-names)
+                         (render-cloud-back frame graphics))))
 
 
 (defn render-scene-shadows
