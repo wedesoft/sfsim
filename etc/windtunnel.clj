@@ -71,7 +71,7 @@
                                       (graphics/render-scene-shadows graphics)
                                       (graphics/render-shockwave-geometry graphics wind-from mach shockwave-radius)
                                       (graphics/render-cloud-geometry graphics nil)
-                                      (graphics/render-clouds graphics [])
+                                      (graphics/render-clouds graphics)
                                       (graphics/render-geometry graphics nil))
              shockwave-renderer   (:sfsim.graphics/shockwave-renderer graphics)
              wind-shadow          (:sfsim.graphics/wind-shadow frame)
