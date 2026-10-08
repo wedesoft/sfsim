@@ -12,8 +12,9 @@ float shockfront(float radial_distance, float curvature_radius);
 vec4 nearest(vec4 result, vec2 uv_fragment, vec2 dpos)
 {
   vec4 point = texture(flood, uv_fragment + dpos);
-  float current = result.z + shockfront(length(result.xy - gl_FragCoord.xy * scale), result.w);
-  float candidate = point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w);
+  vec2 position = (gl_FragCoord.xy - 0.5 * size) * scale;
+  float current = result.z + shockfront(length(result.xy - position), result.w);
+  float candidate = point.z + shockfront(length(point.xy - position), point.w);
   if (candidate > current)
     return point;
   else

@@ -1600,16 +1600,35 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
 
 
 (defn make-mock-cloud-program
+  [fragment-shader]
+  (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                :sfsim.render/fragment [cloud-shader-mock (last fragment-shader)]))
+
+
+(defn make-mock-plume-program
   [_vertex-shader fragment-shader]
   (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                 :sfsim.render/fragment [cloud-shader-mock (last fragment-shader)]))
 
 
+(defn mock-setup-dynamic-cloud-uniforms
+  [_program _other _cloud-render-vars _shadow-vars geometry]
+  (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+
+
+(defn mock-setup-dynamic-plume-uniforms
+  [_program _other _model-vars geometry]
+  (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+
+
 (tabular "Use geometry buffer to render clouds"
          (facts
            (with-redefs [clouds/make-cloud-program make-mock-cloud-program
-                         clouds/setup-geometry-uniforms mock-setup-geometry-uniforms
-                         clouds/setup-dynamic-cloud-uniforms (fn [_program _other _cloud-render-vars _shadow-vars])
+                         plume/make-plume-program make-mock-plume-program
+                         clouds/setup-static-cloud-uniforms mock-setup-geometry-uniforms
+                         plume/setup-static-plume-uniforms mock-setup-geometry-uniforms
+                         clouds/setup-dynamic-cloud-uniforms mock-setup-dynamic-cloud-uniforms
+                         plume/setup-dynamic-plume-uniforms mock-setup-dynamic-plume-uniforms
                          plume/plume-indices [2 3 1 0]
                          plume/plume-vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]]
              (with-invisible-window
@@ -1622,6 +1641,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                      model-vars         (make-model-vars 0.0 1.0 0.0)
                      shadow-vars        {}
                      cloud-renderer     (make-cloud-renderer data)
+                     plume-renderer     (plume/make-plume-renderer data)
                      cloud-render-vars  (make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 0)
                                                                 (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
                                                                 (q/->Quaternion 1 0 0 0))
@@ -1633,7 +1653,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                                               (when ?front
                                                 (render-cloud-front cloud-renderer cloud-render-vars shadow-vars geometry))
                                               (with-underlay-blending
-                                                (plume/render-plume-overlays cloud-renderer plume-transforms cloud-render-vars
+                                                (plume/render-plume-overlays plume-renderer plume-transforms cloud-render-vars
                                                                              model-vars geometry)
                                                 (when ?back
                                                   (render-cloud-back cloud-renderer cloud-render-vars shadow-vars geometry))))))]
@@ -1641,6 +1661,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)
                  (destroy-cloud-geometry geometry)
+                 (plume/destroy-plume-renderer plume-renderer)
                  (destroy-cloud-renderer cloud-renderer)))))
          ?stencil ?x  ?y  ?z  ?front ?plume ?back ?obj-dist ?r    ?g    ?b  ?a
          0x1      1.0 0.0 0.0 false  false  false 2.0       0.0   0.0   0.0 0.0
@@ -1662,7 +1683,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
 
 (fact "Test completeness of cloud render programs"
       (with-invisible-window
-        (with-redefs [clouds/setup-geometry-uniforms (fn [_program _other])]
+        (with-redefs [clouds/setup-static-cloud-uniforms (fn [_program _other])]
           (let [data           {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
                                 :sfsim.clouds/data  {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
                                                      :sfsim.clouds/perlin-octaves [0.57 0.28 0.15]}}

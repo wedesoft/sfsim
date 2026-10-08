@@ -306,7 +306,7 @@ void main()
 {
   vec2 uv_fragment = gl_FragCoord.xy / size;
   vec4 point = texture(flood, uv_fragment);
-  float depth = (point.z + shockfront(length(point.xy - gl_FragCoord.xy * scale), point.w)) / shockwave_radius;
+  float depth = (point.z + shockfront(length(point.xy - (gl_FragCoord.xy - 0.5 * size) * scale), point.w)) / (2.0 * shockwave_radius);
   fragColor = vec3(depth);
 }")
 
@@ -316,7 +316,7 @@ void main()
         (with-invisible-window
           (let [size                 256
                 object-radius        1.4
-                shockwave-radius     (* 5 1.4)
+                shockwave-radius     (* 8 1.4)
                 max-curvature-radius 3.0
                 M                    10.0
                 wind-from            (vec3 1 0 0)
@@ -365,13 +365,11 @@ void main()
         (render/with-invisible-window
           (let [width                320
                 height               240
-                size                 1024
                 level                5
                 dist                 (+ 60000.0 6378000.0)
                 offset               100
                 origin               (vec3 0 0 dist)
                 orientation          (q/rotation (to-radians 90.0) (vec3 1 0 0))
-                max-curvature-radius 3.0
                 mach                 10.0
                 light                (normalize (vec3 1 1 1))
                 wind-from            (vec3 1 0 0)

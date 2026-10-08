@@ -15,7 +15,8 @@
       [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]
       [sfsim.render :refer (use-program uniform-matrix4 uniform-float with-culling with-stencil-op-ref-and-mask render-quads
-                            uniform-int uniform-vector3 use-textures)])
+                            uniform-int uniform-vector3 use-textures uniform-sampler make-program make-vertex-array-object
+                            destroy-vertex-array-object destroy-program)])
     (:import
       (org.lwjgl.opengl
         GL11)))
@@ -149,7 +150,7 @@
                   [:sfsim.model/plume-step :double]]))
 
 
-(defn setup-static-plume-uniforms
+(defn setup-plume-uniforms
   {:malli/schema [:=> [:cat :int model-data] :nil]}
   [program model-data]
   (uniform-float program "plume_nozzle" (:sfsim.model/plume-nozzle model-data))
@@ -189,38 +190,117 @@
     1.0  1.0  1.0])
 
 
+(def geometry-point
+  (slurp "resources/shaders/clouds/geometry-point.glsl"))
+
+
+(def geometry-distance
+  (slurp "resources/shaders/clouds/geometry-distance.glsl"))
+
+
+(def vertex-plume
+  [plume-box-size (template/eval (slurp "resources/shaders/plume/vertex.glsl") {:type "plume"})])
+
+
+(defn fragment-plume
+  [outer]
+  [geometry-distance geometry-point plume-outer plume-point
+   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "plume" :outer outer})])
+
+
+(def vertex-rcs
+  [rcs-box-size (template/eval (slurp "resources/shaders/plume/vertex.glsl") {:type "rcs"})])
+
+
+(defn fragment-rcs
+  [outer]
+  [geometry-distance geometry-point rcs-outer rcs-point
+   (template/eval (slurp "resources/shaders/plume/fragment.glsl") {:type "rcs" :outer outer})])
+
+
+(defn setup-bluenoise-uniforms
+  "Method to set up uniform variables for sampling clouds"
+  {:malli/schema [:=> [:cat :int :map :int] :nil]}
+  [program cloud-data sampler-offset]
+  (uniform-sampler program "bluenoise" sampler-offset)
+  (uniform-int program "noise_size" (:sfsim.texture/width (:sfsim.clouds/bluenoise cloud-data))))
+
+
+(defn setup-static-plume-uniforms
+  [program other]
+  (let [render-config   (:sfsim.render/config other)
+        atmosphere-luts (:sfsim.atmosphere/luts other)
+        model-data      (:sfsim.model/data other)
+        data            (:sfsim.clouds/data other)]
+    (use-program program)
+    (uniform-sampler program "camera_point" 0)
+    (uniform-sampler program "dist" 1)
+    (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 2 false)
+    (setup-bluenoise-uniforms program data 5)
+    (setup-plume-uniforms program model-data)
+    (uniform-float program "amplification" (:sfsim.render/amplification render-config))))
+
+
+(defn make-plume-program
+  [vertex-shader fragment-shader]
+  (make-program :sfsim.render/vertex [vertex-shader]
+                :sfsim.render/fragment [fragment-shader]))
+
+
+(defn make-plume-renderer
+  [data]
+  (let [cloud-config    (:sfsim.clouds/data data)
+        atmosphere-luts (:sfsim.atmosphere/luts data)
+        programs        {::plume-outer (make-plume-program vertex-plume (fragment-plume true))
+                         ::plume-point (make-plume-program vertex-plume (fragment-plume false))
+                         ::rcs-outer (make-plume-program vertex-rcs (fragment-rcs true))
+                         ::rcs-point (make-plume-program vertex-rcs (fragment-rcs false))}
+        vao             (make-vertex-array-object (::plume-point programs) plume-indices plume-vertices ["point" 3])]
+    (doseq [program (vals programs)] (setup-static-plume-uniforms program data))
+    {::programs programs
+     ::vao vao
+     :sfsim.atmosphere/luts atmosphere-luts
+     :sfsim.clouds/data cloud-config}))
+
+
+(defn destroy-plume-renderer
+  [{::keys [programs vao]}]
+  (destroy-vertex-array-object vao)
+  (doseq [program (vals programs)] (destroy-program program)))
+
+
 (defn render-plume-overlay-basic
-  [program-outer program-point plume-vao transform throttle]
+  [program-outer program-point vao transform throttle]
   (with-culling :sfsim.render/cullfront
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
       (use-program program-outer)
       (uniform-matrix4 program-outer "plume_to_object" transform)
       (uniform-matrix4 program-outer "object_to_plume" (inverse transform))
       (uniform-float program-outer "plume_throttle" throttle)
-      (render-quads plume-vao))
+      (render-quads vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
       (use-program program-point)
       (uniform-matrix4 program-point "plume_to_object" transform)
       (uniform-matrix4 program-point "object_to_plume" (inverse transform))
       (uniform-float program-point "plume_throttle" throttle)
-      (render-quads plume-vao))
+      (render-quads vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
       (use-program program-point)
-      (render-quads plume-vao))))
+      (render-quads vao))))
 
 
-(defmulti render-plume-overlay (fn [_cloud-renderer plume-name _model-vars _transform] (first (split plume-name #" "))))
+(defmulti render-plume-overlay (fn [_plume-renderer plume-name _model-vars _transform] (first (split plume-name #" "))))
 
 
 (defmethod render-plume-overlay "Plume"
-  [{:sfsim.clouds/keys [programs plume-vao]} _plume-name model-vars transform]
-  (render-plume-overlay-basic (:sfsim.clouds/plume-outer programs) (:sfsim.clouds/plume-point programs) plume-vao transform
+  [{::keys [programs vao]} _plume-name model-vars transform]
+  (render-plume-overlay-basic (::plume-outer programs) (::plume-point programs) vao transform
                               (:sfsim.model/throttle model-vars)))
 
 
 (defmethod render-plume-overlay "RCS"
-  [{:sfsim.clouds/keys [programs plume-vao]} _plume-name _model-vars transform]
-  (render-plume-overlay-basic (:sfsim.clouds/rcs-outer programs) (:sfsim.clouds/rcs-point programs) plume-vao transform 1.0))
+  [{::keys [programs vao]} _plume-name _model-vars transform]
+  (render-plume-overlay-basic (::rcs-outer programs) (::rcs-point programs) vao transform 1.0))
 
 
 (defn setup-dynamic-overlay-uniforms
@@ -236,19 +316,30 @@
     (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
     (uniform-matrix4 program "object_to_camera" (inverse (:sfsim.render/camera-to-object cloud-render-vars)))
     (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
-    (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))
-    (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))))
+    (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))))
+
+
+(defn setup-dynamic-plume-uniforms
+  [program plume-renderer model-vars geometry]
+  (let [cloud-data      (:sfsim.clouds/data plume-renderer)
+        atmosphere-luts (:sfsim.atmosphere/luts plume-renderer)]
+    (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
+    (uniform-float program "time" (:sfsim.model/time model-vars))
+    (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)
+                   2 (:sfsim.atmosphere/transmittance atmosphere-luts) 3 (:sfsim.atmosphere/scatter atmosphere-luts)
+                   4 (:sfsim.atmosphere/mie atmosphere-luts) 5 (:sfsim.clouds/bluenoise cloud-data)})))
 
 
 (defn render-plume-overlays
-  [cloud-renderer plume-transforms cloud-render-vars model-vars geometry]
-  (let [programs (:sfsim.clouds/programs cloud-renderer)]
-    (doseq [program [(:sfsim.clouds/plume-outer programs) (:sfsim.clouds/plume-point programs)
-                     (:sfsim.clouds/rcs-outer programs) (:sfsim.clouds/rcs-point programs)]]
+  [plume-renderer plume-transforms cloud-render-vars model-vars geometry]
+  (let [programs (::programs plume-renderer)]
+    (doseq [program [(::plume-outer programs) (::plume-point programs)
+                     (::rcs-outer programs) (::rcs-point programs)]]
            (use-program program)
            (setup-dynamic-overlay-uniforms program cloud-render-vars)
+           (setup-dynamic-plume-uniforms program plume-renderer model-vars geometry)
            (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
            (uniform-float program "time" (:sfsim.model/time model-vars))
-           (use-textures {0  (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
+           (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
     (doseq [[thruster transform] plume-transforms]
-           (render-plume-overlay cloud-renderer thruster model-vars transform))))
+           (render-plume-overlay plume-renderer thruster model-vars transform))))

@@ -321,6 +321,7 @@
 (def shadow-patch
   (m/schema [:map [::object-to-shadow-ndc fmat4]
              [::object-to-shadow-map fmat4]
+             [::object-to-shadow fmat4]
              [::world-to-object fmat4]
              [::object-to-light fmat4]
              [::scale :double]
@@ -339,6 +340,7 @@
         light-matrix    (orient-to-light (vec4->vec3 (fm/mulv world-to-object (vec3->vec4 light-direction 0.0))))]
     {::object-to-shadow-ndc (fm/mulm shadow-ndc light-matrix)
      ::object-to-shadow-map (fm/mulm shadow-map light-matrix)
+     ::object-to-shadow     (fm/mulm (translation-matrix (fv/vec3 0 0 shadow-radius)) light-matrix)
      ::world-to-object      world-to-object
      ::object-to-light      light-matrix
      ::scale                (* 2.0 shadow-radius)

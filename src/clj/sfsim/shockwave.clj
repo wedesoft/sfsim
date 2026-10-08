@@ -11,6 +11,7 @@
                             make-program destroy-program make-vertex-array-object destroy-vertex-array-object uniform-matrix4)]
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
       [sfsim.bluenoise :as bluenoise]
+      [sfsim.plume :refer (geometry-point)]
       [sfsim.shaders :refer (vertex-passthrough ray-box)])
     (:import
       (org.lwjgl.opengl
@@ -73,7 +74,7 @@
         vao               (make-vertex-array-object program-init indices vertices ["point" 3])
         program-shockwave (make-program :sfsim.render/vertex [vertex-shockwave]
                                         :sfsim.render/fragment [ray-box shockfront shockwave-transfer fragment-shockwave
-                                                                bluenoise/sampling-offset])
+                                                                bluenoise/sampling-offset geometry-point])
         vao-shockwave     (make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3])]
     {::size                 size
      ::bluenoise            bluenoise
@@ -180,14 +181,17 @@ vec4 normal_source(vec2 uv)
   (let [matrices             (:sfsim.model/matrices wind-shadow)
         world-to-object      (:sfsim.matrix/world-to-object matrices)
         object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
-        camera-to-ndc        (mulm object-to-shadow-ndc (mulm world-to-object camera-to-world))
+        object-to-shadow     (:sfsim.matrix/object-to-shadow matrices)
+        camera-to-object     (mulm world-to-object camera-to-world)
+        camera-to-ndc        (mulm object-to-shadow-ndc camera-to-object)
+        camera-to-shadow     (mulm object-to-shadow camera-to-object)
         ndc-to-camera        (inverse camera-to-ndc)]
     (use-program program-shockwave)
-    (uniform-sampler program-shockwave "points" 0)
+    (uniform-sampler program-shockwave "camera_point" 0)
     (uniform-sampler program-shockwave "flood" 1)
     (uniform-sampler program-shockwave "bluenoise" 2)
-    (uniform-int program-shockwave "width" overlay-width)
-    (uniform-int program-shockwave "height" overlay-height)
+    (uniform-int program-shockwave "overlay_width" overlay-width)
+    (uniform-int program-shockwave "overlay_height" overlay-height)
     (uniform-int program-shockwave "noise_size" (:sfsim.texture/width bluenoise))
     (uniform-float program-shockwave "shockwave_radius" shockwave-radius)
     (uniform-float program-shockwave "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
@@ -196,7 +200,7 @@ vec4 normal_source(vec2 uv)
     (uniform-float program-shockwave "mach" mach)
     (uniform-matrix4 program-shockwave "projection" projection)
     (uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
-    (uniform-matrix4 program-shockwave "camera_to_ndc" camera-to-ndc)
+    (uniform-matrix4 program-shockwave "camera_to_shadow" camera-to-shadow)
     (use-textures {0 points
                    1 flood
                    2 bluenoise})

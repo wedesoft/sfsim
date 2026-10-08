@@ -8,11 +8,12 @@
     [[https://gemini.google.com/app/d411b76be00c0e27]]
 **** TODO Shockwave shader
 ***** DONE Move wind shadow calls into shockwave module
-***** TODO Separate plume renderer from cloud renderer
-***** TODO Dependency inversion for render-cloud-overlay
+***** DONE Separate plume renderer from cloud renderer
+***** DONE Dependency inversion for render-cloud-overlay
+***** DOING Use real coordinates centered around axis instead of NDC when sampling shockwave
+***** TODO Test object-to-shadow matrix returned by shadow-patch-matrices
+***** TODO Align shader code with cloud shader to use shockwave_point and shockwave_outer
 ***** TODO Use render-cloud-overlay with shockwave
-***** TODO Use real coordinates instead of NDC when sampling shockwave
-***** TODO Have x point in wind direction, y and z arbitrary to align with plume box
 ***** TODO Create mixed shader for plume and shockwave
 ****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
 ***** TODO Do not overwrite clouds
