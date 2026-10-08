@@ -191,9 +191,8 @@ vec4 normal_source(vec2 uv)
     (reduce (jump-flooding-step shockwave-renderer (setup-shockwave-shape mach)) initial-shockwave (halving size))))
 
 
-(defn render-shockwave-overlay
-  [{::keys [program-shockwave vao-shockwave bluenoise]} points wind-shadow flood
-   overlay-width overlay-height mach camera-to-world projection]
+(defn setup-dynamic-shockwave-uniforms
+  [program overlay-width overlay-height wind-shadow mach projection camera-to-world points flood bluenoise]
   (let [matrices             (:sfsim.model/matrices wind-shadow)
         world-to-object      (:sfsim.matrix/world-to-object matrices)
         object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
@@ -202,18 +201,23 @@ vec4 normal_source(vec2 uv)
         camera-to-ndc        (mulm object-to-shadow-ndc camera-to-object)
         camera-to-shadow     (mulm object-to-shadow camera-to-object)
         ndc-to-camera        (inverse camera-to-ndc)]
-    (use-program program-shockwave)
-    (uniform-int program-shockwave "overlay_width" overlay-width)
-    (uniform-int program-shockwave "overlay_height" overlay-height)
-    (uniform-float program-shockwave "mach" mach)
-    (uniform-matrix4 program-shockwave "projection" projection)
-    (uniform-matrix4 program-shockwave "ndc_to_camera" ndc-to-camera)
-    (uniform-matrix4 program-shockwave "camera_to_shadow" camera-to-shadow)
-    (use-textures {0 points
-                   1 flood
-                   2 bluenoise})
-    (render-quads vao-shockwave)
-    (destroy-texture flood)))
+    (use-program program)
+    (uniform-int program "overlay_width" overlay-width)
+    (uniform-int program "overlay_height" overlay-height)
+    (uniform-float program "mach" mach)
+    (uniform-matrix4 program "projection" projection)
+    (uniform-matrix4 program "ndc_to_camera" ndc-to-camera)
+    (uniform-matrix4 program "camera_to_shadow" camera-to-shadow)
+    (use-textures {0 points 1 flood 2 bluenoise})))
+
+
+(defn render-shockwave-overlay
+  [{::keys [program-shockwave vao-shockwave bluenoise]} points wind-shadow flood
+   overlay-width overlay-height mach camera-to-world projection]
+  (setup-dynamic-shockwave-uniforms program-shockwave overlay-width overlay-height wind-shadow mach projection camera-to-world
+                                    points flood bluenoise)
+  (render-quads vao-shockwave)
+  (destroy-texture flood))
 
 
 (set! *warn-on-reflection* false)
