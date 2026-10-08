@@ -1889,7 +1889,7 @@
 (defn information-display
   [gui w h state frametime time-lapse]
   (let [controls (-> state :input :sfsim.input/controls)
-        text     (format "vs = %.1f m/s, v = %.1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
+        text     (format "vs = % .1f m/s, v = %.1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
                          (:sfsim.physics/display-vertical-speed (:physics state))
                          (:sfsim.physics/display-speed (:physics state))
                          (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
