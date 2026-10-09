@@ -8,14 +8,15 @@
     (:require
       [fastmath.matrix :refer (mulm inverse)]
       [sfsim.render :refer (uniform-float use-program uniform-int render-quads framebuffer-render uniform-sampler use-textures
-                            make-program destroy-program make-vertex-array-object destroy-vertex-array-object uniform-matrix4)]
+                            make-program destroy-program make-vertex-array-object destroy-vertex-array-object uniform-matrix4
+                            with-stencil-op-ref-and-mask)]
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
       [sfsim.bluenoise :as bluenoise]
-      [sfsim.plume :refer (geometry-point)]
+      [sfsim.plume :refer (geometry-point geometry-distance)]
       [sfsim.shaders :refer (vertex-passthrough ray-box limit-interval)])
     (:import
       (org.lwjgl.opengl
-        GL30)))
+        GL11 GL30)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -42,7 +43,7 @@
 
 
 (def fragment-shockwave
-  [ray-box shockwave-transfer bluenoise/sampling-offset geometry-point limit-interval
+  [ray-box shockwave-transfer bluenoise/sampling-offset geometry-point geometry-distance limit-interval
    (slurp "resources/shaders/shockwave/fragment.glsl")])
 
 
@@ -70,8 +71,9 @@
   [program bluenoise shockwave-radius size]
   (use-program program)
   (uniform-sampler program "camera_point" 0)
-  (uniform-sampler program "flood" 1)
-  (uniform-sampler program "bluenoise" 2)
+  (uniform-sampler program "dist" 1)
+  (uniform-sampler program "flood" 2)
+  (uniform-sampler program "bluenoise" 3)
   (uniform-int program "noise_size" (:sfsim.texture/width bluenoise))
   (uniform-float program "shockwave_radius" shockwave-radius)
   (uniform-float program "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
@@ -88,10 +90,10 @@
         program-step      (make-program :sfsim.render/vertex [vertex-passthrough]
                                         :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
         vao               (make-vertex-array-object program-init indices vertices ["point" 3])
-        program-shockwave (make-program :sfsim.render/vertex [vertex-shockwave]
+        program-outer     (make-program :sfsim.render/vertex [vertex-shockwave]
                                         :sfsim.render/fragment [fragment-shockwave])
-        vao-shockwave     (make-vertex-array-object program-shockwave shockwave-indices shockwave-vertices ["point" 3])]
-    (setup-static-shockwave-uniforms program-shockwave bluenoise shockwave-radius size)
+        vao-shockwave     (make-vertex-array-object program-outer shockwave-indices shockwave-vertices ["point" 3])]
+    (setup-static-shockwave-uniforms program-outer bluenoise shockwave-radius size)
     {::size                 size
      ::bluenoise            bluenoise
      ::shockwave-radius     shockwave-radius
@@ -99,16 +101,16 @@
      ::program-init         program-init
      ::program-step         program-step
      ::vao                  vao
-     ::program-shockwave    program-shockwave
+     ::program-outer        program-outer
      ::vao-shockwave        vao-shockwave}))
 
 
 (defn destroy-shockwave-renderer
-  [{::keys [program-init program-step vao program-shockwave vao-shockwave]}]
+  [{::keys [program-init program-step vao program-outer vao-shockwave]}]
   (destroy-vertex-array-object vao)
   (destroy-program program-step)
   (destroy-program program-init)
-  (destroy-program program-shockwave)
+  (destroy-program program-outer)
   (destroy-vertex-array-object vao-shockwave))
 
 
@@ -192,7 +194,7 @@ vec4 normal_source(vec2 uv)
 
 
 (defn setup-dynamic-shockwave-uniforms
-  [program overlay-width overlay-height wind-shadow mach projection camera-to-world points flood bluenoise]
+  [program overlay-width overlay-height wind-shadow mach projection camera-to-world points dist flood bluenoise]
   (let [matrices             (:sfsim.model/matrices wind-shadow)
         world-to-object      (:sfsim.matrix/world-to-object matrices)
         object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
@@ -208,15 +210,24 @@ vec4 normal_source(vec2 uv)
     (uniform-matrix4 program "projection" projection)
     (uniform-matrix4 program "ndc_to_camera" ndc-to-camera)
     (uniform-matrix4 program "camera_to_shadow" camera-to-shadow)
-    (use-textures {0 points 1 flood 2 bluenoise})))
+    (use-textures {0 points 1 dist 2 flood 3 bluenoise})))
 
 
 (defn render-shockwave-overlay
-  [{::keys [program-shockwave vao-shockwave bluenoise]} points wind-shadow flood
+  [{::keys [program-outer vao-shockwave bluenoise]} points dist wind-shadow flood
    overlay-width overlay-height mach camera-to-world projection]
-  (setup-dynamic-shockwave-uniforms program-shockwave overlay-width overlay-height wind-shadow mach projection camera-to-world
-                                    points flood bluenoise)
-  (render-quads vao-shockwave)
+  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+    (setup-dynamic-shockwave-uniforms program-outer overlay-width overlay-height wind-shadow mach projection camera-to-world
+                                      points dist flood bluenoise)
+    (render-quads vao-shockwave))
+  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+    (setup-dynamic-shockwave-uniforms program-outer overlay-width overlay-height wind-shadow mach projection camera-to-world
+                                      points dist flood bluenoise)
+    (render-quads vao-shockwave))
+  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+    (setup-dynamic-shockwave-uniforms program-outer overlay-width overlay-height wind-shadow mach projection camera-to-world
+                                      points dist flood bluenoise)
+    (render-quads vao-shockwave))
   (destroy-texture flood))
 
 
