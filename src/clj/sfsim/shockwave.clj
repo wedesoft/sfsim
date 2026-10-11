@@ -7,6 +7,7 @@
 (ns sfsim.shockwave
     (:require
       [fastmath.matrix :refer (mulm inverse)]
+      [comb.template :as template]
       [sfsim.render :refer (uniform-float use-program uniform-int render-quads framebuffer-render uniform-sampler use-textures
                             make-program destroy-program make-vertex-array-object destroy-vertex-array-object uniform-matrix4
                             with-stencil-op-ref-and-mask)]
@@ -42,9 +43,10 @@
 (def vertex-shockwave (slurp "resources/shaders/shockwave/vertex.glsl"))
 
 
-(def fragment-shockwave
+(defn fragment-shockwave
+  [outer]
   [ray-box shockwave-transfer bluenoise/sampling-offset geometry-point geometry-distance limit-interval
-   (slurp "resources/shaders/shockwave/fragment.glsl")])
+   (template/eval (slurp "resources/shaders/shockwave/fragment.glsl") {:outer outer})])
 
 
 (def shockwave-indices
@@ -91,9 +93,9 @@
                                         :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
         vao               (make-vertex-array-object program-init indices vertices ["point" 3])
         program-point     (make-program :sfsim.render/vertex [vertex-shockwave]
-                                        :sfsim.render/fragment [fragment-shockwave])
+                                        :sfsim.render/fragment [(fragment-shockwave false)])
         program-outer     (make-program :sfsim.render/vertex [vertex-shockwave]
-                                        :sfsim.render/fragment [fragment-shockwave])
+                                        :sfsim.render/fragment [(fragment-shockwave true)])
         vao-shockwave     (make-vertex-array-object program-outer shockwave-indices shockwave-vertices ["point" 3])]
     (doseq [program [program-point program-outer]]
            (setup-static-shockwave-uniforms program bluenoise shockwave-radius size))

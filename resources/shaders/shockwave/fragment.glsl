@@ -26,10 +26,10 @@ void main()
   vec2 segment = ray_box(vec3(-shockwave_radius, -shockwave_radius, 0),
                          vec3(shockwave_radius, shockwave_radius, 2 * shockwave_radius),
                          origin, direction);
-  if (point.w > 0.0) {
-    float dist = geometry_distance();
-    segment = limit_interval(segment, dist);
-  };
+<% (when (not outer) %>
+  float dist = geometry_distance();
+  segment = limit_interval(segment, dist);
+<% ) %>
   vec4 shockwave_scatter = vec4(0, 0, 0, 0);
   float x = segment.x + shockwave_step * shockwave_radius * sampling_offset();
   while (x < segment.x + segment.y) {
