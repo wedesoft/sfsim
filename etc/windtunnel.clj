@@ -48,6 +48,9 @@
 (def max-curvature-radius 3.0)
 (def mach 10.0)
 
+(def n (atom 0))
+(def t (GLFW/glfwGetTime))
+
 (while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwMakeContextCurrent window)
        (let [dist                 (* 2 6378000)
@@ -93,7 +96,10 @@
                                  (render/clear (vec3 0 1 0) 0.0)
                                  (graphics/render-lighting frame graphics))
          (graphics/destroy-frame frame)
-         (GLFW/glfwPollEvents)))
+         (GLFW/glfwPollEvents)
+         (swap! n inc)
+         (when (zero? (mod @n 100))
+           (println "fps:" (/ @n (- (GLFW/glfwGetTime) t))))))
 
 (GLFW/glfwMakeContextCurrent window)
 
