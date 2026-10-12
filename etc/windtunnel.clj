@@ -48,6 +48,9 @@
 (def max-curvature-radius 3.0)
 (def mach 10.0)
 
+(def n (atom 0))
+(def t (GLFW/glfwGetTime))
+
 (while (not (GLFW/glfwWindowShouldClose window))
        (GLFW/glfwMakeContextCurrent window)
        (let [dist                 (* 2 6378000)
@@ -71,27 +74,32 @@
                                       (graphics/render-scene-shadows graphics)
                                       (graphics/render-shockwave-geometry graphics wind-from mach shockwave-radius)
                                       (graphics/render-cloud-geometry graphics nil)
-                                      (graphics/render-clouds graphics [])
+                                      (graphics/render-clouds graphics)
                                       (graphics/render-geometry graphics nil))
              shockwave-renderer   (:sfsim.graphics/shockwave-renderer graphics)
              wind-shadow          (:sfsim.graphics/wind-shadow frame)
              flood                (:sfsim.graphics/flood frame)
              projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
              points               (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
+             dist                 (:sfsim.clouds/distance (:sfsim.graphics/cloud-geometry frame))
              overlay-width        (:sfsim.render/overlay-width (:sfsim.graphics/cloud-render-vars frame))
              overlay-height       (:sfsim.render/overlay-height (:sfsim.graphics/cloud-render-vars frame))
              camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)]
          ;; Render shockwave
          (render/framebuffer-render overlay-width overlay-height :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                                     (render/with-underlay-blending
-                                      (render-shockwave-overlay shockwave-renderer points wind-shadow flood
-                                                                overlay-width overlay-height mach camera-to-world projection)))
+                                      (render-shockwave-overlay shockwave-renderer points dist wind-shadow flood
+                                                                overlay-width overlay-height mach camera-to-world
+                                                                projection)))
          ;; Compose render of model
          (render/onscreen-render window
                                  (render/clear (vec3 0 1 0) 0.0)
                                  (graphics/render-lighting frame graphics))
          (graphics/destroy-frame frame)
-         (GLFW/glfwPollEvents)))
+         (GLFW/glfwPollEvents)
+         (swap! n inc)
+         (when (zero? (mod @n 100))
+           (println "fps:" (/ @n (- (GLFW/glfwGetTime) t))))))
 
 (GLFW/glfwMakeContextCurrent window)
 

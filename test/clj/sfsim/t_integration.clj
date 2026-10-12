@@ -67,7 +67,7 @@
                                                        (model/make-model-vars 0.0 1.0 0.0))
                                   (graphics/render-shadows graphics tree)
                                   (graphics/render-cloud-geometry graphics tree)
-                                  (graphics/render-clouds graphics [])
+                                  (graphics/render-clouds graphics)
                                   (graphics/render-geometry graphics tree))]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
@@ -109,7 +109,7 @@
                                                           (model/make-model-vars 0.0 1.0 0.0))
                                      (graphics/render-shadows graphics tree)
                                      (graphics/render-cloud-geometry graphics tree)
-                                     (graphics/render-clouds graphics [])
+                                     (graphics/render-clouds graphics)
                                      (graphics/render-geometry graphics tree))]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
@@ -154,7 +154,7 @@
                                    (graphics/render-shadows graphics tree)
                                    (graphics/render-scene-shadows graphics)
                                    (graphics/render-cloud-geometry graphics tree)
-                                   (graphics/render-clouds graphics [])
+                                   (graphics/render-clouds graphics)
                                    (graphics/render-geometry graphics tree))]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics))
@@ -193,7 +193,7 @@
                                      (graphics/render-shadows graphics tree)
                                      (graphics/render-scene-shadows graphics)
                                      (graphics/render-cloud-geometry graphics tree)
-                                     (graphics/render-clouds graphics [])
+                                     (graphics/render-clouds graphics)
                                      (graphics/render-geometry graphics tree))]
           (render-to-image width height false
                            (graphics/render-lighting frame graphics))
@@ -284,7 +284,7 @@ void main()
                                     (graphics/render-shadows graphics tree)
                                     (graphics/render-scene-shadows graphics)
                                     (graphics/render-cloud-geometry graphics tree)
-                                    (graphics/render-clouds graphics (physics/all-rcs))
+                                    (graphics/render-clouds-and-plume graphics (physics/all-rcs))
                                     (graphics/render-geometry graphics tree))]
         (render-to-image width height false
                          (graphics/render-lighting frame graphics))
@@ -399,24 +399,27 @@ void main()
                                          (graphics/render-scene-shadows graphics)
                                          (graphics/render-shockwave-geometry graphics wind-from mach shockwave-radius)
                                          (graphics/render-cloud-geometry graphics tree)
-                                         (graphics/render-clouds graphics [])
+                                         (graphics/render-clouds graphics)
                                          (graphics/render-geometry graphics tree))
                 wind-shadow          (:sfsim.graphics/wind-shadow frame)
                 flood                (:sfsim.graphics/flood frame)
+                cloud-geometry       (:sfsim.graphics/cloud-geometry frame)
                 projection           (:sfsim.render/overlay-projection (:sfsim.graphics/cloud-render-vars frame))
                 points               (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
+                dist                 (:sfsim.clouds/distance (:sfsim.graphics/cloud-geometry frame))
                 overlay-width        (:sfsim.render/overlay-width (:sfsim.graphics/cloud-render-vars frame))
                 overlay-height       (:sfsim.render/overlay-height (:sfsim.graphics/cloud-render-vars frame))
                 camera-to-world      (matrix/transformation-matrix (matrix/quaternion->matrix orientation) origin)]
             (render/framebuffer-render
-              overlay-width overlay-height :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
-              (render/with-underlay-blending
-                (shockwave/render-shockwave-overlay shockwave-renderer points wind-shadow flood overlay-width overlay-height
-                                                    mach camera-to-world projection)))
+              overlay-width overlay-height :sfsim.render/noculling (:sfsim.clouds/depth-stencil cloud-geometry) [(:sfsim.graphics/clouds frame)]
+              (render/with-stencils
+                (render/with-underlay-blending
+                  (shockwave/render-shockwave-overlay shockwave-renderer points dist wind-shadow flood overlay-width overlay-height
+                                                      mach camera-to-world projection))))
             (render/render-to-image width height false
                                     (render/clear (vec3 0 1 0) 0.0)
                                     (graphics/render-lighting frame graphics))
-            => (is-image (str "test/clj/sfsim/fixtures/integration/model-with-shockwave.png") 1.0)
+            => (is-image (str "test/clj/sfsim/fixtures/integration/model-with-shockwave.png") 0.5)
             (graphics/destroy-frame frame)
             (planet/unload-tiles-from-opengl (quadtree-extract tree (tiles-path-list tree)))
             (graphics/destroy-graphics2 graphics)))))
