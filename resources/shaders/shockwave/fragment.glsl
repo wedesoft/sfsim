@@ -2,7 +2,6 @@
 
 uniform sampler2D points;
 uniform mat4 camera_to_shadow;
-uniform float scale;
 uniform int overlay_width;
 uniform int overlay_height;
 uniform float shockwave_step;
@@ -17,12 +16,8 @@ float geometry_distance();
 float sampling_offset();
 vec2 limit_interval(vec2 interval, float limit);
 
-void main()
+vec4 sample_shockwave(vec3 origin, vec3 direction)
 {
-  vec3 scale = vec3(shockwave_radius, shockwave_radius, 2 * shockwave_radius);
-  vec3 origin = (camera_to_shadow * vec4(0, 0, 0, 1)).xyz;
-  vec4 point = geometry_point();
-  vec3 direction = normalize((camera_to_shadow * vec4(point.xyz, 0)).xyz);
   vec2 segment = ray_box(vec3(-shockwave_radius, -shockwave_radius, 0),
                          vec3(shockwave_radius, shockwave_radius, 2 * shockwave_radius),
                          origin, direction);
@@ -30,12 +25,20 @@ void main()
   float dist = geometry_distance();
   segment = limit_interval(segment, dist);
 <% ) %>
-  vec4 shockwave_scatter = vec4(0, 0, 0, 0);
+  vec4 result = vec4(0, 0, 0, 0);
   float x = segment.x + shockwave_step * sampling_offset();
   while (x < segment.x + segment.y) {
     vec3 sample_point = origin + x * direction;
-    shockwave_scatter = shockwave_transfer(sample_point, shockwave_step, shockwave_scatter);
+    result = shockwave_transfer(sample_point, shockwave_step, result);
     x += shockwave_step;
   };
-  fragColor = shockwave_scatter;
+  return result;
+}
+
+void main()
+{
+  vec3 origin = (camera_to_shadow * vec4(0, 0, 0, 1)).xyz;
+  vec4 point = geometry_point();
+  vec3 direction = normalize((camera_to_shadow * vec4(point.xyz, 0)).xyz);
+  fragColor = sample_shockwave(origin, direction);
 }
