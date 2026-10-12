@@ -79,8 +79,8 @@
   (uniform-int program "noise_size" (:sfsim.texture/width bluenoise))
   (uniform-float program "shockwave_radius" shockwave-radius)
   (uniform-float program "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
-  (uniform-float program "shockwave_step" 0.01)
-  (uniform-float program "shockwave_strength" 4.0))
+  (uniform-float program "shockwave_step" 0.5)
+  (uniform-float program "shockwave_strength" 0.05))
 
 
 (defn make-shockwave-renderer

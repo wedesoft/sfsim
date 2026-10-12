@@ -31,11 +31,11 @@ void main()
   segment = limit_interval(segment, dist);
 <% ) %>
   vec4 shockwave_scatter = vec4(0, 0, 0, 0);
-  float x = segment.x + shockwave_step * shockwave_radius * sampling_offset();
+  float x = segment.x + shockwave_step * sampling_offset();
   while (x < segment.x + segment.y) {
     vec3 sample_point = origin + x * direction;
     shockwave_scatter = shockwave_transfer(sample_point, shockwave_step, shockwave_scatter);
-    x += shockwave_step * shockwave_radius;
+    x += shockwave_step;
   };
   fragColor = shockwave_scatter;
 }
