@@ -4,40 +4,17 @@ uniform sampler2D points;
 uniform mat4 camera_to_shadow;
 uniform int overlay_width;
 uniform int overlay_height;
-uniform float shockwave_step;
-uniform float shockwave_radius;
 
 out vec4 fragColor;
 
-vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-vec4 shockwave_transfer(vec3 p, float shockwave_step, vec4 shockwave_scatter);
 vec4 geometry_point();
 float geometry_distance();
-float sampling_offset();
-vec2 limit_interval(vec2 interval, float limit);
-
 <% (when outer %>
-vec4 sample_shockwave_outer(vec3 origin, vec3 direction)
+vec4 sample_shockwave_outer(vec3 object_origin, vec3 object_direction);
 <% ) %>
 <% (when (not outer) %>
-vec4 sample_shockwave_point(vec3 origin, vec3 direction, float dist)
+vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dist);
 <% ) %>
-{
-  vec2 segment = ray_box(vec3(-shockwave_radius, -shockwave_radius, 0),
-                         vec3(shockwave_radius, shockwave_radius, 2 * shockwave_radius),
-                         origin, direction);
-<% (when (not outer) %>
-  segment = limit_interval(segment, dist);
-<% ) %>
-  vec4 result = vec4(0, 0, 0, 0);
-  float x = segment.x + shockwave_step * sampling_offset();
-  while (x < segment.x + segment.y) {
-    vec3 sample_point = origin + x * direction;
-    result = shockwave_transfer(sample_point, shockwave_step, result);
-    x += shockwave_step;
-  };
-  return result;
-}
 
 void main()
 {

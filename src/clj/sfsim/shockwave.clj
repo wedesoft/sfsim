@@ -43,9 +43,15 @@
 (def vertex-shockwave (slurp "resources/shaders/shockwave/vertex.glsl"))
 
 
+(defn fragment-shockwave-segment
+  [outer]
+  (template/eval (slurp "resources/shaders/shockwave/sample-shockwave-segment.glsl") {:outer outer}))
+
+
 (defn fragment-shockwave
   [outer]
   [ray-box shockwave-transfer bluenoise/sampling-offset geometry-point geometry-distance limit-interval
+   (fragment-shockwave-segment outer)
    (template/eval (slurp "resources/shaders/shockwave/fragment.glsl") {:outer outer})])
 
 
