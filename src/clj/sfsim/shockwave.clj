@@ -14,7 +14,8 @@
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
       [sfsim.bluenoise :as bluenoise]
       [sfsim.plume :refer (geometry-point geometry-distance)]
-      [sfsim.shaders :refer (vertex-passthrough ray-box limit-interval)])
+      [sfsim.atmosphere :as atmosphere]
+      [sfsim.shaders :refer (vertex-passthrough ray-box limit-interval) :as shaders])
     (:import
       (org.lwjgl.opengl
         GL11 GL30)))
@@ -43,15 +44,29 @@
 (def vertex-shockwave (slurp "resources/shaders/shockwave/vertex.glsl"))
 
 
-(defn fragment-shockwave-segment
+(defn sample-shockwave-segment
   [outer]
   (template/eval (slurp "resources/shaders/shockwave/sample-shockwave-segment.glsl") {:outer outer}))
+
+
+(defn shockwave-segment
+  [outer]
+  [(sample-shockwave-segment outer) shaders/ray-sphere atmosphere/attenuation-track shaders/limit-interval
+   (template/eval (slurp "resources/shaders/plume/segment.glsl") {:type "shockwave" :outer outer})])
+
+
+(def shockwave-outer
+  (shockwave-segment true))
+
+
+(def shockwave-point
+  (shockwave-segment false))
 
 
 (defn fragment-shockwave
   [outer]
   [ray-box shockwave-transfer bluenoise/sampling-offset geometry-point geometry-distance limit-interval
-   (fragment-shockwave-segment outer)
+   (sample-shockwave-segment outer)
    (template/eval (slurp "resources/shaders/shockwave/fragment.glsl") {:outer outer})])
 
 

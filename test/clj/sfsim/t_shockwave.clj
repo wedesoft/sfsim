@@ -6,7 +6,7 @@
 
 (ns sfsim.t-shockwave
     (:require
-      [clojure.math :refer (sqrt exp)]
+      [clojure.math :refer (sqrt)]
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [midje.sweet :refer :all]
@@ -14,16 +14,14 @@
       [comb.template :as template]
       [sfsim.conftest :refer (roughly-vector shader-test is-image)]
       [sfsim.render :refer (offscreen-render make-program uniform-float make-vertex-array-object clear use-program uniform-int
-                            render-quads destroy-vertex-array-object destroy-program with-invisible-window framebuffer-render)]
-      [sfsim.texture :refer (make-empty-texture-2d destroy-texture rgba-texture->vectors4 make-vector-texture-2d)]
+                            render-quads destroy-vertex-array-object destroy-program with-invisible-window)]
+      [sfsim.texture :refer (destroy-texture rgba-texture->vectors4 make-vector-texture-2d)]
       [sfsim.image :refer (get-vector4 set-vector4!)]
-      [sfsim.shaders :refer (vertex-passthrough)]
+      [sfsim.shaders :refer (vertex-passthrough) :as shaders]
       [sfsim.shockwave :refer :all])
     (:import
       (org.lwjgl.glfw
-        GLFW)
-      (org.lwjgl.opengl
-        GL11 GL12 GL30)))
+        GLFW)))
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
@@ -160,6 +158,68 @@ float shockfront(float radial_distance, float curvature_radius)
        (halving 2) => [1]
        (halving 4) => [2 1]
        (halving 8) => [4 2 1])
+
+
+(def shockwave-outer-probe
+  (template/fn [x object-x outer]
+"#version 450 core
+out vec3 fragColor;
+uniform float object_distance;
+vec4 sample_shockwave_outer(vec3 object_origin, vec3 object_direction)
+{
+  return vec4(object_origin.x, 0.0, 0.0, 0.5);
+}
+vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dist)
+{
+  return vec4(object_origin.x, 0.0, 0.0, 0.5);
+}
+vec2 ray_sphere(vec3 center, float radius, vec3 origin, vec3 direction)
+{
+  float start = max(0.0, - radius - origin.x);
+  float end = radius - origin.x;
+  return vec2(start, end - start);
+}
+vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)
+{
+  return incoming * pow(0.5, max(segment.y, 0.0));
+}
+vec4 shockwave_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
+vec4 shockwave_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
+void main()
+{
+  vec3 origin = vec3(<%= x %>, 0, 0);
+  vec3 object_origin = vec3(<%= object-x %>, 0, 0);
+  vec3 direction = vec3(1, 0, 0);
+  vec3 object_direction = vec3(1, 0, 0);
+  vec3 point = origin + vec3(object_distance, 0, 0);
+  vec3 object_point = object_origin + vec3(object_distance, 0, 0);
+<% (if outer %>
+  fragColor = shockwave_outer(origin, direction, object_origin, object_direction).rga;
+<% %>
+  fragColor = shockwave_point(origin, direction, object_origin, object_direction, object_distance).rga;
+<% ) %>
+}"))
+
+
+(def shockwave-outer-test
+  (shader-test (fn [program object-distance]
+                   (uniform-float program "radius" 2.0)
+                   (uniform-float program "max_height" 1.0)
+                   (uniform-float program "object_distance" object-distance))
+               shockwave-outer-probe (last shockwave-outer) (last shockwave-point) shaders/limit-interval))
+
+
+(tabular "Shader for combining shockwave and atmospheric attenuation"
+         (fact (shockwave-outer-test [?object-distance] [?x ?object-x ?outer]) => (roughly-vector (vec3 ?r ?g ?a) 1e-6))
+         ?x ?object-x ?object-distance ?outer ?r  ?g  ?a
+         5.0     0.0  2.0              true   0.0 0.0 0.5
+         5.0     1.0  2.0              true   1.0 0.0 0.5
+         2.0     1.0  2.0              true   0.5 0.0 0.5
+        -4.0     1.0  2.0              true   0.5 0.0 0.5
+         5.0     0.0  2.0              false  0.0 0.0 0.5
+         5.0     1.0  2.0              false  1.0 0.0 0.5
+         2.0     1.0  2.0              false  0.5 0.0 0.5
+        -4.0     1.0  2.0              false  0.5 0.0 0.5)
 
 
 (GLFW/glfwTerminate)
