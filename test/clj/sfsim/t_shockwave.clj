@@ -13,15 +13,17 @@
       [fastmath.vector :refer (vec3 vec4)]
       [comb.template :as template]
       [sfsim.conftest :refer (roughly-vector shader-test is-image)]
-      [sfsim.render :refer (offscreen-render make-program uniform-float make-vertex-array-object clear use-program uniform-int
-                            render-quads destroy-vertex-array-object destroy-program with-invisible-window)]
+      [sfsim.render :refer :all]
       [sfsim.texture :refer (destroy-texture rgba-texture->vectors4 make-vector-texture-2d)]
       [sfsim.image :refer (get-vector4 set-vector4!)]
       [sfsim.shaders :refer (vertex-passthrough) :as shaders]
+      [sfsim.clouds :as clouds]
       [sfsim.shockwave :refer :all])
     (:import
       (org.lwjgl.glfw
-        GLFW)))
+        GLFW)
+      (org.lwjgl.opengl
+        GL11)))
 
 (mi/collect! {:ns (all-ns)})
 (mi/instrument! {:report (pretty/thrower)})
@@ -220,6 +222,46 @@ void main()
          5.0     1.0  2.0              false  1.0 0.0 0.5
          2.0     1.0  2.0              false  0.5 0.0 0.5
         -4.0     1.0  2.0              false  0.5 0.0 0.5)
+
+
+(def fragment-mock-geometry
+"#version 450 core
+layout (location = 0) out vec4 camera_point;
+layout (location = 1) out float dist;
+uniform vec3 point;
+void main()
+{
+  camera_point = vec4(point, 1.0);
+  dist = length(point);
+}")
+
+
+(defn mock-geometry
+  [x y z stencil]
+  (let [geometry-program (make-program :sfsim.render/vertex [shaders/vertex-passthrough]
+                                       :sfsim.render/fragment [fragment-mock-geometry])
+        indices          [0 1 3 2]
+        vertices         [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+        vao              (make-vertex-array-object geometry-program indices vertices ["point" 3])
+        result           (clouds/render-cloud-geometry 1 1
+                                                       (use-program geometry-program)
+                                                       (uniform-vector3 geometry-program "point" (vec3 x y z))
+                                                       (clear (vec3 0.0 0.0 0.0) 0.0 0)
+                                                       (with-stencils  ; 0x4: model, 0x2: planet, 0x1: atmosphere
+                                                         (with-stencil-op-ref-and-mask GL11/GL_ALWAYS stencil stencil
+                                                           (render-quads vao))))]
+    (destroy-program geometry-program)
+    (assoc result :vao vao)))
+
+
+(tabular "Use geometry buffer to render shockwave overlays"
+         (facts
+           (with-redefs []
+             (with-invisible-window
+               (let [geometry (mock-geometry ?x ?y ?z ?stencil)]
+                 (clouds/destroy-cloud-geometry geometry)))))
+         ?stencil ?x   ?y  ?z
+         0x1      1.0 0.0 0.0)
 
 
 (GLFW/glfwTerminate)

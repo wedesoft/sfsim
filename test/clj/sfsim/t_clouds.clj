@@ -1621,7 +1621,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
   (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
 
 
-(tabular "Use geometry buffer to render clouds"
+(tabular "Use geometry buffer to render clouds and plume"
          (facts
            (with-redefs [clouds/make-cloud-program make-mock-cloud-program
                          plume/make-plume-program make-mock-plume-program
