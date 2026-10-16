@@ -258,7 +258,14 @@ void main()
          (facts
            (with-redefs []
              (with-invisible-window
-               (let [geometry (mock-geometry ?x ?y ?z ?stencil)]
+               (let [geometry             (mock-geometry ?x ?y ?z ?stencil)
+                     size                 256
+                     bluenoise            {:sfsim.texture/width 256}
+                     shockwave-radius     60.0
+                     max-curvature-radius 3.0
+                     shockwave-renderer   (make-shockwave-renderer depth-source normal-source shockfront size bluenoise
+                                                                   shockwave-radius max-curvature-radius)]
+                 (destroy-shockwave-renderer shockwave-renderer)
                  (clouds/destroy-cloud-geometry geometry)))))
          ?stencil ?x   ?y  ?z
          0x1      1.0 0.0 0.0)
