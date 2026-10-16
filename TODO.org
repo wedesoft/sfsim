@@ -10,13 +10,14 @@
 ***** DONE Move wind shadow calls into shockwave module
 ***** DONE Separate plume renderer from cloud renderer
 ***** DONE Dependency inversion for render-cloud-overlay
-***** DOING Use real coordinates centered around axis instead of NDC when sampling shockwave
+***** DONE Use real coordinates centered around axis instead of NDC when sampling shockwave
 ***** TODO Test object-to-shadow matrix returned by shadow-patch-matrices
 ***** TODO Align shader code with cloud shader to use shockwave_point and shockwave_outer
 ***** TODO Use render-cloud-overlay with shockwave
 ***** TODO Create mixed shader for plume and shockwave
 ****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
 ***** TODO Do not overwrite clouds
+*** TODO Stop timewarp when RCS active or rotational speed too large
 *** TODO Reentry MFD
 **** TODO PPO agent outputs high-level guidance (bank angle and angle of attack)
 **** TODO Use down-range and cross-range; add Coriolis and centrifugal acceleration to observations
