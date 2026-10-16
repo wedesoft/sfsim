@@ -13,6 +13,7 @@
       [fastmath.vector :refer (vec3 vec4)]
       [comb.template :as template]
       [sfsim.conftest :refer (roughly-vector shader-test is-image)]
+      [sfsim.quaternion :as q]
       [sfsim.render :refer :all]
       [sfsim.texture :refer (destroy-texture rgba-texture->vectors4 make-vector-texture-2d)]
       [sfsim.image :refer (get-vector4 set-vector4!)]
@@ -263,12 +264,20 @@ void main()
                      bluenoise            {:sfsim.texture/width 256}
                      shockwave-radius     60.0
                      max-curvature-radius 3.0
+                     render-config        {:sfsim.render/cloud-subsampling 1 :sfsim.render/fov 1.04 :sfsim.render/min-z-near 0.1}
+                     planet-render-vars   {:sfsim.render/z-near 0.1 :sfsim.render/z-far 10.0}
                      shockwave-renderer   (make-shockwave-renderer depth-source normal-source shockfront size bluenoise
-                                                                   shockwave-radius max-curvature-radius)]
+                                                                   shockwave-radius max-curvature-radius)
+                     cloud-render-vars    (clouds/make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 0)
+                                                                         (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
+                                                                         (q/->Quaternion 1 0 0 0))
+                     overlay              (clouds/render-cloud-overlay
+                                            cloud-render-vars geometry)]
+                 (destroy-texture overlay)
                  (destroy-shockwave-renderer shockwave-renderer)
                  (clouds/destroy-cloud-geometry geometry)))))
-         ?stencil ?x   ?y  ?z
-         0x1      1.0 0.0 0.0)
+         ?stencil ?x   ?y  ?z ?obj-dist
+         0x1      1.0 0.0 0.0 10.0)
 
 
 (GLFW/glfwTerminate)
