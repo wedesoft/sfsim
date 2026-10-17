@@ -168,6 +168,7 @@
   (doseq [object-shadow (::object-shadows frame)]
          (model/destroy-scene-shadow-map object-shadow))
   (texture/destroy-texture (::clouds frame))
+  (shockwave/destroy-shockwave-geometry (::flood frame))
   (clouds/destroy-cloud-geometry (::cloud-geometry frame))
   (opacity/destroy-opacity-and-shadow (::shadow-vars frame))
   (model/destroy-geometry-buffers (::geometry-buffers frame)))

@@ -225,6 +225,11 @@ vec4 normal_source(vec2 uv)
     (reduce (jump-flooding-step shockwave-renderer (setup-shockwave-shape mach)) initial-shockwave (halving size))))
 
 
+(defn destroy-shockwave-geometry
+  [flood]
+  (destroy-texture flood))
+
+
 (defn setup-dynamic-shockwave-uniforms
   [program cloud-render-vars wind-shadow mach projection points dist flood bluenoise]
   (let [overlay-width        (:sfsim.render/overlay-width cloud-render-vars)
@@ -265,8 +270,7 @@ vec4 normal_source(vec2 uv)
     (render-quads vao-shockwave))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
     (use-program program-point)
-    (render-quads vao-shockwave))
-  (destroy-texture flood))
+    (render-quads vao-shockwave)))
 
 
 (set! *warn-on-reflection* false)

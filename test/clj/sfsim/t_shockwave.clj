@@ -133,7 +133,7 @@ float shockfront(float radial_distance, float curvature_radius)
              (get-vector4 img   0   0) => (roughly-vector (vec4 -1.0 -1.0 -2.0  0.0 ) 1e-2)
              (get-vector4 img  64 128) => (roughly-vector (vec4  0.0 -0.5  1.42 0.58) 1e-2)
              (get-vector4 img 128  64) => (roughly-vector (vec4 -0.5  0.0  1.42 0.58) 1e-2))
-           (destroy-texture tex)
+           (destroy-shockwave-geometry tex)
            (destroy-shockwave-renderer renderer))))
 
 
@@ -152,7 +152,7 @@ float shockfront(float radial_distance, float curvature_radius)
              (get-vector4 result 128 192) => (vec4  0.5 0.0 1.0 1.0)
              (get-vector4 result 128  96) => (vec4 -0.5 0.0 1.0 1.0)
              (get-vector4 result 128 160) => (vec4  0.5 0.0 1.0 1.0)
-             (destroy-texture flood)
+             (destroy-shockwave-geometry flood)
              (destroy-shockwave-renderer renderer)))))
 
 
@@ -287,9 +287,25 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
                 :sfsim.render/fragment [shockwave-shader-mock (last fragment-shader)]))
 
 
+(defn mock-setup-dynamic-shockwave-uniforms
+  [program cloud-render-vars _wind-shadow mach projection points dist _flood _bluenoise]
+  (let [overlay-width        (:sfsim.render/overlay-width cloud-render-vars)
+        overlay-height       (:sfsim.render/overlay-height cloud-render-vars)
+        origin               (:sfsim.render/origin cloud-render-vars)
+        camera-to-world      (:sfsim.render/camera-to-world cloud-render-vars)]
+    (uniform-int program "overlay_width" overlay-width)
+    (uniform-int program "overlay_height" overlay-height)
+    (uniform-vector3 program "origin" origin)
+    (uniform-matrix4 program "camera_to_world" camera-to-world)
+    (uniform-float program "mach" mach)
+    (uniform-matrix4 program "projection" projection)
+    (use-textures {0 points 1 dist})))
+
+
 (tabular "Use geometry buffer to render shockwave overlays"
          (facts
            (with-redefs [shockwave/make-shockwave-program make-mock-shockwave-program
+                         shockwave/setup-dynamic-shockwave-uniforms mock-setup-dynamic-shockwave-uniforms
                          shockwave/shockwave-indices      [2 3 1 0]
                          shockwave/shockwave-vertices     [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]]
              (with-invisible-window
@@ -300,18 +316,30 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
                      max-curvature-radius 3.0
                      render-config        {:sfsim.render/cloud-subsampling 1 :sfsim.render/fov 1.04 :sfsim.render/min-z-near 0.1}
                      planet-render-vars   {:sfsim.render/z-near 0.1 :sfsim.render/z-far 10.0}
+                     wind-shadow          nil
+                     flood                nil
+                     mach                 10.0
+                     points               (:sfsim.clouds/points geometry)
+                     dist                 (:sfsim.clouds/distance geometry)
                      shockwave-renderer   (make-shockwave-renderer depth-source normal-source shockfront size bluenoise
                                                                    shockwave-radius max-curvature-radius)
                      cloud-render-vars    (clouds/make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 0)
                                                                          (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
                                                                          (q/->Quaternion 1 0 0 0))
+                     projection           (:sfsim.render/overlay-projection cloud-render-vars)
                      overlay              (clouds/render-cloud-overlay
-                                            cloud-render-vars geometry)]
+                                            cloud-render-vars geometry
+                                            (without-depth-test
+                                              (with-stencils
+                                                (shockwave/render-shockwave-overlay shockwave-renderer points dist wind-shadow flood
+                                                                                    cloud-render-vars mach projection))))]
+                 (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
+                 ; => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)
                  (destroy-shockwave-renderer shockwave-renderer)
                  (clouds/destroy-cloud-geometry geometry)))))
-         ?stencil ?x   ?y  ?z ?obj-dist
-         0x1      1.0 0.0 0.0 10.0)
+         ?stencil ?x   ?y  ?z ?obj-dist ?r  ?g  ?b  ?a
+         0x1      1.0 0.0 0.0 10.0      1.0 0.0 0.0 1.0)
 
 
 (GLFW/glfwTerminate)
