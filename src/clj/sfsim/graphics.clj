@@ -162,13 +162,12 @@
 (defn destroy-frame
   [frame]
   (when-let [flood (::flood frame)]
-            (texture/destroy-texture flood))
+            (shockwave/destroy-shockwave-geometry flood))
   (when-let [wind-shadow (::wind-shadow frame)]
             (model/destroy-scene-shadow-map wind-shadow))
   (doseq [object-shadow (::object-shadows frame)]
          (model/destroy-scene-shadow-map object-shadow))
   (texture/destroy-texture (::clouds frame))
-  (shockwave/destroy-shockwave-geometry (::flood frame))
   (clouds/destroy-cloud-geometry (::cloud-geometry frame))
   (opacity/destroy-opacity-and-shadow (::shadow-vars frame))
   (model/destroy-geometry-buffers (::geometry-buffers frame)))
