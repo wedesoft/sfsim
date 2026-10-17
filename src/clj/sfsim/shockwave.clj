@@ -10,7 +10,7 @@
       [comb.template :as template]
       [sfsim.render :refer (uniform-float use-program uniform-int render-quads framebuffer-render uniform-sampler use-textures
                             make-program destroy-program make-vertex-array-object destroy-vertex-array-object uniform-matrix4
-                            with-stencil-op-ref-and-mask)]
+                            with-stencil-op-ref-and-mask uniform-vector3)]
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
       [sfsim.bluenoise :as bluenoise]
       [sfsim.plume :refer (geometry-point geometry-distance)]
@@ -229,6 +229,7 @@ vec4 normal_source(vec2 uv)
   [program cloud-render-vars wind-shadow mach projection points dist flood bluenoise]
   (let [overlay-width        (:sfsim.render/overlay-width cloud-render-vars)
         overlay-height       (:sfsim.render/overlay-height cloud-render-vars)
+        origin               (:sfsim.render/origin cloud-render-vars)
         camera-to-world      (:sfsim.render/camera-to-world cloud-render-vars)
         matrices             (:sfsim.model/matrices wind-shadow)
         world-to-object      (:sfsim.matrix/world-to-object matrices)
@@ -240,6 +241,8 @@ vec4 normal_source(vec2 uv)
         ndc-to-camera        (inverse camera-to-ndc)]
     (uniform-int program "overlay_width" overlay-width)
     (uniform-int program "overlay_height" overlay-height)
+    (uniform-vector3 program "origin" origin)
+    (uniform-matrix4 program "camera_to_world" camera-to-world)
     (uniform-float program "mach" mach)
     (uniform-matrix4 program "projection" projection)
     (uniform-matrix4 program "ndc_to_camera" ndc-to-camera)
