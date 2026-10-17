@@ -255,15 +255,43 @@ void main()
     (assoc result :vao vao)))
 
 
+(def shockwave-shader-mock
+"#version 450 core
+uniform sampler2D camera_point;
+uniform sampler2D dist;
+uniform int overlay_width;
+uniform int overlay_height;
+vec4 geometry_point()
+{
+  vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
+  return texture(camera_point, uv);
+}
+float geometry_distance()
+{
+  vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
+  return texture(dist, uv).r;
+}
+vec4 sample_shockwave_outer(vec3 object_origin, vec3 object_direction)
+{
+  return vec4(0, 0, 0, 0);
+}
+vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dist)
+{
+  return vec4(0, 0, 0, 0);
+}")
+
+
 (defn make-mock-shockwave-program
-  [vertex-shader fragment-shader]
-  (make-program :sfsim.render/vertex [vertex-shader]
-                :sfsim.render/fragment [fragment-shader]))
+  [_vertex-shader fragment-shader]
+  (make-program :sfsim.render/vertex [vertex-passthrough]
+                :sfsim.render/fragment [shockwave-shader-mock (last fragment-shader)]))
 
 
 (tabular "Use geometry buffer to render shockwave overlays"
          (facts
-           (with-redefs [shockwave/make-shockwave-program make-mock-shockwave-program]
+           (with-redefs [shockwave/make-shockwave-program make-mock-shockwave-program
+                         shockwave/shockwave-indices      [2 3 1 0]
+                         shockwave/shockwave-vertices     [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]]
              (with-invisible-window
                (let [geometry             (mock-geometry ?x ?y ?z ?stencil)
                      size                 256
