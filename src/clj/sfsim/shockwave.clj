@@ -10,7 +10,7 @@
       [comb.template :as template]
       [sfsim.render :refer (uniform-float use-program uniform-int render-quads framebuffer-render uniform-sampler use-textures
                             make-program destroy-program make-vertex-array-object destroy-vertex-array-object uniform-matrix4
-                            with-stencil-op-ref-and-mask uniform-vector3)]
+                            with-stencil-op-ref-and-mask uniform-vector3 with-culling)]
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
       [sfsim.bluenoise :as bluenoise]
       [sfsim.plume :refer (geometry-point geometry-distance)]
@@ -258,19 +258,20 @@ vec4 normal_source(vec2 uv)
 (defn render-shockwave-overlay
   [{::keys [program-outer program-point vao-shockwave bluenoise]} points dist wind-shadow flood
    cloud-render-vars mach projection]
-  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-    (use-program program-outer)
-    (setup-dynamic-shockwave-uniforms program-outer cloud-render-vars wind-shadow mach projection
-                                      points dist flood bluenoise)
-    (render-quads vao-shockwave))
-  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-    (use-program program-point)
-    (setup-dynamic-shockwave-uniforms program-point cloud-render-vars wind-shadow mach projection
-                                      points dist flood bluenoise)
-    (render-quads vao-shockwave))
-  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-    (use-program program-point)
-    (render-quads vao-shockwave)))
+  (with-culling :sfsim.render/cullfront
+    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+      (use-program program-outer)
+      (setup-dynamic-shockwave-uniforms program-outer cloud-render-vars wind-shadow mach projection
+                                        points dist flood bluenoise)
+      (render-quads vao-shockwave))
+    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+      (use-program program-point)
+      (setup-dynamic-shockwave-uniforms program-point cloud-render-vars wind-shadow mach projection
+                                        points dist flood bluenoise)
+      (render-quads vao-shockwave))
+    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+      (use-program program-point)
+      (render-quads vao-shockwave))))
 
 
 (set! *warn-on-reflection* false)

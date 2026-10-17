@@ -333,13 +333,14 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
                                               (with-stencils
                                                 (shockwave/render-shockwave-overlay shockwave-renderer points dist wind-shadow flood
                                                                                     cloud-render-vars mach projection))))]
+                 (println overlay)
                  (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
-                 ; => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
+                 => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)
                  (destroy-shockwave-renderer shockwave-renderer)
                  (clouds/destroy-cloud-geometry geometry)))))
          ?stencil ?x   ?y  ?z ?obj-dist ?r  ?g  ?b  ?a
-         0x1      1.0 0.0 0.0 10.0      1.0 0.0 0.0 1.0)
+         0x1      1.0 0.0 0.0 10.0      0.0 0.0 0.0 0.0)
 
 
 (GLFW/glfwTerminate)
