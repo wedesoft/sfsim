@@ -19,7 +19,7 @@
       [sfsim.image :refer (get-vector4 set-vector4!)]
       [sfsim.shaders :refer (vertex-passthrough) :as shaders]
       [sfsim.clouds :as clouds]
-      [sfsim.shockwave :refer :all])
+      [sfsim.shockwave :refer :all :as shockwave])
     (:import
       (org.lwjgl.glfw
         GLFW)
@@ -255,9 +255,15 @@ void main()
     (assoc result :vao vao)))
 
 
+(defn make-mock-shockwave-program
+  [vertex-shader fragment-shader]
+  (make-program :sfsim.render/vertex [vertex-shader]
+                :sfsim.render/fragment [fragment-shader]))
+
+
 (tabular "Use geometry buffer to render shockwave overlays"
          (facts
-           (with-redefs []
+           (with-redefs [shockwave/make-shockwave-program make-mock-shockwave-program]
              (with-invisible-window
                (let [geometry             (mock-geometry ?x ?y ?z ?stencil)
                      size                 256
