@@ -104,6 +104,12 @@
   (uniform-float program "shockwave_strength" 0.05))
 
 
+(defn make-shockwave-program
+  [vertex-shader fragment-shader]
+  (make-program :sfsim.render/vertex [vertex-shader]
+                :sfsim.render/fragment [fragment-shader]))
+
+
 (defn make-shockwave-renderer
   [depth-source normal-source shockfront size bluenoise shockwave-radius max-curvature-radius]
   (let [indices           [0 1 3 2]
@@ -113,10 +119,8 @@
         program-step      (make-program :sfsim.render/vertex [vertex-passthrough]
                                         :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
         vao               (make-vertex-array-object program-init indices vertices ["point" 3])
-        program-point     (make-program :sfsim.render/vertex [vertex-shockwave]
-                                        :sfsim.render/fragment [(fragment-shockwave false)])
-        program-outer     (make-program :sfsim.render/vertex [vertex-shockwave]
-                                        :sfsim.render/fragment [(fragment-shockwave true)])
+        program-point     (make-shockwave-program vertex-shockwave (fragment-shockwave false))
+        program-outer     (make-shockwave-program vertex-shockwave (fragment-shockwave true))
         vao-shockwave     (make-vertex-array-object program-outer shockwave-indices shockwave-vertices ["point" 3])]
     (doseq [program [program-point program-outer]]
            (setup-static-shockwave-uniforms program bluenoise shockwave-radius size))
