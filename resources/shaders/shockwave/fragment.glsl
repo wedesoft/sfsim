@@ -1,6 +1,7 @@
 #version 450 core
 
-uniform sampler2D points;
+uniform vec3 origin;
+uniform mat4 camera_to_world;
 uniform mat4 camera_to_shadow;
 uniform int overlay_width;
 uniform int overlay_height;
@@ -16,16 +17,31 @@ vec4 sample_shockwave_outer(vec3 object_origin, vec3 object_direction);
 vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dist);
 <% ) %>
 
+<% (when outer %>
+vec4 shockwave_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction)
+{
+  return sample_shockwave_outer(object_origin, object_direction);
+}
+<% ) %>
+
+<% (when (not outer) %>
+vec4 shockwave_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist)
+{
+  return sample_shockwave_point(object_origin, object_direction, dist);
+}
+<% ) %>
+
 void main()
 {
-  vec3 origin = (camera_to_shadow * vec4(0, 0, 0, 1)).xyz;
-  vec4 point = geometry_point();
-  vec3 direction = normalize((camera_to_shadow * vec4(point.xyz, 0)).xyz);
+  vec4 camera_direction = vec4(normalize(geometry_point().xyz), 0);
+  vec3 direction = mat3(camera_to_world) * camera_direction.xyz;
+  vec3 object_origin_shockwave = (camera_to_shadow * vec4(0, 0, 0, 1)).xyz;
+  vec3 object_direction_shockwave = mat3(camera_to_shadow) * camera_direction.xyz;
 <% (when outer %>
-  fragColor = sample_shockwave_outer(origin, direction);
+  fragColor = shockwave_outer(origin, direction, object_origin_shockwave, object_direction_shockwave);
 <% ) %>
 <% (when (not outer) %>
   float dist = geometry_distance();
-  fragColor = sample_shockwave_point(origin, direction, dist);
+  fragColor = shockwave_point(origin, direction, object_origin_shockwave, object_direction_shockwave, dist);
 <% ) %>
 }

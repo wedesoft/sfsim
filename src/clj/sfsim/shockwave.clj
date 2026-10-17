@@ -226,8 +226,11 @@ vec4 normal_source(vec2 uv)
 
 
 (defn setup-dynamic-shockwave-uniforms
-  [program overlay-width overlay-height wind-shadow mach projection camera-to-world points dist flood bluenoise]
-  (let [matrices             (:sfsim.model/matrices wind-shadow)
+  [program cloud-render-vars wind-shadow mach projection points dist flood bluenoise]
+  (let [overlay-width        (:sfsim.render/overlay-width cloud-render-vars)
+        overlay-height       (:sfsim.render/overlay-height cloud-render-vars)
+        camera-to-world      (:sfsim.render/camera-to-world cloud-render-vars)
+        matrices             (:sfsim.model/matrices wind-shadow)
         world-to-object      (:sfsim.matrix/world-to-object matrices)
         object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
         object-to-shadow     (:sfsim.matrix/object-to-shadow matrices)
@@ -246,15 +249,15 @@ vec4 normal_source(vec2 uv)
 
 (defn render-shockwave-overlay
   [{::keys [program-outer program-point vao-shockwave bluenoise]} points dist wind-shadow flood
-   overlay-width overlay-height mach camera-to-world projection]
+   cloud-render-vars mach projection]
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
     (use-program program-outer)
-    (setup-dynamic-shockwave-uniforms program-outer overlay-width overlay-height wind-shadow mach projection camera-to-world
+    (setup-dynamic-shockwave-uniforms program-outer cloud-render-vars wind-shadow mach projection
                                       points dist flood bluenoise)
     (render-quads vao-shockwave))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
     (use-program program-point)
-    (setup-dynamic-shockwave-uniforms program-point overlay-width overlay-height wind-shadow mach projection camera-to-world
+    (setup-dynamic-shockwave-uniforms program-point cloud-render-vars wind-shadow mach projection
                                       points dist flood bluenoise)
     (render-quads vao-shockwave))
   (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
