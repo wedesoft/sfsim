@@ -39,7 +39,8 @@
   [models overlays]
   (let [cloud-data              (clouds/make-cloud-data config/cloud-config)
         opacity-data            (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
-        atmosphere-luts         (atmosphere/make-atmosphere-luts config/max-height)
+        atmosphere-luts         (atmosphere/make-atmosphere-luts (:sfsim.planet/radius config/planet-config)
+                                                                 config/max-height)
         planet-shadow-renderer  (planet/make-planet-shadow-renderer {:sfsim.opacity/data opacity-data
                                                                      :sfsim.planet/config config/planet-config})
         opacity-renderer        (opacity/make-opacity-renderer {:sfsim.render/config config/render-config
