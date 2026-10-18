@@ -13,9 +13,9 @@
                             with-stencil-op-ref-and-mask uniform-vector3 with-culling)]
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
       [sfsim.bluenoise :as bluenoise]
-      [sfsim.plume :refer (geometry-point geometry-distance)]
+      [sfsim.plume :refer (geometry-point geometry-distance setup-dynamic-overlay-uniforms)]
       [sfsim.atmosphere :as atmosphere]
-      [sfsim.shaders :refer (vertex-passthrough ray-box limit-interval) :as shaders])
+      [sfsim.shaders :refer (vertex-passthrough ray-box ray-sphere limit-interval) :as shaders])
     (:import
       (org.lwjgl.opengl
         GL11 GL30)))
@@ -51,7 +51,7 @@
 
 (defn shockwave-segment
   [outer]
-  [(sample-shockwave-segment outer) shaders/ray-sphere atmosphere/attenuation-track shaders/limit-interval
+  [(sample-shockwave-segment outer) shaders/ray-sphere shaders/limit-interval atmosphere/attenuation-track shaders/limit-interval
    (template/eval (slurp "resources/shaders/plume/segment.glsl") {:type "shockwave" :outer outer})])
 
 
@@ -63,10 +63,10 @@
   (shockwave-segment false))
 
 
-(defn fragment-shockwave
+(defn fragment-shockwave  ;; TODO: use shockwave-segment above
   [outer]
   [ray-box shockwave-transfer bluenoise/sampling-offset geometry-point geometry-distance limit-interval
-   (sample-shockwave-segment outer)
+   ray-sphere (sample-shockwave-segment outer) atmosphere/attenuation-track
    (template/eval (slurp "resources/shaders/shockwave/fragment.glsl") {:outer outer})])
 
 
@@ -91,12 +91,13 @@
 
 
 (defn setup-static-shockwave-uniforms
-  [program bluenoise shockwave-radius size]
+  [program bluenoise atmosphere-luts shockwave-radius size]
   (use-program program)
   (uniform-sampler program "camera_point" 0)
   (uniform-sampler program "dist" 1)
   (uniform-sampler program "flood" 2)
   (uniform-sampler program "bluenoise" 3)
+  (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 4 false)
   (uniform-int program "noise_size" (:sfsim.texture/width bluenoise))
   (uniform-float program "shockwave_radius" shockwave-radius)
   (uniform-float program "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
@@ -111,7 +112,7 @@
 
 
 (defn make-shockwave-renderer
-  [depth-source normal-source shockfront size bluenoise shockwave-radius max-curvature-radius]
+  [depth-source normal-source shockfront size bluenoise atmosphere-luts shockwave-radius max-curvature-radius]
   (let [indices           [0 1 3 2]
         vertices          [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
         program-init      (make-program :sfsim.render/vertex [vertex-passthrough]
@@ -123,7 +124,7 @@
         program-outer     (make-shockwave-program vertex-shockwave (fragment-shockwave true))
         vao-shockwave     (make-vertex-array-object program-outer shockwave-indices shockwave-vertices ["point" 3])]
     (doseq [program [program-point program-outer]]
-           (setup-static-shockwave-uniforms program bluenoise shockwave-radius size))
+           (setup-static-shockwave-uniforms program bluenoise atmosphere-luts shockwave-radius size))
     {::size                 size
      ::bluenoise            bluenoise
      ::shockwave-radius     shockwave-radius
@@ -261,11 +262,13 @@ vec4 normal_source(vec2 uv)
   (with-culling :sfsim.render/cullfront
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
       (use-program program-outer)
+      (setup-dynamic-overlay-uniforms program-outer cloud-render-vars)
       (setup-dynamic-shockwave-uniforms program-outer cloud-render-vars wind-shadow mach projection
                                         points dist flood bluenoise)
       (render-quads vao-shockwave))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
       (use-program program-point)
+      (setup-dynamic-overlay-uniforms program-point cloud-render-vars)
       (setup-dynamic-shockwave-uniforms program-point cloud-render-vars wind-shadow mach projection
                                         points dist flood bluenoise)
       (render-quads vao-shockwave))

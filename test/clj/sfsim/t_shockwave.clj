@@ -18,6 +18,7 @@
       [sfsim.texture :refer (destroy-texture rgba-texture->vectors4 make-vector-texture-2d)]
       [sfsim.image :refer (get-vector4 set-vector4!)]
       [sfsim.shaders :refer (vertex-passthrough) :as shaders]
+      [sfsim.atmosphere :as atmosphere]
       [sfsim.clouds :as clouds]
       [sfsim.shockwave :refer :all :as shockwave])
     (:import
@@ -30,6 +31,9 @@
 (mi/instrument! {:report (pretty/thrower)})
 
 (GLFW/glfwInit)
+
+
+(def atmosphere-luts {:sfsim.atmosphere/radius 6378000.0 :sfsim.atmosphere/max-height 35000.0})
 
 
 (def shockfront-probe
@@ -124,36 +128,46 @@ float shockfront(float radial_distance, float curvature_radius)
           (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/shockwave/curvature.png" 0.1))
 
 
+(defn mock-setup-atmosphere-uniforms
+  [program atmosphere-luts _sampler-offset _surface-radiance]
+  (uniform-float program "radius" (:sfsim.atmosphere/radius atmosphere-luts))
+  (uniform-float program "max_height" (:sfsim.atmosphere/max-height atmosphere-luts)))
+
+
 (facts "Initial step of Jump Flooding Algorithm"
        (with-invisible-window
-         (let [renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 {:sfsim.texture/width 256} 1.0 1.0)
-               tex      (jump-flooding-initialisation renderer identity)]
-           (let [img (rgba-texture->vectors4 tex)]
-             (get-vector4 img 128 128) => (roughly-vector (vec4  0.0  0.0  2.0  0.91) 1e-2)
-             (get-vector4 img   0   0) => (roughly-vector (vec4 -1.0 -1.0 -2.0  0.0 ) 1e-2)
-             (get-vector4 img  64 128) => (roughly-vector (vec4  0.0 -0.5  1.42 0.58) 1e-2)
-             (get-vector4 img 128  64) => (roughly-vector (vec4 -0.5  0.0  1.42 0.58) 1e-2))
-           (destroy-shockwave-geometry tex)
-           (destroy-shockwave-renderer renderer))))
+         (with-redefs [atmosphere/setup-atmosphere-uniforms mock-setup-atmosphere-uniforms]
+           (let [renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 {:sfsim.texture/width 256}
+                                                   atmosphere-luts 1.0 1.0)
+                 tex      (jump-flooding-initialisation renderer identity)]
+             (let [img (rgba-texture->vectors4 tex)]
+               (get-vector4 img 128 128) => (roughly-vector (vec4  0.0  0.0  2.0  0.91) 1e-2)
+               (get-vector4 img   0   0) => (roughly-vector (vec4 -1.0 -1.0 -2.0  0.0 ) 1e-2)
+               (get-vector4 img  64 128) => (roughly-vector (vec4  0.0 -0.5  1.42 0.58) 1e-2)
+               (get-vector4 img 128  64) => (roughly-vector (vec4 -0.5  0.0  1.42 0.58) 1e-2))
+             (destroy-shockwave-geometry tex)
+             (destroy-shockwave-renderer renderer)))))
 
 
 (facts "Jump flood algorithm"
        (with-invisible-window
-         (let [size     256
-               image    {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data (float-array (* size size 4))
-                         :sfsim.image/channels 4}
-               renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 {:sfsim.texture/width 256} 1.0 1.0)]
-           (set-vector4! image 128  64 (vec4 -0.5 0.0 1.0 1.0))
-           (set-vector4! image 128 192 (vec4  0.5 0.0 1.0 1.0))
-           (let [flood  (make-vector-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp image)
-                 flood  (reduce (jump-flooding-step renderer identity) flood [128 64 32 16 8 4 2 1])
-                 result (rgba-texture->vectors4 flood)]
-             (get-vector4 result 128  64) => (vec4 -0.5 0.0 1.0 1.0)
-             (get-vector4 result 128 192) => (vec4  0.5 0.0 1.0 1.0)
-             (get-vector4 result 128  96) => (vec4 -0.5 0.0 1.0 1.0)
-             (get-vector4 result 128 160) => (vec4  0.5 0.0 1.0 1.0)
-             (destroy-shockwave-geometry flood)
-             (destroy-shockwave-renderer renderer)))))
+         (with-redefs [atmosphere/setup-atmosphere-uniforms mock-setup-atmosphere-uniforms]
+           (let [size     256
+                 image    {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data (float-array (* size size 4))
+                           :sfsim.image/channels 4}
+                 renderer (make-shockwave-renderer depth-mock normal-mock shockfront-mock 256 {:sfsim.texture/width 256}
+                                                   atmosphere-luts 1.0 1.0)]
+             (set-vector4! image 128  64 (vec4 -0.5 0.0 1.0 1.0))
+             (set-vector4! image 128 192 (vec4  0.5 0.0 1.0 1.0))
+             (let [flood  (make-vector-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp image)
+                   flood  (reduce (jump-flooding-step renderer identity) flood [128 64 32 16 8 4 2 1])
+                   result (rgba-texture->vectors4 flood)]
+               (get-vector4 result 128  64) => (vec4 -0.5 0.0 1.0 1.0)
+               (get-vector4 result 128 192) => (vec4  0.5 0.0 1.0 1.0)
+               (get-vector4 result 128  96) => (vec4 -0.5 0.0 1.0 1.0)
+               (get-vector4 result 128 160) => (vec4  0.5 0.0 1.0 1.0)
+               (destroy-shockwave-geometry flood)
+               (destroy-shockwave-renderer renderer))))))
 
 
 (facts "Test halving sequence"
@@ -271,20 +285,27 @@ float geometry_distance()
   vec2 uv = vec2(gl_FragCoord.x / overlay_width, gl_FragCoord.y / overlay_height);
   return texture(dist, uv).r;
 }
+vec4 attenuation_track(vec3 light_direction, vec3 origin, vec3 direction, vec2 segment, vec4 incoming)
+{
+  if (segment.y > 0) {
+    return vec4(incoming.rgb * 0.5, incoming.a);
+  } else
+    return incoming;
+}
 vec4 sample_shockwave_outer(vec3 object_origin, vec3 object_direction)
 {
-  return vec4(0, 0, 0, 0);
+  return vec4(0, 0, 1, 0);
 }
 vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dist)
 {
-  return vec4(0, 0, 0, 0);
+  return vec4(1, 0, 0, 0);
 }")
 
 
 (defn make-mock-shockwave-program
   [_vertex-shader fragment-shader]
   (make-program :sfsim.render/vertex [vertex-passthrough]
-                :sfsim.render/fragment [shockwave-shader-mock (last fragment-shader)]))
+                :sfsim.render/fragment [shockwave-shader-mock shaders/ray-sphere shaders/limit-interval (last fragment-shader)]))
 
 
 (defn mock-setup-dynamic-shockwave-uniforms
@@ -304,7 +325,8 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
 
 (tabular "Use geometry buffer to render shockwave overlays"
          (facts
-           (with-redefs [shockwave/make-shockwave-program make-mock-shockwave-program
+           (with-redefs [atmosphere/setup-atmosphere-uniforms mock-setup-atmosphere-uniforms
+                         shockwave/make-shockwave-program make-mock-shockwave-program
                          shockwave/setup-dynamic-shockwave-uniforms mock-setup-dynamic-shockwave-uniforms
                          shockwave/shockwave-indices      [2 3 1 0]
                          shockwave/shockwave-vertices     [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]]
@@ -322,9 +344,9 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
                      points               (:sfsim.clouds/points geometry)
                      dist                 (:sfsim.clouds/distance geometry)
                      shockwave-renderer   (make-shockwave-renderer depth-source normal-source shockfront size bluenoise
-                                                                   shockwave-radius max-curvature-radius)
-                     cloud-render-vars    (clouds/make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 0)
-                                                                         (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 0)
+                                                                   atmosphere-luts shockwave-radius max-curvature-radius)
+                     cloud-render-vars    (clouds/make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 ?h)
+                                                                         (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 ?h)
                                                                          (q/->Quaternion 1 0 0 0))
                      projection           (:sfsim.render/overlay-projection cloud-render-vars)
                      overlay              (clouds/render-cloud-overlay
@@ -333,14 +355,19 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
                                               (with-stencils
                                                 (shockwave/render-shockwave-overlay shockwave-renderer points dist wind-shadow flood
                                                                                     cloud-render-vars mach projection))))]
-                 (println overlay)
                  (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)
                  (destroy-shockwave-renderer shockwave-renderer)
                  (clouds/destroy-cloud-geometry geometry)))))
-         ?stencil ?x   ?y  ?z ?obj-dist ?r  ?g  ?b  ?a
-         0x1      1.0 0.0 0.0 10.0      0.0 0.0 0.0 0.0)
+         ?stencil ?x   ?y  ?z ?obj-dist ?h        ?r  ?g  ?b  ?a
+         0x1      1.0 0.0 0.0 10.0      6578000.0 0.0 0.0 1.0 0.0
+         0x2      1.0 0.0 0.0 10.0      6578000.0 1.0 0.0 0.0 0.0
+         0x4      1.0 0.0 0.0 10.0      6578000.0 1.0 0.0 0.0 0.0
+         0x1      1.0 0.0 0.0 10.0      6388000.0 0.0 0.0 0.5 0.0
+         0x2      1.0 0.0 0.0 10.0      6388000.0 0.5 0.0 0.0 0.0
+         0x1      1.0 0.0 0.0  0.0      6388000.0 0.0 0.0 1.0 0.0
+         0x2      1.0 0.0 0.0  0.0      6388000.0 1.0 0.0 0.0 0.0)
 
 
 (GLFW/glfwTerminate)
