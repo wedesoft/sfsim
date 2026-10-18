@@ -2,7 +2,7 @@
 
 uniform vec3 origin;
 uniform mat4 camera_to_world;
-uniform mat4 camera_to_shadow;
+uniform mat4 camera_to_shockwave;
 uniform int overlay_width;
 uniform int overlay_height;
 
@@ -35,8 +35,8 @@ void main()
 {
   vec4 camera_direction = vec4(normalize(geometry_point().xyz), 0);
   vec3 direction = mat3(camera_to_world) * camera_direction.xyz;
-  vec3 object_origin_shockwave = (camera_to_shadow * vec4(0, 0, 0, 1)).xyz;
-  vec3 object_direction_shockwave = mat3(camera_to_shadow) * camera_direction.xyz;
+  vec3 object_origin_shockwave = (camera_to_shockwave * vec4(0, 0, 0, 1)).xyz;
+  vec3 object_direction_shockwave = mat3(camera_to_shockwave) * camera_direction.xyz;
 <% (when outer %>
   fragColor = shockwave_outer(origin, direction, object_origin_shockwave, object_direction_shockwave);
 <% ) %>
