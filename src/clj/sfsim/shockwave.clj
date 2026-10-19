@@ -130,11 +130,12 @@ vec4 normal_source(vec2 uv)
 
 
 (defn make-shockwave-renderer
-  ([data bluenoise]
-   (make-shockwave-renderer data bluenoise depth-source normal-source shockfront))
-  ([data bluenoise depth-source normal-source shockfront]
+  ([data]
+   (make-shockwave-renderer data depth-source normal-source shockfront))
+  ([data depth-source normal-source shockfront]
    (let [config               (::config data)
          atmosphere-luts      (:sfsim.atmosphere/luts data)
+         bluenoise            (:sfsim.clouds/bluenoise (:sfsim.clouds/data data))
          size                 (::shockwave-size config)
          shockwave-radius     (::shockwave-radius config)
          max-curvature-radius (::max-curvature-radius config)

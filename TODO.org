@@ -7,7 +7,6 @@
 *** TODO Reentry flame
     [[https://gemini.google.com/app/d411b76be00c0e27]]
 **** TODO Shockwave shader
-***** TODO make-shockwave-renderer should only take one argument like the plume renderer constructor
 ***** TODO Use camera-to-plume matrix
 ***** TODO Test object-to-shadow matrix returned by shadow-patch-matrices
 ***** TODO Use render-cloud-overlay with shockwave
