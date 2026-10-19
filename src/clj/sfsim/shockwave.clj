@@ -105,6 +105,24 @@
   (uniform-float program "shockwave_strength" 0.1))
 
 
+(def depth-source
+"#version 450 core
+uniform sampler2D depth;
+float depth_source(vec2 uv)
+{
+  return texture(depth, uv).r;
+}")
+
+
+(def normal-source
+"#version 450 core
+uniform sampler2D normals;
+vec4 normal_source(vec2 uv)
+{
+  return texture(normals, uv);
+}")
+
+
 (defn make-shockwave-program
   [vertex-shader fragment-shader]
   (make-program :sfsim.render/vertex [vertex-shader]
@@ -112,29 +130,32 @@
 
 
 (defn make-shockwave-renderer
-  [depth-source normal-source shockfront size bluenoise atmosphere-luts shockwave-radius max-curvature-radius]
-  (let [indices           [0 1 3 2]
-        vertices          [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-        program-init      (make-program :sfsim.render/vertex [vertex-passthrough]
-                                        :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source])
-        program-step      (make-program :sfsim.render/vertex [vertex-passthrough]
-                                        :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
-        vao               (make-vertex-array-object program-init indices vertices ["point" 3])
-        program-point     (make-shockwave-program vertex-shockwave (fragment-shockwave false))
-        program-outer     (make-shockwave-program vertex-shockwave (fragment-shockwave true))
-        vao-shockwave     (make-vertex-array-object program-outer shockwave-indices shockwave-vertices ["point" 3])]
-    (doseq [program [program-point program-outer]]
-           (setup-static-shockwave-uniforms program bluenoise atmosphere-luts shockwave-radius size))
-    {::size                 size
-     ::bluenoise            bluenoise
-     ::shockwave-radius     shockwave-radius
-     ::max-curvature-radius max-curvature-radius
-     ::program-init         program-init
-     ::program-step         program-step
-     ::vao                  vao
-     ::program-point        program-point
-     ::program-outer        program-outer
-     ::vao-shockwave        vao-shockwave}))
+  ([size bluenoise atmosphere-luts shockwave-radius max-curvature-radius]
+   (make-shockwave-renderer size bluenoise atmosphere-luts shockwave-radius max-curvature-radius
+                            depth-source normal-source shockfront))
+  ([size bluenoise atmosphere-luts shockwave-radius max-curvature-radius depth-source normal-source shockfront]
+   (let [indices           [0 1 3 2]
+         vertices          [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+         program-init      (make-program :sfsim.render/vertex [vertex-passthrough]
+                                         :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source])
+         program-step      (make-program :sfsim.render/vertex [vertex-passthrough]
+                                         :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
+         vao               (make-vertex-array-object program-init indices vertices ["point" 3])
+         program-point     (make-shockwave-program vertex-shockwave (fragment-shockwave false))
+         program-outer     (make-shockwave-program vertex-shockwave (fragment-shockwave true))
+         vao-shockwave     (make-vertex-array-object program-outer shockwave-indices shockwave-vertices ["point" 3])]
+     (doseq [program [program-point program-outer]]
+            (setup-static-shockwave-uniforms program bluenoise atmosphere-luts shockwave-radius size))
+     {::size                 size
+      ::bluenoise            bluenoise
+      ::shockwave-radius     shockwave-radius
+      ::max-curvature-radius max-curvature-radius
+      ::program-init         program-init
+      ::program-step         program-step
+      ::vao                  vao
+      ::program-point        program-point
+      ::program-outer        program-outer
+      ::vao-shockwave        vao-shockwave})))
 
 
 (defn destroy-shockwave-renderer
@@ -200,24 +221,6 @@
   "Generate halving sequence of integers"
   [size]
   (rest (take-while pos? (iterate #(bit-shift-right ^long % 1) size))))
-
-
-(def depth-source
-"#version 450 core
-uniform sampler2D depth;
-float depth_source(vec2 uv)
-{
-  return texture(depth, uv).r;
-}")
-
-
-(def normal-source
-"#version 450 core
-uniform sampler2D normals;
-vec4 normal_source(vec2 uv)
-{
-  return texture(normals, uv);
-}")
 
 
 (defn jump-flooding-algorithm

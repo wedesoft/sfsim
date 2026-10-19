@@ -64,9 +64,7 @@
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
         scene-renderer          (model/make-scene-geometry-renderer true)
         scene-shadow-renderer   (model/make-scene-shadow-renderer)
-        shockwave-renderer      (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
-                                                                   shockwave/shockfront
-                                                                   (:sfsim.shockwave/shockwave-size config/shockwave-config)
+        shockwave-renderer      (shockwave/make-shockwave-renderer (:sfsim.shockwave/shockwave-size config/shockwave-config)
                                                                    (:sfsim.clouds/bluenoise cloud-data)
                                                                    atmosphere-luts
                                                                    (:sfsim.shockwave/shockwave-radius config/shockwave-config)
