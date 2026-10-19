@@ -586,8 +586,8 @@
 
 (defn make-atmosphere-luts
   "Load atmosphere lookup tables"
-  {:malli/schema [:=> [:cat :double] atmosphere-luts]}
-  [max-height]
+  {:malli/schema [:=> [:cat :double :double] atmosphere-luts]}
+  [radius max-height]
   (let [transmittance-data    (slurp-floats "data/atmosphere/transmittance.scatter")
         transmittance         (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                       #:sfsim.image{:width transmittance-elevation-size
@@ -620,6 +620,7 @@
      ::scatter scatter
      ::mie mie
      ::surface-radiance surface-radiance
+     ::radius radius
      ::max-height max-height}))
 
 
@@ -651,6 +652,7 @@
   (when surface-radiance
     (uniform-int program "surface_height_size" (:sfsim.texture/height (::surface-radiance atmosphere-luts)))
     (uniform-int program "surface_sun_elevation_size" (:sfsim.texture/width (::surface-radiance atmosphere-luts))))
+  (uniform-float program "radius" (::radius atmosphere-luts))
   (uniform-float program "max_height" (::max-height atmosphere-luts)))
 
 

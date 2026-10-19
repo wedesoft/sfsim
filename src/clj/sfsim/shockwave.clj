@@ -10,11 +10,12 @@
       [comb.template :as template]
       [sfsim.render :refer (uniform-float use-program uniform-int render-quads framebuffer-render uniform-sampler use-textures
                             make-program destroy-program make-vertex-array-object destroy-vertex-array-object uniform-matrix4
-                            with-stencil-op-ref-and-mask)]
+                            with-stencil-op-ref-and-mask uniform-vector3 with-culling)]
       [sfsim.texture :refer (make-empty-texture-2d destroy-texture disable-compare-mode)]
       [sfsim.bluenoise :as bluenoise]
-      [sfsim.plume :refer (geometry-point geometry-distance)]
-      [sfsim.shaders :refer (vertex-passthrough ray-box limit-interval)])
+      [sfsim.plume :refer (geometry-point geometry-distance setup-dynamic-overlay-uniforms)]
+      [sfsim.atmosphere :as atmosphere]
+      [sfsim.shaders :refer (vertex-passthrough ray-box ray-sphere limit-interval) :as shaders])
     (:import
       (org.lwjgl.opengl
         GL11 GL30)))
@@ -43,9 +44,29 @@
 (def vertex-shockwave (slurp "resources/shaders/shockwave/vertex.glsl"))
 
 
+(defn sample-shockwave-segment
+  [outer]
+  (template/eval (slurp "resources/shaders/shockwave/sample-shockwave-segment.glsl") {:outer outer}))
+
+
+(defn shockwave-segment
+  [outer]
+  [(sample-shockwave-segment outer) shaders/ray-sphere shaders/limit-interval atmosphere/attenuation-track shaders/limit-interval
+   (template/eval (slurp "resources/shaders/plume/segment.glsl") {:type "shockwave" :outer outer})])
+
+
+(def shockwave-outer
+  (shockwave-segment true))
+
+
+(def shockwave-point
+  (shockwave-segment false))
+
+
 (defn fragment-shockwave
   [outer]
   [ray-box shockwave-transfer bluenoise/sampling-offset geometry-point geometry-distance limit-interval
+   ray-sphere (sample-shockwave-segment outer) atmosphere/attenuation-track (shockwave-segment outer)
    (template/eval (slurp "resources/shaders/shockwave/fragment.glsl") {:outer outer})])
 
 
@@ -70,45 +91,77 @@
 
 
 (defn setup-static-shockwave-uniforms
-  [program bluenoise shockwave-radius size]
+  [program bluenoise atmosphere-luts shockwave-radius size]
   (use-program program)
   (uniform-sampler program "camera_point" 0)
   (uniform-sampler program "dist" 1)
   (uniform-sampler program "flood" 2)
   (uniform-sampler program "bluenoise" 3)
+  (atmosphere/setup-atmosphere-uniforms program atmosphere-luts 4 false)
   (uniform-int program "noise_size" (:sfsim.texture/width bluenoise))
   (uniform-float program "shockwave_radius" shockwave-radius)
   (uniform-float program "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
   (uniform-float program "shockwave_step" 0.5)
-  (uniform-float program "shockwave_strength" 0.05))
+  (uniform-float program "shockwave_strength" 0.1))
+
+
+(def depth-source
+"#version 450 core
+uniform sampler2D depth;
+float depth_source(vec2 uv)
+{
+  return texture(depth, uv).r;
+}")
+
+
+(def normal-source
+"#version 450 core
+uniform sampler2D normals;
+vec4 normal_source(vec2 uv)
+{
+  return texture(normals, uv);
+}")
+
+
+(defn make-shockwave-program
+  [vertex-shader fragment-shader]
+  (make-program :sfsim.render/vertex [vertex-shader]
+                :sfsim.render/fragment [fragment-shader]))
 
 
 (defn make-shockwave-renderer
-  [depth-source normal-source shockfront size bluenoise shockwave-radius max-curvature-radius]
-  (let [indices           [0 1 3 2]
-        vertices          [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
-        program-init      (make-program :sfsim.render/vertex [vertex-passthrough]
-                                        :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source])
-        program-step      (make-program :sfsim.render/vertex [vertex-passthrough]
-                                        :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
-        vao               (make-vertex-array-object program-init indices vertices ["point" 3])
-        program-point     (make-program :sfsim.render/vertex [vertex-shockwave]
-                                        :sfsim.render/fragment [(fragment-shockwave false)])
-        program-outer     (make-program :sfsim.render/vertex [vertex-shockwave]
-                                        :sfsim.render/fragment [(fragment-shockwave true)])
-        vao-shockwave     (make-vertex-array-object program-outer shockwave-indices shockwave-vertices ["point" 3])]
-    (doseq [program [program-point program-outer]]
-           (setup-static-shockwave-uniforms program bluenoise shockwave-radius size))
-    {::size                 size
-     ::bluenoise            bluenoise
-     ::shockwave-radius     shockwave-radius
-     ::max-curvature-radius max-curvature-radius
-     ::program-init         program-init
-     ::program-step         program-step
-     ::vao                  vao
-     ::program-point        program-point
-     ::program-outer        program-outer
-     ::vao-shockwave        vao-shockwave}))
+  ([data]
+   (make-shockwave-renderer data depth-source normal-source shockfront))
+  ([data depth-source normal-source shockfront]
+   (let [config               (::config data)
+         atmosphere-luts      (:sfsim.atmosphere/luts data)
+         bluenoise            (:sfsim.clouds/bluenoise (:sfsim.clouds/data data))
+         size                 (::shockwave-size config)
+         shockwave-radius     (::shockwave-radius config)
+         max-curvature-radius (::max-curvature-radius config)
+         indices              [0 1 3 2]
+         vertices             [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
+         program-init         (make-program :sfsim.render/vertex [vertex-passthrough]
+                                            :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source
+                                                                    normal-source])
+         program-step         (make-program :sfsim.render/vertex [vertex-passthrough]
+                                            :sfsim.render/fragment [fragment-jump-flooding-step shockfront])
+         vao                  (make-vertex-array-object program-init indices vertices ["point" 3])
+         program-point        (make-shockwave-program vertex-shockwave (fragment-shockwave false))
+         program-outer        (make-shockwave-program vertex-shockwave (fragment-shockwave true))
+         vao-shockwave        (make-vertex-array-object program-outer shockwave-indices shockwave-vertices ["point" 3])]
+     (doseq [program [program-point program-outer]]
+            (setup-static-shockwave-uniforms program bluenoise atmosphere-luts shockwave-radius size))
+     {::size                 size
+      ::bluenoise            bluenoise
+      ::shockwave-radius     shockwave-radius
+      ::max-curvature-radius max-curvature-radius
+      ::program-init         program-init
+      ::program-step         program-step
+      ::vao                  vao
+      ::program-point        program-point
+      ::program-outer        program-outer
+      ::vao-shockwave        vao-shockwave})))
 
 
 (defn destroy-shockwave-renderer
@@ -176,66 +229,61 @@
   (rest (take-while pos? (iterate #(bit-shift-right ^long % 1) size))))
 
 
-(def depth-source
-"#version 450 core
-uniform sampler2D depth;
-float depth_source(vec2 uv)
-{
-  return texture(depth, uv).r;
-}")
-
-
-(def normal-source
-"#version 450 core
-uniform sampler2D normals;
-vec4 normal_source(vec2 uv)
-{
-  return texture(normals, uv);
-}")
-
-
 (defn jump-flooding-algorithm
   [{::keys [size] :as shockwave-renderer} wind-shadow mach]
   (let [initial-shockwave (jump-flooding-initialisation shockwave-renderer (setup-shockwave-sources wind-shadow mach))]
     (reduce (jump-flooding-step shockwave-renderer (setup-shockwave-shape mach)) initial-shockwave (halving size))))
 
 
+(defn destroy-shockwave-geometry
+  [flood]
+  (destroy-texture flood))
+
+
 (defn setup-dynamic-shockwave-uniforms
-  [program overlay-width overlay-height wind-shadow mach projection camera-to-world points dist flood bluenoise]
-  (let [matrices             (:sfsim.model/matrices wind-shadow)
+  [program cloud-render-vars wind-shadow mach projection points dist flood bluenoise]
+  (let [overlay-width        (:sfsim.render/overlay-width cloud-render-vars)
+        overlay-height       (:sfsim.render/overlay-height cloud-render-vars)
+        origin               (:sfsim.render/origin cloud-render-vars)
+        camera-to-world      (:sfsim.render/camera-to-world cloud-render-vars)
+        matrices             (:sfsim.model/matrices wind-shadow)
         world-to-object      (:sfsim.matrix/world-to-object matrices)
-        object-to-shadow-ndc (:sfsim.matrix/object-to-shadow-ndc matrices)
-        object-to-shadow     (:sfsim.matrix/object-to-shadow matrices)
+        object-to-ndc        (:sfsim.matrix/object-to-shadow-ndc matrices)
+        object-to-shockwave  (:sfsim.matrix/object-to-shadow matrices)
         camera-to-object     (mulm world-to-object camera-to-world)
-        camera-to-ndc        (mulm object-to-shadow-ndc camera-to-object)
-        camera-to-shadow     (mulm object-to-shadow camera-to-object)
+        camera-to-ndc        (mulm object-to-ndc camera-to-object)
+        camera-to-shockwave  (mulm object-to-shockwave camera-to-object)
         ndc-to-camera        (inverse camera-to-ndc)]
     (uniform-int program "overlay_width" overlay-width)
     (uniform-int program "overlay_height" overlay-height)
+    (uniform-vector3 program "origin" origin)
+    (uniform-matrix4 program "camera_to_world" camera-to-world)
     (uniform-float program "mach" mach)
     (uniform-matrix4 program "projection" projection)
     (uniform-matrix4 program "ndc_to_camera" ndc-to-camera)
-    (uniform-matrix4 program "camera_to_shadow" camera-to-shadow)
+    (uniform-matrix4 program "camera_to_shockwave" camera-to-shockwave)
     (use-textures {0 points 1 dist 2 flood 3 bluenoise})))
 
 
 (defn render-shockwave-overlay
   [{::keys [program-outer program-point vao-shockwave bluenoise]} points dist wind-shadow flood
-   overlay-width overlay-height mach camera-to-world projection]
-  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-    (use-program program-outer)
-    (setup-dynamic-shockwave-uniforms program-outer overlay-width overlay-height wind-shadow mach projection camera-to-world
-                                      points dist flood bluenoise)
-    (render-quads vao-shockwave))
-  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-    (use-program program-point)
-    (setup-dynamic-shockwave-uniforms program-point overlay-width overlay-height wind-shadow mach projection camera-to-world
-                                      points dist flood bluenoise)
-    (render-quads vao-shockwave))
-  (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-    (use-program program-point)
-    (render-quads vao-shockwave))
-  (destroy-texture flood))
+   cloud-render-vars mach projection]
+  (with-culling :sfsim.render/cullfront
+    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+      (use-program program-outer)
+      (setup-dynamic-overlay-uniforms program-outer cloud-render-vars)
+      (setup-dynamic-shockwave-uniforms program-outer cloud-render-vars wind-shadow mach projection
+                                        points dist flood bluenoise)
+      (render-quads vao-shockwave))
+    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+      (use-program program-point)
+      (setup-dynamic-overlay-uniforms program-point cloud-render-vars)
+      (setup-dynamic-shockwave-uniforms program-point cloud-render-vars wind-shadow mach projection
+                                        points dist flood bluenoise)
+      (render-quads vao-shockwave))
+    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+      (use-program program-point)
+      (render-quads vao-shockwave))))
 
 
 (set! *warn-on-reflection* false)

@@ -1,54 +1,37 @@
 #version 450 core
 
-uniform sampler2D points;
-uniform mat4 camera_to_shadow;
+uniform vec3 origin;
+uniform mat4 camera_to_world;
+uniform mat4 camera_to_shockwave;
+uniform vec3 light_direction;
+uniform float radius;
+uniform float max_height;
+uniform float object_distance;
 uniform int overlay_width;
 uniform int overlay_height;
-uniform float shockwave_step;
-uniform float shockwave_radius;
 
 out vec4 fragColor;
 
-vec2 ray_box(vec3 box_min, vec3 box_max, vec3 origin, vec3 direction);
-vec4 shockwave_transfer(vec3 p, float shockwave_step, vec4 shockwave_scatter);
 vec4 geometry_point();
 float geometry_distance();
-float sampling_offset();
-vec2 limit_interval(vec2 interval, float limit);
-
 <% (when outer %>
-vec4 sample_shockwave_outer(vec3 origin, vec3 direction)
+vec4 shockwave_outer(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction);
 <% ) %>
 <% (when (not outer) %>
-vec4 sample_shockwave_point(vec3 origin, vec3 direction, float dist)
+vec4 shockwave_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_direction, float dist);
 <% ) %>
-{
-  vec2 segment = ray_box(vec3(-shockwave_radius, -shockwave_radius, 0),
-                         vec3(shockwave_radius, shockwave_radius, 2 * shockwave_radius),
-                         origin, direction);
-<% (when (not outer) %>
-  segment = limit_interval(segment, dist);
-<% ) %>
-  vec4 result = vec4(0, 0, 0, 0);
-  float x = segment.x + shockwave_step * sampling_offset();
-  while (x < segment.x + segment.y) {
-    vec3 sample_point = origin + x * direction;
-    result = shockwave_transfer(sample_point, shockwave_step, result);
-    x += shockwave_step;
-  };
-  return result;
-}
 
 void main()
 {
-  vec3 origin = (camera_to_shadow * vec4(0, 0, 0, 1)).xyz;
-  vec4 point = geometry_point();
-  vec3 direction = normalize((camera_to_shadow * vec4(point.xyz, 0)).xyz);
+  vec4 camera_direction = vec4(normalize(geometry_point().xyz), 0);
+  vec3 direction = mat3(camera_to_world) * camera_direction.xyz;
+  vec3 object_origin_shockwave = (camera_to_shockwave * vec4(0, 0, 0, 1)).xyz;
+  vec3 object_direction_shockwave = mat3(camera_to_shockwave) * camera_direction.xyz;
 <% (when outer %>
-  fragColor = sample_shockwave_outer(origin, direction);
+  fragColor = shockwave_outer(origin, direction, object_origin_shockwave, object_direction_shockwave);
 <% ) %>
 <% (when (not outer) %>
   float dist = geometry_distance();
-  fragColor = sample_shockwave_point(origin, direction, dist);
+  fragColor = shockwave_point(origin, direction, object_origin_shockwave, object_direction_shockwave, dist);
 <% ) %>
 }

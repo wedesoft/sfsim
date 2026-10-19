@@ -39,7 +39,8 @@
   [models overlays]
   (let [cloud-data              (clouds/make-cloud-data config/cloud-config)
         opacity-data            (opacity/make-shadow-data config/shadow-config config/planet-config cloud-data)
-        atmosphere-luts         (atmosphere/make-atmosphere-luts config/max-height)
+        atmosphere-luts         (atmosphere/make-atmosphere-luts (:sfsim.planet/radius config/planet-config)
+                                                                 config/max-height)
         planet-shadow-renderer  (planet/make-planet-shadow-renderer {:sfsim.opacity/data opacity-data
                                                                      :sfsim.planet/config config/planet-config})
         opacity-renderer        (opacity/make-opacity-renderer {:sfsim.render/config config/render-config
@@ -63,12 +64,9 @@
         atmosphere-renderer     (atmosphere/make-atmosphere-geometry-renderer true)
         scene-renderer          (model/make-scene-geometry-renderer true)
         scene-shadow-renderer   (model/make-scene-shadow-renderer)
-        shockwave-renderer      (shockwave/make-shockwave-renderer shockwave/depth-source shockwave/normal-source
-                                                                   shockwave/shockfront
-                                                                   (:sfsim.shockwave/shockwave-size config/shockwave-config)
-                                                                   (:sfsim.clouds/bluenoise cloud-data)
-                                                                   (:sfsim.shockwave/shockwave-radius config/shockwave-config)
-                                                                   (:sfsim.shockwave/max-curvature-radius config/shockwave-config))
+        shockwave-renderer      (shockwave/make-shockwave-renderer {:sfsim.shockwave/config config/shockwave-config
+                                                                    :sfsim.atmosphere/luts atmosphere-luts
+                                                                    :sfsim.clouds/data cloud-data})
         lighting-renderer       (lighting/make-lighting-renderer {:sfsim.render/config config/render-config
                                                                   :sfsim.planet/config config/planet-config
                                                                   :sfsim.opacity/data opacity-data
@@ -162,7 +160,7 @@
 (defn destroy-frame
   [frame]
   (when-let [flood (::flood frame)]
-            (texture/destroy-texture flood))
+            (shockwave/destroy-shockwave-geometry flood))
   (when-let [wind-shadow (::wind-shadow frame)]
             (model/destroy-scene-shadow-map wind-shadow))
   (doseq [object-shadow (::object-shadows frame)]

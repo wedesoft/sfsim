@@ -294,6 +294,7 @@ void main()
           0.0           0.0        1.0   1.0       0.0    1.0    1.0     0.0    0.7  0.368
           (/ rcs-end 2) 0.0        1.0   0.5       0.0    1.0    1.0     1.0    0.0  1.0)
 
+
 (def plume-segment-probe
   (template/fn [outer origin-x x size strength]
 "#version 450 core
