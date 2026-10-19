@@ -137,7 +137,8 @@ float shockfront(float radial_distance, float curvature_radius)
 (facts "Initial step of Jump Flooding Algorithm"
        (with-invisible-window
          (with-redefs [atmosphere/setup-atmosphere-uniforms mock-setup-atmosphere-uniforms]
-           (let [renderer (make-shockwave-renderer 256 {:sfsim.texture/width 256} atmosphere-luts 1.0 1.0
+           (let [config   {:sfsim.shockwave/config {:sfsim.shockwave/shockwave-size 256}}
+                 renderer (make-shockwave-renderer config {:sfsim.texture/width 256} atmosphere-luts 1.0 1.0
                                                    depth-mock normal-mock shockfront-mock)
                  tex      (jump-flooding-initialisation renderer identity)]
              (let [img (rgba-texture->vectors4 tex)]
@@ -153,9 +154,10 @@ float shockfront(float radial_distance, float curvature_radius)
        (with-invisible-window
          (with-redefs [atmosphere/setup-atmosphere-uniforms mock-setup-atmosphere-uniforms]
            (let [size     256
+                 config   {:sfsim.shockwave/config {:sfsim.shockwave/shockwave-size size}}
                  image    {:sfsim.image/width size :sfsim.image/height size :sfsim.image/data (float-array (* size size 4))
                            :sfsim.image/channels 4}
-                 renderer (make-shockwave-renderer 256 {:sfsim.texture/width 256} atmosphere-luts 1.0 1.0
+                 renderer (make-shockwave-renderer config {:sfsim.texture/width 256} atmosphere-luts 1.0 1.0
                                                    depth-mock normal-mock shockfront-mock)]
              (set-vector4! image 128  64 (vec4 -0.5 0.0 1.0 1.0))
              (set-vector4! image 128 192 (vec4  0.5 0.0 1.0 1.0))
@@ -335,6 +337,7 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
              (with-invisible-window
                (let [geometry             (mock-geometry ?x ?y ?z ?stencil)
                      size                 256
+                     config               {:sfsim.shockwave/config {:sfsim.shockwave/shockwave-size size}}
                      bluenoise            {:sfsim.texture/width 256}
                      shockwave-radius     60.0
                      max-curvature-radius 3.0
@@ -345,7 +348,7 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
                      mach                 10.0
                      points               (:sfsim.clouds/points geometry)
                      dist                 (:sfsim.clouds/distance geometry)
-                     shockwave-renderer   (make-shockwave-renderer size bluenoise atmosphere-luts shockwave-radius
+                     shockwave-renderer   (make-shockwave-renderer config bluenoise atmosphere-luts shockwave-radius
                                                                    max-curvature-radius)
                      cloud-render-vars    (clouds/make-cloud-render-vars render-config planet-render-vars 1 1 (vec3 0 0 ?h)
                                                                          (q/->Quaternion 1 0 0 0) (vec3 1 0 0) (vec3 ?obj-dist 0 ?h)

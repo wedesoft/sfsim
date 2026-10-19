@@ -130,11 +130,13 @@ vec4 normal_source(vec2 uv)
 
 
 (defn make-shockwave-renderer
-  ([size bluenoise atmosphere-luts shockwave-radius max-curvature-radius]
-   (make-shockwave-renderer size bluenoise atmosphere-luts shockwave-radius max-curvature-radius
+  ([data bluenoise atmosphere-luts shockwave-radius max-curvature-radius]
+   (make-shockwave-renderer data bluenoise atmosphere-luts shockwave-radius max-curvature-radius
                             depth-source normal-source shockfront))
-  ([size bluenoise atmosphere-luts shockwave-radius max-curvature-radius depth-source normal-source shockfront]
-   (let [indices           [0 1 3 2]
+  ([data bluenoise atmosphere-luts shockwave-radius max-curvature-radius depth-source normal-source shockfront]
+   (let [config            (::config data)
+         size              (::shockwave-size config)
+         indices           [0 1 3 2]
          vertices          [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
          program-init      (make-program :sfsim.render/vertex [vertex-passthrough]
                                          :sfsim.render/fragment [fragment-jump-flooding-init curvature depth-source normal-source])
