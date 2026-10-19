@@ -67,7 +67,6 @@
         shockwave-renderer      (shockwave/make-shockwave-renderer {:sfsim.shockwave/config config/shockwave-config}
                                                                    (:sfsim.clouds/bluenoise cloud-data)
                                                                    atmosphere-luts
-                                                                   (:sfsim.shockwave/shockwave-radius config/shockwave-config)
                                                                    (:sfsim.shockwave/max-curvature-radius config/shockwave-config))
         lighting-renderer       (lighting/make-lighting-renderer {:sfsim.render/config config/render-config
                                                                   :sfsim.planet/config config/planet-config
