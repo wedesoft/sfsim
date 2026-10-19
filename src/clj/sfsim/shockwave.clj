@@ -63,10 +63,10 @@
   (shockwave-segment false))
 
 
-(defn fragment-shockwave  ;; TODO: use shockwave-segment above
+(defn fragment-shockwave
   [outer]
   [ray-box shockwave-transfer bluenoise/sampling-offset geometry-point geometry-distance limit-interval
-   ray-sphere (sample-shockwave-segment outer) atmosphere/attenuation-track
+   ray-sphere (sample-shockwave-segment outer) atmosphere/attenuation-track (shockwave-segment outer)
    (template/eval (slurp "resources/shaders/shockwave/fragment.glsl") {:outer outer})])
 
 
@@ -102,7 +102,7 @@
   (uniform-float program "shockwave_radius" shockwave-radius)
   (uniform-float program "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
   (uniform-float program "shockwave_step" 0.5)
-  (uniform-float program "shockwave_strength" 0.05))
+  (uniform-float program "shockwave_strength" 0.1))
 
 
 (defn make-shockwave-program

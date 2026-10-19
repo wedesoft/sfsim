@@ -305,7 +305,9 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
 (defn make-mock-shockwave-program
   [_vertex-shader fragment-shader]
   (make-program :sfsim.render/vertex [vertex-passthrough]
-                :sfsim.render/fragment [shockwave-shader-mock shaders/ray-sphere shaders/limit-interval (last fragment-shader)]))
+                :sfsim.render/fragment [shockwave-shader-mock shaders/ray-sphere shaders/limit-interval
+                                        (last (shockwave-segment false)) (last (shockwave-segment true))
+                                        (last fragment-shader)]))
 
 
 (defn mock-setup-dynamic-shockwave-uniforms

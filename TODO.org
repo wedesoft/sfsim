@@ -7,11 +7,6 @@
 *** TODO Reentry flame
     [[https://gemini.google.com/app/d411b76be00c0e27]]
 **** TODO Shockwave shader
-***** DONE Move wind shadow calls into shockwave module
-***** DONE Separate plume renderer from cloud renderer
-***** DONE Dependency inversion for render-cloud-overlay
-***** DONE Use real coordinates centered around axis instead of NDC when sampling shockwave
-***** DOING Align shader code with cloud shader to use shockwave_point and shockwave_outer
 ***** TODO make-shockwave-renderer should only take one argument like the plume renderer constructor
 ***** TODO Use camera-to-plume matrix
 ***** TODO Test object-to-shadow matrix returned by shadow-patch-matrices
