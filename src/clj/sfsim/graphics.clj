@@ -66,8 +66,7 @@
         scene-shadow-renderer   (model/make-scene-shadow-renderer)
         shockwave-renderer      (shockwave/make-shockwave-renderer {:sfsim.shockwave/config config/shockwave-config}
                                                                    (:sfsim.clouds/bluenoise cloud-data)
-                                                                   atmosphere-luts
-                                                                   (:sfsim.shockwave/max-curvature-radius config/shockwave-config))
+                                                                   atmosphere-luts)
         lighting-renderer       (lighting/make-lighting-renderer {:sfsim.render/config config/render-config
                                                                   :sfsim.planet/config config/planet-config
                                                                   :sfsim.opacity/data opacity-data
