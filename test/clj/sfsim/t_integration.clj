@@ -400,21 +400,15 @@ void main()
                                          (graphics/render-cloud-geometry graphics tree)
                                          (graphics/render-clouds graphics)
                                          (graphics/render-geometry graphics tree))
-                wind-shadow          (:sfsim.graphics/wind-shadow frame)
-                flood                (:sfsim.graphics/flood frame)
                 cloud-geometry       (:sfsim.graphics/cloud-geometry frame)
                 cloud-render-vars    (:sfsim.graphics/cloud-render-vars frame)
-                projection           (:sfsim.render/overlay-projection cloud-render-vars)
-                points               (:sfsim.clouds/points (:sfsim.graphics/cloud-geometry frame))
-                dist                 (:sfsim.clouds/distance (:sfsim.graphics/cloud-geometry frame))
                 overlay-width        (:sfsim.render/overlay-width cloud-render-vars)
                 overlay-height       (:sfsim.render/overlay-height cloud-render-vars)]
             (render/framebuffer-render
               overlay-width overlay-height :sfsim.render/noculling (:sfsim.clouds/depth-stencil cloud-geometry) [(:sfsim.graphics/clouds frame)]
               (render/with-stencils
                 (render/with-underlay-blending
-                  (shockwave/render-shockwave-overlay shockwave-renderer points dist wind-shadow flood cloud-render-vars
-                                                      mach projection))))
+                  (graphics/render-shockwave-overlay frame graphics mach))))
             (render/render-to-image width height false
                                     (render/clear (vec3 0 1 0) 0.0)
                                     (graphics/render-lighting frame graphics))

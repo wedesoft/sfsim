@@ -216,7 +216,7 @@
                        velocity           (physics/get-linear-speed :sfsim.physics/surface (:physics @state))
                        speed-of-sound     (atmosphere/speed-of-sound (atmosphere/temperature-at-height height))
                        wind-from          (sub (normalize velocity))
-                       mach               (max 1.1 (/ (mag velocity) speed-of-sound))
+                       mach               (/ (mag velocity) speed-of-sound)
                        jd-ut              (physics/get-julian-date-ut (:physics @state))
                        icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
                        sun-pos            (earth-sun jd-ut)
@@ -256,7 +256,8 @@
                                               (graphics/render-scene-shadows graphics)
                                               (graphics/render-shockwave-geometry graphics wind-from mach)
                                               (graphics/render-cloud-geometry graphics tree)
-                                              (graphics/render-clouds-and-plume graphics (physics/active-rcs (:physics @state)))
+                                              (graphics/render-clouds-and-shockwave-and-plume
+                                                graphics (physics/active-rcs (:physics @state)) mach)
                                               (graphics/render-geometry graphics tree))]
                    (onscreen-render window
                                     (graphics/render-lighting frame graphics)
