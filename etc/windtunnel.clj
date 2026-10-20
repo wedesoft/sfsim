@@ -39,7 +39,6 @@
       (reset! mouse-button (= action GLFW/GLFW_PRESS)))))
 
 (GLFW/glfwMakeContextCurrent window)
-(def shockwave-radius (:sfsim.shockwave/shockwave-radius config/shockwave-config))
 (def graphics (graphics/make-graphics2 [{:sfsim.graphics/model-file "data/models/venturestar.glb"
                                          :sfsim.graphics/object-radius (:sfsim.model/object-radius config/model-config)}]
                                        []))
@@ -72,7 +71,7 @@
                                                            light object model-vars)
                                       (graphics/render-shadows graphics nil)
                                       (graphics/render-scene-shadows graphics)
-                                      (graphics/render-shockwave-geometry graphics wind-from mach shockwave-radius)
+                                      (graphics/render-shockwave-geometry graphics wind-from mach)
                                       (graphics/render-cloud-geometry graphics nil)
                                       (graphics/render-clouds graphics)
                                       (graphics/render-geometry graphics nil))

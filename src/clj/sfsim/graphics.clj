@@ -303,10 +303,11 @@
 
 
 (defn render-shockwave-geometry
-  [frame graphics wind-from mach shockwave-radius]
+  [frame graphics wind-from mach]
   (let [scene-shadow-renderer   (::scene-shadow-renderer graphics)
         shockwave-renderer      (::shockwave-renderer graphics)
         shadow-size             (:sfsim.opacity/scene-shadow-size config/shadow-config)
+        shockwave-radius        (:sfsim.shockwave/shockwave-radius shockwave-renderer)
         wind-shadow             (model/scene-shadow-map scene-shadow-renderer
                                             wind-from
                                             (first (get-moved-scenes frame graphics))
