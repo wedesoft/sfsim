@@ -178,6 +178,11 @@ float shockfront(float radial_distance, float curvature_radius)
                (destroy-shockwave-renderer renderer))))))
 
 
+(fact "Skip jump flooding if mach number is too small"
+      (jump-flooding-algorithm {:sfsim.shockwave/minimum-mach 1.1} nil 1.0) => nil
+      (render-shockwave-overlay {:sfsim.shockwave/minimum-mach 1.1} nil nil nil nil nil 1.0 nil) => nil)
+
+
 (facts "Test halving sequence"
        (halving 1) => []
        (halving 2) => [1]
@@ -347,7 +352,8 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
                      max-curvature-radius 3.0
                      config               {:sfsim.shockwave/config {:sfsim.shockwave/shockwave-size size
                                                                     :sfsim.shockwave/shockwave-radius shockwave-radius
-                                                                    :sfsim.shockwave/max-curvature-radius max-curvature-radius}
+                                                                    :sfsim.shockwave/max-curvature-radius max-curvature-radius
+                                                                    :sfsim.shockwave/minimum-mach 1.1}
                                            :sfsim.atmosphere/luts atmosphere-luts
                                            :sfsim.clouds/data {:sfsim.clouds/bluenoise {:sfsim.texture/width 256}}}
                      render-config        {:sfsim.render/cloud-subsampling 1 :sfsim.render/fov 1.04 :sfsim.render/min-z-near 0.1}

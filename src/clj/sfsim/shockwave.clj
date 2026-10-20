@@ -139,6 +139,7 @@ vec4 normal_source(vec2 uv)
          size                 (::shockwave-size config)
          shockwave-radius     (::shockwave-radius config)
          max-curvature-radius (::max-curvature-radius config)
+         minimum-mach         (::minimum-mach config)
          indices              [0 1 3 2]
          vertices             [-1.0 -1.0 0.5, 1.0 -1.0 0.5, -1.0 1.0 0.5, 1.0 1.0 0.5]
          program-init         (make-program :sfsim.render/vertex [vertex-passthrough]
@@ -156,6 +157,7 @@ vec4 normal_source(vec2 uv)
       ::bluenoise            bluenoise
       ::shockwave-radius     shockwave-radius
       ::max-curvature-radius max-curvature-radius
+      ::minimum-mach         minimum-mach
       ::program-init         program-init
       ::program-step         program-step
       ::vao                  vao
@@ -230,14 +232,16 @@ vec4 normal_source(vec2 uv)
 
 
 (defn jump-flooding-algorithm
-  [{::keys [size] :as shockwave-renderer} wind-shadow mach]
-  (let [initial-shockwave (jump-flooding-initialisation shockwave-renderer (setup-shockwave-sources wind-shadow mach))]
-    (reduce (jump-flooding-step shockwave-renderer (setup-shockwave-shape mach)) initial-shockwave (halving size))))
+  [{::keys [size minimum-mach] :as shockwave-renderer} wind-shadow mach]
+  (when (>= ^double mach ^double minimum-mach)
+    (let [initial-shockwave (jump-flooding-initialisation shockwave-renderer (setup-shockwave-sources wind-shadow mach))]
+      (reduce (jump-flooding-step shockwave-renderer (setup-shockwave-shape mach)) initial-shockwave (halving size)))))
 
 
 (defn destroy-shockwave-geometry
   [flood]
-  (destroy-texture flood))
+  (when flood
+    (destroy-texture flood)))
 
 
 (defn setup-dynamic-shockwave-uniforms
@@ -266,24 +270,25 @@ vec4 normal_source(vec2 uv)
 
 
 (defn render-shockwave-overlay
-  [{::keys [program-outer program-point vao-shockwave bluenoise]} points dist wind-shadow flood
+  [{::keys [program-outer program-point vao-shockwave bluenoise minimum-mach]} points dist wind-shadow flood
    cloud-render-vars mach projection]
-  (with-culling :sfsim.render/cullfront
-    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
-      (use-program program-outer)
-      (setup-dynamic-overlay-uniforms program-outer cloud-render-vars)
-      (setup-dynamic-shockwave-uniforms program-outer cloud-render-vars wind-shadow mach projection
-                                        points dist flood bluenoise)
-      (render-quads vao-shockwave))
-    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
-      (use-program program-point)
-      (setup-dynamic-overlay-uniforms program-point cloud-render-vars)
-      (setup-dynamic-shockwave-uniforms program-point cloud-render-vars wind-shadow mach projection
-                                        points dist flood bluenoise)
-      (render-quads vao-shockwave))
-    (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
-      (use-program program-point)
-      (render-quads vao-shockwave))))
+  (when (>= ^double mach ^double minimum-mach)
+    (with-culling :sfsim.render/cullfront
+      (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
+        (use-program program-outer)
+        (setup-dynamic-overlay-uniforms program-outer cloud-render-vars)
+        (setup-dynamic-shockwave-uniforms program-outer cloud-render-vars wind-shadow mach projection
+                                          points dist flood bluenoise)
+        (render-quads vao-shockwave))
+      (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
+        (use-program program-point)
+        (setup-dynamic-overlay-uniforms program-point cloud-render-vars)
+        (setup-dynamic-shockwave-uniforms program-point cloud-render-vars wind-shadow mach projection
+                                          points dist flood bluenoise)
+        (render-quads vao-shockwave))
+      (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
+        (use-program program-point)
+        (render-quads vao-shockwave)))))
 
 
 (set! *warn-on-reflection* false)
