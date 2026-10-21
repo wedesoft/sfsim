@@ -324,7 +324,7 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
 
 
 (defn mock-setup-dynamic-shockwave-uniforms
-  [program cloud-render-vars _wind-shadow mach projection points dist _flood _bluenoise]
+  [_shockwave-renderer program cloud-render-vars _wind-shadow mach projection points dist _flood]
   (let [overlay-width        (:sfsim.render/overlay-width cloud-render-vars)
         overlay-height       (:sfsim.render/overlay-height cloud-render-vars)
         origin               (:sfsim.render/origin cloud-render-vars)
