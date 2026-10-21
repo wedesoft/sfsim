@@ -215,7 +215,7 @@
                                                     (camera/get-camera-pose (:camera @state) (:physics @state)))
                        velocity           (physics/get-linear-speed :sfsim.physics/surface (:physics @state))
                        speed-of-sound     (atmosphere/speed-of-sound (atmosphere/temperature-at-height height))
-                       wind-from          (sub (normalize velocity))
+                       wind-from          (normalize velocity)
                        mach               (/ (mag velocity) speed-of-sound)
                        jd-ut              (physics/get-julian-date-ut (:physics @state))
                        icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
