@@ -213,6 +213,10 @@
                        object-orientation (physics/get-orientation :sfsim.physics/surface (:physics @state))
                        [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
                                                     (camera/get-camera-pose (:camera @state) (:physics @state)))
+                       velocity           (physics/get-linear-speed :sfsim.physics/surface (:physics @state))
+                       speed-of-sound     (atmosphere/speed-of-sound (atmosphere/temperature-at-height height))
+                       wind-from          (normalize velocity)
+                       mach               (/ (mag velocity) speed-of-sound)
                        jd-ut              (physics/get-julian-date-ut (:physics @state))
                        icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
                        sun-pos            (earth-sun jd-ut)
@@ -250,8 +254,12 @@
                                                                    model-vars)
                                               (graphics/render-shadows graphics tree)
                                               (graphics/render-scene-shadows graphics)
+                                              (graphics/render-shockwave-geometry graphics wind-from mach)
                                               (graphics/render-cloud-geometry graphics tree)
-                                              (graphics/render-clouds-and-plume graphics (physics/active-rcs (:physics @state)))
+                                              (graphics/render-clouds-and-plume
+                                                graphics (physics/active-rcs (:physics @state)))
+                                              ; (graphics/render-clouds-and-shockwave-and-plume
+                                              ;   graphics (physics/active-rcs (:physics @state)) mach)
                                               (graphics/render-geometry graphics tree))]
                    (onscreen-render window
                                     (graphics/render-lighting frame graphics)
