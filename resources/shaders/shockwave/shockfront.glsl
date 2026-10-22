@@ -3,6 +3,7 @@
 uniform float mach;
 uniform float object_radius;
 
+// Using Billig's shockwave correlation
 float shockfront(float radial_distance, float curvature_radius)
 {
   float mach2 = mach * mach;
