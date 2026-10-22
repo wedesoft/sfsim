@@ -63,7 +63,8 @@
 
  :sfsim.shockwave-config #:sfsim.shockwave{:shockwave-size 1024
                                            :shockwave-radius 60.0
-                                           :max-curvature-radius 3.0}
+                                           :max-curvature-radius 3.0
+                                           :minimum-mach 1.1}
 
  :sfsim.model-config #:sfsim.model{:object-radius 30.0  ; includes size of expanding plume
                                    :elevation 9.0

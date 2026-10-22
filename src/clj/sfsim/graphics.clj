@@ -271,6 +271,20 @@
                                  model-vars cloud-geometry)))
 
 
+(defn render-shockwave-overlay
+  [frame graphics mach]
+  (let [shockwave-renderer (::shockwave-renderer graphics)
+        cloud-render-vars  (::cloud-render-vars frame)
+        cloud-geometry     (::cloud-geometry frame)
+        points             (:sfsim.clouds/points cloud-geometry)
+        dist               (:sfsim.clouds/distance cloud-geometry)
+        wind-shadow        (::wind-shadow frame)
+        flood              (::flood frame)
+        projection         (:sfsim.render/overlay-projection cloud-render-vars)]
+    (shockwave/render-shockwave-overlay shockwave-renderer points dist wind-shadow flood
+                                        cloud-render-vars mach projection)))
+
+
 (defn render-clouds
   [frame graphics]
   (render-clouds-basic frame graphics
@@ -285,6 +299,16 @@
                        (render-cloud-front frame graphics)
                        (render/with-underlay-blending
                          (render-plume-overlays frame graphics rcs-names)
+                         (render-cloud-back frame graphics))))
+
+
+(defn render-clouds-and-shockwave-and-plume
+  [frame graphics rcs-names mach]
+  (render-clouds-basic frame graphics
+                       (render-cloud-front frame graphics)
+                       (render/with-underlay-blending
+                         (render-plume-overlays frame graphics rcs-names)
+                         (render-shockwave-overlay frame graphics mach)
                          (render-cloud-back frame graphics))))
 
 
@@ -303,10 +327,11 @@
 
 
 (defn render-shockwave-geometry
-  [frame graphics wind-from mach shockwave-radius]
+  [frame graphics wind-from mach]
   (let [scene-shadow-renderer   (::scene-shadow-renderer graphics)
         shockwave-renderer      (::shockwave-renderer graphics)
         shadow-size             (:sfsim.opacity/scene-shadow-size config/shadow-config)
+        shockwave-radius        (:sfsim.shockwave/shockwave-radius shockwave-renderer)
         wind-shadow             (model/scene-shadow-map scene-shadow-renderer
                                             wind-from
                                             (first (get-moved-scenes frame graphics))
