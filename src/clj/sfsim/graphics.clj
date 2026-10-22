@@ -280,9 +280,10 @@
         dist               (:sfsim.clouds/distance cloud-geometry)
         wind-shadow        (::wind-shadow frame)
         flood              (::flood frame)
-        projection         (:sfsim.render/overlay-projection cloud-render-vars)]
+        projection         (:sfsim.render/overlay-projection cloud-render-vars)
+        time_              (:sfsim.model/time (::model-vars frame))]
     (shockwave/render-shockwave-overlay shockwave-renderer points dist wind-shadow flood
-                                        cloud-render-vars mach projection)))
+                                        cloud-render-vars mach projection time_)))
 
 
 (defn render-clouds

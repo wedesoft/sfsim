@@ -274,17 +274,19 @@ vec4 normal_source(vec2 uv)
 
 (defn render-shockwave-overlay
   [{::keys [program-outer program-point vao-shockwave minimum-mach] :as shockwave-renderer} points dist wind-shadow
-   flood cloud-render-vars mach projection]
+   flood cloud-render-vars mach projection time_]
   (when (>= ^double mach ^double minimum-mach)
     (with-culling :sfsim.render/cullfront
       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
         (use-program program-outer)
+        (uniform-float program-outer "time" time_)
         (setup-dynamic-overlay-uniforms program-outer cloud-render-vars)
         (setup-dynamic-shockwave-uniforms shockwave-renderer program-outer cloud-render-vars wind-shadow mach projection
                                           points dist flood)
         (render-quads vao-shockwave))
       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
         (use-program program-point)
+        (uniform-float program-point "time" time_)
         (setup-dynamic-overlay-uniforms program-point cloud-render-vars)
         (setup-dynamic-shockwave-uniforms shockwave-renderer program-point cloud-render-vars wind-shadow mach projection
                                           points dist flood)
