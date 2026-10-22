@@ -42,10 +42,11 @@ vec4 shockwave_transfer(vec3 point, float shockwave_step, vec4 shockwave_scatter
     float dist = length(toApex);
     vec2 dir = (dist > 0.0001) ? (toApex / dist) : vec2(0.0, 1.0);
 
-    float noiseScale = 0.5;   // Frequency of the noise features
+    float noiseScale = 20.0;   // Frequency of the noise features
     float speed = 0.0;         // Speed of outward expansion
 
-    vec2 noiseUV = dir * (dist * noiseScale - time * speed);
+    // vec2 noiseUV = dir * (dist * noiseScale - time * speed);
+    vec2 noiseUV = dir * noiseScale;
 
     float shockNoise = noise(noiseUV);
 
