@@ -1,5 +1,5 @@
 ================================================================================
-Error Logging & Diagnostics
+Privacy Policy
 ================================================================================
 
 To ensure application stability and fix software bugs, sfsim automatically logs

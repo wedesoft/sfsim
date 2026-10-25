@@ -1214,7 +1214,7 @@
     (scale gui 768) (scale gui (+ ^long title-height (* ^long text-height 15) ^long padding ^long widget-height)) :dialog
     (ignore-nil-> state state
       (layout-row-dynamic gui (scale gui (* ^long text-height 15)) 1)
-      (group gui "privacy" "Privacy"
+      (group gui "privacy" "Privacy Policy"
              (layout-row-dynamic gui (scale gui text-row-height) 1)
              (doseq [line (line-seq (io/reader "privacy.txt"))]
                     (text-label gui line)))
@@ -1368,7 +1368,7 @@
                     (assoc-in state [:input :sfsim.input/menu] nil))
                   (when (button-label gui "License")
                     (assoc-in state [:gui ::menu] license-dialog))
-                  (when (button-label gui "Privacy")
+                  (when (button-label gui "Privacy Policy")
                     (assoc-in state [:gui ::menu] privacy-dialog))
                   (when (button-label gui "Quit")
                     (GLFW/glfwSetWindowShouldClose (:window state) true)))))
