@@ -11,6 +11,8 @@ common: &default_settings
   log_limit_in_kbytes: 0
   log_daily: false
   log_file_name: newrelic_agent.log
+  process_host:
+    display_name: "masked-host"
   application_logging:
     enabled: true
     forwarding:
