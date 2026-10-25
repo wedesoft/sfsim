@@ -4,7 +4,7 @@
   "executable": "sfsim",
   "classpath": ["target/sfsim.jar", "resources"],
   "mainclass": "sfsim.core",
-  "resources": ["LICENSE", "CREDITS", "about.txt", "AUTHORS", "libjolt.so"],
-  "vmargs": ["-Xms2g", "-Xmx4g", "-XX:+UseZGC", "-XX:+UseDynamicNumberOfGCThreads"],
+  "resources": ["LICENSE", "CREDITS", "about.txt", "privacy.txt", "AUTHORS", "libjolt.so", "opt"],
+  "vmargs": ["-Xms2g", "-Xmx4g", "-XX:+UseZGC", "-XX:+UseDynamicNumberOfGCThreads", "-javaagent:opt/newrelic/newrelic.jar"],
   "output": "out-linux"
 }

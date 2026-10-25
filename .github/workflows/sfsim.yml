@@ -32,6 +32,12 @@ jobs:
           key: ${{ runner.os }}-pip-torch-2.11.0-numpy-2.4.3
           restore-keys: |
             ${{ runner.os }}-pip-
+      - name: Cache New Relic
+        id: cache-newrelic
+        uses: actions/cache@v6.1.0
+        with:
+          path: newrelic-java.zip
+          key: newrelic
       - name: Cache Packr
         id: cache-packr
         uses: actions/cache@v6.1.0
@@ -89,6 +95,15 @@ jobs:
         run: xvfb-run clj -M:test
       - name: Create Java archive
         run: clj -T:build uber
+      - if: ${{ steps.cache-newrelic.outputs.cache-hit != 'true' }}
+        name: Download New Relic Agent
+        run: curl -O https://download.newrelic.com/newrelic/java-agent/newrelic-agent/current/newrelic-java.zip
+      - name: Add New Relic Agent
+        env:
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+        run: |
+          unzip -q -n newrelic-java.zip -d opt
+          sed -i "s/license_key: ''/license_key: '$NEW_RELIC_LICENSE_KEY'/" opt/newrelic/newrelic.yml
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
         name: Download packr jar
         run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
@@ -117,6 +132,12 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('deps.edn') }}
           restore-keys: ${{ runner.os }}-m2-
+      - name: Cache New Relic
+        id: cache-newrelic
+        uses: actions/cache@v6.1.0
+        with:
+          path: newrelic-java.zip
+          key: newrelic
       - name: Cache Packr
         id: cache-packr
         uses: actions/cache@v6.1.0
@@ -182,6 +203,15 @@ jobs:
     #   run: clj '-J-DLIBGL_ALWAYS_SOFTWARE=true' '-J-Dorg.lwjgl.opengl.libname=./opengl32.dll' -M:test
       - name: Create Java archive
         run: clj -T:build uber
+      - if: ${{ steps.cache-newrelic.outputs.cache-hit != 'true' }}
+        name: Download New Relic Agent
+        run: curl -O https://download.newrelic.com/newrelic/java-agent/newrelic-agent/current/newrelic-java.zip
+      - name: Add New Relic Agent
+        env:
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+        run: |
+          unzip -q -n newrelic-java.zip -d opt
+          sed -i "s/license_key: ''/license_key: '$NEW_RELIC_LICENSE_KEY'/" opt/newrelic/newrelic.yml
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
         name: Download packr jar
         run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
