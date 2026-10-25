@@ -124,7 +124,7 @@ You can take the data folder of a Steam playtest build instead.
 
 * Run tests (recommended to use xvfb-run): `xvfb-run uv run clj -M:test`
 * Run tests for specific module (rendering for example): `xvfb-run uv run clj -M:test sfsim.t-render`
-* Run main program: `clj -M:run`
+* Run main program: `clj -M:run` (or with monitoring use `clj -M:newrelic:run`)
 
 You can enable the integration tests as follows (requires assets): `touch .integration`
 

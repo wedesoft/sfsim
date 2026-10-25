@@ -1193,13 +1193,30 @@
   [state gui ^long window-width ^long window-height]
   (nuklear-window
     gui "License"
-    (quot (- window-width (scale gui 768)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 12) ^long padding ^long widget-height))) 2)
-    (scale gui 768) (scale gui (+ ^long title-height (* ^long text-height 12) ^long padding ^long widget-height)) :dialog
+    (quot (- window-width (scale gui 768)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 15) ^long padding ^long widget-height))) 2)
+    (scale gui 768) (scale gui (+ ^long title-height (* ^long text-height 15) ^long padding ^long widget-height)) :dialog
     (ignore-nil-> state state
-      (layout-row-dynamic gui (scale gui (* ^long text-height 12)) 1)
+      (layout-row-dynamic gui (scale gui (* ^long text-height 15)) 1)
       (group gui "license" "License"
              (layout-row-dynamic gui (scale gui text-row-height) 1)
              (doseq [line (line-seq (io/reader "about.txt"))]
+                    (text-label gui line)))
+      (layout-row-dynamic gui (scale gui row-height) 1)
+      (when (button-label gui "Close")
+        (assoc-in state [:gui ::menu] main-dialog)))))
+
+
+(defn privacy-dialog
+  [state gui ^long window-width ^long window-height]
+  (nuklear-window
+    gui "Privacy"
+    (quot (- window-width (scale gui 768)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long text-height 15) ^long padding ^long widget-height))) 2)
+    (scale gui 768) (scale gui (+ ^long title-height (* ^long text-height 15) ^long padding ^long widget-height)) :dialog
+    (ignore-nil-> state state
+      (layout-row-dynamic gui (scale gui (* ^long text-height 15)) 1)
+      (group gui "privacy" "Privacy"
+             (layout-row-dynamic gui (scale gui text-row-height) 1)
+             (doseq [line (line-seq (io/reader "privacy.txt"))]
                     (text-label gui line)))
       (layout-row-dynamic gui (scale gui row-height) 1)
       (when (button-label gui "Close")
@@ -1330,8 +1347,8 @@
   [state gui ^long window-width ^long window-height]
   (nuklear-window
     gui (format "sfsim %s" version)
-    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 8)))) 2)
-    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 8)))
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 9)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 9)))
     :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui (scale gui row-height) 1)
@@ -1351,6 +1368,8 @@
                     (assoc-in state [:input :sfsim.input/menu] nil))
                   (when (button-label gui "License")
                     (assoc-in state [:gui ::menu] license-dialog))
+                  (when (button-label gui "Privacy")
+                    (assoc-in state [:gui ::menu] privacy-dialog))
                   (when (button-label gui "Quit")
                     (GLFW/glfwSetWindowShouldClose (:window state) true)))))
 
