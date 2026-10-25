@@ -34,6 +34,8 @@
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED" "-XX:+UseZGC"
                             "-XX:+UseDynamicNumberOfGCThreads" "--sun-misc-unsafe-memory-access=allow"]
                  :main-opts ["-m" "sfsim.core"]}
+           :newrelic {:jvm-opts ["-javaagent:opt/newrelic/newrelic.jar"
+                                 "-Dnewrelic.config.file=opt/newrelic/newrelic.yml"]}
            :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.14"}
                           com.scarletcomply/license-finder {:mvn/version "0.4.0"}
                           sfsim/sfsim {:local/root "."}}

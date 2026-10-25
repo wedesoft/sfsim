@@ -1,0 +1,81 @@
+common: &default_settings
+  license_key: ''
+  agent_enabled: true
+  app_name: 'sfsim'
+  high_security: false
+  enable_auto_app_naming: false
+  enable_auto_transaction_naming: true
+  log_level: info
+  audit_mode: false
+  log_file_count: 1
+  log_limit_in_kbytes: 0
+  log_daily: false
+  log_file_name: newrelic_agent.log
+  application_logging:
+    enabled: true
+    forwarding:
+      enabled: true
+    metrics:
+      enabled: true
+  max_stack_trace_lines: 30
+  attributes:
+    enabled: true
+  transaction_tracer:
+    enabled: true
+    transaction_threshold: apdex_f
+    record_sql: obfuscated
+    log_sql: false
+    stack_trace_threshold: 0.5
+    explain_enabled: true
+    explain_threshold: 0.5
+    top_n: 20
+  error_collector:
+    enabled: true
+    ignore_errors: akka.actor.ActorKilledException
+    ignore_status_codes: 404
+  transaction_events:
+    enabled: true
+    max_samples_stored: 2000
+  distributed_tracing:
+    enabled: true
+    exclude_newrelic_header: false
+  span_events:
+    enabled: true
+    max_samples_stored: 2000
+    attributes:
+      enabled: true
+  cross_application_tracer:
+    enabled: false
+  thread_profiler:
+    enabled: true
+  browser_monitoring:
+    auto_instrument: true
+  class_transformer:
+    com.newrelic.instrumentation.servlet-user:
+      enabled: false
+    com.newrelic.instrumentation.spring-aop-2:
+      enabled: false
+    com.newrelic.instrumentation.jdbc-resultset:
+      enabled: false
+    classloader_excludes:
+      groovy.lang.GroovyClassLoader$InnerLoader,
+      org.codehaus.groovy.runtime.callsite.CallSiteClassLoader,
+      com.collaxa.cube.engine.deployment.BPELClassLoader,
+      org.springframework.data.convert.ClassGeneratingEntityInstantiator$ObjectInstantiatorClassGenerator,
+      org.mvel2.optimizers.impl.asm.ASMAccessorOptimizer$ContextClassLoader,
+      gw.internal.gosu.compiler.SingleServingGosuClassLoader,
+  jfr:
+    enabled: false
+    audit_logging: false
+  labels:
+development:
+  <<: *default_settings
+  app_name: 'sfsim (Development)'
+test:
+  <<: *default_settings
+  app_name: 'sfsim (Test)'
+production:
+  <<: *default_settings
+staging:
+  <<: *default_settings
+  app_name: 'sfsim (Staging)'
