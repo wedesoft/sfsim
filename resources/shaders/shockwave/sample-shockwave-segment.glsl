@@ -32,5 +32,3 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
   };
   return result;
 }
-
-

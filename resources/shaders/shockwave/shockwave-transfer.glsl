@@ -16,6 +16,4 @@ vec4 shockwave_transfer(vec3 point, float shockwave_step, vec4 shockwave_scatter
     shockwave_scatter += vec4(emission, emission, 0, 0);
   };
   return shockwave_scatter;
-};
-
-
+}

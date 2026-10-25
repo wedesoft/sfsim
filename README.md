@@ -71,6 +71,16 @@ git checkout windows
 
 You need to build the Jolt wrapper library (tested with Linux and Windows/MinGW): `make jolt`
 
+### New Relic Agent
+
+```
+curl -O https://download.newrelic.com/newrelic/java-agent/newrelic-agent/current/newrelic-java.zip
+          unzip -q newrelic-java.zip -d resources
+unzip -q newrelic-java.zip -d opt
+```
+
+You also need to edit `opt/newrelic/newrelic.yml` and add your New Relic Ingest License Key.
+
 ### Assets
 
 Furthermore you need to create content of data folder as shown in the bullet points below.
@@ -114,7 +124,7 @@ You can take the data folder of a Steam playtest build instead.
 
 * Run tests (recommended to use xvfb-run): `xvfb-run uv run clj -M:test`
 * Run tests for specific module (rendering for example): `xvfb-run uv run clj -M:test sfsim.t-render`
-* Run main program: `clj -M:run`
+* Run main program: `clj -M:run` (or with monitoring use `clj -M:newrelic:run`)
 
 You can enable the integration tests as follows (requires assets): `touch .integration`
 

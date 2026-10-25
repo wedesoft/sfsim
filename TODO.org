@@ -3,6 +3,12 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
+** TODO [#A] Core bugs and blockers                                       :bug:
+*** TODO Rare stack overflow in neighbour tile code
+**** TODO Consider whether resolution level difference could be more than one
+*** DONE Out-of-bounds exception when exceeding Mach 30
+*** TODO At cloud reporting of exceptions and crashes
+
 ** TODO [#A] Reentry                                                      :flight:physics:graphics:
 *** TODO Reentry flame
     [[https://gemini.google.com/app/d411b76be00c0e27]]
@@ -98,12 +104,6 @@
 *** TODO Add controls widget or tutorial
 *** TODO Tutorial
 *** TODO Draw MFDs first and use stencil
-
-** TODO [#A] Core bugs and blockers                                       :bug:
-*** TODO Rare stack overflow in neighbour tile code
-**** TODO Consider whether resolution level difference could be more than one
-*** DONE Out-of-bounds exception when exceeding Mach 30
-
 ** TODO [#A] Rendering pipeline modernization                             :graphics:rendering:
 *** TODO Modern rendering pipeline
 **** TODO Add RCS state to model vars
