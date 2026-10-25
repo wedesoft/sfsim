@@ -44,7 +44,9 @@
       GLFW
       GLFWVidMode)
     (org.lwjgl.nuklear
-      Nuklear)))
+      Nuklear)
+    (com.newrelic.api.agent
+      NewRelic)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -297,9 +299,17 @@
         (when user-stats (steam/destroy))))
   (catch Exception e
          (log/error e "Exception in main function")
-         (log/info "aborting sfsim" version)
+         (NewRelic/noticeError e)
+         (-> (NewRelic/getAgent)
+             (.getInsights)
+             (.recordCustomEvent "AppShutdown" {"type" "Crash"}))
+         (Thread/sleep 2000)
          (System/exit 1)))
   (log/info "terminating sfsim" version)
+  (-> (NewRelic/getAgent)
+      (.getInsights)
+      (.recordCustomEvent "AppShutdown" {"type" "CleanExit"}))
+  (Thread/sleep 2000)
   (System/exit 0))
 
 
