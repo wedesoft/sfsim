@@ -4,10 +4,11 @@
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
 ** TODO [#A] Core bugs and blockers                                       :bug:
+*** DONE At cloud reporting of exceptions and crashes
+**** TODO Use bash on Windows CI because sed does not seem to work
 *** TODO Rare stack overflow in neighbour tile code
 **** TODO Consider whether resolution level difference could be more than one
 *** DONE Out-of-bounds exception when exceeding Mach 30
-*** TODO At cloud reporting of exceptions and crashes
 
 ** TODO [#A] Reentry                                                      :flight:physics:graphics:
 *** TODO Reentry flame

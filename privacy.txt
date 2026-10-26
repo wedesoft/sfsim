@@ -2,13 +2,21 @@
 Privacy Policy
 ================================================================================
 
-To ensure application stability and fix software bugs, sfsim automatically logs
+To ensure application stability and fix software bugs, **sfsim** automatically logs
 technical error reports when an unexpected error occurs.
 
-What we collect: Anonymized stack traces, exception codes, and basic error logs.
+### What We Collect
+* **Technical & Error Telemetry:** Anonymized stack traces, exception codes,
+application version numbers, and basic environment host indicators required by
+monitoring tools (e.g., New Relic).
 
-What we DO NOT collect: No personal data, user credentials, system metrics,
-hardware specs, or personal files.
+### What We DO NOT Collect
+* **No Personal Identifiers:** No user names, email addresses, IP addresses,
+or account credentials.
+* **No Personal Files:** No telemetry from your local file system, directories,
+or personal documents.
 
-This technical data is processed solely for debugging purposes and is never
-shared or used to identify you.
+### How We Use Data
+This technical data is processed solely for software debugging and performance
+monitoring. It is never sold, used for tracking or advertising, or used to identify
+individual users.
