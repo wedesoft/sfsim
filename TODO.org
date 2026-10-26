@@ -5,9 +5,7 @@
 
 ** TODO [#A] Core bugs and blockers                                       :bug:
 *** DONE At cloud reporting of exceptions and crashes
-**** TODO Use bash on Windows CI because sed does not seem to work
-*** TODO Rare stack overflow in neighbour tile code
-**** TODO Consider whether resolution level difference could be more than one
+**** DONE Use bash on Windows CI because sed does not seem to work
 *** DONE Out-of-bounds exception when exceeding Mach 30
 
 ** TODO [#A] Reentry                                                      :flight:physics:graphics:
@@ -21,6 +19,8 @@
 ****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
 ***** TODO Do not overwrite clouds
 *** TODO Stop timewarp when RCS active or rotational speed too large
+*** TODO tutorial (show keys, joystick, commands)
+*** TODO orbit MFD
 *** TODO Reentry MFD
 **** TODO PPO agent outputs high-level guidance (bank angle and angle of attack)
 **** TODO Use down-range and cross-range; add Coriolis and centrifugal acceleration to observations
