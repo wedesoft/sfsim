@@ -338,8 +338,7 @@
                :target-dir class-dir})
   (b/compile-clj {:basis basis
                   :src-dirs ["src/clj"]
-                  :class-dir class-dir
-                  :exclude [#"(?i)license.*"]})
+                  :class-dir class-dir})
   (b/uber {:class-dir class-dir
            :uber-file "target/sfsim.jar"
            :basis basis

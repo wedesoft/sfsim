@@ -75,8 +75,7 @@ You need to build the Jolt wrapper library (tested with Linux and Windows/MinGW)
 
 ```
 curl -O https://download.newrelic.com/newrelic/java-agent/newrelic-agent/current/newrelic-java.zip
-          unzip -q newrelic-java.zip -d resources
-unzip -q newrelic-java.zip -d opt
+unzip -q -n newrelic-java.zip -d opt
 ```
 
 You also need to edit `opt/newrelic/newrelic.yml` and add your New Relic Ingest License Key.
