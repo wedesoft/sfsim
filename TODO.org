@@ -4,10 +4,9 @@
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
 ** TODO [#A] Core bugs and blockers                                       :bug:
-*** TODO Rare stack overflow in neighbour tile code
-**** TODO Consider whether resolution level difference could be more than one
+*** DONE At cloud reporting of exceptions and crashes
+**** DONE Use bash on Windows CI because sed does not seem to work
 *** DONE Out-of-bounds exception when exceeding Mach 30
-*** TODO At cloud reporting of exceptions and crashes
 
 ** TODO [#A] Reentry                                                      :flight:physics:graphics:
 *** TODO Reentry flame
@@ -20,6 +19,9 @@
 ****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
 ***** TODO Do not overwrite clouds
 *** TODO Stop timewarp when RCS active or rotational speed too large
+*** TODO tutorial (show keys, joystick, commands)
+*** TODO speed indicator, height, vertical speed
+*** TODO orbit MFD guidance needles
 *** TODO Reentry MFD
 **** TODO PPO agent outputs high-level guidance (bank angle and angle of attack)
 **** TODO Use down-range and cross-range; add Coriolis and centrifugal acceleration to observations
@@ -358,6 +360,7 @@
 
 * BUGS / TECH DEBT
 
+** TODO Update to UCRT64 (msystem: UCRT64)
 ** TODO Shadows and opacity maps are set up in three places              :techdebt:
 ** TODO Add object radius to object                                      :techdebt:
 ** DONE Fix planet tessellation tests                                    :bug:

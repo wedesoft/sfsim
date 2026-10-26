@@ -102,6 +102,10 @@ jobs:
         env:
           NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
         run: |
+          if [[ -z "${NEW_RELIC_LICENSE_KEY//[[:space:]]/}" ]]; then
+            echo "::error::NEW_RELIC_LICENSE_KEY is missing or empty."
+            exit 1
+          fi
           unzip -q -n newrelic-java.zip -d opt
           sed -i "s/license_key: ''/license_key: '$NEW_RELIC_LICENSE_KEY'/" opt/newrelic/newrelic.yml
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
@@ -148,6 +152,7 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
+          suppress-deprecation-warnings: msystem-mingw64
           update: true
           install: >-
             mingw-w64-x86_64-toolchain
@@ -210,8 +215,11 @@ jobs:
         env:
           NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
         run: |
+          if ([string]::IsNullOrWhiteSpace($env:NEW_RELIC_LICENSE_KEY)) {
+            throw "NEW_RELIC_LICENSE_KEY is missing or empty."
+          }
           unzip -q -n newrelic-java.zip -d opt
-          sed -i "s/license_key: ''/license_key: '$NEW_RELIC_LICENSE_KEY'/" opt/newrelic/newrelic.yml
+          (Get-Content 'opt/newrelic/newrelic.yml' -Raw).Replace("license_key: ''", "license_key: '$env:NEW_RELIC_LICENSE_KEY'") | Set-Content 'opt/newrelic/newrelic.yml' -Encoding utf8 -NoNewline
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
         name: Download packr jar
         run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
