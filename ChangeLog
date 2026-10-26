@@ -1,13 +1,15 @@
-sfsim (0.32-1)
+sfsim (0.32-2)
 
-  * Working on shockwave graphics (not enabled yet)
-	* Add cloud error logging
-	* Add privacy policy
+	* Update privacy policy
+
+-- Jan Wedekind <jan@wedesoft.de>  Mon, 26 Oct 2026 11:15:30 +0000
 
 sfsim (0.31-1)
 
   * Fixed undefined world to camera matrix causing cloud shadow issues
 	* Update minor Java version
+
+-- Jan Wedekind <jan@wedesoft.de>  Mon, 25 Oct 2026 23:00:00 +0000
 
 sfsim (0.30-1)
 
