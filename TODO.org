@@ -20,7 +20,8 @@
 ***** TODO Do not overwrite clouds
 *** TODO Stop timewarp when RCS active or rotational speed too large
 *** TODO tutorial (show keys, joystick, commands)
-*** TODO orbit MFD
+*** TODO speed indicator, height, vertical speed
+*** TODO orbit MFD guidance needles
 *** TODO Reentry MFD
 **** TODO PPO agent outputs high-level guidance (bank angle and angle of attack)
 **** TODO Use down-range and cross-range; add Coriolis and centrifugal acceleration to observations
