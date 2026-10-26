@@ -37,7 +37,7 @@
      - [[https://www.shadertoy.com/view/XX3fDH]]
      - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
 
-** TODO [#A] Launch and ascent                                           :flight:guidance:
+** TODO [#A] Launch and ascent                                            :flight:guidance:
 *** TODO Launch guidance indicators
 *** TODO Reinforcement-learning launch physics
 **** TODO Rewards and penalties
@@ -265,7 +265,7 @@
 **** TODO Dock
 *** TODO Use separate thread for building Nuklear buffer
 
-** TODO [#C] Spacecraft simulation                                       :physics:
+** TODO [#C] Spacecraft simulation                                        :physics:
 *** TODO Fuel consumption
 *** TODO Full testing of saving/loading configs and retrieving values
 *** TODO Allow setting heading in location dialog
@@ -287,14 +287,14 @@
 **** TODO Burning up
 **** TODO Wing stress failures
 
-** TODO [#C] Moon                                                        :scenery:
+** TODO [#C] Moon                                                         :scenery:
 *** TODO Moon base and lights
 *** TODO Rotating Moon coordinate system and ground collisions
 *** TODO Moon dust behavior
 *** TODO Moon orbit/surface speed display
 *** TODO Accelerated coordinate system with solar gravity
 
-** TODO [#C] Space station                                               :scenery:
+** TODO [#C] Space station                                                :scenery:
 *** TODO Space station model
 *** TODO Station lights
 *** TODO NASA docking system
@@ -303,7 +303,7 @@
     - [[https://science.nasa.gov/resource/international-space-station-3d-model/]]
     - [[https://www.youtube.com/watch?v=dWYpVfhvsak]]
 
-** TODO [#C] Graphics improvements                                       :graphics:
+** TODO [#C] Graphics improvements                                        :graphics:
 *** TODO General quality
 **** TODO FXAA
 **** TODO HDR rendering and HDR bloom
@@ -337,7 +337,7 @@
 *** TODO Materials and reflections
 **** TODO Create windows using blending / reflections
 
-** TODO [#C] Marketing and progression                                   :marketing:
+** TODO [#C] Marketing and progression                                    :marketing:
 *** TODO Missions and high scores
 *** TODO Targeted game description
 **** TODO Describe game four layers deep: genre, sub-genre, combat, setting/theme
@@ -361,20 +361,20 @@
 * BUGS / TECH DEBT
 
 ** TODO Update to UCRT64 (msystem: UCRT64)
-** TODO Shadows and opacity maps are set up in three places              :techdebt:
-** TODO Add object radius to object                                      :techdebt:
-** DONE Fix planet tessellation tests                                    :bug:
-** TODO Improve quaternion performance                                   :perf:
-** TODO Use dtype-next instead of aget/aset                              :techdebt:
-** TODO Extendability / modding                                          :architecture:
+** TODO Shadows and opacity maps are set up in three places               :techdebt:
+** TODO Add object radius to object                                       :techdebt:
+** DONE Fix planet tessellation tests                                     :bug:
+** TODO Improve quaternion performance                                    :perf:
+** TODO Use dtype-next instead of aget/aset                               :techdebt:
+** TODO Extendability / modding                                           :architecture:
 ** TODO Put parameters like max-height, power, specular, radius into config files
 ** TODO Separate atmosphere from environmental shadow code
-** TODO Free camera                                                      :feature:
-** TODO Eclipse                                                          :feature:
-** TODO Weather                                                          :feature:
+** TODO Free camera                                                       :feature:
+** TODO Eclipse                                                           :feature:
+** TODO Weather                                                           :feature:
 *** TODO uniform random offsets for Worley noises to generate different cloud cover for each game
-** TODO Winter daytime is too dark                                       :bug:
-** TODO Common playtest issues                                           :playtest:
+** TODO Winter daytime is too dark                                        :bug:
+** TODO Common playtest issues                                            :playtest:
 *** DONE Audio too loud
 *** TODO Tutorial
 **** TODO Take off
