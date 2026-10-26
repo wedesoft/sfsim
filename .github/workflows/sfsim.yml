@@ -103,7 +103,7 @@ jobs:
           NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
         run: |
           unzip -q -n newrelic-java.zip -d opt
-          sed -i "s/license_key: ''/license_key: '$NEW_RELIC_LICENSE_KEY'/" opt/newrelic/newrelic.yml
+          sed -i "s/license_key: ''/license_key: '$env:NEW_RELIC_LICENSE_KEY'/" opt/newrelic/newrelic.yml
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
         name: Download packr jar
         run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
