@@ -297,8 +297,8 @@
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
         (when user-stats (steam/destroy))))
-  (catch Exception e
-         (log/error e "Exception in main function")
+  (catch Throwable e
+         (log/error e "Throwable in main function")
          (NewRelic/noticeError e)
          (-> (NewRelic/getAgent)
              (.getInsights)
