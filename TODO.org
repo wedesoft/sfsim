@@ -7,6 +7,8 @@
 *** DONE At cloud reporting of exceptions and crashes
 **** DONE Use bash on Windows CI because sed does not seem to work
 *** DONE Out-of-bounds exception when exceeding Mach 30
+*** TODO (build-neighbour :sfsim.cubemap/face5 270 7 65 0 38 0.0 30.0 0 0 90) stackoverflow
+*** TODO cloud shader infinite loop
 
 ** TODO [#A] Reentry                                                      :flight:physics:graphics:
 *** TODO Reentry flame
@@ -29,6 +31,7 @@
 **** TODO Final entry window and heading alignment cylinder
 *** TODO Cockpit warning for heat
 *** TODO Simulate burning up / reentry heating effects
+*** TODO burn marks, tile heating
 *** TODO Reentry physics improvements
 **** DONE Can still use small simulation steps but large control steps
 **** TODO Start-state curriculum: begin near landing site
@@ -106,6 +109,7 @@
 *** TODO Add controls widget or tutorial
 *** TODO Tutorial
 *** TODO Draw MFDs first and use stencil
+*** TODO alarms for heating, wing stress, collision, ...
 ** TODO [#A] Rendering pipeline modernization                             :graphics:rendering:
 *** TODO Modern rendering pipeline
 **** TODO Add RCS state to model vars
