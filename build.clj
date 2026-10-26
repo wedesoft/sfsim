@@ -7,6 +7,7 @@
 ; See https://clojure.github.io/tools.build/clojure.tools.build.api.html
 (ns build
     (:require [clojure.tools.build.api :as b]
+              [hf.depstar.api :as depstar]
               [clojure.java.io :as io]
               [clojure.java.shell :refer (sh)]
               [scarlet.license-finder.core :as license-finder]
@@ -334,15 +335,16 @@
 (def class-dir "target/classes")
 
 (defn uber [_]
+  (b/delete {:path "target"})
   (b/copy-dir {:src-dirs ["src/clj"]
                :target-dir class-dir})
   (b/compile-clj {:basis basis
                   :src-dirs ["src/clj"]
                   :class-dir class-dir})
-  (b/uber {:class-dir class-dir
-           :uber-file "target/sfsim.jar"
-           :basis basis
-           :main 'sfsim.core}))
+  (depstar/uber {:class-dir class-dir
+                 :uber-file "target/sfsim.jar"
+                 :basis basis
+                 :main-class 'sfsim.core}))
 
 (defn download-spaceship
   "Download Spaceship model"
