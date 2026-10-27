@@ -33,7 +33,7 @@
         clj-python/libpython-clj {:mvn/version "2.026"}}
  :paths ["src/clj" "resources"]
  :aliases {:run {:jvm-opts ["-Xms2g" "-Xmx4g" "--enable-native-access=ALL-UNNAMED" "-XX:+UseZGC"
-                            "-XX:+UseDynamicNumberOfGCThreads" "--sun-misc-unsafe-memory-access=allow"]
+                            "-XX:+UseDynamicNumberOfGCThreads"]
                  :main-opts ["-m" "sfsim.core"]}
            :newrelic {:jvm-opts ["-javaagent:opt/newrelic/newrelic.jar"]}
            :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.14"}
@@ -42,14 +42,14 @@
                           sfsim/sfsim {:local/root "."}}
                    :ns-default build
                    :exec-fn all
-                   :jvm-opts ["-Xms2g" "-Xmx4g" "--sun-misc-unsafe-memory-access=allow"]}
+                   :jvm-opts ["-Xms2g" "-Xmx4g"]}
            :test {:extra-deps {midje/midje {:mvn/version "1.10.10"}
                                midje-runner/midje-runner {:git/url "https://github.com/wedesoft/midje-runner.git"
                                                           :git/sha "47c2e6c0f002ac15dc9acfeeb4e83d1ac30457aa"}}
                   :extra-paths ["test/clj"]
                   :main-opts ["-m" "midje-runner.runner"]
-                  :jvm-opts ["--enable-native-access=ALL-UNNAMED" "--sun-misc-unsafe-memory-access=allow"]}
+                  :jvm-opts ["--enable-native-access=ALL-UNNAMED"]}
            :profile {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.9.0"}}
                      :jvm-opts ["-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"
-                                "-XX:+UseZGC" "--sun-misc-unsafe-memory-access=allow"]
+                                "-XX:+UseZGC"]
                      :main-opts ["-m" "sfsim.core"]}}}
