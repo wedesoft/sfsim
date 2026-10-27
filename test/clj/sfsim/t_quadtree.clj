@@ -388,22 +388,23 @@
 (tabular "Get neighbouring tile face and coordinates"
          (let [extract (juxt :sfsim.quadtree/face :sfsim.quadtree/row :sfsim.quadtree/column
                              :sfsim.quadtree/tile-y :sfsim.quadtree/tile-x :sfsim.quadtree/rotation)]
-           (fact (extract (neighbour-tile ?face 2 9 ?row ?column ?tile-y ?tile-x ?dy ?dx 0)) => ?neighbour))
-         ?face ?row ?column ?tile-y ?tile-x ?dy ?dx ?neighbour
-         face0 0    0         0.0     0.0    0   0  [face0 0 0   0.0 0.0   0]
-         face0 1    2         5.0     7.0    0   0  [face0 1 2   5.0 7.0   0]
-         face0 1    2         5.0     7.0    1   0  [face0 1 2   6.0 7.0   0]
-         face0 1    2         5.0     6.0    0   1  [face0 1 2   5.0 7.0   0]
-         face0 1    2         5.0     7.0    4   0  [face0 2 2   1.0 7.0   0]
-         face0 1    2         5.0     7.0    0   2  [face0 1 3   5.0 1.0   0]
-         face0 1    2         5.0     7.0   -6   0  [face0 0 2   7.0 7.0   0]
-         face0 1    2         5.0     7.0    0  -8  [face0 1 1   5.0 7.0   0]
-         face1 0    0         0.0     0.0   -1   0  [face0 3 0   7.0 0.0   0]
-         face0 0    0         0.0     0.0   -1   0  [face4 0 0   1.0 0.0 180]
-         face0 0    0         0.5     0.0    1   0  [face0 0 0   1.5 0.0   0]
-         face0 0    0         0.0     0.5    0   1  [face0 0 0   0.0 1.5   0]
-         face0 3    0         7.5     0.5    1   0  [face1 0 0   0.5 0.5   0]
-         face0 3    3         2.0     0.0   -1  -1  [face0 3 2   1.0 7.0   0])
+           (fact (extract (neighbour-tile ?face ?level ?tilesize ?row ?column ?tile-y ?tile-x ?dy ?dx 0)) => ?neighbour))
+         ?face ?level ?tilesize ?row ?column ?tile-y ?tile-x ?dy ?dx ?neighbour
+         face0 2      9         0    0         0.0     0.0    0   0  [face0 0 0   0.0 0.0   0]
+         face0 2      9         1    2         5.0     7.0    0   0  [face0 1 2   5.0 7.0   0]
+         face0 2      9         1    2         5.0     7.0    1   0  [face0 1 2   6.0 7.0   0]
+         face0 2      9         1    2         5.0     6.0    0   1  [face0 1 2   5.0 7.0   0]
+         face0 2      9         1    2         5.0     7.0    4   0  [face0 2 2   1.0 7.0   0]
+         face0 2      9         1    2         5.0     7.0    0   2  [face0 1 3   5.0 1.0   0]
+         face0 2      9         1    2         5.0     7.0   -6   0  [face0 0 2   7.0 7.0   0]
+         face0 2      9         1    2         5.0     7.0    0  -8  [face0 1 1   5.0 7.0   0]
+         face1 2      9         0    0         0.0     0.0   -1   0  [face0 3 0   7.0 0.0   0]
+         face0 2      9         0    0         0.0     0.0   -1   0  [face3 0 3   1.0 8.0 180]
+         face0 2      9         0    0         0.5     0.0    1   0  [face0 0 0   1.5 0.0   0]
+         face0 2      9         0    0         0.0     0.5    0   1  [face0 0 0   0.0 1.5   0]
+         face0 2      9         3    0         7.5     0.5    1   0  [face1 0 0   0.5 0.5   0]
+         face0 2      9         3    3         2.0     0.0   -1  -1  [face0 3 2   1.0 7.0   0]
+         face5 1      5         1    0         3.0     0.0    1   0  [face5 1 0   4.0 0.0   0])
 
 
 (tabular "Get neighbouring tile face and coordinates"

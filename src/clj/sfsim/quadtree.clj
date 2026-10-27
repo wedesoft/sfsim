@@ -528,13 +528,13 @@
       :else
       (let [tile-y (+ ^double tile-y ^long dy)]
         (cond
-          (>= ^double tile-y (dec ^long tilesize))
+          (> ^double tile-y (dec ^long tilesize))
           (recur face level tilesize (inc ^long row) column (- ^double tile-y ^long (dec ^long tilesize)) tile-x 0 dx rotation)
           (< ^double tile-y 0)
           (recur face level tilesize (dec ^long row) column (+ ^double tile-y ^long (dec ^long tilesize)) tile-x 0 dx rotation)
           :else
           (let [tile-x (+ ^double tile-x ^long dx)]
-            (cond (>= ^double tile-x ^long (dec ^long tilesize))
+            (cond (> ^double tile-x ^long (dec ^long tilesize))
                   (recur face level tilesize row (inc ^long column) ^double tile-y (- ^double tile-x ^long (dec ^long tilesize))
                          0 0 rotation)
                   (< ^double tile-x 0)

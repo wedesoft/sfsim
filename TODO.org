@@ -7,7 +7,7 @@
 *** DONE At cloud reporting of exceptions and crashes
 **** DONE Use bash on Windows CI because sed does not seem to work
 *** DONE Out-of-bounds exception when exceeding Mach 30
-*** TODO (build-neighbour :sfsim.cubemap/face5 270 7 65 0 38 0.0 30.0 0 0 90) stackoverflow
+*** DONE (build-neighbour :sfsim.cubemap/face5 270 7 65 0 38 0.0 30.0 0 0 90) stackoverflow
 *** TODO cloud shader infinite loop
 
 ** TODO [#A] Reentry                                                      :flight:physics:graphics:
