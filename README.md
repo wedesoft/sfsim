@@ -12,7 +12,7 @@ See [sfsim homepage][1] for more details.
 ## Dependencies
 
 * Tested on Debian 13 and Windows 11
-* Install [Java Temurin for Linux](https://adoptium.net/en-GB/installation/linux) or [Java Temurin for Windows](https://adoptium.net/en-GB/installation/windows). For maximum compatibility on Windows, I use the 21 LTS release.
+* Install [Java Temurin for Linux](https://adoptium.net/en-GB/installation/linux) or [Java Temurin for Windows](https://adoptium.net/en-GB/installation/windows). For maximum compatibility on Windows, I use the 25 LTS release.
 * [Install Clojure 1.12](https://clojure.org/guides/install_clojure)
 * Download [Packr](https://github.com/libgdx/packr) Jar file for creating Windows executable
 * Install [Python 3.13](https://www.python.org/) if you are using GNU/Linux
