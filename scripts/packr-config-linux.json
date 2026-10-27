@@ -1,6 +1,6 @@
 {
   "platform": "linux64",
-  "jdk": "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.5-8.0.LTS/x64",
+  "jdk": "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.5-8/x64",
   "executable": "sfsim",
   "classpath": ["target/sfsim.jar", "resources"],
   "mainclass": "sfsim.core",
