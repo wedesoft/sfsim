@@ -7,7 +7,7 @@
 *** TODO Reentry flame
     [[https://gemini.google.com/app/d411b76be00c0e27]]
 **** TODO Shockwave shader
-***** TODO Use camera-to-plume matrix
+***** DONE Use camera-to-plume matrix
 ***** TODO Test object-to-shadow matrix returned by shadow-patch-matrices
 ***** DONE Use render-cloud-overlay with shockwave
 ***** TODO Create mixed shader for plume and shockwave
