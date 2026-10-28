@@ -274,14 +274,14 @@
   (with-culling :sfsim.render/cullfront
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
       (use-program program-outer)
-      (uniform-matrix4 program-outer "plume_to_object" plume-to-object)
       (uniform-matrix4 program-outer "camera_to_plume" (mulm (inverse plume-to-object) camera-to-object))
+      (uniform-matrix4 program-outer "plume_to_camera" (mulm (inverse camera-to-object) plume-to-object))
       (uniform-float program-outer "plume_throttle" throttle)
       (render-quads vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
       (use-program program-point)
-      (uniform-matrix4 program-point "plume_to_object" plume-to-object)
       (uniform-matrix4 program-outer "camera_to_plume" (mulm (inverse plume-to-object) camera-to-object))
+      (uniform-matrix4 program-outer "plume_to_camera" (mulm (inverse camera-to-object) plume-to-object))
       (uniform-float program-point "plume_throttle" throttle)
       (render-quads vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
