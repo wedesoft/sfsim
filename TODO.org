@@ -10,9 +10,10 @@
 ***** DONE Use camera-to-plume matrix
 ***** DONE Test object-to-shadow matrix returned by shadow-patch-matrices
 ***** DONE Use render-cloud-overlay with shockwave
+***** TODO Adjust shockwave strength according to dynamic pressure
 ***** TODO Create mixed shader for plume and shockwave
 ****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
-***** TODO Do not overwrite clouds
+***** DONE Do not overwrite clouds
 **** TODO Reentry flame / burning up references
      - [[https://www.shadertoy.com/view/XX3fDH]]
      - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
