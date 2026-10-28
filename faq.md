@@ -16,6 +16,15 @@ Note that a playtest build is [available on Steam][1].
 Planned features are vertical launch, space station docking, moon landing, atmospheric reentry, and landing on a runway.
 It is also planned to have flight instruments to support the different stages of flight.
 
+### Will there be more planets in the game?
+
+Currently only Earth and Moon are planned at least for the 1.0 release.
+
+### Will there be more spaceship types
+
+Currently only one spaceship is planned.
+Implementing a spaceship requires quite a bit of work: Aerodynamics, custom thrust shaders, cockpit, modelling and animations.
+
 ### What operating systems are supported?
 
 GNU/Linux and Microsoft Windows are supported.
