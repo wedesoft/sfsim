@@ -8,7 +8,7 @@
     [[https://gemini.google.com/app/d411b76be00c0e27]]
 **** TODO Shockwave shader
 ***** DONE Use camera-to-plume matrix
-***** TODO Test object-to-shadow matrix returned by shadow-patch-matrices
+***** DONE Test object-to-shadow matrix returned by shadow-patch-matrices
 ***** DONE Use render-cloud-overlay with shockwave
 ***** TODO Create mixed shader for plume and shockwave
 ****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
@@ -352,6 +352,8 @@
 
 * BACKLOG [#D] Nice to haves
 
+** TODO Rain drops
+** TODO Improve look of clouds from orbit
 ** TODO Reuse part of shadow and opacity map
 
 * BUGS / TECH DEBT
