@@ -11,6 +11,11 @@
 ***** DONE Test object-to-shadow matrix returned by shadow-patch-matrices
 ***** DONE Use render-cloud-overlay with shockwave
 ***** TODO Adjust shockwave strength according to dynamic pressure
+***** TODO Visualise vehicle heating (use compute shader and shader storage buffer object (SSBO) with double buffering?)
+****** TODO SSBO has (position, normal, current temperature, mass/capacity factor)
+****** TODO Check maximum temperature of hull and shield to detect failure
+****** TODO Run tiny SSBO with specific points for thermometer readings
+****** TODO Vertex-to-vertex heat conduction?
 ***** TODO Create mixed shader for plume and shockwave
 ****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
 ***** DONE Do not overwrite clouds
