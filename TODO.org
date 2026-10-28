@@ -21,7 +21,7 @@
 ****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
 ***** TODO Do not overwrite clouds
 *** TODO Stop timewarp when RCS active or rotational speed too large
-*** TODO tutorial (show keys, joystick, commands)
+*** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 *** TODO speed indicator, height, vertical speed
 *** TODO orbit MFD guidance needles
 *** TODO Reentry MFD
