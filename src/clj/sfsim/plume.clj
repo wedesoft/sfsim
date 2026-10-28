@@ -310,7 +310,6 @@
     (uniform-int program "overlay_width" overlay-width)
     (uniform-int program "overlay_height" overlay-height)
     (uniform-vector3 program "origin" (:sfsim.render/origin cloud-render-vars))
-    (uniform-vector3 program "object_origin" (:sfsim.render/object-origin cloud-render-vars))
     (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world cloud-render-vars))
     (uniform-matrix4 program "world_to_camera" (inverse (:sfsim.render/camera-to-world cloud-render-vars)))
     (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))

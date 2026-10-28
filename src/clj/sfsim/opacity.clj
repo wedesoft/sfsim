@@ -7,7 +7,6 @@
 (ns sfsim.opacity
   "Rendering of deep opacity maps for cloud shadows"
   (:require
-    [clojure.math :refer (sqrt)]
     [fastmath.vector :refer (mag dot)]
     [malli.core :as m]
     [sfsim.atmosphere :refer (phase)]
@@ -19,7 +18,6 @@
                                        use-program uniform-int uniform-float uniform-vector3 render-quads use-textures render-config
                                        vertex-array-object render-vars)]
     [sfsim.texture :refer (destroy-texture)]
-    [sfsim.util :refer (sqr)]
     [sfsim.worley :refer (worley-size)]))
 
 
