@@ -270,7 +270,7 @@
 
 
 (defn render-plume-overlay-basic
-  [program-outer program-point vao camera-to-object plume-to-object camera-to-plume throttle]
+  [program-outer program-point vao camera-to-plume throttle]
   (with-culling :sfsim.render/cullfront
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
       (use-program program-outer)
@@ -289,18 +289,18 @@
       (render-quads vao))))
 
 
-(defmulti render-plume-overlay (fn [_plume-renderer plume-name _model-vars _camera_to_object _plume-to-object _camera_to_plume] (first (split plume-name #" "))))
+(defmulti render-plume-overlay (fn [_plume-renderer plume-name _model-vars _camera_to_plume] (first (split plume-name #" "))))
 
 
 (defmethod render-plume-overlay "Plume"
-  [{::keys [programs vao]} _plume-name model-vars camera-to-object plume-to-object camera-to-plume]
-  (render-plume-overlay-basic (::plume-outer programs) (::plume-point programs) vao camera-to-object plume-to-object camera-to-plume
+  [{::keys [programs vao]} _plume-name model-vars camera-to-plume]
+  (render-plume-overlay-basic (::plume-outer programs) (::plume-point programs) vao camera-to-plume
                               (:sfsim.model/throttle model-vars)))
 
 
 (defmethod render-plume-overlay "RCS"
-  [{::keys [programs vao]} _plume-name _model-vars camera-to-object plume-to-object camera-to-plume]
-  (render-plume-overlay-basic (::rcs-outer programs) (::rcs-point programs) vao camera-to-object plume-to-object camera-to-plume 1.0))
+  [{::keys [programs vao]} _plume-name _model-vars camera-to-plume]
+  (render-plume-overlay-basic (::rcs-outer programs) (::rcs-point programs) vao camera-to-plume 1.0))
 
 
 (defn setup-dynamic-overlay-uniforms
@@ -341,4 +341,4 @@
            (uniform-float program "time" (:sfsim.model/time model-vars))
            (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
     (doseq [[thruster plume-to-object] plume-transforms]
-           (render-plume-overlay plume-renderer thruster model-vars camera-to-object plume-to-object (mulm (inverse plume-to-object) camera-to-object)))))
+           (render-plume-overlay plume-renderer thruster model-vars (mulm (inverse plume-to-object) camera-to-object)))))
