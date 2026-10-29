@@ -3,25 +3,28 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
-** TODO [#A] Core bugs and blockers                                       :bug:
-*** DONE At cloud reporting of exceptions and crashes
-**** DONE Use bash on Windows CI because sed does not seem to work
-*** DONE Out-of-bounds exception when exceeding Mach 30
-*** DONE (build-neighbour :sfsim.cubemap/face5 270 7 65 0 38 0.0 30.0 0 0 90) stackoverflow
-*** DONE cloud shader infinite loop
-
 ** TODO [#A] Reentry                                                      :flight:physics:graphics:
 *** TODO Reentry flame
     [[https://gemini.google.com/app/d411b76be00c0e27]]
 **** TODO Shockwave shader
-***** TODO Use camera-to-plume matrix
-***** TODO Test object-to-shadow matrix returned by shadow-patch-matrices
-***** TODO Use render-cloud-overlay with shockwave
+***** DONE Use camera-to-plume matrix
+***** DONE Test object-to-shadow matrix returned by shadow-patch-matrices
+***** DONE Use render-cloud-overlay with shockwave
+***** TODO Adjust shockwave strength according to dynamic pressure
+***** TODO Visualise vehicle heating (use compute shader and shader storage buffer object (SSBO) with double buffering?)
+****** TODO SSBO has (position, normal, current temperature, mass/capacity factor)
+****** TODO use distance to shockwave to estimate heating?
+****** TODO Check maximum temperature of hull and shield to detect failure
+****** TODO Run tiny SSBO with specific points for thermometer readings
+****** TODO Vertex-to-vertex heat conduction?
 ***** TODO Create mixed shader for plume and shockwave
 ****** TODO Use stencil buffer to prevent duplicate draw calls where bounding boxes overlap
-***** TODO Do not overwrite clouds
+***** DONE Do not overwrite clouds
+**** TODO Reentry flame / burning up references
+     - [[https://www.shadertoy.com/view/XX3fDH]]
+     - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
 *** TODO Stop timewarp when RCS active or rotational speed too large
-*** TODO tutorial (show keys, joystick, commands)
+*** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 *** TODO speed indicator, height, vertical speed
 *** TODO orbit MFD guidance needles
 *** TODO Reentry MFD
@@ -33,12 +36,8 @@
 *** TODO Simulate burning up / reentry heating effects
 *** TODO burn marks, tile heating
 *** TODO Reentry physics improvements
-**** DONE Can still use small simulation steps but large control steps
 **** TODO Start-state curriculum: begin near landing site
 **** TODO Reward agent for following a reference energy profile
-**** TODO Reentry flame / burning up references
-     - [[https://www.shadertoy.com/view/XX3fDH]]
-     - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
 
 ** TODO [#A] Launch and ascent                                           :flight:guidance:
 *** TODO Launch guidance indicators
@@ -360,6 +359,8 @@
 
 * BACKLOG [#D] Nice to haves
 
+** TODO Rain drops
+** TODO Improve look of clouds from orbit
 ** TODO Reuse part of shadow and opacity map
 
 * BUGS / TECH DEBT

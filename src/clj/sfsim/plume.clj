@@ -10,7 +10,7 @@
       [clojure.string :refer (split)]
       [malli.core :as m]
       [comb.template :as template]
-      [fastmath.matrix :refer (inverse)]
+      [fastmath.matrix :refer (inverse mulm)]
       [sfsim.shaders :as shaders]
       [sfsim.atmosphere :as atmosphere]
       [sfsim.bluenoise :refer (sampling-offset)]
@@ -270,18 +270,18 @@
 
 
 (defn render-plume-overlay-basic
-  [program-outer program-point vao transform throttle]
+  [program-outer program-point vao camera-to-plume throttle]
   (with-culling :sfsim.render/cullfront
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
       (use-program program-outer)
-      (uniform-matrix4 program-outer "plume_to_object" transform)
-      (uniform-matrix4 program-outer "object_to_plume" (inverse transform))
+      (uniform-matrix4 program-outer "camera_to_plume" camera-to-plume)
+      (uniform-matrix4 program-outer "plume_to_camera" (inverse camera-to-plume))
       (uniform-float program-outer "plume_throttle" throttle)
       (render-quads vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
       (use-program program-point)
-      (uniform-matrix4 program-point "plume_to_object" transform)
-      (uniform-matrix4 program-point "object_to_plume" (inverse transform))
+      (uniform-matrix4 program-outer "camera_to_plume" camera-to-plume)
+      (uniform-matrix4 program-outer "plume_to_camera" (inverse camera-to-plume))
       (uniform-float program-point "plume_throttle" throttle)
       (render-quads vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
@@ -289,18 +289,18 @@
       (render-quads vao))))
 
 
-(defmulti render-plume-overlay (fn [_plume-renderer plume-name _model-vars _transform] (first (split plume-name #" "))))
+(defmulti render-plume-overlay (fn [_plume-renderer plume-name _model-vars _camera_to_plume] (first (split plume-name #" "))))
 
 
 (defmethod render-plume-overlay "Plume"
-  [{::keys [programs vao]} _plume-name model-vars transform]
-  (render-plume-overlay-basic (::plume-outer programs) (::plume-point programs) vao transform
+  [{::keys [programs vao]} _plume-name model-vars camera-to-plume]
+  (render-plume-overlay-basic (::plume-outer programs) (::plume-point programs) vao camera-to-plume
                               (:sfsim.model/throttle model-vars)))
 
 
 (defmethod render-plume-overlay "RCS"
-  [{::keys [programs vao]} _plume-name _model-vars transform]
-  (render-plume-overlay-basic (::rcs-outer programs) (::rcs-point programs) vao transform 1.0))
+  [{::keys [programs vao]} _plume-name _model-vars camera-to-plume]
+  (render-plume-overlay-basic (::rcs-outer programs) (::rcs-point programs) vao camera-to-plume 1.0))
 
 
 (defn setup-dynamic-overlay-uniforms
@@ -310,10 +310,8 @@
     (uniform-int program "overlay_width" overlay-width)
     (uniform-int program "overlay_height" overlay-height)
     (uniform-vector3 program "origin" (:sfsim.render/origin cloud-render-vars))
-    (uniform-vector3 program "object_origin" (:sfsim.render/object-origin cloud-render-vars))
     (uniform-matrix4 program "camera_to_world" (:sfsim.render/camera-to-world cloud-render-vars))
     (uniform-matrix4 program "world_to_camera" (inverse (:sfsim.render/camera-to-world cloud-render-vars)))
-    (uniform-matrix4 program "camera_to_object" (:sfsim.render/camera-to-object cloud-render-vars))
     (uniform-matrix4 program "object_to_camera" (inverse (:sfsim.render/camera-to-object cloud-render-vars)))
     (uniform-matrix4 program "projection" (:sfsim.render/overlay-projection cloud-render-vars))
     (uniform-float program "object_distance" (:sfsim.render/object-distance cloud-render-vars))))
@@ -332,7 +330,8 @@
 
 (defn render-plume-overlays
   [plume-renderer plume-transforms cloud-render-vars model-vars geometry]
-  (let [programs (::programs plume-renderer)]
+  (let [programs         (::programs plume-renderer)
+        camera-to-object (:sfsim.render/camera-to-object cloud-render-vars)]
     (doseq [program [(::plume-outer programs) (::plume-point programs)
                      (::rcs-outer programs) (::rcs-point programs)]]
            (use-program program)
@@ -341,5 +340,5 @@
            (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
            (uniform-float program "time" (:sfsim.model/time model-vars))
            (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
-    (doseq [[thruster transform] plume-transforms]
-           (render-plume-overlay plume-renderer thruster model-vars transform))))
+    (doseq [[thruster plume-to-object] plume-transforms]
+           (render-plume-overlay plume-renderer thruster model-vars (mulm (inverse plume-to-object) camera-to-object)))))

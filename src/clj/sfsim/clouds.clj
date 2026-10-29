@@ -500,7 +500,6 @@
      :sfsim.render/overlay-projection overlay-projection
      :sfsim.render/origin camera-position
      :sfsim.render/light-direction light-direction
-     :sfsim.render/object-origin object-origin
      :sfsim.render/camera-to-world camera-to-world
      :sfsim.render/camera-to-object camera-to-object
      :sfsim.render/object-distance (mag object-origin)}))
