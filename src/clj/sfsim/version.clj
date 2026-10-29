@@ -7,4 +7,4 @@
 (ns sfsim.version)
 
 
-(def version "0.33-1")
+(def version "0.34-1")
