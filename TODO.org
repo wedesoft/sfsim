@@ -10,7 +10,8 @@
 ***** DONE Use camera-to-plume matrix
 ***** DONE Test object-to-shadow matrix returned by shadow-patch-matrices
 ***** DONE Use render-cloud-overlay with shockwave
-***** TODO Adjust shockwave strength according to dynamic pressure
+***** TODO Adjust shockwave strength according to dynamic pressure (70-75 km, 4.5 to 5.5 km/s, AoA 40 degree)
+      1/2 * rho * speed^3 C_d A
 ***** TODO Visualise vehicle heating (use compute shader and shader storage buffer object (SSBO) with double buffering?)
 ****** TODO SSBO has (position, normal, current temperature, mass/capacity factor)
 ****** TODO use distance to shockwave to estimate heating?
