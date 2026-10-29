@@ -101,8 +101,7 @@
   (uniform-int program "noise_size" (:sfsim.texture/width bluenoise))
   (uniform-float program "shockwave_radius" shockwave-radius)
   (uniform-float program "scale" (/ (* 2.0 ^double shockwave-radius) ^long size))
-  (uniform-float program "shockwave_step" 0.5)
-  (uniform-float program "shockwave_strength" 0.1))
+  (uniform-float program "shockwave_step" 0.5))
 
 
 (def depth-source
@@ -246,7 +245,7 @@ vec4 normal_source(vec2 uv)
 
 
 (defn setup-dynamic-shockwave-uniforms
-  [{::keys [atmosphere-luts bluenoise]} program cloud-render-vars wind-shadow mach projection points dist flood]
+  [{::keys [atmosphere-luts bluenoise]} program cloud-render-vars wind-shadow mach shockwave-strength projection points dist flood]
   (let [overlay-width        (:sfsim.render/overlay-width cloud-render-vars)
         overlay-height       (:sfsim.render/overlay-height cloud-render-vars)
         origin               (:sfsim.render/origin cloud-render-vars)
@@ -264,6 +263,7 @@ vec4 normal_source(vec2 uv)
     (uniform-vector3 program "origin" origin)
     (uniform-matrix4 program "camera_to_world" camera-to-world)
     (uniform-float program "mach" mach)
+    (uniform-float program "shockwave_strength" shockwave-strength)
     (uniform-matrix4 program "projection" projection)
     (uniform-matrix4 program "ndc_to_camera" ndc-to-camera)
     (uniform-matrix4 program "camera_to_shockwave" camera-to-shockwave)
@@ -274,20 +274,20 @@ vec4 normal_source(vec2 uv)
 
 (defn render-shockwave-overlay
   [{::keys [program-outer program-point vao-shockwave minimum-mach] :as shockwave-renderer} points dist wind-shadow
-   flood cloud-render-vars mach projection]
+   flood cloud-render-vars mach shockwave-strength projection]
   (when (>= ^double mach ^double minimum-mach)
     (with-culling :sfsim.render/cullfront
       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x1 0x1
         (use-program program-outer)
         (setup-dynamic-overlay-uniforms program-outer cloud-render-vars)
-        (setup-dynamic-shockwave-uniforms shockwave-renderer program-outer cloud-render-vars wind-shadow mach projection
-                                          points dist flood)
+        (setup-dynamic-shockwave-uniforms shockwave-renderer program-outer cloud-render-vars wind-shadow mach shockwave-strength
+                                          projection points dist flood)
         (render-quads vao-shockwave))
       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
         (use-program program-point)
         (setup-dynamic-overlay-uniforms program-point cloud-render-vars)
-        (setup-dynamic-shockwave-uniforms shockwave-renderer program-point cloud-render-vars wind-shadow mach projection
-                                          points dist flood)
+        (setup-dynamic-shockwave-uniforms shockwave-renderer program-point cloud-render-vars wind-shadow mach shockwave-strength
+                                          projection points dist flood)
         (render-quads vao-shockwave))
       (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
         (use-program program-point)

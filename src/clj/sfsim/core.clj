@@ -219,6 +219,7 @@
                        speed-of-sound     (atmosphere/speed-of-sound (atmosphere/temperature-at-height height))
                        wind-from          (normalize velocity)
                        mach               (/ (mag velocity) speed-of-sound)
+                       shockwave-strength (:sfsim.physics/shockwave-strength (:physics @state))
                        jd-ut              (physics/get-julian-date-ut (:physics @state))
                        icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
                        sun-pos            (earth-sun jd-ut)
@@ -258,10 +259,8 @@
                                               (graphics/render-scene-shadows graphics)
                                               (graphics/render-shockwave-geometry graphics wind-from mach)
                                               (graphics/render-cloud-geometry graphics tree)
-                                              (graphics/render-clouds-and-plume
-                                                graphics (physics/active-rcs (:physics @state)))
-                                              ; (graphics/render-clouds-and-shockwave-and-plume
-                                              ;   graphics (physics/active-rcs (:physics @state)) mach)
+                                              (graphics/render-clouds-and-shockwave-and-plume
+                                                graphics (physics/active-rcs (:physics @state)) mach shockwave-strength)
                                               (graphics/render-geometry graphics tree))]
                    (onscreen-render window
                                     (graphics/render-lighting frame graphics)
@@ -297,8 +296,8 @@
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
         (when user-stats (steam/destroy))))
-  (catch Exception e
-         (log/error e "Exception in main function")
+  (catch Throwable e
+         (log/error e "Throwable in main function")
          (NewRelic/noticeError e)
          (-> (NewRelic/getAgent)
              (.getInsights)

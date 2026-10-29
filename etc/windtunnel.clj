@@ -81,7 +81,7 @@
          ;; Render shockwave
          (render/framebuffer-render overlay-width overlay-height :sfsim.render/noculling nil [(:sfsim.graphics/clouds frame)]
                                     (render/with-underlay-blending
-                                      (graphics/render-shockwave-overlay frame graphics mach)))
+                                      (graphics/render-shockwave-overlay frame graphics mach 1.0)))
          ;; Compose render of model
          (render/onscreen-render window
                                  (render/clear (vec3 0 1 0) 0.0)

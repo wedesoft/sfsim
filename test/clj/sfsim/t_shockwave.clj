@@ -180,7 +180,7 @@ float shockfront(float radial_distance, float curvature_radius)
 
 (fact "Skip jump flooding if mach number is too small"
       (jump-flooding-algorithm {:sfsim.shockwave/minimum-mach 1.1} nil 1.0) => nil
-      (render-shockwave-overlay {:sfsim.shockwave/minimum-mach 1.1} nil nil nil nil nil 1.0 nil) => nil)
+      (render-shockwave-overlay {:sfsim.shockwave/minimum-mach 1.1} nil nil nil nil nil 1.0 1.0 nil) => nil)
 
 
 (facts "Test halving sequence"
@@ -324,7 +324,7 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
 
 
 (defn mock-setup-dynamic-shockwave-uniforms
-  [_shockwave-renderer program cloud-render-vars _wind-shadow mach projection points dist _flood]
+  [_shockwave-renderer program cloud-render-vars _wind-shadow mach shockwave-strength projection points dist _flood]
   (let [overlay-width        (:sfsim.render/overlay-width cloud-render-vars)
         overlay-height       (:sfsim.render/overlay-height cloud-render-vars)
         origin               (:sfsim.render/origin cloud-render-vars)
@@ -334,6 +334,7 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
     (uniform-vector3 program "origin" origin)
     (uniform-matrix4 program "camera_to_world" camera-to-world)
     (uniform-float program "mach" mach)
+    (uniform-float program "shockwave_strength" shockwave-strength)
     (uniform-matrix4 program "projection" projection)
     (use-textures {0 points 1 dist})))
 
@@ -373,7 +374,7 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
                                             (without-depth-test
                                               (with-stencils
                                                 (shockwave/render-shockwave-overlay shockwave-renderer points dist wind-shadow flood
-                                                                                    cloud-render-vars mach projection))))]
+                                                                                    cloud-render-vars mach 1.0 projection))))]
                  (get-vector4 (rgba-texture->vectors4 overlay) 0 0)
                  => (roughly-vector (vec4 ?r ?g ?b ?a) 1e-3)
                  (destroy-texture overlay)

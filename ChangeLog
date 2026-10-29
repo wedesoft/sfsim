@@ -1,3 +1,18 @@
+sfsim (0.34-1)
+
+  * Enable shockwave graphics
+
+-- Jan Wedekind <jan@wedesoft.de>  Thu, 29 Oct 2026 22:10:03 +0000
+
+sfsim (0.33-1)
+
+  * Switch to stable LTS Java version 25 instead of 27
+	* Bugfix for infinite recursion when deciding cube face of edge point
+	* Bugfix for negative opacity step size causing infinite loop when computing
+	  cloud shadows
+
+-- Jan Wedekind <jan@wedesoft.de>  Tue, 27 Oct 2026 23:08:24 +0000
+
 sfsim (0.32-2)
 
 	* Update privacy policy
