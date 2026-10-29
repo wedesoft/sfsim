@@ -272,7 +272,7 @@
 
 
 (defn render-shockwave-overlay
-  [frame graphics mach]
+  [frame graphics mach shockwave-strength]
   (let [shockwave-renderer (::shockwave-renderer graphics)
         cloud-render-vars  (::cloud-render-vars frame)
         cloud-geometry     (::cloud-geometry frame)
@@ -282,7 +282,7 @@
         flood              (::flood frame)
         projection         (:sfsim.render/overlay-projection cloud-render-vars)]
     (shockwave/render-shockwave-overlay shockwave-renderer points dist wind-shadow flood
-                                        cloud-render-vars mach projection)))
+                                        cloud-render-vars mach shockwave-strength projection)))
 
 
 (defn render-clouds
@@ -303,12 +303,12 @@
 
 
 (defn render-clouds-and-shockwave-and-plume
-  [frame graphics rcs-names mach]
+  [frame graphics rcs-names mach shockwave-strength]
   (render-clouds-basic frame graphics
                        (render-cloud-front frame graphics)
                        (render/with-underlay-blending
                          (render-plume-overlays frame graphics rcs-names)
-                         (render-shockwave-overlay frame graphics mach)
+                         (render-shockwave-overlay frame graphics mach shockwave-strength)
                          (render-cloud-back frame graphics))))
 
 

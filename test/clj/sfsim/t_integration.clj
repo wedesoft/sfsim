@@ -408,7 +408,7 @@ void main()
               overlay-width overlay-height :sfsim.render/noculling (:sfsim.clouds/depth-stencil cloud-geometry) [(:sfsim.graphics/clouds frame)]
               (render/with-stencils
                 (render/with-underlay-blending
-                  (graphics/render-shockwave-overlay frame graphics mach))))
+                  (graphics/render-shockwave-overlay frame graphics mach 1.0))))
             (render/render-to-image width height false
                                     (render/clear (vec3 0 1 0) 0.0)
                                     (graphics/render-lighting frame graphics))

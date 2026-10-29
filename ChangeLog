@@ -1,3 +1,9 @@
+sfsim (0.34-1)
+
+  * Enable shockwave graphics
+
+-- Jan Wedekind <jan@wedesoft.de>  Thu, 29 Oct 2026 22:10:03 +0000
+
 sfsim (0.33-1)
 
   * Switch to stable LTS Java version 25 instead of 27

@@ -635,6 +635,20 @@
        (dynamic-pressure density speed) ^double reference-area 0.5 ^double wing-span)))
 
 
+(defn heating
+  "Determine heat power (drag times speed)"
+  [height orientation linear-speed gear air-brake]
+  (let [density             (atmosphere/density-at-height height)
+        temperature         (atmosphere/temperature-at-height height)
+        speed-of-sound      (atmosphere/speed-of-sound temperature)
+        speed               (linear-speed-in-body-system orientation linear-speed)
+        drag                (drag speed speed-of-sound density gear air-brake)]
+    (* drag (:sfsim.aerodynamics/speed speed))))
+
+
+(def max-heating (heating 70000.0 (q/rotation (to-radians 40.0) (vec3 0 1 0)) (vec3 5500 0 0) 0.0 0.0))
+
+
 (defn aerodynamic-loads
   "Determine aerodynamic forces and moments"
   {:malli/schema [:=> [:cat :double q/quaternion fvec3 fvec3 fvec3 :double :double] :some]}
@@ -644,7 +658,8 @@
         speed-of-sound      (atmosphere/speed-of-sound temperature)
         speed               (linear-speed-in-body-system orientation linear-speed)
         rotation            (angular-speed-in-body-system orientation angular-speed)
-        forces              (vec3 (- ^double (drag speed speed-of-sound density gear air-brake))
+        drag                (drag speed speed-of-sound density gear air-brake)
+        forces              (vec3 (- ^double drag)
                                   (side-force speed control speed-of-sound density)
                                   (- (lift speed rotation speed-of-sound density)))
         aerodynamic-moments (vec3 (roll-moment speed speed-of-sound density)
@@ -657,7 +672,8 @@
                                   (pitch-moment-control speed control speed-of-sound density)
                                   (yaw-moment-control speed control speed-of-sound density))]
     {::forces (q/rotate-vector orientation (wind-to-body-system speed forces))
-     ::moments (q/rotate-vector orientation (add (add aerodynamic-moments damping-moments) control-moments))}))
+     ::moments (q/rotate-vector orientation (add (add aerodynamic-moments damping-moments) control-moments))
+     ::shockwave-strength (/ (* drag (:sfsim.aerodynamics/speed speed)) max-heating)}))
 
 
 (set! *warn-on-reflection* false)

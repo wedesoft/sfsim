@@ -434,73 +434,73 @@
 
 (defn lift-mock
   ^double [speed-body ^Vec3 rotation ^double speed-of-sound ^double density]
-  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} speed-of-sound => 340.0 density => 1.224)
   2.0)
 
 
 (defn drag-mock
   [speed-body speed-of-sound density gear air-brake]
-  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224 gear => 0.25 air-brake => 0.4)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} speed-of-sound => 340.0 density => 1.224 gear => 0.25 air-brake => 0.4)
   3.0)
 
 
 (defn side-force-mock
   ^double [speed-body control ^double speed-of-sound ^double density]
-  (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
   5.0)
 
 
 (defn roll-moment-mock
   ^double [speed-body ^double speed-of-sound ^double density]
-  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} speed-of-sound => 340.0 density => 1.224)
   0.5)
 
 
 (defn pitch-moment-mock
   ^double [speed-body ^double speed-of-sound ^double density]
-  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} speed-of-sound => 340.0 density => 1.224)
   0.125)
 
 
 (defn yaw-moment-mock
   ^double [speed-body ^double speed-of-sound ^double density]
-  (facts speed-body => :speed-body speed-of-sound => 340.0 density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} speed-of-sound => 340.0 density => 1.224)
   0.25)
 
 
 (defn roll-damping-mock
   ^double [speed-body rate ^double density]
-  (facts speed-body => :speed-body rate => :angular-body density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} rate => :angular-body density => 1.224)
   -1.0)
 
 
 (defn pitch-damping-mock
   ^double [speed-body rate ^double density]
-  (facts speed-body => :speed-body rate => :angular-body density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} rate => :angular-body density => 1.224)
   -0.25)
 
 
 (defn yaw-damping-mock
   ^double [speed-body rate ^double density]
-  (facts speed-body => :speed-body rate => :angular-body density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} rate => :angular-body density => 1.224)
   -0.5)
 
 
 (defn roll-moment-control-mock
   ^double [speed-body ^Vec3 control ^double speed-of-sound ^double density]
-  (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
   0.0)
 
 
 (defn pitch-moment-control-mock
   ^double [speed-body ^Vec3 control ^double speed-of-sound ^double density]
-  (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
   0.0)
 
 
 (defn yaw-moment-control-mock
   ^double [speed-body ^Vec3 control ^double speed-of-sound ^double density]
-  (facts speed-body => :speed-body control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
+  (facts speed-body => {:sfsim.aerodynamics/speed 5.0} control => (vec3 0 1 2) speed-of-sound => 340.0 density => 1.224)
   0.0)
 
 
@@ -517,13 +517,13 @@
                        atmosphere/speed-of-sound speed-of-sound-mock
                        aerodynamics/linear-speed-in-body-system
                        (fn [orientation speed] (facts orientation => (q/->Quaternion 1.0 0.0 0.0 0.0) speed => (vec3 5 0 0))
-                           :speed-body)
+                           {:sfsim.aerodynamics/speed 5.0})
                        aerodynamics/angular-speed-in-body-system
                        (fn [orientation speed] (facts orientation => (q/->Quaternion 1.0 0.0 0.0 0.0) speed => (vec3 3 1 2))
                            :angular-body)
                        wind-to-body-system
                        (fn [speed-body force-vector]
-                           (facts speed-body => :speed-body)
+                           (facts speed-body => {:sfsim.aerodynamics/speed 5.0})
                            force-vector)
                        aerodynamics/lift
                        lift-mock
@@ -555,7 +555,7 @@
            => (vec3 -0.5 -0.125 -0.25)
            (with-redefs [aerodynamics/linear-speed-in-body-system
                          (fn [orientation speed] (facts orientation => (q/->Quaternion 0.0 1.0 0.0 0.0) speed => (vec3 5 0 0))
-                             :speed-body)
+                             {:sfsim.aerodynamics/speed 5.0})
                        aerodynamics/angular-speed-in-body-system
                        (fn [orientation speed] (facts orientation => (q/->Quaternion 0.0 1.0 0.0 0.0) speed => (vec3 3 1 2))
                            :angular-body)]
@@ -565,6 +565,14 @@
              (:sfsim.aerodynamics/moments (aerodynamic-loads height (q/->Quaternion 0.0 1.0 0.0 0.0) linear-speed angular-speed
                                                              (vec3 0 1 2) 0.25 0.4))
              => (q/rotate-vector (q/->Quaternion 0.0 1.0 0.0 0.0) (vec3 -0.5 -0.125 -0.25))))))
+
+
+(facts "Amount of drag relative to maximum drag"
+       (let [aoa  (q/rotation (to-radians 40.0) (vec3 0 1 0))
+             zero (aerodynamic-loads 70000.0 aoa (vec3 0 0 0) (vec3 0 0 0) (vec3 0 0 0) 0.0 0.0)
+             full (aerodynamic-loads 70000.0 aoa (vec3 5500 0 0) (vec3 0 0 0) (vec3 0 0 0) 0.0 0.0)]
+         (:sfsim.aerodynamics/shockwave-strength zero) => (roughly 0.0 1e-6)
+         (:sfsim.aerodynamics/shockwave-strength full) => (roughly 1.0 1e-6)))
 
 
 (facts "Test zero aerodynamic forces and moments at rest"
