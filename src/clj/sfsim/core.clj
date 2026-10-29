@@ -219,6 +219,7 @@
                        speed-of-sound     (atmosphere/speed-of-sound (atmosphere/temperature-at-height height))
                        wind-from          (normalize velocity)
                        mach               (/ (mag velocity) speed-of-sound)
+                       shockwave-strength (:sfsim.physics/shockwave-strength (:physics @state))
                        jd-ut              (physics/get-julian-date-ut (:physics @state))
                        icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
                        sun-pos            (earth-sun jd-ut)

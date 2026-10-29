@@ -117,6 +117,7 @@
    ::control-surfaces (vec3 0 0 0)
    ::brake 0.0
    ::vehicle nil
+   ::shockwave-strength 0.0
    ::local-mesh {::coords nil ::mesh nil}})
 
 
@@ -628,7 +629,7 @@
                                                (::control-surfaces state) (::gear state) (::air-brake state))]
     (add-force ::surface state (:sfsim.aerodynamics/forces loads))
     (add-torque ::surface state (:sfsim.aerodynamics/moments loads))
-    state))
+    (assoc state ::shockwave-strength (:sfsim.aerodynamics/shockwave-strength loads))))
 
 
 (defn create-vehicle-constraint
