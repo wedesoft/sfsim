@@ -280,8 +280,8 @@
       (render-quads vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x2 0x2
       (use-program program-point)
-      (uniform-matrix4 program-outer "camera_to_plume" camera-to-plume)
-      (uniform-matrix4 program-outer "plume_to_camera" (inverse camera-to-plume))
+      (uniform-matrix4 program-point "camera_to_plume" camera-to-plume)
+      (uniform-matrix4 program-point "plume_to_camera" (inverse camera-to-plume))
       (uniform-float program-point "plume_throttle" throttle)
       (render-quads vao))
     (with-stencil-op-ref-and-mask GL11/GL_EQUAL 0x4 0x4
@@ -339,6 +339,7 @@
            (setup-dynamic-plume-uniforms program plume-renderer model-vars geometry)
            (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
            (uniform-float program "time" (:sfsim.model/time model-vars))
+           (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))
            (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
     (doseq [[thruster plume-to-object] plume-transforms]
            (render-plume-overlay plume-renderer thruster model-vars (mulm (inverse plume-to-object) camera-to-object)))))
