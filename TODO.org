@@ -12,6 +12,7 @@
 ***** DONE Use render-cloud-overlay with shockwave
 ***** DONE Adjust shockwave strength according to dynamic pressure (70-75 km, 4.5 to 5.5 km/s, AoA 40 degree)
       1/2 * rho * speed^3 C_d A = speed * drag
+***** TODO Put texture clear instruction into texture module
 ***** TODO adapt colour of shockwave
 ***** TODO make shockwave more noisy at higher air pressures
 ***** TODO Visualise vehicle heating (use compute shader and shader storage buffer object (SSBO) with double buffering?)

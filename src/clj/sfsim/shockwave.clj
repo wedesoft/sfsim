@@ -18,7 +18,9 @@
       [sfsim.shaders :refer (vertex-passthrough ray-box ray-sphere limit-interval) :as shaders])
     (:import
       (org.lwjgl.opengl
-        GL11 GL30)))
+        GL11 GL30 GL44)
+      (java.nio
+        ByteBuffer)))
 
 
 (set! *unchecked-math* :warn-on-boxed)
@@ -178,7 +180,9 @@ vec4 normal_source(vec2 uv)
 
 (defn jump-flooding-initialisation
   [{::keys [program-init vao size shockwave-radius max-curvature-radius]} fun]
-  (let [flood (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
+  (let [flood            (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)
+        ^ByteBuffer data nil]
+    (GL44/glClearTexImage (:sfsim.texture/texture flood) 0 GL11/GL_RGBA GL11/GL_FLOAT data)
     (framebuffer-render size size :sfsim.render/cullback nil [flood]
                         (use-program program-init)
                         (uniform-int program-init "size" size)
