@@ -643,7 +643,7 @@
         speed-of-sound      (atmosphere/speed-of-sound temperature)
         speed               (linear-speed-in-body-system orientation linear-speed)
         drag                (drag speed speed-of-sound density gear air-brake)]
-    (* drag (:sfsim.aerodynamics/speed speed))))
+    (* ^double drag ^double (:sfsim.aerodynamics/speed speed))))
 
 
 (def max-heating (heating 70000.0 (q/rotation (to-radians 40.0) (vec3 0 1 0)) (vec3 5500 0 0) 0.0 0.0))
@@ -673,7 +673,7 @@
                                   (yaw-moment-control speed control speed-of-sound density))]
     {::forces (q/rotate-vector orientation (wind-to-body-system speed forces))
      ::moments (q/rotate-vector orientation (add (add aerodynamic-moments damping-moments) control-moments))
-     ::shockwave-strength (/ (* drag (:sfsim.aerodynamics/speed speed)) max-heating)}))
+     ::shockwave-strength (/ (* ^double drag ^double (:sfsim.aerodynamics/speed speed)) ^double max-heating)}))
 
 
 (set! *warn-on-reflection* false)
