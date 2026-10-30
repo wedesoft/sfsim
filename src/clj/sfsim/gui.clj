@@ -903,8 +903,10 @@
          stack#   (MemoryStack/stackPush)
          ~rect    (NkRect/malloc stack#)]
      (Nuklear/nk_widget ~rect context#)
-     ~@body
-     (MemoryStack/stackPop)))
+     (try
+       ~@body
+       (finally
+         (MemoryStack/stackPop)))))
 
 
 (defmacro with-rect

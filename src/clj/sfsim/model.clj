@@ -29,7 +29,7 @@
                           framebuffer-render render-quads) :as render]
     [sfsim.shaders :refer (shrink-shadow-index)]
     [sfsim.texture :refer (make-rgba-texture destroy-texture texture-2d generate-mipmap make-empty-texture-2d
-                           make-empty-depth-stencil-texture-2d)]
+                           make-empty-depth-stencil-texture-2d clear-texture)]
     [sfsim.util :refer (N0 N)])
   (:import
     (java.nio
@@ -772,6 +772,8 @@
   (let [centered-scene (assoc-in scene [::root ::transform] (eye 4))
         normal-tex     (when normals
                          (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F size size))]
+    (when normals
+      (clear-texture normal-tex GL11/GL_RGBA GL11/GL_FLOAT))
     (doseq [program (vals (::programs renderer))]
            (use-program program)
            (uniform-int program "shadow_size" size))

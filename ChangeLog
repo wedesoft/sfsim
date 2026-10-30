@@ -1,3 +1,9 @@
+sfsim (0.34-3)
+
+  * Clear normal buffer because it is required by some graphics drivers
+
+-- Jan Wedekind <jan@wedesoft.de>  Fri, 30 Oct 2026 14:41:00 +0000
+
 sfsim (0.34-2)
 
   * Bugfix for uniforms initialised for wrong shader

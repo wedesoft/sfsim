@@ -18,7 +18,7 @@
       [sfsim.shaders :refer (vertex-passthrough ray-box ray-sphere limit-interval) :as shaders])
     (:import
       (org.lwjgl.opengl
-        GL11 GL30 GL44)
+        GL11 GL30)
       (java.nio
         ByteBuffer)))
 
@@ -181,7 +181,6 @@ vec4 normal_source(vec2 uv)
 (defn jump-flooding-initialisation
   [{::keys [program-init vao size shockwave-radius max-curvature-radius]} fun]
   (let [flood            (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/zero GL30/GL_RGBA32F size size)]
-    ; (GL44/glClearTexImage (:sfsim.texture/texture flood) 0 GL11/GL_RGBA GL11/GL_FLOAT ^ByteBuffer nil)
     (framebuffer-render size size :sfsim.render/cullback nil [flood]
                         (use-program program-init)
                         (uniform-int program-init "size" size)
@@ -254,6 +253,7 @@ vec4 normal_source(vec2 uv)
         origin               (:sfsim.render/origin cloud-render-vars)
         camera-to-world      (:sfsim.render/camera-to-world cloud-render-vars)
         light-direction      (:sfsim.render/light-direction cloud-render-vars)
+        amplification        (:sfsim.render/amplification cloud-render-vars)
         matrices             (:sfsim.model/matrices wind-shadow)
         world-to-object      (:sfsim.matrix/world-to-object matrices)
         object-to-ndc        (:sfsim.matrix/object-to-shadow-ndc matrices)
@@ -267,6 +267,7 @@ vec4 normal_source(vec2 uv)
     (uniform-vector3 program "origin" origin)
     (uniform-matrix4 program "camera_to_world" camera-to-world)
     (uniform-vector3 program "light_direction" light-direction)
+    (uniform-float program "amplification" amplification)
     (uniform-float program "mach" mach)
     (uniform-float program "shockwave_strength" shockwave-strength)
     (uniform-matrix4 program "projection" projection)

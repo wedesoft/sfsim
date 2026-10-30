@@ -1633,7 +1633,8 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                          plume/plume-vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]]
              (with-invisible-window
                (let [geometry           (mock-geometry ?x ?y ?z ?stencil)
-                     render-config      {:sfsim.render/cloud-subsampling 1 :sfsim.render/fov 1.04 :sfsim.render/min-z-near 0.1}
+                     render-config      {:sfsim.render/cloud-subsampling 1 :sfsim.render/fov 1.04 :sfsim.render/min-z-near 0.1
+                                         :sfsim.render/amplification 6.0}
                      planet-render-vars {:sfsim.render/z-near 0.1 :sfsim.render/z-far 10.0}
                      data               {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}
                                          :sfsim.clouds/data   {:sfsim.clouds/cloud-octaves [0.46 0.32 0.22]
