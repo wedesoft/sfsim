@@ -286,7 +286,7 @@
                                         (when menu (swap! state menu @gui window-width window-height)))
                                       (let [controls (-> @state :input :sfsim.input/controls)]
                                         (gui/flight-controls-display controls @gui)
-                                        (gui/information-display @gui window-width window-height @state @frametime time-lapse))
+                                        (gui/information-display @gui window-width window-height @state @capture-counter (-> @state :input :sfsim.input/capture) time-lapse))
                                       (gui/render-nuklear-gui @gui window-width window-height)))
                    (graphics/destroy-frame frame))
                  (Nuklear/nk_input_begin (:sfsim.gui/context @gui))

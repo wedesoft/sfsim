@@ -1908,16 +1908,17 @@
 
 
 (defn information-display
-  [gui w h state frametime time-lapse]
+  [gui w h state capture-counter capture time-lapse]
   (let [controls (-> state :input :sfsim.input/controls)
-        text     (format "vs = % .1f m/s, v = %.1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
+        text     (format "vs = % .1f m/s, v = %.1f m/s, %s%s%s, frame = %5d%s, time x = %2d"
                          (:sfsim.physics/display-vertical-speed (:physics state))
                          (:sfsim.physics/display-speed (:physics state))
                          (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
                          (if (:sfsim.input/brake controls) ", brake"
                            (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
                          (if (:sfsim.input/air-brake controls) ", air brake" "")
-                         (/ 1.0 ^double frametime)
+                         capture-counter
+                         (if capture "*" " ")
                          time-lapse)]
     (without-window-padding gui
       (nuklear-window gui "Orbit" (scale gui 10) (- ^long h (scale gui (+ 10 256)))
