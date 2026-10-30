@@ -340,6 +340,7 @@
            (uniform-float program "pressure" (:sfsim.model/pressure model-vars))
            (uniform-float program "time" (:sfsim.model/time model-vars))
            (uniform-vector3 program "light_direction" (:sfsim.render/light-direction cloud-render-vars))
+           (uniform-float program "amplification" (:sfsim.render/amplification cloud-render-vars))
            (use-textures {0 (:sfsim.clouds/points geometry) 1 (:sfsim.clouds/distance geometry)}))
     (doseq [[thruster plume-to-object] plume-transforms]
            (render-plume-overlay plume-renderer thruster model-vars (mulm (inverse plume-to-object) camera-to-object)))))

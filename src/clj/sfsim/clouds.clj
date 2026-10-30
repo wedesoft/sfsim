@@ -483,6 +483,7 @@
   [render-config planet-render-vars width height camera-position camera-orientation light-direction object-position object-orientation]
   (let [fov                (:sfsim.render/fov render-config)
         min-z-near         (:sfsim.render/min-z-near render-config)
+        amplification      (:sfsim.render/amplification render-config)
         cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
         overlay-width      (quot ^long width ^long cloud-subsampling)
         overlay-height     (quot ^long height ^long cloud-subsampling)
@@ -500,6 +501,7 @@
      :sfsim.render/overlay-projection overlay-projection
      :sfsim.render/origin camera-position
      :sfsim.render/light-direction light-direction
+     :sfsim.render/amplification amplification
      :sfsim.render/camera-to-world camera-to-world
      :sfsim.render/camera-to-object camera-to-object
      :sfsim.render/object-distance (mag object-origin)}))
