@@ -10,6 +10,8 @@
     [sfsim.image :refer (image byte-image float-image-2d float-image-3d float-image-4d)]
     [sfsim.util :refer (N)])
   (:import
+    (java.nio
+      ByteBuffer)
     (org.lwjgl
       BufferUtils)
     (org.lwjgl.opengl
@@ -21,6 +23,7 @@
       GL30
       GL31
       GL42
+      GL44
       EXTTextureFilterAnisotropic)))
 
 
@@ -596,6 +599,12 @@
     (let [buf (BufferUtils/createFloatBuffer (* width height 3))]
       (GL11/glGetTexImage ^long (+ GL13/GL_TEXTURE_CUBE_MAP_POSITIVE_X face) 0 GL12/GL_RGB GL11/GL_FLOAT buf)
       #:sfsim.image{:width width :height height :data (float-buffer->array buf)})))
+
+
+(defn clear-texture
+  [{::keys [^long texture]} format_ type_]
+  (let [^ByteBuffer data nil]
+    (GL44/glClearTexImage texture 0 format_ type_ ^ByteBuffer data)))
 
 
 (set! *warn-on-reflection* false)
