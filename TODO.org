@@ -12,6 +12,7 @@
 ***** DONE Use render-cloud-overlay with shockwave
 ***** DONE Adjust shockwave strength according to dynamic pressure (70-75 km, 4.5 to 5.5 km/s, AoA 40 degree)
       1/2 * rho * speed^3 C_d A = speed * drag
+***** TODO set amplification
 ***** TODO Put texture clear instruction into texture module
 ***** TODO adapt colour of shockwave
 ***** TODO make shockwave more noisy at higher air pressures
@@ -26,7 +27,8 @@
 **** TODO Reentry flame / burning up references
      - [[https://www.shadertoy.com/view/XX3fDH]]
      - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
-*** TODO Stop timewarp when RCS active or rotational speed too large
+*** TODO restart button
+*** TODO Stop timewarp when RCS active or rotational speed too large, do not automatically increase timewarp
 *** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 *** TODO speed indicator, height, vertical speed
 *** TODO orbit MFD guidance needles

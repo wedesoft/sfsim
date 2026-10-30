@@ -604,7 +604,7 @@
 (defn clear-texture
   [{::keys [^long texture]} format_ type_]
   (let [^ByteBuffer data nil]
-    (GL44/glClearTexImage texture 0 format_ type_ ^ByteBuffer data)))
+    (GL44/glClearTexImage texture 0 ^long format_ ^long type_ ^ByteBuffer data)))
 
 
 (set! *warn-on-reflection* false)
