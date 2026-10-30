@@ -14,7 +14,6 @@
 (GLFW/glfwDefaultWindowHints)
 (def width 1024)
 (def height 768)
-(def size 512)
 (def window (GLFW/glfwCreateWindow width height "Windtunnel" 0 0))
 (GLFW/glfwSwapInterval 1)
 (def mouse-pos (atom [0.0 0.0]))
