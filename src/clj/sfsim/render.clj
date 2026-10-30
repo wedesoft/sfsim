@@ -734,7 +734,7 @@
   "Macro to create shadow map"
   [width height color-textures culling & body]
   `(let [tex# (make-empty-depth-texture-2d :sfsim.texture/linear :sfsim.texture/zero ~width ~height)]
-     (GL44/glClearTexImage (:sfsim.texture/texture tex#) 0 GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT (float-array [0.0]))
+     ; (GL44/glClearTexImage (:sfsim.texture/texture tex#) 0 GL11/GL_DEPTH_COMPONENT GL11/GL_FLOAT (float-array [0.0]))
      (framebuffer-render ~width ~height ~culling tex# ~color-textures ~@body tex#)))
 
 
