@@ -366,6 +366,7 @@
      GLFW/GLFW_KEY_S         ::elevator-up
      GLFW/GLFW_KEY_Q         ::rudder-left
      GLFW/GLFW_KEY_E         ::rudder-right
+     GLFW/GLFW_KEY_C         ::capture
      GLFW/GLFW_KEY_DOWN      ::camera-rotate-x-positive
      GLFW/GLFW_KEY_UP        ::camera-rotate-x-negative
      GLFW/GLFW_KEY_RIGHT     ::camera-rotate-y-positive
@@ -573,6 +574,13 @@
       (assoc-in state [::controls ::rcs-pitch] -1)
       (increment-clamp state ::elevator -0.0625))
     (assoc-in state [::controls ::rcs-pitch] 0)))
+
+
+(defmethod simulator-key ::capture
+  [state _id action _mods]
+  (if (keypress? action)
+    (update-in state [::capture] not)
+    state))
 
 
 (defmethod simulator-key ::camera-rotate-x-positive

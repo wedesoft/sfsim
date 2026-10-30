@@ -43,6 +43,8 @@
     (org.lwjgl.glfw
       GLFW
       GLFWVidMode)
+    (org.lwjgl.opengl
+      GL11)
     (org.lwjgl.nuklear
       Nuklear)
     (com.newrelic.api.agent
@@ -122,6 +124,7 @@
       (GLFW/glfwSetScrollCallback window (scroll-callback event-buffer))
 
       (let [frame-counter       (atom 0)
+            capture-counter     (atom 0)
             frametime           (atom 0.25)
             spk                 (astro/make-spk-document "data/astro/de430_1850-2150.bsp")  ; Spacecraft and Planet Kernel (SPK)
             barycenter-sun      (astro/make-spk-segment-interpolator spk 0 10)
@@ -186,7 +189,7 @@
                  (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
                  (swap! state assoc-in [:gui :sfsim.gui/window-width] (aget w 0))
                  (swap! state assoc-in [:gui :sfsim.gui/window-height] (aget h 0)))
-               (let [dt              (elapsed-time)
+               (let [dt              (elapsed-time (/ 1.0 30.0) (/ 1.0 30.0))
                      earth-radius    (:sfsim.planet/radius config/planet-config)
                      object-position (physics/get-position :sfsim.physics/surface (:physics @state))
                      height          (- (mag object-position) ^double earth-radius)
@@ -264,6 +267,18 @@
                                               (graphics/render-geometry graphics tree))]
                    (onscreen-render window
                                     (graphics/render-lighting frame graphics)
+                                    (when (and (-> @state :input :sfsim.input/capture) (not (-> @state :input :sfsim.input/pause)))
+                                      (let [buffer (java.nio.ByteBuffer/allocateDirect (* 4 ^long window-width ^long window-height))
+                                          data   (byte-array (* 4 ^long window-width ^long window-height))]
+                                      (GL11/glFlush)
+                                      (GL11/glFinish)
+                                      (GL11/glReadPixels 0 0 ^long window-width ^long window-height GL11/GL_RGBA GL11/GL_UNSIGNED_BYTE buffer)
+                                      (.get buffer data)
+                                      (image/spit-jpg (format "frame%06d.jpg" @capture-counter) {:sfsim.image/data data
+                                                                                                 :sfsim.image/width window-width
+                                                                                                 :sfsim.image/height window-height
+                                                                                                 :sfsim.image/channels 4} true)
+                                      (swap! capture-counter inc)))
                                     (with-culling :sfsim.render/noculling
                                       (let [menu (-> @state :gui :sfsim.gui/menu)]
                                         (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR
