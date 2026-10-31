@@ -25,7 +25,7 @@ Blast off from the launch pad and slowly tilt your spacecraft to start building 
 Make sure you don't lose to much energy to air friction but also gather enough horizontal speed not to plunge back into the atmosphere.
 
 <div class="video-container">
-<video src="pics/launch.mp4" autoplay loop playsinline></video>
+<video src="/sfsim/pics/launch.mp4" autoplay loop playsinline></video>
 </div>
 
 ### Orbit the planet
@@ -34,7 +34,7 @@ Your orbit should be nearly circular and above the atmosphere.
 If you get it wrong, you might enter the atmosphere unprepared and might even burn up!
 
 <div class="video-container">
-<video src="pics/rcs.mp4" autoplay loop playsinline></video>
+<video src="/sfsim/pics/rcs.mp4" autoplay loop playsinline></video>
 </div>
 
 ### Perform reentry
@@ -42,7 +42,7 @@ Perform a deorbit burn and reentry to come out at the desired location.
 Make sure you plan it right, otherwise you might end up over the ocean, or even burn up on reentry.
 
 <div class="video-container">
-<video src="pics/reentry.mp4" autoplay loop playsinline></video>
+<video src="/sfsim/pics/reentry.mp4" autoplay loop playsinline></video>
 </div>
 
 ### Land back on Earth
@@ -51,7 +51,7 @@ Apply the brakes, come to a standstill, and celebrate mission success.
 Don't touch down too fast, or you might break the landing gear or even destroy the spacecraft. Don't touch down too late, or you will run out of runway.
 
 <div class="video-container">
-<video src="pics/landing.mp4" autoplay loop playsinline></video>
+<video src="/sfsim/pics/landing.mp4" autoplay loop playsinline></video>
 </div>
 
 ## The project
