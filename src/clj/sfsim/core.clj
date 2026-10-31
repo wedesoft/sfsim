@@ -195,6 +195,7 @@
                      time-lapse      (min ^long time-lapse-sel (time-lapse-limit height throttle))
                      window-width    (-> @state :gui :sfsim.gui/window-width)
                      window-height   (-> @state :gui :sfsim.gui/window-height)]
+                 (swap! state assoc-in [:input :sfsim.input/time-lapse] time-lapse)
                  (planet/update-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                  :sfsim.planet/config config/planet-config) tile-tree window-width
                                           (physics/get-position :sfsim.physics/surface (:physics @state)))

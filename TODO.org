@@ -3,7 +3,7 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
-** TODO do not automatically increase timewarp
+** DONE do not automatically increase timewarp
 ** TODO restart button
 ** TODO Stop timewarp when RCS active or rotational speed too large
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
