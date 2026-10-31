@@ -62,7 +62,7 @@ After some half-hearted attempts, I decided to start the project for real in 202
 I worked on the tough issues first and I finally managed to get to a point where I felt confident to create a Steam page showcasing early results.
 Progress is slow as this is only a hobby project, but I hope to release a demo soon!
 
-{% include youtube.html id="Oh6of7vEmu0" %}
+{% include youtube.html id="xDl24SQ_QuE" %}
 
 The beautiful music used in the trailer was made by [The Orchestra Tsumugi][4].
 
