@@ -3,36 +3,29 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
+** DONE do not automatically increase timewarp
+** TODO restart button
+** TODO Stop timewarp when RCS active or rotational speed too large
+** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
+** TODO speed indicator, height, vertical speed
+** TODO orbit MFD guidance needles
+** TODO Reentry MFD
+** TODO fuel should get used up and reduce vehicle weight
 ** TODO [#A] Reentry                                                      :flight:physics:graphics:
-*** TODO Reentry flame
+*** TODO Reentry
     [[https://gemini.google.com/app/d411b76be00c0e27]]
 **** TODO Shockwave shader
-***** DONE Use camera-to-plume matrix
-***** DONE Test object-to-shadow matrix returned by shadow-patch-matrices
-***** DONE Use render-cloud-overlay with shockwave
-***** DONE Adjust shockwave strength according to dynamic pressure (70-75 km, 4.5 to 5.5 km/s, AoA 40 degree)
-      1/2 * rho * speed^3 C_d A = speed * drag
-***** TODO set amplification
-***** TODO Put texture clear instruction into texture module
-***** TODO adapt colour of shockwave
-***** TODO make shockwave more noisy at higher air pressures
-***** TODO Visualise vehicle heating (use compute shader and shader storage buffer object (SSBO) with double buffering?)
-***** TODO fuel should get used up and reduce vehicle weight
 ***** TODO disable shockwave in space
+***** TODO adapt colour of shockwave
+***** TODO add wake
+***** TODO Reentry flame / burning up references
+      - [[https://www.shadertoy.com/view/XX3fDH]]
+      - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
+***** TODO Visualise vehicle heating (use compute shader and shader storage buffer object (SSBO) with double buffering?)
 ****** TODO SSBO has (position, normal, current temperature, mass/capacity factor)
 ****** TODO use distance to shockwave to estimate heating?
 ****** TODO Check maximum temperature of hull and shield to detect failure
 ****** TODO Run tiny SSBO with specific points for thermometer readings
-***** DONE Do not overwrite clouds
-**** TODO Reentry flame / burning up references
-     - [[https://www.shadertoy.com/view/XX3fDH]]
-     - [[https://en.wikipedia.org/wiki/Atmospheric_entry]]
-*** TODO restart button
-*** TODO Stop timewarp when RCS active or rotational speed too large, do not automatically increase timewarp
-*** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
-*** TODO speed indicator, height, vertical speed
-*** TODO orbit MFD guidance needles
-*** TODO Reentry MFD
 **** TODO PPO agent outputs high-level guidance (bank angle and angle of attack)
 **** TODO Use down-range and cross-range; add Coriolis and centrifugal acceleration to observations
 **** TODO Use velocity, flight path angle, altitude
