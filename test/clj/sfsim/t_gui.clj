@@ -449,4 +449,19 @@
           8.0   "pitch-max.png")
 
 
+(facts "Display flash message"
+       (set-flash-message {:sfsim.gui/menu nil} "test message")
+       => {:sfsim.gui/message-time 3.0 :sfsim.gui/message-text "test message" :sfsim.gui/menu nil}
+       (flash-message-update {:sfsim.gui/message-time 0.0 :sfsim.gui/message-text nil} 0.25)
+       => {:sfsim.gui/message-time 0.0 :sfsim.gui/message-text nil}
+       (flash-message-update {:sfsim.gui/message-time 0.0 :sfsim.gui/message-text nil :sfsim.gui/menu nil} 0.25)
+       => {:sfsim.gui/message-time 0.0 :sfsim.gui/message-text nil :sfsim.gui/menu nil}
+       (flash-message-update {:sfsim.gui/message-time 0.0 :sfsim.gui/message-text "test message"} 0.25)
+       => {:sfsim.gui/message-time 0.0 :sfsim.gui/message-text nil}
+       (flash-message-update {:sfsim.gui/message-time 1.0 :sfsim.gui/message-text "test message"} 0.25)
+       => {:sfsim.gui/message-time 0.75 :sfsim.gui/message-text "test message"}
+       (flash-message-update {:sfsim.gui/message-time 1.0 :sfsim.gui/message-text "test message" :sfsim.gui/menu nil} 0.25)
+       => {:sfsim.gui/message-time 0.75 :sfsim.gui/message-text "test message" :sfsim.gui/menu nil})
+
+
 (GLFW/glfwTerminate)

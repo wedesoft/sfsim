@@ -979,22 +979,49 @@
      ::yaw-rate (nth body-angular-velocity 2)}))
 
 
+(defn exp-time-lapse
+  "Exponentiate time lapse"
+  ^long [^long exponent]
+  (* 2 (long (pow 2 exponent))))
+
+
 (defn time-lapse-limit-throttle
-  "Time lapse limit due to main engine"
+  "Time lapse limit due to active main engine"
   ^long [^double throttle]
-  (if (zero? throttle) 5 1))
+  (exp-time-lapse (if (zero? throttle) 5 1)))
 
 
 (defn time-lapse-limit-height
-  "Time lapse limit due to atmosphere"
+  "Time lapse limit due to atmospheric pressure"
   ^long [^double height]
-  (long (floor (/ height 10000))))
+  (exp-time-lapse (min 5 (long (floor (/ height 10000))))))
+
+
+(defn time-lapse-limit-rcs
+  "Time lapse limit due to active RCS thruster"
+  ^long [controls]
+  (let [^long rcs-roll  (:sfsim.input/rcs-roll controls)
+        ^long rcs-pitch (:sfsim.input/rcs-pitch controls)
+        ^long rcs-yaw   (:sfsim.input/rcs-yaw controls)]
+    (exp-time-lapse (if (and (zero? rcs-roll) (zero? rcs-pitch) (zero? rcs-yaw)) 5 1))))
 
 
 (defn time-lapse-limit
-  "Limit time lapse depending on height"
-  ^long [^double height ^double throttle]
-    (* 2 (long (pow 2 (min (time-lapse-limit-throttle throttle) (time-lapse-limit-height height))))))
+  "Determine limited time lapse and information message"
+  [desired-time-lapse state planet controls]
+  (let [height             (get-height state planet)
+        limit-for-throttle (time-lapse-limit-throttle (:sfsim.input/throttle controls))
+        limit-for-rcs      (time-lapse-limit-rcs controls)
+        limit-for-height   (time-lapse-limit-height height)]
+    (cond
+      (> ^long desired-time-lapse limit-for-throttle)
+      {::time-lapse limit-for-throttle ::message "Time lapse limited with active main thruster"}
+      (> ^long desired-time-lapse limit-for-rcs)
+      {::time-lapse limit-for-rcs ::message "Time lapse limited with active RCS thruster"}
+      (> ^long desired-time-lapse limit-for-height)
+      {::time-lapse limit-for-height ::message "Time lapse limited because of atmosphere"}
+      :else
+      {::time-lapse desired-time-lapse ::message nil})))
 
 
 (set! *warn-on-reflection* false)

@@ -644,14 +644,37 @@
        (get-height @state {:sfsim.planet/radius 6378000.0}) => 200000.0)
 
 
-(facts "Limit time lapse depending on height and throttle"
-       (time-lapse-limit 0 0.0) => 2
-       (time-lapse-limit 10000 0.0) => 4
-       (time-lapse-limit 20000 0.0) => 8
-       (time-lapse-limit 5000 0.0) => 2
-       (time-lapse-limit 20000 0.5) => 4
-       (time-lapse-limit 5000 0.5) => 2
-       (time-lapse-limit 1000000 0.0) => 64)
+(facts "Limit time lapse depending throttle"
+       (time-lapse-limit-height 0) => 2
+       (time-lapse-limit-height 10000) => 4
+       (time-lapse-limit-height 20000) => 8
+       (time-lapse-limit-height 5000) => 2
+       (time-lapse-limit-height 1000000) => 64)
+
+
+(facts "Limit time lapse depending on height"
+       (time-lapse-limit-throttle 0.0) => 64
+       (time-lapse-limit-throttle 0.5) => 4
+       (time-lapse-limit-throttle 1.0) => 4)
+
+(def ctrl {:sfsim.input/throttle 0.0 :sfsim.input/rcs-roll 0.0 :sfsim.input/rcs-pitch 0.0 :sfsim.input/rcs-yaw 0.0})
+
+
+(facts "Limit desired time lapse"
+       (swap! state set-pose :sfsim.physics/surface (vec3 6578000 0 0) (q/->Quaternion -0.5 0.5 0.5 -0.5))
+       (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} ctrl)
+       => {:sfsim.physics/time-lapse 32 :sfsim.physics/message nil}
+       (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} (assoc ctrl :sfsim.input/throttle 0.5))
+       => {:sfsim.physics/time-lapse 4 :sfsim.physics/message "Time lapse limited with active main thruster"}
+       (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} (assoc ctrl :sfsim.input/rcs-roll 1))
+       => {:sfsim.physics/time-lapse 4 :sfsim.physics/message "Time lapse limited with active RCS thruster"}
+       (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} (assoc ctrl :sfsim.input/rcs-pitch 1))
+       => {:sfsim.physics/time-lapse 4 :sfsim.physics/message "Time lapse limited with active RCS thruster"}
+       (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} (assoc ctrl :sfsim.input/rcs-yaw 1))
+       => {:sfsim.physics/time-lapse 4 :sfsim.physics/message "Time lapse limited with active RCS thruster"}
+       (swap! state set-pose :sfsim.physics/surface (vec3 6398000 0 0) (q/->Quaternion -0.5 0.5 0.5 -0.5))
+       (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} ctrl)
+       => {:sfsim.physics/time-lapse 8 :sfsim.physics/message "Time lapse limited because of atmosphere"})
 
 
 (jolt/remove-and-destroy-body sphere)
