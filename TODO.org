@@ -5,6 +5,7 @@
 
 ** DONE do not automatically increase timewarp
 ** TODO restart button
+** TODO amplification, light direction, and any other atmosphere related uniforms should be set in one place
 ** TODO Stop timewarp when RCS active or rotational speed too large
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 ** TODO speed indicator, height, vertical speed
