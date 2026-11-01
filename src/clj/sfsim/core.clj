@@ -38,7 +38,7 @@
     [sfsim.image :as image]
     [sfsim.audio :as audio]
     [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config process-events joysticks-poll ->InputHandler
-                         char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback time-lapse-limit)])
+                         char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback)])
   (:import
     (org.lwjgl.glfw
       GLFW
@@ -190,7 +190,7 @@
                      height          (physics/get-height (:physics @state) config/planet-config)
                      throttle        (-> @state :input :sfsim.input/controls :sfsim.input/throttle)
                      time-lapse-sel  (-> @state :input :sfsim.input/time-lapse)
-                     time-lapse      (min ^long time-lapse-sel (time-lapse-limit height throttle))
+                     time-lapse      (min ^long time-lapse-sel (physics/time-lapse-limit height throttle))
                      window-width    (-> @state :gui :sfsim.gui/window-width)
                      window-height   (-> @state :gui :sfsim.gui/window-height)]
                  (swap! state assoc-in [:input :sfsim.input/time-lapse] time-lapse)

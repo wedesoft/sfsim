@@ -7,7 +7,7 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [clojure.math :refer (PI cos sin tan atan2 hypot to-radians sqrt acos log1p sinh)]
+    [clojure.math :refer (PI cos sin tan atan2 hypot to-radians sqrt acos log1p sinh pow floor)]
     [clojure.set :refer (union)]
     [fastmath.matrix :refer (mulv mulm inverse mat3x3)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot div)]
@@ -977,6 +977,12 @@
     {::roll-rate (nth body-angular-velocity 0)
      ::pitch-rate (nth body-angular-velocity 1)
      ::yaw-rate (nth body-angular-velocity 2)}))
+
+
+(defn time-lapse-limit
+  "Limit time lapse depending on height"
+  ^long [^double height ^double throttle]
+    (* 2 (long (pow 2 (min (if (zero? throttle) 5 1) (floor (/ height 10000)))))))
 
 
 (set! *warn-on-reflection* false)
