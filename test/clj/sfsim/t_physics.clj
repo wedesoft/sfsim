@@ -271,8 +271,7 @@
              planet #:sfsim.planet{:radius radius :max-height 8000.0}]
          (swap! state set-geographic (fn [_v] radius) planet 0.0 (to-radians ?longitude) (to-radians ?latitude) ?height)
          (let [geo-position (get-geographic @state planet)
-               height       (get-height @state planet)
-               ]
+               height       (get-height @state planet)]
            (facts
              (to-degrees (:longitude geo-position)) => (roughly ?longitude 1e-3)
              (to-degrees (:latitude geo-position)) => (roughly ?latitude 1e-3)
@@ -636,6 +635,13 @@
        (:sfsim.physics/roll-rate (rotation-rates @state)) => (roughly 2.0 1e-6)
        (:sfsim.physics/pitch-rate (rotation-rates @state)) => (roughly 3.0 1e-6)
        (:sfsim.physics/yaw-rate (rotation-rates @state)) => (roughly 5.0 1e-6))
+
+
+(facts "Get height of spacecraft above earth surface"
+       (swap! state set-pose :sfsim.physics/surface (vec3 6378000 0 0) (q/->Quaternion -0.5 0.5 0.5 -0.5))
+       (get-height @state {:sfsim.planet/radius 6378000.0}) => 0.0
+       (swap! state set-pose :sfsim.physics/surface (vec3 6578000 0 0) (q/->Quaternion -0.5 0.5 0.5 -0.5))
+       (get-height @state {:sfsim.planet/radius 6378000.0}) => 200000.0)
 
 
 (jolt/remove-and-destroy-body sphere)
