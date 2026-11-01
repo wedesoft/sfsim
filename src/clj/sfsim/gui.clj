@@ -1929,25 +1929,41 @@
                       (layout-row-dynamic gui (scale gui 256) 1)
                       (navball-prepare gui (physics/orbit-orientation (:physics state)))
                       (navball-mfd gui (physics/rotation-rates (:physics state))))
-      (when (-> state :input :sfsim.input/pause)
-        (nuklear-window gui "Pause" (scale gui (+ 20 128)) (scale gui 10) (scale gui 80) (scale gui text-row-height) :widget
-                        (layout-row-dynamic gui (scale gui text-row-height) 1)
-                        (widget gui canvas canvas-rect
-                                (let [font (::bitmap-font gui)
-                                      x0   (.x ^NkRect canvas-rect)
-                                      y0   (.y ^NkRect canvas-rect)
-                                      w    (.w ^NkRect canvas-rect)
-                                      h    (.h ^NkRect canvas-rect)
-                                      tw   (text-width "Pause" font)]
-                                  (with-colors
-                                    [bg  255 255 255
-                                     red 255   0   0]
-                                    (fill-rect canvas canvas-rect 0.0 bg)
-                                    (draw-text canvas (+ x0 (/ (- w ^double tw) 2)) y0 tw h "Pause" font red)))))))
+      (when-let [message (or (-> state :gui ::message-text) (when (-> state :input :sfsim.input/pause) "Pause"))]
+                (let [font (::bitmap-font gui)
+                      tw   (text-width message font)]
+                  (nuklear-window gui "Pause" (scale gui (+ 20 128)) (scale gui 10) tw (scale gui text-row-height) :widget
+                                  (layout-row-dynamic gui (scale gui text-row-height) 1)
+                                  (widget gui canvas canvas-rect
+                                          (let [
+                                                x0   (.x ^NkRect canvas-rect)
+                                                y0   (.y ^NkRect canvas-rect)
+                                                w    (.w ^NkRect canvas-rect)
+                                                h    (.h ^NkRect canvas-rect)]
+                                            (with-colors
+                                              [bg  255 255 255
+                                               red 255   0   0]
+                                              (fill-rect canvas canvas-rect 0.0 bg)
+                                              (draw-text canvas (+ x0 (/ (- w ^double tw) 2)) y0 tw h message font red))))))))
     (nuklear-window gui "Information" (scale gui (+ 20 256)) (- ^long h (scale gui (+ 10 ^long text-height)))
                     (scale gui 720) (scale gui (* ^long text-height 1)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)
                     (text-label gui text))))
+
+
+(defn set-flash-message
+  "Flash a message"
+  [state message-text]
+  (assoc state ::message-time 3.0 ::message-text message-text))
+
+
+(defn flash-message-update
+  "Keep track of a flashed message"
+  [{::keys [message-time message-text] :as state} ^double elapsed]
+  (let [updated-time (- ^double message-time elapsed)]
+    (if (pos? updated-time)
+      (assoc state ::message-time updated-time ::message-text message-text)
+      (assoc state ::message-time 0.0 ::message-text nil))))
 
 
 (set! *warn-on-reflection* false)

@@ -1,3 +1,12 @@
+sfsim (0.35-1)
+
+  * Do not automatically increase time lapse
+	* Limit time lapse when RCS thruster is active
+	* Limit time lapse if angular speed is high
+	* Flash message with reason why time lapse is limited
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun,  1 Nov 2026 23:40:25 +0000
+
 sfsim (0.34-3)
 
   * Clear normal buffer because it is required by some graphics drivers

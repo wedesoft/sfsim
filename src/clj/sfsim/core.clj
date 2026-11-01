@@ -38,7 +38,7 @@
     [sfsim.image :as image]
     [sfsim.audio :as audio]
     [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config process-events joysticks-poll ->InputHandler
-                         char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback time-lapse-limit)])
+                         char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback)])
   (:import
     (org.lwjgl.glfw
       GLFW
@@ -143,7 +143,9 @@
             gui-state           {:sfsim.gui/menu nil
                                  :sfsim.gui/window-width window-width
                                  :sfsim.gui/window-height window-height
-                                 :sfsim.gui/fullscreen false}
+                                 :sfsim.gui/fullscreen false
+                                 :sfsim.gui/message-time 0.0
+                                 :sfsim.gui/message-text nil}
             gui                 (atom (gui/make-navball (gui/make-nuklear-gui-with-font 1.0)))
             audio-state         (audio/make-audio-state)
             state               (atom {:gui gui-state
@@ -187,15 +189,18 @@
                  (swap! state assoc-in [:gui :sfsim.gui/window-width] (aget w 0))
                  (swap! state assoc-in [:gui :sfsim.gui/window-height] (aget h 0)))
                (let [dt              (elapsed-time)
-                     earth-radius    (:sfsim.planet/radius config/planet-config)
-                     object-position (physics/get-position :sfsim.physics/surface (:physics @state))
-                     height          (- (mag object-position) ^double earth-radius)
-                     throttle        (-> @state :input :sfsim.input/controls :sfsim.input/throttle)
-                     time-lapse-sel  (-> @state :input :sfsim.input/time-lapse)
-                     time-lapse      (min ^long time-lapse-sel (time-lapse-limit height throttle))
+                     time-lapse-info (-> @state
+                                         :input
+                                         :sfsim.input/time-lapse
+                                         (physics/time-lapse-limit (:physics @state)
+                                                                   config/planet-config
+                                                                   (-> @state :input :sfsim.input/controls)))
                      window-width    (-> @state :gui :sfsim.gui/window-width)
                      window-height   (-> @state :gui :sfsim.gui/window-height)]
-                 (swap! state assoc-in [:input :sfsim.input/time-lapse] time-lapse)
+                 (swap! state assoc-in [:input :sfsim.input/time-lapse] (:sfsim.physics/time-lapse time-lapse-info))
+                 (swap! state update :gui gui/flash-message-update dt)
+                 (when-let [message (:sfsim.physics/message time-lapse-info)]
+                   (swap! state update :gui gui/set-flash-message message))
                  (planet/update-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
                                                  :sfsim.planet/config config/planet-config) tile-tree window-width
                                           (physics/get-position :sfsim.physics/surface (:physics @state)))
@@ -203,15 +208,17 @@
                    (swap! state update-in [:gui :sfsim.gui/menu] #(or % gui/main-dialog))
                    (swap! state assoc-in [:gui :sfsim.gui/menu] nil))
                  (when (not (-> @state :input :sfsim.input/pause))
-                   (swap! state update :physics physics/simulation-step (-> @state :input :sfsim.input/controls)
-                          (* ^double dt ^long time-lapse) config/planet-config split-orientations thrust))
+                   (swap! state update :physics physics/simulation-step
+                          (-> @state :input :sfsim.input/controls)
+                          (* ^double dt ^long (:sfsim.physics/time-lapse time-lapse-info))
+                          config/planet-config split-orientations thrust))
                  (swap! state update :camera camera/camera-step (:physics @state) (-> @state :input :sfsim.input/camera) dt)
                  (swap! state update :audio audio/update-state (:physics @state) (:input @state) (:camera @state))
                  (when (and @recording (not (-> @state :input :sfsim.input/pause)))
                    (let [frame {:physics (physics/save-state (:physics @state)) :camera (:camera @state)}]
                      (swap! recording conj frame)))
                  (let [object-position    (physics/get-position :sfsim.physics/surface (:physics @state))
-                       height             (- (mag object-position) ^double earth-radius)
+                       height             (physics/get-height (:physics @state) config/planet-config)
                        pressure           (/ (atmosphere/pressure-at-height height) (atmosphere/pressure-at-height 0.0))
                        object-orientation (physics/get-orientation :sfsim.physics/surface (:physics @state))
                        [origin camera-orientation] ((juxt :sfsim.camera/position :sfsim.camera/orientation)
@@ -272,7 +279,8 @@
                                         (when menu (swap! state menu @gui window-width window-height)))
                                       (let [controls (-> @state :input :sfsim.input/controls)]
                                         (gui/flight-controls-display controls @gui)
-                                        (gui/information-display @gui window-width window-height @state @frametime time-lapse))
+                                        (gui/information-display @gui window-width window-height @state @frametime
+                                                                 (:sfsim.physics/time-lapse time-lapse-info)))
                                       (gui/render-nuklear-gui @gui window-width window-height)))
                    (graphics/destroy-frame frame))
                  (Nuklear/nk_input_begin (:sfsim.gui/context @gui))

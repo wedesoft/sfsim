@@ -4,8 +4,10 @@
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
 ** DONE do not automatically increase timewarp
+** DONE Limit timewarp when RCS active
+** DONE Limit timelapse when rotational speed too large
 ** TODO restart button
-** TODO Stop timewarp when RCS active or rotational speed too large
+** TODO amplification, light direction, and any other atmosphere related uniforms should be set in one place
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 ** TODO speed indicator, height, vertical speed
 ** TODO orbit MFD guidance needles
