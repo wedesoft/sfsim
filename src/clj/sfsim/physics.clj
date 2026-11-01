@@ -979,10 +979,22 @@
      ::yaw-rate (nth body-angular-velocity 2)}))
 
 
+(defn time-lapse-limit-throttle
+  "Time lapse limit due to main engine"
+  ^long [^double throttle]
+  (if (zero? throttle) 5 1))
+
+
+(defn time-lapse-limit-height
+  "Time lapse limit due to atmosphere"
+  ^long [^double height]
+  (long (floor (/ height 10000))))
+
+
 (defn time-lapse-limit
   "Limit time lapse depending on height"
   ^long [^double height ^double throttle]
-    (* 2 (long (pow 2 (min (if (zero? throttle) 5 1) (floor (/ height 10000)))))))
+    (* 2 (long (pow 2 (min (time-lapse-limit-throttle throttle) (time-lapse-limit-height height))))))
 
 
 (set! *warn-on-reflection* false)
