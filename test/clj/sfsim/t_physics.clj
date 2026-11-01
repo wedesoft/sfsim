@@ -646,9 +646,9 @@
 
 (facts "Limit time lapse depending throttle"
        (time-lapse-limit-height 0) => 2
+       (time-lapse-limit-height 5000) => 2
        (time-lapse-limit-height 10000) => 4
        (time-lapse-limit-height 20000) => 8
-       (time-lapse-limit-height 5000) => 2
        (time-lapse-limit-height 1000000) => 64)
 
 
@@ -657,11 +657,21 @@
        (time-lapse-limit-throttle 0.5) => 4
        (time-lapse-limit-throttle 1.0) => 4)
 
+
+(facts "Limit time lapse depending on angular velocity"
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians 720.0))) => 1
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians 360.0))) => 1
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians 180.0))) => 2
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians  90.0))) => 4
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians 135.0))) => 2)
+
+
 (def ctrl {:sfsim.input/throttle 0.0 :sfsim.input/rcs-roll 0.0 :sfsim.input/rcs-pitch 0.0 :sfsim.input/rcs-yaw 0.0})
 
 
 (facts "Limit desired time lapse"
        (swap! state set-pose :sfsim.physics/surface (vec3 6578000 0 0) (q/->Quaternion -0.5 0.5 0.5 -0.5))
+       (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
        (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} ctrl)
        => {:sfsim.physics/time-lapse 32 :sfsim.physics/message nil}
        (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} (assoc ctrl :sfsim.input/throttle 0.5))
@@ -672,9 +682,16 @@
        => {:sfsim.physics/time-lapse 4 :sfsim.physics/message "Time lapse limited with active RCS thruster"}
        (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} (assoc ctrl :sfsim.input/rcs-yaw 1))
        => {:sfsim.physics/time-lapse 4 :sfsim.physics/message "Time lapse limited with active RCS thruster"}
+       (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 (to-radians 360.0)))
+       (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} ctrl)
+       => {:sfsim.physics/time-lapse 1 :sfsim.physics/message "Time lapse limited because of angular velocity"}
+       (swap! state set-speed :sfsim.physics/surface (vec3 0 0 0) (vec3 0 0 0))
        (swap! state set-pose :sfsim.physics/surface (vec3 6398000 0 0) (q/->Quaternion -0.5 0.5 0.5 -0.5))
        (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} ctrl)
-       => {:sfsim.physics/time-lapse 8 :sfsim.physics/message "Time lapse limited because of atmosphere"})
+       => {:sfsim.physics/time-lapse 8 :sfsim.physics/message "Time lapse limited because of atmosphere"}
+       (swap! state set-pose :sfsim.physics/surface (vec3 6378000 0 0) (q/->Quaternion -0.5 0.5 0.5 -0.5))
+       (time-lapse-limit 32 @state {:sfsim.planet/radius 6378000.0} (assoc ctrl :sfsim.input/rcs-roll 1))
+       => {:sfsim.physics/time-lapse 2 :sfsim.physics/message "Time lapse limited because of atmosphere"})
 
 
 (jolt/remove-and-destroy-body sphere)

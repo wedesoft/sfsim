@@ -7,7 +7,7 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [clojure.math :refer (PI cos sin tan atan2 hypot to-radians sqrt acos log1p sinh pow floor)]
+    [clojure.math :refer (PI cos sin tan atan2 hypot to-radians sqrt acos log1p log sinh pow floor)]
     [clojure.set :refer (union)]
     [fastmath.matrix :refer (mulv mulm inverse mat3x3)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot div)]
@@ -982,19 +982,19 @@
 (defn exp-time-lapse
   "Exponentiate time lapse"
   ^long [^long exponent]
-  (* 2 (long (pow 2 exponent))))
+  (long (pow 2 exponent)))
 
 
 (defn time-lapse-limit-throttle
   "Time lapse limit due to active main engine"
   ^long [^double throttle]
-  (exp-time-lapse (if (zero? throttle) 5 1)))
+  (* 2 (exp-time-lapse (if (zero? throttle) 5 1))))
 
 
 (defn time-lapse-limit-height
   "Time lapse limit due to atmospheric pressure"
   ^long [^double height]
-  (exp-time-lapse (min 5 (long (floor (/ height 10000))))))
+  (* 2 (exp-time-lapse (min 5 (long (floor (/ height 10000)))))))
 
 
 (defn time-lapse-limit-rcs
@@ -1003,7 +1003,14 @@
   (let [^long rcs-roll  (:sfsim.input/rcs-roll controls)
         ^long rcs-pitch (:sfsim.input/rcs-pitch controls)
         ^long rcs-yaw   (:sfsim.input/rcs-yaw controls)]
-    (exp-time-lapse (if (and (zero? rcs-roll) (zero? rcs-pitch) (zero? rcs-yaw)) 5 1))))
+    (* 2 (exp-time-lapse (if (and (zero? rcs-roll) (zero? rcs-pitch) (zero? rcs-yaw)) 5 1)))))
+
+
+(defn time-lapse-limit-rotation
+  ^long [angular-velocity]
+  (let [factor   (/ (to-radians 360.0) (mag angular-velocity))
+        exponent (max 0 (long (floor (/ (log factor) (log 2.0)))))]
+    (exp-time-lapse exponent)))
 
 
 (defn time-lapse-limit
@@ -1012,14 +1019,18 @@
   (let [height             (get-height state planet)
         limit-for-throttle (time-lapse-limit-throttle (:sfsim.input/throttle controls))
         limit-for-rcs      (time-lapse-limit-rcs controls)
-        limit-for-height   (time-lapse-limit-height height)]
+        limit-for-height   (time-lapse-limit-height height)
+        limit-for-rotation (time-lapse-limit-rotation (get-angular-speed ::orbit state))
+        lowest-limit       (min limit-for-throttle limit-for-rcs limit-for-height limit-for-rotation)]
     (cond
-      (> ^long desired-time-lapse limit-for-throttle)
+      (and (> ^long desired-time-lapse limit-for-throttle) (= lowest-limit limit-for-throttle))
       {::time-lapse limit-for-throttle ::message "Time lapse limited with active main thruster"}
-      (> ^long desired-time-lapse limit-for-rcs)
+      (and (> ^long desired-time-lapse limit-for-rcs) (= lowest-limit limit-for-rcs))
       {::time-lapse limit-for-rcs ::message "Time lapse limited with active RCS thruster"}
-      (> ^long desired-time-lapse limit-for-height)
+      (and (> ^long desired-time-lapse limit-for-height) (= lowest-limit limit-for-height))
       {::time-lapse limit-for-height ::message "Time lapse limited because of atmosphere"}
+      (and (> ^long desired-time-lapse limit-for-rotation) (= lowest-limit limit-for-rotation))
+      {::time-lapse limit-for-rotation ::message "Time lapse limited because of angular velocity"}
       :else
       {::time-lapse desired-time-lapse ::message nil})))
 
