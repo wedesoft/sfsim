@@ -9,6 +9,7 @@
       [malli.dev.pretty :as pretty]
       [malli.instrument :as mi]
       [midje.sweet :refer :all]
+      [sfsim.config :as config]
       [sfsim.input :refer :all :as input])
     (:import
       [org.lwjgl.glfw
@@ -20,6 +21,22 @@
 
 
 (GLFW/glfwInit)
+
+
+(facts "Read user configuration"
+       (with-redefs [config/sfsim-data "test/clj/sfsim/fixtures/input"]
+         (read-joystick-config {:sfsim.input/other "test"} "nosuchfile.edn")
+         => {:sfsim.input/mappings {:sfsim.input/joysticks {:sfsim.input/dead-zone 0.1}} :sfsim.input/other "test"}
+         (read-joystick-config {:sfsim.input/other "test"} "joysticks.edn")
+         => {:sfsim.input/mappings {:sfsim.input/joysticks {:sfsim.input/dead-zone 0.5}} :sfsim.input/other "test"}))
+
+
+(facts "Read settings"
+       (with-redefs [config/sfsim-data "test/clj/sfsim/fixtures/input"]
+         (read-settings-config {:sfsim.input/other "test"} "nosuchfile.edn")
+         => {:sfsim.input/settings {:sfsim.input/auto-rudder 0.5} :sfsim.input/other "test"}
+         (read-settings-config {:sfsim.input/other "test"} "settings.edn")
+         => {:sfsim.input/settings {:sfsim.input/auto-rudder nil} :sfsim.input/other "test"}))
 
 
 (facts "Process character events"
@@ -280,6 +297,38 @@
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_PRESS 0)
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_Q) GLFW/GLFW_RELEASE 0)
          (:sfsim.input/rudder (:sfsim.input/controls @state)) => 1.0
+         ; Auto rudder on
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/rudder] 0.0)
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/aileron] 0.0)
+         (swap! state assoc-in [:sfsim.input/settings :sfsim.input/auto-rudder] 0.5)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.0625
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => (* 0.5 0.0625)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_PRESS  GLFW/GLFW_MOD_CONTROL)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_RELEASE GLFW/GLFW_MOD_CONTROL)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.0
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => 0.0
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => -0.0625
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => (* 0.5 -0.0625)
+         ; Auto-rudder off
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/rudder] 0.0)
+         (swap! state assoc-in [:sfsim.input/controls :sfsim.input/aileron] 0.0)
+         (swap! state assoc-in [:sfsim.input/settings :sfsim.input/auto-rudder] nil)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.0625
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => 0.0
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_PRESS  GLFW/GLFW_MOD_CONTROL)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_A) GLFW/GLFW_RELEASE GLFW/GLFW_MOD_CONTROL)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.0
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => 0.0
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_PRESS 0)
+         (swap! state simulator-key (mappings GLFW/GLFW_KEY_D) GLFW/GLFW_RELEASE 0)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => -0.0625
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => 0.0
          ; Throttle
          (:sfsim.input/throttle (:sfsim.input/controls @state)) => 0.0
          (swap! state simulator-key (mappings GLFW/GLFW_KEY_R) GLFW/GLFW_PRESS 0)
@@ -452,8 +501,9 @@
          => []
          (process-events [] (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75]) mock-handler)
          => [{:device "Gamepad" :axis 0 :value -0.5} {:device "Gamepad" :axis 1 :value -0.75}]
-         ; Aerofoil surfaces
+         ; Aerofoil surfaces without auto rudder
          (swap! state assoc :sfsim.input/mappings mappings)
+         (swap! state assoc-in [:sfsim.input/settings :sfsim.input/auto-rudder] nil)
          (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
          (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.5
          (:sfsim.input/elevator (:sfsim.input/controls @state)) => 0.75
@@ -463,6 +513,18 @@
          (:sfsim.input/aileron (:sfsim.input/controls @state)) => -0.5
          (:sfsim.input/elevator (:sfsim.input/controls @state)) => -0.75
          (:sfsim.input/rudder (:sfsim.input/controls @state)) => 0.5
+         ; Aerofoil surfaces with auto rudder
+         (swap! state assoc :sfsim.input/mappings mappings)
+         (swap! state assoc-in [:sfsim.input/settings :sfsim.input/auto-rudder] 0.5)
+         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => 0.5
+         (:sfsim.input/elevator (:sfsim.input/controls @state)) => 0.75
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => 0.25
+         (swap! state assoc :sfsim.input/mappings mappings-inv)
+         (swap! state process-events (add-joystick-axis-state event-buffer axis-state "Gamepad" [-0.5 -0.75 0.5 0.0]) handler)
+         (:sfsim.input/aileron (:sfsim.input/controls @state)) => -0.5
+         (:sfsim.input/elevator (:sfsim.input/controls @state)) => -0.75
+         (:sfsim.input/rudder (:sfsim.input/controls @state)) => -0.25
          ; RCS thrusters
          (swap! state assoc-in [:sfsim.input/controls :sfsim.input/rcs] true)
          (swap! state assoc :sfsim.input/mappings mappings)

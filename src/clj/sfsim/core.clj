@@ -37,8 +37,8 @@
     [sfsim.texture :as texture]
     [sfsim.image :as image]
     [sfsim.audio :as audio]
-    [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config process-events joysticks-poll ->InputHandler
-                         char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback)])
+    [sfsim.input :refer (make-event-buffer make-initial-state read-joystick-config read-settings-config process-events joysticks-poll
+                         ->InputHandler char-callback key-callback cursor-pos-callback mouse-button-callback scroll-callback)])
   (:import
     (org.lwjgl.glfw
       GLFW
@@ -128,7 +128,7 @@
             barycenter-earth    (astro/make-spk-segment-interpolator spk 0 3)
             earth-sun           (fn [jd-ut] (sub (barycenter-sun jd-ut) (barycenter-earth jd-ut)))
             jd-ut               {:sfsim.astro/year 2026 :sfsim.astro/month 6 :sfsim.astro/day 22}
-            input-state         (-> (make-initial-state) read-joystick-config)
+            input-state         (-> (make-initial-state) read-joystick-config read-settings-config)
             convex-hulls-join   (jolt/compound-of-convex-hulls-settings convex-hulls 0.1 (* 26.87036336765512 1.25))
             body                (jolt/create-and-add-dynamic-body convex-hulls-join (vec3 0 0 0) (q/->Quaternion 1 0 0 0))
             mass                (jolt/get-mass body)

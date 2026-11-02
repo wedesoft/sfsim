@@ -381,10 +381,22 @@
 
 (defn read-joystick-config
   "Read joystick configuration and add to input mappings"
-  [state]
-  (assoc-in state
-            [::mappings ::joysticks]
-            (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1})))
+  ([state]
+   (read-joystick-config state "joysticks.edn"))
+  ([state joysticks-config-file]
+   (assoc-in state
+             [::mappings ::joysticks]
+             (config/read-user-config joysticks-config-file {:sfsim.input/dead-zone 0.1}))))
+
+
+(defn read-settings-config
+  "Read input settings and add to input"
+  ([state]
+   (read-settings-config state "settings.edn"))
+  ([state settings-config-file]
+   (assoc state
+          ::settings
+          (config/read-user-config settings-config-file {:sfsim.input/auto-rudder 0.5}))))
 
 
 (defn menu-key
@@ -523,8 +535,14 @@
     (if (get-in state [::controls ::rcs])
       (assoc-in state [::controls ::rcs-roll] 1)
       (if (= mods GLFW/GLFW_MOD_CONTROL)
-        (assoc-in state [::controls ::aileron] 0.0)
-       (increment-clamp state ::aileron 0.0625)))
+        (let [state (assoc-in state [::controls ::aileron] 0.0)]
+          (if (get-in state [::settings ::auto-rudder])
+            (assoc-in state [::controls ::rudder] 0.0)
+            state))
+        (let [state (increment-clamp state ::aileron 0.0625)]
+          (if-let [auto-rudder (get-in state [::settings ::auto-rudder])]
+            (assoc-in state [::controls ::rudder] (* auto-rudder (get-in state [::controls ::aileron])))
+            state))))
     (assoc-in state [::controls ::rcs-roll] 0)))
 
 
@@ -533,7 +551,10 @@
   (if (keypress? action)
     (if (get-in state [::controls ::rcs])
       (assoc-in state [::controls ::rcs-roll] -1)
-      (increment-clamp state ::aileron -0.0625))
+      (let [state (increment-clamp state ::aileron -0.0625)]
+        (if-let [auto-rudder (get-in state [::settings ::auto-rudder])]
+          (assoc-in state [::controls ::rudder] (* auto-rudder (get-in state [::controls ::aileron])))
+          state)))
     (assoc-in state [::controls ::rcs-roll] 0)))
 
 
@@ -652,7 +673,13 @@
   [aerofoil rcs-thruster epsilon state value]
   (if (get-in state [::controls ::rcs])
     (assoc-in state [::controls rcs-thruster] (dead-zone-three-state epsilon value))
-    (assoc-in state [::controls aerofoil] (dead-zone-continuous epsilon value))))
+    (let [auto-rudder (get-in state [::settings ::auto-rudder])]
+      (if (and (= aerofoil ::rudder) auto-rudder)
+        state
+        (let [state (assoc-in state [::controls aerofoil] (dead-zone-continuous epsilon value))]
+          (if (and (= aerofoil ::aileron) auto-rudder)
+            (assoc-in state [::controls ::rudder] (* auto-rudder (-> state ::controls ::aileron)))
+            state))))))
 
 
 (defmulti simulator-joystick-axis
