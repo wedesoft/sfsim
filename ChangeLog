@@ -1,3 +1,9 @@
+sfsim (0.36-1)
+
+  * Implemented auto-rudder
+
+-- Jan Wedekind <jan@wedesoft.de>  Tue,  3 Nov 2026 00:32:00 +0000
+
 sfsim (0.35-1)
 
   * Do not automatically increase time lapse
