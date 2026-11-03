@@ -1169,6 +1169,26 @@
                       (assoc-in state [:gui ::menu] main-dialog))))))
 
 
+(defn settings-dialog
+  [state gui ^long window-width ^long window-height]
+  (nuklear-window
+    gui "Settings" (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 3)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 2))) :dialog
+    (ignore-nil-> state state
+                  (layout-row-dynamic gui (scale gui row-height) 1)
+                  (update-in state [:input :sfsim.input/settings :sfsim.input/auto-rudder] #(property-float gui "auto-rudder" 0.0 (or % 0.0) 1.0 0.1 0.0025))
+                  (update-in state [:input :sfsim.input/settings :sfsim.input/auto-rudder] #(if (zero? %) nil %))
+                  (layout-row-dynamic gui (scale gui row-height) 2)
+                  (when (button-label gui "Save")
+                    (config/write-user-config "settings.edn" (get-in state [:input :sfsim.input/settings]))
+                    (assoc-in state [:gui ::menu] main-dialog))
+                  (when (button-label gui "Close")
+                    (-> state
+                        (assoc-in [:input :sfsim.input/settings]
+                                  (config/read-user-config "settings.edn" {:sfsim.input/auto-rudder 0.5}))
+                        (assoc-in [:gui ::menu] main-dialog))))))
+
+
 (defn sound-dialog
   [state gui ^long window-width ^long window-height]
   (nuklear-window
@@ -1349,8 +1369,8 @@
   [state gui ^long window-width ^long window-height]
   (nuklear-window
     gui (format "sfsim %s" version)
-    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 9)))) 2)
-    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 9)))
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 10)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 10)))
     :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui (scale gui row-height) 1)
@@ -1364,14 +1384,16 @@
                     (assoc-in state [:gui ::menu] joystick-dialog))
                   (when (button-label gui "Keyboard")
                     (assoc-in state [:gui ::menu] keyboard-dialog))
+                  (when (button-label gui "Settings")
+                    (assoc-in state [:gui ::menu] settings-dialog))
                   (when (button-label gui "Sound")
                     (assoc-in state [:gui ::menu] sound-dialog))
-                  (when (button-label gui "Resume")
-                    (assoc-in state [:input :sfsim.input/menu] nil))
                   (when (button-label gui "License")
                     (assoc-in state [:gui ::menu] license-dialog))
                   (when (button-label gui "Privacy Policy")
                     (assoc-in state [:gui ::menu] privacy-dialog))
+                  (when (button-label gui "Resume")
+                    (assoc-in state [:input :sfsim.input/menu] nil))
                   (when (button-label gui "Quit")
                     (GLFW/glfwSetWindowShouldClose (:window state) true)))))
 
