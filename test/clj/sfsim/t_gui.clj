@@ -449,6 +449,16 @@
           8.0   "pitch-max.png")
 
 
+(tabular "Display roll control input"
+         (fact
+           (widget-test gui canvas rect 160 32 (draw-roll-control gui canvas rect ?control))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?control ?result
+         -1.0     "roll-control-left.png"
+          1.0     "roll-control-right.png"
+          0.0     "roll-control-zero.png")
+
+
 (facts "Display flash message"
        (set-flash-message {:sfsim.gui/menu nil} "test message")
        => {:sfsim.gui/message-time 3.0 :sfsim.gui/message-text "test message" :sfsim.gui/menu nil}

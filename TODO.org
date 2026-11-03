@@ -10,6 +10,7 @@
 ** TODO restart button
 ** TODO amplification, light direction, and any other atmosphere related uniforms should be set in one place
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
+** TODO Nice indicators for control inputs
 ** TODO speed indicator, height, vertical speed
 ** TODO orbit MFD guidance needles
 ** TODO Reentry MFD

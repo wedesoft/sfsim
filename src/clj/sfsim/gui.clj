@@ -1896,6 +1896,21 @@
   (vertical-scale gui canvas canvas-rect minimum maximum step current))
 
 
+(defn draw-roll-control
+  "Display roll control input"
+  {:malli/schema [:=> [:cat :some :some :some :double] :any]}
+  [gui canvas canvas-rect current]
+  (let [x0 (.x ^NkRect canvas-rect)
+        y0 (.y ^NkRect canvas-rect)
+        w  (.w ^NkRect canvas-rect)
+        h  (.h ^NkRect canvas-rect)]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0]
+      (fill-rect canvas canvas-rect 0.0 bg)
+      (stroke-line canvas x0 (+ y0 (* 0.5 h)) (+ x0 w) (+ y0 (* 0.5 h)) (scale gui 2.0) green))))
+
+
 (defn navball-mfd
   "Display navball widget"
   [gui rotation-rates]
