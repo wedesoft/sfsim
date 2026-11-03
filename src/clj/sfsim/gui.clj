@@ -25,7 +25,7 @@
                           uniform-vector2)]
     [sfsim.texture :refer (make-rgba-texture make-rgb-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
                            texture->image generate-mipmap)]
-    [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name)])
+    [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name read-settings-config read-joystick-config)])
   (:import
     (java.nio
       DirectByteBuffer)
@@ -1111,10 +1111,9 @@
                   (when (button-label gui "Save")
                     (config/write-user-config "joysticks.edn" (get-in state [:input :sfsim.input/mappings :sfsim.input/joysticks]))
                     (assoc-in state [:gui ::menu] main-dialog))
-                  (when (button-label gui "Close")
+                  (when (button-label gui "Cancel")
                     (-> state
-                        (assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks]
-                                  (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
+                        (update :input read-joystick-config)
                         (assoc-in [:gui ::menu] main-dialog))))))
 
 
@@ -1182,10 +1181,9 @@
                   (when (button-label gui "Save")
                     (config/write-user-config "settings.edn" (get-in state [:input :sfsim.input/settings]))
                     (assoc-in state [:gui ::menu] main-dialog))
-                  (when (button-label gui "Close")
+                  (when (button-label gui "Cancel")
                     (-> state
-                        (assoc-in [:input :sfsim.input/settings]
-                                  (config/read-user-config "settings.edn" {:sfsim.input/auto-rudder 0.5}))
+                        (update :input read-settings-config)
                         (assoc-in [:gui ::menu] main-dialog))))))
 
 
@@ -1204,7 +1202,7 @@
                   (when (button-label gui "Save")
                     (config/write-user-config "sound.edn" (get-in state [:audio :sfsim.audio/settings]))
                     (assoc-in state [:gui ::menu] main-dialog))
-                  (when (button-label gui "Close")
+                  (when (button-label gui "Cancel")
                     (-> state
                         (assoc-in [:audio :sfsim.audio/settings]
                                   (config/read-user-config "sound.edn" {:sfsim.audio/volume 1.0 :sfsim.audio/no-music false}))
@@ -1286,7 +1284,7 @@
                           (update :physics physics/destroy-vehicle-constraint)
                           (update :physics physics/set-geographic (:surface state) config/planet-config
                                   (:sfsim.model/elevation config/model-config) longitude latitude height))))
-                  (when (button-label gui "Close")
+                  (when (button-label gui "Cancel")
                     (assoc-in state [:gui ::menu] main-dialog)))))
 
 
