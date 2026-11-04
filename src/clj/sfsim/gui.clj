@@ -18,6 +18,7 @@
     [sfsim.matrix :refer (quaternion->matrix)]
     [sfsim.astro :as astro]
     [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map sqr)]
+    [sfsim.steam :as steam]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                           destroy-vertex-array-object with-invisible-window framebuffer-render make-vertex-array-object
@@ -1367,8 +1368,8 @@
   [state gui ^long window-width ^long window-height]
   (nuklear-window
     gui (format "sfsim %s" version)
-    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 10)))) 2)
-    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 10)))
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 11)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 11)))
     :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui (scale gui row-height) 1)
@@ -1392,6 +1393,9 @@
                     (assoc-in state [:gui ::menu] privacy-dialog))
                   (when (button-label gui "Resume")
                     (assoc-in state [:input :sfsim.input/menu] nil))
+                  (when (button-label gui "Quit & Wishlist")
+                    (GLFW/glfwSetWindowShouldClose (:window state) true)
+                    (steam/show-wishlist-page))
                   (when (button-label gui "Quit")
                     (GLFW/glfwSetWindowShouldClose (:window state) true)))))
 

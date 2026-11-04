@@ -3,10 +3,6 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
-** DONE do not automatically increase timewarp
-** DONE Limit timewarp when RCS active
-** DONE Limit timelapse when rotational speed too large
-** DONE Use config reading methods in gui module when resetting configs
 ** TODO restart button
 ** TODO amplification, light direction, and any other atmosphere related uniforms should be set in one place
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
