@@ -541,7 +541,7 @@
             state))
         (let [state (increment-clamp state ::aileron 0.0625)]
           (if-let [auto-rudder (get-in state [::settings ::auto-rudder])]
-            (assoc-in state [::controls ::rudder] (* auto-rudder (get-in state [::controls ::aileron])))
+            (assoc-in state [::controls ::rudder] (* ^double auto-rudder ^double (get-in state [::controls ::aileron])))
             state))))
     (assoc-in state [::controls ::rcs-roll] 0)))
 
@@ -553,7 +553,7 @@
       (assoc-in state [::controls ::rcs-roll] -1)
       (let [state (increment-clamp state ::aileron -0.0625)]
         (if-let [auto-rudder (get-in state [::settings ::auto-rudder])]
-          (assoc-in state [::controls ::rudder] (* auto-rudder (get-in state [::controls ::aileron])))
+          (assoc-in state [::controls ::rudder] (* ^double auto-rudder ^double (get-in state [::controls ::aileron])))
           state)))
     (assoc-in state [::controls ::rcs-roll] 0)))
 
@@ -678,7 +678,7 @@
         state
         (let [state (assoc-in state [::controls aerofoil] (dead-zone-continuous epsilon value))]
           (if (and (= aerofoil ::aileron) auto-rudder)
-            (assoc-in state [::controls ::rudder] (* auto-rudder (-> state ::controls ::aileron)))
+            (assoc-in state [::controls ::rudder] (* ^double auto-rudder ^double (-> state ::controls ::aileron)))
             state))))))
 
 

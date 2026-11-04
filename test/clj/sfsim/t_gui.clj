@@ -451,7 +451,7 @@
 
 (tabular "Display roll control input"
          (fact
-           (widget-test gui canvas rect 160 32 (draw-roll-control gui canvas rect ?control))
+           (widget-test gui canvas rect 160 48 (draw-roll-control gui canvas rect ?control))
            => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
          ?control ?result
          -1.0     "roll-control-left.png"

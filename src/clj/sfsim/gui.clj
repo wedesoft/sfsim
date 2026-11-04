@@ -1176,7 +1176,7 @@
     (ignore-nil-> state state
                   (layout-row-dynamic gui (scale gui row-height) 1)
                   (update-in state [:input :sfsim.input/settings :sfsim.input/auto-rudder] #(property-float gui "auto-rudder" 0.0 (or % 0.0) 1.0 0.1 0.0025))
-                  (update-in state [:input :sfsim.input/settings :sfsim.input/auto-rudder] #(if (zero? %) nil %))
+                  (update-in state [:input :sfsim.input/settings :sfsim.input/auto-rudder] #(if (zero? ^double %) nil %))
                   (layout-row-dynamic gui (scale gui row-height) 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "settings.edn" (get-in state [:input :sfsim.input/settings]))
@@ -1900,15 +1900,20 @@
   "Display roll control input"
   {:malli/schema [:=> [:cat :some :some :some :double] :any]}
   [gui canvas canvas-rect current]
-  (let [x0 (.x ^NkRect canvas-rect)
-        y0 (.y ^NkRect canvas-rect)
-        w  (.w ^NkRect canvas-rect)
-        h  (.h ^NkRect canvas-rect)]
+  (let [font (::bitmap-font gui)
+        text "aileron"
+        x0   (.x ^NkRect canvas-rect)
+        y0   (.y ^NkRect canvas-rect)
+        w    (.w ^NkRect canvas-rect)
+        h    (.h ^NkRect canvas-rect)
+        bw   (* 0.8 w)
+        tw   (text-width text font)]
     (with-colors
       [bg       0   0   0
        green    0 255   0]
       (fill-rect canvas canvas-rect 0.0 bg)
-      (stroke-line canvas x0 (+ y0 (* 0.5 h)) (+ x0 w) (+ y0 (* 0.5 h)) (scale gui 2.0) green))))
+      (draw-text canvas (+ x0 (/ (- w ^double tw) 2)) y0 tw h text font green)
+      (stroke-line canvas (+ x0 (/ (- w ^double bw) 2)) (+ y0 (* 0.75 h)) (+ x0 (/ (+ w ^double bw) 2)) (+ y0 (* 0.75 h)) (scale gui 2.0) green))))
 
 
 (defn navball-mfd
