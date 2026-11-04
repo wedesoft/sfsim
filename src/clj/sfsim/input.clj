@@ -678,7 +678,7 @@
         state
         (let [state (assoc-in state [::controls aerofoil] (dead-zone-continuous epsilon value))]
           (if (and (= aerofoil ::aileron) auto-rudder)
-            (assoc-in state [::controls ::rudder] (* ^double auto-rudder ^double (-> state ::controls ::aileron)))
+            (assoc-in state [::controls ::rudder] (* ^double auto-rudder (double (-> state ::controls ::aileron))))
             state))))))
 
 

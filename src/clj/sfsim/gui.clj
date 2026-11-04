@@ -677,12 +677,12 @@
       (.x nk-vec2 (scale gui 64))
       (.y nk-vec2 (scale gui 64))
       (.min_size win nk-vec2)
-      (.combo_border win(scale gui 1))
-      (.contextual_border win(scale gui 1))
-      (.menu_border win(scale gui 1))
-      (.group_border win(scale gui 1))
-      (.tooltip_border win(scale gui 1))
-      (.popup_border win(scale gui 1))
+      (.combo_border win (scale gui 1))
+      (.contextual_border win (scale gui 1))
+      (.menu_border win (scale gui 1))
+      (.group_border win (scale gui 1))
+      (.tooltip_border win (scale gui 1))
+      (.popup_border win (scale gui 1))
       (.border win (scale gui 2))
       (.min_row_height_padding win (scale gui 8))
       (.x nk-vec2 (scale gui 4))
@@ -1900,24 +1900,47 @@
   (vertical-scale gui canvas canvas-rect minimum maximum step current))
 
 
-(defn draw-roll-control
-  "Display roll control input"
-  {:malli/schema [:=> [:cat :some :some :some :double] :any]}
-  [gui canvas canvas-rect current]
-  (let [font (::bitmap-font gui)
-        text "aileron"
-        x0   (.x ^NkRect canvas-rect)
-        y0   (.y ^NkRect canvas-rect)
-        w    (.w ^NkRect canvas-rect)
-        h    (.h ^NkRect canvas-rect)
-        bw   (* 0.8 w)
-        tw   (text-width text font)]
+(defn draw-horizontal-control
+  "Display roll or rudder control input"
+  {:malli/schema [:=> [:cat :some :some :some :string :double] :any]}
+  [gui canvas canvas-rect text current]
+  (let [font       (::bitmap-font gui)
+        x0         (.x ^NkRect canvas-rect)
+        y0         (.y ^NkRect canvas-rect)
+        w          (.w ^NkRect canvas-rect)
+        h          (.h ^NkRect canvas-rect)
+        text-width (text-width text font)
+        x1         (+ x0 (* 0.1 w))
+        y1         (+ y0 (* 0.75 h))
+        x-centre   (+ x0 (* 0.5 w))
+        bar-width  (* 0.8 w)
+        size1      (* 0.1 h)
+        size2      (* 0.17 h)
+        x-marker   (+ x-centre (* (* ^double current bar-width) 0.5))]
     (with-colors
       [bg       0   0   0
        green    0 255   0]
       (fill-rect canvas canvas-rect 0.0 bg)
-      (draw-text canvas (+ x0 (/ (- w ^double tw) 2)) y0 tw h text font green)
-      (stroke-line canvas (+ x0 (/ (- w ^double bw) 2)) (+ y0 (* 0.75 h)) (+ x0 (/ (+ w ^double bw) 2)) (+ y0 (* 0.75 h)) (scale gui 2.0) green))))
+      (draw-text canvas (+ x0 (* 0.5 (- w ^double text-width))) y0 text-width h text font green)
+      (stroke-line canvas x1 y1 (+ x1 bar-width) y1 (scale gui 2.0) green)
+      (stroke-line canvas x1 (- y1 size1) x1 (+ y1 size1) (scale gui 2.0) green)
+      (stroke-line canvas (+ x1 bar-width) (- y1 size1) (+ x1 bar-width) (+ y1 size1) (scale gui 2.0) green)
+      (stroke-polygon canvas [[x-marker y1] [(+ x-marker size1) (+ y1 size2)] [(- x-marker size1) (+ y1 size2)]]
+                      (scale gui 2) green))))
+
+
+(defn draw-aileron-control
+  "Display aileron control input"
+  {:malli/schema [:=> [:cat :some :some :some :double] :any]}
+  [gui canvas canvas-rect current]
+  (draw-horizontal-control gui canvas canvas-rect "aileron" current))
+
+
+(defn draw-rudder-control
+  "Display rudder control input"
+  {:malli/schema [:=> [:cat :some :some :some :double] :any]}
+  [gui canvas canvas-rect current]
+  (draw-horizontal-control gui canvas canvas-rect "rudder" current))
 
 
 (defn navball-mfd

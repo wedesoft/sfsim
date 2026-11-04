@@ -449,14 +449,24 @@
           8.0   "pitch-max.png")
 
 
-(tabular "Display roll control input"
+(tabular "Display aileron control input"
          (fact
-           (widget-test gui canvas rect 160 48 (draw-roll-control gui canvas rect ?control))
+           (widget-test gui canvas rect 160 48 (draw-aileron-control gui canvas rect ?control))
            => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
          ?control ?result
-         -1.0     "roll-control-left.png"
-          1.0     "roll-control-right.png"
-          0.0     "roll-control-zero.png")
+         -1.0     "aileron-control-left.png"
+          1.0     "aileron-control-right.png"
+          0.0     "aileron-control-zero.png")
+
+
+(tabular "Display rudder control input"
+         (fact
+           (widget-test gui canvas rect 160 48 (draw-rudder-control gui canvas rect ?control))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?control ?result
+         -1.0     "rudder-control-left.png"
+          1.0     "rudder-control-right.png"
+          0.0     "rudder-control-zero.png")
 
 
 (facts "Display flash message"
