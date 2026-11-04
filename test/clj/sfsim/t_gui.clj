@@ -454,9 +454,29 @@
            (widget-test gui canvas rect 160 48 (draw-rudder-control gui canvas rect ?control))
            => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
          ?control ?result
-         -1.0     "rudder-control-left.png"
-          1.0     "rudder-control-right.png"
+          1.0     "rudder-control-left.png"
+         -1.0     "rudder-control-right.png"
           0.0     "rudder-control-centre.png")
+
+
+(tabular "Display elevator control input"
+         (fact
+           (widget-test gui canvas rect 120 120 (draw-elevator-control gui canvas rect ?control))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?control ?result
+          1.0     "elevator-control-down.png"
+         -1.0     "elevator-control-up.png"
+          0.0     "elevator-control-centre.png")
+
+
+(tabular "Display aileron control input"
+         (fact
+           (widget-test gui canvas rect 120 120 (draw-aileron-control gui canvas rect ?control))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?control ?result
+          1.0     "aileron-control-left.png"
+         -1.0     "aileron-control-right.png"
+          0.0     "aileron-control-centre.png")
 
 
 (facts "Display flash message"
