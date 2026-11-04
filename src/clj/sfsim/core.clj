@@ -43,6 +43,8 @@
     (org.lwjgl.glfw
       GLFW
       GLFWVidMode)
+    (org.lwjgl.system
+      MemoryStack)
     (org.lwjgl.nuklear
       Nuklear)
     (com.newrelic.api.agent
@@ -74,7 +76,8 @@
     (jolt/jolt-init)
     (jolt/set-gravity (vec3 0 0 0))
 
-    (let [window-width        (:sfsim.render/window-width config/render-config)
+    (let [stack               (MemoryStack/stackPush)
+          window-width        (:sfsim.render/window-width config/render-config)
           window-height       (:sfsim.render/window-height config/render-config)
           window              (make-window "sfsim" window-width window-height false)
           longitude           (to-radians -1.3747)
@@ -302,6 +305,7 @@
         (gui/destroy-navball @gui)
         (gui/destroy-nuklear-gui-with-font @gui)
         (destroy-window window)
+        (MemoryStack/stackPop)
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
         (when user-stats (steam/destroy))))
