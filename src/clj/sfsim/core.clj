@@ -54,6 +54,9 @@
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
 
+(def frame-counter       (atom 0))
+(def uptime              (atom 0.0))
+
 
 (defn -main
   "Space flight simulator main function"
@@ -124,8 +127,7 @@
       (GLFW/glfwSetMouseButtonCallback window (mouse-button-callback event-buffer))
       (GLFW/glfwSetScrollCallback window (scroll-callback event-buffer))
 
-      (let [frame-counter       (atom 0)
-            frametime           (atom 0.25)
+      (let [frametime           (atom 0.25)
             spk                 (astro/make-spk-document "data/astro/de430_1850-2150.bsp")  ; Spacecraft and Planet Kernel (SPK)
             barycenter-sun      (astro/make-spk-segment-interpolator spk 0 10)
             barycenter-earth    (astro/make-spk-segment-interpolator spk 0 3)
@@ -296,6 +298,7 @@
                    (steam/detect-achievements user-stats (:physics @state))
                    (steam/run-callbacks))
                  (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
+                 (swap! uptime + ^double dt)
                  (swap! frame-counter inc)))
         (texture/destroy-texture (:sfsim.planet/normal-tex overlay))
         (texture/destroy-texture (:sfsim.planet/diffuse-tex overlay))
@@ -317,6 +320,7 @@
              (.recordCustomEvent "AppShutdown" {"type" "Crash"}))
          (Thread/sleep 2000)
          (System/exit 1)))
+  (log/info (format "average fps was %.2f" (if (zero? @uptime) 0.0 (/ ^double @frame-counter ^double @uptime))))
   (log/info "terminating sfsim" version)
   (-> (NewRelic/getAgent)
       (.getInsights)
