@@ -283,7 +283,6 @@
                                                                (if menu GLFW/GLFW_CURSOR_NORMAL GLFW/GLFW_CURSOR_HIDDEN))
                                         (when menu (swap! state menu @gui window-width window-height)))
                                       (let [controls (-> @state :input :sfsim.input/controls)]
-                                        (gui/flight-controls-display controls @gui)
                                         (gui/information-display @gui window-width window-height @state @frametime
                                                                  (:sfsim.physics/time-lapse time-lapse-info)))
                                       (gui/render-nuklear-gui @gui window-width window-height)))

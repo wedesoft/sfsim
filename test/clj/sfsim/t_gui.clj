@@ -451,7 +451,7 @@
 
 (tabular "Display rudder control input"
          (fact
-           (widget-test gui canvas rect 160 48 (draw-rudder-control gui canvas rect ?control))
+           (widget-test gui canvas rect 160 96 (draw-rudder-control gui canvas rect ?control))
            => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
          ?control ?result
           1.0     "rudder-control-left.png"
@@ -477,6 +477,23 @@
           1.0     "aileron-control-left.png"
          -1.0     "aileron-control-right.png"
           0.0     "aileron-control-centre.png")
+
+
+(def input-params #:sfsim.input{:aileron 0.25 :elevator 0.5 :rudder 1.0})
+
+
+(fact "Render control inputs MFD"
+      (doseq [s [1 2]]
+             (gui-offscreen-render
+               (quot 264 s) (quot 264 s)
+               (let [gui (make-nuklear-gui-with-font (/ 1.0 s))]
+                 (nuklear-dark-style gui)
+                 (nuklear-window gui "control test window" 0 0 (quot 264 s) (quot 264 s) :widget
+                                 (layout-row-dynamic gui (/ 256.0 s) 1)
+                                 (controls-mfd gui input-params))
+                 (render-nuklear-gui gui (quot 264 s) (quot 264 s))
+                 (destroy-nuklear-gui-with-font gui)))
+             => (is-image (format "test/clj/sfsim/fixtures/gui/controls-%d.png" s) 0.10)))
 
 
 (facts "Display flash message"
