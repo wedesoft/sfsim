@@ -1904,43 +1904,41 @@
   "Display roll or rudder control input"
   {:malli/schema [:=> [:cat :some :some :some :string :double] :any]}
   [gui canvas canvas-rect text current]
-  (let [font       (::bitmap-font gui)
-        x0         (.x ^NkRect canvas-rect)
-        y0         (.y ^NkRect canvas-rect)
-        w          (.w ^NkRect canvas-rect)
-        h          (.h ^NkRect canvas-rect)
-        text-width (text-width text font)
-        x1         (+ x0 (* 0.1 w))
-        y1         (+ y0 (* 0.75 h))
-        x-centre   (+ x0 (* 0.5 w))
-        bar-width  (* 0.8 w)
-        size1      (* 0.1 h)
-        size2      (* 0.17 h)
-        x-marker   (+ x-centre (* (* ^double current bar-width) 0.5))]
+  (let [font        (::bitmap-font gui)
+        x0          (.x ^NkRect canvas-rect)
+        y0          (.y ^NkRect canvas-rect)
+        w           (.w ^NkRect canvas-rect)
+        h           (.h ^NkRect canvas-rect)
+        text-width  (text-width text font)
+        text-height (scale gui text-height)
+        x1          (+ x0 (* 0.1 w))
+        y1          (+ y0 (* 0.25 h))
+        x-centre    (+ x0 (* 0.5 w))
+        bar-width   (* 0.8 w)
+        size1       (* 0.1 h)
+        size2       (* 0.17 h)
+        x-marker    (+ x-centre (* (* ^double current bar-width) 0.5))]
     (with-colors
       [bg       0   0   0
-       green    0 255   0]
+       green    0 255   0
+       white  255 255 255]
       (fill-rect canvas canvas-rect 0.0 bg)
-      (draw-text canvas (+ x0 (* 0.5 (- w ^double text-width))) y0 text-width h text font green)
+      (draw-text canvas (+ x0 (* 0.5 (- w ^double text-width))) (+ y0 text-height) text-width h text font white)
       (stroke-line canvas x1 y1 (+ x1 bar-width) y1 (scale gui 2.0) green)
       (stroke-line canvas x1 (- y1 size1) x1 (+ y1 size1) (scale gui 2.0) green)
+      (stroke-line canvas x-centre (- y1 size1) x-centre (+ y1 size1) (scale gui 2.0) green)
       (stroke-line canvas (+ x1 bar-width) (- y1 size1) (+ x1 bar-width) (+ y1 size1) (scale gui 2.0) green)
+      (stroke-polygon canvas [[x-marker y1] [(+ x-marker size1) (- y1 size2)] [(- x-marker size1) (- y1 size2)]]
+                      (scale gui 2) green)
       (stroke-polygon canvas [[x-marker y1] [(+ x-marker size1) (+ y1 size2)] [(- x-marker size1) (+ y1 size2)]]
                       (scale gui 2) green))))
-
-
-(defn draw-aileron-control
-  "Display aileron control input"
-  {:malli/schema [:=> [:cat :some :some :some :double] :any]}
-  [gui canvas canvas-rect current]
-  (draw-horizontal-control gui canvas canvas-rect "aileron" current))
 
 
 (defn draw-rudder-control
   "Display rudder control input"
   {:malli/schema [:=> [:cat :some :some :some :double] :any]}
   [gui canvas canvas-rect current]
-  (draw-horizontal-control gui canvas canvas-rect "rudder" current))
+  (draw-horizontal-control gui canvas canvas-rect "RUDDER" current))
 
 
 (defn navball-mfd
