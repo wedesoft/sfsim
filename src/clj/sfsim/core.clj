@@ -43,6 +43,8 @@
     (org.lwjgl.glfw
       GLFW
       GLFWVidMode)
+    (org.lwjgl.system
+      MemoryStack)
     (org.lwjgl.nuklear
       Nuklear)
     (com.newrelic.api.agent
@@ -51,6 +53,9 @@
 
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
+
+(def frame-counter       (atom 0))
+(def uptime              (atom 0.0))
 
 
 (defn -main
@@ -74,7 +79,8 @@
     (jolt/jolt-init)
     (jolt/set-gravity (vec3 0 0 0))
 
-    (let [window-width        (:sfsim.render/window-width config/render-config)
+    (let [stack               (MemoryStack/stackPush)
+          window-width        (:sfsim.render/window-width config/render-config)
           window-height       (:sfsim.render/window-height config/render-config)
           window              (make-window "sfsim" window-width window-height false)
           longitude           (to-radians -1.3747)
@@ -121,8 +127,7 @@
       (GLFW/glfwSetMouseButtonCallback window (mouse-button-callback event-buffer))
       (GLFW/glfwSetScrollCallback window (scroll-callback event-buffer))
 
-      (let [frame-counter       (atom 0)
-            frametime           (atom 0.25)
+      (let [frametime           (atom 0.25)
             spk                 (astro/make-spk-document "data/astro/de430_1850-2150.bsp")  ; Spacecraft and Planet Kernel (SPK)
             barycenter-sun      (astro/make-spk-segment-interpolator spk 0 10)
             barycenter-earth    (astro/make-spk-segment-interpolator spk 0 3)
@@ -154,7 +159,8 @@
                                        :camera camera-state
                                        :audio audio-state
                                        :surface surface
-                                       :window window})
+                                       :window window
+                                       :user-stats user-stats})
             recording           (atom (and (.exists (java.io.File. "recording.edn"))  ; Initialize recording with "echo [] > recording.edn"
                                            (clojure.edn/read-string (slurp "recording.edn"))))]
         (start-clock)
@@ -278,7 +284,6 @@
                                                                (if menu GLFW/GLFW_CURSOR_NORMAL GLFW/GLFW_CURSOR_HIDDEN))
                                         (when menu (swap! state menu @gui window-width window-height)))
                                       (let [controls (-> @state :input :sfsim.input/controls)]
-                                        (gui/flight-controls-display controls @gui)
                                         (gui/information-display @gui window-width window-height @state @frametime
                                                                  (:sfsim.physics/time-lapse time-lapse-info)))
                                       (gui/render-nuklear-gui @gui window-width window-height)))
@@ -293,6 +298,7 @@
                    (steam/detect-achievements user-stats (:physics @state))
                    (steam/run-callbacks))
                  (swap! frametime (fn [^double x] (+ (* 0.95 x) (* 0.05 ^double dt))))
+                 (swap! uptime + ^double dt)
                  (swap! frame-counter inc)))
         (texture/destroy-texture (:sfsim.planet/normal-tex overlay))
         (texture/destroy-texture (:sfsim.planet/diffuse-tex overlay))
@@ -302,6 +308,7 @@
         (gui/destroy-navball @gui)
         (gui/destroy-nuklear-gui-with-font @gui)
         (destroy-window window)
+        (MemoryStack/stackPop)
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
         (when user-stats (steam/destroy))))
@@ -313,6 +320,7 @@
              (.recordCustomEvent "AppShutdown" {"type" "Crash"}))
          (Thread/sleep 2000)
          (System/exit 1)))
+  (log/info (format "average fps was %.2f" (if (zero? @uptime) 0.0 (/ ^double @frame-counter ^double @uptime))))
   (log/info "terminating sfsim" version)
   (-> (NewRelic/getAgent)
       (.getInsights)

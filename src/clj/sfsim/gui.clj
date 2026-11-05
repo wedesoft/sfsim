@@ -6,7 +6,7 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (PI to-radians to-degrees cos sin ceil)]
+    [clojure.math :refer (PI to-radians to-degrees cos sin ceil sqrt)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.vector :refer (vec2 vec3)]
@@ -18,6 +18,7 @@
     [sfsim.matrix :refer (quaternion->matrix)]
     [sfsim.astro :as astro]
     [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map sqr)]
+    [sfsim.steam :as steam]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                           destroy-vertex-array-object with-invisible-window framebuffer-render make-vertex-array-object
@@ -25,7 +26,7 @@
                           uniform-vector2)]
     [sfsim.texture :refer (make-rgba-texture make-rgb-texture byte-buffer->array destroy-texture texture-2d make-empty-texture-2d
                            texture->image generate-mipmap)]
-    [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name)])
+    [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name read-settings-config read-joystick-config)])
   (:import
     (java.nio
       DirectByteBuffer)
@@ -676,12 +677,12 @@
       (.x nk-vec2 (scale gui 64))
       (.y nk-vec2 (scale gui 64))
       (.min_size win nk-vec2)
-      (.combo_border win(scale gui 1))
-      (.contextual_border win(scale gui 1))
-      (.menu_border win(scale gui 1))
-      (.group_border win(scale gui 1))
-      (.tooltip_border win(scale gui 1))
-      (.popup_border win(scale gui 1))
+      (.combo_border win (scale gui 1))
+      (.contextual_border win (scale gui 1))
+      (.menu_border win (scale gui 1))
+      (.group_border win (scale gui 1))
+      (.tooltip_border win (scale gui 1))
+      (.popup_border win (scale gui 1))
       (.border win (scale gui 2))
       (.min_row_height_padding win (scale gui 8))
       (.x nk-vec2 (scale gui 4))
@@ -1111,10 +1112,9 @@
                   (when (button-label gui "Save")
                     (config/write-user-config "joysticks.edn" (get-in state [:input :sfsim.input/mappings :sfsim.input/joysticks]))
                     (assoc-in state [:gui ::menu] main-dialog))
-                  (when (button-label gui "Close")
+                  (when (button-label gui "Cancel")
                     (-> state
-                        (assoc-in [:input :sfsim.input/mappings :sfsim.input/joysticks]
-                                  (config/read-user-config "joysticks.edn" {:sfsim.input/dead-zone 0.1}))
+                        (update :input read-joystick-config)
                         (assoc-in [:gui ::menu] main-dialog))))))
 
 
@@ -1177,15 +1177,14 @@
     (ignore-nil-> state state
                   (layout-row-dynamic gui (scale gui row-height) 1)
                   (update-in state [:input :sfsim.input/settings :sfsim.input/auto-rudder] #(property-float gui "auto-rudder" 0.0 (or % 0.0) 1.0 0.1 0.0025))
-                  (update-in state [:input :sfsim.input/settings :sfsim.input/auto-rudder] #(if (zero? %) nil %))
+                  (update-in state [:input :sfsim.input/settings :sfsim.input/auto-rudder] #(if (zero? ^double %) nil %))
                   (layout-row-dynamic gui (scale gui row-height) 2)
                   (when (button-label gui "Save")
                     (config/write-user-config "settings.edn" (get-in state [:input :sfsim.input/settings]))
                     (assoc-in state [:gui ::menu] main-dialog))
-                  (when (button-label gui "Close")
+                  (when (button-label gui "Cancel")
                     (-> state
-                        (assoc-in [:input :sfsim.input/settings]
-                                  (config/read-user-config "settings.edn" {:sfsim.input/auto-rudder 0.5}))
+                        (update :input read-settings-config)
                         (assoc-in [:gui ::menu] main-dialog))))))
 
 
@@ -1204,7 +1203,7 @@
                   (when (button-label gui "Save")
                     (config/write-user-config "sound.edn" (get-in state [:audio :sfsim.audio/settings]))
                     (assoc-in state [:gui ::menu] main-dialog))
-                  (when (button-label gui "Close")
+                  (when (button-label gui "Cancel")
                     (-> state
                         (assoc-in [:audio :sfsim.audio/settings]
                                   (config/read-user-config "sound.edn" {:sfsim.audio/volume 1.0 :sfsim.audio/no-music false}))
@@ -1286,7 +1285,7 @@
                           (update :physics physics/destroy-vehicle-constraint)
                           (update :physics physics/set-geographic (:surface state) config/planet-config
                                   (:sfsim.model/elevation config/model-config) longitude latitude height))))
-                  (when (button-label gui "Close")
+                  (when (button-label gui "Cancel")
                     (assoc-in state [:gui ::menu] main-dialog)))))
 
 
@@ -1369,8 +1368,8 @@
   [state gui ^long window-width ^long window-height]
   (nuklear-window
     gui (format "sfsim %s" version)
-    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 10)))) 2)
-    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 10)))
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 11)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 11)))
     :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui (scale gui row-height) 1)
@@ -1394,50 +1393,12 @@
                     (assoc-in state [:gui ::menu] privacy-dialog))
                   (when (button-label gui "Resume")
                     (assoc-in state [:input :sfsim.input/menu] nil))
+                  (when (button-label gui "View Wishlist Page")
+                    (when (:user-stats state)
+                      (GLFW/glfwIconifyWindow (:window state))
+                      (steam/show-wishlist-page)))
                   (when (button-label gui "Quit")
                     (GLFW/glfwSetWindowShouldClose (:window state) true)))))
-
-
-(defn flight-controls-display
-  [input-controls gui]
-  (let [stack    (MemoryStack/stackPush)
-        rect     (NkRect/malloc stack)
-        rgb      (NkColor/malloc stack)
-        throttle (:sfsim.input/throttle input-controls)
-        aileron  (:sfsim.input/aileron input-controls)
-        elevator (:sfsim.input/elevator input-controls)
-        rudder   (:sfsim.input/rudder input-controls)]
-    (nuklear-window gui "Yoke" (scale gui 10) (scale gui 10) (scale gui 80) (scale gui 80) :widget
-                    (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui (scale gui 80) 1)
-                      (Nuklear/nk_widget rect (::context gui))
-                      (Nuklear/nk_fill_circle canvas
-                                              (Nuklear/nk_rect (scale gui (- 45 (* ^double aileron 30)))
-                                                               (scale gui (- 45 (* ^double elevator 30)))
-                                                               (scale gui 10) (scale gui 10)
-                                                               rect)
-                                              (Nuklear/nk_rgb 255 0 0 rgb))))
-    (nuklear-window gui "Rudder" (scale gui 10) (scale gui 95) (scale gui 80) (scale gui 20) :widget
-                    (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui (scale gui 20) 1)
-                      (Nuklear/nk_widget rect (::context gui))
-                      (Nuklear/nk_fill_circle canvas
-                                              (Nuklear/nk_rect (scale gui (- 45 (* ^double rudder 30)))
-                                                               (scale gui 100)
-                                                               (scale gui 10) (scale gui 10)
-                                                               rect)
-                                              (Nuklear/nk_rgb 255 0 255 rgb))))
-    (nuklear-window gui "Throttle" (scale gui 95) (scale gui 10) (scale gui 20) (scale gui 80) :widget
-                    (let [canvas (Nuklear/nk_window_get_canvas (::context gui))]
-                      (layout-row-dynamic gui (scale gui 80) 1)
-                      (Nuklear/nk_widget rect (::context gui))
-                      (Nuklear/nk_fill_circle canvas
-                                              (Nuklear/nk_rect (scale gui 100)
-                                                               (scale gui (- 75 (* 60 ^double throttle)))
-                                                               (scale gui 10) (scale gui 10)
-                                                               rect)
-                                              (Nuklear/nk_rgb 255 255 255 rgb)))))
-  (MemoryStack/stackPop))
 
 
 (defn float-str
@@ -1898,6 +1859,122 @@
   (vertical-scale gui canvas canvas-rect minimum maximum step current))
 
 
+(defn draw-horizontal-control
+  "Display rudder control input"
+  {:malli/schema [:=> [:cat :some :some :some :string :double] :any]}
+  [gui canvas canvas-rect text current]
+  (let [font        (::bitmap-font gui)
+        x0          (.x ^NkRect canvas-rect)
+        y0          (.y ^NkRect canvas-rect)
+        w           (.w ^NkRect canvas-rect)
+        h           (.h ^NkRect canvas-rect)
+        text-width  (text-width text font)
+        text-height (scale gui text-height)
+        x1          (+ x0 (* 0.1 w))
+        y1          (+ y0 (* 0.25 h))
+        x-centre    (+ x0 (* 0.5 w))
+        bar-width   (* 0.8 w)
+        size-marker (/ text-height 4.0)
+        size1       (/ text-height 6.0)
+        size2       (* size1 (sqrt 3.0))
+        x-marker    (- x-centre (* (* ^double current bar-width) 0.5))]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0
+       bright 202 213 197]
+      (fill-rect canvas canvas-rect 0.0 bg)
+      (draw-text canvas (+ x0 (* 0.5 (- w ^double text-width))) (+ y0 (- h text-height)) text-width text-height text font bright)
+      (stroke-line canvas x1 y1 (+ x1 bar-width) y1 (scale gui 3.0) green)
+      (stroke-line canvas x1 y1 x1 (+ y1 size-marker) (scale gui 2.0) green)
+      (stroke-line canvas x-centre y1 x-centre (+ y1 size-marker) (scale gui 2.0) green)
+      (stroke-line canvas (+ x1 bar-width) y1 (+ x1 bar-width) (+ y1 size-marker) (scale gui 2.0) green)
+      (stroke-polygon canvas [[x-marker y1] [(+ x-marker size1) (- y1 size2)] [(- x-marker size1) (- y1 size2)]]
+                      (scale gui 2) green)
+      (stroke-polygon canvas [[x-marker y1] [(+ x-marker size1) (+ y1 size2)] [(- x-marker size1) (+ y1 size2)]]
+                      (scale gui 2) green))))
+
+
+(defn draw-vertical-control
+  "Display aileron or elevator control input"
+  {:malli/schema [:=> [:cat :some :some :some :string :double :double] :any]}
+  [gui canvas canvas-rect text current1 current2]
+  (let [font        (::bitmap-font gui)
+        x0          (.x ^NkRect canvas-rect)
+        y0          (.y ^NkRect canvas-rect)
+        w           (.w ^NkRect canvas-rect)
+        h           (.h ^NkRect canvas-rect)
+        text-width  (text-width text font)
+        text-height (scale gui text-height)
+        bar-height  (* 0.8 (- h text-height))
+        x1          (+ x0 (* 0.5 w))
+        y1          (+ y0 (* 0.1 (- h text-height)))
+        y-centre    (+ y0 (* 0.5 (- h text-height)))
+        size-marker (/ text-height 4.0)
+        size1       (/ text-height 6.0)
+        size2       (* size1 (sqrt 3.0))
+        y-marker1   (+ y-centre (* (* ^double current1 bar-height) 0.5))
+        y-marker2   (+ y-centre (* (* ^double current2 bar-height) 0.5))]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0
+       bright 202 213 197]
+      (fill-rect canvas canvas-rect 0.0 bg)
+      (draw-text canvas (+ x0 (* 0.5 (- w ^double text-width))) (+ y0 (- h text-height)) text-width text-height text font bright)
+      (stroke-line canvas x1 y1 x1 (+ y1 bar-height) (scale gui 2.0) bright)
+      (stroke-line canvas (- x1 size-marker) y1 (+ x1 size-marker) y1 (scale gui 2.0) bright)
+      (stroke-line canvas (- x1 size-marker) y-centre (+ x1 size-marker) y-centre (scale gui 2.0) bright)
+      (stroke-line canvas (- x1 size-marker) (+ y1 bar-height) (+ x1 size-marker) (+ y1 bar-height) (scale gui 2.0) bright)
+      (stroke-polygon canvas [[x1 y-marker1] [(- x1 size2) (+ y-marker1 size1)] [(- x1 size2) (- y-marker1 size1)]]
+                      (scale gui 2) green)
+      (stroke-polygon canvas [[x1 y-marker2] [(+ x1 size2) (+ y-marker2 size1)] [(+ x1 size2) (- y-marker2 size1)]]
+                      (scale gui 2) green))))
+
+
+(defn draw-rudder-control
+  "Display rudder control input"
+  {:malli/schema [:=> [:cat :some :some :some :double] :any]}
+  [gui canvas canvas-rect current]
+  (draw-horizontal-control gui canvas canvas-rect "RUDDER" current))
+
+
+(defn draw-elevator-control
+  "Display elevator control input"
+  {:malli/schema [:=> [:cat :some :some :some :double] :any]}
+  [gui canvas canvas-rect current]
+  (draw-vertical-control gui canvas canvas-rect "ELEVATOR" current current))
+
+
+(defn draw-aileron-control
+  "Display aileron control input"
+  {:malli/schema [:=> [:cat :some :some :some :double] :any]}
+  [gui canvas canvas-rect current]
+  (draw-vertical-control gui canvas canvas-rect "AILERON" (- ^double current) (+ ^double current)))
+
+
+(defn controls-mfd
+  "Visualize inputs to aerodynamic control surfaces"
+  [gui {:sfsim.input/keys [aileron elevator rudder]}]
+  (widget gui canvas canvas-rect
+          (let [x0    (.x canvas-rect)
+                y0    (.y canvas-rect)
+                w     (.w canvas-rect)
+                h     (.h canvas-rect)
+                h1    (* 0.7 h)
+                h2    (* 0.3 h)]
+            (with-colors
+              [bg       0   0   0
+               border  82 185 142]
+              (fill-rect canvas canvas-rect 0.0 bg)
+              (with-rect rect (+ x0 (scale gui 1)) (+ y0 (scale gui 1)) (- w (scale gui 2)) (- h (scale gui 2))
+                (stroke-rect canvas rect 0.0 (scale gui 3.0) border))
+              (with-rect rect (+ x0 (scale gui 2)) (+ y0 (scale gui 2)) (- (* 0.5 w) (scale gui 4)) (- h1 (scale gui 4))
+                (draw-aileron-control gui canvas rect aileron))
+              (with-rect rect (+ x0 (* 0.5 w) (scale gui 2)) (+ y0 (scale gui 2)) (- (* 0.5 w) (scale gui 4)) (- h1 (scale gui 4))
+                (draw-elevator-control gui canvas rect elevator))
+              (with-rect rect (+ x0 (scale gui 2))  (+ y0 h1 (scale gui 2)) (- w (scale gui 4)) (- h2 (scale gui 4))
+                (draw-rudder-control gui canvas rect rudder))))))
+
+
 (defn navball-mfd
   "Display navball widget"
   [gui rotation-rates]
@@ -1932,6 +2009,7 @@
 (defn information-display
   [gui w h state frametime time-lapse]
   (let [controls (-> state :input :sfsim.input/controls)
+        font     (::bitmap-font gui)
         text     (format "vs = % .1f m/s, v = %.1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
                          (:sfsim.physics/display-vertical-speed (:physics state))
                          (:sfsim.physics/display-speed (:physics state))
@@ -1946,15 +2024,18 @@
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
                       (orbit-mfd gui (physics/orbital-parameters config/planet-config (:physics state))))
+      (nuklear-window gui "Controls" (scale gui (+ 20 256)) (- ^long h (scale gui (+ 10 256)))
+                      (scale gui 256) (scale gui 256) :widget
+                      (layout-row-dynamic gui (scale gui 256) 1)
+                      (controls-mfd gui controls))
       (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
                       (navball-prepare gui (physics/orbit-orientation (:physics state)))
                       (navball-mfd gui (physics/rotation-rates (:physics state))))
       (when-let [message (or (-> state :gui ::message-text) (when (-> state :input :sfsim.input/pause) "Pause"))]
-                (let [font (::bitmap-font gui)
-                      tw   (text-width message font)]
-                  (nuklear-window gui "Pause" (scale gui (+ 20 128)) (scale gui 10) tw (scale gui text-row-height) :widget
+                (let [tw2 (text-width message font)]
+                  (nuklear-window gui "Pause" (scale gui 10) (scale gui (+ 20 ^long text-height)) tw2 (scale gui text-row-height) :widget
                                   (layout-row-dynamic gui (scale gui text-row-height) 1)
                                   (widget gui canvas canvas-rect
                                           (let [
@@ -1966,8 +2047,8 @@
                                               [bg  255 255 255
                                                red 255   0   0]
                                               (fill-rect canvas canvas-rect 0.0 bg)
-                                              (draw-text canvas (+ x0 (/ (- w ^double tw) 2)) y0 tw h message font red))))))))
-    (nuklear-window gui "Information" (scale gui (+ 20 256)) (- ^long h (scale gui (+ 10 ^long text-height)))
+                                              (draw-text canvas (+ x0 (/ (- w ^double tw2) 2)) y0 tw2 h message font red))))))))
+    (nuklear-window gui "Information" (scale gui 10) (scale gui 10)
                     (scale gui 720) (scale gui (* ^long text-height 1)) :widget
                     (layout-row-dynamic gui (scale gui text-row-height) 1)
                     (text-label gui text))))
