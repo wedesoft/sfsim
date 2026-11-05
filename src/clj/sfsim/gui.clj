@@ -2035,7 +2035,7 @@
                       (navball-mfd gui (physics/rotation-rates (:physics state))))
       (when-let [message (or (-> state :gui ::message-text) (when (-> state :input :sfsim.input/pause) "Pause"))]
                 (let [tw2 (text-width message font)]
-                  (nuklear-window gui "Pause" (scale gui 10) (scale gui (+ 20 text-height)) tw2 (scale gui text-row-height) :widget
+                  (nuklear-window gui "Pause" (scale gui 10) (scale gui (+ 20 ^long text-height)) tw2 (scale gui text-row-height) :widget
                                   (layout-row-dynamic gui (scale gui text-row-height) 1)
                                   (widget gui canvas canvas-rect
                                           (let [
