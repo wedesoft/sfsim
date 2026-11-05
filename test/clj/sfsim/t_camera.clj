@@ -39,13 +39,13 @@
        (:sfsim.camera/domain @state) => :sfsim.camera/slow
        (:sfsim.camera/distance @state) => 100.0
        (:sfsim.camera/roll @state) => 0.0
-       (:sfsim.camera/pitch @state) => (roughly (to-radians -3.0) 1e-6)
+       (:sfsim.camera/pitch @state) => (roughly (to-radians -4.0) 1e-6)
        (:sfsim.camera/yaw @state) => 0.0
        (:sfsim.camera/target-distance @state) => 100.0
        (:sfsim.camera/target-roll @state) => 0.0
-       (:sfsim.camera/target-pitch @state) => (roughly (to-radians -3.0) 1e-6)
+       (:sfsim.camera/target-pitch @state) => (roughly (to-radians -4.0) 1e-6)
        (:sfsim.camera/target-yaw @state) => 0.0
-       (:sfsim.camera/pitch-offset @state) => (roughly (to-radians -7.0) 1e-6))
+       (:sfsim.camera/pitch-offset @state) => (roughly (to-radians -6.0) 1e-6))
 
 
 (facts "Determine horizon system"
