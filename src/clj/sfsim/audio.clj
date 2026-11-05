@@ -57,10 +57,11 @@
 
 (defn initialize-audio
   "Open audio device"
-  [^String device-name]
-  (let [device (ALC10/alcOpenDevice device-name)]
+  []
+  (let [^String device-name nil
+        device              (ALC10/alcOpenDevice device-name)]
     (when (zero? ^long device)
-      (throw (RuntimeException. (format "Error opening sound device \"%s\"." device-name))))
+      (throw (RuntimeException. (format "Error opening default sound device."))))
     (let [device-caps (ALC/createCapabilities device)
           context     (ALC10/alcCreateContext ^long device (int-array 1))
           use-tlc     (and (.ALC_EXT_thread_local_context device-caps)
@@ -216,7 +217,7 @@
 
 (defn make-audio-state
   []
-  (let [audio (initialize-audio "")
+  (let [audio (initialize-audio)
         surrealism-mix-buffer (-> "data/audio/andrew-kn-surrealism-ambient-mix.ogg" load-vorbis make-audio-buffer)
         edge-of-space-buffer (-> "data/audio/andrew-kn-at-the-edge-of-space.ogg" load-vorbis make-audio-buffer)
         gear-deploy-buffer (-> "data/audio/gear-deploy.ogg" load-vorbis make-audio-buffer)
