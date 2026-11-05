@@ -1,3 +1,15 @@
+sfsim (0.37-1)
+
+  * Pitch camera so MFDs do not cover the spacecraft
+	* Open nil audio device instead of "" audio device
+	* Add wishlist page button
+	* Add display showing aileron, elevator, and rudder control input
+	* Reduce cloud sampling quality
+	* Log average fps when terminating game
+	* Add memory stack to main method
+
+-- Jan Wedekind <jan@wedesoft.de>  Thu,  5 Nov 2026 21:24:22 +0000
+
 sfsim (0.36-1)
 
   * Implemented auto-rudder
