@@ -1880,9 +1880,9 @@
     (with-colors
       [bg       0   0   0
        green    0 255   0
-       white  255 255 255]
+       bright 202 213 197]
       (fill-rect canvas canvas-rect 0.0 bg)
-      (draw-text canvas (+ x0 (* 0.5 (- w ^double text-width))) (+ y0 (- h text-height)) text-width text-height text font white)
+      (draw-text canvas (+ x0 (* 0.5 (- w ^double text-width))) (+ y0 (- h text-height)) text-width text-height text font bright)
       (stroke-line canvas x1 y1 (+ x1 bar-width) y1 (scale gui 3.0) green)
       (stroke-line canvas x1 y1 x1 (+ y1 size-marker) (scale gui 2.0) green)
       (stroke-line canvas x-centre y1 x-centre (+ y1 size-marker) (scale gui 2.0) green)
@@ -1916,13 +1916,13 @@
     (with-colors
       [bg       0   0   0
        green    0 255   0
-       white  255 255 255]
+       bright 202 213 197]
       (fill-rect canvas canvas-rect 0.0 bg)
-      (draw-text canvas (+ x0 (* 0.5 (- w ^double text-width))) (+ y0 (- h text-height)) text-width text-height text font white)
-      (stroke-line canvas x1 y1 x1 (+ y1 bar-height) (scale gui 2.0) white)
-      (stroke-line canvas (- x1 size-marker) y1 (+ x1 size-marker) y1 (scale gui 2.0) white)
-      (stroke-line canvas (- x1 size-marker) y-centre (+ x1 size-marker) y-centre (scale gui 2.0) white)
-      (stroke-line canvas (- x1 size-marker) (+ y1 bar-height) (+ x1 size-marker) (+ y1 bar-height) (scale gui 2.0) white)
+      (draw-text canvas (+ x0 (* 0.5 (- w ^double text-width))) (+ y0 (- h text-height)) text-width text-height text font bright)
+      (stroke-line canvas x1 y1 x1 (+ y1 bar-height) (scale gui 2.0) bright)
+      (stroke-line canvas (- x1 size-marker) y1 (+ x1 size-marker) y1 (scale gui 2.0) bright)
+      (stroke-line canvas (- x1 size-marker) y-centre (+ x1 size-marker) y-centre (scale gui 2.0) bright)
+      (stroke-line canvas (- x1 size-marker) (+ y1 bar-height) (+ x1 size-marker) (+ y1 bar-height) (scale gui 2.0) bright)
       (stroke-polygon canvas [[x1 y-marker1] [(- x1 size2) (+ y-marker1 size1)] [(- x1 size2) (- y-marker1 size1)]]
                       (scale gui 2) green)
       (stroke-polygon canvas [[x1 y-marker2] [(+ x1 size2) (+ y-marker2 size1)] [(+ x1 size2) (- y-marker2 size1)]]
