@@ -1394,8 +1394,9 @@
                   (when (button-label gui "Resume")
                     (assoc-in state [:input :sfsim.input/menu] nil))
                   (when (button-label gui "View Wishlist Page")
-                    (GLFW/glfwIconifyWindow (:window state))
-                    (steam/show-wishlist-page))
+                    (when (:user-stats state)
+                      (GLFW/glfwIconifyWindow (:window state))
+                      (steam/show-wishlist-page)))
                   (when (button-label gui "Quit")
                     (GLFW/glfwSetWindowShouldClose (:window state) true)))))
 

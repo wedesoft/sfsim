@@ -159,7 +159,8 @@
                                        :camera camera-state
                                        :audio audio-state
                                        :surface surface
-                                       :window window})
+                                       :window window
+                                       :user-stats user-stats})
             recording           (atom (and (.exists (java.io.File. "recording.edn"))  ; Initialize recording with "echo [] > recording.edn"
                                            (clojure.edn/read-string (slurp "recording.edn"))))]
         (start-clock)
