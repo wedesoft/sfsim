@@ -37,14 +37,15 @@
 
 (facts "Camera initialisation"
        (:sfsim.camera/domain @state) => :sfsim.camera/slow
-       (:sfsim.camera/distance @state) => 60.0
+       (:sfsim.camera/distance @state) => 100.0
        (:sfsim.camera/roll @state) => 0.0
-       (:sfsim.camera/pitch @state) => (roughly (to-radians -10.0) 1e-6)
+       (:sfsim.camera/pitch @state) => (roughly (to-radians -3.0) 1e-6)
        (:sfsim.camera/yaw @state) => 0.0
-       (:sfsim.camera/target-distance @state) => 60.0
+       (:sfsim.camera/target-distance @state) => 100.0
        (:sfsim.camera/target-roll @state) => 0.0
-       (:sfsim.camera/target-pitch @state) => (roughly (to-radians -10.0) 1e-6)
-       (:sfsim.camera/target-yaw @state) => 0.0)
+       (:sfsim.camera/target-pitch @state) => (roughly (to-radians -3.0) 1e-6)
+       (:sfsim.camera/target-yaw @state) => 0.0
+       (:sfsim.camera/pitch-offset @state) => (roughly (to-radians -7.0) 1e-6))
 
 
 (facts "Determine horizon system"
@@ -76,6 +77,7 @@
        (swap! state assoc :sfsim.camera/pitch 0.0)
        (swap! state assoc :sfsim.camera/target-pitch 0.0)
        (swap! state assoc :sfsim.camera/distance 0.0)
+       (swap! state assoc :sfsim.camera/pitch-offset 0.0)
        (:sfsim.camera/position (get-camera-pose @state @physics-state))
        => (roughly-vector (vec3 0 0 (- radius)) 1e-3)
        (:sfsim.camera/orientation (get-camera-pose @state @physics-state))
@@ -101,7 +103,11 @@
        (swap! state assoc :sfsim.camera/roll (to-radians 90.0))
        (:sfsim.camera/orientation (get-camera-pose @state @physics-state))
        => (roughly-quaternion (q/->Quaternion 0 (sqrt 0.5) 0 (sqrt 0.5)) 1e-6)
-       (swap! state assoc :sfsim.camera/roll (to-radians 0.0)))
+       (swap! state assoc :sfsim.camera/roll (to-radians 0.0))
+       (swap! state assoc :sfsim.camera/pitch-offset (to-radians 90.0))
+       (:sfsim.camera/orientation (get-camera-pose @state @physics-state))
+       => (roughly-quaternion (q/->Quaternion 0 (sqrt 0.5) (sqrt 0.5) 0) 1e-6)
+       (swap! state assoc :sfsim.camera/pitch-offset (to-radians 0.0)))
 
 
 (def camera-input #:sfsim.input{:rotate-x 0.0 :rotate-y 0.0 :rotate-z 0.0 :distance-change 0.0})
@@ -115,7 +121,7 @@
        (-> (update-camera-pose @state 0.25 (assoc camera-input :sfsim.input/rotate-z 8.0))
            :sfsim.camera/target-roll) => 2.0
        (-> (update-camera-pose @state 0.25 (assoc camera-input :sfsim.input/distance-change 8.0))
-           :sfsim.camera/target-distance) => (roughly (* 60.0 (exp 2.0)) 1e-6)
+           :sfsim.camera/target-distance) => (roughly (* 100.0 (exp 2.0)) 1e-6)
        (swap! state assoc :sfsim.camera/yaw 0.0)
        (swap! state assoc :sfsim.camera/pitch 0.0)
        (swap! state assoc :sfsim.camera/roll 0.0)
@@ -156,6 +162,7 @@
        (swap! state assoc :sfsim.camera/target-yaw (to-radians 5.0))
        (swap! state assoc :sfsim.camera/target-pitch 0.0)
        (swap! state assoc :sfsim.camera/target-roll 0.0)
+       (swap! state assoc :sfsim.camera/pitch-offset 0.0)
        (let [camera-orientation (:sfsim.camera/orientation (get-camera-pose @state @physics-state))]
          (swap! state set-mode :sfsim.camera/fast @physics-state)
          (:sfsim.camera/domain @state) => :sfsim.camera/fast

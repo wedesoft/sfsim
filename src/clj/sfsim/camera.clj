@@ -22,14 +22,15 @@
 (defn make-camera-state
   []
   {::domain ::slow
-   ::distance 60.0
+   ::distance 100.0
    ::roll 0.0
-   ::pitch (to-radians -10.0)
+   ::pitch (to-radians -4.0)
    ::yaw 0.0
-   ::target-distance 60.0
+   ::target-distance 100.0
    ::target-roll 0.0
-   ::target-pitch (to-radians -10.0)
-   ::target-yaw 0.0})
+   ::target-pitch (to-radians -4.0)
+   ::target-yaw 0.0
+   ::pitch-offset (to-radians -6.0)})
 
 
 (defn unit-cross
@@ -109,8 +110,9 @@
   (let [position           (physics/get-position :sfsim.physics/surface physics-state)
         domain             (::domain camera-state)
         horizon            (matrix->quaternion (horizon-for-domain physics-state domain))
-        camera-orientation (q/* horizon (camera->horizon camera-state))
-        relative-position  (q/rotate-vector camera-orientation (mult (vec3 0 0 1) ^double (::distance camera-state)))]
+        object-direction   (q/* horizon (camera->horizon camera-state))
+        camera-orientation (q/* object-direction (q/rotation (::pitch-offset camera-state) (vec3 1 0 0)))
+        relative-position  (q/rotate-vector object-direction (mult (vec3 0 0 1) ^double (::distance camera-state)))]
     {::position (add position relative-position) ::orientation camera-orientation}))
 
 
