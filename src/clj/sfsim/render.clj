@@ -1016,7 +1016,7 @@
   (if-let [{:keys [start end] :as query-pair} (peek queue)]
           (if (and (query-result-available? start) (query-result-available? end))
             (do
-              (println text start end (* 1e-9 (- (query-result end) (query-result start))) "seconds")
+              (println (format "%8.4f" (* 1e-6 (- (query-result end) (query-result start)))) "ms:" text)
               (destroy-opengl-query-pair query-pair)
               (pop queue))
             queue)
