@@ -18,9 +18,7 @@
       [sfsim.shaders :refer (vertex-passthrough ray-box ray-sphere limit-interval) :as shaders])
     (:import
       (org.lwjgl.opengl
-        GL11 GL30)
-      (java.nio
-        ByteBuffer)))
+        GL11 GL30)))
 
 
 (set! *unchecked-math* :warn-on-boxed)

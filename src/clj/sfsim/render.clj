@@ -20,6 +20,8 @@
                            make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)]
     [sfsim.util :refer (N)])
   (:import
+    (org.lwjgl.system
+      MemoryUtil)
     (org.lwjgl
       BufferUtils)
     (org.lwjgl.glfw
@@ -194,8 +196,8 @@
   [title width height border]
   (setup-window-hints true border)
   (let [window (GLFW/glfwCreateWindow ^long width ^long height ^String title 0 0)]
-    (when-not window
-              (throw (RuntimeException. "Failed to create window")))
+    (when (= window MemoryUtil/NULL)
+      (throw (RuntimeException. "Failed to create window")))
     (GLFW/glfwMakeContextCurrent window)
     (GLFW/glfwShowWindow window)
     (GL/createCapabilities)

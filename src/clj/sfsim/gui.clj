@@ -1877,7 +1877,7 @@
         size-marker (/ text-height 4.0)
         size1       (/ text-height 6.0)
         size2       (* size1 (sqrt 3.0))
-        x-marker    (- x-centre (* (* ^double current bar-width) 0.5))]
+        x-marker    (- x-centre (* ^double current bar-width 0.5))]
     (with-colors
       [bg       0   0   0
        green    0 255   0
@@ -1912,8 +1912,8 @@
         size-marker (/ text-height 4.0)
         size1       (/ text-height 6.0)
         size2       (* size1 (sqrt 3.0))
-        y-marker1   (+ y-centre (* (* ^double current1 bar-height) 0.5))
-        y-marker2   (+ y-centre (* (* ^double current2 bar-height) 0.5))]
+        y-marker1   (+ y-centre (* ^double current1 bar-height 0.5))
+        y-marker2   (+ y-centre (* ^double current2 bar-height 0.5))]
     (with-colors
       [bg       0   0   0
        green    0 255   0
