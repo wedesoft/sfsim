@@ -13,10 +13,10 @@
     [sfsim.clouds :refer (opacity-vertex opacity-fragment opacity-cascade setup-cloud-render-uniforms cloud-data)]
     [sfsim.matrix :refer (split-list shadow-matrix-cascade shadow-config shadow-data)]
     [sfsim.planet :refer (render-shadow-cascade destroy-shadow-cascade planet-config planet-shadow-renderer
-                                                shadow-vars render-depth)]
+                          shadow-vars render-depth)]
     [sfsim.render :refer (make-program destroy-program make-vertex-array-object destroy-vertex-array-object
-                                       use-program uniform-int uniform-float uniform-vector3 render-quads use-textures render-config
-                                       vertex-array-object render-vars)]
+                          use-program uniform-int uniform-float uniform-vector3 render-quads use-textures render-config
+                          vertex-array-object render-vars opengl-measure-time)]
     [sfsim.texture :refer (destroy-texture)]
     [sfsim.worley :refer (worley-size)]))
 
@@ -68,15 +68,17 @@
 (defn render-opacity-cascade
   "Render a cascade of opacity maps and return it as a list of 3D textures"
   [{::keys [program vao data] :as other} matrix-cas light-direction scatter-amount opacity-step]
-  (let [cloud-data (:sfsim.clouds/data other)]
-    (use-textures {0 (:sfsim.clouds/worley cloud-data) 1 (:sfsim.clouds/perlin-worley cloud-data)
-                   2 (:sfsim.clouds/cloud-cover cloud-data)})
-    (opacity-cascade (::shadow-size data) (::num-opacity-layers data) matrix-cas
-                     (/ ^double (:sfsim.clouds/detail-scale cloud-data) ^long worley-size) program
-                     (uniform-vector3 program "light_direction" light-direction)
-                     (uniform-float program "scatter_amount" scatter-amount)
-                     (uniform-float program "opacity_step" opacity-step)
-                     (render-quads vao))))
+  (opengl-measure-time
+    "render-opacity-cascade"
+    (let [cloud-data (:sfsim.clouds/data other)]
+      (use-textures {0 (:sfsim.clouds/worley cloud-data) 1 (:sfsim.clouds/perlin-worley cloud-data)
+                     2 (:sfsim.clouds/cloud-cover cloud-data)})
+      (opacity-cascade (::shadow-size data) (::num-opacity-layers data) matrix-cas
+                       (/ ^double (:sfsim.clouds/detail-scale cloud-data) ^long worley-size) program
+                       (uniform-vector3 program "light_direction" light-direction)
+                       (uniform-float program "scatter_amount" scatter-amount)
+                       (uniform-float program "opacity_step" opacity-step)
+                       (render-quads vao)))))
 
 
 (defn destroy-opacity-cascade

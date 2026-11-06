@@ -198,18 +198,19 @@
 
 (defn render-cloud-geometry
   [frame graphics tree]
-  (let [render-config           (:sfsim.render/config graphics)
-        cloud-geometry-renderer (::cloud-geometry-renderer graphics)
-        planet-render-vars      (::planet-render-vars frame)
-        scene-render-vars       (::scene-render-vars frame)
-        planet-geometry-vars    (render/make-subsampled-vars planet-render-vars render-config)
-        scene-geometry-vars     (if scene-render-vars
-                                  (render/make-subsampled-vars scene-render-vars render-config)
-                                  planet-geometry-vars)
-        moved-scenes            (get-moved-scenes frame graphics)]
-    (assoc frame
-           ::cloud-geometry
-           (model/render-joined-geometry2 cloud-geometry-renderer scene-geometry-vars planet-geometry-vars moved-scenes tree))))
+  (render/opengl-measure-time "render-cloud-geometry"
+    (let [render-config           (:sfsim.render/config graphics)
+          cloud-geometry-renderer (::cloud-geometry-renderer graphics)
+          planet-render-vars      (::planet-render-vars frame)
+          scene-render-vars       (::scene-render-vars frame)
+          planet-geometry-vars    (render/make-subsampled-vars planet-render-vars render-config)
+          scene-geometry-vars     (if scene-render-vars
+                                    (render/make-subsampled-vars scene-render-vars render-config)
+                                    planet-geometry-vars)
+          moved-scenes            (get-moved-scenes frame graphics)]
+      (assoc frame
+             ::cloud-geometry
+             (model/render-joined-geometry2 cloud-geometry-renderer scene-geometry-vars planet-geometry-vars moved-scenes tree)))))
 
 
 (defn plume-transforms
@@ -304,12 +305,13 @@
 
 (defn render-clouds-and-shockwave-and-plume
   [frame graphics rcs-names mach shockwave-strength]
-  (render-clouds-basic frame graphics
-                       (render-cloud-front frame graphics)
-                       (render/with-underlay-blending
-                         (render-plume-overlays frame graphics rcs-names)
-                         (render-shockwave-overlay frame graphics mach shockwave-strength)
-                         (render-cloud-back frame graphics))))
+  (render/opengl-measure-time "render-clouds-and-shockwave-and-plume"
+    (render-clouds-basic frame graphics
+                         (render-cloud-front frame graphics)
+                         (render/with-underlay-blending
+                           (render-plume-overlays frame graphics rcs-names)
+                           (render-shockwave-overlay frame graphics mach shockwave-strength)
+                           (render-cloud-back frame graphics)))))
 
 
 (defn render-scene-shadows
@@ -318,31 +320,33 @@
         shadow-size           (:sfsim.opacity/scene-shadow-size config/shadow-config)
         light-direction       (::light-direction frame)
         moved-scenes          (get-moved-scenes frame graphics)
-        object-shadows        (mapv #(model/scene-shadow-map scene-shadow-renderer light-direction %
-                                                             shadow-size
-                                                             (:sfsim.model/object-radius %)
-                                                             :sfsim.render/cullfront false)
-                                    moved-scenes)]
+        object-shadows        (render/opengl-measure-time "render-scene-shadows"
+                                (mapv #(model/scene-shadow-map scene-shadow-renderer light-direction %
+                                                               shadow-size
+                                                               (:sfsim.model/object-radius %)
+                                                               :sfsim.render/cullfront false)
+                                      moved-scenes))]
     (assoc frame ::object-shadows object-shadows)))
 
 
 (defn render-shockwave-geometry
   [frame graphics wind-from mach]
-  (let [scene-shadow-renderer   (::scene-shadow-renderer graphics)
-        shockwave-renderer      (::shockwave-renderer graphics)
-        shadow-size             (:sfsim.opacity/scene-shadow-size config/shadow-config)
-        shockwave-radius        (:sfsim.shockwave/shockwave-radius shockwave-renderer)
-        wind-shadow             (model/scene-shadow-map scene-shadow-renderer
-                                            wind-from
-                                            (first (get-moved-scenes frame graphics))
-                                            shadow-size
-                                            shockwave-radius
-                                            :sfsim.render/cullback
-                                            true)
-        flood                   (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)]
-    (assoc frame
-           ::wind-shadow wind-shadow
-           ::flood flood)))
+  (render/opengl-measure-time "render-shockwave-geometry"
+    (let [scene-shadow-renderer   (::scene-shadow-renderer graphics)
+          shockwave-renderer      (::shockwave-renderer graphics)
+          shadow-size             (:sfsim.opacity/scene-shadow-size config/shadow-config)
+          shockwave-radius        (:sfsim.shockwave/shockwave-radius shockwave-renderer)
+          wind-shadow             (model/scene-shadow-map scene-shadow-renderer
+                                                          wind-from
+                                                          (first (get-moved-scenes frame graphics))
+                                                          shadow-size
+                                                          shockwave-radius
+                                                          :sfsim.render/cullback
+                                                          true)
+          flood                   (shockwave/jump-flooding-algorithm shockwave-renderer wind-shadow mach)]
+      (assoc frame
+             ::wind-shadow wind-shadow
+             ::flood flood))))
 
 
 (defn render-geometry
@@ -364,19 +368,21 @@
                                        (:sfsim.render/projection planet-render-vars))
         atmosphere-render-vars       (::atmosphere-render-vars frame)
         geometry-buffers             (::geometry-buffers frame)]
-    (model/render-geometry
-      geometry-buffers
-      ;; Clear color, depth, and stencil buffer
-      (render/clear (vec3 0 1 0) 0.0 0)
-      (render/with-stencils
-        (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
-          (doseq [moved-scene moved-scenes]
-                 (model/render-scene-geometry2 scene-geometry-renderer scene-projection {:sfsim.render/camera-to-world camera-to-world}
-                                               moved-scene)))
-        (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
-          (planet/render-planet-geometry2 planet-geometry-renderer planet-render-vars true tree))
-        (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
-          (atmosphere/render-full-atmosphere-geometry atmosphere-geometry-renderer atmosphere-render-vars))))
+    (render/opengl-measure-time
+      "render-geometry"
+      (model/render-geometry
+        geometry-buffers
+        ;; Clear color, depth, and stencil buffer
+        (render/clear (vec3 0 1 0) 0.0 0)
+        (render/with-stencils
+          (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
+            (doseq [moved-scene moved-scenes]
+                   (model/render-scene-geometry2 scene-geometry-renderer scene-projection {:sfsim.render/camera-to-world camera-to-world}
+                                                 moved-scene)))
+          (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
+            (planet/render-planet-geometry2 planet-geometry-renderer planet-render-vars true tree))
+          (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
+            (atmosphere/render-full-atmosphere-geometry atmosphere-geometry-renderer atmosphere-render-vars)))))
     frame))
 
 

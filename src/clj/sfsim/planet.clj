@@ -21,7 +21,8 @@
     [sfsim.jolt :as jolt]
     [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
                           uniform-sampler destroy-program shadow-cascade uniform-float make-vertex-array-object
-                          destroy-vertex-array-object vertex-array-object use-textures render-vars diagonal-field-of-view make-render-vars2)
+                          destroy-vertex-array-object vertex-array-object use-textures render-vars diagonal-field-of-view
+                          make-render-vars2 opengl-measure-time)
      :as render]
     [sfsim.shaders :as shaders]
     [sfsim.texture :refer (make-rgb-texture-array make-vector-texture-2d make-ubyte-texture-2d destroy-texture
@@ -159,8 +160,9 @@
   "Render planetary shadow cascade"
   {:malli/schema [:=> [:cat :map [:* :any]] [:vector texture-2d]]}
   [{::keys [program] :as other} & {:keys [tree] :as data}]
-  (shadow-cascade (:sfsim.opacity/shadow-size (:sfsim.opacity/data other)) (:sfsim.opacity/matrix-cascade data) program
-                  (fn render-planet-shadow [world-to-camera] (render-tree program tree world-to-camera [] [::surf-tex]))))
+  (opengl-measure-time "render-shadow-cascade"
+    (shadow-cascade (:sfsim.opacity/shadow-size (:sfsim.opacity/data other)) (:sfsim.opacity/matrix-cascade data) program
+                    (fn render-planet-shadow [world-to-camera] (render-tree program tree world-to-camera [] [::surf-tex])))))
 
 
 (defn destroy-shadow-cascade

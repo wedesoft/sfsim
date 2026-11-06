@@ -288,15 +288,16 @@
                                                 graphics (physics/active-rcs (:physics @state)) mach shockwave-strength)
                                               (graphics/render-geometry graphics tree))]
                    (render/onscreen-render window
-                                           (graphics/render-lighting frame graphics)
-                                           (render/with-culling :sfsim.render/noculling
-                                             (let [menu (-> @state :gui :sfsim.gui/menu)]
-                                               (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR
-                                                                      (if menu GLFW/GLFW_CURSOR_NORMAL GLFW/GLFW_CURSOR_HIDDEN))
-                                               (when menu (swap! state menu @gui window-width window-height)))
-                                             (gui/information-display @gui window-width window-height @state @frametime
-                                                                      (:sfsim.physics/time-lapse time-lapse-info))
-                                             (gui/render-nuklear-gui @gui window-width window-height)))
+                                           (render/opengl-measure-time "lighting" (graphics/render-lighting frame graphics))
+                                           (render/opengl-measure-time "gui"
+                                             (render/with-culling :sfsim.render/noculling
+                                               (let [menu (-> @state :gui :sfsim.gui/menu)]
+                                                 (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR
+                                                                        (if menu GLFW/GLFW_CURSOR_NORMAL GLFW/GLFW_CURSOR_HIDDEN))
+                                                 (when menu (swap! state menu @gui window-width window-height)))
+                                               (gui/information-display @gui window-width window-height @state @frametime
+                                                                        (:sfsim.physics/time-lapse time-lapse-info))
+                                               (gui/render-nuklear-gui @gui window-width window-height))))
                    (graphics/destroy-frame frame))
                  (Nuklear/nk_input_begin (:sfsim.gui/context @gui))
                  (GLFW/glfwPollEvents)
