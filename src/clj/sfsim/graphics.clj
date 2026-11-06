@@ -368,19 +368,20 @@
                                        (:sfsim.render/projection planet-render-vars))
         atmosphere-render-vars       (::atmosphere-render-vars frame)
         geometry-buffers             (::geometry-buffers frame)]
-    (render/opengl-measure-time
-      "render-geometry"
-      (model/render-geometry
-        geometry-buffers
-        ;; Clear color, depth, and stencil buffer
-        (render/clear (vec3 0 1 0) 0.0 0)
-        (render/with-stencils
+    (model/render-geometry
+      geometry-buffers
+      ;; Clear color, depth, and stencil buffer
+      (render/clear (vec3 0 1 0) 0.0 0)
+      (render/with-stencils
+        (render/opengl-measure-time "render-scene-geometry2"
           (render/with-stencil-op-ref-and-mask GL11/GL_ALWAYS 0x4 0x4
             (doseq [moved-scene moved-scenes]
                    (model/render-scene-geometry2 scene-geometry-renderer scene-projection {:sfsim.render/camera-to-world camera-to-world}
-                                                 moved-scene)))
+                                                 moved-scene))))
+        (render/opengl-measure-time "render-planet-geometry2"
           (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x2 (if model-covers-planet? 0x6 0x2)
-            (planet/render-planet-geometry2 planet-geometry-renderer planet-render-vars true tree))
+            (planet/render-planet-geometry2 planet-geometry-renderer planet-render-vars true tree)))
+        (render/opengl-measure-time "render-full-atmosphere-geometry"
           (render/with-stencil-op-ref-and-mask GL11/GL_GEQUAL 0x1 0x7
             (atmosphere/render-full-atmosphere-geometry atmosphere-geometry-renderer atmosphere-render-vars)))))
     frame))
