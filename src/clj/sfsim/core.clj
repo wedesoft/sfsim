@@ -73,7 +73,8 @@
     (java.util.Locale/setDefault java.util.Locale/US)
 
     ;; Initialise GLFW
-    (GLFW/glfwInit)
+    (when-not (GLFW/glfwInit)
+              (throw (RuntimeException. "Failed to initialize GLFW")))
 
     ;; Initialise Jolt Physics
     (jolt/jolt-init)
