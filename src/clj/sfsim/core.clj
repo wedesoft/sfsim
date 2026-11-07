@@ -332,7 +332,7 @@
              (.recordCustomEvent "AppShutdown" {"type" "Crash"}))
          (Thread/sleep 2000)
          (System/exit 1)))
-  (log/info (format "average fps was %.2f" (if (zero? @uptime) 0.0 (/ ^double @frame-counter ^double @uptime))))
+  (log/info (format "average fps was %.2f" (if (zero? ^double @uptime) 0.0 (/ ^double @frame-counter ^double @uptime))))
   (log/info "terminating sfsim" version)
   (-> (NewRelic/getAgent)
       (.getInsights)
