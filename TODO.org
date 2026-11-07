@@ -3,8 +3,11 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
-** DONE protect against exceptions when parsing numbers (parseInt, parseDouble) in gui
 ** TODO improve performance of planet
+*** TODO instanced rendering of two quads (GL33/glVertexAttribDivisor 3 1)
+*** TODO instanced rendering of different textures with different quads using layers of a sampler2DArray (flat in int layer?)
+         (GL31/glDrawElementsInstanced GL11/GL_TRIANGLES index-count GL11/GL_UNSIGNED_INT 0 instance-count)
+*** TODO asynchronous texture update using a ring buffer of PBOs (pixel buffer objects)
 ** TODO restart button
 ** TODO artifacts when rendering nearby water
 ** TODO amplification, light direction, and any other atmosphere related uniforms should be set in one place
