@@ -3,7 +3,7 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
-** TODO protect against exceptions when parsing numbers (parseInt, parseDouble) in gui
+** DONE protect against exceptions when parsing numbers (parseInt, parseDouble) in gui
 ** TODO improve performance of planet
 ** TODO restart button
 ** TODO artifacts when rendering nearby water
