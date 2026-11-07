@@ -987,8 +987,8 @@
 
 (defn destroy-opengl-query-pair
   [{:keys [start end]}]
-  (GL15/glDeleteQueries start)
-  (GL15/glDeleteQueries end))
+  (GL15/glDeleteQueries ^long start)
+  (GL15/glDeleteQueries ^long end))
 
 
 (defn destroy-opengl-queries
@@ -1000,14 +1000,14 @@
 
 
 (defn query-result-available?
-  [query]
+  [^long query]
   (let [result (int-array 1)]
     (GL15/glGetQueryObjectiv query GL15/GL_QUERY_RESULT_AVAILABLE result)
     (not (zero? (aget result 0)))))
 
 
 (defn query-result
-  [query]
+  ^long [^long query]
   (GL33/glGetQueryObjectui64 query GL15/GL_QUERY_RESULT))
 
 
