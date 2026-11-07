@@ -3,7 +3,10 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
+** TODO protect against exceptions when parsing numbers (parseInt, parseDouble) in gui
+** TODO improve performance of planet
 ** TODO restart button
+** TODO artifacts when rendering nearby water
 ** TODO amplification, light direction, and any other atmosphere related uniforms should be set in one place
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 ** TODO Nice indicators for control inputs
