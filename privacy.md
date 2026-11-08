@@ -7,6 +7,7 @@ permalink: /privacy
 To ensure application stability, monitor performance, and fix software bugs,
 **sfsim** automatically collects operational logs and technical error reports
 during application execution.
+Select "Play without Diagnostic Tracking" to opt-out.
 
 ### What We Collect
 * **Technical & Error Telemetry:** Anonymized stack traces, exception codes,
