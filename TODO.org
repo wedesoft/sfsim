@@ -4,26 +4,33 @@
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
 ** TODO improve performance of planet
+*** TODO remove unnecessary vertex buffer data from planet renderer
+*** TODO check number of tiles required when rendering planet
+*** TODO update parts of 2d texture array using pbo ring buffer
+*** TODO update layer indices with dynamic draw vbo
 *** TODO instanced rendering of two quads (GL33/glVertexAttribDivisor 3 1)
 *** TODO check minimum for GL_MAX_ARRAY_TEXTURE_LAYERS (2048?)
 *** TODO instanced rendering of different textures with different quads using layers of a sampler2DArray (flat in int layer?)
          (GL31/glDrawElementsInstanced GL11/GL_TRIANGLES index-count GL11/GL_UNSIGNED_INT 0 instance-count)
 *** TODO asynchronous texture update using a ring buffer of PBOs (pixel buffer objects)
+** TODO speed indicator, height, vertical speed
+** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
+** TODO orbit MFD guidance needles
+** TODO Reentry MFD
 ** TODO button to report problem?
 ** TODO restart button
 ** TODO improve monitoring
-*** TODO implement opt-in (common -> log_level: off) does not require application restart
+*** TODO implement opt-out
+    Add option in Steam dialog to launch without APM:
+    * Play sfsim
+    * Play without Diagnostic Tracking
 *** TODO button to report problem (log an error)
 *** TODO funnel for first session (tutorial steps)
 *** TODO frame time histogram
 *** TODO GPU information
 ** TODO artifacts when rendering nearby water
 ** TODO amplification, light direction, and any other atmosphere related uniforms should be set in one place
-** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 ** TODO Nice indicators for control inputs
-** TODO speed indicator, height, vertical speed
-** TODO orbit MFD guidance needles
-** TODO Reentry MFD
 ** TODO fuel should get used up and reduce vehicle weight
 ** TODO [#A] Reentry                                                      :flight:physics:graphics:
 *** TODO Reentry
