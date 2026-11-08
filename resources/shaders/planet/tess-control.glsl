@@ -45,7 +45,6 @@ void main(void)
     gl_TessLevelInner[0] = high_detail;
     gl_TessLevelInner[1] = high_detail;
   };
-  gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
   tcs_out[gl_InvocationID].surfacecoord = tcs_in[gl_InvocationID].surfacecoord;
   tcs_out[gl_InvocationID].colorcoord = tcs_in[gl_InvocationID].colorcoord;
 }

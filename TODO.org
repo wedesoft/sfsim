@@ -5,10 +5,17 @@
 
 ** TODO improve performance of planet
 *** TODO instanced rendering of two quads (GL33/glVertexAttribDivisor 3 1)
+*** TODO check minimum for GL_MAX_ARRAY_TEXTURE_LAYERS (2048?)
 *** TODO instanced rendering of different textures with different quads using layers of a sampler2DArray (flat in int layer?)
          (GL31/glDrawElementsInstanced GL11/GL_TRIANGLES index-count GL11/GL_UNSIGNED_INT 0 instance-count)
 *** TODO asynchronous texture update using a ring buffer of PBOs (pixel buffer objects)
 ** TODO restart button
+** TODO improve monitoring
+*** TODO implement opt-in (common -> log_level: off) does not require application restart
+*** TODO button to report problem (log an error)
+*** TODO funnel for first session (tutorial steps)
+*** TODO frame time histogram
+*** TODO GPU information
 ** TODO artifacts when rendering nearby water
 ** TODO amplification, light direction, and any other atmosphere related uniforms should be set in one place
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
