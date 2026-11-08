@@ -165,6 +165,7 @@
 *** TODO More music [[https://freesound.org/search/?q=andrewkn&f=&s=Date+added+(newest+first)]]
 *** TODO Wheel-brake sound
 *** TODO Beep/chime sound
+*** TODO Generate voice messages using espeak-ng
 *** TODO Ambient cockpit sounds (ventilation, fan hum)
 *** TODO Thruster sounds and gear sounds inside spacecraft
 *** TODO Event-based radio chatter
