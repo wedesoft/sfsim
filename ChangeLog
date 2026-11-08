@@ -1,3 +1,10 @@
+sfsim (0.38-2)
+
+  * Replace sfsim-noapm.bat with sfsim-noapm.exe because BAT file opens a DOS
+	  command window
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun,  8 Nov 2026 22:44:50 +0000
+
 sfsim (0.38-1)
 
   * Add GLFW error logging
