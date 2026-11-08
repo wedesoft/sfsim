@@ -28,7 +28,12 @@
       GLFW)
     (org.lwjgl.opengl
       GL11
-      GL12)))
+      GL12
+      GL15
+      GL20
+      GL30
+      GL31
+      GL33)))
 
 
 (mi/collect! {:ns (all-ns)})
@@ -1214,6 +1219,118 @@ void main()
          (vec4 1.0  0.0 0.0  1.0) (vec4 0.0  1.0 0.0  0.25) (vec4 1.0  0.25 0.0  1.0)
          (vec4 1.0  0.0 0.0  1.0) (vec4 0.0  1.0 0.0  0.25) (vec4 1.0  0.25 0.0  1.0)
          (vec4 1.0  0.0 0.0  0.2) (vec4 0.0  1.0 0.0  0.4 ) (vec4 1.0  0.4  0.0  0.2))
+
+
+(def vertex-instanced
+"#version 450 core
+in vec3 point0;
+in vec3 point1;
+in vec3 point2;
+in vec3 point3;
+in vec3 color;
+out VS_OUT
+{
+  vec3 color;
+} vs_out;
+void main()
+{
+  vec3 points[4] = vec3[4](point0, point1, point2, point3);
+  gl_Position = vec4(points[gl_VertexID], 1.0);
+  vs_out.color = color;
+}")
+
+
+(def fragment-instanced
+"#version 450 core
+in VS_OUT
+{
+  vec3 color;
+} fs_in;
+out vec3 fragColor;
+void main()
+{
+  fragColor = fs_in.color;
+}")
+
+
+(defn setup-vertex-attrib-pointers2
+  "Set up mappings from vertex array buffer row to vertex shader attributes"
+  [program attributes divisor]
+  (let [attribute-pairs (partition 3 attributes)
+        sizes           (mapv (fn [[^long opengl-type _name ^long size]] (* (opengl-type-size opengl-type) size)) attribute-pairs)
+        stride          (apply + sizes)
+        offsets         (reductions + 0 (butlast sizes))
+        attr-locations  (for [[[opengl-type attribute size] offset] (mapv list attribute-pairs offsets)]
+                          (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
+                            (GL20/glEnableVertexAttribArray location)
+                            (GL20/glVertexAttribPointer location ^long size ^long opengl-type true ^long stride ^long offset)
+                            (GL33/glVertexAttribDivisor location divisor)
+                            location))]
+    (vec attr-locations)))
+
+
+
+(defn make-vertex-array-object2
+  "Create vertex array object and vertex buffer objects using integers for indices and floating point numbers for vertex data"
+  [program indices vertices1 attributes1 vertices2 attributes2]
+  (let [float-attributes1    (mapcat #(conj % GL11/GL_FLOAT) (partition 2 attributes1))
+        float-attributes2    (mapcat #(conj % GL11/GL_FLOAT) (partition 2 attributes2))
+        vertex-array-object (GL30/glGenVertexArrays)
+        _                   (GL30/glBindVertexArray vertex-array-object)
+        index-buffer        (GL15/glGenBuffers)
+        array-buffer1       (GL15/glGenBuffers)
+        array-buffer2       (GL15/glGenBuffers)
+        locations1          (do
+                              (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer1)
+                              (set-static-float-buffer-data GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices1)))
+                              (setup-vertex-attrib-pointers2 program float-attributes1 1))
+        locations2          (do
+                              (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer2)
+                              (set-static-float-buffer-data GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices2)))
+                              (setup-vertex-attrib-pointers2 program float-attributes2 1)) ]
+    (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
+    (set-static-int-buffer-data GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)))
+    {::vertex-array-object  vertex-array-object
+     ::array-buffer1        array-buffer1
+     ::array-buffer2        array-buffer2
+     ::index-buffer         index-buffer
+     ::attribute-locations1 locations1
+     ::attribute-locations2 locations2
+     ::nrows                4}))
+
+
+(defn destroy-vertex-array-object2
+  "Destroy vertex array object and vertex buffer objects"
+  [{::keys [vertex-array-object array-buffer1 array-buffer2 index-buffer attribute-locations1 attribute-locations2]}]
+  (GL30/glBindVertexArray vertex-array-object)
+  (doseq [location attribute-locations1] (GL20/glDisableVertexAttribArray location))
+  (doseq [location attribute-locations2] (GL20/glDisableVertexAttribArray location))
+  (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
+  (GL15/glDeleteBuffers ^long array-buffer1)
+  (GL15/glDeleteBuffers ^long array-buffer2)
+  (GL30/glBindVertexArray 0)
+  (GL30/glDeleteVertexArrays ^long vertex-array-object))
+
+
+(defn render-quads2
+  [vertex-array-object]
+  (GL30/glBindVertexArray (::vertex-array-object vertex-array-object))
+  (GL31/glDrawElementsInstanced GL11/GL_TRIANGLES 6 GL11/GL_UNSIGNED_INT 0 2))
+
+
+(fact "Instanced rendering of two quads"
+      (offscreen-render 160 120
+                        (let [indices  [0 1 3 0 3 2]
+                              vertices [-1.0 -1.0 0.2, 0.5 -1.0 0.2, -1.0 0.5 0.2, 0.5 0.5 0.2,
+                                        -0.5 -0.5 0.1, 1.0 -0.5 0.1, -0.5 1.0 0.1, 1.0 1.0 0.1]
+                              colors   [1.0 0.5 0.0, 0.0 0.5 1.0]
+                              program  (make-program :sfsim.render/vertex [vertex-instanced] :sfsim.render/fragment [fragment-instanced])
+                              vao      (make-vertex-array-object2 program indices vertices ["point0" 3 "point1" 3 "point2" 3 "point3" 3]
+                                                                  colors ["color" 3])]
+                          (use-program program)
+                          (render-quads2 vao)
+                          (destroy-vertex-array-object2 vao)
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/render/instanced.png" 0.0))
 
 
 (GLFW/glfwTerminate)

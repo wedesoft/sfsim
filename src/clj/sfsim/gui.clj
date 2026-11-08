@@ -28,6 +28,8 @@
                            texture->image generate-mipmap)]
     [sfsim.input :refer (get-joystick-sensor-for-mapping get-key-name read-settings-config read-joystick-config)])
   (:import
+    (java.lang
+      NumberFormatException)
     (java.nio
       DirectByteBuffer)
     (java.nio.charset
@@ -1252,10 +1254,12 @@
 
 (defn location-dialog-get
   [position-data]
-  (let [longitude   (to-radians (Double/parseDouble (edit-get (:longitude position-data))))
-        latitude    (to-radians (Double/parseDouble (edit-get (:latitude position-data))))
-        height      (Double/parseDouble (edit-get (:height position-data)))]
-    {:longitude longitude :latitude latitude :height height}))
+  (try
+    (let [longitude   (to-radians (Double/parseDouble (edit-get (:longitude position-data))))
+          latitude    (to-radians (Double/parseDouble (edit-get (:latitude position-data))))
+          height      (Double/parseDouble (edit-get (:height position-data)))]
+      {:longitude longitude :latitude latitude :height height})
+    (catch NumberFormatException _e)))
 
 
 (defn location-dialog-set
@@ -1280,11 +1284,11 @@
                   (text-label gui "Height")
                   (tabbing gui state (edit-field gui (:height position-data)) 2 3)
                   (when (button-label gui "Set")
-                    (let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
-                      (-> state
-                          (update :physics physics/destroy-vehicle-constraint)
-                          (update :physics physics/set-geographic (:surface state) config/planet-config
-                                  (:sfsim.model/elevation config/model-config) longitude latitude height))))
+                    (when-let [{:keys [longitude latitude height]} (location-dialog-get position-data)]
+                              (-> state
+                                  (update :physics physics/destroy-vehicle-constraint)
+                                  (update :physics physics/set-geographic (:surface state) config/planet-config
+                                          (:sfsim.model/elevation config/model-config) longitude latitude height))))
                   (when (button-label gui "Cancel")
                     (assoc-in state [:gui ::menu] main-dialog)))))
 
@@ -1299,16 +1303,19 @@
 
 
 (defn datetime-dialog-get
-  ^double [time-data]
-  (let [day    (Integer/parseInt (trim (edit-get (:day time-data))))
-        month  (Integer/parseInt (trim (edit-get (:month time-data))))
-        year   (Integer/parseInt (trim (edit-get (:year time-data))))
-        hour   (Integer/parseInt (trim (edit-get (:hour time-data))))
-        minute (Integer/parseInt (trim (edit-get (:minute time-data))))
-        sec    (Integer/parseInt (trim (edit-get (:second time-data))))
-        jd     (astro/julian-date #:sfsim.astro{:year year :month month :day day})
-        clock  (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
-    (+ (- jd 0.5) clock)))
+  [time-data]
+  (try
+    (let [day    (Integer/parseInt (trim (edit-get (:day time-data))))
+          month  (Integer/parseInt (trim (edit-get (:month time-data))))
+          year   (Integer/parseInt (trim (edit-get (:year time-data))))
+          hour   (Integer/parseInt (trim (edit-get (:hour time-data))))
+          minute (Integer/parseInt (trim (edit-get (:minute time-data))))
+          sec    (Integer/parseInt (trim (edit-get (:second time-data))))
+          jd     (astro/julian-date #:sfsim.astro{:year year :month month :day day})
+          clock  (/ (+ (/ (+ (/ sec 60.0) minute) 60.0) hour) 24.0)]
+      (println day month year hour minute sec jd clock)
+      (+ (- jd 0.5) clock))
+    (catch NumberFormatException _e)))
 
 
 (defn datetime-dialog-set
@@ -1359,7 +1366,8 @@
                               (tabbing gui state (edit-field gui (:second time-data)) 5 6))
                   (layout-row-dynamic gui (scale gui row-height) 2)
                   (when (button-label gui "Set")
-                    (update state :physics physics/set-julian-date-ut (datetime-dialog-get time-data)))
+                    (when-let [datetime (datetime-dialog-get time-data)]
+                              (update state :physics physics/set-julian-date-ut datetime)))
                   (when (button-label gui "Close")
                     (assoc-in state [:gui ::menu] main-dialog)))))
 
@@ -1877,7 +1885,7 @@
         size-marker (/ text-height 4.0)
         size1       (/ text-height 6.0)
         size2       (* size1 (sqrt 3.0))
-        x-marker    (- x-centre (* (* ^double current bar-width) 0.5))]
+        x-marker    (- x-centre (* ^double current bar-width 0.5))]
     (with-colors
       [bg       0   0   0
        green    0 255   0
@@ -1912,8 +1920,8 @@
         size-marker (/ text-height 4.0)
         size1       (/ text-height 6.0)
         size2       (* size1 (sqrt 3.0))
-        y-marker1   (+ y-centre (* (* ^double current1 bar-height) 0.5))
-        y-marker2   (+ y-centre (* (* ^double current2 bar-height) 0.5))]
+        y-marker1   (+ y-centre (* ^double current1 bar-height 0.5))
+        y-marker2   (+ y-centre (* ^double current2 bar-height 0.5))]
     (with-colors
       [bg       0   0   0
        green    0 255   0

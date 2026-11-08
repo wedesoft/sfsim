@@ -20,6 +20,10 @@
                            make-empty-depth-stencil-texture-2d texture->image destroy-texture texture texture-2d)]
     [sfsim.util :refer (N)])
   (:import
+    (clojure.lang
+      PersistentQueue)
+    (org.lwjgl.system
+      MemoryUtil)
     (org.lwjgl
       BufferUtils)
     (org.lwjgl.glfw
@@ -33,6 +37,7 @@
       GL20
       GL30
       GL32
+      GL33
       GL40
       GL45)))
 
@@ -194,6 +199,8 @@
   [title width height border]
   (setup-window-hints true border)
   (let [window (GLFW/glfwCreateWindow ^long width ^long height ^String title 0 0)]
+    (when (= window MemoryUtil/NULL)
+      (throw (RuntimeException. "Failed to create window")))
     (GLFW/glfwMakeContextCurrent window)
     (GLFW/glfwShowWindow window)
     (GL/createCapabilities)
@@ -346,8 +353,8 @@
         offsets         (reductions + 0 (butlast sizes))
         attr-locations  (for [[[opengl-type attribute size] offset] (mapv list attribute-pairs offsets)]
                           (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
-                            (GL20/glVertexAttribPointer location ^long size ^long opengl-type true ^long stride ^long offset)
                             (GL20/glEnableVertexAttribArray location)
+                            (GL20/glVertexAttribPointer location ^long size ^long opengl-type true ^long stride ^long offset)
                             location))]
     (vec attr-locations)))
 
@@ -973,6 +980,59 @@
     (destroy-vertex-array-object vao)
     (destroy-program program)
     result))
+
+
+(def opengl-query-timestamps (atom {}))
+
+
+(defn destroy-opengl-query-pair
+  [{:keys [start end]}]
+  (GL15/glDeleteQueries ^long start)
+  (GL15/glDeleteQueries ^long end))
+
+
+(defn destroy-opengl-queries
+  []
+  (doseq [[_text queue] @opengl-query-timestamps]
+         (doseq [query-pair queue]
+                (destroy-opengl-query-pair query-pair)))
+  (reset! opengl-query-timestamps {}))
+
+
+(defn query-result-available?
+  [^long query]
+  (let [result (int-array 1)]
+    (GL15/glGetQueryObjectiv query GL15/GL_QUERY_RESULT_AVAILABLE result)
+    (not (zero? (aget result 0)))))
+
+
+(defn query-result
+  ^long [^long query]
+  (GL33/glGetQueryObjectui64 query GL15/GL_QUERY_RESULT))
+
+
+(defn show-opengl-timing
+  [text queue]
+  (if-let [{:keys [start end] :as query-pair} (peek queue)]
+          (if (and (query-result-available? start) (query-result-available? end))
+            (do
+              (println (format "%8.4f" (* 1e-6 (- (query-result end) (query-result start)))) "ms:" text)
+              (destroy-opengl-query-pair query-pair)
+              (pop queue))
+            queue)
+          queue))
+
+
+(defmacro opengl-measure-time
+  [text & body]
+  `(let [start# (GL15/glGenQueries)
+         end#   (GL15/glGenQueries)]
+     (swap! opengl-query-timestamps update ~text #(conj (or % PersistentQueue/EMPTY) {:start start# :end end#}))
+     (GL33/glQueryCounter start# GL33/GL_TIMESTAMP)
+     (let [result# (do ~@body)]
+       (GL33/glQueryCounter end# GL33/GL_TIMESTAMP)
+       (swap! opengl-query-timestamps update ~text #(show-opengl-timing ~text %))
+       result#)))
 
 
 (set! *warn-on-reflection* false)

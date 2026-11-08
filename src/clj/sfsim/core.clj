@@ -32,7 +32,7 @@
     [sfsim.physics :as physics]
     [sfsim.quadtree :as quadtree]
     [sfsim.quaternion :as q]
-    [sfsim.render :refer (make-window destroy-window onscreen-render quad-splits-orientations with-culling)]
+    [sfsim.render :as render]
     [sfsim.graphics :as graphics]
     [sfsim.texture :as texture]
     [sfsim.image :as image]
@@ -42,7 +42,9 @@
   (:import
     (org.lwjgl.glfw
       GLFW
-      GLFWVidMode)
+      GLFWVidMode
+      GLFWErrorCallback
+      GLFWErrorCallbackI)
     (org.lwjgl.system
       MemoryStack)
     (org.lwjgl.nuklear
@@ -72,17 +74,26 @@
     ;; Ensure floating point numbers use a dot as decimal separator
     (java.util.Locale/setDefault java.util.Locale/US)
 
+    ;; Set GLFW error callback
+    (GLFW/glfwSetErrorCallback
+      (reify GLFWErrorCallbackI
+             (invoke [_ _error description]
+               (log/error (GLFWErrorCallback/getDescription description)))))
+
+    ;; Create a stack object for LWJGL
+    (MemoryStack/stackPush)
+
     ;; Initialise GLFW
-    (GLFW/glfwInit)
+    (when-not (GLFW/glfwInit)
+              (throw (RuntimeException. "Failed to initialize GLFW")))
 
     ;; Initialise Jolt Physics
     (jolt/jolt-init)
     (jolt/set-gravity (vec3 0 0 0))
 
-    (let [stack               (MemoryStack/stackPush)
-          window-width        (:sfsim.render/window-width config/render-config)
+    (let [window-width        (:sfsim.render/window-width config/render-config)
           window-height       (:sfsim.render/window-height config/render-config)
-          window              (make-window "sfsim" window-width window-height false)
+          window              (render/make-window "sfsim" window-width window-height false)
           longitude           (to-radians -1.3747)
           latitude            (to-radians 50.9672)
           earth-radius        (:sfsim.planet/radius config/planet-config)
@@ -109,7 +120,7 @@
           model               (first (:sfsim.graphics/scenes graphics))
           convex-hulls        (update (model/empty-meshes-to-points model) :sfsim.model/transform #(mulm gltf-to-aerodynamic %))
           tile-tree           (planet/make-tile-tree)
-          split-orientations  (quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8)
+          split-orientations  (render/quad-splits-orientations (:sfsim.planet/tilesize config/planet-config) 8)
           surface             (quadtree/distance-to-surface config/planet-config split-orientations)
           event-buffer        (atom (make-event-buffer))
           user-stats          (steam/initialize)]
@@ -276,17 +287,16 @@
                                               (graphics/render-clouds-and-shockwave-and-plume
                                                 graphics (physics/active-rcs (:physics @state)) mach shockwave-strength)
                                               (graphics/render-geometry graphics tree))]
-                   (onscreen-render window
-                                    (graphics/render-lighting frame graphics)
-                                    (with-culling :sfsim.render/noculling
-                                      (let [menu (-> @state :gui :sfsim.gui/menu)]
-                                        (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR
-                                                               (if menu GLFW/GLFW_CURSOR_NORMAL GLFW/GLFW_CURSOR_HIDDEN))
-                                        (when menu (swap! state menu @gui window-width window-height)))
-                                      (let [controls (-> @state :input :sfsim.input/controls)]
-                                        (gui/information-display @gui window-width window-height @state @frametime
-                                                                 (:sfsim.physics/time-lapse time-lapse-info)))
-                                      (gui/render-nuklear-gui @gui window-width window-height)))
+                   (render/onscreen-render window
+                                           (graphics/render-lighting frame graphics)
+                                           (render/with-culling :sfsim.render/noculling
+                                             (let [menu (-> @state :gui :sfsim.gui/menu)]
+                                               (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR
+                                                                      (if menu GLFW/GLFW_CURSOR_NORMAL GLFW/GLFW_CURSOR_HIDDEN))
+                                               (when menu (swap! state menu @gui window-width window-height)))
+                                             (gui/information-display @gui window-width window-height @state @frametime
+                                                                      (:sfsim.physics/time-lapse time-lapse-info))
+                                             (gui/render-nuklear-gui @gui window-width window-height)))
                    (graphics/destroy-frame frame))
                  (Nuklear/nk_input_begin (:sfsim.gui/context @gui))
                  (GLFW/glfwPollEvents)
@@ -304,14 +314,15 @@
         (texture/destroy-texture (:sfsim.planet/diffuse-tex overlay))
         (planet/destroy-tile-tree tile-tree)
         (graphics/destroy-graphics2 graphics)
+        (render/destroy-opengl-queries)
         (audio/destroy-audio-state audio-state)
         (gui/destroy-navball @gui)
         (gui/destroy-nuklear-gui-with-font @gui)
-        (destroy-window window)
-        (MemoryStack/stackPop)
+        (render/destroy-window window)
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
         (when user-stats (steam/destroy))))
+        (MemoryStack/stackPop)
   (catch Throwable e
          (log/error e "Throwable in main function")
          (NewRelic/noticeError e)
@@ -320,7 +331,7 @@
              (.recordCustomEvent "AppShutdown" {"type" "Crash"}))
          (Thread/sleep 2000)
          (System/exit 1)))
-  (log/info (format "average fps was %.2f" (if (zero? @uptime) 0.0 (/ ^double @frame-counter ^double @uptime))))
+  (log/info (format "average fps was %.2f" (if (zero? ^double @uptime) 0.0 (/ ^double @frame-counter ^double @uptime))))
   (log/info "terminating sfsim" version)
   (-> (NewRelic/getAgent)
       (.getInsights)

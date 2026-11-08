@@ -35,17 +35,16 @@
 
 (defn make-cube-map-tile-vertices
   "Create vertex array object for drawing cube map tiles"
-  {:malli/schema [:=> [:cat :keyword N0 N0 N0 N N] [:vector :double]]}
-  [face level y x height-tilesize color-tilesize]
-  (let [[a b c d] (cube-map-corners face level y x)
-        h0        (/ 0.5 ^long height-tilesize)
+  {:malli/schema [:=> [:cat N N] [:vector :double]]}
+  [height-tilesize color-tilesize]
+  (let [h0        (/ 0.5 ^long height-tilesize)
         h1        (- 1.0 h0)
         c0        (/ 0.5 ^long color-tilesize)
         c1        (- 1.0 c0)]
-    [(a 0) (a 1) (a 2) h0 h0 c0 c0
-     (b 0) (b 1) (b 2) h1 h0 c1 c0
-     (c 0) (c 1) (c 2) h0 h1 c0 c1
-     (d 0) (d 1) (d 2) h1 h1 c1 c1]))
+    [h0 h0 c0 c0
+     h1 h0 c1 c0
+     h0 h1 c0 c1
+     h1 h1 c1 c1]))
 
 
 (def vertex-planet
@@ -191,9 +190,8 @@
   (let [tilesize       (::tilesize config)
         color-tilesize (::color-tilesize config)
         indices        [0 2 3 1]
-        vertices       (make-cube-map-tile-vertices (:sfsim.quadtree/face tile) (:sfsim.quadtree/level tile)
-                                                    (:sfsim.quadtree/y tile) (:sfsim.quadtree/x tile) tilesize color-tilesize)
-        vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+        vertices       (make-cube-map-tile-vertices tilesize color-tilesize)
+        vao            (make-vertex-array-object program indices vertices ["surfacecoord" 2 "colorcoord" 2])
         day-night-tex  (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp [(::day tile) (::night tile)])
         surf-tex       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                #:sfsim.image{:width tilesize :height tilesize :data (::surface tile)
