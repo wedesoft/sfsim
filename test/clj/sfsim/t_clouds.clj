@@ -1480,9 +1480,9 @@ void main()
                    moved-scene         (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform]
                                                  (transformation-matrix (eye 3) (vec3 0 0 (or ?model 0))))
                    indices             [0 2 3 1]
-                   vertices            (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
+                   vertices            (make-cube-map-tile-vertices 3 3)
                    vao                 (make-vertex-array-object planet-program indices vertices
-                                                                 ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+                                                                 ["surfacecoord" 2 "colorcoord" 2])
                    data                [-1  1 0, 0  1 0, 1  1 0,
                                         -1  0 0, 0  0 0, 1  0 0,
                                         -1 -1 0, 0 -1 0, 1 -1 0]
