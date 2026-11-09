@@ -1471,6 +1471,7 @@ void main()
          (facts
            (with-invisible-window
              (let [data                {:sfsim.planet/config {:sfsim.planet/tilesize 3
+                                                              :sfsim.planet/color-tilesize 3
                                                               :sfsim.planet/worley-data "test/clj/sfsim/fixtures/clouds/worley-cover.raw"
                                                               :sfsim.planet/worley-size 8}}
                    renderer            (make-joined-geometry-renderer data 0)

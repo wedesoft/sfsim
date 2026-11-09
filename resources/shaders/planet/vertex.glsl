@@ -1,5 +1,7 @@
 #version 450 core
 
+uniform int height_tilesize;
+uniform int color_tilesize;
 in vec2 surfacecoord;
 in vec2 colorcoord;
 
@@ -12,6 +14,9 @@ out VS_OUT
 // Vertex shader to pass through coordinates and texture indices for surface pointcloud and color texture.
 void main()
 {
-  vs_out.surfacecoord = surfacecoord;
-  vs_out.colorcoord = colorcoord;
+  vec2 corner = vec2(gl_VertexID & 1, (gl_VertexID >> 1) & 1);
+  float h = 0.5 / height_tilesize;
+  float c = 0.5 / color_tilesize;
+  vs_out.surfacecoord = vec2(h) + corner * (1.0 - 2.0 * h);
+  vs_out.colorcoord   = vec2(c) + corner * (1.0 - 2.0 * c);
 }

@@ -5,7 +5,8 @@
 
 ** TODO improve performance of planet
 *** DONE check number of tiles required when rendering planet
-*** TODO eliminate per-vertex data in planet shader
+*** DONE eliminate per-vertex data in planet shader
+*** TODO do not generate unused vertex data for planet shader any more
 *** TODO update parts of 2d texture array using pbo ring buffer
 *** TODO update layer indices with dynamic draw vbo
 *** TODO instanced rendering of two quads (GL33/glVertexAttribDivisor 3 1) [[https://share.gemini.google/q1Ee7FywCJm9]]
