@@ -4,26 +4,25 @@ title: Privacy Policy
 permalink: /privacy
 ---
 
-To ensure application stability, monitor performance, and fix software bugs,
 **sfsim** automatically collects operational logs and technical error reports
-during application execution.
-Select "Play without Diagnostic Tracking" to opt-out.
+while the application is running. This information helps to maintain stability,
+monitor performance, and resolve software issues.
+
+To disable this collection, select **"Play without Diagnostic Tracking."**
 
 ### What We Collect
-* **Technical & Error Telemetry:** Anonymized stack traces, exception codes,
-application version numbers, and basic environment host indicators required by
-monitoring tools (e.g., New Relic).
-* **Application & Operational Logs:** System log output, execution diagnostics,
-status messages, and runtime event logs generated during normal operation and
-troubleshooting.
+- **Technical and error data:** Stack traces, exception codes, application
+version numbers, and the hostname reported by the monitoring tool (New Relic).
+- **Application and operational logs:** Execution diagnostics. status messages,
+and runtime event logs generated during normal operation and troubleshooting.
 
-### What We DO NOT Collect
-* **No Personal Identifiers:** No user names, email addresses, IP addresses,
-or account credentials.
-* **No Personal Files:** No telemetry from your local file system, directories,
-or personal documents.
+### What We Do Not Collect
+- **Personal identifiers:** We do not collect usernames, email addresses,
+IP addresses, or account credentials.
+- **Personal files:** We do not collect the contents of your personal files
+or documents, or information about your local files and directories.
 
-### How We Use Data
-This technical data is processed solely for software debugging and performance
-monitoring. It is never sold, used for tracking or advertising, or used to
-identify individual users.
+### How We Use This Data
+We use this information only to diagnose software issues and monitor application
+performance. We do not sell it, use it for advertising or user tracking, or use
+it to identify individual users.
