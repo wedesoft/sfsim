@@ -555,3 +555,11 @@
         (provided
           (quadtree/create-local-triangles orientations face2 7 65 2 3 7 5) => [[0 1 2]]
           (quadtree/create-local-vertices face2 7 65 2 3 7 5 6378000.0 (vec3 0 0 30)) => [point])))
+
+
+(facts "Count leaves of tree"
+       (leaf-count nil) => 0
+       (leaf-count {}) => 1
+       (leaf-count {face2 {}}) => 1
+       (leaf-count {face0 {} face2 {}}) => 2
+       (leaf-count {face0 {quad0 {} quad1 {} quad2 {}}}) => 3)

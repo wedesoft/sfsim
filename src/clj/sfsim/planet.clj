@@ -147,6 +147,8 @@
                                   :sfsim.render/fragment [fragment-planet-shadow])]
     (use-program program)
     (uniform-sampler program "surface" 0)
+    (uniform-int program "height_tilesize" (::tilesize (::config data)))
+    (uniform-int program "color_tilesize" (::color-tilesize (::config data)))
     (uniform-int program "high_detail" (dec ^long tilesize))
     (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
@@ -234,7 +236,7 @@
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
   [{::keys [config]} tree width position]
   (let [tilesize  (::tilesize config)
-        increase? (partial increase-level? tilesize (::radius config) width 60.0 10 7 position)]; TODO: use params for values
+        increase? (partial increase-level? tilesize (::radius config) width 60.0 5 7 position)]; TODO: use params for values
     (update-level-of-detail tree (::radius config) increase? true)))
 
 
@@ -362,6 +364,8 @@
       (uniform-sampler program "normals"   2)
       (uniform-sampler program "water"     3)
       (uniform-sampler program "worley"    4))
+    (uniform-int program "height_tilesize" (::tilesize config))
+    (uniform-int program "color_tilesize" (::color-tilesize config))
     (uniform-int program "high_detail" (dec ^long tilesize))
     (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     (when full

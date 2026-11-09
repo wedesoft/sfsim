@@ -140,6 +140,8 @@ void main()
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-sampler program "surface" 0)
+                               (uniform-sampler program "height_tilesize" 2)
+                               (uniform-sampler program "color_tilesize" 2)
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" ?neighbours)
@@ -198,6 +200,8 @@ void main()
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-sampler program "surface" 0)
+                               (uniform-sampler program "height_tilesize" 2)
+                               (uniform-sampler program "color_tilesize" 2)
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" 15)
@@ -237,6 +241,8 @@ void main()
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "surface" 0)
+                          (uniform-sampler program "height_tilesize" 2)
+                          (uniform-sampler program "color_tilesize" 2)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
@@ -273,6 +279,8 @@ void main()
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "surface" 0)
+                          (uniform-sampler program "height_tilesize" 2)
+                          (uniform-sampler program "color_tilesize" 2)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
@@ -310,6 +318,8 @@ void main()
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "surface" 0)
+                          (uniform-sampler program "height_tilesize" 2)
+                          (uniform-sampler program "color_tilesize" 2)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
@@ -742,6 +752,8 @@ void main()
                                (use-program program)
                                (clear (vec3 0 0 0))
                                (uniform-sampler program "surface" 0)
+                               (uniform-sampler program "height_tilesize" 9)
+                               (uniform-sampler program "color_tilesize" 9)
                                (uniform-int program "high_detail" 8)
                                (uniform-int program "low_detail" 4)
                                (uniform-matrix4 program "projection" projection)
@@ -770,16 +782,16 @@ void main()
 (let [vao :sfsim.planet/vao]
   (tabular "Call each tile in tree to be rendered"
            (fact (render-tile-calls ?program ?node ?transform [] [:sfsim.planet/surf-tex]) => ?result)
-           ?program ?transform ?node                                ?result
-           1234 :transform {}                                       []
-           1234 :transform {vao 42}                                 [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face0 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face1 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face2 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face3 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face4 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face5 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face3 {:sfsim.quadtree/quad2 {vao 42}}}
+           ?program ?transform ?node                           ?result
+           1234     :transform {}                              []
+           1234     :transform {vao 42}                        [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face0 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face1 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face2 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face3 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face4 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face5 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face3 {:sfsim.quadtree/quad2 {vao 42}}}
            [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]))
 
 
@@ -824,6 +836,7 @@ void main()
 (facts "Render planet geometry"
        (with-invisible-window
          (let [data             {:sfsim.planet/config {:sfsim.planet/tilesize 3
+                                                       :sfsim.planet/color-tilesize 3
                                                        :sfsim.planet/worley-data "test/clj/sfsim/fixtures/clouds/worley-cover.raw"
                                                        :sfsim.planet/worley-size 8}}
                render-vars      #:sfsim.render{:projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
