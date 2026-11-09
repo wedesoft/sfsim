@@ -73,6 +73,8 @@ jobs:
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
         name: Build Jolt bindings
         run: make libjolt.so
+      - name: Build sfsim-noapm
+        run: make sfsim-noapm
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
