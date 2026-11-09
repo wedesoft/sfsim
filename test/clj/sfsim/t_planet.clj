@@ -770,16 +770,16 @@ void main()
 (let [vao :sfsim.planet/vao]
   (tabular "Call each tile in tree to be rendered"
            (fact (render-tile-calls ?program ?node ?transform [] [:sfsim.planet/surf-tex]) => ?result)
-           ?program ?transform ?node                                ?result
-           1234 :transform {}                                       []
-           1234 :transform {vao 42}                                 [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face0 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face1 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face2 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face3 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face4 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face5 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face3 {:sfsim.quadtree/quad2 {vao 42}}}
+           ?program ?transform ?node                           ?result
+           1234     :transform {}                              []
+           1234     :transform {vao 42}                        [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face0 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face1 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face2 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face3 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face4 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face5 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face3 {:sfsim.quadtree/quad2 {vao 42}}}
            [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]))
 
 

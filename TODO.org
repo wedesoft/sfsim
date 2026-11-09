@@ -4,7 +4,7 @@
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
 ** TODO improve performance of planet
-*** TODO check number of tiles required when rendering planet
+*** DONE check number of tiles required when rendering planet
 *** TODO eliminate per-vertex data in planet shader
 *** TODO update parts of 2d texture array using pbo ring buffer
 *** TODO update layer indices with dynamic draw vbo
