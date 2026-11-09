@@ -4,16 +4,13 @@ JOLTFLAGS = -DJPH_DOUBLE_PRECISION -DJPH_OBJECT_STREAM -DJPH_USE_AVX -DJPH_USE_S
 CCFLAGS = -g -O3 -fPIC -Wall -Werror -DNDEBUG $(JOLTFLAGS) -pthread -I/usr/local/include -Isrc/c
 LDFLAGS = -L/usr/local/lib -lJolt -pthread
 
-all: jolt sfsim-noapm
+all: jolt
 
 jolt: libjolt.so
 
 libjolt.so: src/c/sfsim/jolt.o
 	$(CC) -shared -flto=auto -o $@ $^ $(LDFLAGS)
 	$(STRIP) $@
-
-sfsim-noapm: sfsim-noapm.o
-	$(CC) -o $@ $^
 
 .cc.o:
 	$(CC) $(CCFLAGS) -c $< -o $@
