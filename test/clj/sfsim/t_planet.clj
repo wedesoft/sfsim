@@ -63,19 +63,33 @@
          (with-redefs [cubemap/cube-map-corners (fn [^Keyword face ^long level ^long y ^long x]
                                                   (fact [face level y x] => [:sfsim.cubemap/face5 3 2 1])
                                                   [a b c d])]
-           (let [arr (make-cube-map-tile-vertices :sfsim.cubemap/face5 3 2 1 10 100)]
-             (subvec arr  0  3) => (vec a)
-             (subvec arr  7 10) => (vec b)
-             (subvec arr 14 17) => (vec c)
-             (subvec arr 21 24) => (vec d)
-             (subvec arr  3  5) => [0.05 0.05]
-             (subvec arr 10 12) => [0.95 0.05]
-             (subvec arr 17 19) => [0.05 0.95]
-             (subvec arr 24 26) => [0.95 0.95]
-             (subvec arr  5  7) => [0.005 0.005]
-             (subvec arr 12 14) => [0.995 0.005]
-             (subvec arr 19 21) => [0.005 0.995]
-             (subvec arr 26 28) => [0.995 0.995]))))
+           (let [arr (make-cube-map-tile-vertices 10 100)]
+             (subvec arr  0  2) => [0.05 0.05]
+             (subvec arr  4  6) => [0.95 0.05]
+             (subvec arr  8 10) => [0.05 0.95]
+             (subvec arr 12 14) => [0.95 0.95]
+             (subvec arr  2  4) => [0.005 0.005]
+             (subvec arr  6  8) => [0.995 0.005]
+             (subvec arr 10 12) => [0.005 0.995]
+             (subvec arr 14 16) => [0.995 0.995]))))
+
+
+(def vertex-white
+"#version 450 core
+in vec3 point;
+in vec2 surfacecoord;
+in vec2 colorcoord;
+out VS_OUT
+{
+  vec2 surfacecoord;
+  vec2 colorcoord;
+} vs_out;
+void main()
+{
+  vs_out.surfacecoord = surfacecoord;
+  vs_out.colorcoord = colorcoord;
+  gl_Position = vec4(point, 1);
+}")
 
 
 (def fragment-white
@@ -94,7 +108,7 @@ void main()
                                          +0.5 -0.5 0.5 0.0 0.0 0.0 0.0
                                          -0.5  0.5 0.5 0.0 0.0 0.0 0.0
                                          +0.5  0.5 0.5 0.0 0.0 0.0 0.0]
-                              program   (make-program :sfsim.render/vertex [vertex-planet]
+                              program   (make-program :sfsim.render/vertex [vertex-white]
                                                       :sfsim.render/fragment [fragment-white])
                               variables ["point" 3 "surfacecoord" 2 "colorcoord" 2]
                               vao       (make-vertex-array-object program indices vertices variables)]
@@ -126,6 +140,8 @@ void main()
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-sampler program "surface" 0)
+                               (uniform-sampler program "height_tilesize" 2)
+                               (uniform-sampler program "color_tilesize" 2)
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" ?neighbours)
@@ -184,6 +200,8 @@ void main()
                                (clear (vec3 0 0 0))
                                (use-program program)
                                (uniform-sampler program "surface" 0)
+                               (uniform-sampler program "height_tilesize" 2)
+                               (uniform-sampler program "color_tilesize" 2)
                                (uniform-int program "high_detail" 4)
                                (uniform-int program "low_detail" 2)
                                (uniform-int program "neighbours" 15)
@@ -223,6 +241,8 @@ void main()
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "surface" 0)
+                          (uniform-sampler program "height_tilesize" 2)
+                          (uniform-sampler program "color_tilesize" 2)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
@@ -259,6 +279,8 @@ void main()
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "surface" 0)
+                          (uniform-sampler program "height_tilesize" 2)
+                          (uniform-sampler program "color_tilesize" 2)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
@@ -296,6 +318,8 @@ void main()
                           (clear (vec3 0 0 0))
                           (use-program program)
                           (uniform-sampler program "surface" 0)
+                          (uniform-sampler program "height_tilesize" 2)
+                          (uniform-sampler program "color_tilesize" 2)
                           (uniform-int program "high_detail" 4)
                           (uniform-int program "low_detail" 2)
                           (uniform-int program "neighbours" 15)
@@ -708,8 +732,7 @@ void main()
                                                             :sfsim.render/geometry [(geometry-planet-shading 0)]
                                                             :sfsim.render/fragment [fragment-white-tree])
                                    indices    [0 2 3 1]
-                                   face       :sfsim.cubemap/face0
-                                   vertices   (make-cube-map-tile-vertices face 0 0 0 9 9)
+                                   vertices   (make-cube-map-tile-vertices 9 9)
                                    data       (flatten
                                                 (for [y (range 1.0 -1.25 -0.25) x (range -1.0 1.25 0.25)]
                                                   [(* x 0.5) (* y 0.5) 0.5]))
@@ -717,7 +740,7 @@ void main()
                                                                       #:sfsim.image{:width 9 :height 9 :data (float-array data)
                                                                                     :channels 3})
                                    vao        (make-vertex-array-object program indices vertices
-                                                                        ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+                                                                        ["surfacecoord" 2 "colorcoord" 2])
                                    transform  (transformation-matrix (eye 3) (vec3 0 0 2.5))
                                    projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
                                    neighbours {:sfsim.quadtree/up    ?up
@@ -729,6 +752,8 @@ void main()
                                (use-program program)
                                (clear (vec3 0 0 0))
                                (uniform-sampler program "surface" 0)
+                               (uniform-sampler program "height_tilesize" 9)
+                               (uniform-sampler program "color_tilesize" 9)
                                (uniform-int program "high_detail" 8)
                                (uniform-int program "low_detail" 4)
                                (uniform-matrix4 program "projection" projection)
@@ -757,16 +782,16 @@ void main()
 (let [vao :sfsim.planet/vao]
   (tabular "Call each tile in tree to be rendered"
            (fact (render-tile-calls ?program ?node ?transform [] [:sfsim.planet/surf-tex]) => ?result)
-           ?program ?transform ?node                                ?result
-           1234 :transform {}                                       []
-           1234 :transform {vao 42}                                 [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face0 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face1 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face2 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face3 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face4 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face5 {vao 42}}         [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
-           1234 :transform {:sfsim.cubemap/face3 {:sfsim.quadtree/quad2 {vao 42}}}
+           ?program ?transform ?node                           ?result
+           1234     :transform {}                              []
+           1234     :transform {vao 42}                        [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face0 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face1 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face2 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face3 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face4 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face5 {vao 42}} [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]
+           1234     :transform {:sfsim.cubemap/face3 {:sfsim.quadtree/quad2 {vao 42}}}
            [[1234 {vao 42} :transform [] [:sfsim.planet/surf-tex]]]))
 
 
@@ -811,14 +836,15 @@ void main()
 (facts "Render planet geometry"
        (with-invisible-window
          (let [data             {:sfsim.planet/config {:sfsim.planet/tilesize 3
+                                                       :sfsim.planet/color-tilesize 3
                                                        :sfsim.planet/worley-data "test/clj/sfsim/fixtures/clouds/worley-cover.raw"
                                                        :sfsim.planet/worley-size 8}}
                render-vars      #:sfsim.render{:projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
                                                :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
                renderer         (make-planet-geometry-renderer data false 0 [])
                indices          [0 2 3 1]
-               vertices         (make-cube-map-tile-vertices :sfsim.cubemap/face0 0 0 0 3 3)
-               vao              (make-vertex-array-object (:sfsim.planet/program renderer) indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+               vertices         (make-cube-map-tile-vertices 3 3)
+               vao              (make-vertex-array-object (:sfsim.planet/program renderer) indices vertices ["surfacecoord" 2 "colorcoord" 2])
                data             [-1  1 0, 0  1 0, 1  1 0,
                                  -1  0 0, 0  0 0, 1  0 0,
                                  -1 -1 0, 0 -1 0, 1 -1 0]

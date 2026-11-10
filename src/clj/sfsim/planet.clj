@@ -36,17 +36,16 @@
 
 (defn make-cube-map-tile-vertices
   "Create vertex array object for drawing cube map tiles"
-  {:malli/schema [:=> [:cat :keyword N0 N0 N0 N N] [:vector :double]]}
-  [face level y x height-tilesize color-tilesize]
-  (let [[a b c d] (cube-map-corners face level y x)
-        h0        (/ 0.5 ^long height-tilesize)
+  {:malli/schema [:=> [:cat N N] [:vector :double]]}
+  [height-tilesize color-tilesize]
+  (let [h0        (/ 0.5 ^long height-tilesize)
         h1        (- 1.0 h0)
         c0        (/ 0.5 ^long color-tilesize)
         c1        (- 1.0 c0)]
-    [(a 0) (a 1) (a 2) h0 h0 c0 c0
-     (b 0) (b 1) (b 2) h1 h0 c1 c0
-     (c 0) (c 1) (c 2) h0 h1 c0 c1
-     (d 0) (d 1) (d 2) h1 h1 c1 c1]))
+    [h0 h0 c0 c0
+     h1 h0 c1 c0
+     h0 h1 c0 c1
+     h1 h1 c1 c1]))
 
 
 (def vertex-planet
@@ -149,6 +148,8 @@
                                   :sfsim.render/fragment [fragment-planet-shadow])]
     (use-program program)
     (uniform-sampler program "surface" 0)
+    (uniform-int program "height_tilesize" (::tilesize (::config data)))
+    (uniform-int program "color_tilesize" (::color-tilesize (::config data)))
     (uniform-int program "high_detail" (dec ^long tilesize))
     (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     (uniform-int program "shadow_size" (:sfsim.opacity/shadow-size shadow-data))
@@ -193,9 +194,8 @@
   (let [tilesize       (::tilesize config)
         color-tilesize (::color-tilesize config)
         indices        [0 2 3 1]
-        vertices       (make-cube-map-tile-vertices (:sfsim.quadtree/face tile) (:sfsim.quadtree/level tile)
-                                                    (:sfsim.quadtree/y tile) (:sfsim.quadtree/x tile) tilesize color-tilesize)
-        vao            (make-vertex-array-object program indices vertices ["point" 3 "surfacecoord" 2 "colorcoord" 2])
+        vertices       (make-cube-map-tile-vertices tilesize color-tilesize)
+        vao            (make-vertex-array-object program indices vertices ["surfacecoord" 2 "colorcoord" 2])
         day-night-tex  (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp [(::day tile) (::night tile)])
         surf-tex       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                #:sfsim.image{:width tilesize :height tilesize :data (::surface tile)
@@ -238,7 +238,7 @@
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
   [{::keys [config]} tree width position]
   (let [tilesize  (::tilesize config)
-        increase? (partial increase-level? tilesize (::radius config) width 60.0 10 7 position)]; TODO: use params for values
+        increase? (partial increase-level? tilesize (::radius config) width 60.0 5 7 position)]; TODO: use params for values
     (update-level-of-detail tree (::radius config) increase? true)))
 
 
@@ -366,6 +366,8 @@
       (uniform-sampler program "normals"   2)
       (uniform-sampler program "water"     3)
       (uniform-sampler program "worley"    4))
+    (uniform-int program "height_tilesize" (::tilesize config))
+    (uniform-int program "color_tilesize" (::color-tilesize config))
     (uniform-int program "high_detail" (dec ^long tilesize))
     (uniform-int program "low_detail" (quot (dec ^long tilesize) 2))
     (when full

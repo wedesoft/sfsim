@@ -353,8 +353,8 @@
         offsets         (reductions + 0 (butlast sizes))
         attr-locations  (for [[[opengl-type attribute size] offset] (mapv list attribute-pairs offsets)]
                           (let [location (GL20/glGetAttribLocation ^long program ^String attribute)]
-                            (GL20/glVertexAttribPointer location ^long size ^long opengl-type true ^long stride ^long offset)
                             (GL20/glEnableVertexAttribArray location)
+                            (GL20/glVertexAttribPointer location ^long size ^long opengl-type true ^long stride ^long offset)
                             location))]
     (vec attr-locations)))
 

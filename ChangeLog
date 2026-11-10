@@ -1,3 +1,20 @@
+sfsim (0.38-2)
+
+  * Replace sfsim-noapm.bat with sfsim-noapm.exe because BAT file opens a DOS
+	  command window
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun,  8 Nov 2026 22:44:50 +0000
+
+sfsim (0.38-1)
+
+  * Add GLFW error logging
+	* Add OpenGL macros which can be used to measure GPU time
+	* Handle exceptions when user enters invalid integers or doubles
+	* Add wrapper scripts for GNU/Linux and Windows to run without application
+	  performance monitoring
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun,  8 Nov 2026 21:37:50 +0000
+
 sfsim (0.37-1)
 
   * Pitch camera so MFDs do not cover the spacecraft

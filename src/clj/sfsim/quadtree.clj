@@ -629,5 +629,21 @@
    ::triangles (create-local-triangles orientations face level tilesize row column tile-y tile-x)})
 
 
+(defn leaf-count
+  "Count the number of leaves in a tree"
+  [tree]
+  (cond
+    (not tree)      0
+    (is-leaf? tree) 1
+    :else
+    (transduce (map (comp leaf-count tree))
+               +
+               [:sfsim.cubemap/face0 :sfsim.cubemap/face1
+                :sfsim.cubemap/face2 :sfsim.cubemap/face3
+                :sfsim.cubemap/face4 :sfsim.cubemap/face5
+                :sfsim.quadtree/quad0 :sfsim.quadtree/quad1
+                :sfsim.quadtree/quad2 :sfsim.quadtree/quad3])))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
