@@ -55,39 +55,11 @@
                  :sfsim.atmosphere/brightness (vec3 0.3 0.3 0.3)})
 
 
-(facts "Create vertex array object for drawing cube map tiles"
-       (let [a (vec3 -0.75 -0.5  -1.0)
-             b (vec3 -0.5  -0.5  -1.0)
-             c (vec3 -0.75 -0.25 -1.0)
-             d (vec3 -0.5  -0.25 -1.0)]
-         (with-redefs [cubemap/cube-map-corners (fn [^Keyword face ^long level ^long y ^long x]
-                                                  (fact [face level y x] => [:sfsim.cubemap/face5 3 2 1])
-                                                  [a b c d])]
-           (let [arr (make-cube-map-tile-vertices 10 100)]
-             (subvec arr  0  2) => [0.05 0.05]
-             (subvec arr  4  6) => [0.95 0.05]
-             (subvec arr  8 10) => [0.05 0.95]
-             (subvec arr 12 14) => [0.95 0.95]
-             (subvec arr  2  4) => [0.005 0.005]
-             (subvec arr  6  8) => [0.995 0.005]
-             (subvec arr 10 12) => [0.005 0.995]
-             (subvec arr 14 16) => [0.995 0.995]))))
-
-
 (def vertex-white
 "#version 450 core
 in vec3 point;
-in vec2 surfacecoord;
-in vec2 colorcoord;
-out VS_OUT
-{
-  vec2 surfacecoord;
-  vec2 colorcoord;
-} vs_out;
 void main()
 {
-  vs_out.surfacecoord = surfacecoord;
-  vs_out.colorcoord = colorcoord;
   gl_Position = vec4(point, 1);
 }")
 
@@ -104,10 +76,10 @@ void main()
 (fact "Use vertex data to draw a quad"
       (offscreen-render 256 256
                         (let [indices   [0 1 3 2]
-                              vertices  [-0.5 -0.5 0.5 0.0 0.0 0.0 0.0
-                                         +0.5 -0.5 0.5 0.0 0.0 0.0 0.0
-                                         -0.5  0.5 0.5 0.0 0.0 0.0 0.0
-                                         +0.5  0.5 0.5 0.0 0.0 0.0 0.0]
+                              vertices  [-0.5 -0.5 0.5
+                                         +0.5 -0.5 0.5
+                                         -0.5  0.5 0.5
+                                         +0.5  0.5 0.5]
                               program   (make-program :sfsim.render/vertex [vertex-white]
                                                       :sfsim.render/fragment [fragment-white])
                               variables ["point" 3 "surfacecoord" 2 "colorcoord" 2]
@@ -732,15 +704,13 @@ void main()
                                                             :sfsim.render/geometry [(geometry-planet-shading 0)]
                                                             :sfsim.render/fragment [fragment-white-tree])
                                    indices    [0 2 3 1]
-                                   vertices   (make-cube-map-tile-vertices 9 9)
                                    data       (flatten
                                                 (for [y (range 1.0 -1.25 -0.25) x (range -1.0 1.25 0.25)]
                                                   [(* x 0.5) (* y 0.5) 0.5]))
                                    surf-tex   (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                                       #:sfsim.image{:width 9 :height 9 :data (float-array data)
                                                                                     :channels 3})
-                                   vao        (make-vertex-array-object program indices vertices
-                                                                        ["surfacecoord" 2 "colorcoord" 2])
+                                   vao        (make-vertex-array-object program indices)
                                    transform  (transformation-matrix (eye 3) (vec3 0 0 2.5))
                                    projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
                                    neighbours {:sfsim.quadtree/up    ?up
@@ -843,8 +813,7 @@ void main()
                                                :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
                renderer         (make-planet-geometry-renderer data false 0 [])
                indices          [0 2 3 1]
-               vertices         (make-cube-map-tile-vertices 3 3)
-               vao              (make-vertex-array-object (:sfsim.planet/program renderer) indices vertices ["surfacecoord" 2 "colorcoord" 2])
+               vao              (make-vertex-array-object (:sfsim.planet/program renderer) indices)
                data             [-1  1 0, 0  1 0, 1  1 0,
                                  -1  0 0, 0  0 0, 1  0 0,
                                  -1 -1 0, 0 -1 0, 1 -1 0]

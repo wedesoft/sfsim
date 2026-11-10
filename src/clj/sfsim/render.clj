@@ -310,8 +310,10 @@
 
 
 (def vertex-array-object
-  (m/schema [:map [::vertex-array-object :int] [::array-buffer :int] [::index-buffer :int]
-             [::attribute-locations [:vector :int]]]))
+  (m/schema [:map [::vertex-array-object :int]
+                  [::index-buffer :int]
+                  [::array-buffer [:maybe :int]]
+                  [::attribute-locations [:maybe [:vector :int]]]]))
 
 
 (definline set-static-float-buffer-data
@@ -361,23 +363,27 @@
 
 (defn make-vertex-array-object
   "Create vertex array object and vertex buffer objects using integers for indices and floating point numbers for vertex data"
-  {:malli/schema [:=> [:cat :int [:vector :int] [:vector number?] [:and sequential? [:repeat [:cat :string N]]]]
+  {:malli/schema [:=> [:cat :int [:vector :int]
+                       [:? [:cat [:maybe [:vector number?]] [:maybe [:and sequential? [:repeat [:cat :string N]]]]]]]
                   vertex-array-object]}
-  [program indices vertices attributes]
-  (let [float-attributes    (mapcat #(conj % GL11/GL_FLOAT) (partition 2 attributes))
-        vertex-array-object (GL30/glGenVertexArrays)
-        array-buffer        (GL15/glGenBuffers)
-        index-buffer        (GL15/glGenBuffers)]
-    (GL30/glBindVertexArray vertex-array-object)
-    (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
-    (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
-    (set-static-float-buffer-data GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices)))
-    (set-static-int-buffer-data GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)))
-    {::vertex-array-object vertex-array-object
-     ::array-buffer        array-buffer
-     ::index-buffer        index-buffer
-     ::attribute-locations (setup-vertex-attrib-pointers program float-attributes)
-     ::nrows               (count indices)}))
+  ([program indices]
+   (make-vertex-array-object program indices nil nil))
+  ([program indices vertices attributes]
+   (let [float-attributes    (mapcat #(conj % GL11/GL_FLOAT) (partition 2 attributes))
+         vertex-array-object (GL30/glGenVertexArrays)
+         index-buffer        (GL15/glGenBuffers)
+         array-buffer        (when vertices (GL15/glGenBuffers))]
+     (GL30/glBindVertexArray vertex-array-object)
+     (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER index-buffer)
+     (set-static-int-buffer-data GL15/GL_ELEMENT_ARRAY_BUFFER (make-int-buffer (int-array indices)))
+     (when vertices
+       (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER array-buffer)
+       (set-static-float-buffer-data GL15/GL_ARRAY_BUFFER (make-float-buffer (float-array vertices))))
+     {::vertex-array-object vertex-array-object
+      ::array-buffer        array-buffer
+      ::index-buffer        index-buffer
+      ::attribute-locations (setup-vertex-attrib-pointers program float-attributes)
+      ::nrows               (count indices)})))
 
 
 (defn make-vertex-array-stream
@@ -420,8 +426,9 @@
   (doseq [location attribute-locations] (GL20/glDisableVertexAttribArray location))
   (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER 0)
   (GL15/glDeleteBuffers ^long index-buffer)
-  (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
-  (GL15/glDeleteBuffers ^long array-buffer)
+  (when array-buffer
+    (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER 0)
+    (GL15/glDeleteBuffers ^long array-buffer))
   (GL30/glBindVertexArray 0)
   (GL30/glDeleteVertexArrays ^long vertex-array-object))
 
@@ -620,10 +627,13 @@
   "Initialise rendering of a vertex array object"
   {:malli/schema [:=> [:cat vertex-array-object] :nil]}
   [vertex-array-object]
-  `(do
-     (GL30/glBindVertexArray (::vertex-array-object ~vertex-array-object))
-     (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER (::array-buffer ~vertex-array-object))
-     (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER (::index-buffer ~vertex-array-object))))
+  `(let [vao# (::vertex-array-object ~vertex-array-object)
+         vbo# (::array-buffer ~vertex-array-object)
+         vio# (::index-buffer ~vertex-array-object)]
+     (GL30/glBindVertexArray vao#)
+     (when vbo#
+       (GL15/glBindBuffer GL15/GL_ARRAY_BUFFER vbo#))
+     (GL15/glBindBuffer GL15/GL_ELEMENT_ARRAY_BUFFER vio#)))
 
 
 (definline render-quads
