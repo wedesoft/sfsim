@@ -2,8 +2,6 @@
 
 uniform int height_tilesize;
 uniform int color_tilesize;
-in vec2 surfacecoord;
-in vec2 colorcoord;
 
 out VS_OUT
 {
