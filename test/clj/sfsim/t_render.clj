@@ -86,6 +86,27 @@ void main()
                           (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/render/quad.png" 0.0))
 
 
+(def vertex-compute
+"#version 450 core
+void main()
+{
+  vec2 corner = vec2(gl_VertexID & 1, (gl_VertexID >> 1) & 1);
+  gl_Position = vec4(corner - vec2(0.5), 0.5, 1.0);
+}")
+
+
+(fact "Use vertex array object with indices only"
+      (offscreen-render 160 120
+                        (let [indices  [0 1 3 2]
+                              program  (make-program :sfsim.render/vertex [vertex-compute] :sfsim.render/fragment [fragment-blue])
+                              vao      (make-vertex-array-object program indices)]
+                          (clear (vec3 0.0 0.0 0.0))
+                          (use-program program)
+                          (render-quads vao)
+                          (destroy-vertex-array-object vao)
+                          (destroy-program program))) => (is-image "test/clj/sfsim/fixtures/render/quad.png" 0.0))
+
+
 (fact "Group shaders in lists"
       (offscreen-render 160 120
                         (let [indices  [0 1 3 2]
