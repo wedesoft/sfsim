@@ -4,15 +4,12 @@
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
 ** TODO improve performance of planet
-*** DONE some preliminary optimisation
-**** DONE check number of tiles required when rendering planet
-**** DONE eliminate per-vertex data in planet shader
-**** DONE do not generate unused vertex data for planet shader any more
 *** TODO reduce tessellation amount
 **** TODO compute desired inner tessellation using camera distance to center of tile
 **** TODO compute deepest neighbour for edge
 ***** TODO if neighbour is deeper, use inner resolution for edge tessellation
 ***** TODO if neighbour is less deep, use neighbours inner resolution for edge tessellation (divided by appropriate power of two)
+***** TODO if neighbour is same depth, use smaller resolution for tessellation of edge
 *** TODO frustum culling
 *** TODO instanced rendering
 **** TODO update parts of 2d texture array using pbo ring buffer

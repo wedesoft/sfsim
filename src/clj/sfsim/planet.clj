@@ -7,7 +7,7 @@
 (ns sfsim.planet
   "Module with functionality to render a planet"
   (:require
-    [clojure.math :refer (sqrt cos)]
+    [clojure.math :refer (sqrt cos to-radians)]
     [comb.template :as template]
     [fastmath.matrix :refer (mulm eye inverse)]
     [fastmath.vector :refer (mag)]
@@ -221,7 +221,7 @@
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
   [{::keys [config]} tree width position]
   (let [tilesize  (::tilesize config)
-        increase? (partial increase-level? tilesize (::radius config) width 60.0 5 7 position)]; TODO: use params for values
+        increase? (partial increase-level? tilesize (::radius config) width (to-radians 60.0) 5 7 position)]; TODO: use params for values
     (update-level-of-detail tree (::radius config) increase? true)))
 
 
