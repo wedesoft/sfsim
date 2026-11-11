@@ -642,5 +642,16 @@
                 :sfsim.quadtree/quad2 :sfsim.quadtree/quad3])))
 
 
+(defn sufficient-tessellation
+  "Select a tessellation level based on maximum size of fragments"
+  ^long [^long tilesize ^double max-size ^double fragment-size]
+  (let [next-size (* 2.0 fragment-size)]
+    (if (>= max-size next-size)
+      (recur (bit-or (bit-shift-right tilesize 1) 1)
+             max-size
+             next-size)
+      (max 1 (dec tilesize)))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

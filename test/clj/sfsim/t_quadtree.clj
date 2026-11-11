@@ -566,3 +566,12 @@
        (leaf-count {face2 {}}) => 1
        (leaf-count {face0 {} face2 {}}) => 2
        (leaf-count {face0 {quad0 {} quad1 {} quad2 {}}}) => 3)
+
+
+(facts "Determine sufficient amount of inner tessellation"
+       (sufficient-tessellation 65  8.0  8.0) => 64
+       (sufficient-tessellation 65  8.0  4.0) => 32
+       (sufficient-tessellation 65  8.0  1.0) => 8
+       (sufficient-tessellation 65 64.0  2.0) => 2
+       (sufficient-tessellation 65 64.0  1.0) => 1
+       (sufficient-tessellation 65  8.0  6.0) => 64)
