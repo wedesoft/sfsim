@@ -24,13 +24,14 @@
 
 
 (defn quad-size
-  "Determine screen size of a quad of the world map"
+  "Determine screen size of triangle output of tesselated quad of the world map"
   {:malli/schema [:=> [:cat N0 N :double N :double :double] :double]}
   [level tilesize radius width distance angle]
-  (/ (* radius width) (* distance (bit-shift-left 1 ^long level) (dec tilesize) (tan (* 0.5 angle)))))
+  (/ (* ^double radius ^long width)
+     (* ^double distance (bit-shift-left 1 ^long level) (dec ^long tilesize) (tan (* 0.5 ^double angle)))))
 
 
-(defn quad-size-for-camera-position
+(defn- quad-size-for-camera-position
   "Determine screen size of a quad given the camera position"
   {:malli/schema [:=> [:cat N :double N :double fvec3 :keyword N0 N0 N0] :double]}
   [tilesize radius width angle position face level y x]
@@ -68,11 +69,11 @@
   {:malli/schema [:=> [:cat :keyword N0 N0 N0 :double] tile]}
   [face level y x radius]
   (let [tar (access-cube-tar (cube-tar "data/globe" face level x))]
-    {::face                face
-     ::level               level
-     ::y                   y
-     ::x                   x
-     ::center              (tile-center face level y x radius)
+    {::face                 face
+     ::level                level
+     ::y                    y
+     ::x                    x
+     ::center               (tile-center face level y x radius)
      :sfsim.planet/day     (slurp-image-tar     tar (cube-file-name y ".jpg"))
      :sfsim.planet/night   (slurp-image-tar     tar (cube-file-name y ".night.jpg"))
      :sfsim.planet/surface (slurp-floats-gz-tar tar (cube-file-name y ".surf.gz"))
