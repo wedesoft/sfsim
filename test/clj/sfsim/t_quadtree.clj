@@ -39,18 +39,18 @@
 
 
 (fact "Determine the size of a quad on the screen"
-      (quad-size 0 2 1000.0 1920 1000.0 (to-radians 90.0)) => (roughly 1920.0 1e-3)
-      (quad-size 0 3 1000.0 1920 1000.0 (to-radians 90.0)) => (roughly 960.0 1e-3)
-      (quad-size 1 2 1000.0 1920 1000.0 (to-radians 90.0)) => (roughly 960.0 1e-3)
-      (quad-size 0 2  500.0 1920 1000.0 (to-radians 90.0)) => (roughly 960.0 1e-3)
-      (quad-size 0 2  500.0 1920 1000.0 (* 2.0 (atan 0.5))) => (roughly 1920.0 1e-3))
+      (fragment-size 0 2 1000.0 1920 1000.0 (to-radians 90.0)) => (roughly 1920.0 1e-3)
+      (fragment-size 0 3 1000.0 1920 1000.0 (to-radians 90.0)) => (roughly 960.0 1e-3)
+      (fragment-size 1 2 1000.0 1920 1000.0 (to-radians 90.0)) => (roughly 960.0 1e-3)
+      (fragment-size 0 2  500.0 1920 1000.0 (to-radians 90.0)) => (roughly 960.0 1e-3)
+      (fragment-size 0 2  500.0 1920 1000.0 (* 2.0 (atan 0.5))) => (roughly 1920.0 1e-3))
 
 
 (facts "Decide whether to increase quadtree level or not"
        (increase-level? 33 6378000.0 1280 1.04 5 3 (vec3 200000 0 0) face5 2 0 1) => truthy
        (provided
          (cubemap/tile-center face5 2 0 1 6378000.0) => (vec3 50000 0 0)
-         (quadtree/quad-size 2 33 6378000.0 1280 150000.0 1.04) => 10.0))
+         (quadtree/fragment-size 2 33 6378000.0 1280 150000.0 1.04) => 10.0))
 
 
 (tabular "Load normals, scale factors and colors for a tile"

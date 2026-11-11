@@ -23,7 +23,7 @@
 (set! *warn-on-reflection* true)
 
 
-(defn quad-size
+(defn fragment-size
   "Determine screen size of triangle output of tesselated quad of the world map"
   {:malli/schema [:=> [:cat N0 N :double N :double :double] :double]}
   [level tilesize radius width distance angle]
@@ -31,13 +31,13 @@
      (* ^double distance (bit-shift-left 1 ^long level) (dec ^long tilesize) (tan (* 0.5 ^double angle)))))
 
 
-(defn- quad-size-for-camera-position
+(defn- fragment-size-for-camera-position
   "Determine screen size of a quad given the camera position"
   {:malli/schema [:=> [:cat N :double N :double fvec3 :keyword N0 N0 N0] :double]}
   [tilesize radius width angle position face level y x]
   (let [center   (tile-center face level y x radius)
         distance (mag (sub position center))]
-    (quad-size level tilesize radius width distance angle)))
+    (fragment-size level tilesize radius width distance angle)))
 
 
 (defn increase-level?
@@ -45,7 +45,7 @@
   {:malli/schema [:=> [:cat N :double N :double N N fvec3 :keyword N0 N0 N0] :boolean]}
   [tilesize radius width angle max-size max-level position face level y x]
   (and (< ^long level ^long max-level)
-       (> ^double (quad-size-for-camera-position tilesize radius width angle position face level y x) ^long max-size)))
+       (> ^double (fragment-size-for-camera-position tilesize radius width angle position face level y x) ^long max-size)))
 
 
 (def tile
