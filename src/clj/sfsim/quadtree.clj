@@ -33,19 +33,18 @@
 
 (defn- fragment-size-for-camera-position
   "Determine screen size of a quad given the camera position"
-  {:malli/schema [:=> [:cat N :double N :double fvec3 :keyword N0 N0 N0] :double]}
-  [tilesize radius width angle position face level y x]
-  (let [center   (tile-center face level y x radius)
-        distance (mag (sub position center))]
+  {:malli/schema [:=> [:cat N :double N :double fvec3 :keyword N0 fvec3] :double]}
+  [tilesize radius width angle position level center]
+  (let [distance (mag (sub position center))]
     (fragment-size level tilesize radius width distance angle)))
 
 
 (defn increase-level?
   "Decide whether next quad tree level is required"
-  {:malli/schema [:=> [:cat N :double N :double N N fvec3 :keyword N0 N0 N0] :boolean]}
-  [tilesize radius width angle max-size max-level position face level y x]
+  {:malli/schema [:=> [:cat N :double N :double N N fvec3 N0 fvec3] :boolean]}
+  [tilesize radius width angle max-size max-level position level center]
   (and (< ^long level ^long max-level)
-       (> ^double (fragment-size-for-camera-position tilesize radius width angle position face level y x) ^long max-size)))
+       (> ^double (fragment-size-for-camera-position tilesize radius width angle position level center) ^long max-size)))
 
 
 (def tile
@@ -132,7 +131,7 @@
   ([tree increase-level-fun? path]
    (cond
      (nil? tree) []
-     (and (is-flat? tree) (not (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree)))) (sub-paths path)
+     (and (is-flat? tree) (not (increase-level-fun? (::level tree) (::center tree)))) (sub-paths path)
      :else (mapcat #(tiles-to-drop (% tree) increase-level-fun? (conj path %)) [::quad0 ::quad1 ::quad2 ::quad3]))))
 
 
@@ -160,7 +159,7 @@
               :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5])))
   ([tree increase-level-fun? path]
    (if (nil? tree) []
-       (let [increase? (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree))]
+       (let [increase? (increase-level-fun? (::level tree) (::center tree))]
          (cond
            (and (is-leaf? tree) increase?) (sub-paths path)
            increase?                       (mapcat #(tiles-to-load (% tree) increase-level-fun? (conj path %))
