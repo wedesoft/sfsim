@@ -205,7 +205,13 @@
        (quadtree-map {face4 {:id 42}} (fn [node] (update node :id inc)))
        => {face4 {:id 43}}
        (quadtree-map {face2 {:id 10} face4 {:id 20}} (fn [node] (update node :id inc)))
-       => {face2 {:id 11} face4 {:id 21}})
+       => {face2 {:id 11} face4 {:id 21}}
+       (quadtree-map {face2 {:id 10 quad0 {:id 20}}} (fn [node] (update node :id inc)))
+       => {face2 {:id 11 quad0 {:id 21}}}
+       (quadtree-map {face2 {:id 10 quad1 {:id 20 quad2 {:id 30}}}} (fn [node] (update node :id inc)))
+       => {face2 {:id 11 quad1 {:id 21 quad2 {:id 31}}}}
+       (quadtree-map {face3 {:id 42}} (fn [node delta] (update node :id + delta)) 3)
+       => {face3 {:id 45}})
 
 
 (def keyword->int {face0 0 face1 1 face2 2 face3 3 face4 4 face5 5})

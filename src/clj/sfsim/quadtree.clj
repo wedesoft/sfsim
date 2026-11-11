@@ -219,15 +219,16 @@
 
 
 (defn quadtree-map
-  "Recursively apply function to quad tree"
-  [tree fun & arglist]
-  (cond-> tree
-          (:sfsim.cubemap/face0 tree) (update :sfsim.cubemap/face0 fun)
-          (:sfsim.cubemap/face1 tree) (update :sfsim.cubemap/face1 fun)
-          (:sfsim.cubemap/face2 tree) (update :sfsim.cubemap/face2 fun)
-          (:sfsim.cubemap/face3 tree) (update :sfsim.cubemap/face3 fun)
-          (:sfsim.cubemap/face4 tree) (update :sfsim.cubemap/face4 fun)
-          (:sfsim.cubemap/face5 tree) (update :sfsim.cubemap/face5 fun)))
+  "Apply function to each node of a cube with quad trees as faces"
+  [tree fun & args]
+  (reduce (fn [tree face]
+              (if (get tree face)
+                (update tree face (fn [node] (apply fun (apply quadtree-map node fun args) args)))
+                tree))
+          tree
+          [:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
+           :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5
+           ::quad0 ::quad1 ::quad2 ::quad3]))
 
 
 (defn neighbour-path
