@@ -218,6 +218,18 @@
             (apply update-in tree path fun args)) tree (apply map list paths arglists)))
 
 
+(defn quadtree-map
+  "Recursively apply function to quad tree"
+  [tree fun & arglist]
+  (cond-> tree
+          (:sfsim.cubemap/face0 tree) (update :sfsim.cubemap/face0 fun)
+          (:sfsim.cubemap/face1 tree) (update :sfsim.cubemap/face1 fun)
+          (:sfsim.cubemap/face2 tree) (update :sfsim.cubemap/face2 fun)
+          (:sfsim.cubemap/face3 tree) (update :sfsim.cubemap/face3 fun)
+          (:sfsim.cubemap/face4 tree) (update :sfsim.cubemap/face4 fun)
+          (:sfsim.cubemap/face5 tree) (update :sfsim.cubemap/face5 fun)))
+
+
 (defn neighbour-path
   "Determine path of neighbouring tile at same level"
   {:malli/schema [:=> [:cat [:sequential :keyword] :int :int [:? :boolean]]

@@ -195,6 +195,19 @@
        (quadtree-update {face3 {:id 5}} [[face3]] #(update %1 :id (partial + %2)) [2]) => {face3 {:id 7}})
 
 
+(facts "Apply function to each node of quad tree"
+       (quadtree-map {} identity)
+       => {}
+       (quadtree-map {face3 {}} identity)
+       => {face3 {}}
+       (quadtree-map {face3 {:id 42}} (fn [node] (update node :id inc)))
+       => {face3 {:id 43}}
+       (quadtree-map {face4 {:id 42}} (fn [node] (update node :id inc)))
+       => {face4 {:id 43}}
+       (quadtree-map {face2 {:id 10} face4 {:id 20}} (fn [node] (update node :id inc)))
+       => {face2 {:id 11} face4 {:id 21}})
+
+
 (def keyword->int {face0 0 face1 1 face2 2 face3 3 face4 4 face5 5})
 (def int->keyword {0 face0 1 face1 2 face2 3 face3 4 face4 5 face5})
 
