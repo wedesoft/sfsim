@@ -18,7 +18,6 @@
     [sfsim.image :refer (get-vector3 get-vector4 get-float-3d get-float)]
     [sfsim.matrix :refer (transformation-matrix projection-matrix shadow-matrix-cascade)]
     [sfsim.quaternion :as q]
-    [sfsim.planet :refer (make-cube-map-tile-vertices)]
     [sfsim.model :refer (read-gltf make-model-vars
                          load-scene-into-opengl destroy-scene material-type make-joined-geometry-renderer render-joined-geometry2
                          destroy-joined-geometry-renderer)]
@@ -1481,9 +1480,7 @@ void main()
                    moved-scene         (assoc-in opengl-scene [:sfsim.model/root :sfsim.model/transform]
                                                  (transformation-matrix (eye 3) (vec3 0 0 (or ?model 0))))
                    indices             [0 2 3 1]
-                   vertices            (make-cube-map-tile-vertices 3 3)
-                   vao                 (make-vertex-array-object planet-program indices vertices
-                                                                 ["surfacecoord" 2 "colorcoord" 2])
+                   vao                 (make-vertex-array-object planet-program indices)
                    data                [-1  1 0, 0  1 0, 1  1 0,
                                         -1  0 0, 0  0 0, 1  0 0,
                                         -1 -1 0, 0 -1 0, 1 -1 0]

@@ -7,13 +7,13 @@
 (ns sfsim.planet
   "Module with functionality to render a planet"
   (:require
-    [clojure.math :refer (sqrt cos)]
+    [clojure.math :refer (sqrt cos to-radians)]
     [comb.template :as template]
     [fastmath.matrix :refer (mulm eye inverse)]
     [fastmath.vector :refer (mag)]
     [malli.core :as m]
     [sfsim.config :as config]
-    [sfsim.cubemap :refer (cube-map-corners project-onto-cube determine-face cube-j cube-i tile-center)]
+    [sfsim.cubemap :refer (project-onto-cube determine-face cube-j cube-i tile-center)]
     [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box shadow-patch)]
     [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
                             quadtree-extract tile-coordinates create-local-mesh)]
@@ -31,20 +31,6 @@
 
 (set! *unchecked-math* :warn-on-boxed)
 (set! *warn-on-reflection* true)
-
-
-(defn make-cube-map-tile-vertices
-  "Create vertex array object for drawing cube map tiles"
-  {:malli/schema [:=> [:cat N N] [:vector :double]]}
-  [height-tilesize color-tilesize]
-  (let [h0        (/ 0.5 ^long height-tilesize)
-        h1        (- 1.0 h0)
-        c0        (/ 0.5 ^long color-tilesize)
-        c1        (- 1.0 c0)]
-    [h0 h0 c0 c0
-     h1 h0 c1 c0
-     h0 h1 c0 c1
-     h1 h1 c1 c1]))
 
 
 (def vertex-planet
@@ -192,8 +178,7 @@
   (let [tilesize       (::tilesize config)
         color-tilesize (::color-tilesize config)
         indices        [0 2 3 1]
-        vertices       (make-cube-map-tile-vertices tilesize color-tilesize)
-        vao            (make-vertex-array-object program indices vertices ["surfacecoord" 2 "colorcoord" 2])
+        vao            (make-vertex-array-object program indices)
         day-night-tex  (make-rgb-texture-array :sfsim.texture/linear :sfsim.texture/clamp [(::day tile) (::night tile)])
         surf-tex       (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                #:sfsim.image{:width tilesize :height tilesize :data (::surface tile)
@@ -236,7 +221,7 @@
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
   [{::keys [config]} tree width position]
   (let [tilesize  (::tilesize config)
-        increase? (partial increase-level? tilesize (::radius config) width 60.0 5 7 position)]; TODO: use params for values
+        increase? (partial increase-level? tilesize (::radius config) width (to-radians 60.0) 5 7 position)]; TODO: use params for values
     (update-level-of-detail tree (::radius config) increase? true)))
 
 
