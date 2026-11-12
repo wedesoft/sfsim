@@ -665,5 +665,13 @@
       (max 1 (dec tilesize)))))
 
 
+(defn update-inner-tessellation
+  "Select inner tessellation for tile"
+  [tilesize max-size radius width angle position {::keys [level center] :as tile}]
+  (let [distance (mag (sub position center))
+        fragment-size (fragment-size level tilesize radius width distance angle)]
+    (assoc tile ::inner-tessellation (sufficient-tessellation tilesize max-size fragment-size))))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
