@@ -322,6 +322,18 @@
                         ::quad0 ::quad1 ::quad2 ::quad3})))
 
 
+(defn get-in-deepest-existing
+  "Get deepest existing element"
+  [tree path]
+  (reduce
+    (fn [node k]
+        (if-let [child (get node k)]
+                child
+                (reduced node)))
+    tree
+    path))
+
+
 (defn- check-neighbours-for-tile
   "Update neighbourhood information for a single tile"
   {:malli/schema [:=> [:cat [:maybe :map] [:sequential :keyword]] [:maybe :map]]}

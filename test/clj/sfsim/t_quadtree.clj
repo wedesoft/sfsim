@@ -322,6 +322,14 @@
        (leaf-paths {face5 {:vao 42 quad1 {}}}) => [[face5 quad1]])
 
 
+(facts "Get deepest available node for specified path"
+       (get-in-deepest-existing {:a {:b 42}} []) => {:a {:b 42}}
+       (get-in-deepest-existing {:a {:b 42}} [:a]) => {:b 42}
+       (get-in-deepest-existing {:a {:b 42}} [:a :b]) => 42
+       (get-in-deepest-existing {:a {:b 42}} [:a :b :c]) => 42
+       (get-in-deepest-existing {:a {:b 42}} [:c]) => {:a {:b 42}})
+
+
 (facts "Update quad tree with neighbourhood information"
        (get-in (check-neighbours {face5 {} face1 {}})         [face5 :sfsim.quadtree/up]) => true
        (get-in (check-neighbours {face5 {}})                  [face5 :sfsim.quadtree/up]) => false
