@@ -697,11 +697,11 @@
       (not (is-leaf? neighbour))
       node-tessellation
       ; Neighbour is less deep, so use neighbours tessellation level downscaled appropriately
-      (< (::level neighbour) (::level node))
-      (max 1 (bit-shift-right (::inner-tessellation neighbour) (- (::level node) (::level neighbour))))
+      (< ^long (::level neighbour) ^long (::level node))
+      (max 1 (bit-shift-right ^long (::inner-tessellation neighbour) (- ^long (::level node) ^long (::level neighbour))))
       ; Neighbour has same depth, so use whichever tessellation level is smaller
       :else
-      (min node-tessellation (::inner-tessellation neighbour)))))
+      (min ^long node-tessellation ^long (::inner-tessellation neighbour)))))
 
 
 (set! *warn-on-reflection* false)
