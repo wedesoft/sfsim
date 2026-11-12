@@ -322,29 +322,6 @@
                         ::quad0 ::quad1 ::quad2 ::quad3})))
 
 
-(defn get-in-deepest-existing
-  "Get deepest existing element"
-  [tree path]
-  (reduce
-    (fn [node k]
-        (if-let [child (get node k)]
-                child
-                (reduced node)))
-    tree
-    path))
-
-
-(defn outer-tessellation
-  "Determine outer tessellation in given direction"
-  [tree path dy dx]
-  (let [node (get-in tree path)
-        neighbour-path (neighbour-path path dy dx)
-        neighbour      (get-in-deepest-existing tree neighbour-path)]
-    (if (is-leaf? neighbour)
-      (min (::inner-tessellation node) (::inner-tessellation neighbour))
-      (::inner-tessellation node))))
-
-
 (defn- check-neighbours-for-tile
   "Update neighbourhood information for a single tile"
   {:malli/schema [:=> [:cat [:maybe :map] [:sequential :keyword]] [:maybe :map]]}
@@ -694,6 +671,37 @@
   (let [distance (mag (sub position center))
         fragment-size (fragment-size level tilesize radius width distance angle)]
     (assoc tile ::inner-tessellation (sufficient-tessellation tilesize max-size fragment-size))))
+
+
+(defn get-in-deepest-existing
+  "Get deepest existing element"
+  [tree path]
+  (reduce
+    (fn [node k]
+        (if-let [child (get node k)]
+                child
+                (reduced node)))
+    tree
+    path))
+
+
+(defn outer-tessellation
+  "Determine outer tessellation in given direction"
+  [tree path dy dx]
+  (let [node              (get-in tree path)
+        adjacent-path     (neighbour-path path dy dx)
+        neighbour         (get-in-deepest-existing tree adjacent-path)
+        node-tessellation (::inner-tessellation node)]
+    (cond
+      ; Neighbour is deeper, so use inner tessellation level
+      (not (is-leaf? neighbour))
+      node-tessellation
+      ; Neighbour is less deep, so use neighbours tessellation level downscaled appropriately
+      (< (::level neighbour) (::level node))
+      (max 1 (bit-shift-right (::inner-tessellation neighbour) (- (::level node) (::level neighbour))))
+      ; Neighbour has same depth, so use whichever tessellation level is smaller
+      :else
+      (min node-tessellation (::inner-tessellation neighbour)))))
 
 
 (set! *warn-on-reflection* false)

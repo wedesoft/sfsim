@@ -322,36 +322,6 @@
        (leaf-paths {face5 {:vao 42 quad1 {}}}) => [[face5 quad1]])
 
 
-(facts "Get deepest available node for specified path"
-       (get-in-deepest-existing {:a {:b 42}} []) => {:a {:b 42}}
-       (get-in-deepest-existing {:a {:b 42}} [:a]) => {:b 42}
-       (get-in-deepest-existing {:a {:b 42}} [:a :b]) => 42
-       (get-in-deepest-existing {:a {:b 42}} [:a :b :c]) => 42
-       (get-in-deepest-existing {:a {:b 42}} [:c]) => {:a {:b 42}})
-
-
-(facts "Determine outer tessellation level"
-       (outer-tessellation
-         {face5 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 32}
-          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 64}}
-         [face5]
-         0 1) => 32
-       (provided
-         (quadtree/neighbour-path [face5] 0 1) => [face2])
-       (outer-tessellation
-         {face5 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 32}
-          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 16}}
-         [face5]
-         0 1) => 16
-       (provided
-         (quadtree/neighbour-path [face5] 0 1) => [face2])
-       (outer-tessellation
-         {face5 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 32}
-          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 16 quad0 {}}}
-         [face5]
-         0 1) => 32)
-
-
 (facts "Update quad tree with neighbourhood information"
        (get-in (check-neighbours {face5 {} face1 {}})         [face5 :sfsim.quadtree/up]) => true
        (get-in (check-neighbours {face5 {}})                  [face5 :sfsim.quadtree/up]) => false
@@ -640,3 +610,44 @@
        => {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0) :sfsim.quadtree/inner-tessellation 32}
       (provided
         (quadtree/fragment-size 7 65 6378000.0 1920 400000.0 1.0) => 8.0))
+
+
+(facts "Get deepest available node for specified path"
+       (get-in-deepest-existing {:a {:b 42}} []) => {:a {:b 42}}
+       (get-in-deepest-existing {:a {:b 42}} [:a]) => {:b 42}
+       (get-in-deepest-existing {:a {:b 42}} [:a :b]) => 42
+       (get-in-deepest-existing {:a {:b 42}} [:a :b :c]) => 42
+       (get-in-deepest-existing {:a {:b 42}} [:c]) => {:a {:b 42}})
+
+
+(facts "Determine outer tessellation level"
+       (outer-tessellation
+         {face5 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 32}
+          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 64}}
+         [face5]
+         0 1) => 32
+       (outer-tessellation
+         {face5 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 32}
+          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 16}}
+         [face5]
+         0 1) => 16
+       (outer-tessellation
+         {face5 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 32}
+          face2 {:sfsim.quadtree/level 0 quad0 {}}}
+         [face5]
+         0 1) => 32
+       (outer-tessellation
+         {face5 {quad1 {:sfsim.quadtree/level 1}}
+          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 16}}
+         [face5 quad1]
+         0 1) => 8
+       (outer-tessellation
+         {face5 {quad1 {quad3 {:sfsim.quadtree/level 2}}}
+          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 16}}
+         [face5 quad1 quad3]
+         0 1) => 4
+       (outer-tessellation
+         {face5 {quad1 {quad3 {:sfsim.quadtree/level 2}}}
+          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 2}}
+         [face5 quad1 quad3]
+         0 1) => 1)
