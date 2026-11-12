@@ -710,5 +710,17 @@
       (min ^long node-tessellation ^long (::inner-tessellation neighbour)))))
 
 
+(defn update-outer-tessellation
+  "Update tile with outer tessellation information"
+  [tree path]
+  (update-in
+    tree path
+    assoc
+    :sfsim.quadtree/up-tessellation    (outer-tessellation tree path -1  0)
+    :sfsim.quadtree/left-tessellation  (outer-tessellation tree path  0 -1)
+    :sfsim.quadtree/down-tessellation  (outer-tessellation tree path  1  0)
+    :sfsim.quadtree/right-tessellation (outer-tessellation tree path  0  1)))
+
+
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)

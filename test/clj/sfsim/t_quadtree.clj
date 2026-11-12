@@ -659,3 +659,21 @@
           face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 2}}
          [face5 quad1 quad3]
          0 1) => 1)
+
+
+(tabular "Update outer tessellation level"
+         (fact
+           (get-in
+             (update-outer-tessellation
+               {face5 {quad1 {quad2 {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation 64}
+                              quad0 {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation  4}
+                              quad3 {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation 32}}
+                       quad0 {quad3 {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation  8}}
+                       quad3 {quad0 {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation 16}}}}
+               [face5 quad1 quad2])
+             [face5 quad1 quad2 ?key]) => ?result)
+         ?key                               ?result
+         :sfsim.quadtree/up-tessellation     4
+         :sfsim.quadtree/left-tessellation   8
+         :sfsim.quadtree/down-tessellation  16
+         :sfsim.quadtree/right-tessellation 32)
