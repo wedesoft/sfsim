@@ -666,11 +666,17 @@
 
 
 (defn update-inner-tessellation
-  "Select inner tessellation for tile"
-  [tilesize max-size radius width angle position {::keys [level center] :as tile}]
+  "Select inner tessellation for a tile"
+  [{::keys [level center] :as tile} tilesize max-size radius width angle position]
   (let [distance (mag (sub position center))
         fragment-size (fragment-size level tilesize radius width distance angle)]
     (assoc tile ::inner-tessellation (sufficient-tessellation tilesize max-size fragment-size))))
+
+
+(defn update-inner-tessellation-levels
+  "Select inner tessellation level for each tile of the tree"
+  [tree tilesize max-size radius width angle position]
+  (quadtree-map tree update-inner-tessellation tilesize max-size radius width angle position))
 
 
 (defn get-in-deepest-existing

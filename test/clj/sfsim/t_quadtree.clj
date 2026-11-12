@@ -604,12 +604,20 @@
        (sufficient-tessellation 65  8.0  6.0) => 64)
 
 
-(facts "Update tile tree with inner tessellation information"
-       (update-inner-tessellation 65 16.0 6378000.0 1920 1.0 (vec3 -200000 0 0)
-                                  {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0)})
+(facts "Update node with inner tessellation information"
+       (update-inner-tessellation {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0)}
+                                  65 16.0 6378000.0 1920 1.0 (vec3 -200000 0 0))
        => {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0) :sfsim.quadtree/inner-tessellation 32}
       (provided
         (quadtree/fragment-size 7 65 6378000.0 1920 400000.0 1.0) => 8.0))
+
+
+(facts "Update tile tree with inner tessellation information"
+       (let [node {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0)}]
+         (update-inner-tessellation-levels {quad0 node} 65 16.0 6378000.0 1920 1.0 (vec3 -200000 0 0))
+         => {quad0 {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0) :sfsim.quadtree/inner-tessellation 32}}
+         (provided
+           (quadtree/fragment-size 7 65 6378000.0 1920 400000.0 1.0) => 8.0)))
 
 
 (facts "Get deepest available node for specified path"
