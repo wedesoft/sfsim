@@ -1,13 +1,17 @@
+	* Catch infinity value when determining time lapse limit due to rotation
+	* Make diagnostic monitoring optional
+	* Replace vertex data for planetary tiles with computation
+
 sfsim (0.38-2)
 
-  * Replace sfsim-noapm.bat with sfsim-noapm.exe because BAT file opens a DOS
+	* Replace sfsim-noapm.bat with sfsim-noapm.exe because BAT file opens a DOS
 	  command window
 
 -- Jan Wedekind <jan@wedesoft.de>  Sun,  8 Nov 2026 22:44:50 +0000
 
 sfsim (0.38-1)
 
-  * Add GLFW error logging
+	* Add GLFW error logging
 	* Add OpenGL macros which can be used to measure GPU time
 	* Handle exceptions when user enters invalid integers or doubles
 	* Add wrapper scripts for GNU/Linux and Windows to run without application
@@ -17,7 +21,7 @@ sfsim (0.38-1)
 
 sfsim (0.37-1)
 
-  * Pitch camera so MFDs do not cover the spacecraft
+	* Pitch camera so MFDs do not cover the spacecraft
 	* Open nil audio device instead of "" audio device
 	* Add wishlist page button
 	* Add display showing aileron, elevator, and rudder control input
@@ -29,13 +33,13 @@ sfsim (0.37-1)
 
 sfsim (0.36-1)
 
-  * Implemented auto-rudder
+	* Implemented auto-rudder
 
 -- Jan Wedekind <jan@wedesoft.de>  Tue,  3 Nov 2026 00:32:00 +0000
 
 sfsim (0.35-1)
 
-  * Do not automatically increase time lapse
+	* Do not automatically increase time lapse
 	* Limit time lapse when RCS thruster is active
 	* Limit time lapse if angular speed is high
 	* Flash message with reason why time lapse is limited
@@ -44,25 +48,25 @@ sfsim (0.35-1)
 
 sfsim (0.34-3)
 
-  * Clear normal buffer because it is required by some graphics drivers
+	* Clear normal buffer because it is required by some graphics drivers
 
 -- Jan Wedekind <jan@wedesoft.de>  Fri, 30 Oct 2026 14:41:00 +0000
 
 sfsim (0.34-2)
 
-  * Bugfix for uniforms initialised for wrong shader
+	* Bugfix for uniforms initialised for wrong shader
 
 -- Jan Wedekind <jan@wedesoft.de>  Thu, 29 Oct 2026 23:36:03 +0000
 
 sfsim (0.34-1)
 
-  * Enable shockwave graphics
+	* Enable shockwave graphics
 
 -- Jan Wedekind <jan@wedesoft.de>  Thu, 29 Oct 2026 22:10:03 +0000
 
 sfsim (0.33-1)
 
-  * Switch to stable LTS Java version 25 instead of 27
+	* Switch to stable LTS Java version 25 instead of 27
 	* Bugfix for infinite recursion when deciding cube face of edge point
 	* Bugfix for negative opacity step size causing infinite loop when computing
 	  cloud shadows
@@ -77,7 +81,7 @@ sfsim (0.32-2)
 
 sfsim (0.31-1)
 
-  * Fixed undefined world to camera matrix causing cloud shadow issues
+	* Fixed undefined world to camera matrix causing cloud shadow issues
 	* Update minor Java version
 
 -- Jan Wedekind <jan@wedesoft.de>  Mon, 25 Oct 2026 23:00:00 +0000
@@ -85,20 +89,20 @@ sfsim (0.31-1)
 sfsim (0.30-1)
 
 	* Implemented deferred rendering
-  * Added runway
+	* Added runway
 
 -- Jan Wedekind <jan@wedesoft.de>  Thu, 27 Aug 2026 00:06:00 +0100
 
 sfsim (0.29-1)
 
-  * Use metallic and roughness value from Blender
+	* Use metallic and roughness value from Blender
 	* Update model materials
 
 -- Jan Wedekind <jan@wedesoft.de>  Fri,  7 Jun 2026 23:19:31 +0100
 
 sfsim (0.28-1)
 
-  * Minor fix for time lapse limit
+	* Minor fix for time lapse limit
 	* Github CI builds for Linux and Windows
 	* Increased coverage of schemas
 
