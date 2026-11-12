@@ -222,13 +222,29 @@
   "Apply function to each node of a cube with quad trees as faces"
   [tree fun & args]
   (reduce (fn [tree face]
-              (if (get tree face)
-                (update tree face (fn [node] (apply fun (apply quadtree-map node fun args) args)))
-                tree))
+              (if-let [node (get tree face)]
+                      (assoc tree face (apply fun (apply quadtree-map node fun args) args))
+                      tree))
           tree
           [:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
            :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5
            ::quad0 ::quad1 ::quad2 ::quad3]))
+
+
+(defn quadtree-map-indexed
+  "Apply function to each node of a cube with quad trees as faces supplying path as argument"
+  ([tree fun]
+   (quadtree-map-indexed tree fun []))
+  ([tree fun path]
+   (reduce (fn [tree face]
+               (if-let [node (get tree face)]
+                       (let [node-path (conj path face)]
+                         (assoc tree face (fun (quadtree-map-indexed node fun node-path) node-path)))
+                       tree))
+           tree
+           [:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
+            :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5
+            ::quad0 ::quad1 ::quad2 ::quad3])))
 
 
 (defn neighbour-path
@@ -712,14 +728,19 @@
 
 (defn update-outer-tessellation
   "Update tile with outer tessellation information"
-  [tree path]
-  (update-in
-    tree path
-    assoc
+  [tree node path]
+  (assoc
+    node
     :sfsim.quadtree/up-tessellation    (outer-tessellation tree path -1  0)
     :sfsim.quadtree/left-tessellation  (outer-tessellation tree path  0 -1)
     :sfsim.quadtree/down-tessellation  (outer-tessellation tree path  1  0)
     :sfsim.quadtree/right-tessellation (outer-tessellation tree path  0  1)))
+
+
+(defn update-outer-tessellation-levels
+  "Update each tile in the tree with outer tessellation information"
+  [tree]
+  (quadtree-map-indexed tree (partial update-outer-tessellation tree)))
 
 
 (set! *warn-on-reflection* false)
