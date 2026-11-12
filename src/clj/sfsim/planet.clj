@@ -221,10 +221,10 @@
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
   [{::keys [config]} tree width position]
   (let [tilesize  (::tilesize config)
-        increase? (partial increase-level? tilesize (::radius config) width (to-radians 60.0) 10.0 7 position)]; TODO: use config
+        increase? (partial increase-level? tilesize (::radius config) width (to-radians 60.0) 10 7 position)]; TODO: use config
     (-> tree
         (update-level-of-detail (::radius config) increase? true)
-        (update-inner-tessellation-levels tilesize 20.0 (::radius config) width (to-radians 60.0) position)))); TODO: use config
+        (update-inner-tessellation-levels tilesize 20 (::radius config) width (to-radians 60.0) position)))); TODO: use config
 
 
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))

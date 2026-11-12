@@ -596,12 +596,12 @@
 
 
 (facts "Determine sufficient amount of inner tessellation"
-       (sufficient-tessellation 65  8.0  8.0) => 64
-       (sufficient-tessellation 65  8.0  4.0) => 32
-       (sufficient-tessellation 65  8.0  1.0) => 8
-       (sufficient-tessellation 65 64.0  2.0) => 2
-       (sufficient-tessellation 65 64.0  1.0) => 1
-       (sufficient-tessellation 65  8.0  6.0) => 64)
+       (sufficient-tessellation 65  8 8.0) => 64
+       (sufficient-tessellation 65  8 4.0) => 32
+       (sufficient-tessellation 65  8 1.0) => 8
+       (sufficient-tessellation 65 64 2.0) => 2
+       (sufficient-tessellation 65 64 1.0) => 1
+       (sufficient-tessellation 65  8 6.0) => 64)
 
 
 (facts "Update node with inner tessellation information"

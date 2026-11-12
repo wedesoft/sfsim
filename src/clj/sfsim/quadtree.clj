@@ -656,7 +656,7 @@
 
 (defn sufficient-tessellation
   "Select a tessellation level based on maximum size of fragments"
-  ^long [^long tilesize ^double max-size ^double fragment-size]
+  ^long [^long tilesize ^long max-size ^double fragment-size]
   (let [next-size (* 2.0 fragment-size)]
     (if (>= max-size next-size)
       (recur (bit-or (bit-shift-right tilesize 1) 1)
