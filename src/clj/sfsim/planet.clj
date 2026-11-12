@@ -16,7 +16,7 @@
     [sfsim.cubemap :refer (project-onto-cube determine-face cube-j cube-i tile-center)]
     [sfsim.matrix :refer (transformation-matrix fmat4 fvec3 shadow-data shadow-box shadow-patch)]
     [sfsim.quadtree :refer (is-leaf? increase-level? quadtree-update update-level-of-detail tile-info tiles-path-list
-                            quadtree-extract tile-coordinates create-local-mesh)]
+                            quadtree-extract tile-coordinates create-local-mesh update-inner-tessellation-levels)]
     [sfsim.quaternion :refer (quaternion ->Quaternion)]
     [sfsim.jolt :as jolt]
     [sfsim.render :refer (uniform-int uniform-vector3 uniform-matrix4 render-patches make-program use-program
@@ -221,8 +221,10 @@
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
   [{::keys [config]} tree width position]
   (let [tilesize  (::tilesize config)
-        increase? (partial increase-level? tilesize (::radius config) width (to-radians 60.0) 5 7 position)]; TODO: use params for values
-    (update-level-of-detail tree (::radius config) increase? true)))
+        increase? (partial increase-level? tilesize (::radius config) width (to-radians 60.0) 10.0 7 position)]; TODO: use config
+    (-> tree
+        (update-level-of-detail (::radius config) increase? true)
+        (update-inner-tessellation-levels tilesize 20.0 (::radius config) width (to-radians 60.0) position)))); TODO: use config
 
 
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))
