@@ -334,6 +334,17 @@
     path))
 
 
+(defn outer-tessellation
+  "Determine outer tessellation in given direction"
+  [tree path dy dx]
+  (let [node (get-in tree path)
+        neighbour-path (neighbour-path path dy dx)
+        neighbour      (get-in-deepest-existing tree neighbour-path)]
+    (if (is-leaf? neighbour)
+      (min (::inner-tessellation node) (::inner-tessellation neighbour))
+      (::inner-tessellation node))))
+
+
 (defn- check-neighbours-for-tile
   "Update neighbourhood information for a single tile"
   {:malli/schema [:=> [:cat [:maybe :map] [:sequential :keyword]] [:maybe :map]]}
