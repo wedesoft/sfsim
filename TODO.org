@@ -6,7 +6,7 @@
 ** TODO improve performance of planet
 *** TODO reduce tessellation amount
 **** TODO compute desired inner tessellation using camera distance to center of tile
-**** TODO compute deepest neighbour for edge
+**** TODO compute deepest neighbour for edge: checking-depth/path, direction, inner tessellation -> edge tessellation
 ***** TODO if neighbour is deeper, use inner resolution for edge tessellation
 ***** TODO if neighbour is less deep, use neighbours inner resolution for edge tessellation (divided by appropriate power of two)
 ***** TODO if neighbour is same depth, use smaller resolution for tessellation of edge
