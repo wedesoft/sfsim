@@ -1,6 +1,10 @@
+sfsim (0.39-1)
+
 	* Catch infinity value when determining time lapse limit due to rotation
 	* Make diagnostic monitoring optional
 	* Replace vertex data for planetary tiles with computation
+
+-- Jan Wedekind <jan@wedesoft.de>  Thu, 12 Nov 2026 01:03:26 +0000
 
 sfsim (0.38-2)
 
