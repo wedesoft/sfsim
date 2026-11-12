@@ -659,11 +659,12 @@
 
 
 (facts "Limit time lapse depending on angular velocity"
-       (time-lapse-limit-rotation (vec3 0 0 (to-radians 720.0))) => 1
-       (time-lapse-limit-rotation (vec3 0 0 (to-radians 360.0))) => 1
-       (time-lapse-limit-rotation (vec3 0 0 (to-radians 180.0))) => 2
-       (time-lapse-limit-rotation (vec3 0 0 (to-radians  90.0))) => 4
-       (time-lapse-limit-rotation (vec3 0 0 (to-radians 135.0))) => 2)
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians 720.0))) =>  1
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians 360.0))) =>  1
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians 180.0))) =>  2
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians  90.0))) =>  4
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians 135.0))) =>  2
+       (time-lapse-limit-rotation (vec3 0 0 (to-radians   0.0))) => 64)
 
 
 (def ctrl {:sfsim.input/throttle 0.0 :sfsim.input/rcs-roll 0.0 :sfsim.input/rcs-pitch 0.0 :sfsim.input/rcs-yaw 0.0})

@@ -4,16 +4,21 @@
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
 ** TODO improve performance of planet
-*** DONE check number of tiles required when rendering planet
-*** DONE eliminate per-vertex data in planet shader
-*** DONE do not generate unused vertex data for planet shader any more
-*** TODO update parts of 2d texture array using pbo ring buffer
-*** TODO update layer indices with dynamic draw vbo
-*** TODO instanced rendering of two quads (GL33/glVertexAttribDivisor 3 1) [[https://share.gemini.google/q1Ee7FywCJm9]]
-*** TODO check minimum for GL_MAX_ARRAY_TEXTURE_LAYERS (2048?)
-*** TODO instanced rendering of different textures with different quads using layers of a sampler2DArray (flat in int layer?)
+*** TODO reduce tessellation amount
+**** TODO compute desired inner tessellation using camera distance to center of tile
+**** TODO compute deepest neighbour for edge: checking-depth/path, direction, inner tessellation -> edge tessellation
+***** TODO if neighbour is deeper, use inner resolution for edge tessellation
+***** TODO if neighbour is less deep, use neighbours inner resolution for edge tessellation (divided by appropriate power of two)
+***** TODO if neighbour is same depth, use smaller resolution for tessellation of edge
+*** TODO frustum culling
+*** TODO instanced rendering
+**** TODO update parts of 2d texture array using pbo ring buffer
+**** TODO update layer indices with dynamic draw vbo
+**** TODO instanced rendering of two quads (GL33/glVertexAttribDivisor 3 1) [[https://share.gemini.google/q1Ee7FywCJm9]]
+**** TODO check minimum for GL_MAX_ARRAY_TEXTURE_LAYERS (2048?)
+**** TODO instanced rendering of different textures with different quads using layers of a sampler2DArray (flat in int layer?)
          (GL31/glDrawElementsInstanced GL11/GL_TRIANGLES index-count GL11/GL_UNSIGNED_INT 0 instance-count)
-*** TODO asynchronous texture update using a ring buffer of PBOs (pixel buffer objects)
+**** TODO asynchronous texture update using a ring buffer of PBOs (pixel buffer objects)
 ** TODO speed indicator, height, vertical spee
 ** TODO auto-centering keyboard controls and pitch trim
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)

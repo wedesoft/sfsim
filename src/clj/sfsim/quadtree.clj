@@ -23,32 +23,28 @@
 (set! *warn-on-reflection* true)
 
 
-(defn quad-size
-  "Determine screen size of a quad of the world map"
+(defn fragment-size
+  "Determine screen size of triangle output of tesselated quad of the world map"
   {:malli/schema [:=> [:cat N0 N :double N :double :double] :double]}
-  [level tilesize radius1 width distance angle]
-  (let [cnt         (bit-shift-left 1 ^long level)
-        real-size   (/ ^double (* 2.0 ^double radius1) ^long cnt ^long (dec ^long tilesize))
-        f           (/ ^long width (* 2.0 ^double (-> ^double angle (* 0.5) to-radians tan)))
-        screen-size (* ^double (/ ^double real-size ^double (max 1.0 ^double distance)) f)]
-    screen-size))
+  [level tilesize radius width distance angle]
+  (/ (* ^double radius ^long width)
+     (* ^double distance (bit-shift-left 1 ^long level) (dec ^long tilesize) (tan (* 0.5 ^double angle)))))
 
 
-(defn- quad-size-for-camera-position
+(defn- fragment-size-for-camera-position
   "Determine screen size of a quad given the camera position"
-  {:malli/schema [:=> [:cat N :double N :double fvec3 :keyword N0 N0 N0] :double]}
-  [tilesize radius width angle position face level y x]
-  (let [center   (tile-center face level y x radius)
-        distance (mag (sub position center))]
-    (quad-size level tilesize radius width distance angle)))
+  {:malli/schema [:=> [:cat N :double N :double fvec3 :keyword N0 fvec3] :double]}
+  [tilesize radius width angle position level center]
+  (let [distance (mag (sub position center))]
+    (fragment-size level tilesize radius width distance angle)))
 
 
 (defn increase-level?
   "Decide whether next quad tree level is required"
-  {:malli/schema [:=> [:cat N :double N :double N N fvec3 :keyword N0 N0 N0] :boolean]}
-  [tilesize radius width angle max-size max-level position face level y x]
+  {:malli/schema [:=> [:cat N :double N :double N N fvec3 N0 fvec3] :boolean]}
+  [tilesize radius width angle max-size max-level position level center]
   (and (< ^long level ^long max-level)
-       (> ^double (quad-size-for-camera-position tilesize radius width angle position face level y x) ^long max-size)))
+       (> ^double (fragment-size-for-camera-position tilesize radius width angle position level center) ^long max-size)))
 
 
 (def tile
@@ -135,7 +131,7 @@
   ([tree increase-level-fun? path]
    (cond
      (nil? tree) []
-     (and (is-flat? tree) (not (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree)))) (sub-paths path)
+     (and (is-flat? tree) (not (increase-level-fun? (::level tree) (::center tree)))) (sub-paths path)
      :else (mapcat #(tiles-to-drop (% tree) increase-level-fun? (conj path %)) [::quad0 ::quad1 ::quad2 ::quad3]))))
 
 
@@ -163,7 +159,7 @@
               :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5])))
   ([tree increase-level-fun? path]
    (if (nil? tree) []
-       (let [increase? (increase-level-fun? (::face tree) (::level tree) (::y tree) (::x tree))]
+       (let [increase? (increase-level-fun? (::level tree) (::center tree))]
          (cond
            (and (is-leaf? tree) increase?) (sub-paths path)
            increase?                       (mapcat #(tiles-to-load (% tree) increase-level-fun? (conj path %))
@@ -220,6 +216,19 @@
   (reduce (fn update-tile-in-quadtree
             [tree [path & args]]
             (apply update-in tree path fun args)) tree (apply map list paths arglists)))
+
+
+(defn quadtree-map
+  "Apply function to each node of a cube with quad trees as faces"
+  [tree fun & args]
+  (reduce (fn [tree face]
+              (if (get tree face)
+                (update tree face (fn [node] (apply fun (apply quadtree-map node fun args) args)))
+                tree))
+          tree
+          [:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
+           :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5
+           ::quad0 ::quad1 ::quad2 ::quad3]))
 
 
 (defn neighbour-path
@@ -643,6 +652,17 @@
                 :sfsim.cubemap/face4 :sfsim.cubemap/face5
                 :sfsim.quadtree/quad0 :sfsim.quadtree/quad1
                 :sfsim.quadtree/quad2 :sfsim.quadtree/quad3])))
+
+
+(defn sufficient-tessellation
+  "Select a tessellation level based on maximum size of fragments"
+  ^long [^long tilesize ^double max-size ^double fragment-size]
+  (let [next-size (* 2.0 fragment-size)]
+    (if (>= max-size next-size)
+      (recur (bit-or (bit-shift-right tilesize 1) 1)
+             max-size
+             next-size)
+      (max 1 (dec tilesize)))))
 
 
 (set! *warn-on-reflection* false)

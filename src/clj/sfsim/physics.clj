@@ -1008,9 +1008,9 @@
 
 (defn time-lapse-limit-rotation
   ^long [angular-velocity]
-  (let [factor   (/ (to-radians 360.0) (mag angular-velocity))
-        exponent (max 0 (long (floor (/ (log factor) (log 2.0)))))]
-    (exp-time-lapse exponent)))
+  (let [factor (min 64.0 (/ (to-radians 360.0) (mag angular-velocity)))]
+    (exp-time-lapse
+      (max 0 (Math/getExponent (double factor))))))
 
 
 (defn time-lapse-limit

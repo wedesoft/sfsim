@@ -6,7 +6,7 @@
 
 (ns sfsim.t-quadtree
   (:require
-    [clojure.math :refer (tan to-radians)]
+    [clojure.math :refer (tan to-radians atan)]
     [fastmath.vector :refer (vec3 add mag)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
@@ -39,15 +39,17 @@
 
 
 (fact "Determine the size of a quad on the screen"
-      (quad-size 2 33 6378000.0 1024 1000000.0 60.0) => (/ (* 512 (/ (/ 6378000.0 2 32) 1000000.0)) (tan (to-radians 30.0)))
-      (quad-size 2 33 6378000.0 1024 0.0 60.0) => (/ (* 512 (/ 6378000.0 2 32)) (tan (to-radians 30.0))))
+      (fragment-size 0 2 1000.0 1920 1000.0 (to-radians 90.0)) => (roughly 1920.0 1e-3)
+      (fragment-size 0 3 1000.0 1920 1000.0 (to-radians 90.0)) => (roughly 960.0 1e-3)
+      (fragment-size 1 2 1000.0 1920 1000.0 (to-radians 90.0)) => (roughly 960.0 1e-3)
+      (fragment-size 0 2  500.0 1920 1000.0 (to-radians 90.0)) => (roughly 960.0 1e-3)
+      (fragment-size 0 2  500.0 1920 1000.0 (* 2.0 (atan 0.5))) => (roughly 1920.0 1e-3))
 
 
 (facts "Decide whether to increase quadtree level or not"
-       (increase-level? 33 6378000.0 1280 60.0 5 3 (vec3 200000 0 0) face5 2 0 1) => truthy
+       (increase-level? 33 6378000.0 1280 1.04 5 3 (vec3 200000 0 0) 2 (vec3 50000 0 0)) => truthy
        (provided
-         (cubemap/tile-center face5 2 0 1 6378000.0) => (vec3 50000 0 0)
-         (quadtree/quad-size 2 33 6378000.0 1280 150000.0 60.0) => 10.0))
+         (quadtree/fragment-size 2 33 6378000.0 1280 150000.0 1.04) => 10.0))
 
 
 (tabular "Load normals, scale factors and colors for a tile"
@@ -97,16 +99,20 @@
 
 
 (facts "Determine list of tiles to remove"
-       (let [quad     {face5 {:sfsim.quadtree/face 2 :sfsim.quadtree/level 1 :sfsim.quadtree/y 0 :sfsim.quadtree/x 0
+       (let [quad     {face5 {:sfsim.quadtree/face 2
+                              :sfsim.quadtree/level 1
+                              :sfsim.quadtree/y 0
+                              :sfsim.quadtree/x 0
+                              :sfsim.quadtree/center (vec3 1 2 3)
                               quad0 {} quad1 {} quad2 {} quad3 {}}}
              sub-quad {face5 {quad0 {} quad1 {} quad2 {quad0 {} quad1 {} quad2 {} quad3 {}} quad3 {}}}
              basic    {face0 {} face1 {} face2 {} face3 {} face4 {} face5 {}}]
-         (tiles-to-drop {}   (fn [face level y x] false)) => []
-         (tiles-to-drop quad (fn [face level y x] false)) => [[face5 quad0] [face5 quad1] [face5 quad2] [face5 quad3]]
-         (tiles-to-drop quad (fn [face level y x] (= [face level y x] [2 1 0 0]))) => []
-         (tiles-to-drop sub-quad (fn [face level y x] false))
+         (tiles-to-drop {}   (fn [level center] false)) => []
+         (tiles-to-drop quad (fn [level center] false)) => [[face5 quad0] [face5 quad1] [face5 quad2] [face5 quad3]]
+         (tiles-to-drop quad (fn [level center] (= [level center] [1 (vec3 1 2 3)]))) => []
+         (tiles-to-drop sub-quad (fn [level center] false))
          => [[face5 quad2 quad0] [face5 quad2 quad1] [face5 quad2 quad2] [face5 quad2 quad3]]
-         (tiles-to-drop basic (fn [face level y x] false)) => []))
+         (tiles-to-drop basic (fn [level center] false)) => []))
 
 
 (facts "Get list of tile paths"
@@ -126,22 +132,26 @@
 
 (facts "Determine list of tiles to load"
        (let [basic    {face0 {} face1 {} face2 {} face3 {} face4 {}
-                       face5 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 1 :sfsim.quadtree/y 0 :sfsim.quadtree/x 0}}
+                       face5 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 1 :sfsim.quadtree/y 0 :sfsim.quadtree/x 0
+                              :sfsim.quadtree/center (vec3 1 2 3)}}
              quad     {face0 {} face1 {} face2 {} face3 {} face4 {}
                        face5 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 1 :sfsim.quadtree/y 0 :sfsim.quadtree/x 0
+                              :sfsim.quadtree/center (vec3 2 3 5)
                               quad0 {} quad1 {} quad2 {} quad3 {}}}
              sub-quad {face0 {} face1 {} face2 {} face3 {} face4 {}
                        face5 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 1 :sfsim.quadtree/y 0 :sfsim.quadtree/x 0
-                              quad0 {} quad1 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 2 :sfsim.quadtree/y 0 :sfsim.quadtree/x 1}
+                              :sfsim.quadtree/center (vec3 1 2 3)
+                              quad0 {} quad1 {:sfsim.quadtree/face 5 :sfsim.quadtree/level 2 :sfsim.quadtree/y 0 :sfsim.quadtree/x 1
+                                              :sfsim.quadtree/center (vec3 2 3 5)}
                               quad2 {} quad3 {}}}]
-         (tiles-to-load basic (fn [face level y x] false)) => []
-         (tiles-to-load {}  (fn [face level y x] false)) => [[face0] [face1] [face2] [face3] [face4] [face5]]
-         (tiles-to-load basic (fn [face level y x] (= [face level y x] [5 1 0 0])))
+         (tiles-to-load basic (fn [level center] false)) => []
+         (tiles-to-load {}  (fn [level center] false)) => [[face0] [face1] [face2] [face3] [face4] [face5]]
+         (tiles-to-load basic (fn [level center](= [level center] [1 (vec3 1 2 3)])))
          => [[face5 quad0] [face5 quad1] [face5 quad2] [face5 quad3]]
-         (tiles-to-load quad (fn [face level y x] (= [face level y x] [5 1 0 0]))) => []
-         (tiles-to-load sub-quad (fn [f l y x] (contains? #{[5 1] [5 2]} [f l])))
+         (tiles-to-load quad (fn [level center] (= [level center] [1 (vec3 2 3 5)]))) => []
+         (tiles-to-load sub-quad (fn [l c] (contains? #{[1 (vec3 1 2 3)] [2 (vec3 2 3 5)]} [l c])))
          => [[face5 quad1 quad0] [face5 quad1 quad1] [face5 quad1 quad2] [face5 quad1 quad3]]
-         (tiles-to-load sub-quad (fn [face level y x] (= [5 2] [face level]))) => []))
+         (tiles-to-load sub-quad (fn [level center] (= [2 (vec3 2 3 5)] [level center]))) => []))
 
 
 (tabular "Convert tile path to face, level, y and x"
@@ -183,6 +193,25 @@
        (quadtree-update {face3 {:id 5}} [[face3]] #(update % :id inc)) => {face3 {:id 6}}
        (quadtree-update {face3 {:5 {:id 7}}} [[face3 :5]] #(update % :id inc)) => {face3 {:5 {:id 8}}}
        (quadtree-update {face3 {:id 5}} [[face3]] #(update %1 :id (partial + %2)) [2]) => {face3 {:id 7}})
+
+
+(facts "Apply function to each node of quad tree"
+       (quadtree-map {} identity)
+       => {}
+       (quadtree-map {face3 {}} identity)
+       => {face3 {}}
+       (quadtree-map {face3 {:id 42}} (fn [node] (update node :id inc)))
+       => {face3 {:id 43}}
+       (quadtree-map {face4 {:id 42}} (fn [node] (update node :id inc)))
+       => {face4 {:id 43}}
+       (quadtree-map {face2 {:id 10} face4 {:id 20}} (fn [node] (update node :id inc)))
+       => {face2 {:id 11} face4 {:id 21}}
+       (quadtree-map {face2 {:id 10 quad0 {:id 20}}} (fn [node] (update node :id inc)))
+       => {face2 {:id 11 quad0 {:id 21}}}
+       (quadtree-map {face2 {:id 10 quad1 {:id 20 quad2 {:id 30}}}} (fn [node] (update node :id inc)))
+       => {face2 {:id 11 quad1 {:id 21 quad2 {:id 31}}}}
+       (quadtree-map {face3 {:id 42}} (fn [node delta] (update node :id + delta)) 3)
+       => {face3 {:id 45}})
 
 
 (def keyword->int {face0 0 face1 1 face2 2 face3 3 face4 4 face5 5})
@@ -304,21 +333,22 @@
 
 (facts "Update level of detail (LOD)"
        (with-redefs [quadtree/load-tile-data (fn [face level y x radius] (fact face => face2 level => 1) {:id (+ (* y 2) x 1)})]
-         (let [face     (fn [f] {:sfsim.quadtree/face f, :sfsim.quadtree/level 0, :sfsim.quadtree/y 0, :sfsim.quadtree/x 0})
-               flat     {face0 (face face0), face1 (face face1), face2 (face face2),
-                         face3 (face face3), face4 (face face4), face5 (face face5)}
-               quad     (fn [f] (merge (face f) {quad0 {:id 1} quad1 {:id 2} quad2 {:id 3} quad3 {:id 4}}))
-               one-face {face0 (face face0), face1 (face face1), face2 (quad face2),
-                         face3 (face face3), face4 (face face4), face5 (face face5)}
+         (let [face     (fn [f x] {:sfsim.quadtree/face f, :sfsim.quadtree/level 0, :sfsim.quadtree/y 0, :sfsim.quadtree/x 0
+                                   :sfsim.quadtree/center (vec3 x 3 5)})
+               flat     {face0 (face face0 0), face1 (face face1 1), face2 (face face2 2),
+                         face3 (face face3 3), face4 (face face4 4), face5 (face face5 5)}
+               quad     (fn [f x] (merge (face f x) {quad0 {:id 1} quad1 {:id 2} quad2 {:id 3} quad3 {:id 4}}))
+               one-face {face0 (face face0 0), face1 (face face1 1), face2 (quad face2 2),
+                         face3 (face face3 3), face4 (face face4 4), face5 (face face5 5)}
                radius   6378000.0]
            (:tree (update-level-of-detail flat radius (constantly false) false)) => flat
            (:drop (update-level-of-detail flat radius (constantly false) false)) => []
            (:drop (update-level-of-detail one-face radius (constantly false) false)) => [{:id 1} {:id 2} {:id 3} {:id 4}]
            (:tree (update-level-of-detail one-face radius (constantly false) false)) => flat
            (:load (update-level-of-detail flat radius (constantly false) false)) => []
-           (:load (update-level-of-detail flat radius #(= %& [face2 0 0 0]) false))
+           (:load (update-level-of-detail flat radius #(= %& [0 (vec3  2 3 5)]) false))
            => [[face2 quad0] [face2 quad1] [face2 quad2] [face2 quad3]]
-           (:tree (update-level-of-detail flat radius #(= %& [face2 0 0 0]) false)) => one-face
+           (:tree (update-level-of-detail flat radius #(= %& [0 (vec3 2 3 5)]) false)) => one-face
            (get-in (update-level-of-detail flat radius (constantly false) true) [:tree face2 :sfsim.quadtree/up]) => true)))
 
 
@@ -563,3 +593,12 @@
        (leaf-count {face2 {}}) => 1
        (leaf-count {face0 {} face2 {}}) => 2
        (leaf-count {face0 {quad0 {} quad1 {} quad2 {}}}) => 3)
+
+
+(facts "Determine sufficient amount of inner tessellation"
+       (sufficient-tessellation 65  8.0  8.0) => 64
+       (sufficient-tessellation 65  8.0  4.0) => 32
+       (sufficient-tessellation 65  8.0  1.0) => 8
+       (sufficient-tessellation 65 64.0  2.0) => 2
+       (sufficient-tessellation 65 64.0  1.0) => 1
+       (sufficient-tessellation 65  8.0  6.0) => 64)
