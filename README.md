@@ -193,6 +193,7 @@ Note that when baking normal maps, you need to use +X, -Y, and +Z for R, G, and 
   * [Reentry](https://reentrygame.com/)
   * [Kerbal Space Program](https://www.kerbalspaceprogram.com/)
   * [Kitten Space Agency](https://kittenspaceagency.wiki.gg/)
+  * [Spaceflight Simulator 2](https://store.steampowered.com/app/2960460/Spaceflight_Simulator_2/)
   * [Flight of Nova](https://flight-of-nova.com/)
   * [Lunar Flight](http://www.shovsoft.com/lunarflight/)
   * [Eagle Lander 3D](http://eaglelander3d.com/)
