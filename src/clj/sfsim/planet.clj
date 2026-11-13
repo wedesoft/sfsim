@@ -220,13 +220,15 @@
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles"
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
-  [{::keys [config]} tree width position]
-  (let [tilesize  (::tilesize config)
-        increase? (partial increase-level? tilesize (::radius config) width (to-radians 60.0) 10 7 position)]; TODO: use config
-    (-> tree
-        (update-level-of-detail (::radius config) increase? true)
-        (update-inner-tessellation-levels tilesize 20 (::radius config) width (to-radians 60.0) position); TODO: use config
-        update-outer-tessellation-levels)))
+  [{{::keys [tilesize radius]} ::config} tree width position]
+  (let [fov       (to-radians 60.0)
+        increase? (partial increase-level? tilesize radius width fov 10 7 position)
+        updates   (update-level-of-detail tree radius increase? true)]; TODO: use config
+    (update updates :tree
+            (fn [tree]
+                (-> tree
+                    (update-inner-tessellation-levels tilesize 20 radius width fov position); TODO: use config
+                    update-outer-tessellation-levels)))))
 
 
 (def tree (m/schema [:map [:tree :some] [:changes :some]]))

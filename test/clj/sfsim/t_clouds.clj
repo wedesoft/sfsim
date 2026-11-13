@@ -1488,7 +1488,12 @@ void main()
                                                                #:sfsim.image{:width 3 :height 3 :data (float-array data) :channels 3})
                    tree                {:sfsim.planet/vao vao
                                         :sfsim.planet/surf-tex surface
-                                        :sfsim.quadtree/center (vec3 0 0 (or ?planet 0))}
+                                        :sfsim.quadtree/center (vec3 0 0 (or ?planet 0))
+                                        :sfsim.quadtree/inner-tessellation 8
+                                        :sfsim.quadtree/up-tessellation    8
+                                        :sfsim.quadtree/left-tessellation  8
+                                        :sfsim.quadtree/down-tessellation  8
+                                        :sfsim.quadtree/right-tessellation 8}
                    camera-to-world     (transformation-matrix (eye 3) (vec3 0 0 0))
                    model-render-vars   #:sfsim.render{:sfsim.render/camera-to-world camera-to-world
                                                       :sfsim.render/z-near 0.1
