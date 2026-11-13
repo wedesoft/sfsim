@@ -7,7 +7,7 @@
 (ns sfsim.physics
   "Physics related functions except for Jolt bindings"
   (:require
-    [clojure.math :refer (PI cos sin tan atan2 hypot to-radians sqrt acos log1p log sinh pow floor)]
+    [clojure.math :refer (PI cos sin tan atan2 hypot to-radians sqrt acos log1p sinh pow floor)]
     [clojure.set :refer (union)]
     [fastmath.matrix :refer (mulv mulm inverse mat3x3)]
     [fastmath.vector :refer (vec3 mag normalize mult add sub cross dot div)]

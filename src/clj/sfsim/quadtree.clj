@@ -8,7 +8,7 @@
   "Manage quad tree of map tiles."
   (:require
     [clojure.core.memoize :as z]
-    [clojure.math :refer (tan to-radians)]
+    [clojure.math :refer (tan)]
     [fastmath.vector :refer (sub mag add)]
     [malli.core :as m]
     [sfsim.cubemap :refer (tile-center project-onto-cube determine-face cube-i cube-j)]
@@ -313,16 +313,6 @@
    (neighbour-path path dy dx true)))
 
 
-(defn neighbour-paths
-  "Get the paths for the four neighbours of a tile"
-  {:malli/schema [:=> [:cat [:sequential :keyword]] [:map-of :keyword [:sequential :keyword]]]}
-  [path]
-  {::up    (neighbour-path path -1  0)
-   ::left  (neighbour-path path  0 -1)
-   ::down  (neighbour-path path  1  0)
-   ::right (neighbour-path path  0  1)})
-
-
 (defn leaf-paths
   "Get a path to every leaf in the tree"
   {:malli/schema [:=> [:cat [:maybe :map]] [:sequential [:sequential :keyword]]]}
@@ -338,37 +328,17 @@
                         ::quad0 ::quad1 ::quad2 ::quad3})))
 
 
-(defn- check-neighbours-for-tile
-  "Update neighbourhood information for a single tile"
-  {:malli/schema [:=> [:cat [:maybe :map] [:sequential :keyword]] [:maybe :map]]}
-  [tree path]
-  (reduce
-    (fn check-neighbour-resolution
-      [updated-tree [direction neighbour-path]]
-      (assoc-in updated-tree (conj (vec path) direction) (boolean (get-in tree neighbour-path))))
-    tree
-    (neighbour-paths path)))
-
-
-(defn check-neighbours
-  "Populate quad tree with neighbourhood information"
-  {:malli/schema [:=> [:cat [:maybe :map]] [:maybe :map]]}
-  [tree]
-  (reduce check-neighbours-for-tile tree (leaf-paths tree)))
-
-
 (defn update-level-of-detail
   "Return tree with updated level of detail (LOD), a list of dropped tiles and a list of new paths"
-  {:malli/schema [:=> [:cat [:maybe :map] :double fn? :boolean]
+  {:malli/schema [:=> [:cat [:maybe :map] :double fn?]
                   [:map [:tree [:maybe :map]]
                    [:drop [:vector :map]]
                    [:load [:sequential [:vector :keyword]]]]]}
-  [tree radius increase-level-fun? neighbours?]
+  [tree radius increase-level-fun?]
   (let [drop-list (tiles-to-drop tree increase-level-fun?)
         load-list (tiles-to-load tree increase-level-fun?)
-        new-tiles (load-tiles-data (tiles-meta-data load-list) radius)
-        check     (if neighbours? check-neighbours identity)]
-    {:tree (check (quadtree-add (quadtree-drop tree drop-list) load-list new-tiles))
+        new-tiles (load-tiles-data (tiles-meta-data load-list) radius)]
+    {:tree (quadtree-add (quadtree-drop tree drop-list) load-list new-tiles)
      :drop (quadtree-extract tree drop-list)
      :load load-list}))
 
