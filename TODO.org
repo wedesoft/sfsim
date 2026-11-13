@@ -5,7 +5,7 @@
 
 ** TODO improve performance of planet
 *** DONE remove unused neighbour checking code
-*** TODO bug in location dialog tab focus
+*** DONE bug in datetime dialog tab focus
 *** TODO reduce tessellation amount
 **** DONE compute desired inner tessellation using camera distance to center of tile
 **** DONE compute deepest neighbour for edge: checking-depth/path, direction, inner tessellation -> edge tessellation
