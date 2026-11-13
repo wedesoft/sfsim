@@ -315,28 +315,10 @@
          [face5 quad2]        0  -1  [face4 quad2])
 
 
-(tabular "Get the four neighbours for a given path of a tile"
-         (fact (?k (neighbour-paths [face5 quad1 quad2])) => ?path)
-         ?k                      ?path
-         :sfsim.quadtree/up    [face5 quad1 quad0]
-         :sfsim.quadtree/left  [face5 quad0 quad3]
-         :sfsim.quadtree/down  [face5 quad3 quad0]
-         :sfsim.quadtree/right [face5 quad1 quad3])
-
-
 (facts "Get a list of paths of the leaves"
        (set (leaf-paths {face1 {} face2 {}}))  => #{[face1] [face2]}
        (leaf-paths {face5 {quad1 {}}})         => [[face5 quad1]]
        (leaf-paths {face5 {:vao 42 quad1 {}}}) => [[face5 quad1]])
-
-
-(facts "Update quad tree with neighbourhood information"
-       (get-in (check-neighbours {face5 {} face1 {}})         [face5 :sfsim.quadtree/up]) => true
-       (get-in (check-neighbours {face5 {}})                  [face5 :sfsim.quadtree/up]) => false
-       (get-in (check-neighbours {face5 {} face4 {}})         [face5 :sfsim.quadtree/left]) => true
-       (get-in (check-neighbours {face5 {}})                  [face5 :sfsim.quadtree/left]) => false
-       (get-in (check-neighbours {face1 {} face5 {}})         [face1 :sfsim.quadtree/down]) => true
-       (get-in (check-neighbours {face5 {quad1 {} quad3 {}}}) [face5 quad1 :sfsim.quadtree/down]) => true)
 
 
 (facts "Update level of detail (LOD)"
@@ -349,15 +331,14 @@
                one-face {face0 (face face0 0), face1 (face face1 1), face2 (quad face2 2),
                          face3 (face face3 3), face4 (face face4 4), face5 (face face5 5)}
                radius   6378000.0]
-           (:tree (update-level-of-detail flat radius (constantly false) false)) => flat
-           (:drop (update-level-of-detail flat radius (constantly false) false)) => []
-           (:drop (update-level-of-detail one-face radius (constantly false) false)) => [{:id 1} {:id 2} {:id 3} {:id 4}]
-           (:tree (update-level-of-detail one-face radius (constantly false) false)) => flat
-           (:load (update-level-of-detail flat radius (constantly false) false)) => []
-           (:load (update-level-of-detail flat radius #(= %& [0 (vec3  2 3 5)]) false))
+           (:tree (update-level-of-detail flat radius (constantly false))) => flat
+           (:drop (update-level-of-detail flat radius (constantly false))) => []
+           (:drop (update-level-of-detail one-face radius (constantly false))) => [{:id 1} {:id 2} {:id 3} {:id 4}]
+           (:tree (update-level-of-detail one-face radius (constantly false))) => flat
+           (:load (update-level-of-detail flat radius (constantly false))) => []
+           (:load (update-level-of-detail flat radius #(= %& [0 (vec3  2 3 5)])))
            => [[face2 quad0] [face2 quad1] [face2 quad2] [face2 quad3]]
-           (:tree (update-level-of-detail flat radius #(= %& [0 (vec3 2 3 5)]) false)) => one-face
-           (get-in (update-level-of-detail flat radius (constantly false) true) [:tree face2 :sfsim.quadtree/up]) => true)))
+           (:tree (update-level-of-detail flat radius #(= %& [0 (vec3 2 3 5)]))) => one-face)))
 
 
 (fact "Get tile indices, coordinates of pixel within tile and position in pixel"

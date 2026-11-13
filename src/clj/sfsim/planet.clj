@@ -222,8 +222,8 @@
   {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
   [{{::keys [tilesize radius]} ::config} tree width position]
   (let [fov       (to-radians 60.0)
-        increase? (partial increase-level? tilesize radius width fov 10 7 position)
-        updates   (update-level-of-detail tree radius increase? true)]; TODO: use config
+        increase? (partial increase-level? tilesize radius width fov 10 7 position); TODO: use config
+        updates   (update-level-of-detail tree radius increase?)]
     (update updates :tree
             (fn [tree]
                 (-> tree

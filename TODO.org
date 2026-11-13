@@ -4,7 +4,7 @@
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
 ** TODO improve performance of planet
-*** TODO remove unused neighbour checking code
+*** DONE remove unused neighbour checking code
 *** TODO bug in location dialog tab focus
 *** TODO reduce tessellation amount
 **** DONE compute desired inner tessellation using camera distance to center of tile
