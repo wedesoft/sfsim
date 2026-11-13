@@ -1,3 +1,10 @@
+sfsim (0.40-1)
+
+	* Improved tessellation control algorithm resulting in significant
+	  performance boost.
+
+-- Jan Wedekind <jan@wedesoft.de>  Fri, 13 Nov 2026 01:09:17 +0000
+
 sfsim (0.39-1)
 
 	* Catch infinity value when determining time lapse limit due to rotation
