@@ -109,15 +109,6 @@
     (/ (+ tile (double (/ pixel (dec tilesize)))) tiles)))
 
 
-(defn cube-map-corners
-  "Get 3D vectors to corners of cube map tile"
-  [^Keyword face ^long level ^long row ^long column]
-  [(cube-map face (cube-coordinate level 2 row 0.0) (cube-coordinate level 2 column 0.0))
-   (cube-map face (cube-coordinate level 2 row 0.0) (cube-coordinate level 2 column 1.0))
-   (cube-map face (cube-coordinate level 2 row 1.0) (cube-coordinate level 2 column 0.0))
-   (cube-map face (cube-coordinate level 2 row 1.0) (cube-coordinate level 2 column 1.0))])
-
-
 (defn longitude
   "Longitude of 3D point (East is positive)"
   ^double [^Vec3 point]

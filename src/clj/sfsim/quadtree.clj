@@ -8,7 +8,7 @@
   "Manage quad tree of map tiles."
   (:require
     [clojure.core.memoize :as z]
-    [clojure.math :refer (tan to-radians)]
+    [clojure.math :refer (tan)]
     [fastmath.vector :refer (sub mag add)]
     [malli.core :as m]
     [sfsim.cubemap :refer (tile-center project-onto-cube determine-face cube-i cube-j)]
