@@ -214,6 +214,14 @@
        => {face3 {:id 45}})
 
 
+(facts "Apply function to each node of quad tree providing path as argument"
+       (quadtree-map-indexed {} (fn [node path] node)) => {}
+       (quadtree-map-indexed {face3 {:id 42}} (fn [node path] (assoc node :path path)))
+       => {face3 {:id 42 :path [face3]}}
+       (quadtree-map-indexed {face2 {:id 10 quad0 {:id 20}}} (fn [node path] (assoc node :path path)))
+       => {face2 {:id 10 :path [face2] quad0 {:id 20 :path [face2 quad0]}}})
+
+
 (def keyword->int {face0 0 face1 1 face2 2 face3 3 face4 4 face5 5})
 (def int->keyword {0 face0 1 face1 2 face2 3 face3 4 face4 5 face5})
 
@@ -596,17 +604,105 @@
 
 
 (facts "Determine sufficient amount of inner tessellation"
-       (sufficient-tessellation 65  8.0  8.0) => 64
-       (sufficient-tessellation 65  8.0  4.0) => 32
-       (sufficient-tessellation 65  8.0  1.0) => 8
-       (sufficient-tessellation 65 64.0  2.0) => 2
-       (sufficient-tessellation 65 64.0  1.0) => 1
-       (sufficient-tessellation 65  8.0  6.0) => 64)
+       (sufficient-tessellation 65  8 8.0) => 64
+       (sufficient-tessellation 65  8 4.0) => 32
+       (sufficient-tessellation 65  8 1.0) => 8
+       (sufficient-tessellation 65 64 2.0) => 2
+       (sufficient-tessellation 65 64 1.0) => 1
+       (sufficient-tessellation 65  8 6.0) => 64)
 
 
-(facts "Update tile tree with inner tessellation information"
-       (update-inner-tessellation 65 16.0 6378000.0 1920 1.0 (vec3 -200000 0 0)
-                                  {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0)})
+(facts "Update node with inner tessellation information"
+       (update-inner-tessellation {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0)}
+                                  65 16.0 6378000.0 1920 1.0 (vec3 -200000 0 0))
        => {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0) :sfsim.quadtree/inner-tessellation 32}
       (provided
         (quadtree/fragment-size 7 65 6378000.0 1920 400000.0 1.0) => 8.0))
+
+
+(facts "Update tile tree with inner tessellation information"
+       (let [node {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0)}]
+         (update-inner-tessellation-levels {quad0 node} 65 16.0 6378000.0 1920 1.0 (vec3 -200000 0 0))
+         => {quad0 {:sfsim.quadtree/level 7 :sfsim.quadtree/center (vec3 200000 0 0) :sfsim.quadtree/inner-tessellation 32}}
+         (provided
+           (quadtree/fragment-size 7 65 6378000.0 1920 400000.0 1.0) => 8.0)))
+
+
+(facts "Get deepest available node for specified path"
+       (get-in-deepest-existing {:a {:b 42}} []) => {:a {:b 42}}
+       (get-in-deepest-existing {:a {:b 42}} [:a]) => {:b 42}
+       (get-in-deepest-existing {:a {:b 42}} [:a :b]) => 42
+       (get-in-deepest-existing {:a {:b 42}} [:a :b :c]) => 42
+       (get-in-deepest-existing {:a {:b 42}} [:c]) => {:a {:b 42}})
+
+
+(facts "Determine outer tessellation level"
+       (outer-tessellation
+         {face5 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 32}
+          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 64}}
+         [face5]
+         0 1) => 32
+       (outer-tessellation
+         {face5 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 32}
+          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 16}}
+         [face5]
+         0 1) => 16
+       (outer-tessellation
+         {face5 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 32}
+          face2 {:sfsim.quadtree/level 0 quad0 {}}}
+         [face5]
+         0 1) => 32
+       (outer-tessellation
+         {face5 {quad1 {:sfsim.quadtree/level 1}}
+          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 16}}
+         [face5 quad1]
+         0 1) => 8
+       (outer-tessellation
+         {face5 {quad1 {quad3 {:sfsim.quadtree/level 2}}}
+          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 16}}
+         [face5 quad1 quad3]
+         0 1) => 4
+       (outer-tessellation
+         {face5 {quad1 {quad3 {:sfsim.quadtree/level 2}}}
+          face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 2}}
+         [face5 quad1 quad3]
+         0 1) => 1)
+
+
+(tabular "Update outer tessellation levels of tile"
+         (fact
+           (get
+             (update-outer-tessellation
+               {face5 {quad1 {quad2 {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation 64}
+                              quad0 {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation  4}
+                              quad3 {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation 32}}
+                       quad0 {quad3 {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation  8}}
+                       quad3 {quad0 {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation 16}}}}
+               {:sfsim.quadtree/level 2 :sfsim.quadtree/inner-tessellation 64}
+               [face5 quad1 quad2])
+             ?key) => ?result)
+         ?key                               ?result
+         :sfsim.quadtree/level               2
+         :sfsim.quadtree/inner-tessellation 64
+         :sfsim.quadtree/up-tessellation     4
+         :sfsim.quadtree/left-tessellation   8
+         :sfsim.quadtree/down-tessellation  16
+         :sfsim.quadtree/right-tessellation 32)
+
+
+(tabular "Update outer tessellation levels of each tile in the tree"
+         (fact
+           (get-in
+             (update-outer-tessellation-levels
+               {face0 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 64}
+                face1 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 32}
+                face2 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation 16}
+                face3 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation  8}
+                face4 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation  4}
+                face5 {:sfsim.quadtree/level 0 :sfsim.quadtree/inner-tessellation  2}})
+             ?keys) => ?result)
+         ?keys                                   ?result
+         [face0 :sfsim.quadtree/up-tessellation]     8
+         [face0 :sfsim.quadtree/left-tessellation]   4
+         [face0 :sfsim.quadtree/down-tessellation]  32
+         [face0 :sfsim.quadtree/right-tessellation] 16)

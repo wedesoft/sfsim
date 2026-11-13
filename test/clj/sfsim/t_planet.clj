@@ -114,9 +114,11 @@ void main()
                                (uniform-sampler program "surface" 0)
                                (uniform-sampler program "height_tilesize" 2)
                                (uniform-sampler program "color_tilesize" 2)
-                               (uniform-int program "high_detail" 4)
-                               (uniform-int program "low_detail" 2)
-                               (uniform-int program "neighbours" ?neighbours)
+                               (uniform-int program "inner_detail" 4)
+                               (uniform-int program "up_detail" ?up)
+                               (uniform-int program "left_detail" ?left)
+                               (uniform-int program "down_detail" ?down)
+                               (uniform-int program "right_detail" ?right)
                                (uniform-matrix4 program "tile_to_camera" (eye 4))
                                (uniform-vector3 program "tile_center" (vec3 0 0 0))
                                (uniform-matrix4 program "projection" (eye 4))
@@ -126,12 +128,12 @@ void main()
                                (destroy-texture surface)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image ?result 1.0))
-         ?neighbours ?result
-         15          "test/clj/sfsim/fixtures/planet/tessellation.png"
-         +1          "test/clj/sfsim/fixtures/planet/tessellation-0.png"
-         +2          "test/clj/sfsim/fixtures/planet/tessellation-1.png"
-         +4          "test/clj/sfsim/fixtures/planet/tessellation-2.png"
-         +8          "test/clj/sfsim/fixtures/planet/tessellation-3.png")
+         ?up ?left ?down ?right ?result
+         4   4     4     4      "test/clj/sfsim/fixtures/planet/tessellation.png"
+         4   2     2     2      "test/clj/sfsim/fixtures/planet/tessellation-0.png"
+         2   4     2     2      "test/clj/sfsim/fixtures/planet/tessellation-1.png"
+         2   2     4     2      "test/clj/sfsim/fixtures/planet/tessellation-2.png"
+         2   2     2     4      "test/clj/sfsim/fixtures/planet/tessellation-3.png")
 
 
 (def texture-coordinates-probe
@@ -174,9 +176,10 @@ void main()
                                (uniform-sampler program "surface" 0)
                                (uniform-sampler program "height_tilesize" 2)
                                (uniform-sampler program "color_tilesize" 2)
-                               (uniform-int program "high_detail" 4)
-                               (uniform-int program "low_detail" 2)
-                               (uniform-int program "neighbours" 15)
+                               (uniform-int program "up_detail" 4)
+                               (uniform-int program "left_detail" 4)
+                               (uniform-int program "down_detail" 4)
+                               (uniform-int program "right_detail" 4)
                                (uniform-matrix4 program "tile_to_camera" (eye 4))
                                (uniform-vector3 program "tile_center" (vec3 0 0 0))
                                (uniform-matrix4 program "projection" (eye 4))
@@ -215,9 +218,11 @@ void main()
                           (uniform-sampler program "surface" 0)
                           (uniform-sampler program "height_tilesize" 2)
                           (uniform-sampler program "color_tilesize" 2)
-                          (uniform-int program "high_detail" 4)
-                          (uniform-int program "low_detail" 2)
-                          (uniform-int program "neighbours" 15)
+                          (uniform-int program "inner_detail" 4)
+                          (uniform-int program "up_detail" 4)
+                          (uniform-int program "left_detail" 4)
+                          (uniform-int program "down_detail" 4)
+                          (uniform-int program "right_detail" 4)
                           (uniform-matrix4 program "tile_to_camera" (transformation-matrix (eye 3) (vec3 0.1 0 0)))
                           (uniform-vector3 program "tile_center" (vec3 0 0 0))
                           (uniform-matrix4 program "projection" (eye 4))
@@ -253,9 +258,11 @@ void main()
                           (uniform-sampler program "surface" 0)
                           (uniform-sampler program "height_tilesize" 2)
                           (uniform-sampler program "color_tilesize" 2)
-                          (uniform-int program "high_detail" 4)
-                          (uniform-int program "low_detail" 2)
-                          (uniform-int program "neighbours" 15)
+                          (uniform-int program "inner_detail" 4)
+                          (uniform-int program "up_detail" 4)
+                          (uniform-int program "left_detail" 4)
+                          (uniform-int program "down_detail" 4)
+                          (uniform-int program "right_detail" 4)
                           (uniform-float program "z_near" 0.0)
                           (uniform-matrix4 program "tile_to_camera" (transformation-matrix (eye 3) (vec3 0 0 -2)))
                           (uniform-vector3 program "tile_center" (vec3 0 0 0))
@@ -292,9 +299,11 @@ void main()
                           (uniform-sampler program "surface" 0)
                           (uniform-sampler program "height_tilesize" 2)
                           (uniform-sampler program "color_tilesize" 2)
-                          (uniform-int program "high_detail" 4)
-                          (uniform-int program "low_detail" 2)
-                          (uniform-int program "neighbours" 15)
+                          (uniform-int program "inner_detail" 4)
+                          (uniform-int program "up_detail" 4)
+                          (uniform-int program "left_detail" 4)
+                          (uniform-int program "down_detail" 4)
+                          (uniform-int program "right_detail" 4)
                           (uniform-matrix4 program "tile_to_camera" (eye 4))
                           (uniform-vector3 program "tile_center" (vec3 0 0 0))
                           (uniform-matrix4 program "projection" (eye 4))
@@ -713,30 +722,29 @@ void main()
                                    vao        (make-vertex-array-object program indices)
                                    transform  (transformation-matrix (eye 3) (vec3 0 0 2.5))
                                    projection (projection-matrix 256 256 0.5 5.0 (/ PI 3))
-                                   neighbours {:sfsim.quadtree/up    ?up
-                                               :sfsim.quadtree/left  ?left
-                                               :sfsim.quadtree/down  ?down
-                                               :sfsim.quadtree/right ?right}
+                                   neighbours {:sfsim.quadtree/up-tessellation    ?up
+                                               :sfsim.quadtree/left-tessellation  ?left
+                                               :sfsim.quadtree/down-tessellation  ?down
+                                               :sfsim.quadtree/right-tessellation ?right}
                                    tile       (merge {:sfsim.planet/vao vao :sfsim.planet/surf-tex surf-tex
+                                                      :sfsim.quadtree/inner-tessellation 8
                                                       :sfsim.quadtree/center (vec3 0 0 0.5)} neighbours)]
                                (use-program program)
                                (clear (vec3 0 0 0))
                                (uniform-sampler program "surface" 0)
                                (uniform-sampler program "height_tilesize" 9)
                                (uniform-sampler program "color_tilesize" 9)
-                               (uniform-int program "high_detail" 8)
-                               (uniform-int program "low_detail" 4)
                                (uniform-matrix4 program "projection" projection)
                                (raster-lines (render-tile program tile (inverse transform) [] [:sfsim.planet/surf-tex]))
                                (destroy-texture surf-tex)
                                (destroy-vertex-array-object vao)
                                (destroy-program program))) => (is-image (str "test/clj/sfsim/fixtures/planet/" ?result) ?threshold))
          ?up   ?left ?down ?right ?result          ?threshold
-         true  true  true  true   "tile.png"       1.07
-         false true  true  true   "tile-up.png"    1.07
-         true  false true  true   "tile-left.png"  1.07
-         true  true  false true   "tile-down.png"  1.07
-         true  true  true  false  "tile-right.png" 1.07)
+         8     8     8     8      "tile.png"       1.07
+         4     8     8     8      "tile-up.png"    1.07
+         8     4     8     8      "tile-left.png"  1.07
+         8     8     4     8      "tile-down.png"  1.07
+         8     8     8     4      "tile-right.png" 1.07)
 
 
 (defn render-tile-calls
@@ -820,7 +828,12 @@ void main()
                surface          (make-vector-texture-2d :sfsim.texture/linear :sfsim.texture/clamp
                                                         #:sfsim.image{:width 3 :height 3 :data (float-array data)
                                                                       :channels 3})
-               tree             {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 2)}
+               tree             {:sfsim.planet/vao vao :sfsim.planet/surf-tex surface :sfsim.quadtree/center (vec3 0 0 2)
+                                 :sfsim.quadtree/inner-tessellation 8
+                                 :sfsim.quadtree/up-tessellation    8
+                                 :sfsim.quadtree/left-tessellation  8
+                                 :sfsim.quadtree/down-tessellation  8
+                                 :sfsim.quadtree/right-tessellation 8}
                geometry         (clouds/render-cloud-geometry 160 120 (render-planet-geometry2 renderer render-vars false tree))]
            (get-vector4 (rgba-texture->vectors4 (:sfsim.clouds/points geometry)) 60 80)
            => (roughly-vector (vec4 0.011 0.011 -3.0 1.0) 1e-3)

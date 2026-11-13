@@ -222,13 +222,29 @@
   "Apply function to each node of a cube with quad trees as faces"
   [tree fun & args]
   (reduce (fn [tree face]
-              (if (get tree face)
-                (update tree face (fn [node] (apply fun (apply quadtree-map node fun args) args)))
-                tree))
+              (if-let [node (get tree face)]
+                      (assoc tree face (apply fun (apply quadtree-map node fun args) args))
+                      tree))
           tree
           [:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
            :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5
            ::quad0 ::quad1 ::quad2 ::quad3]))
+
+
+(defn quadtree-map-indexed
+  "Apply function to each node of a cube with quad trees as faces supplying path as argument"
+  ([tree fun]
+   (quadtree-map-indexed tree fun []))
+  ([tree fun path]
+   (reduce (fn [tree face]
+               (if-let [node (get tree face)]
+                       (let [node-path (conj path face)]
+                         (assoc tree face (fun (quadtree-map-indexed node fun node-path) node-path)))
+                       tree))
+           tree
+           [:sfsim.cubemap/face0 :sfsim.cubemap/face1 :sfsim.cubemap/face2
+            :sfsim.cubemap/face3 :sfsim.cubemap/face4 :sfsim.cubemap/face5
+            ::quad0 ::quad1 ::quad2 ::quad3])))
 
 
 (defn neighbour-path
@@ -656,7 +672,7 @@
 
 (defn sufficient-tessellation
   "Select a tessellation level based on maximum size of fragments"
-  ^long [^long tilesize ^double max-size ^double fragment-size]
+  ^long [^long tilesize ^long max-size ^double fragment-size]
   (let [next-size (* 2.0 fragment-size)]
     (if (>= max-size next-size)
       (recur (bit-or (bit-shift-right tilesize 1) 1)
@@ -666,11 +682,65 @@
 
 
 (defn update-inner-tessellation
-  "Select inner tessellation for tile"
-  [tilesize max-size radius width angle position {::keys [level center] :as tile}]
+  "Select inner tessellation for a tile"
+  [{::keys [level center] :as tile} tilesize max-size radius width angle position]
   (let [distance (mag (sub position center))
         fragment-size (fragment-size level tilesize radius width distance angle)]
     (assoc tile ::inner-tessellation (sufficient-tessellation tilesize max-size fragment-size))))
+
+
+(defn update-inner-tessellation-levels
+  "Select inner tessellation level for each tile of the tree"
+  [tree tilesize max-size radius width angle position]
+  (quadtree-map tree update-inner-tessellation tilesize max-size radius width angle position))
+
+
+(defn get-in-deepest-existing
+  "Get deepest existing element"
+  [tree path]
+  (reduce
+    (fn [node k]
+        (if-let [child (get node k)]
+                child
+                (reduced node)))
+    tree
+    path))
+
+
+(defn outer-tessellation
+  "Determine outer tessellation in given direction"
+  [tree path dy dx]
+  (let [node              (get-in tree path)
+        adjacent-path     (neighbour-path path dy dx)
+        neighbour         (get-in-deepest-existing tree adjacent-path)
+        node-tessellation (::inner-tessellation node)]
+    (cond
+      ; Neighbour is deeper, so use inner tessellation level
+      (not (is-leaf? neighbour))
+      node-tessellation
+      ; Neighbour is less deep, so use neighbours tessellation level downscaled appropriately
+      (< ^long (::level neighbour) ^long (::level node))
+      (max 1 (bit-shift-right ^long (::inner-tessellation neighbour) (- ^long (::level node) ^long (::level neighbour))))
+      ; Neighbour has same depth, so use whichever tessellation level is smaller
+      :else
+      (min ^long node-tessellation ^long (::inner-tessellation neighbour)))))
+
+
+(defn update-outer-tessellation
+  "Update tile with outer tessellation information"
+  [tree node path]
+  (assoc
+    node
+    :sfsim.quadtree/up-tessellation    (outer-tessellation tree path -1  0)
+    :sfsim.quadtree/left-tessellation  (outer-tessellation tree path  0 -1)
+    :sfsim.quadtree/down-tessellation  (outer-tessellation tree path  1  0)
+    :sfsim.quadtree/right-tessellation (outer-tessellation tree path  0  1)))
+
+
+(defn update-outer-tessellation-levels
+  "Update each tile in the tree with outer tessellation information"
+  [tree]
+  (quadtree-map-indexed tree (partial update-outer-tessellation tree)))
 
 
 (set! *warn-on-reflection* false)
