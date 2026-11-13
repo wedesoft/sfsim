@@ -227,7 +227,7 @@
     (update updates :tree
             (fn [tree]
                 (-> tree
-                    (update-inner-tessellation-levels tilesize 20 radius width fov position); TODO: use config
+                    (update-inner-tessellation-levels tilesize 40 radius width fov position); TODO: use config
                     update-outer-tessellation-levels)))))
 
 
