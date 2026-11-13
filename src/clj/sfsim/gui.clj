@@ -1378,8 +1378,8 @@
   [state gui ^long window-width ^long window-height]
   (nuklear-window
     gui (format "sfsim %s" version)
-    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 11)))) 2)
-    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 11)))
+    (quot (- window-width (scale gui 320)) 2) (quot (- window-height (scale gui (+ ^long title-height (* ^long widget-height 10)))) 2)
+    (scale gui 320) (scale gui (+ ^long title-height (* ^long widget-height 10)))
     :dialog
     (ignore-nil-> state state
                   (layout-row-dynamic gui (scale gui row-height) 1)
@@ -1403,10 +1403,6 @@
                     (assoc-in state [:gui ::menu] privacy-dialog))
                   (when (button-label gui "Resume")
                     (assoc-in state [:input :sfsim.input/menu] nil))
-                  (when (button-label gui "View Wishlist Page")
-                    (when (:user-stats state)
-                      (GLFW/glfwIconifyWindow (:window state))
-                      (steam/show-wishlist-page)))
                   (when (button-label gui "Quit")
                     (GLFW/glfwSetWindowShouldClose (:window state) true)))))
 

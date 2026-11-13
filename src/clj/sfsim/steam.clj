@@ -121,13 +121,5 @@
         (safe-unlock-achievement! user-stats "CIRCULARORBIT")))))
 
 
-(defn show-wishlist-page
-  "Show Steam wishlist page"
-  []
-  (let [callback (reify SteamFriendsCallback (onPersonaStateChange [_this _steam-id _property-flags]))
-        friends  (SteamFriends. callback)]
-    (.activateGameOverlayToStore friends 3687560 SteamFriends$OverlayToStoreFlag/None)))
-
-
 (set! *warn-on-reflection* false)
 (set! *unchecked-math* false)
