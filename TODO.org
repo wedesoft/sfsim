@@ -3,30 +3,27 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
-** TODO improve performance of planet
-** TODO speed indicator, height, vertical speed
+** TODO MFD with speed indicator, height, vertical speed, horizon
+** TODO article about rendering procedurally generated planet using tessellation
 ** TODO auto-centering keyboard controls and pitch trim
-** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
-*** TODO black loading screen with noise instead of paused game
-*** TODO start flying
+** TODO implement menu with starts (disable some achievements depending)
+*** TODO Approach
 *** TODO Take off
-*** TODO set of tutorials
+*** TODO in orbit
+** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 **** TODO Phase 1: Atmospheric Flight & Landing
 **** TODO Phase 2: Launch to Orbit & Atmospheric Escape
 **** TODO Phase 3: Orbital Flight & Basic 6-DOF Controls (RCS translation keys: Strafe Up/Down/Left/Right)
 **** TODO Phase 4: Space Station Docking
-*** TODO Orbital parameters
+**** TODO Orbital parameters
 ** TODO orbit MFD guidance needles
+** TODO test on widescreen
 ** TODO Reentry MFD
 ** TODO restart button
 ** TODO improve monitoring
-*** DONE implement opt-out
-    Add option in Steam dialog to launch without APM:
-    * Play sfsim
-    * Play without Diagnostic Tracking
 *** TODO button to report problem (log an error)
 *** TODO funnel for first session (tutorial steps)
-*** TODO frame time histogram
+*** TODO frame time quantiles
 *** TODO GPU information
 ** TODO artifacts when rendering nearby water
 ** TODO amplification, light direction, and any other atmosphere related uniforms should be set in one place
