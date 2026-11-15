@@ -3,10 +3,11 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
-** TODO improve performance of planet
 ** TODO speed indicator, height, vertical speed
 ** TODO auto-centering keyboard controls and pitch trim
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
+** TODO key names not correct on some languages
+** TODO integration tests for different screen formats
 *** TODO black loading screen with noise instead of paused game
 *** TODO start flying
 *** TODO Take off
