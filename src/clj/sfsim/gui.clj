@@ -2054,10 +2054,17 @@
         (doseq [tick (range (max 0 (- speed-rounded 60)) (+ speed-rounded 70) 10)]
                (let [yi (+ cy (* (- speed tick) (scale gui 2)))]
                  (draw-text-right canvas x0 (- yi (scale gui (* 0.4 text-height))) (* w 0.7) text-height (format "%d" tick) font bright)
-                 (stroke-line canvas (+ x0 (* 0.8 w)) yi (+ x0 w) yi (scale gui 1) bright)))
-        (draw-text canvas (+ x0 (* w 0.05)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed2) font green)
-        (draw-text canvas (+ x0 (* w 0.25)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed1) font green)
-        (draw-text canvas (+ x0 (* w 0.45)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed0) font green)))))
+                 (stroke-line canvas (+ x0 (* 0.8 w)) yi (+ x0 w) yi (scale gui 1) bright))))
+      (with-rect rect (+ x0 (* w 0.1)) (- cy (scale gui (* 0.4 text-height))) (* w 0.6) (scale gui (* 0.8 text-height))
+        (fill-rect canvas rect 0.0 bg))
+      (with-rect rect (+ x0 (* w 0.55)) (- cy (scale gui (* 0.8 text-height))) (* w 0.2) (scale gui (* 1.6 text-height))
+        (fill-rect canvas rect 0.0 bg))
+      (with-clip canvas (+ x0 (* w 0.1)) (- cy (scale gui (* 0.4 text-height))) w (scale gui (* 0.8 text-height))
+        (draw-text canvas (+ x0 (* w 0.15)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed2) font green)
+        (draw-text canvas (+ x0 (* w 0.35)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed1) font green))
+      (with-clip canvas (+ x0 (* w 0.55)) (- cy (scale gui (* 0.8 text-height))) (* w 0.2) (scale gui (* 1.6 text-height))
+        (doseq [delta (range -1 2)]
+               (draw-text canvas (+ x0 (* w 0.55)) (+ cy (scale gui (- (* 0.8 text-height (+ speed-frac delta)) (* 0.4 text-height)))) (* w 0.2) text-height (format "%d" (mod (- speed0 delta) 10)) font green))))))
 
 
 (defn horizon-mfd
