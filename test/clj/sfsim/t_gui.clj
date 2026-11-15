@@ -502,9 +502,9 @@
            => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
          ?speed ?result
           0.0   "speed-0.png"
+          2.0   "speed-2.png"
           5.0   "speed-5.png"
          10.0   "speed-10.png")
-
 
 
 (def horizon-settings {:sfsim.physics/display-speed 25.0})

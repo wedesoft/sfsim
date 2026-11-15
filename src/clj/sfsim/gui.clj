@@ -6,7 +6,7 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (PI to-radians to-degrees cos sin ceil sqrt)]
+    [clojure.math :refer (PI to-radians to-degrees cos sin ceil sqrt floor)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.vector :refer (vec2 vec3)]
@@ -2038,9 +2038,14 @@
         h               (.h ^NkRect canvas-rect)
         cy              (+ y0 (* 0.5 h))
         speed-rounded   (* 10 (long (quot speed 10)))
-        ]
+        speed-floor     (long (floor speed))
+        speed-frac      (- speed speed-floor)
+        speed0          (mod speed-floor 10)
+        speed1          (mod (quot speed-floor 10) 10)
+        speed2          (mod (quot speed-floor 100) 10)]
     (with-colors
       [bg       0   0   0
+       green    0 255   0
        grey    64  64  64
        bright 202 213 197]
       (fill-rect canvas canvas-rect 0.0 grey)
@@ -2049,7 +2054,10 @@
         (doseq [tick (range (max 0 (- speed-rounded 60)) (+ speed-rounded 70) 10)]
                (let [yi (+ cy (* (- speed tick) (scale gui 2)))]
                  (draw-text-right canvas x0 (- yi (scale gui (* 0.4 text-height))) (* w 0.7) text-height (format "%d" tick) font bright)
-                 (stroke-line canvas (+ x0 (* 0.8 w)) yi (+ x0 w) yi (scale gui 1) bright)))))))
+                 (stroke-line canvas (+ x0 (* 0.8 w)) yi (+ x0 w) yi (scale gui 1) bright)))
+        (draw-text canvas (+ x0 (* w 0.05)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed2) font green)
+        (draw-text canvas (+ x0 (* w 0.25)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed1) font green)
+        (draw-text canvas (+ x0 (* w 0.45)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed0) font green)))))
 
 
 (defn horizon-mfd
@@ -2065,7 +2073,7 @@
                border  82 185 142]
               (fill-rect canvas canvas-rect 0.0 bg)
               (stroke-rect canvas canvas-rect 0.0 (scale gui 2.0) border)
-              (with-rect rect (+ x0 (* w 0.05)) (+ y0 (* h 0.1)) (* w 0.25) (* h 0.8)
+              (with-rect rect (+ x0 (* w 0.05)) (+ y0 (* h 0.1)) (* w 0.2) (* h 0.8)
                 (draw-speed gui canvas rect (:sfsim.physics/display-speed settings)))))))
 
 
