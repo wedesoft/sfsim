@@ -2039,13 +2039,15 @@
         cy              (+ y0 (* 0.5 h))
         half-row        (scale gui (* 0.4 text-height))
         row-height      (scale gui (* 0.8 text-height))
+        text-y          (- cy half-row)
+        window-y        (- cy row-height)
         speed-rounded   (* 10 (long (quot speed 10)))
         speed-floor     (long (floor speed))
         speed-round     (long (round speed))
         speed-frac      (- speed speed-floor)
-        speed0          (mod speed-floor 10)
-        speed1          (mod (quot speed-round 10) 10)
-        speed2          (mod (quot speed-round 100) 10)]
+        ones            (mod speed-floor 10)
+        tens            (mod (quot speed-round 10) 10)
+        hundreds        (mod (quot speed-round 100) 10)]
     (with-colors
       [bg       0   0   0
        green    0 255   0
@@ -2056,18 +2058,18 @@
       (with-clip canvas x0 y0 w h
         (doseq [tick (range (max 0 (- speed-rounded 50)) (+ speed-rounded 60) 10)]
                (let [yi (+ cy (* (- speed tick) (scale gui 3.0)))]
-                 (draw-text-right canvas x0 (- yi half-row) (* w 0.7) text-height (format "%d" tick) font bright)
+                 (draw-text-right canvas x0 (- yi half-row) (* w 0.7) text-height (str tick) font bright)
                  (stroke-line canvas (+ x0 (* 0.8 w)) yi (+ x0 w) yi (scale gui 1) bright))))
-      (with-rect rect (+ x0 (* w 0.1)) (- cy half-row) (* w 0.6) row-height
+      (with-rect rect (+ x0 (* w 0.1)) text-y (* w 0.6) row-height
         (fill-rect canvas rect 0.0 bg))
-      (with-rect rect (+ x0 (* w 0.55)) (- cy row-height) (* w 0.2) (scale gui (* 1.6 text-height))
+      (with-rect rect (+ x0 (* w 0.55)) window-y (* w 0.2) (scale gui (* 1.6 text-height))
         (fill-rect canvas rect 0.0 bg))
-      (with-clip canvas (+ x0 (* w 0.1)) (- cy half-row) w row-height
-        (draw-text canvas (+ x0 (* w 0.15)) (- cy half-row) (* w 0.2) text-height (format "%d" speed2) font green)
-        (draw-text canvas (+ x0 (* w 0.35)) (- cy half-row) (* w 0.2) text-height (format "%d" speed1) font green))
-      (with-clip canvas (+ x0 (* w 0.55)) (- cy row-height) (* w 0.2) (scale gui (* 1.6 text-height))
+      (with-clip canvas (+ x0 (* w 0.1)) text-y w row-height
+        (draw-text canvas (+ x0 (* w 0.15)) text-y (* w 0.2) text-height (str hundreds) font green)
+        (draw-text canvas (+ x0 (* w 0.35)) text-y (* w 0.2) text-height (str tens) font green))
+      (with-clip canvas (+ x0 (* w 0.55)) window-y (* w 0.2) (scale gui (* 1.6 text-height))
         (doseq [delta (range -1 2)]
-               (draw-text canvas (+ x0 (* w 0.55)) (+ cy (scale gui (- (* 0.8 text-height (+ speed-frac delta)) (* 0.4 text-height)))) (* w 0.2) text-height (format "%d" (mod (- speed0 delta) 10)) font green))))))
+               (draw-text canvas (+ x0 (* w 0.55)) (+ cy (- (* row-height (+ speed-frac delta)) half-row)) (* w 0.2) text-height (str (mod (- ones delta) 10)) font green))))))
 
 
 (defn horizon-mfd
