@@ -2088,16 +2088,15 @@
               (fill-rect canvas canvas-rect 0.0 bg)
               (stroke-rect canvas canvas-rect 0.0 (scale gui 2.0) border)
               (with-rect rect (+ x0 (* w 0.05)) (+ y0 (* h 0.1)) (* w 0.2) (* h 0.8)
-                (draw-speed gui canvas rect (:sfsim.physics/display-speed settings)))))))
+                (draw-speed gui canvas rect (::knots-indicated-air-speed settings)))))))
 
 
 (defn information-display
   [gui w h state frametime time-lapse]
   (let [controls (-> state :input :sfsim.input/controls)
         font     (::bitmap-font gui)
-        text     (format "vs = % .1f m/s, v = %.1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
+        text     (format "vs = % .1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
                          (:sfsim.physics/display-vertical-speed (:physics state))
-                         (:sfsim.physics/display-speed (:physics state))
                          (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
                          (if (:sfsim.input/brake controls) ", brake"
                            (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
@@ -2116,7 +2115,7 @@
       (nuklear-window gui "Horizon" (scale gui (+ 30 512)) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
-                      (horizon-mfd gui (:physics state)))
+                      (horizon-mfd gui {::knots-indicated-air-speed (physics/get-knots-indicated-air-speed (:physics state) config/planet-config)}))
       (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)

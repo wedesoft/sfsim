@@ -3,7 +3,13 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
-** TODO speed indicator, height, vertical speed
+** TODO speed indicator
+*** TODO height
+*** TODO vertical speed
+*** TODO vertical acceleration
+*** TODO Mach number
+*** DONE Knots Indicated Airspeed
+*** TODO Angle of Attack
 ** TODO auto-centering keyboard controls and pitch trim
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 ** TODO key names not correct on some languages
@@ -17,6 +23,7 @@
 **** TODO Phase 3: Orbital Flight & Basic 6-DOF Controls (RCS translation keys: Strafe Up/Down/Left/Right)
 **** TODO Phase 4: Space Station Docking
 *** TODO Orbital parameters
+** TODO display dynamic pressure
 ** TODO orbit MFD guidance needles
 ** TODO Reentry MFD
 ** TODO restart button

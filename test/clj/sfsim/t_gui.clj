@@ -514,7 +514,7 @@
          10.7   "speed-10-7.png")
 
 
-(def horizon-settings {:sfsim.physics/display-speed 25.0})
+(def horizon-settings {:sfsim.gui/knots-indicated-air-speed 25.0})
 
 
 (fact "Render horizon MFD"
