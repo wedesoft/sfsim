@@ -236,7 +236,7 @@ void main()
                    (uniform-float program "radius" 2.0)
                    (uniform-float program "max_height" 1.0)
                    (uniform-float program "object_distance" object-distance))
-               shockwave-outer-probe (last shockwave-outer) (last shockwave-point) shaders/limit-interval))
+               shockwave-outer-probe (last (shockwave-segment true)) (last (shockwave-segment false)) shaders/limit-interval))
 
 
 (tabular "Shader for combining shockwave and atmospheric attenuation"

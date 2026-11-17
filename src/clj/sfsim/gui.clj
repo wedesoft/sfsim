@@ -6,7 +6,7 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (PI to-radians to-degrees cos sin ceil sqrt)]
+    [clojure.math :refer (PI to-radians to-degrees cos sin ceil sqrt floor)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.vector :refer (vec2 vec3)]
@@ -18,7 +18,6 @@
     [sfsim.matrix :refer (quaternion->matrix)]
     [sfsim.astro :as astro]
     [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map sqr)]
-    [sfsim.steam :as steam]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                           destroy-vertex-array-object with-invisible-window framebuffer-render make-vertex-array-object
@@ -943,6 +942,23 @@
     `(with-color ~(nth colors 0) ~(nth colors 1) ~(nth colors 2) ~(nth colors 3)
        (with-colors ~(drop 4 colors) ~@body))
     `(do ~@body)))
+
+
+(defmacro with-clip
+  [canvas x y w h & body]
+  `(let [^NkCommandBuffer canvas# ~canvas]
+     (with-open [stack# (MemoryStack/stackPush)]
+       (let [saved# (.set (NkRect/malloc stack#) (.clip canvas#))
+             clip#  (.set (NkRect/malloc stack#)
+                          (float ~x)
+                          (float ~y)
+                          (float ~w)
+                          (float ~h))]
+         (Nuklear/nk_push_scissor canvas# clip#)
+         (try
+           ~@body
+           (finally
+             (Nuklear/nk_push_scissor canvas# saved#)))))))
 
 
 (defn fill-rect
@@ -2012,6 +2028,61 @@
                   (draw-navball gui canvas rect)))))))
 
 
+(defn draw-speed
+  [gui canvas canvas-rect speed]
+  (let [font            (::bitmap-font gui)
+        x0              (.x ^NkRect canvas-rect)
+        y0              (.y ^NkRect canvas-rect)
+        w               (.w ^NkRect canvas-rect)
+        h               (.h ^NkRect canvas-rect)
+        cy              (+ y0 (* 0.5 h))
+        speed-rounded   (* 10 (long (quot speed 10)))
+        speed-floor     (long (floor speed))
+        speed-frac      (- speed speed-floor)
+        speed0          (mod speed-floor 10)
+        speed1          (mod (quot speed-floor 10) 10)
+        speed2          (mod (quot speed-floor 100) 10)]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0
+       grey    64  64  64
+       bright 202 213 197]
+      (fill-rect canvas canvas-rect 0.0 grey)
+      (stroke-rect canvas canvas-rect 0.0 (scale gui 1.0) bright)
+      (with-clip canvas x0 y0 w h
+        (doseq [tick (range (max 0 (- speed-rounded 60)) (+ speed-rounded 70) 10)]
+               (let [yi (+ cy (* (- speed tick) (scale gui 2)))]
+                 (draw-text-right canvas x0 (- yi (scale gui (* 0.4 text-height))) (* w 0.7) text-height (format "%d" tick) font bright)
+                 (stroke-line canvas (+ x0 (* 0.8 w)) yi (+ x0 w) yi (scale gui 1) bright))))
+      (with-rect rect (+ x0 (* w 0.1)) (- cy (scale gui (* 0.4 text-height))) (* w 0.6) (scale gui (* 0.8 text-height))
+        (fill-rect canvas rect 0.0 bg))
+      (with-rect rect (+ x0 (* w 0.55)) (- cy (scale gui (* 0.8 text-height))) (* w 0.2) (scale gui (* 1.6 text-height))
+        (fill-rect canvas rect 0.0 bg))
+      (with-clip canvas (+ x0 (* w 0.1)) (- cy (scale gui (* 0.4 text-height))) w (scale gui (* 0.8 text-height))
+        (draw-text canvas (+ x0 (* w 0.15)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed2) font green)
+        (draw-text canvas (+ x0 (* w 0.35)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed1) font green))
+      (with-clip canvas (+ x0 (* w 0.55)) (- cy (scale gui (* 0.8 text-height))) (* w 0.2) (scale gui (* 1.6 text-height))
+        (doseq [delta (range -1 2)]
+               (draw-text canvas (+ x0 (* w 0.55)) (+ cy (scale gui (- (* 0.8 text-height (+ speed-frac delta)) (* 0.4 text-height)))) (* w 0.2) text-height (format "%d" (mod (- speed0 delta) 10)) font green))))))
+
+
+(defn horizon-mfd
+  "Display horizon and other information"
+  [gui settings]
+  (widget gui canvas canvas-rect
+          (let [x0    (.x canvas-rect)
+                y0    (.y canvas-rect)
+                w     (.w canvas-rect)
+                h     (.h canvas-rect)]
+            (with-colors
+              [bg       0   0   0
+               border  82 185 142]
+              (fill-rect canvas canvas-rect 0.0 bg)
+              (stroke-rect canvas canvas-rect 0.0 (scale gui 2.0) border)
+              (with-rect rect (+ x0 (* w 0.05)) (+ y0 (* h 0.1)) (* w 0.2) (* h 0.8)
+                (draw-speed gui canvas rect (:sfsim.physics/display-speed settings)))))))
+
+
 (defn information-display
   [gui w h state frametime time-lapse]
   (let [controls (-> state :input :sfsim.input/controls)
@@ -2034,6 +2105,10 @@
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
                       (controls-mfd gui controls))
+      (nuklear-window gui "Horizon" (scale gui (+ 30 512)) (- ^long h (scale gui (+ 10 256)))
+                      (scale gui 256) (scale gui 256) :widget
+                      (layout-row-dynamic gui (scale gui 256) 1)
+                      (horizon-mfd gui (:physics state)))
       (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
