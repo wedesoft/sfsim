@@ -55,14 +55,6 @@
    (template/eval (slurp "resources/shaders/plume/segment.glsl") {:type "shockwave" :outer outer})])
 
 
-(def shockwave-outer
-  (shockwave-segment true))
-
-
-(def shockwave-point
-  (shockwave-segment false))
-
-
 (defn fragment-shockwave
   [outer]
   [ray-box shockwave-transfer bluenoise/sampling-offset geometry-point geometry-distance limit-interval

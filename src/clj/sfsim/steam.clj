@@ -17,9 +17,6 @@
       (com.codedisaster.steamworks
         SteamLibraryLoaderLwjgl3
         SteamAPI
-        SteamFriends
-        SteamFriendsCallback
-        SteamFriends$OverlayToStoreFlag
         SteamUserStats
         SteamUserStatsCallback)))
 
