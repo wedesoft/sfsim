@@ -230,6 +230,15 @@
        => (roughly (/ PI 2) 1e-6))
 
 
+(facts "Get knots indicated airspeed"
+       (get-indicated-air-speed 0.0 (q/->Quaternion 1 0 0 0) (vec3 0 0 0)) => 0.0
+       (get-indicated-air-speed 0.0 (q/->Quaternion 1 0 0 0) (vec3 100 0 0)) => 100.0
+       (get-indicated-air-speed 0.0 (q/->Quaternion 1 0 0 0) (vec3 -100 0 0)) => 0.0
+       (get-indicated-air-speed 0.0 (q/->Quaternion 1 0 0 0) (vec3 0 100 0)) => 0.0
+       (get-indicated-air-speed 0.0 (q/rotation (to-radians 90.0) (vec3 0 0 1)) (vec3 0 100 0)) => 100.0
+       (get-indicated-air-speed 5500.0 (q/->Quaternion 1 0 0 0) (vec3 100 0 0)) => (roughly 75.436 1e-3))
+
+
 (defn coefficient-of-lift-mock
    ^double [^double speed-mach ^double alpha ^double beta]
   (facts alpha => 0.0 beta => 0.0 speed-mach => 0.5)

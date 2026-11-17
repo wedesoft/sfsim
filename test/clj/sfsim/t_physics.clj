@@ -19,6 +19,7 @@
     [sfsim.quaternion :as q]
     [sfsim.jolt :as jolt]
     [sfsim.astro :as astro]
+    [sfsim.units :as units]
     [sfsim.physics :refer :all]))
 
 
@@ -143,7 +144,6 @@
        (:sfsim.physics/position @state) => (vec3 0 0 0)
        (:sfsim.physics/speed @state) => (vec3 0 0 0)
        (:sfsim.physics/domain @state) => :sfsim.physics/surface
-       (:sfsim.physics/display-speed @state) => 0.0
        (:sfsim.physics/display-vertical-speed @state) => 0.0
        (:sfsim.physics/throttle @state) => 0.0
        (:sfsim.physics/air-brake @state) => 0.0
@@ -235,6 +235,12 @@
        (jolt/get-angular-velocity sphere) => (vec3 0 0 2)
        (get-linear-speed :sfsim.physics/orbit @state) => (vec3 100 0 0)
        (get-angular-speed :sfsim.physics/orbit @state) => (vec3 0 0 2))
+
+
+(facts "Get knots indicated air speed (KIAS)"
+       (swap! state set-pose :sfsim.physics/surface (vec3 6383500 0 0) (q/->Quaternion 1 0 0 0))
+       (swap! state set-speed :sfsim.physics/surface (vec3 100 0 0) (vec3 0 0 0))
+       (get-knots-indicated-air-speed @state {:sfsim.planet/radius 6378000.0}) => (roughly (/ 75.436 units/knot) 1e-3))
 
 
 (facts "Set longitude, latitude, and height of space craft"
@@ -346,7 +352,6 @@
        (swap! state update-state 1.0 (gravitation (vec3 0 0 0) 5.9722e+24))
        (jolt/get-translation (@state :sfsim.physics/body)) => (roughly-vector (vec3 0 0 (- 6678000 (* 0.5 8.938))) 1e-3)
        (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (roughly-vector (vec3 0 0 -8.938) 1e-3)
-       (@state :sfsim.physics/display-speed) => (roughly 4.469 1e-3)
        (@state :sfsim.physics/display-vertical-speed) => (roughly -4.469 1e-3)
 
        (swap! state set-pose :sfsim.physics/surface (vec3 6678000 0 0) (q/->Quaternion 1 0 0 0))
@@ -367,15 +372,13 @@
        (swap! state update-state 1.0 (gravitation (vec3 0 0 0) 5.9722e+24))
        (@state :sfsim.physics/position) => (roughly-vector (vec3 (- 6678000 (* 0.5 8.938)) 0 0) 1e-3)
        (@state :sfsim.physics/speed) => (roughly-vector (vec3 -8.938 0 0) 1e-3)
-       (@state :sfsim.physics/display-speed) => (roughly 8.938 1e-3)
        (@state :sfsim.physics/display-vertical-speed) => (roughly -8.938 1e-3)
        (jolt/get-translation (@state :sfsim.physics/body)) => (vec3 0 0 0)
        (jolt/get-linear-velocity (@state :sfsim.physics/body)) => (vec3 0 0 0)
 
        (swap! state update-state 1.0 (gravitation (vec3 0 0 0) 5.9722e+24))
        (@state :sfsim.physics/position) => (roughly-vector (vec3 (- 6678000 (* 0.5 8.938 4)) 0 0) 1e-3)
-       (@state :sfsim.physics/speed) => (roughly-vector (vec3 (* 2 -8.938) 0 0) 1e-3)
-       (@state :sfsim.physics/display-speed) => (roughly (* 2 8.938) 1e-3))
+       (@state :sfsim.physics/speed) => (roughly-vector (vec3 (* 2 -8.938) 0 0) 1e-3))
 
 
 (facts "Apply forces in Earth centered rotating coordinate system"
