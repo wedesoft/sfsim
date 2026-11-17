@@ -6,7 +6,7 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (PI to-radians to-degrees cos sin ceil sqrt floor)]
+    [clojure.math :refer (PI to-radians to-degrees cos sin ceil sqrt floor round)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.vector :refer (vec2 vec3)]
@@ -2036,12 +2036,20 @@
         w               (.w ^NkRect canvas-rect)
         h               (.h ^NkRect canvas-rect)
         cy              (+ y0 (* 0.5 h))
+        half-row        (scale gui (* 0.4 text-height))
+        row-height      (scale gui (* 0.8 text-height))
+        window-height   (scale gui (* 1.6 text-height))
+        x               #(+ x0 (* w %))
+        text-y          (- cy half-row)
+        window-y        (- cy row-height)
+        digit-width     (* 0.2 w)
         speed-rounded   (* 10 (long (quot speed 10)))
         speed-floor     (long (floor speed))
+        speed-round     (long (round speed))
         speed-frac      (- speed speed-floor)
-        speed0          (mod speed-floor 10)
-        speed1          (mod (quot speed-floor 10) 10)
-        speed2          (mod (quot speed-floor 100) 10)]
+        ones            (mod speed-floor 10)
+        tens            (mod (quot speed-round 10) 10)
+        hundreds        (mod (quot speed-round 100) 10)]
     (with-colors
       [bg       0   0   0
        green    0 255   0
@@ -2050,20 +2058,20 @@
       (fill-rect canvas canvas-rect 0.0 grey)
       (stroke-rect canvas canvas-rect 0.0 (scale gui 1.0) bright)
       (with-clip canvas x0 y0 w h
-        (doseq [tick (range (max 0 (- speed-rounded 60)) (+ speed-rounded 70) 10)]
-               (let [yi (+ cy (* (- speed tick) (scale gui 2)))]
-                 (draw-text-right canvas x0 (- yi (scale gui (* 0.4 text-height))) (* w 0.7) text-height (format "%d" tick) font bright)
-                 (stroke-line canvas (+ x0 (* 0.8 w)) yi (+ x0 w) yi (scale gui 1) bright))))
-      (with-rect rect (+ x0 (* w 0.1)) (- cy (scale gui (* 0.4 text-height))) (* w 0.6) (scale gui (* 0.8 text-height))
+        (doseq [tick (range (max 0 (- speed-rounded 50)) (+ speed-rounded 60) 10)]
+               (let [y (+ cy (* (- speed tick) (scale gui 3.0)))]
+                 (draw-text-right canvas x0 (- y half-row) (* w 0.7) text-height (str tick) font bright)
+                 (stroke-line canvas (x 0.8) y (+ x0 w) y (scale gui 1.0) bright))))
+      (with-rect rect (x 0.1) text-y (* w 0.6) row-height
         (fill-rect canvas rect 0.0 bg))
-      (with-rect rect (+ x0 (* w 0.55)) (- cy (scale gui (* 0.8 text-height))) (* w 0.2) (scale gui (* 1.6 text-height))
+      (with-rect rect (x 0.55) window-y digit-width window-height
         (fill-rect canvas rect 0.0 bg))
-      (with-clip canvas (+ x0 (* w 0.1)) (- cy (scale gui (* 0.4 text-height))) w (scale gui (* 0.8 text-height))
-        (draw-text canvas (+ x0 (* w 0.15)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed2) font green)
-        (draw-text canvas (+ x0 (* w 0.35)) (- cy (scale gui (* 0.4 text-height))) (* w 0.2) text-height (format "%d" speed1) font green))
-      (with-clip canvas (+ x0 (* w 0.55)) (- cy (scale gui (* 0.8 text-height))) (* w 0.2) (scale gui (* 1.6 text-height))
+      (with-clip canvas (x 0.1) text-y w row-height
+        (doseq [[left digit] [[0.15 hundreds] [0.35 tens]]]
+               (draw-text canvas (+ x0 (* w left)) text-y digit-width text-height (str digit) font green)))
+      (with-clip canvas (x 0.55) window-y digit-width window-height
         (doseq [delta (range -1 2)]
-               (draw-text canvas (+ x0 (* w 0.55)) (+ cy (scale gui (- (* 0.8 text-height (+ speed-frac delta)) (* 0.4 text-height)))) (* w 0.2) text-height (format "%d" (mod (- speed0 delta) 10)) font green))))))
+               (draw-text canvas (x 0.55) (+ cy (- (* row-height (+ speed-frac delta)) half-row)) digit-width text-height (str (mod (- ones delta) 10)) font green))))))
 
 
 (defn horizon-mfd

@@ -504,9 +504,14 @@
           0.0   "speed-0.png"
           0.2   "speed-0-2.png"
           0.5   "speed-0-5.png"
+          0.8   "speed-0-8.png"
           2.0   "speed-2.png"
           5.0   "speed-5.png"
-         10.0   "speed-10.png")
+          9.2   "speed-9-2.png"
+          9.7   "speed-9-7.png"
+         10.0   "speed-10.png"
+         10.2   "speed-10-2.png"
+         10.7   "speed-10-7.png")
 
 
 (def horizon-settings {:sfsim.physics/display-speed 25.0})
