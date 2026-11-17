@@ -10,6 +10,11 @@
 *** TODO Mach number
 *** DONE Knots Indicated Airspeed
 *** TODO Angle of Attack
+** TODO article about rendering planet
+*** TODO use octaves of worley (?) noise
+*** TODO function to determine path of neighbour (rotations not needed)
+*** TODO background LOD and tessellation level (<= 64) computation
+*** TODO foreground rendering
 ** TODO auto-centering keyboard controls and pitch trim
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 ** TODO key names not correct on some languages
