@@ -9,6 +9,7 @@
 *** TODO vertical acceleration
 *** TODO Mach number
 *** DONE Knots Indicated Airspeed
+*** TODO knots in orbit
 *** TODO Angle of Attack
 ** TODO article about rendering planet
 *** TODO use octaves of worley (?) noise
