@@ -2040,6 +2040,7 @@
         row-height      (scale gui (* 0.8 text-height))
         window-height   (scale gui (* 1.6 text-height))
         x               #(+ x0 (* w %))
+        y               #(+ cy (* w %))
         text-y          (- cy half-row)
         window-y        (- cy row-height)
         digit-width     (* 0.2 w)
@@ -2064,14 +2065,23 @@
                  (stroke-line canvas (x 0.8) y (+ x0 w) y (scale gui 1.0) bright))))
       (with-rect rect (x 0.1) text-y (* w 0.6) row-height
         (fill-rect canvas rect 0.0 bg))
-      (with-rect rect (x 0.55) window-y digit-width window-height
+      (with-rect rect (x 0.55) window-y (inc digit-width) window-height
         (fill-rect canvas rect 0.0 bg))
+      (fill-polygon canvas [[(x 0.75) (y -0.1)] [(x 0.9) (y 0.0)] [(x 0.75) (y 0.1)]] bg)
       (with-clip canvas (x 0.1) text-y w row-height
         (doseq [[left digit] [[0.15 hundreds] [0.35 tens]]]
                (draw-text canvas (+ x0 (* w left)) text-y digit-width text-height (str digit) font green)))
       (with-clip canvas (x 0.55) window-y digit-width window-height
         (doseq [delta (range -1 2)]
-               (draw-text canvas (x 0.55) (+ cy (- (* row-height (+ speed-frac delta)) half-row)) digit-width text-height (str (mod (- ones delta) 10)) font green))))))
+               (draw-text canvas (x 0.55) (+ cy (- (* row-height (+ speed-frac delta)) half-row)) digit-width text-height (str (mod (- ones delta) 10)) font green)))
+      (stroke-polygon canvas [[(x 0.1) text-y] [(x 0.55) text-y]
+                              [(x 0.55) (- cy row-height)]
+                              [(x 0.75) (- cy row-height)]
+                              [(x 0.75) (y -0.1)] [(x 0.9) (y 0.0)] [(x 0.75) (y 0.1)]
+                              [(x 0.75) (+ cy row-height)]
+                              [(x 0.55) (+ cy row-height)]
+                              [(x 0.55) (+ text-y row-height)] [(x 0.1) (+ text-y row-height)]]
+                      (scale gui 1.0) bright))))
 
 
 (defn horizon-mfd
