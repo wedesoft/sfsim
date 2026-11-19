@@ -19,7 +19,7 @@
 (def slugs 14.5939029372)
 (def mile 1852)
 (def hour 3600)
-(def knot (/ mile hour))
+(def knot (/ ^double mile ^double hour))
 
 
 (set! *warn-on-reflection* false)

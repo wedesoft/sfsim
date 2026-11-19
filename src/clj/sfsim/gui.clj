@@ -945,20 +945,14 @@
 
 
 (defmacro with-clip
-  [canvas x y w h & body]
-  `(let [^NkCommandBuffer canvas# ~canvas]
-     (with-open [stack# (MemoryStack/stackPush)]
-       (let [saved# (.set (NkRect/malloc stack#) (.clip canvas#))
-             clip#  (.set (NkRect/malloc stack#)
-                          (float ~x)
-                          (float ~y)
-                          (float ~w)
-                          (float ~h))]
-         (Nuklear/nk_push_scissor canvas# clip#)
-         (try
-           ~@body
-           (finally
-             (Nuklear/nk_push_scissor canvas# saved#)))))))
+  [canvas rect & body]
+  `(with-open [stack# (MemoryStack/stackPush)]
+     (let [saved# (.set (NkRect/malloc stack#) (.clip ~canvas))]
+       (Nuklear/nk_push_scissor ~canvas ~rect)
+       (try
+         ~@body
+         (finally
+           (Nuklear/nk_push_scissor ~canvas saved#))))))
 
 
 (defn fill-rect
@@ -1028,6 +1022,13 @@
   [canvas x y w h text font color]
   (let [text-width (text-width text font)]
     (draw-text canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text font color)))
+
+
+(defn draw-text-center
+  "Draw centered text on a canvas"
+  [canvas x y w h text font color]
+  (let [text-width (text-width text font)]
+    (draw-text canvas (+ ^double x (* 0.5 (- ^double w ^double text-width))) y text-width h text font color)))
 
 
 (declare main-dialog)
@@ -2028,28 +2029,38 @@
                   (draw-navball gui canvas rect)))))))
 
 
+(defn digit
+  "Get a decimal digit from a number"
+  ^long [^long x ^long i]
+  (if (zero? i)
+    (mod x 10)
+    (recur (quot x 10) (dec i))))
+
+
 (defn draw-speed
-  [gui canvas canvas-rect speed]
+  "Draw speed scale"
+  [gui ^NkCommandBuffer canvas canvas-rect ^double speed]
   (let [font            (::bitmap-font gui)
         x0              (.x ^NkRect canvas-rect)
         y0              (.y ^NkRect canvas-rect)
         w               (.w ^NkRect canvas-rect)
         h               (.h ^NkRect canvas-rect)
-        cy              (+ y0 (* 0.5 h))
-        half-row        (scale gui (* 0.4 text-height))
-        row-height      (scale gui (* 0.8 text-height))
-        window-height   (scale gui (* 1.6 text-height))
-        x               #(+ x0 (* w %))
-        text-y          (- cy half-row)
-        window-y        (- cy row-height)
-        digit-width     (* 0.2 w)
-        speed-rounded   (* 10 (long (quot speed 10)))
-        speed-floor     (long (floor speed))
+        cy              (+ y0 (quot h 2))
+        digit-height    (long (scale gui 18))
+        digit-height2   (quot digit-height 2)
+        digit-width     (long (scale gui 9))
+        margin-left     (long (scale gui 6))
+        margin-right    (long (scale gui 12))
+        thickness       (scale gui 1.0)
+        num-digits      5
+        rounding        10
+        delta           5
+        triangle-size   (long (scale gui 4))
+        tick-interval   (long (scale gui 32))
+        nearest-tick    (* rounding (long (quot speed rounding)))
         speed-round     (long (round speed))
-        speed-frac      (- speed speed-floor)
-        ones            (mod speed-floor 10)
-        tens            (mod (quot speed-round 10) 10)
-        hundreds        (mod (quot speed-round 100) 10)]
+        speed-floor     (long (floor speed))
+        speed-frac      (- speed speed-floor)]
     (with-colors
       [bg       0   0   0
        green    0 255   0
@@ -2057,38 +2068,72 @@
        bright 202 213 197]
       (fill-rect canvas canvas-rect 0.0 grey)
       (stroke-rect canvas canvas-rect 0.0 (scale gui 1.0) bright)
-      (with-clip canvas x0 y0 w h
-        (doseq [tick (range (max 0 (- speed-rounded 50)) (+ speed-rounded 60) 10)]
-               (let [y (+ cy (* (- speed tick) (scale gui 3.0)))]
-                 (draw-text-right canvas x0 (- y half-row) (* w 0.7) text-height (str tick) font bright)
-                 (stroke-line canvas (x 0.8) y (+ x0 w) y (scale gui 1.0) bright))))
-      (with-rect rect (x 0.1) text-y (* w 0.6) row-height
-        (fill-rect canvas rect 0.0 bg))
-      (with-rect rect (x 0.55) window-y digit-width window-height
-        (fill-rect canvas rect 0.0 bg))
-      (with-clip canvas (x 0.1) text-y w row-height
-        (doseq [[left digit] [[0.15 hundreds] [0.35 tens]]]
-               (draw-text canvas (+ x0 (* w left)) text-y digit-width text-height (str digit) font green)))
-      (with-clip canvas (x 0.55) window-y digit-width window-height
-        (doseq [delta (range -1 2)]
-               (draw-text canvas (x 0.55) (+ cy (- (* row-height (+ speed-frac delta)) half-row)) digit-width text-height (str (mod (- ones delta) 10)) font green))))))
+      (with-clip canvas canvas-rect
+        (doseq [^long tick (range (max 0 (- nearest-tick (* rounding delta))) (+ nearest-tick (* rounding (inc delta))) rounding)]
+               (let [y (+ cy (/ (* tick-interval (- speed tick)) rounding))]
+                 (doseq [^long i (range num-digits)]
+                        (draw-text canvas (+ x0 margin-left (* i digit-width)) (- y digit-height2) digit-width digit-height
+                                   (str (digit tick (- num-digits 1 i))) font bright))
+                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness bright))))
+      (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
+        (fill-rect canvas rect 0.0 bg)
+        (doseq [^long i (range (dec num-digits))]
+               (draw-text canvas (+ x0 margin-left (* i digit-width)) (- cy digit-height2) digit-width digit-height
+                          (str (digit speed-round (- num-digits 1 i))) font green)))
+      (with-rect rect (+ x0 margin-left (* digit-width (dec num-digits))) (- cy digit-height) digit-width (* 2 digit-height)
+        (with-clip canvas rect
+          (fill-rect canvas rect 0.0 bg)
+          (doseq [^long delta (range -1 2)]
+                 (draw-text canvas (+ x0 margin-left (* digit-width (dec num-digits)))
+                            (+ cy (- (* digit-height (+ speed-frac delta)) digit-height2))
+                            digit-width digit-height
+                            (str (digit (- speed-floor delta) 0) delta)
+                            font green))))
+      (fill-polygon canvas
+                    [[(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
+                     [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
+                     [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]]
+                    bg)
+      (stroke-polygon canvas
+                      [[(+ x0 margin-left) (- cy digit-height2)]
+                       [(+ x0 margin-left (* digit-width (dec num-digits))) (- cy digit-height2)]
+                       [(+ x0 margin-left (* digit-width (dec num-digits))) (- cy digit-height)]
+                       [(+ x0 margin-left (* digit-width num-digits)) (- cy digit-height)]
+                       [(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
+                       [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
+                       [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]
+                       [(+ x0 margin-left (* digit-width num-digits)) (+ cy digit-height)]
+                       [(+ x0 margin-left (* digit-width (dec num-digits))) (+ cy digit-height)]
+                       [(+ x0 margin-left (* digit-width (dec num-digits))) (+ cy digit-height2)]
+                       [(+ x0 margin-left) (+ cy digit-height2)]]
+                      thickness bright))))
 
 
 (defn horizon-mfd
   "Display horizon and other information"
   [gui settings]
   (widget gui canvas canvas-rect
-          (let [x0    (.x canvas-rect)
-                y0    (.y canvas-rect)
-                w     (.w canvas-rect)
-                h     (.h canvas-rect)]
+          (let [font         (::bitmap-font gui)
+                x0           (.x canvas-rect)
+                y0           (.y canvas-rect)
+                w            (.w canvas-rect)
+                h            (.h canvas-rect)
+                digit-width  (long (scale gui 9))
+                margin       (long (scale gui 2))
+                margin-left  (long (scale gui 6))
+                margin-right (long (scale gui 12))
+                num-digits   5
+                speed-width  (+ margin-left margin-right (* num-digits digit-width))]
             (with-colors
               [bg       0   0   0
+               title  129 226 207
                border  82 185 142]
               (fill-rect canvas canvas-rect 0.0 bg)
               (stroke-rect canvas canvas-rect 0.0 (scale gui 2.0) border)
-              (with-rect rect (+ x0 (* w 0.05)) (+ y0 (* h 0.1)) (* w 0.2) (* h 0.8)
-                (draw-speed gui canvas rect (::knots-indicated-air-speed settings)))))))
+              (draw-text-center canvas x0 (+ y0 margin) w (scale gui text-height) "speed m/s" font title)
+              (with-rect rect (+ x0 (quot (- w speed-width) 2)) (+ y0 margin (scale gui text-height))
+                speed-width (- h (* 2 margin) (scale gui text-height))
+                (draw-speed gui canvas rect (::speed settings)))))))
 
 
 (defn information-display
@@ -2115,7 +2160,7 @@
       (nuklear-window gui "Horizon" (scale gui (+ 30 512)) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
-                      (horizon-mfd gui {::knots-indicated-air-speed (physics/get-knots-indicated-air-speed (:physics state) config/planet-config)}))
+        (horizon-mfd gui {::speed (physics/get-speed (:physics state))}))
       (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)

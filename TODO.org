@@ -9,8 +9,13 @@
 *** TODO vertical acceleration
 *** TODO Mach number
 *** DONE Knots Indicated Airspeed
-*** TODO knots in orbit
+*** TODO feet per second in orbit
 *** TODO Angle of Attack
+*** TODO manual surface mode / orbit mode / docking mode switch
+*** TODO manual indicated air speed, true air speed, orbital speed (m/s)
+         automatically zero out air speed below 10e-4 Pa,
+         Switchover to Mach at Mach 3? Switch over to ground speed at 400000 feet height
+*** TODO Display Mach number and dynamic pressure continuously
 ** TODO article about rendering planet
 *** TODO use octaves of worley (?) noise
 *** TODO function to determine path of neighbour (rotations not needed)

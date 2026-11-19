@@ -1,3 +1,9 @@
+sfsim (0.42-1)
+
+  * Implement a nicer speed display
+
+-- Jan Wedekind <jan@wedesoft.de>  Thu, 19 Nov 2026 00:03:00 +0000
+
 sfsim (0.41-1)
 
 	* Bugfix for tabbing in datetime dialog

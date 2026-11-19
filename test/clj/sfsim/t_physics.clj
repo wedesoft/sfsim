@@ -240,7 +240,12 @@
 (facts "Get knots indicated air speed (KIAS)"
        (swap! state set-pose :sfsim.physics/surface (vec3 6383500 0 0) (q/->Quaternion 1 0 0 0))
        (swap! state set-speed :sfsim.physics/surface (vec3 100 0 0) (vec3 0 0 0))
-       (get-knots-indicated-air-speed @state {:sfsim.planet/radius 6378000.0}) => (roughly (/ 75.436 units/knot) 1e-3))
+       (get-speed @state) => 100.0
+       (swap! state set-domain :sfsim.physics/orbit)
+       (swap! state set-pose :sfsim.physics/orbit (vec3 6383500 0 0) (q/->Quaternion 1 0 0 0))
+       (swap! state set-speed :sfsim.physics/orbit (vec3 100 0 0) (vec3 0 0 0))
+       (get-speed @state) => 100.0
+       (swap! state set-domain :sfsim.physics/surface))
 
 
 (facts "Set longitude, latitude, and height of space craft"
