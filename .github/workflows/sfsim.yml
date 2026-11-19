@@ -18,7 +18,7 @@ jobs:
         uses: actions/cache@v6.1.0
         with:
           path: libjolt.so
-          key: ${{ runner.os }}-libjolt-5.6.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
+          key: ${{ runner.os }}-libjolt-5.7.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
       - name: Cache Maven packages
         uses: actions/cache@v6.1.0
         with:
@@ -53,13 +53,13 @@ jobs:
         name: Download JoltPhysics
         run: |
           cd ~
-          curl -L -o JoltPhysics-5.6.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.6.0.tar.gz
-          tar xzf JoltPhysics-5.6.0.tar.gz
+          curl -L -o JoltPhysics-5.7.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.7.0.tar.gz
+          tar xzf JoltPhysics-5.7.0.tar.gz
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
         name: Build JoltPhysics
         run: |
           cd ~
-          cd JoltPhysics-5.6.0/Build
+          cd JoltPhysics-5.7.0/Build
           ./cmake_linux_clang_gcc.sh Release g++ -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF -DJPH_USE_DX12=OFF -DJPH_USE_VK=OFF -DJPH_USE_MTL=OFF -DJPH_USE_CPU_COMPUTE=OFF
           cd Linux_Release
           make
@@ -67,7 +67,7 @@ jobs:
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
         name: Install JoltPhysics
         run: |
-          cd ~/JoltPhysics-5.6.0/Build/Linux_Release
+          cd ~/JoltPhysics-5.7.0/Build/Linux_Release
           sudo make install
           cd ../../..
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
@@ -84,13 +84,13 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
-          java-version: '25.0.5+8.0.LTS'
+          java-version: '25'
       - name: Print JAVA_HOME
         run: echo $JAVA_HOME
       - name: Install Clojure
         uses: DeLaGuardo/setup-clojure@13.7.0
         with:
-          cli: 1.12.6.1673
+          cli: 1.12.7.1681
       - name: Run tests
         run: xvfb-run clj -M:test
       - name: Create Java archive
@@ -111,6 +111,8 @@ jobs:
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
         name: Download packr jar
         run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
+      - name: Update Java path in Packr script
+        run: sed -i 's|"jdk": ".*"|"jdk": "'$JAVA_HOME'"|' scripts/packr-config-linux.json
       - name: Create Linux executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json
       - name: upload
@@ -129,7 +131,7 @@ jobs:
         uses: actions/cache@v6.1.0
         with:
           path: libjolt.dll
-          key: ${{ runner.os }}-libjolt-5.6.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
+          key: ${{ runner.os }}-libjolt-5.7.0-${{ hashFiles('src/c/sfsim/jolt.cc') }}-${{ hashFiles('src/c/sfsim/jolt.hh') }}
       - name: Cache Maven packages
         uses: actions/cache@v6.1.0
         with:
@@ -164,14 +166,14 @@ jobs:
         shell: msys2 {0}
         run: |
           cd ~
-          curl -L -o JoltPhysics-5.6.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.6.0.tar.gz
-          tar xzf JoltPhysics-5.6.0.tar.gz
+          curl -L -o JoltPhysics-5.7.0.tar.gz https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.7.0.tar.gz
+          tar xzf JoltPhysics-5.7.0.tar.gz
       - if: ${{ steps.cache-libjolt.outputs.cache-hit != 'true' }}
         name: Build JoltPhysics
         shell: msys2 {0}
         run: |
           cd ~
-          cd JoltPhysics-5.6.0/Build
+          cd JoltPhysics-5.7.0/Build
           ./cmake_windows_mingw.sh Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DDOUBLE_PRECISION=ON -DDEBUG_RENDERER_IN_DEBUG_AND_RELEASE=OFF -DPROFILER_IN_DEBUG_AND_RELEASE=OFF -DINTERPROCEDURAL_OPTIMIZATION=OFF -DUSE_AVX2=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF -DJPH_USE_DX12=OFF -DJPH_USE_VK=OFF -DJPH_USE_MTL=OFF -DJPH_USE_CPU_COMPUTE=OFF
           cmake --build MinGW_Release -j `nproc`
           cmake --install MinGW_Release --prefix $MINGW_PREFIX
@@ -187,13 +189,13 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
-          java-version: '25.0.5+8.0.LTS'
+          java-version: '25'
       - name: Print JAVA_HOME
         run: echo $env:JAVA_HOME
       - name: Install Clojure
         uses: DeLaGuardo/setup-clojure@13.7.0
         with:
-          cli: 1.12.6.1673
+          cli: 1.12.7.1681
     # Windows tests not working and fail with:
     #
     # java.lang.IllegalStateException: There is no OpenGL context current in the current thread.
@@ -232,6 +234,11 @@ jobs:
           cp $MINGW_PREFIX/bin/libgcc_s_seh-1.dll .
           cp $MINGW_PREFIX/bin/libstdc++-6.dll .
           cp $MINGW_PREFIX/bin/libwinpthread-1.dll .
+      - name: Update Java path in Packr script
+        run: sed -i 's|"jdk": ".*"|"jdk": "'$JAVA_HOME'"|' scripts/packr-config-linux.json
+        run: |
+          $javaHome = $env:JAVA_HOME.Replace('\', '/')
+          (Get-Content "scripts/packr-config-windows.json" -Raw) -replace '"jdk": "[^"]*"', "`"jdk`": `"$javaHome`"" | Set-Content "scripts/packr-config-windows.json" -Encoding utf8 -NoNewline
       - name: Create Windows executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json
       - name: upload
