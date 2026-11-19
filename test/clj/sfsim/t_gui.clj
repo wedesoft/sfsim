@@ -498,7 +498,7 @@
 
 (tabular "Display speed scale"
          (fact
-           (widget-test gui canvas rect 48 160 (draw-speed gui canvas rect ?speed))
+           (widget-test gui canvas rect (+ 8 6 12 (* 5 9)) 168 (draw-speed gui canvas rect ?speed))
            => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
          ?speed ?result
           0.0   "speed-0.png"
@@ -514,7 +514,7 @@
          10.7   "speed-10-7.png")
 
 
-(def horizon-settings {:sfsim.gui/knots-indicated-air-speed 25.0})
+(def horizon-settings {:sfsim.gui/speed 25.0})
 
 
 (fact "Render horizon MFD"

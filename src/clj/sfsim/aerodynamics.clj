@@ -428,7 +428,7 @@
   "Get indicated airspeed"
   [height orientation linear-speed]
   (let [speed-rotated (q/rotate-vector (q/inverse orientation) linear-speed)
-        speed         (max 0.0 (speed-rotated 0))
+        speed         (max 0.0 ^double (speed-rotated 0))
         density0      (atmosphere/density-at-height 0)
         density       (atmosphere/density-at-height height)
         q             (dynamic-pressure density speed)]

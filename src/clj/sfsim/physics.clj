@@ -476,12 +476,10 @@
     (set-domain state (if (>= height ^double space-boundary) ::orbit ::surface))))
 
 
-(defn get-knots-indicated-air-speed
-  [state {:sfsim.planet/keys [radius]}]
-  (let [height      (- (mag (get-position ::surface state)) ^double radius)
-        orientation (get-orientation ::surface state)
-        speed       (get-linear-speed ::surface state)]
-    (/ (aerodynamics/get-indicated-air-speed height orientation speed) units/knot)))
+(defn get-speed
+  "Get absolute speed in current domain"
+  [state]
+  (mag (get-linear-speed (::domain state) state)))
 
 
 (defmulti update-state
