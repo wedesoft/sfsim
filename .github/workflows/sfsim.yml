@@ -84,7 +84,7 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
-          java-version: '25.0.5+8.0.LTS'
+          java-version: '25'
       - name: Print JAVA_HOME
         run: echo $JAVA_HOME
       - name: Install Clojure
@@ -111,6 +111,8 @@ jobs:
       - if: ${{ steps.cache-packr.outputs.cache-hit != 'true' }}
         name: Download packr jar
         run: curl -L https://github.com/libgdx/packr/releases/download/4.0.0/packr-all-4.0.0.jar -o packr-all-4.0.0.jar
+      - name: Update Java path in Packr script
+        run: sed -i 's|"jdk": ".*"|"jdk": "'$JAVA_HOME'"|' scripts/packr-config-linux.json
       - name: Create Linux executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-linux.json
       - name: upload
@@ -187,7 +189,7 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
-          java-version: '25.0.5+8.0.LTS'
+          java-version: '25'
       - name: Print JAVA_HOME
         run: echo $env:JAVA_HOME
       - name: Install Clojure
@@ -232,6 +234,11 @@ jobs:
           cp $MINGW_PREFIX/bin/libgcc_s_seh-1.dll .
           cp $MINGW_PREFIX/bin/libstdc++-6.dll .
           cp $MINGW_PREFIX/bin/libwinpthread-1.dll .
+      - name: Update Java path in Packr script
+        run: sed -i 's|"jdk": ".*"|"jdk": "'$JAVA_HOME'"|' scripts/packr-config-linux.json
+        run: |
+          $javaHome = $env:JAVA_HOME.Replace('\', '/')
+          (Get-Content "scripts/packr-config-windows.json" -Raw) -replace '"jdk": "[^"]*"', "`"jdk`": `"$javaHome`"" | Set-Content "scripts/packr-config-windows.json" -Encoding utf8 -NoNewline
       - name: Create Windows executable
         run: java -jar packr-all-4.0.0.jar scripts/packr-config-windows.json
       - name: upload
