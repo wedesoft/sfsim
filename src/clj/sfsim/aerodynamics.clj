@@ -6,7 +6,7 @@
 
 (ns sfsim.aerodynamics
     (:require
-      [clojure.math :refer (PI cos sin to-radians atan2 hypot exp)]
+      [clojure.math :refer (PI cos sin to-radians atan2 hypot exp sqrt)]
       [fastmath.matrix :refer (mat3x3)]
       [fastmath.vector :refer (vec3 mag add)]
       [fastmath.interpolation :as interpolation]
@@ -422,6 +422,17 @@
   "Maximum dynamic pressure data point from space shuttle (height 11000m, speed 1.3 Ma)"
   (let [h 11000]
     (dynamic-pressure (atmosphere/density-at-height h) (* 1.3 (atmosphere/speed-of-sound (atmosphere/temperature-at-height h))))))
+
+
+(defn get-indicated-air-speed
+  "Get indicated airspeed"
+  [height orientation linear-speed]
+  (let [speed-rotated (q/rotate-vector (q/inverse orientation) linear-speed)
+        speed         (max 0.0 ^double (speed-rotated 0))
+        density0      (atmosphere/density-at-height 0)
+        density       (atmosphere/density-at-height height)
+        q             (dynamic-pressure density speed)]
+    (sqrt (/ (* 2 q) density0))))
 
 
 (def C-l-q 4.2624)

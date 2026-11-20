@@ -479,7 +479,7 @@
           0.0     "aileron-control-centre.png")
 
 
-(def input-params #:sfsim.input{:aileron 0.25 :elevator 0.5 :rudder 1.0})
+(def control-settings #:sfsim.input{:aileron 0.25 :elevator 0.5 :rudder 1.0})
 
 
 (fact "Render control inputs MFD"
@@ -490,10 +490,45 @@
                  (nuklear-dark-style gui)
                  (nuklear-window gui "control test window" 0 0 (quot 264 s) (quot 264 s) :widget
                                  (layout-row-dynamic gui (/ 256.0 s) 1)
-                                 (controls-mfd gui input-params))
+                                 (controls-mfd gui control-settings))
                  (render-nuklear-gui gui (quot 264 s) (quot 264 s))
                  (destroy-nuklear-gui-with-font gui)))
              => (is-image (format "test/clj/sfsim/fixtures/gui/controls-%d.png" s) 0.10)))
+
+
+(tabular "Display speed scale"
+         (fact
+           (widget-test gui canvas rect (+ 8 6 12 (* 5 9)) 168 (draw-speed gui canvas rect ?speed))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?speed ?result
+          0.0   "speed-0.png"
+          0.2   "speed-0-2.png"
+          0.5   "speed-0-5.png"
+          0.8   "speed-0-8.png"
+          2.0   "speed-2.png"
+          5.0   "speed-5.png"
+          9.2   "speed-9-2.png"
+          9.7   "speed-9-7.png"
+         10.0   "speed-10.png"
+         10.2   "speed-10-2.png"
+         10.7   "speed-10-7.png")
+
+
+(def horizon-settings {:sfsim.gui/speed 25.0})
+
+
+(fact "Render horizon MFD"
+      (doseq [s [1 2]]
+             (gui-offscreen-render
+               (quot 264 s) (quot 264 s)
+               (let [gui (make-nuklear-gui-with-font (/ 1.0 s))]
+                 (nuklear-dark-style gui)
+                 (nuklear-window gui "horizon test window" 0 0 (quot 264 s) (quot 264 s) :widget
+                                 (layout-row-dynamic gui (/ 256.0 s) 1)
+                                 (horizon-mfd gui horizon-settings))
+                 (render-nuklear-gui gui (quot 264 s) (quot 264 s))
+                 (destroy-nuklear-gui-with-font gui)))
+             => (is-image (format "test/clj/sfsim/fixtures/gui/horizon-%d.png" s) 0.10)))
 
 
 (facts "Display flash message"

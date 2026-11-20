@@ -32,6 +32,7 @@
         width              675
         surface-tilesize   65
         sublevel           1
+        min-surface-level  4
         max-surface-level  4
         max-color-level    5
         subsample          (bit-shift-left 1 sublevel)
@@ -50,7 +51,8 @@
                    (let [j                 (cube-coordinate out-level surface-tilesize b (double v))
                          i                 (cube-coordinate out-level surface-tilesize a (double u))
                          p                 (cube-map face j i)
-                         point             (project-onto-globe p (max 0 (min max-surface-level ^long in-level)) width radius)]
+                         point             (project-onto-globe p (max min-surface-level (min max-surface-level ^long in-level))
+                                                               width radius)]
                      (set-vector3! surface v u (sub point center))))
                  (doseq [v (range color-tilesize) u (range color-tilesize)]
                    (let [j                 (cube-coordinate out-level color-tilesize b (double v))

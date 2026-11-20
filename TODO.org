@@ -3,27 +3,50 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
-** TODO MFD with speed indicator, height, vertical speed, horizon
-** TODO article about rendering procedurally generated planet using tessellation
+** DONE pick height values from same level of resolution to prevent mismatches at seams
+** TODO speed indicator
+*** TODO height
+*** TODO vertical speed
+*** TODO vertical acceleration
+*** TODO Mach number
+*** DONE Knots Indicated Airspeed
+*** TODO feet per second in orbit
+*** TODO Angle of Attack
+*** TODO manual surface mode / orbit mode / docking mode switch
+*** TODO manual indicated air speed, true air speed, orbital speed (m/s)
+         automatically zero out air speed below 10e-4 Pa,
+         Switchover to Mach at Mach 3? Switch over to ground speed at 400000 feet height
+*** TODO Display Mach number and dynamic pressure continuously
+** TODO article about rendering planet
+*** TODO use octaves of worley (?) noise
+*** TODO function to determine path of neighbour (rotations not needed)
+*** TODO background LOD and tessellation level (<= 64) computation
+*** TODO foreground rendering
 ** TODO auto-centering keyboard controls and pitch trim
-** TODO implement menu with starts (disable some achievements depending)
-*** TODO Approach
-*** TODO Take off
-*** TODO in orbit
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
+** TODO key names not correct on some languages
+** TODO integration tests for different screen formats
+*** TODO black loading screen with noise instead of paused game
+*** TODO start flying
+*** TODO Take off
+*** TODO set of tutorials
 **** TODO Phase 1: Atmospheric Flight & Landing
 **** TODO Phase 2: Launch to Orbit & Atmospheric Escape
 **** TODO Phase 3: Orbital Flight & Basic 6-DOF Controls (RCS translation keys: Strafe Up/Down/Left/Right)
 **** TODO Phase 4: Space Station Docking
-**** TODO Orbital parameters
+*** TODO Orbital parameters
+** TODO display dynamic pressure
 ** TODO orbit MFD guidance needles
-** TODO test on widescreen
 ** TODO Reentry MFD
 ** TODO restart button
 ** TODO improve monitoring
+*** DONE implement opt-out
+    Add option in Steam dialog to launch without APM:
+    * Play sfsim
+    * Play without Diagnostic Tracking
 *** TODO button to report problem (log an error)
 *** TODO funnel for first session (tutorial steps)
-*** TODO frame time quantiles
+*** TODO frame time histogram
 *** TODO GPU information
 ** TODO artifacts when rendering nearby water
 ** TODO amplification, light direction, and any other atmosphere related uniforms should be set in one place

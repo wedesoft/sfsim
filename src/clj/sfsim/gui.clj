@@ -6,7 +6,7 @@
 
 (ns sfsim.gui
   (:require
-    [clojure.math :refer (PI to-radians to-degrees cos sin ceil sqrt)]
+    [clojure.math :refer (PI to-radians to-degrees cos sin ceil sqrt floor round)]
     [clojure.java.io :as io]
     [clojure.string :refer (trim)]
     [fastmath.vector :refer (vec2 vec3)]
@@ -18,7 +18,6 @@
     [sfsim.matrix :refer (quaternion->matrix)]
     [sfsim.astro :as astro]
     [sfsim.util :refer (slurp-byte-buffer dissoc-in ignore-nil-> invert-map sqr)]
-    [sfsim.steam :as steam]
     [sfsim.render :refer (make-program use-program uniform-matrix4 with-mapped-vertex-arrays with-overlay-blending
                           with-scissor set-scissor destroy-program setup-vertex-attrib-pointers make-vertex-array-stream
                           destroy-vertex-array-object with-invisible-window framebuffer-render make-vertex-array-object
@@ -945,6 +944,17 @@
     `(do ~@body)))
 
 
+(defmacro with-clip
+  [canvas rect & body]
+  `(with-open [stack# (MemoryStack/stackPush)]
+     (let [saved# (.set (NkRect/malloc stack#) (.clip ~canvas))]
+       (Nuklear/nk_push_scissor ~canvas ~rect)
+       (try
+         ~@body
+         (finally
+           (Nuklear/nk_push_scissor ~canvas saved#))))))
+
+
 (defn fill-rect
   "Draw filled rectangle"
   [canvas rect rounding color]
@@ -1012,6 +1022,13 @@
   [canvas x y w h text font color]
   (let [text-width (text-width text font)]
     (draw-text canvas (- (+ ^double x ^double w) ^double text-width) y text-width h text font color)))
+
+
+(defn draw-text-center
+  "Draw centered text on a canvas"
+  [canvas x y w h text font color]
+  (let [text-width (text-width text font)]
+    (draw-text canvas (+ ^double x (* 0.5 (- ^double w ^double text-width))) y text-width h text font color)))
 
 
 (declare main-dialog)
@@ -2012,13 +2029,119 @@
                   (draw-navball gui canvas rect)))))))
 
 
+(defn digit
+  "Get a decimal digit from a number"
+  ^long [^long x ^long i]
+  (if (zero? i)
+    (mod x 10)
+    (recur (quot x 10) (dec i))))
+
+
+(defn draw-speed
+  "Draw speed scale"
+  [gui ^NkCommandBuffer canvas canvas-rect ^double speed]
+  (let [font            (::bitmap-font gui)
+        x0              (.x ^NkRect canvas-rect)
+        y0              (.y ^NkRect canvas-rect)
+        w               (.w ^NkRect canvas-rect)
+        h               (.h ^NkRect canvas-rect)
+        cy              (+ y0 (quot h 2))
+        digit-height    (long (scale gui 18))
+        digit-height2   (quot digit-height 2)
+        digit-width     (long (scale gui 9))
+        margin-left     (long (scale gui 6))
+        margin-right    (long (scale gui 12))
+        thickness       (scale gui 1.0)
+        num-digits      5
+        rounding        10
+        delta           5
+        triangle-size   (long (scale gui 4))
+        tick-interval   (long (scale gui 32))
+        nearest-tick    (* rounding (long (quot speed rounding)))
+        speed-round     (long (round speed))
+        speed-floor     (long (floor speed))
+        speed-frac      (- speed speed-floor)]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0
+       grey    64  64  64
+       bright 202 213 197]
+      (fill-rect canvas canvas-rect 0.0 grey)
+      (stroke-rect canvas canvas-rect 0.0 (scale gui 1.0) bright)
+      (with-clip canvas canvas-rect
+        (doseq [^long tick (range (max 0 (- nearest-tick (* rounding delta))) (+ nearest-tick (* rounding (inc delta))) rounding)]
+               (let [y (+ cy (/ (* tick-interval (- speed tick)) rounding))]
+                 (doseq [^long i (range num-digits)]
+                        (draw-text canvas (+ x0 margin-left (* i digit-width)) (- y digit-height2) digit-width digit-height
+                                   (str (digit tick (- num-digits 1 i))) font bright))
+                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness bright))))
+      (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
+        (fill-rect canvas rect 0.0 bg)
+        (doseq [^long i (range (dec num-digits))]
+               (draw-text canvas (+ x0 margin-left (* i digit-width)) (- cy digit-height2) digit-width digit-height
+                          (str (digit speed-round (- num-digits 1 i))) font green)))
+      (with-rect rect (+ x0 margin-left (* digit-width (dec num-digits))) (- cy digit-height) digit-width (* 2 digit-height)
+        (with-clip canvas rect
+          (fill-rect canvas rect 0.0 bg)
+          (doseq [^long delta (range -1 2)]
+                 (draw-text canvas (+ x0 margin-left (* digit-width (dec num-digits)))
+                            (+ cy (- (* digit-height (+ speed-frac delta)) digit-height2))
+                            digit-width digit-height
+                            (str (digit (- speed-floor delta) 0) delta)
+                            font green))))
+      (fill-polygon canvas
+                    [[(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
+                     [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
+                     [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]]
+                    bg)
+      (stroke-polygon canvas
+                      [[(+ x0 margin-left) (- cy digit-height2)]
+                       [(+ x0 margin-left (* digit-width (dec num-digits))) (- cy digit-height2)]
+                       [(+ x0 margin-left (* digit-width (dec num-digits))) (- cy digit-height)]
+                       [(+ x0 margin-left (* digit-width num-digits)) (- cy digit-height)]
+                       [(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
+                       [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
+                       [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]
+                       [(+ x0 margin-left (* digit-width num-digits)) (+ cy digit-height)]
+                       [(+ x0 margin-left (* digit-width (dec num-digits))) (+ cy digit-height)]
+                       [(+ x0 margin-left (* digit-width (dec num-digits))) (+ cy digit-height2)]
+                       [(+ x0 margin-left) (+ cy digit-height2)]]
+                      thickness bright))))
+
+
+(defn horizon-mfd
+  "Display horizon and other information"
+  [gui settings]
+  (widget gui canvas canvas-rect
+          (let [font         (::bitmap-font gui)
+                x0           (.x canvas-rect)
+                y0           (.y canvas-rect)
+                w            (.w canvas-rect)
+                h            (.h canvas-rect)
+                digit-width  (long (scale gui 9))
+                margin       (long (scale gui 2))
+                margin-left  (long (scale gui 6))
+                margin-right (long (scale gui 12))
+                num-digits   5
+                speed-width  (+ margin-left margin-right (* num-digits digit-width))]
+            (with-colors
+              [bg       0   0   0
+               title  129 226 207
+               border  82 185 142]
+              (fill-rect canvas canvas-rect 0.0 bg)
+              (stroke-rect canvas canvas-rect 0.0 (scale gui 2.0) border)
+              (draw-text-center canvas x0 (+ y0 margin) w (scale gui text-height) "speed m/s" font title)
+              (with-rect rect (+ x0 (quot (- w speed-width) 2)) (+ y0 margin (scale gui text-height))
+                speed-width (- h (* 2 margin) (scale gui text-height))
+                (draw-speed gui canvas rect (::speed settings)))))))
+
+
 (defn information-display
   [gui w h state frametime time-lapse]
   (let [controls (-> state :input :sfsim.input/controls)
         font     (::bitmap-font gui)
-        text     (format "vs = % .1f m/s, v = %.1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
+        text     (format "vs = % .1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
                          (:sfsim.physics/display-vertical-speed (:physics state))
-                         (:sfsim.physics/display-speed (:physics state))
                          (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
                          (if (:sfsim.input/brake controls) ", brake"
                            (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
@@ -2034,6 +2157,10 @@
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
                       (controls-mfd gui controls))
+      (nuklear-window gui "Horizon" (scale gui (+ 30 512)) (- ^long h (scale gui (+ 10 256)))
+                      (scale gui 256) (scale gui 256) :widget
+                      (layout-row-dynamic gui (scale gui 256) 1)
+        (horizon-mfd gui {::speed (physics/get-speed (:physics state))}))
       (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)

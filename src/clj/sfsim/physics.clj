@@ -16,6 +16,7 @@
     [sfsim.matrix :refer (matrix->quaternion get-translation rotation-matrix)]
     [sfsim.model :as model]
     [sfsim.util :refer (sqr clamp)]
+    [sfsim.units :as units]
     [sfsim.planet :as planet]
     [sfsim.jolt :as jolt]
     [sfsim.astro :as astro]
@@ -108,7 +109,6 @@
    ::position (vec3 0 0 0)
    ::speed (vec3 0 0 0)
    ::domain ::surface
-   ::display-speed 0.0
    ::display-vertical-speed 0.0
    ::throttle 0.0
    ::air-brake 0.0
@@ -476,6 +476,12 @@
     (set-domain state (if (>= height ^double space-boundary) ::orbit ::surface))))
 
 
+(defn get-speed
+  "Get absolute speed in current domain"
+  [state]
+  (mag (get-linear-speed (::domain state) state)))
+
+
 (defmulti update-state
   "Perform simulation step"
   (fn [state _dt _acceleration] (::domain state)))
@@ -497,12 +503,10 @@
     (jolt/update-system dt 1)
     (let [speed                  (jolt/get-linear-velocity body)
           position               (jolt/get-translation body)
-          display-speed          (mag speed)
           display-vertical-speed (dot speed (normalize position))]
       (jolt/add-impulse body (mult dv2 mass))
       (-> state
           (update ::offset-seconds + dt)
-          (assoc ::display-speed display-speed)
           (assoc ::display-vertical-speed display-vertical-speed)))))
 
 
@@ -525,11 +529,9 @@
       (jolt/set-linear-velocity body (vec3 0 0 0))
       (let [position               (add position delta-position)
             speed                  (add speed delta-speed)
-            display-speed          (mag speed)
             display-vertical-speed (dot speed (normalize position))]
         (-> state
             (update ::offset-seconds + dt)
-            (assoc ::display-speed display-speed)
             (assoc ::display-vertical-speed display-vertical-speed)
             (assoc ::position position)
             (assoc ::speed speed))))))
