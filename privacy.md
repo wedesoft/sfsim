@@ -1,0 +1,28 @@
+---
+layout: page
+title: Privacy Policy
+permalink: /privacy
+---
+
+**sfsim** automatically collects operational logs and technical error reports
+while the application is running. This information helps to maintain stability,
+monitor performance, and resolve software issues.
+
+To disable this collection, select **"Play without Diagnostic Tracking."**
+
+### What We Collect
+- **Technical and error data:** Stack traces, exception codes, application
+version numbers, and the hostname reported by the monitoring tool (New Relic).
+- **Application and operational logs:** Execution diagnostics. status messages,
+and runtime event logs generated during normal operation and troubleshooting.
+
+### What We Do Not Collect
+- **Personal identifiers:** We do not collect usernames, email addresses,
+IP addresses, or account credentials.
+- **Personal files:** We do not collect the contents of your personal files
+or documents, or information about your local files and directories.
+
+### How We Use This Data
+We use this information only to diagnose software issues and monitor application
+performance. We do not sell it, use it for advertising or user tracking, or use
+it to identify individual users.

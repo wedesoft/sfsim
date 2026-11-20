@@ -17,6 +17,9 @@ plugins:
 minima:
   skin: dark
   social_links:  # see minima's _includes/social.html
+    - title: "reddit.com/r/sfsim"
+      icon: reddit
+      url: "https://www.reddit.com/r/sfsim/"
     - title: "discord.gg/EJEE6QNHra"
       icon: discord
       url: "https://discord.gg/EJEE6QNHra"

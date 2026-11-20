@@ -16,6 +16,15 @@ Note that a playtest build is [available on Steam][1].
 Planned features are vertical launch, space station docking, moon landing, atmospheric reentry, and landing on a runway.
 It is also planned to have flight instruments to support the different stages of flight.
 
+### Will there be more planets in the game?
+
+Currently only Earth and Moon are planned at least for the 1.0 release.
+
+### Will there be more spaceship types
+
+Currently only one spaceship is planned.
+Implementing a spaceship requires quite a bit of work: Aerodynamics, custom thrust shaders, cockpit, modelling and animations.
+
 ### What operating systems are supported?
 
 GNU/Linux and Microsoft Windows are supported.
@@ -111,6 +120,15 @@ Development is fairly slow because it is a hobby.
 The first commit to the [sfsim repository][16] happened in September 2020.
 There is also prior work on model rendering in 2017.
 Also I made two attempts at implementing a physics engine using sequential impulses in 2017 and 2020.
+
+### Why are you using Clojure
+After C++ and Ruby, I switched to GNU/Guile (a Scheme dialect), because I wanted a language with dynamic typing, hygienic macros, multiple dispatch, simple native interface, and fast start up. I eventually switched to Clojure, because it has more flexible multi methods and fast hash maps, vectors, and sets.
+
+I later came to appreciate Clojure's immutable data structures, concurrency primitives (atoms, refs, and agents), and early method binding (fast method calls).
+
+Also by being a hosted language, it has access to the many Java libraries as well as Java's foreign function and memory interface.
+
+You can try [Clojure in this online REPL](https://tryclojure.org/).
 
 [1]: https://store.steampowered.com/app/3687560/sfsim/
 [2]: https://github.com/wedesoft/sfsim
