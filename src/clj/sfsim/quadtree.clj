@@ -517,13 +517,10 @@
         crossing (cond
                    (< ^long row 0)
                    [0 (+ ^long row gridsize) column]
-
                    (>= ^long row gridsize)
                    [1 (- ^long row gridsize) column]
-
                    (< ^long column 0)
                    [2 row (+ ^long column gridsize)]
-
                    (>= ^long column gridsize)
                    [3 row (- ^long column gridsize)])]
     (if-let [[edge row column] crossing]
