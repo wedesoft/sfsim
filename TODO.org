@@ -5,14 +5,15 @@
 
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
 ** TODO speed indicator
+*** DONE Speed
+*** TODO Angle of Attack
+*** TODO horizon
 *** TODO height
 *** TODO vertical speed
-*** TODO vertical acceleration
-*** TODO Mach number
-*** DONE Speed in meter per second (current reference system)
-*** TODO Angle of Attack
-*** TODO manual surface mode / orbit mode / docking mode switch
-*** TODO Display dynamic pressure
+*** TODO acceleration (dial)
+*** TODO heading
+** TODO manual surface mode / orbit mode / docking mode switch
+** TODO Display dynamic pressure
 ** TODO article about rendering planet
 *** TODO use octaves of worley (?) noise
 *** TODO function to determine path of neighbour (rotations not needed)
