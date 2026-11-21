@@ -2,7 +2,7 @@
 
 This is a work in progress.
 Aim is to simulate take off, space station docking, and moon landing with a futuristic space plane.
-Requires OpenGL 4.5 (glClipControl for reversed-z rendering)
+Requires OpenGL 4.6.
 See [sfsim homepage][1] for more details.
 
 **[Note: Official binary releases are strictly distributed through Steam. Do not download sfsim binaries from third-party sources!](https://store.steampowered.com/app/3687560/sfsim/)**
