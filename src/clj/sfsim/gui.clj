@@ -2109,6 +2109,48 @@
                       thickness bright))))
 
 
+(defn draw-vertical-speed
+  "Draw vertical speed scale"
+  [gui ^NkCommandBuffer canvas canvas-rect ^double vertical-speed]
+  (let [font            (:sfsim.gui/bitmap-font gui)
+        x0              (.x ^NkRect canvas-rect)
+        y0              (.y ^NkRect canvas-rect)
+        w               (.w ^NkRect canvas-rect)
+        h               (.h ^NkRect canvas-rect)
+        cy              (+ y0 (quot h 2))
+        digit-height    (long (scale gui 18))
+        digit-height2   (quot digit-height 2)
+        digit-width     (long (scale gui 9))
+        margin-left     (long (scale gui 6))
+        margin-right    (long (scale gui 12))
+        thickness       (scale gui 1.0)
+        num-digits      5
+        rounding        10
+        delta           5
+        tick-interval   (long (scale gui 32))
+        nearest-tick    (* rounding (long (quot vertical-speed rounding)))
+        yzero           (+ cy (/ (* tick-interval vertical-speed) rounding))]
+    (with-colors
+      [bg       0   0   0
+       grey    64  64  64
+       bright 202 213 197]
+      (when (> yzero y0)
+        (with-rect rect x0 y0 w (min h (- yzero y0))
+          (fill-rect canvas rect 0.0 bright)))
+      (when (< yzero (+ y0 h))
+        (with-rect rect x0 (max y0 yzero) w (- (+ y0 h) (max y0 yzero))
+          (fill-rect canvas rect 0.0 grey)))
+     (with-clip canvas canvas-rect
+       (println "range" (- nearest-tick (* rounding delta)) (+ nearest-tick (* rounding (inc delta))) rounding)
+        (doseq [^long tick (range (- nearest-tick (* rounding delta)) (+ nearest-tick (* rounding (inc delta))) rounding)]
+               (println tick)
+               (let [y (+ cy (/ (* tick-interval (- vertical-speed tick)) rounding))]
+                 (doseq [^long i (range num-digits)]
+                        (draw-text canvas (+ x0 margin-left (* i digit-width)) (- y digit-height2) digit-width digit-height
+                                   (str (digit tick (- num-digits 1 i))) font (if (>= tick 0) grey bright)))
+                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness (if (>= tick 0) grey bright))))))))
+
+
 (defn horizon-mfd
   "Display horizon and other information"
   [gui settings]

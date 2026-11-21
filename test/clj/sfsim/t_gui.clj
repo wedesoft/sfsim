@@ -514,6 +514,14 @@
          10.7   "speed-10-7.png")
 
 
+(tabular "Display vertical speed scale"
+         (fact
+           (widget-test gui canvas rect 64 168 (draw-vertical-speed gui canvas rect ?vertical-speed))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?vertical-speed ?result
+         0.0             "vertical-speed-0.png")
+
+
 (def horizon-settings {:sfsim.gui/speed 25.0})
 
 

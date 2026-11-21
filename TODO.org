@@ -6,10 +6,10 @@
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
 ** TODO speed indicator
 *** DONE Speed
+*** TODO vertical speed
 *** TODO Angle of Attack (color negative part of scale)
 *** TODO horizon
 *** TODO height
-*** TODO vertical speed
 *** TODO vertical acceleration scale
 *** TODO acceleration (dial)
 *** TODO heading
