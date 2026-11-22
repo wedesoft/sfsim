@@ -1,6 +1,14 @@
+sfsim (0.43-1)
+
+	* Add a nicer vertical speed display
+	* Update for map tiles to fix problems with height gaps at mesh
+	  transitions
+
+-- Jan Wedekind <jan@wedesoft.de>  Sun, 22 Nov 2026 23:42:00 +0000
+
 sfsim (0.42-1)
 
-  * Implement a nicer speed display
+	* Implement a nicer speed display
 
 -- Jan Wedekind <jan@wedesoft.de>  Thu, 19 Nov 2026 00:03:00 +0000
 
