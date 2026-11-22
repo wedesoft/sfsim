@@ -2236,11 +2236,11 @@
                border  82 185 142]
               (fill-rect canvas canvas-rect 0.0 bg)
               (stroke-rect canvas canvas-rect 0.0 (scale gui 2.0) border)
-              (draw-text-center canvas x0 (+ y0 margin) w2 (scale gui text-height) "speed m/s" font title)
+              (draw-text-center canvas x0 (+ y0 margin) w2 (scale gui text-height) "v m/s" font title)
               (with-rect rect (+ x0 (quot (- w2 speed-width) 2)) (+ y0 margin (scale gui text-height))
                 speed-width (- h (* 2 margin) (scale gui text-height))
                 (draw-speed gui canvas rect (::speed settings)))
-              (draw-text-center canvas (+ x0 w2) (+ y0 margin) w2 (scale gui text-height) "vspeed m/s" font title)
+              (draw-text-center canvas (+ x0 w2) (+ y0 margin) w2 (scale gui text-height) "vs m/s" font title)
               (with-rect rect (+ x0 w2 (quot (- w2 speed-width) 2)) (+ y0 margin (scale gui text-height))
                 speed-width (- h (* 2 margin) (scale gui text-height))
                 (draw-vertical-speed gui canvas rect (::vertical-speed settings)))))))
@@ -2250,8 +2250,7 @@
   [gui w h state frametime time-lapse]
   (let [controls (-> state :input :sfsim.input/controls)
         font     (::bitmap-font gui)
-        text     (format "vs = % .1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
-                         (:sfsim.physics/display-vertical-speed (:physics state))
+        text     (format "%s%s%s, fps = %5.1f, time x = %2d"
                          (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
                          (if (:sfsim.input/brake controls) ", brake"
                            (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
@@ -2270,7 +2269,7 @@
       (nuklear-window gui "Horizon" (scale gui (+ 30 512)) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
-        (horizon-mfd gui {::speed (physics/get-speed (:physics state))}))
+        (horizon-mfd gui {::speed (physics/get-speed (:physics state)) ::vertical-speed (:sfsim.physics/display-vertical-speed (:physics state))}))
       (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
