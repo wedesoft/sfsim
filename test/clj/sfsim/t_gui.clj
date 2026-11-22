@@ -516,13 +516,17 @@
 
 (tabular "Display vertical speed scale"
          (fact
-           (widget-test gui canvas rect 64 168 (draw-vertical-speed gui canvas rect ?vertical-speed))
+           (widget-test gui canvas rect (+ 6 (* 5 9) 12 8) 168 (draw-vertical-speed gui canvas rect ?vertical-speed))
            => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
          ?vertical-speed ?result
-         0.0             "vertical-speed-0.png")
+           0.0           "vertical-speed-0.png"
+           5.0           "vertical-speed-5.png"
+          20.0           "vertical-speed-20.png"
+         -5.0            "vertical-speed-neg-5.png"
+         -20.0           "vertical-speed-neg-20.png")
 
 
-(def horizon-settings {:sfsim.gui/speed 25.0})
+(def horizon-settings {:sfsim.gui/speed 25.0 :sfsim.gui/vertical-speed -20.0})
 
 
 (fact "Render horizon MFD"
