@@ -6,8 +6,10 @@
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
 ** TODO speed indicator
 *** DONE Speed
+**** TODO make speed display background bright and text dark
 *** DONE vertical speed
 **** TODO compute vertical speed on the fly
+**** TODO change colour of current speed display depending on sign
 *** TODO Angle of Attack (color negative part of scale)
 *** TODO horizon
 *** TODO height
