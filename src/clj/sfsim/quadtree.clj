@@ -478,65 +478,83 @@
     (neighbour-tile face level tilesize row' column' tile-y' tile-x' dy' dx' rotation')))
 
 
+(def face-transitions
+  #:sfsim.cubemap
+  {:face0 [[:sfsim.cubemap/face3 180]
+           [:sfsim.cubemap/face1   0]
+           [:sfsim.cubemap/face4  90]
+           [:sfsim.cubemap/face2 270]]
+   :face1 [[:sfsim.cubemap/face0   0]
+           [:sfsim.cubemap/face5   0]
+           [:sfsim.cubemap/face4   0]
+           [:sfsim.cubemap/face2   0]]
+   :face2 [[:sfsim.cubemap/face0  90]
+           [:sfsim.cubemap/face5 270]
+           [:sfsim.cubemap/face1   0]
+           [:sfsim.cubemap/face3   0]]
+   :face3 [[:sfsim.cubemap/face0 180]
+           [:sfsim.cubemap/face5 180]
+           [:sfsim.cubemap/face2   0]
+           [:sfsim.cubemap/face4   0]]
+   :face4 [[:sfsim.cubemap/face0 270]
+           [:sfsim.cubemap/face5  90]
+           [:sfsim.cubemap/face3   0]
+           [:sfsim.cubemap/face1   0]]
+   :face5 [[:sfsim.cubemap/face1   0]
+           [:sfsim.cubemap/face3 180]
+           [:sfsim.cubemap/face4 270]
+           [:sfsim.cubemap/face2  90]]})
+
+
 (defn neighbour-tile
   "Get neighbouring tile face and coordinates"
-  {:malli/schema [:=> [:cat :keyword :int :int :int :int :double :double :int :int :int] neighbour]}
+  {:malli/schema
+   [:=> [:cat :keyword :int :int :int :int :double :double :int :int :int]
+    neighbour]}
   [face level tilesize row column tile-y tile-x dy dx rotation]
-  (let [gridsize (bit-shift-left 1 ^long level)]
-    (cond
-      (< ^long row 0)
-      (let [row (+ ^long row gridsize)]
-        (case face
-          :sfsim.cubemap/face0 (build-neighbour :sfsim.cubemap/face3 180 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face1 (build-neighbour :sfsim.cubemap/face0   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face2 (build-neighbour :sfsim.cubemap/face0  90 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face3 (build-neighbour :sfsim.cubemap/face0 180 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face4 (build-neighbour :sfsim.cubemap/face0 270 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face5 (build-neighbour :sfsim.cubemap/face1   0 level tilesize row column tile-y tile-x dy dx rotation)))
-      (>= ^long row gridsize)
-      (let [row (- ^long row gridsize)]
-        (case face
-          :sfsim.cubemap/face0 (build-neighbour :sfsim.cubemap/face1   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face1 (build-neighbour :sfsim.cubemap/face5   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face2 (build-neighbour :sfsim.cubemap/face5 270 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face3 (build-neighbour :sfsim.cubemap/face5 180 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face4 (build-neighbour :sfsim.cubemap/face5  90 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face5 (build-neighbour :sfsim.cubemap/face3 180 level tilesize row column tile-y tile-x dy dx rotation)))
-      (< ^long column 0)
-      (let [column (+ ^long column gridsize)]
-        (case face
-          :sfsim.cubemap/face0 (build-neighbour :sfsim.cubemap/face4  90 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face1 (build-neighbour :sfsim.cubemap/face4   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face2 (build-neighbour :sfsim.cubemap/face1   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face3 (build-neighbour :sfsim.cubemap/face2   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face4 (build-neighbour :sfsim.cubemap/face3   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face5 (build-neighbour :sfsim.cubemap/face4 270 level tilesize row column tile-y tile-x dy dx rotation)))
-      (>= ^long column gridsize)
-      (let [column (- ^long column gridsize)]
-        (case face
-          :sfsim.cubemap/face0 (build-neighbour :sfsim.cubemap/face2 270 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face1 (build-neighbour :sfsim.cubemap/face2   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face2 (build-neighbour :sfsim.cubemap/face3   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face3 (build-neighbour :sfsim.cubemap/face4   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face4 (build-neighbour :sfsim.cubemap/face1   0 level tilesize row column tile-y tile-x dy dx rotation)
-          :sfsim.cubemap/face5 (build-neighbour :sfsim.cubemap/face2  90 level tilesize row column tile-y tile-x dy dx rotation)))
-      :else
+  (let [gridsize (bit-shift-left 1 ^long level)
+        tile-max (dec ^long tilesize)
+        crossing (cond
+                   (< ^long row 0)
+                   [0 (+ ^long row gridsize) column]
+                   (>= ^long row gridsize)
+                   [1 (- ^long row gridsize) column]
+                   (< ^long column 0)
+                   [2 row (+ ^long column gridsize)]
+                   (>= ^long column gridsize)
+                   [3 row (- ^long column gridsize)])]
+    (if-let [[edge row column] crossing]
+      (let [[next-face turn] (get-in face-transitions [face edge])]
+        (build-neighbour next-face turn
+                         level tilesize row column
+                         tile-y tile-x dy dx rotation))
       (let [tile-y (+ ^double tile-y ^long dy)]
         (cond
-          (> ^double tile-y (dec ^long tilesize))
-          (recur face level tilesize (inc ^long row) column (- ^double tile-y ^long (dec ^long tilesize)) tile-x 0 dx rotation)
-          (< ^double tile-y 0)
-          (recur face level tilesize (dec ^long row) column (+ ^double tile-y ^long (dec ^long tilesize)) tile-x 0 dx rotation)
+          (> tile-y tile-max)
+          (recur face level tilesize (inc ^long row) column
+                 (- tile-y tile-max) tile-x 0 dx rotation)
+
+          (< tile-y 0)
+          (recur face level tilesize (dec ^long row) column
+                 (+ tile-y tile-max) tile-x 0 dx rotation)
+
           :else
           (let [tile-x (+ ^double tile-x ^long dx)]
-            (cond (> ^double tile-x ^long (dec ^long tilesize))
-                  (recur face level tilesize row (inc ^long column) ^double tile-y (- ^double tile-x ^long (dec ^long tilesize))
-                         0 0 rotation)
-                  (< ^double tile-x 0)
-                  (recur face level tilesize row (dec ^long column) tile-y (+ ^double tile-x ^long (dec ^long tilesize))
-                         0 0 rotation)
-                  :else
-                  {::face face ::row row ::column column ::tile-y tile-y ::tile-x tile-x ::rotation rotation})))))))
+            (cond
+              (> tile-x tile-max)
+              (recur face level tilesize row (inc ^long column)
+                     tile-y (- tile-x tile-max) 0 0 rotation)
+
+              (< tile-x 0)
+              (recur face level tilesize row (dec ^long column)
+                     tile-y (+ tile-x tile-max) 0 0 rotation)
+              :else
+              {::face face
+               ::row row
+               ::column column
+               ::tile-y tile-y
+               ::tile-x tile-x
+               ::rotation rotation})))))))
 
 
 (defn translate-indices

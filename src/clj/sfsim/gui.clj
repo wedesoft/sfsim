@@ -947,12 +947,28 @@
 (defmacro with-clip
   [canvas rect & body]
   `(with-open [stack# (MemoryStack/stackPush)]
-     (let [saved# (.set (NkRect/malloc stack#) (.clip ~canvas))]
-       (Nuklear/nk_push_scissor ~canvas ~rect)
-       (try
-         ~@body
-         (finally
-           (Nuklear/nk_push_scissor ~canvas saved#))))))
+     (let [canvas# ~canvas
+           ^NkRect requested# ~rect
+           saved#  (.set (NkRect/malloc stack#) (.clip canvas#))
+           left#   (max (.x saved#) (.x requested#))
+           top#    (max (.y saved#) (.y requested#))
+           right#  (min (+ (.x saved#) (.w saved#))
+                        (+ (.x requested#) (.w requested#)))
+           bottom# (min (+ (.y saved#) (.h saved#))
+                        (+ (.y requested#) (.h requested#)))
+           width#  (- right# left#)
+           height# (- bottom# top#)]
+       (when (and (pos? width#) (pos? height#))
+         (let [clipped# (.set (NkRect/malloc stack#)
+                              (float left#)
+                              (float top#)
+                              (float width#)
+                              (float height#))]
+           (Nuklear/nk_push_scissor canvas# clipped#)
+           (try
+             ~@body
+             (finally
+               (Nuklear/nk_push_scissor canvas# saved#))))))))
 
 
 (defn fill-rect
@@ -2037,6 +2053,31 @@
     (recur (quot x 10) (dec i))))
 
 
+(defn draw-spaced
+  "Shared code for drawing numbers or signed numbers"
+  [canvas font x y digit-range digit-width digit-height text-at color]
+  (doseq [^long i digit-range]
+         (draw-text canvas (+ x (* i digit-width)) y digit-width digit-height (text-at i) font color)))
+
+
+(defn draw-digits
+  "Draw number using evenly spaced digits"
+  [canvas font x y num-digits digit-range digit-width digit-height value color]
+  (draw-spaced canvas font x y digit-range digit-width digit-height
+               (fn [i] (str (digit value (- num-digits 1 i))))
+               color))
+
+
+(defn draw-digits-signed
+  "Draw signed number using evenly spaced digits"
+  [canvas font x y num-digits digit-range digit-width digit-height value color]
+  (draw-spaced canvas font x y digit-range digit-width digit-height
+               (fn [i] (if (zero? i)
+                         (cond (neg? value) "-" (zero? value) " " :else "+")
+                         (str (digit (abs value) (- num-digits 1 i)))))
+               color))
+
+
 (defn draw-speed
   "Draw speed scale"
   [gui ^NkCommandBuffer canvas canvas-rect ^double speed]
@@ -2071,15 +2112,13 @@
       (with-clip canvas canvas-rect
         (doseq [^long tick (range (max 0 (- nearest-tick (* rounding delta))) (+ nearest-tick (* rounding (inc delta))) rounding)]
                (let [y (+ cy (/ (* tick-interval (- speed tick)) rounding))]
-                 (doseq [^long i (range num-digits)]
-                        (draw-text canvas (+ x0 margin-left (* i digit-width)) (- y digit-height2) digit-width digit-height
-                                   (str (digit tick (- num-digits 1 i))) font bright))
+                 (draw-digits canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits) digit-width
+                              digit-height tick bright)
                  (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness bright))))
       (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
         (fill-rect canvas rect 0.0 bg)
-        (doseq [^long i (range (dec num-digits))]
-               (draw-text canvas (+ x0 margin-left (* i digit-width)) (- cy digit-height2) digit-width digit-height
-                          (str (digit speed-round (- num-digits 1 i))) font green)))
+        (draw-digits canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range (dec num-digits)) digit-width digit-height
+                     speed-round green))
       (with-rect rect (+ x0 margin-left (* digit-width (dec num-digits))) (- cy digit-height) digit-width (* 2 digit-height)
         (with-clip canvas rect
           (fill-rect canvas rect 0.0 bg)
@@ -2109,6 +2148,72 @@
                       thickness bright))))
 
 
+(defn draw-vertical-speed
+  "Draw vertical speed scale"
+  [gui ^NkCommandBuffer canvas canvas-rect ^double vertical-speed]
+  (let [font            (:sfsim.gui/bitmap-font gui)
+        x0              (.x ^NkRect canvas-rect)
+        y0              (.y ^NkRect canvas-rect)
+        w               (.w ^NkRect canvas-rect)
+        h               (.h ^NkRect canvas-rect)
+        cy              (+ y0 (quot h 2))
+        digit-height    (long (scale gui 18))
+        digit-height2   (quot digit-height 2)
+        digit-width     (long (scale gui 9))
+        margin-left     (long (scale gui 6))
+        margin-right    (long (scale gui 12))
+        thickness       (scale gui 1.0)
+        num-digits      5
+        rounding        10
+        delta           5
+        triangle-size   (long (scale gui 4))
+        tick-interval   (long (scale gui 32))
+        nearest-tick    (* rounding (long (quot vertical-speed rounding)))
+        yzero           (+ cy (/ (* tick-interval vertical-speed) rounding))]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0
+       grey    64  64  64
+       bright 202 213 197]
+      (when (> yzero y0)
+        (with-rect rect x0 y0 w (min h (- yzero y0))
+          (fill-rect canvas rect 0.0 bright)))
+      (when (< yzero (+ y0 h))
+        (with-rect rect x0 (max y0 yzero) w (- (+ y0 h) (max y0 yzero))
+          (fill-rect canvas rect 0.0 grey)))
+     (with-clip canvas canvas-rect
+        (doseq [^long tick (range (- nearest-tick (* rounding delta)) (+ nearest-tick (* rounding (inc delta))) rounding)]
+               (let [y (+ cy (/ (* tick-interval (- vertical-speed tick)) rounding))]
+                 (if (zero? tick)
+                   (do
+                     (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits)
+                                         digit-width digit-height tick bright)
+                     (with-rect rect x0 (- y digit-height2) w digit-height2
+                       (with-clip canvas rect
+                         (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits) digit-width digit-height tick grey))))
+                   (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits)
+                                       digit-width digit-height tick (if (>= tick 0) grey bright)))
+                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness (if (>= tick 0) grey bright))))
+      (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
+        (fill-rect canvas rect 0.0 bg)
+        (draw-digits-signed canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range num-digits) digit-width digit-height
+                            (round vertical-speed) green))
+      (fill-polygon canvas
+                    [[(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
+                     [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
+                     [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]]
+                    bg)
+      (stroke-polygon canvas
+                      [[(+ x0 margin-left) (- cy digit-height2)]
+                       [(+ x0 margin-left (* digit-width num-digits)) (- cy digit-height2)]
+                       [(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
+                       [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
+                       [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]
+                       [(+ x0 margin-left (* digit-width num-digits)) (+ cy digit-height2)]
+                       [(+ x0 margin-left) (+ cy digit-height2)]]
+                      thickness bright)))))
+
+
 (defn horizon-mfd
   "Display horizon and other information"
   [gui settings]
@@ -2118,6 +2223,7 @@
                 y0           (.y canvas-rect)
                 w            (.w canvas-rect)
                 h            (.h canvas-rect)
+                w2           (quot w 2)
                 digit-width  (long (scale gui 9))
                 margin       (long (scale gui 2))
                 margin-left  (long (scale gui 6))
@@ -2130,18 +2236,21 @@
                border  82 185 142]
               (fill-rect canvas canvas-rect 0.0 bg)
               (stroke-rect canvas canvas-rect 0.0 (scale gui 2.0) border)
-              (draw-text-center canvas x0 (+ y0 margin) w (scale gui text-height) "speed m/s" font title)
-              (with-rect rect (+ x0 (quot (- w speed-width) 2)) (+ y0 margin (scale gui text-height))
+              (draw-text-center canvas x0 (+ y0 margin) w2 (scale gui text-height) "v m/s" font title)
+              (with-rect rect (+ x0 (quot (- w2 speed-width) 2)) (+ y0 margin (scale gui text-height))
                 speed-width (- h (* 2 margin) (scale gui text-height))
-                (draw-speed gui canvas rect (::speed settings)))))))
+                (draw-speed gui canvas rect (::speed settings)))
+              (draw-text-center canvas (+ x0 w2) (+ y0 margin) w2 (scale gui text-height) "vs m/s" font title)
+              (with-rect rect (+ x0 w2 (quot (- w2 speed-width) 2)) (+ y0 margin (scale gui text-height))
+                speed-width (- h (* 2 margin) (scale gui text-height))
+                (draw-vertical-speed gui canvas rect (::vertical-speed settings)))))))
 
 
 (defn information-display
   [gui w h state frametime time-lapse]
   (let [controls (-> state :input :sfsim.input/controls)
         font     (::bitmap-font gui)
-        text     (format "vs = % .1f m/s, %s%s%s, fps = %5.1f, time x = %2d"
-                         (:sfsim.physics/display-vertical-speed (:physics state))
+        text     (format "%s%s%s, fps = %5.1f, time x = %2d"
                          (if (:sfsim.input/rcs controls) "RCS" "aerofoil")
                          (if (:sfsim.input/brake controls) ", brake"
                            (if (:sfsim.input/parking-brake controls) ", parking brake" ""))
@@ -2160,7 +2269,7 @@
       (nuklear-window gui "Horizon" (scale gui (+ 30 512)) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
-        (horizon-mfd gui {::speed (physics/get-speed (:physics state))}))
+        (horizon-mfd gui {::speed (physics/get-speed (:physics state)) ::vertical-speed (:sfsim.physics/display-vertical-speed (:physics state))}))
       (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)

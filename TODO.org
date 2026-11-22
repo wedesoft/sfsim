@@ -5,24 +5,26 @@
 
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
 ** TODO speed indicator
+*** DONE Speed
+**** TODO make speed display background bright and text dark
+*** DONE vertical speed
+**** TODO compute vertical speed on the fly
+**** TODO change colour of current speed display depending on sign
+*** TODO Angle of Attack (color negative part of scale)
+*** TODO horizon
 *** TODO height
-*** TODO vertical speed
-*** TODO vertical acceleration
-*** TODO Mach number
-*** DONE Knots Indicated Airspeed
-*** TODO feet per second in orbit
-*** TODO Angle of Attack
-*** TODO manual surface mode / orbit mode / docking mode switch
-*** TODO manual indicated air speed, true air speed, orbital speed (m/s)
-         automatically zero out air speed below 10e-4 Pa,
-         Switchover to Mach at Mach 3? Switch over to ground speed at 400000 feet height
-*** TODO Display Mach number and dynamic pressure continuously
+*** TODO vertical acceleration scale
+*** TODO acceleration (dial)
+*** TODO heading
+** TODO manual surface mode / orbit mode / docking mode switch
+** TODO Display dynamic pressure
 ** TODO article about rendering planet
 *** TODO use octaves of worley (?) noise
 *** TODO function to determine path of neighbour (rotations not needed)
 *** TODO background LOD and tessellation level (<= 64) computation
 *** TODO foreground rendering
 ** TODO auto-centering keyboard controls and pitch trim
+** TODO directional RCS thrust
 ** TODO tutorial (keyboard widget, show next key to press, joystick, commands)
 ** TODO key names not correct on some languages
 ** TODO integration tests for different screen formats
