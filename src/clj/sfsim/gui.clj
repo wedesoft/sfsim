@@ -2057,14 +2057,14 @@
   "Shared code for drawing numbers or signed numbers"
   [canvas font x y digit-range digit-width digit-height text-at color]
   (doseq [^long i digit-range]
-         (draw-text canvas (+ x (* i digit-width)) y digit-width digit-height (text-at i) font color)))
+         (draw-text canvas (+ ^long x (* i ^long digit-width)) y digit-width digit-height (text-at i) font color)))
 
 
 (defn draw-digits
   "Draw number using evenly spaced digits"
   [canvas font x y num-digits digit-range digit-width digit-height value color]
   (draw-spaced canvas font x y digit-range digit-width digit-height
-               (fn [i] (str (digit value (- num-digits 1 i))))
+               (fn [^long i] (str (digit value (- ^long num-digits 1 i))))
                color))
 
 
@@ -2072,9 +2072,10 @@
   "Draw signed number using evenly spaced digits"
   [canvas font x y num-digits digit-range digit-width digit-height value color]
   (draw-spaced canvas font x y digit-range digit-width digit-height
-               (fn [i] (if (zero? i)
-                         (cond (neg? value) "-" (zero? value) " " :else "+")
-                         (str (digit (abs value) (- num-digits 1 i)))))
+               (fn [^long i]
+                   (if (zero? i)
+                     (cond (neg? ^long value) "-" (zero? ^long value) " " :else "+")
+                     (str (digit (abs ^long value) (- ^long num-digits 1 i)))))
                color))
 
 
@@ -2197,7 +2198,7 @@
       (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
         (fill-rect canvas rect 0.0 bg)
         (draw-digits-signed canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range num-digits) digit-width digit-height
-                            (round vertical-speed) green))
+                            (long (round vertical-speed)) green))
       (fill-polygon canvas
                     [[(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
                      [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
