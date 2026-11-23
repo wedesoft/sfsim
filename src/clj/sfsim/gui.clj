@@ -2211,7 +2211,7 @@
                        [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]
                        [(+ x0 margin-left (* digit-width num-digits)) (+ cy digit-height2)]
                        [(+ x0 margin-left) (+ cy digit-height2)]]
-                      thickness bright)))))
+                      thickness (if (>= vertical-speed 0.0) grey bright))))))
 
 
 (defn horizon-mfd
