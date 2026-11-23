@@ -16,7 +16,6 @@
     [sfsim.matrix :refer (matrix->quaternion get-translation rotation-matrix)]
     [sfsim.model :as model]
     [sfsim.util :refer (sqr clamp)]
-    [sfsim.units :as units]
     [sfsim.planet :as planet]
     [sfsim.jolt :as jolt]
     [sfsim.astro :as astro]
