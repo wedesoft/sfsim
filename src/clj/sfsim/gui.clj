@@ -2057,25 +2057,27 @@
   "Shared code for drawing numbers or signed numbers"
   [canvas font x y digit-range digit-width digit-height text-at color]
   (doseq [^long i digit-range]
-         (draw-text canvas (+ x (* i digit-width)) y digit-width digit-height (text-at i) font color)))
+         (draw-text canvas (+ ^long x (* i ^long digit-width)) y digit-width digit-height (text-at i) font color)))
 
 
 (defn draw-digits
   "Draw number using evenly spaced digits"
   [canvas font x y num-digits digit-range digit-width digit-height value color]
   (draw-spaced canvas font x y digit-range digit-width digit-height
-               (fn [i] (str (digit value (- num-digits 1 i))))
+               (fn [^long i] (str (digit value (- ^long num-digits 1 i))))
                color))
 
 
 (defn draw-digits-signed
   "Draw signed number using evenly spaced digits"
   [canvas font x y num-digits digit-range digit-width digit-height value color]
-  (draw-spaced canvas font x y digit-range digit-width digit-height
-               (fn [i] (if (zero? i)
-                         (cond (neg? value) "-" (zero? value) " " :else "+")
-                         (str (digit (abs value) (- num-digits 1 i)))))
-               color))
+  (let [rounded-value (long (round value))]
+    (draw-spaced canvas font x y digit-range digit-width digit-height
+                 (fn [^long i]
+                     (if (zero? i)
+                       (cond (neg? ^double value) "-" (zero? ^double value) " " :else "+")
+                       (str (digit (abs rounded-value) (- ^long num-digits 1 i)))))
+                 color)))
 
 
 (defn draw-speed
@@ -2107,14 +2109,14 @@
        green    0 255   0
        grey    64  64  64
        bright 202 213 197]
-      (fill-rect canvas canvas-rect 0.0 grey)
-      (stroke-rect canvas canvas-rect 0.0 (scale gui 1.0) bright)
+      (fill-rect canvas canvas-rect 0.0 bright)
+      (stroke-rect canvas canvas-rect 0.0 (scale gui 1.0) grey)
       (with-clip canvas canvas-rect
         (doseq [^long tick (range (max 0 (- nearest-tick (* rounding delta))) (+ nearest-tick (* rounding (inc delta))) rounding)]
                (let [y (+ cy (/ (* tick-interval (- speed tick)) rounding))]
                  (draw-digits canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits) digit-width
-                              digit-height tick bright)
-                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness bright))))
+                              digit-height tick grey)
+                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness grey))))
       (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
         (fill-rect canvas rect 0.0 bg)
         (draw-digits canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range (dec num-digits)) digit-width digit-height
@@ -2145,7 +2147,7 @@
                        [(+ x0 margin-left (* digit-width (dec num-digits))) (+ cy digit-height)]
                        [(+ x0 margin-left (* digit-width (dec num-digits))) (+ cy digit-height2)]
                        [(+ x0 margin-left) (+ cy digit-height2)]]
-                      thickness bright))))
+                      thickness grey))))
 
 
 (defn draw-vertical-speed
@@ -2197,7 +2199,7 @@
       (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
         (fill-rect canvas rect 0.0 bg)
         (draw-digits-signed canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range num-digits) digit-width digit-height
-                            (round vertical-speed) green))
+                            vertical-speed green))
       (fill-polygon canvas
                     [[(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
                      [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
@@ -2211,7 +2213,7 @@
                        [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]
                        [(+ x0 margin-left (* digit-width num-digits)) (+ cy digit-height2)]
                        [(+ x0 margin-left) (+ cy digit-height2)]]
-                      thickness bright)))))
+                      thickness (if (>= vertical-speed 0.0) grey bright))))))
 
 
 (defn horizon-mfd
@@ -2269,7 +2271,7 @@
       (nuklear-window gui "Horizon" (scale gui (+ 30 512)) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
-        (horizon-mfd gui {::speed (physics/get-speed (:physics state)) ::vertical-speed (:sfsim.physics/display-vertical-speed (:physics state))}))
+        (horizon-mfd gui {::speed (physics/get-speed (:physics state)) ::vertical-speed (physics/get-vertical-speed (:physics state))}))
       (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)

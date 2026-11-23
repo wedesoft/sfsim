@@ -5,15 +5,16 @@
 
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
 ** TODO speed indicator
-*** DONE Speed
-**** TODO make speed display background bright and text dark
+*** TODO height
+**** TODO use piecewise linear scale (+500 feet, 100000 feet, 400000 feet (scale change)) or logarithmic scale
 *** DONE vertical speed
-**** TODO compute vertical speed on the fly
-**** TODO change colour of current speed display depending on sign
+**** TODO use piecewise linear scale (+-740 feet/second, coarse +-2940 feet/second) or logarithmic scale
+          change yzero formula to non-linear scale position function
+          adapt number of ticks to control tick density
+*** DONE speed
+*** TODO vertical acceleration scale
 *** TODO Angle of Attack (color negative part of scale)
 *** TODO horizon
-*** TODO height
-*** TODO vertical acceleration scale
 *** TODO acceleration (dial)
 *** TODO heading
 ** TODO manual surface mode / orbit mode / docking mode switch
