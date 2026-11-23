@@ -2271,7 +2271,7 @@
       (nuklear-window gui "Horizon" (scale gui (+ 30 512)) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
-        (horizon-mfd gui {::speed (physics/get-speed (:physics state)) ::vertical-speed (:sfsim.physics/display-vertical-speed (:physics state))}))
+        (horizon-mfd gui {::speed (physics/get-speed (:physics state)) ::vertical-speed (physics/get-vertical-speed (:physics state))}))
       (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)

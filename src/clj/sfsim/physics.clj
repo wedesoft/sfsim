@@ -108,7 +108,6 @@
    ::position (vec3 0 0 0)
    ::speed (vec3 0 0 0)
    ::domain ::surface
-   ::display-vertical-speed 0.0
    ::throttle 0.0
    ::air-brake 0.0
    ::gear 1.0
@@ -481,6 +480,15 @@
   (mag (get-linear-speed (::domain state) state)))
 
 
+(defn get-vertical-speed
+  "Get vertical speed in current domain"
+  [state]
+  (let [domain   (::domain state)
+        position (get-position domain state)
+        speed    (get-linear-speed domain state)]
+    (dot speed (normalize position))))
+
+
 (defmulti update-state
   "Perform simulation step"
   (fn [state _dt _acceleration] (::domain state)))
@@ -500,13 +508,9 @@
     (jolt/set-gravity (vec3 0 0 0))
     (jolt/add-impulse body (mult dv1 mass))
     (jolt/update-system dt 1)
-    (let [speed                  (jolt/get-linear-velocity body)
-          position               (jolt/get-translation body)
-          display-vertical-speed (dot speed (normalize position))]
-      (jolt/add-impulse body (mult dv2 mass))
-      (-> state
-          (update ::offset-seconds + dt)
-          (assoc ::display-vertical-speed display-vertical-speed)))))
+    (jolt/add-impulse body (mult dv2 mass))
+    (-> state
+        (update ::offset-seconds + dt))))
 
 
 (defmethod update-state ::orbit
@@ -527,11 +531,9 @@
       (jolt/set-translation body (vec3 0 0 0))
       (jolt/set-linear-velocity body (vec3 0 0 0))
       (let [position               (add position delta-position)
-            speed                  (add speed delta-speed)
-            display-vertical-speed (dot speed (normalize position))]
+            speed                  (add speed delta-speed)]
         (-> state
             (update ::offset-seconds + dt)
-            (assoc ::display-vertical-speed display-vertical-speed)
             (assoc ::position position)
             (assoc ::speed speed))))))
 
