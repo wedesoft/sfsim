@@ -2071,12 +2071,13 @@
 (defn draw-digits-signed
   "Draw signed number using evenly spaced digits"
   [canvas font x y num-digits digit-range digit-width digit-height value color]
-  (draw-spaced canvas font x y digit-range digit-width digit-height
-               (fn [^long i]
-                   (if (zero? i)
-                     (cond (neg? ^long value) "-" (zero? ^long value) " " :else "+")
-                     (str (digit (abs ^long value) (- ^long num-digits 1 i)))))
-               color))
+  (let [rounded-value (long (round value))]
+    (draw-spaced canvas font x y digit-range digit-width digit-height
+                 (fn [^long i]
+                     (if (zero? i)
+                       (cond (neg? ^double value) "-" (zero? ^double value) " " :else "+")
+                       (str (digit (abs rounded-value) (- ^long num-digits 1 i)))))
+                 color)))
 
 
 (defn draw-speed
@@ -2198,7 +2199,7 @@
       (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
         (fill-rect canvas rect 0.0 bg)
         (draw-digits-signed canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range num-digits) digit-width digit-height
-                            (long (round vertical-speed)) green))
+                            vertical-speed green))
       (fill-polygon canvas
                     [[(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
                      [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
