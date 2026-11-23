@@ -6,12 +6,14 @@
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
 ** TODO speed indicator
 *** DONE speed
+*** TODO height
+**** TODO use piecewise linear scale (+500 feet, 100000 feet, 400000 feet (scale change)) or logarithmic scale
 *** DONE vertical speed
 **** TODO compute vertical speed on the fly
-*** TODO height
+**** TODO use piecewise linear scale (+-740 feet/second, coarse +-2940 feet/second) or logarithmic scale
+*** TODO vertical acceleration scale
 *** TODO Angle of Attack (color negative part of scale)
 *** TODO horizon
-*** TODO vertical acceleration scale
 *** TODO acceleration (dial)
 *** TODO heading
 ** TODO manual surface mode / orbit mode / docking mode switch
