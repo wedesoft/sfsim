@@ -2107,14 +2107,14 @@
        green    0 255   0
        grey    64  64  64
        bright 202 213 197]
-      (fill-rect canvas canvas-rect 0.0 grey)
-      (stroke-rect canvas canvas-rect 0.0 (scale gui 1.0) bright)
+      (fill-rect canvas canvas-rect 0.0 bright)
+      (stroke-rect canvas canvas-rect 0.0 (scale gui 1.0) grey)
       (with-clip canvas canvas-rect
         (doseq [^long tick (range (max 0 (- nearest-tick (* rounding delta))) (+ nearest-tick (* rounding (inc delta))) rounding)]
                (let [y (+ cy (/ (* tick-interval (- speed tick)) rounding))]
                  (draw-digits canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits) digit-width
-                              digit-height tick bright)
-                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness bright))))
+                              digit-height tick grey)
+                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness grey))))
       (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
         (fill-rect canvas rect 0.0 bg)
         (draw-digits canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range (dec num-digits)) digit-width digit-height
@@ -2145,7 +2145,7 @@
                        [(+ x0 margin-left (* digit-width (dec num-digits))) (+ cy digit-height)]
                        [(+ x0 margin-left (* digit-width (dec num-digits))) (+ cy digit-height2)]
                        [(+ x0 margin-left) (+ cy digit-height2)]]
-                      thickness bright))))
+                      thickness grey))))
 
 
 (defn draw-vertical-speed
