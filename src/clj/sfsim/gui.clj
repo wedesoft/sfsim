@@ -2260,6 +2260,7 @@
         thickness       (scale gui 1.0)
         num-digits      6
         rounding        (height-rounding height)
+        triangle-size   (long (scale gui 4))
         tick-interval   (long (scale gui 32))
         nearest-tick    (* rounding (long (quot height rounding)))]
     (with-colors
@@ -2281,7 +2282,25 @@
                 (draw-chars canvas font (+ x0 margin-left) (- y digit-height2) num-digits digit-width digit-height
                             (subs (float-str tick) 1) grey)
                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness grey)
-                (recur (- tick (height-rounding (dec tick))) (+ y tick-interval))))))))
+                (recur (- tick (height-rounding (dec tick))) (+ y tick-interval))))
+        (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
+          (fill-rect canvas rect 0.0 bg)
+          (draw-chars canvas font (+ x0 margin-left) (- cy digit-height2) num-digits digit-width digit-height
+                      (subs (float-str height) 1) green))
+        (fill-polygon canvas
+                      [[(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
+                       [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
+                       [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]]
+                      bg)
+        (stroke-polygon canvas
+                        [[(+ x0 margin-left) (- cy digit-height2)]
+                         [(+ x0 margin-left (* digit-width num-digits)) (- cy digit-height2)]
+                         [(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
+                         [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
+                         [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]
+                         [(+ x0 margin-left (* digit-width num-digits)) (+ cy digit-height2)]
+                         [(+ x0 margin-left) (+ cy digit-height2)]]
+                        thickness grey)))))
 
 
 (defn horizon-mfd
@@ -2298,8 +2317,9 @@
                 margin       (long (scale gui 2))
                 margin-left  (long (scale gui 6))
                 margin-right (long (scale gui 12))
-                num-digits   5
-                speed-width  (+ margin-left margin-right (* num-digits digit-width))]
+                speed-width  (+ margin-left margin-right (* 5 digit-width))
+                vspeed-width (+ margin-left margin-right (* 5 digit-width))
+                height-width (+ margin-left margin-right (* 6 digit-width))]
             (with-colors
               [bg       0   0   0
                title  129 226 207
@@ -2311,12 +2331,12 @@
                 speed-width (- h (* 2 margin) (scale gui text-height))
                 (draw-speed gui canvas rect (::speed settings)))
               (draw-text-center canvas (+ x0 w3) (+ y0 margin) w3 (scale gui text-height) "vs m/s" font title)
-              (with-rect rect (+ x0 w3 (quot (- w3 speed-width) 2)) (+ y0 margin (scale gui text-height))
-                speed-width (- h (* 2 margin) (scale gui text-height))
+              (with-rect rect (+ x0 w3 (quot (- w3 vspeed-width) 2)) (+ y0 margin (scale gui text-height))
+                vspeed-width (- h (* 2 margin) (scale gui text-height))
                 (draw-vertical-speed gui canvas rect (::vertical-speed settings)))
               (draw-text-center canvas (+ x0 (* 2 w3)) (+ y0 margin) w3 (scale gui text-height) "h m" font title)
-              (with-rect rect (+ x0 (* 2 w3) (quot (- w3 speed-width) 2)) (+ y0 margin (scale gui text-height))
-                speed-width (- h (* 2 margin) (scale gui text-height))
+              (with-rect rect (+ x0 (* 2 w3) (quot (- w3 height-width) 2)) (+ y0 margin (scale gui text-height))
+                height-width (- h (* 2 margin) (scale gui text-height))
                 (draw-height gui canvas rect (::height settings)))))))
 
 
@@ -2343,7 +2363,9 @@
       (nuklear-window gui "Horizon" (scale gui (+ 30 512)) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
-        (horizon-mfd gui {::speed (physics/get-speed (:physics state)) ::vertical-speed (physics/get-vertical-speed (:physics state))}))
+        (horizon-mfd gui {::speed (physics/get-speed (:physics state))
+                          ::vertical-speed (physics/get-vertical-speed (:physics state))
+                          ::height (physics/get-height (:physics state) config/planet-config)}))
       (nuklear-window gui "Navball" (- ^long w (scale gui (+ 10 256))) (- ^long h (scale gui (+ 10 256)))
                       (scale gui 256) (scale gui 256) :widget
                       (layout-row-dynamic gui (scale gui 256) 1)
