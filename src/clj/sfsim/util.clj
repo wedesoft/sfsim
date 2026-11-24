@@ -34,8 +34,7 @@
     (org.apache.commons.compress.archivers.tar
       TarFile
       TarArchiveOutputStream
-      TarArchiveEntry
-      TarFile$BoundedTarEntryInputStream)
+      TarArchiveEntry)
     (org.lwjgl
       BufferUtils)))
 
@@ -99,7 +98,7 @@
 (defn get-tar-entry
   "Open stream to read file from tar archive"
   {:malli/schema [:=> [:cat tarfile non-empty-string] :some]}
-  ^TarFile$BoundedTarEntryInputStream [tar ^String file-name]
+  ^BufferedInputStream [tar ^String file-name]
   (let [entry (get-in tar [::entries file-name])]
     (when-not entry
               (throw (Exception. (str "Entry " file-name " not found in tar file"))))

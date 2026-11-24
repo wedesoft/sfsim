@@ -4,6 +4,7 @@
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
+** TODO Use independent TarFile objects for main thread physics code and background map loading code
 ** TODO speed indicator
 *** TODO height
 **** TODO use piecewise linear scale (+500 feet, 100000 feet, 400000 feet (scale change)) or logarithmic scale

@@ -2183,7 +2183,7 @@
       (when (< yzero (+ y0 h))
         (with-rect rect x0 (max y0 yzero) w (- (+ y0 h) (max y0 yzero))
           (fill-rect canvas rect 0.0 grey)))
-     (with-clip canvas canvas-rect
+      (with-clip canvas canvas-rect
         (doseq [^long tick (range (- nearest-tick (* rounding delta)) (+ nearest-tick (* rounding (inc delta))) rounding)]
                (let [y (+ cy (/ (* tick-interval (- vertical-speed tick)) rounding))]
                  (if (zero? tick)
@@ -2192,28 +2192,61 @@
                                          digit-width digit-height tick bright)
                      (with-rect rect x0 (- y digit-height2) w digit-height2
                        (with-clip canvas rect
-                         (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits) digit-width digit-height tick grey))))
+                         (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits)
+                                             digit-width digit-height tick grey))))
                    (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits)
                                        digit-width digit-height tick (if (>= tick 0) grey bright)))
                  (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness (if (>= tick 0) grey bright))))
-      (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
-        (fill-rect canvas rect 0.0 bg)
-        (draw-digits-signed canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range num-digits) digit-width digit-height
-                            vertical-speed green))
-      (fill-polygon canvas
-                    [[(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
-                     [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
-                     [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]]
-                    bg)
-      (stroke-polygon canvas
-                      [[(+ x0 margin-left) (- cy digit-height2)]
-                       [(+ x0 margin-left (* digit-width num-digits)) (- cy digit-height2)]
-                       [(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
+        (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
+          (fill-rect canvas rect 0.0 bg)
+          (draw-digits-signed canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range num-digits) digit-width digit-height
+                              vertical-speed green))
+        (fill-polygon canvas
+                      [[(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
                        [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
-                       [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]
-                       [(+ x0 margin-left (* digit-width num-digits)) (+ cy digit-height2)]
-                       [(+ x0 margin-left) (+ cy digit-height2)]]
-                      thickness (if (>= vertical-speed 0.0) grey bright))))))
+                       [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]]
+                      bg)
+        (stroke-polygon canvas
+                        [[(+ x0 margin-left) (- cy digit-height2)]
+                         [(+ x0 margin-left (* digit-width num-digits)) (- cy digit-height2)]
+                         [(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
+                         [(+ x0 margin-left (* digit-width num-digits) triangle-size) cy]
+                         [(+ x0 margin-left (* digit-width num-digits)) (+ cy triangle-size)]
+                         [(+ x0 margin-left (* digit-width num-digits)) (+ cy digit-height2)]
+                         [(+ x0 margin-left) (+ cy digit-height2)]]
+                        thickness (if (>= vertical-speed 0.0) grey bright))))))
+
+
+(defn draw-height
+  "Draw height scale"
+  [gui ^NkCommandBuffer canvas canvas-rect ^double height]
+  (let [font            (:sfsim.gui/bitmap-font gui)
+        x0              (.x ^NkRect canvas-rect)
+        y0              (.y ^NkRect canvas-rect)
+        w               (.w ^NkRect canvas-rect)
+        h               (.h ^NkRect canvas-rect)
+        cy              (+ y0 (quot h 2))
+        digit-height    (long (scale gui 18))
+        digit-height2   (quot digit-height 2)
+        digit-width     (long (scale gui 9))
+        margin-left     (long (scale gui 6))
+        margin-right    (long (scale gui 12))
+        thickness       (scale gui 1.0)
+        num-digits      5
+        rounding        10
+        delta           5
+        triangle-size   (long (scale gui 4))
+        tick-interval   (long (scale gui 32))
+        nearest-tick    (* rounding (long (quot height rounding)))
+        yzero           (+ cy (/ (* tick-interval height) rounding))]
+    (with-colors
+      [bg       0   0   0
+       green    0 255   0
+       grey    64  64  64
+       bright 202 213 197]
+      (fill-rect canvas canvas-rect 0.0 bright)
+      (stroke-rect canvas canvas-rect 0.0 (scale gui 1.0) grey)
+     )))
 
 
 (defn horizon-mfd
