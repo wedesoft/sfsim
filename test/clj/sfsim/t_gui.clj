@@ -526,6 +526,15 @@
          -20.0           "vertical-speed-neg-20.png")
 
 
+(tabular "Display height scale"
+         (fact
+           (widget-test gui canvas rect (+ 6 (* 5 9) 12 8) 168 (draw-height gui canvas rect ?height))
+           => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
+         ?height ?result
+         0.0     "height-0.png"
+         )
+
+
 (def horizon-settings {:sfsim.gui/speed 25.0 :sfsim.gui/vertical-speed -20.0})
 
 
