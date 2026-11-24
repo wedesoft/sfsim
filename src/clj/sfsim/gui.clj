@@ -2068,6 +2068,14 @@
                color))
 
 
+(defn draw-chars
+  "Draw text using evenly spaced characters"
+  [canvas font x y num-digits digit-range digit-width digit-height value color]
+  (draw-spaced canvas font x y digit-range digit-width digit-height
+               (fn [^long i] (subs value i (inc i)))
+               color))
+
+
 (defn draw-digits-signed
   "Draw signed number using evenly spaced digits"
   [canvas font x y num-digits digit-range digit-width digit-height value color]
@@ -2217,6 +2225,22 @@
                         thickness (if (>= vertical-speed 0.0) grey bright))))))
 
 
+(defn decimals
+  "Get number of decimal digits of number"
+  [x]
+  (if (zero? x)
+    0
+    (inc (decimals (quot x 10)))))
+
+
+(defn height-rounding
+  "Get tick interval of current segment of scale"
+  [x]
+  (if (>= x 1000)
+    (* 10 (height-rounding (quot x 10)))
+    10))
+
+
 (defn draw-height
   "Draw height scale"
   [gui ^NkCommandBuffer canvas canvas-rect ^double height]
@@ -2232,8 +2256,9 @@
         margin-left     (long (scale gui 6))
         margin-right    (long (scale gui 12))
         thickness       (scale gui 1.0)
-        num-digits      5
-        rounding        10
+        segment         (decimals height)
+        num-digits      6
+        rounding        (height-rounding height)
         delta           5
         triangle-size   (long (scale gui 4))
         tick-interval   (long (scale gui 32))
@@ -2246,7 +2271,19 @@
        bright 202 213 197]
       (fill-rect canvas canvas-rect 0.0 bright)
       (stroke-rect canvas canvas-rect 0.0 (scale gui 1.0) grey)
-     )))
+      (with-clip canvas canvas-rect
+        (loop [tick nearest-tick y (+ cy (/ (* tick-interval (- height nearest-tick)) rounding))]
+              (when (>= (+ y digit-height2) y0)
+                (draw-chars canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits) digit-width
+                             digit-height (subs (float-str tick) 1) grey)
+                (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness grey)
+                (recur (+ tick (height-rounding tick)) (- y tick-interval))))
+        (loop [tick nearest-tick y (+ cy (/ (* tick-interval (- height nearest-tick)) rounding))]
+              (when (< (- y digit-height2) (+ y0 h))
+                (draw-chars canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits) digit-width
+                            digit-height (subs (float-str tick) 1) grey)
+                (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness grey)
+                (recur (- tick (height-rounding (dec tick))) (+ y tick-interval))))))))
 
 
 (defn horizon-mfd

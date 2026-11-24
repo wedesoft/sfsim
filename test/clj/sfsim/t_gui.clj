@@ -496,6 +496,17 @@
              => (is-image (format "test/clj/sfsim/fixtures/gui/controls-%d.png" s) 0.10)))
 
 
+(facts "Get digits of number"
+       (digit 0 0) => 0
+       (digit 7 0) => 7
+       (digit 9 0) => 9
+       (digit 10 0) => 0
+       (digit 17 0) => 7
+       (digit 7 1) => 0
+       (digit 27 1) => 2
+       (digit 127 1) => 2)
+
+
 (tabular "Display speed scale"
          (fact
            (widget-test gui canvas rect (+ 8 6 12 (* 5 9)) 168 (draw-speed gui canvas rect ?speed))
@@ -526,13 +537,35 @@
          -20.0           "vertical-speed-neg-20.png")
 
 
+(facts "Get decimals of number"
+       (decimals 1) => 1
+       (decimals 7) => 1
+       (decimals 10) => 2
+       (decimals 17) => 2
+       (decimals 100) => 3
+       (decimals 123) => 3)
+
+
+(facts "Tick interval of height values"
+       (height-rounding 1) => 10
+       (height-rounding 10) => 10
+       (height-rounding 100) => 10
+       (height-rounding 1000) => 100
+       (height-rounding 10000) => 1000
+       (height-rounding 100000) => 10000)
+
+
 (tabular "Display height scale"
          (fact
-           (widget-test gui canvas rect (+ 6 (* 5 9) 12 8) 168 (draw-height gui canvas rect ?height))
+           (widget-test gui canvas rect (+ 6 (* 6 9) 12 8) 168 (draw-height gui canvas rect ?height))
            => (is-image (str "test/clj/sfsim/fixtures/gui/" ?result) 0.1))
          ?height ?result
          0.0     "height-0.png"
-         )
+         7.0     "height-7.png"
+         997.0   "height-997.png"
+         1000.0  "height-1000.png"
+         1070.0  "height-1070.png"
+         9999.0  "height-9999.png")
 
 
 (def horizon-settings {:sfsim.gui/speed 25.0 :sfsim.gui/vertical-speed -20.0})
