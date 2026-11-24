@@ -2055,32 +2055,32 @@
 
 (defn draw-spaced
   "Shared code for drawing numbers or signed numbers"
-  [canvas font x y digit-range digit-width digit-height text-at color]
-  (doseq [^long i digit-range]
+  [canvas font x y num-digits digit-width digit-height text-at color]
+  (doseq [^long i (range num-digits)]
          (draw-text canvas (+ ^long x (* i ^long digit-width)) y digit-width digit-height (text-at i) font color)))
 
 
 (defn draw-digits
   "Draw number using evenly spaced digits"
-  [canvas font x y num-digits digit-range digit-width digit-height value color]
-  (draw-spaced canvas font x y digit-range digit-width digit-height
+  [canvas font x y num-digits digit-width digit-height value color]
+  (draw-spaced canvas font x y num-digits digit-width digit-height
                (fn [^long i] (str (digit value (- ^long num-digits 1 i))))
                color))
 
 
 (defn draw-chars
   "Draw text using evenly spaced characters"
-  [canvas font x y num-digits digit-range digit-width digit-height value color]
-  (draw-spaced canvas font x y digit-range digit-width digit-height
+  [canvas font x y num-digits digit-width digit-height value color]
+  (draw-spaced canvas font x y num-digits digit-width digit-height
                (fn [^long i] (subs value i (inc i)))
                color))
 
 
 (defn draw-digits-signed
   "Draw signed number using evenly spaced digits"
-  [canvas font x y num-digits digit-range digit-width digit-height value color]
+  [canvas font x y num-digits digit-width digit-height value color]
   (let [rounded-value (long (round value))]
-    (draw-spaced canvas font x y digit-range digit-width digit-height
+    (draw-spaced canvas font x y num-digits digit-width digit-height
                  (fn [^long i]
                      (if (zero? i)
                        (cond (neg? ^double value) "-" (zero? ^double value) " " :else "+")
@@ -2122,13 +2122,12 @@
       (with-clip canvas canvas-rect
         (doseq [^long tick (range (max 0 (- nearest-tick (* rounding delta))) (+ nearest-tick (* rounding (inc delta))) rounding)]
                (let [y (+ cy (/ (* tick-interval (- speed tick)) rounding))]
-                 (draw-digits canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits) digit-width
-                              digit-height tick grey)
+                 (draw-digits canvas font (+ x0 margin-left) (- y digit-height2) num-digits digit-width digit-height tick grey)
                  (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness grey))))
       (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
         (fill-rect canvas rect 0.0 bg)
-        (draw-digits canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range (dec num-digits)) digit-width digit-height
-                     speed-round green))
+        (draw-digits canvas font (+ x0 margin-left) (- cy digit-height2) (dec num-digits) digit-width digit-height
+                     (quot speed-round 10) green))
       (with-rect rect (+ x0 margin-left (* digit-width (dec num-digits))) (- cy digit-height) digit-width (* 2 digit-height)
         (with-clip canvas rect
           (fill-rect canvas rect 0.0 bg)
@@ -2196,18 +2195,18 @@
                (let [y (+ cy (/ (* tick-interval (- vertical-speed tick)) rounding))]
                  (if (zero? tick)
                    (do
-                     (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits)
-                                         digit-width digit-height tick bright)
+                     (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits digit-width digit-height
+                                         tick bright)
                      (with-rect rect x0 (- y digit-height2) w digit-height2
                        (with-clip canvas rect
-                         (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits)
-                                             digit-width digit-height tick grey))))
-                   (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits)
-                                       digit-width digit-height tick (if (>= tick 0) grey bright)))
+                         (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits digit-width digit-height
+                                             tick grey))))
+                   (draw-digits-signed canvas font (+ x0 margin-left) (- y digit-height2) num-digits digit-width digit-height
+                                       tick (if (>= tick 0) grey bright)))
                  (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness (if (>= tick 0) grey bright))))
         (with-rect rect (+ x0 margin-left) (- cy digit-height2) (* digit-width num-digits) digit-height
           (fill-rect canvas rect 0.0 bg)
-          (draw-digits-signed canvas font (+ x0 margin-left) (- cy digit-height2) num-digits (range num-digits) digit-width digit-height
+          (draw-digits-signed canvas font (+ x0 margin-left) (- cy digit-height2) num-digits digit-width digit-height
                               vertical-speed green))
         (fill-polygon canvas
                       [[(+ x0 margin-left (* digit-width num-digits)) (- cy triangle-size)]
@@ -2227,7 +2226,7 @@
 
 (defn decimals
   "Get number of decimal digits of number"
-  [x]
+  ^long [^long x]
   (if (zero? x)
     0
     (inc (decimals (quot x 10)))))
@@ -2235,7 +2234,7 @@
 
 (defn height-rounding
   "Get tick interval of current segment of scale"
-  [x]
+  ^long [^long x]
   (if (>= x 1000)
     (* 10 (height-rounding (quot x 10)))
     10))
@@ -2256,14 +2255,10 @@
         margin-left     (long (scale gui 6))
         margin-right    (long (scale gui 12))
         thickness       (scale gui 1.0)
-        segment         (decimals height)
         num-digits      6
         rounding        (height-rounding height)
-        delta           5
-        triangle-size   (long (scale gui 4))
         tick-interval   (long (scale gui 32))
-        nearest-tick    (* rounding (long (quot height rounding)))
-        yzero           (+ cy (/ (* tick-interval height) rounding))]
+        nearest-tick    (* rounding (long (quot height rounding)))]
     (with-colors
       [bg       0   0   0
        green    0 255   0
@@ -2274,14 +2269,14 @@
       (with-clip canvas canvas-rect
         (loop [tick nearest-tick y (+ cy (/ (* tick-interval (- height nearest-tick)) rounding))]
               (when (>= (+ y digit-height2) y0)
-                (draw-chars canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits) digit-width
-                             digit-height (subs (float-str tick) 1) grey)
+                (draw-chars canvas font (+ x0 margin-left) (- y digit-height2) num-digits digit-width digit-height
+                            (subs (float-str tick) 1) grey)
                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness grey)
                 (recur (+ tick (height-rounding tick)) (- y tick-interval))))
         (loop [tick nearest-tick y (+ cy (/ (* tick-interval (- height nearest-tick)) rounding))]
               (when (< (- y digit-height2) (+ y0 h))
-                (draw-chars canvas font (+ x0 margin-left) (- y digit-height2) num-digits (range num-digits) digit-width
-                            digit-height (subs (float-str tick) 1) grey)
+                (draw-chars canvas font (+ x0 margin-left) (- y digit-height2) num-digits digit-width digit-height
+                            (subs (float-str tick) 1) grey)
                 (stroke-line canvas (+ x0 (- w margin-right)) y (+ x0 w) y thickness grey)
                 (recur (- tick (height-rounding (dec tick))) (+ y tick-interval))))))))
 
