@@ -568,7 +568,7 @@
          9999.0  "height-9999.png")
 
 
-(def horizon-settings {:sfsim.gui/speed 25.0 :sfsim.gui/vertical-speed -20.0})
+(def horizon-settings {:sfsim.gui/speed 25.0 :sfsim.gui/vertical-speed -20.0 :sfsim.gui/height 1234.0})
 
 
 (fact "Render horizon MFD"

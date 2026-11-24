@@ -2056,8 +2056,11 @@
 (defn draw-spaced
   "Shared code for drawing numbers or signed numbers"
   [canvas font x y num-digits digit-width digit-height text-at color]
-  (doseq [^long i (range num-digits)]
-         (draw-text canvas (+ ^long x (* i ^long digit-width)) y digit-width digit-height (text-at i) font color)))
+  (loop [i 0 x x]
+        (when (< i ^long num-digits)
+          (let [txt (text-at i)]
+            (draw-text canvas x y digit-width digit-height txt font color)
+            (recur (inc i) (+ ^long x (if (= txt ".") (quot ^long digit-width 2) ^long digit-width)))))))
 
 
 (defn draw-digits
@@ -2290,7 +2293,7 @@
                 y0           (.y canvas-rect)
                 w            (.w canvas-rect)
                 h            (.h canvas-rect)
-                w2           (quot w 2)
+                w3           (quot w 3)
                 digit-width  (long (scale gui 9))
                 margin       (long (scale gui 2))
                 margin-left  (long (scale gui 6))
@@ -2303,14 +2306,18 @@
                border  82 185 142]
               (fill-rect canvas canvas-rect 0.0 bg)
               (stroke-rect canvas canvas-rect 0.0 (scale gui 2.0) border)
-              (draw-text-center canvas x0 (+ y0 margin) w2 (scale gui text-height) "v m/s" font title)
-              (with-rect rect (+ x0 (quot (- w2 speed-width) 2)) (+ y0 margin (scale gui text-height))
+              (draw-text-center canvas x0 (+ y0 margin) w3 (scale gui text-height) "v m/s" font title)
+              (with-rect rect (+ x0 (quot (- w3 speed-width) 2)) (+ y0 margin (scale gui text-height))
                 speed-width (- h (* 2 margin) (scale gui text-height))
                 (draw-speed gui canvas rect (::speed settings)))
-              (draw-text-center canvas (+ x0 w2) (+ y0 margin) w2 (scale gui text-height) "vs m/s" font title)
-              (with-rect rect (+ x0 w2 (quot (- w2 speed-width) 2)) (+ y0 margin (scale gui text-height))
+              (draw-text-center canvas (+ x0 w3) (+ y0 margin) w3 (scale gui text-height) "vs m/s" font title)
+              (with-rect rect (+ x0 w3 (quot (- w3 speed-width) 2)) (+ y0 margin (scale gui text-height))
                 speed-width (- h (* 2 margin) (scale gui text-height))
-                (draw-vertical-speed gui canvas rect (::vertical-speed settings)))))))
+                (draw-vertical-speed gui canvas rect (::vertical-speed settings)))
+              (draw-text-center canvas (+ x0 (* 2 w3)) (+ y0 margin) w3 (scale gui text-height) "h m" font title)
+              (with-rect rect (+ x0 (* 2 w3) (quot (- w3 speed-width) 2)) (+ y0 margin (scale gui text-height))
+                speed-width (- h (* 2 margin) (scale gui text-height))
+                (draw-height gui canvas rect (::height settings)))))))
 
 
 (defn information-display
