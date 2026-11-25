@@ -5,6 +5,7 @@
 
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
 ** TODO Use independent TarFile objects for main thread physics code and background map loading code
+** TODO make space for more MFDs (buttons to switch them?)
 ** TODO speed indicator
 *** TODO vertical acceleration scale
 *** TODO Angle of Attack (color negative part of scale)
@@ -12,6 +13,7 @@
 *** TODO acceleration (dial?)
 *** TODO dynamic pressure
 *** TODO heading
+*** TODO displayed vertical speed is negative
 ** TODO manual surface mode / orbit mode / docking mode switch
 ** TODO article about rendering planet
 *** TODO use octaves of worley (?) noise
