@@ -2175,7 +2175,7 @@
         margin-left     (long (scale gui 6))
         margin-right    (long (scale gui 12))
         thickness       (scale gui 1.0)
-        num-digits      5
+        num-digits      6
         rounding        10
         delta           5
         triangle-size   (long (scale gui 4))
@@ -2318,7 +2318,7 @@
                 margin-left  (long (scale gui 6))
                 margin-right (long (scale gui 12))
                 speed-width  (+ margin-left margin-right (* 5 digit-width))
-                vspeed-width (+ margin-left margin-right (* 5 digit-width))
+                vspeed-width (+ margin-left margin-right (* 6 digit-width))
                 height-width (+ margin-left margin-right (* 6 digit-width))]
             (with-colors
               [bg       0   0   0

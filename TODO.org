@@ -6,8 +6,6 @@
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
 ** TODO Use independent TarFile objects for main thread physics code and background map loading code
 ** TODO speed indicator
-*** TODO height
-**** TODO use piecewise linear scale (+500 feet, 100000 feet, 400000 feet (scale change)) or logarithmic scale
 *** DONE vertical speed
 **** TODO use piecewise linear scale (+-740 feet/second, coarse +-2940 feet/second) or logarithmic scale
           change yzero formula to non-linear scale position function
