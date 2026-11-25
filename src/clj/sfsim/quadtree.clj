@@ -60,14 +60,15 @@
              [:sfsim.planet/water :any]]))
 
 
-(def access-cube-tar (make-lru-cache 80 untar tar-close))
+;; First argument enforces separate caches for each client because Tar file access is not thread safe.
+(def access-cube-tar (make-lru-cache 80 (fn [_client-id file-name] (untar file-name)) tar-close))
 
 
 (defn load-tile-data
   "Load data associated with a cube map tile"
   {:malli/schema [:=> [:cat :keyword N0 N0 N0 :double] tile]}
   [face level y x radius]
-  (let [tar (access-cube-tar (cube-tar "data/globe" face level x))]
+  (let [tar (access-cube-tar :load-tile-data (cube-tar "data/globe" face level x))]
     {::face                 face
      ::level                level
      ::y                    y
@@ -374,7 +375,7 @@
   "Load tile with specified face and tile position"
   (z/lru
     (fn [level tilesize face row column]
-      (let [tar       (access-cube-tar (cube-tar "data/globe" face level column))
+      (let [tar       (access-cube-tar :load-surface-tile (cube-tar "data/globe" face level column))
             file-name (cube-file-name row ".surf.gz")]
         #:sfsim.image{:width tilesize :height tilesize :data (slurp-floats-gz-tar tar file-name)}))
     :lru/threshold 4))

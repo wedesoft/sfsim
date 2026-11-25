@@ -4,7 +4,8 @@
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
-** TODO Use independent TarFile objects for main thread physics code and background map loading code
+** DONE Use independent TarFile objects for main thread physics code and background map loading code
+** TODO test different aspect ratios
 ** TODO make space for more MFDs (buttons to switch them?)
 ** TODO speed indicator
 *** TODO vertical acceleration scale
