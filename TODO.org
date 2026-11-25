@@ -6,18 +6,13 @@
 ** DONE pick height values from same level of resolution to prevent mismatches at seams
 ** TODO Use independent TarFile objects for main thread physics code and background map loading code
 ** TODO speed indicator
-*** DONE vertical speed
-**** TODO use piecewise linear scale (+-740 feet/second, coarse +-2940 feet/second) or logarithmic scale
-          change yzero formula to non-linear scale position function
-          adapt number of ticks to control tick density
-*** DONE speed
 *** TODO vertical acceleration scale
 *** TODO Angle of Attack (color negative part of scale)
 *** TODO horizon
-*** TODO acceleration (dial)
+*** TODO acceleration (dial?)
+*** TODO dynamic pressure
 *** TODO heading
 ** TODO manual surface mode / orbit mode / docking mode switch
-** TODO Display dynamic pressure
 ** TODO article about rendering planet
 *** TODO use octaves of worley (?) noise
 *** TODO function to determine path of neighbour (rotations not needed)
