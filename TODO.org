@@ -3,7 +3,7 @@
 
 * NOW [#A] Vertical slice: launch -> orbit -> reentry -> landing
 
-** TODO test different aspect ratios
+** TODO test different aspect ratios (use vertical field of view)
 ** TODO make space for more MFDs (buttons to switch them?)
 ** TODO speed indicator
 *** TODO vertical acceleration scale
