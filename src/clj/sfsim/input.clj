@@ -659,13 +659,12 @@
 
 (defn menu-scroll
   [state gui dx dy]
-  (let [stack  (MemoryStack/stackPush)
-        scroll (NkVec2/malloc stack)]
-    (.x scroll dx)
-    (.y scroll dy)
-    (Nuklear/nk_input_scroll (:sfsim.gui/context gui) scroll)
-    (MemoryStack/stackPop)
-    state))
+  (with-open [stack (MemoryStack/stackPush)]
+    (let [scroll (NkVec2/malloc stack)]
+      (.x scroll dx)
+      (.y scroll dy)
+      (Nuklear/nk_input_scroll (:sfsim.gui/context gui) scroll)
+      state)))
 
 
 (defn simulator-joystick-with-dead-zone

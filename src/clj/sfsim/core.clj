@@ -80,9 +80,6 @@
              (invoke [_ _error description]
                (log/error (GLFWErrorCallback/getDescription description)))))
 
-    ;; Create a stack object for LWJGL
-    (MemoryStack/stackPush)
-
     ;; Initialise GLFW
     (when-not (GLFW/glfwInit)
               (throw (RuntimeException. "Failed to initialize GLFW")))
@@ -322,7 +319,6 @@
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
         (when user-stats (steam/destroy))))
-        (MemoryStack/stackPop)
   (catch Throwable e
          (log/error e "Throwable in main function")
          (NewRelic/noticeError e)

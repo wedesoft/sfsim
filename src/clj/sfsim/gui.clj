@@ -261,7 +261,7 @@
 (defn render-nuklear-gui
   "Display the graphical user interface"
   [{::keys [context config program vao cmds]} ^long width ^long height]
-  (let [stack (MemoryStack/stackPush)]
+  (with-open [stack (MemoryStack/stackPush)]
     (GL11/glViewport 0 0 width height)
     (use-program program)
     (uniform-matrix4 program "projection" (gui-matrix width height))
@@ -274,17 +274,16 @@
     (with-overlay-blending
       (with-scissor
         (loop [cmd (Nuklear/nk__draw_begin context cmds) offset 0]
-          (when cmd
-            (when (not (zero? (.elem_count cmd)))
-              (GL13/glActiveTexture GL13/GL_TEXTURE0)
-              (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
-              (let [clip-rect (.clip_rect cmd)]
-                (set-scissor (.x clip-rect) (- height (long (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
-              (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
-            (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))))
+              (when cmd
+                (when (not (zero? (.elem_count cmd)))
+                  (GL13/glActiveTexture GL13/GL_TEXTURE0)
+                  (GL11/glBindTexture GL11/GL_TEXTURE_2D (.id (.texture cmd)))
+                  (let [clip-rect (.clip_rect cmd)]
+                    (set-scissor (.x clip-rect) (- height (long (+ (.y clip-rect) (.h clip-rect)))) (.w clip-rect) (.h clip-rect)))
+                  (GL11/glDrawElements GL11/GL_TRIANGLES (.elem_count cmd) GL11/GL_UNSIGNED_SHORT offset))
+                (recur (Nuklear/nk__draw_next cmd cmds context) (+ offset (* 2 (.elem_count cmd))))))))
     (Nuklear/nk_clear context)
     (Nuklear/nk_buffer_clear cmds)
-    (MemoryStack/stackPop)
     nil))
 
 
@@ -303,10 +302,9 @@
 (defmacro nuklear-window
   "Create window using specified title, size, and set of instructions"
   [gui title x y width height decoration & body]
-  `(let [stack#   (MemoryStack/stackPush)
-         rect#    (NkRect/malloc stack#)
-         context# (::context ~gui)]
-     (try
+  `(with-open [stack# (MemoryStack/stackPush)]
+     (let [rect#    (NkRect/malloc stack#)
+           context# (::context ~gui)]
        (when (Nuklear/nk_begin ^NkContext context# ~title (Nuklear/nk_rect ~x ~y ~width ~height rect#)
                                ~(case decoration
                                   :dialog `(bit-or Nuklear/NK_WINDOW_BORDER Nuklear/NK_WINDOW_TITLE
@@ -315,25 +313,22 @@
                                   :widget `Nuklear/NK_WINDOW_NO_SCROLLBAR))
          (let [result# (do ~@body)]
            (Nuklear/nk_end context#)
-           result#))
-       (finally
-         (MemoryStack/stackPop)))))
+           result#)))))
 
 
 (defmacro without-window-padding
   "Temporarily disable window padding"
   [gui & body]
-  `(let [stack#   (MemoryStack/stackPush)
-         nk-vec2# (NkVec2/malloc stack#)
-         win#     (.window (.style ^NkContext (::context ~gui)))]
-     (.x nk-vec2# 0)
-     (.y nk-vec2# 0)
-     (.padding win# nk-vec2#)
-     ~@body
-      (.x nk-vec2# (scale ~gui 4))
-      (.y nk-vec2# (scale ~gui 4))
-     (.padding win# nk-vec2#)
-     (MemoryStack/stackPop)))
+  `(with-open [stack# (MemoryStack/stackPush)]
+     (let [nk-vec2# (NkVec2/malloc stack#)
+           win#     (.window (.style ^NkContext (::context ~gui)))]
+       (.x nk-vec2# 0)
+       (.y nk-vec2# 0)
+       (.padding win# nk-vec2#)
+       ~@body
+       (.x nk-vec2# (scale ~gui 4))
+       (.y nk-vec2# (scale ~gui 4))
+       (.padding win# nk-vec2#))))
 
 
 (defn layout-row-dynamic
@@ -391,24 +386,23 @@
 (defn text-width-callback
   "Determine width of text in pixels"
   [fontinfo scale text len scale-x]
-  (let [stack     (MemoryStack/stackPush)
-        unicode   (.mallocInt stack 1)
-        advance   (.mallocInt stack 1)
-        glyph-len (Nuklear/nnk_utf_decode ^long text (MemoryUtil/memAddress unicode) ^long len)
-        result
-        (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
-              (if (or (> ^long text-len ^long len)
-                      (zero? glyph-len)
-                      (= (.get unicode 0) Nuklear/NK_UTF_INVALID))
-                text-width
-                (do
-                  (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
-                  (let [text-width (+ text-width (* (.get advance 0) ^double scale ^double scale-x))
-                        glyph-len  (Nuklear/nnk_utf_decode (+ ^long text text-len)
-                                                           (MemoryUtil/memAddress unicode) (- ^long len text-len))]
-                    (recur (+ text-len glyph-len) glyph-len text-width)))))]
-    (MemoryStack/stackPop)
-    result))
+  (with-open [stack (MemoryStack/stackPush)]
+    (let [unicode   (.mallocInt stack 1)
+          advance   (.mallocInt stack 1)
+          glyph-len (Nuklear/nnk_utf_decode ^long text (MemoryUtil/memAddress unicode) ^long len)
+          result
+          (loop [text-len glyph-len glyph-len glyph-len text-width 0.0]
+                (if (or (> ^long text-len ^long len)
+                        (zero? glyph-len)
+                        (= (.get unicode 0) Nuklear/NK_UTF_INVALID))
+                  text-width
+                  (do
+                    (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo (.get unicode 0) advance nil)
+                    (let [text-width (+ text-width (* (.get advance 0) ^double scale ^double scale-x))
+                          glyph-len  (Nuklear/nnk_utf_decode (+ ^long text text-len)
+                                                             (MemoryUtil/memAddress unicode) (- ^long len text-len))]
+                      (recur (+ text-len glyph-len) glyph-len text-width)))))]
+      result)))
 
 
 (defn text-width
@@ -450,26 +444,25 @@
             (reify NkQueryFontGlyphCallbackI  ; do not simplify using a Clojure fn, because otherwise the uber jar build breaks
               (invoke
                 [_this _handle font-height glyph codepoint _next-codepoint]
-                (let [stack   (MemoryStack/stackPush)
-                      x       (.floats stack 0.0)
-                      y       (.floats stack 0.0)
-                      q       (STBTTAlignedQuad/malloc stack)
-                      advance (.mallocInt stack 1)]
-                  (STBTruetype/stbtt_GetPackedQuad ^STBTTPackedchar$Buffer cdata ^long bitmap-width ^long bitmap-height
-                                                   (- codepoint 32) x y q false)
-                  (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo codepoint advance nil)
-                  (let [ufg (NkUserFontGlyph/create glyph)
-                        w   (- (.x1 q) (.x0 q))
-                        h   (- (.y1 q) (.y0 q))
-                        ox  (* ^double scale-x (.x0 q))
-                        oy  (+ (* ^double scale-y (.y0 q)) font-height (* ^double scale-y ^double descent))]
-                    (.width ufg (* ^double scale-x w))
-                    (.height ufg (* ^double scale-y h))
-                    (.set (.offset ufg) ox oy)
-                    (.xadvance ufg (* (.get advance 0) ^double scale ^double scale-x))
-                    (.set (.uv ufg 0) (.s0 q) (.t0 q))
-                    (.set (.uv ufg 1) (.s1 q) (.t1 q)))
-                  (MemoryStack/stackPop)))))))
+                (with-open [stack (MemoryStack/stackPush)]
+                  (let [x       (.floats stack 0.0)
+                        y       (.floats stack 0.0)
+                        q       (STBTTAlignedQuad/malloc stack)
+                        advance (.mallocInt stack 1)]
+                    (STBTruetype/stbtt_GetPackedQuad ^STBTTPackedchar$Buffer cdata ^long bitmap-width ^long bitmap-height
+                                                     (- codepoint 32) x y q false)
+                    (STBTruetype/stbtt_GetCodepointHMetrics ^STBTTFontinfo fontinfo codepoint advance nil)
+                    (let [ufg (NkUserFontGlyph/create glyph)
+                          w   (- (.x1 q) (.x0 q))
+                          h   (- (.y1 q) (.y0 q))
+                          ox  (* ^double scale-x (.x0 q))
+                          oy  (+ (* ^double scale-y (.y0 q)) font-height (* ^double scale-y ^double descent))]
+                      (.width ufg (* ^double scale-x w))
+                      (.height ufg (* ^double scale-y h))
+                      (.set (.offset ufg) ox oy)
+                      (.xadvance ufg (* (.get advance 0) ^double scale ^double scale-x))
+                      (.set (.uv ufg 0) (.s0 q) (.t0 q))
+                      (.set (.uv ufg 1) (.s1 q) (.t1 q))))))))))
 
 
 (defn make-font
@@ -513,232 +506,229 @@
 
 (defn nuklear-global-scale
   [gui]
-  (let [stack       (MemoryStack/stackPush)
-        nk-vec2     (NkVec2/malloc ^MemoryStack stack)
-        context     (::context gui)
-        style       (.style ^NkContext context)]
-    ;; Scale widget dimensions
-    ;;
-    ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
-    ;;
-    ;; default buttons
-    (let [button (.button style)]
-      (.x nk-vec2 (scale gui 2))
-      (.y nk-vec2 (scale gui 2))
-      (.padding button nk-vec2)
-      (.border button (scale gui 1))
-      (.rounding button (scale gui 4)))
-    ;; contextual button
-    (let [button (.contextual_button style)]
-      (.x nk-vec2 (scale gui 2))
-      (.y nk-vec2 (scale gui 2))
-      (.padding button nk-vec2))
-    ;; menu button
-    (let [button (.menu_button style)]
-      (.x nk-vec2 (scale gui 2))
-      (.y nk-vec2 (scale gui 2))
-      (.padding button nk-vec2)
-      (.rounding button(scale gui 1)))
-    ;; checkbox toggle
-    (let [toggle (.checkbox style)]
-      (.x nk-vec2 (scale gui 2))
-      (.y nk-vec2 (scale gui 2))
-      (.padding toggle nk-vec2)
-      (.spacing toggle (scale gui 4)))
-    ;; option toggle
-    (let [toggle (.option style)]
-      (.x nk-vec2 (scale gui 3))
-      (.y nk-vec2 (scale gui 3))
-      (.padding toggle nk-vec2)
-      (.spacing toggle (scale gui 4)))
-    ;; selectable
-    (let [select (.selectable style)]
-      (.x nk-vec2 (scale gui 2))
-      (.y nk-vec2 (scale gui 2))
-      (.padding select nk-vec2)
-      (.image_padding select nk-vec2))
-    ;; slider
-    (let [slider (.slider style)]
-      (.x nk-vec2 (scale gui 16))
-      (.y nk-vec2 (scale gui 16))
-      (.cursor_size slider nk-vec2)
-      (.x nk-vec2 (scale gui 2))
-      (.y nk-vec2 (scale gui 2))
-      (.padding slider nk-vec2)
-      (.spacing slider nk-vec2)
-      (.bar_height slider (scale gui 4)))
-    ;; slider buttons
-    (doseq [button [(.inc_button (.slider style))
-                    (.dec_button (.slider style))]]
-           (.border ^NkStyleButton button(scale gui 1)))
-    ;; knob
-    (let [knob (.knob style)]
-      (.knob_border knob(scale gui 1))
-      (.x nk-vec2 (scale gui 2))
-      (.y nk-vec2 (scale gui 2))
-      (.padding knob nk-vec2)
-      (.cursor_width knob (scale gui 2)))
-    ;; progress
-    (let [prog (.progress style)]
-      (.x nk-vec2 (scale gui 4))
-      (.y nk-vec2 (scale gui 4))
-      (.padding prog nk-vec2))
-    ;; scrollbars
-    (doseq [_scroll [(.scrollh style) (.scrollv style)]])
-    ;; scrollbars buttons
-    (doseq [scroll [(.scrollh style) (.scrollv style)]]
-           (doseq [button [(.inc_button ^NkStyleScrollbar scroll)
-                           (.dec_button ^NkStyleScrollbar scroll)]]
-                  (.border ^NkStyleButton button(scale gui 1))))
-    ;; edit
-    (let [edit (.edit style)]
-      (.x nk-vec2 (scale gui 10))
-      (.y nk-vec2 (scale gui 10))
-      (.scrollbar_size edit nk-vec2)
-      (let [_scroll (.scrollbar edit)])
-      (.x nk-vec2 (scale gui 4))
-      (.y nk-vec2 (scale gui 4))
-      (.padding edit nk-vec2)
-      (.row_padding edit (scale gui 2))
-      (.cursor_size edit (scale gui 4))
-      (.border edit(scale gui 1)))
-    ;; property
-    (let [property (.property style)]
-      (.x nk-vec2 (scale gui 4))
-      (.y nk-vec2 (scale gui 4))
-      (.padding property nk-vec2)
-      (.border property(scale gui 1))
-      (.rounding property (scale gui 10)))
-    ;; property buttons
-    (doseq [_button [(.inc_button (.property style))
-                     (.dec_button (.property style))]])
-    ;; property edit
-    (let [edit (.edit (.property style))]
-      (.cursor_size edit (scale gui 8)))
-    ;; chart
-    (let [chart (.chart style)]
-      (.x nk-vec2 (scale gui 4))
-      (.y nk-vec2 (scale gui 4))
-      (.padding chart nk-vec2))
-    ;; combo
-    (let [combo (.combo style)]
-      (.x nk-vec2 (scale gui 4))
-      (.y nk-vec2 (scale gui 4))
-      (.content_padding combo nk-vec2)
-      (.x nk-vec2 (scale gui 0))
-      (.y nk-vec2 (scale gui 4))
-      (.button_padding combo nk-vec2)
-      (.x nk-vec2 (scale gui 4))
-      (.y nk-vec2 (scale gui 0))
-      (.spacing combo nk-vec2)
-      (.border combo(scale gui 1)))
-    ;; combo button
-    (let [button (.button (.combo style))]
-      (.x nk-vec2 (scale gui 2))
-      (.y nk-vec2 (scale gui 2))
-      (.padding button nk-vec2))
-    ;; tab
-    (let [tab (.tab style)]
-      (.x nk-vec2 (scale gui 4))
-      (.y nk-vec2 (scale gui 4))
-      (.padding tab nk-vec2)
-      (.spacing tab nk-vec2)
-      (.indent tab (scale gui 10))
-      (.border tab(scale gui 1)))
-    ;; tab button
-    (doseq [button [(.tab_minimize_button (.tab style))
-                    (.tab_maximize_button (.tab style))]]
-           (.x nk-vec2 (scale gui 2))
-           (.y nk-vec2 (scale gui 2))
-           (.padding ^NkStyleButton button nk-vec2))
-    ;; node button
-    (doseq [button [(.node_minimize_button (.tab style))
-                    (.node_maximize_button (.tab style))]]
-           (.x nk-vec2 (scale gui 2))
-           (.y nk-vec2 (scale gui 2))
-           (.padding ^NkStyleButton button nk-vec2))
-    ;; window header
-    (let [header (.header (.window style))]
-           (.x nk-vec2 (scale gui 4))
-           (.y nk-vec2 (scale gui 4))
-           (.label_padding header nk-vec2)
-           (.padding header nk-vec2))
-    ;; window header close button
-    (let [_button (.close_button (.header (.window style)))])
-    ;; window header minimize button
-    (let [_button (.minimize_button (.header (.window style)))])
-    ;; window
-    (let [win (.window style)]
-      (.x nk-vec2 (scale gui 4))
-      (.y nk-vec2 (scale gui 4))
-      (.spacing win nk-vec2)
-      (.x nk-vec2 (scale gui 10))
-      (.y nk-vec2 (scale gui 10))
-      (.scrollbar_size win nk-vec2)
-      (.x nk-vec2 (scale gui 64))
-      (.y nk-vec2 (scale gui 64))
-      (.min_size win nk-vec2)
-      (.combo_border win (scale gui 1))
-      (.contextual_border win (scale gui 1))
-      (.menu_border win (scale gui 1))
-      (.group_border win (scale gui 1))
-      (.tooltip_border win (scale gui 1))
-      (.popup_border win (scale gui 1))
-      (.border win (scale gui 2))
-      (.min_row_height_padding win (scale gui 8))
-      (.x nk-vec2 (scale gui 4))
-      (.y nk-vec2 (scale gui 4))
-      (.padding win nk-vec2)
-      (.group_padding win nk-vec2)
-      (.popup_padding win nk-vec2)
-      (.combo_padding win nk-vec2)
-      (.contextual_padding win nk-vec2)
-      (.menu_padding win nk-vec2)
-      (.tooltip_padding win nk-vec2))
-    (MemoryStack/stackPop)))
+  (with-open [stack (MemoryStack/stackPush)]
+    (let [nk-vec2     (NkVec2/malloc ^MemoryStack stack)
+          context     (::context gui)
+          style       (.style ^NkContext context)]
+      ;; Scale widget dimensions
+      ;;
+      ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
+      ;;
+      ;; default buttons
+      (let [button (.button style)]
+        (.x nk-vec2 (scale gui 2))
+        (.y nk-vec2 (scale gui 2))
+        (.padding button nk-vec2)
+        (.border button (scale gui 1))
+        (.rounding button (scale gui 4)))
+      ;; contextual button
+      (let [button (.contextual_button style)]
+        (.x nk-vec2 (scale gui 2))
+        (.y nk-vec2 (scale gui 2))
+        (.padding button nk-vec2))
+      ;; menu button
+      (let [button (.menu_button style)]
+        (.x nk-vec2 (scale gui 2))
+        (.y nk-vec2 (scale gui 2))
+        (.padding button nk-vec2)
+        (.rounding button(scale gui 1)))
+      ;; checkbox toggle
+      (let [toggle (.checkbox style)]
+        (.x nk-vec2 (scale gui 2))
+        (.y nk-vec2 (scale gui 2))
+        (.padding toggle nk-vec2)
+        (.spacing toggle (scale gui 4)))
+      ;; option toggle
+      (let [toggle (.option style)]
+        (.x nk-vec2 (scale gui 3))
+        (.y nk-vec2 (scale gui 3))
+        (.padding toggle nk-vec2)
+        (.spacing toggle (scale gui 4)))
+      ;; selectable
+      (let [select (.selectable style)]
+        (.x nk-vec2 (scale gui 2))
+        (.y nk-vec2 (scale gui 2))
+        (.padding select nk-vec2)
+        (.image_padding select nk-vec2))
+      ;; slider
+      (let [slider (.slider style)]
+        (.x nk-vec2 (scale gui 16))
+        (.y nk-vec2 (scale gui 16))
+        (.cursor_size slider nk-vec2)
+        (.x nk-vec2 (scale gui 2))
+        (.y nk-vec2 (scale gui 2))
+        (.padding slider nk-vec2)
+        (.spacing slider nk-vec2)
+        (.bar_height slider (scale gui 4)))
+      ;; slider buttons
+      (doseq [button [(.inc_button (.slider style))
+                      (.dec_button (.slider style))]]
+             (.border ^NkStyleButton button(scale gui 1)))
+      ;; knob
+      (let [knob (.knob style)]
+        (.knob_border knob(scale gui 1))
+        (.x nk-vec2 (scale gui 2))
+        (.y nk-vec2 (scale gui 2))
+        (.padding knob nk-vec2)
+        (.cursor_width knob (scale gui 2)))
+      ;; progress
+      (let [prog (.progress style)]
+        (.x nk-vec2 (scale gui 4))
+        (.y nk-vec2 (scale gui 4))
+        (.padding prog nk-vec2))
+      ;; scrollbars
+      (doseq [_scroll [(.scrollh style) (.scrollv style)]])
+      ;; scrollbars buttons
+      (doseq [scroll [(.scrollh style) (.scrollv style)]]
+             (doseq [button [(.inc_button ^NkStyleScrollbar scroll)
+                             (.dec_button ^NkStyleScrollbar scroll)]]
+                    (.border ^NkStyleButton button(scale gui 1))))
+      ;; edit
+      (let [edit (.edit style)]
+        (.x nk-vec2 (scale gui 10))
+        (.y nk-vec2 (scale gui 10))
+        (.scrollbar_size edit nk-vec2)
+        (let [_scroll (.scrollbar edit)])
+        (.x nk-vec2 (scale gui 4))
+        (.y nk-vec2 (scale gui 4))
+        (.padding edit nk-vec2)
+        (.row_padding edit (scale gui 2))
+        (.cursor_size edit (scale gui 4))
+        (.border edit(scale gui 1)))
+      ;; property
+      (let [property (.property style)]
+        (.x nk-vec2 (scale gui 4))
+        (.y nk-vec2 (scale gui 4))
+        (.padding property nk-vec2)
+        (.border property(scale gui 1))
+        (.rounding property (scale gui 10)))
+      ;; property buttons
+      (doseq [_button [(.inc_button (.property style))
+                       (.dec_button (.property style))]])
+      ;; property edit
+      (let [edit (.edit (.property style))]
+        (.cursor_size edit (scale gui 8)))
+      ;; chart
+      (let [chart (.chart style)]
+        (.x nk-vec2 (scale gui 4))
+        (.y nk-vec2 (scale gui 4))
+        (.padding chart nk-vec2))
+      ;; combo
+      (let [combo (.combo style)]
+        (.x nk-vec2 (scale gui 4))
+        (.y nk-vec2 (scale gui 4))
+        (.content_padding combo nk-vec2)
+        (.x nk-vec2 (scale gui 0))
+        (.y nk-vec2 (scale gui 4))
+        (.button_padding combo nk-vec2)
+        (.x nk-vec2 (scale gui 4))
+        (.y nk-vec2 (scale gui 0))
+        (.spacing combo nk-vec2)
+        (.border combo(scale gui 1)))
+      ;; combo button
+      (let [button (.button (.combo style))]
+        (.x nk-vec2 (scale gui 2))
+        (.y nk-vec2 (scale gui 2))
+        (.padding button nk-vec2))
+      ;; tab
+      (let [tab (.tab style)]
+        (.x nk-vec2 (scale gui 4))
+        (.y nk-vec2 (scale gui 4))
+        (.padding tab nk-vec2)
+        (.spacing tab nk-vec2)
+        (.indent tab (scale gui 10))
+        (.border tab(scale gui 1)))
+      ;; tab button
+      (doseq [button [(.tab_minimize_button (.tab style))
+                      (.tab_maximize_button (.tab style))]]
+             (.x nk-vec2 (scale gui 2))
+             (.y nk-vec2 (scale gui 2))
+             (.padding ^NkStyleButton button nk-vec2))
+      ;; node button
+      (doseq [button [(.node_minimize_button (.tab style))
+                      (.node_maximize_button (.tab style))]]
+             (.x nk-vec2 (scale gui 2))
+             (.y nk-vec2 (scale gui 2))
+             (.padding ^NkStyleButton button nk-vec2))
+      ;; window header
+      (let [header (.header (.window style))]
+        (.x nk-vec2 (scale gui 4))
+        (.y nk-vec2 (scale gui 4))
+        (.label_padding header nk-vec2)
+        (.padding header nk-vec2))
+      ;; window header close button
+      (let [_button (.close_button (.header (.window style)))])
+      ;; window header minimize button
+      (let [_button (.minimize_button (.header (.window style)))])
+      ;; window
+      (let [win (.window style)]
+        (.x nk-vec2 (scale gui 4))
+        (.y nk-vec2 (scale gui 4))
+        (.spacing win nk-vec2)
+        (.x nk-vec2 (scale gui 10))
+        (.y nk-vec2 (scale gui 10))
+        (.scrollbar_size win nk-vec2)
+        (.x nk-vec2 (scale gui 64))
+        (.y nk-vec2 (scale gui 64))
+        (.min_size win nk-vec2)
+        (.combo_border win (scale gui 1))
+        (.contextual_border win (scale gui 1))
+        (.menu_border win (scale gui 1))
+        (.group_border win (scale gui 1))
+        (.tooltip_border win (scale gui 1))
+        (.popup_border win (scale gui 1))
+        (.border win (scale gui 2))
+        (.min_row_height_padding win (scale gui 8))
+        (.x nk-vec2 (scale gui 4))
+        (.y nk-vec2 (scale gui 4))
+        (.padding win nk-vec2)
+        (.group_padding win nk-vec2)
+        (.popup_padding win nk-vec2)
+        (.combo_padding win nk-vec2)
+        (.contextual_padding win nk-vec2)
+        (.menu_padding win nk-vec2)
+        (.tooltip_padding win nk-vec2)))))
 
 
 (defn nuklear-dark-style
   [gui]
-  (let [stack       (MemoryStack/stackPush)
-        rgb         (NkColor/malloc ^MemoryStack stack)
-        style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)
-        context     (::context gui)]
-    ;; Set color scheme
-    ;;
-    ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TEXT (Nuklear/nk_rgb 210 210 210 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_WINDOW (Nuklear/nk_rgb 57 67 71 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_HEADER (Nuklear/nk_rgb 51 51 56 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BORDER (Nuklear/nk_rgb 46 46 46 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_HOVER (Nuklear/nk_rgb 58 93 121 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_ACTIVE (Nuklear/nk_rgb 63 98 126 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_HOVER (Nuklear/nk_rgb 45 53 56 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT (Nuklear/nk_rgb 57 67 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT_ACTIVE (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_PROPERTY (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT_CURSOR (Nuklear/nk_rgb 210 210 210 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_COMBO (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR_HIGHLIGHT (Nuklear/nk_rgb 255 0 0 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR (Nuklear/nk_rgb 50 58 61 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
-    (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
-    (Nuklear/nk_style_from_table context style-table)
-    ;; pop stack
-    (MemoryStack/stackPop)
-    (nuklear-global-scale gui)))
+  (with-open [stack (MemoryStack/stackPush)]
+    (let [rgb         (NkColor/malloc ^MemoryStack stack)
+          style-table (NkColor/malloc Nuklear/NK_COLOR_COUNT ^MemoryStack stack)
+          context     (::context gui)]
+      ;; Set color scheme
+      ;;
+      ;; see https://github.com/Immediate-Mode-UI/Nuklear/blob/master/src/nuklear_style.c
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TEXT (Nuklear/nk_rgb 210 210 210 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_WINDOW (Nuklear/nk_rgb 57 67 71 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_HEADER (Nuklear/nk_rgb 51 51 56 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BORDER (Nuklear/nk_rgb 46 46 46 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON (Nuklear/nk_rgb 48 83 111 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_HOVER (Nuklear/nk_rgb 58 93 121 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_BUTTON_ACTIVE (Nuklear/nk_rgb 63 98 126 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE (Nuklear/nk_rgb 50 58 61 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_HOVER (Nuklear/nk_rgb 45 53 56 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TOGGLE_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT (Nuklear/nk_rgb 57 67 61 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SELECT_ACTIVE (Nuklear/nk_rgb 48 83 111 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER (Nuklear/nk_rgb 50 58 61 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SLIDER_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_PROPERTY (Nuklear/nk_rgb 50 58 61 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT (Nuklear/nk_rgb 50 58 61 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_EDIT_CURSOR (Nuklear/nk_rgb 210 210 210 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_COMBO (Nuklear/nk_rgb 50 58 61 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART (Nuklear/nk_rgb 50 58 61 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR (Nuklear/nk_rgb 48 83 111 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_CHART_COLOR_HIGHLIGHT (Nuklear/nk_rgb 255 0 0 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR (Nuklear/nk_rgb 50 58 61 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR (Nuklear/nk_rgb 48 83 111 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_HOVER (Nuklear/nk_rgb 53 88 116 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_SCROLLBAR_CURSOR_ACTIVE (Nuklear/nk_rgb 58 93 121 rgb))
+      (.put ^NkColor$Buffer style-table Nuklear/NK_COLOR_TAB_HEADER (Nuklear/nk_rgb 48 83 111 rgb))
+      (Nuklear/nk_style_from_table context style-table)
+      (nuklear-global-scale gui))))
 
 
 (defn slider-int
@@ -900,39 +890,30 @@
 (defmacro widget
   "Macro to set up rendering of a custom widget"
   [gui canvas rect & body]
-  `(let [context# (::context ~gui)
-         ~canvas  (Nuklear/nk_window_get_canvas context#)
-         stack#   (MemoryStack/stackPush)
-         ~rect    (NkRect/malloc stack#)]
-     (Nuklear/nk_widget ~rect context#)
-     (try
-       ~@body
-       (finally
-         (MemoryStack/stackPop)))))
+  `(with-open [stack# (MemoryStack/stackPush)]
+     (let [context# (::context ~gui)
+           ~canvas  (Nuklear/nk_window_get_canvas context#)
+           ~rect    (NkRect/malloc stack#)]
+       (Nuklear/nk_widget ~rect context#)
+       ~@body)))
 
 
 (defmacro with-rect
   "Define a temporary rectangle"
   [rect x y w h & body]
-  `(let [stack# (MemoryStack/stackPush)
-         ~rect  (NkRect/malloc stack#)]
-     (Nuklear/nk_rect ~x ~y ~w ~h ~rect)
-     (try
-       ~@body
-       (finally
-         (MemoryStack/stackPop)))))
+  `(with-open [stack# (MemoryStack/stackPush)]
+     (let [ ~rect (NkRect/malloc stack#)]
+       (Nuklear/nk_rect ~x ~y ~w ~h ~rect)
+       ~@body)))
 
 
 (defmacro with-color
   "Define a colour"
   [color r g b & body]
-  `(let [stack# (MemoryStack/stackPush)
-         ~color (NkColor/malloc stack#)]
-     (Nuklear/nk_rgb ~r ~g ~b ~color)
-     (try
-       ~@body
-       (finally
-         (MemoryStack/stackPop)))))
+  `(with-open [stack# (MemoryStack/stackPush)]
+     (let [~color (NkColor/malloc stack#)]
+       (Nuklear/nk_rgb ~r ~g ~b ~color)
+       ~@body)))
 
 
 (defmacro with-colors
