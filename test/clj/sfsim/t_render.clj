@@ -6,7 +6,7 @@
 
 (ns sfsim.t-render
   (:require
-    [clojure.math :refer (to-radians asin sin sqrt PI)]
+    [clojure.math :refer (to-radians atan tan sqrt PI)]
     [comb.template :as template]
     [fastmath.matrix :refer (eye) :as m]
     [fastmath.vector :refer (vec3 vec4 normalize)]
@@ -918,7 +918,7 @@ void main(void)
 
 (fact "Shadow mapping integration test"
       (with-invisible-window
-        (let [projection      (projection-matrix 320 240 2.0 5.0 (to-radians 90))
+        (let [projection      (projection-matrix 320 240 2.0 5.0 (to-radians 73.73979529168803))
               camera-to-world (eye 4)
               light-direction (normalize (vec3 1 1 2))
               shadow-mat      (shadow-matrices projection camera-to-world light-direction 1.0)
@@ -974,7 +974,7 @@ void main(void)
 
 (fact "Shadow cascade integration test"
       (with-invisible-window
-        (let [projection      (projection-matrix 320 240 2.0 5.0 (to-radians 90))
+        (let [projection      (projection-matrix 320 240 2.0 5.0 (to-radians 73.73979529168803))
               camera-to-world (eye 4)
               num-steps       1
               light-direction (normalize (vec3 1 1 2))
@@ -1113,13 +1113,13 @@ void main()
 
 
 (facts "Diagonal field of view"
-       (diagonal-field-of-view 320   0 (* 0.25 PI)) => (roughly (* 0.25 PI) 1e-6)
-       (diagonal-field-of-view 320 320 (* 0.25 PI)) => (roughly (* 2 (asin (* (sqrt 2.0) (sin (* 0.125 PI))))) 1e-6)
-       (diagonal-field-of-view 320 240 (* 0.25 PI)) => (roughly 0.997559 1e-6))
+       (diagonal-field-of-view   0 240 (* 0.25 PI)) => (roughly (* 0.25 PI) 1e-6)
+       (diagonal-field-of-view 320 320 (* 0.25 PI)) => (roughly (* 2 (atan (* (sqrt 2.0) (tan (* 0.125 PI))))) 1e-6)
+       (diagonal-field-of-view 320 240 (* 0.25 PI)) => (roughly 1.2084481434443168 1e-6))
 
 
 (facts "Join z-ranges and projection matrices of two render variable hashmaps"
-       (let [render-config #:sfsim.render{:fov (to-radians 60.0) :cloud-subsampling 2}
+       (let [render-config #:sfsim.render{:vfov (to-radians 46.82644889274108) :cloud-subsampling 2}
              origin        (vec3 1 2 3)
              object-origin (vec3 4 0 0)
              orientation   (q/->Quaternion 1 0 0 0)
@@ -1133,7 +1133,7 @@ void main()
          (:sfsim.render/object-origin planet-vars) => (vec3 -3 2 3)
          (:sfsim.render/window-width joined-vars) => 320
          (:sfsim.render/window-height joined-vars) => 240
-         (:sfsim.render/projection joined-vars) => (roughly-matrix (projection-matrix 320 240 10.0 10001.0 (to-radians 60)) 1e-6)
+         (:sfsim.render/projection joined-vars) => (roughly-matrix (projection-matrix 320 240 10.0 10001.0 (to-radians 46.82644889274108)) 1e-6)
          (:sfsim.render/origin joined-vars) => origin
          (:sfsim.render/z-near joined-vars) => 10.0
          (:sfsim.render/z-far joined-vars) => 10000.0

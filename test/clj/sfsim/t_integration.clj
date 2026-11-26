@@ -41,20 +41,20 @@
 
 
 (defn load-tile-tree
-  [planet-renderer tree fov width position n]
+  [planet-renderer tree vfov height position n]
   (if (zero? n)
     tree
-    (let [data (planet/background-tree-update planet-renderer tree fov width position)
+    (let [data (planet/background-tree-update planet-renderer tree vfov height position)
           tree (planet/load-tiles-into-opengl planet-renderer (:tree data) (:load data))]
-      (load-tile-tree planet-renderer tree fov width position (dec n)))))
+      (load-tile-tree planet-renderer tree vfov height position (dec n)))))
 
 
 (when (.exists (io/file ".integration"))
   (tabular "Integration test rendering of planet, atmosphere, and clouds"
     (fact
       (with-invisible-window
-        (let [fov             (to-radians 60.0)
-              width           320
+        (let [vfov            (to-radians 46.82644889274108)
+              width           420
               height          240
               level           5
               light-direction (vec3 1 0 0)
@@ -63,7 +63,7 @@
                                                      :sfsim.planet/config config/planet-config
                                                      :sfsim.planet/programs [(:sfsim.planet/program
                                                                                (:sfsim.graphics/planet-geometry-renderer graphics))])
-                                              {} fov width ?position level)
+                                              {} vfov height ?position level)
               frame           (-> (graphics/make-frame graphics width height ?position ?orientation light-direction []
                                                        (model/make-model-vars 0.0 1.0 0.0))
                                   (graphics/render-shadows graphics tree)
@@ -85,8 +85,8 @@
   (tabular "Integration test rendering of object, planet, atmosphere, and clouds"
     (fact
       (with-invisible-window
-        (let [fov                (to-radians 60.0)
-              width              320
+        (let [vfov               (to-radians 46.82644889274108)
+              width              420
               height             240
               level              5
               object-radius      1.4
@@ -95,7 +95,7 @@
                                    [{:sfsim.graphics/model-file (str "test/clj/sfsim/fixtures/model/" ?model)
                                      :sfsim.graphics/object-radius object-radius}]
                                    [])
-              object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -5)))
+              object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -7)))
               object-orientation (matrix->quaternion (mulm (mulm (rotation-matrix-3d-y (/ PI 4))
                                                                  (rotation-matrix-3d-x (/ PI 6)))
                                                            aerodynamics/gltf-to-aerodynamic))
@@ -104,7 +104,7 @@
                                                         :sfsim.planet/config config/planet-config
                                                         :sfsim.planet/programs [(:sfsim.planet/program
                                                                                   (:sfsim.graphics/planet-geometry-renderer graphics))])
-                                                 {} fov width ?position level)
+                                                 {} vfov height ?position level)
               frame              (-> (graphics/make-frame graphics width height ?position ?orientation light-direction
                                                           [{:sfsim.graphics/object-position object-position
                                                             :sfsim.graphics/object-orientation object-orientation}]
@@ -129,8 +129,8 @@
 (when (.exists (io/file ".integration"))
   (fact "Integration test rendering of model self-shadowing"
     (with-invisible-window
-      (let [fov                (to-radians 60.0)
-            width              320
+      (let [vfov               (to-radians 46.82644889274108)
+            width              420
             height             240
             level              5
             object-radius      1.4
@@ -149,7 +149,7 @@
                                                       :sfsim.planet/config config/planet-config
                                                       :sfsim.planet/programs [(:sfsim.planet/program
                                                                                 (:sfsim.graphics/planet-geometry-renderer graphics))])
-                                               {} fov width position level)
+                                               {} vfov height position level)
             frame              (-> (graphics/make-frame graphics width height position orientation light-direction
                                                         [{:sfsim.graphics/object-position object-position
                                                           :sfsim.graphics/object-orientation object-orientation}]
@@ -171,8 +171,8 @@
   (tabular "Test rendering of model"
     (fact
       (with-invisible-window
-        (let [fov                (to-radians 60.0)
-              width              320
+        (let [vfov               (to-radians 46.82644889274108)
+              width              420
               height             240
               level              5
               object-radius      (:sfsim.model/object-radius config/model-config)
@@ -181,7 +181,7 @@
                                    [{:sfsim.graphics/model-file "data/models/venturestar.glb"
                                      :sfsim.graphics/object-radius object-radius}]
                                    [])
-              object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -50)))
+              object-position    (add ?position (q/rotate-vector ?orientation (vec3 0 0 -70)))
               object-orientation (matrix->quaternion (mulm (mulm (rotation-matrix-3d-x (/ PI 6))
                                                                  (rotation-matrix-3d-y (/ PI -2)))
                                                            aerodynamics/gltf-to-aerodynamic))
@@ -189,7 +189,7 @@
                                                         :sfsim.planet/config config/planet-config
                                                         :sfsim.planet/programs [(:sfsim.planet/program
                                                                                   (:sfsim.graphics/planet-geometry-renderer graphics))])
-                                                 {} fov width ?position level)
+                                                 {} vfov height ?position level)
               frame              (-> (graphics/make-frame graphics width height ?position ?orientation light-direction
                                                           [{:sfsim.graphics/object-position object-position
                                                             :sfsim.graphics/object-orientation object-orientation}]
@@ -233,7 +233,7 @@ void main()
 (when (.exists (io/file ".integration"))
   (fact "Integration test rendering of rocket plume"
         (with-invisible-window
-          (let [width 320
+          (let [width 420
                 height 240
                 indices  [0 1 3 2]
                 vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]
@@ -261,8 +261,8 @@ void main()
 (when (.exists (io/file ".integration"))
   (fact "Test rendering of model with main engine plume and RCS thrusters"
     (with-invisible-window
-      (let [fov                 (to-radians 60.0)
-            width               320
+      (let [vfov                (to-radians 46.82644889274108)
+            width               420
             height              240
             level               5
             object-radius       (:sfsim.model/object-radius config/model-config)
@@ -281,7 +281,7 @@ void main()
                                                        :sfsim.planet/config config/planet-config
                                                        :sfsim.planet/programs [(:sfsim.planet/program
                                                                                  (:sfsim.graphics/planet-geometry-renderer graphics))])
-                                                {} fov width position level)
+                                                {} vfov height position level)
             frame               (-> (graphics/make-frame graphics width height position orientation light-direction
                                                          [{:sfsim.graphics/object-position object-position
                                                            :sfsim.graphics/object-orientation object-orientation}]
@@ -368,8 +368,8 @@ void main()
 (when (.exists (io/file ".integration"))
   (fact "Test rendering of model with shockwave"
         (render/with-invisible-window
-          (let [fov                  (to-radians 60.0)
-                width                320
+          (let [vfov                 (to-radians 46.82644889274108)
+                width                420
                 height               240
                 level                5
                 dist                 (+ 60000.0 6378000.0)
@@ -395,7 +395,7 @@ void main()
                                                             :sfsim.planet/config config/planet-config
                                                             :sfsim.planet/programs [(:sfsim.planet/program
                                                                                       (:sfsim.graphics/planet-geometry-renderer graphics))])
-                                                     {} fov width origin level)
+                                                     {} vfov height origin level)
                 object               [{:sfsim.graphics/object-position (add origin (q/rotate-vector orientation (vec3 0 0 (- offset))))
                                        :sfsim.graphics/object-orientation object-orientation}]
                 frame                (-> (graphics/make-frame graphics width height origin orientation

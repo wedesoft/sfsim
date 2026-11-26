@@ -1260,7 +1260,7 @@ void main()
               shadow-size     128
               z-near          1.0
               z-far           6.0
-              projection      (projection-matrix 320 240 z-near z-far (to-radians 45))
+              projection      (projection-matrix 320 240 z-near z-far (to-radians 34.5158770189817))
               camera-to-world (transformation-matrix (eye 3) (vec3 0 0 4))
               light           (vec3 0 0 1)
               shadow-data     #:sfsim.opacity{:num-steps num-steps :mix 0.5 :depth 5.0}
@@ -1348,15 +1348,15 @@ void main()
 
 
 (facts "Test level-of-detail offset computation"
-       (lod-offset {:sfsim.render/fov (/ PI 2)} {:sfsim.clouds/detail-scale worley-size} {:sfsim.render/window-width 1})
+       (lod-offset {:sfsim.render/vfov (/ PI 2)} {:sfsim.clouds/detail-scale worley-size} {:sfsim.render/window-height 1})
        => (roughly 1.0 1e-5)
-       (lod-offset {:sfsim.render/fov (/ PI 2)} {:sfsim.clouds/detail-scale worley-size} {:sfsim.render/window-width 1024})
+       (lod-offset {:sfsim.render/vfov (/ PI 2)} {:sfsim.clouds/detail-scale worley-size} {:sfsim.render/window-height 1024})
        => (roughly -9.0 1e-5)
-       (lod-offset {:sfsim.render/fov (/ PI 2)} {:sfsim.clouds/detail-scale (/ worley-size 2)}
-                   {:sfsim.render/window-width 1})
+       (lod-offset {:sfsim.render/vfov (/ PI 2)} {:sfsim.clouds/detail-scale (/ worley-size 2)}
+                   {:sfsim.render/window-height 1})
        => (roughly 2.0 1e-5)
-       (lod-offset {:sfsim.render/fov (* 2 (atan 2))} {:sfsim.clouds/detail-scale worley-size}
-                   {:sfsim.render/window-width 1})
+       (lod-offset {:sfsim.render/vfov (* 2 (atan 2))} {:sfsim.clouds/detail-scale worley-size}
+                   {:sfsim.render/window-height 1})
        => (roughly 2.0 1e-5))
 
 
@@ -1636,7 +1636,7 @@ vec4 rcs_point(vec3 origin, vec3 direction, vec3 object_origin, vec3 object_dire
                          plume/plume-vertices [-1.0 -1.0 0.0, 1.0 -1.0 0.0, -1.0 1.0 0.0, 1.0 1.0 0.0]]
              (with-invisible-window
                (let [geometry           (mock-geometry ?x ?y ?z ?stencil)
-                     render-config      {:sfsim.render/cloud-subsampling 1 :sfsim.render/fov 1.04 :sfsim.render/min-z-near 0.1
+                     render-config      {:sfsim.render/cloud-subsampling 1 :sfsim.render/vfov 1.04 :sfsim.render/min-z-near 0.1
                                          :sfsim.render/amplification 6.0}
                      planet-render-vars {:sfsim.render/z-near 0.1 :sfsim.render/z-far 10.0}
                      data               {:sfsim.opacity/data {:sfsim.opacity/num-steps 2}

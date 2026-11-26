@@ -7,7 +7,7 @@
 (ns sfsim.render
   "Functions for doing OpenGL rendering"
   (:require
-    [clojure.math :refer (sin asin hypot)]
+    [clojure.math :refer (tan atan hypot)]
     [fastmath.matrix :refer (mulm inverse mat->float-array mat3x3 mat4x4)]
     [fastmath.vector :refer (vec2 vec3 vec4 mag)]
     [malli.core :as m]
@@ -788,14 +788,14 @@
 
 (defn diagonal-field-of-view
   "Compute diagonal field of view angle"
-  ^double [^long width ^long height ^double fov]
-  (let [dx  (sin (* 0.5 fov))
-        dy  (/ (* height dx) width)
+  ^double [^long width ^long height ^double vfov]
+  (let [dy  (tan (* 0.5 vfov))
+        dx  (/ (* width dy) height)
         dxy (hypot dx dy)]
-    (* 2.0 (asin dxy))))
+    (* 2.0 (atan dxy))))
 
 
-(def render-config (m/schema [:map [::amplification :double] [::fov :double] [::min-z-near :double] [::cloud-subsampling :int]]))
+(def render-config (m/schema [:map [::amplification :double] [::vfov :double] [::min-z-near :double] [::cloud-subsampling :int]]))
 
 
 (def render-vars
@@ -812,17 +812,17 @@
 
 (defn make-render-vars2
   "Create hash map with render variables for rendering current frame with specified depth range"
-  {:malli/schema [:=> [:cat [:map [::fov :double] [::cloud-subsampling :int]] N N fvec3 quaternion fvec3 :double :double]
+  {:malli/schema [:=> [:cat [:map [::vfov :double] [::cloud-subsampling :int]] N N fvec3 quaternion fvec3 :double :double]
                       render-vars]}
   [render-config window-width window-height camera-position camera-orientation light-direction z-near z-far]
-  (let [fov                (::fov render-config)
+  (let [vfov               (::vfov render-config)
         camera-to-world    (transformation-matrix (quaternion->matrix camera-orientation) camera-position)
         z-offset           1.0
-        projection         (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)]
+        projection         (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) vfov)]
     {::origin camera-position
      ::z-near z-near
      ::z-far z-far
-     ::fov fov
+     ::vfov vfov
      ::window-width window-width
      ::window-height window-height
      ::light-direction light-direction
@@ -833,7 +833,7 @@
 (defn make-subsampled-vars
   "Create lower resolution configuration"
   [render-vars render-config]
-  (let [fov               (::fov render-config)
+  (let [vfov              (::vfov render-config)
         cloud-subsampling (::cloud-subsampling render-config)
         window-width      (::window-width render-vars)
         window-height     (::window-height render-vars)
@@ -842,7 +842,7 @@
         z-offset           1.0
         overlay-width     (quot ^long window-width ^long cloud-subsampling)
         overlay-height    (quot ^long window-height ^long cloud-subsampling)
-        projection        (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) fov)]
+        projection        (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) vfov)]
     (assoc render-vars
            ::window-width overlay-width
            ::window-height overlay-height
@@ -851,12 +851,12 @@
 
 (defn make-render-vars
   "Create hash map with render variables for rendering current frame with specified depth range"
-  {:malli/schema [:=> [:cat [:map [::fov :double] [::cloud-subsampling :int]] N N fvec3 quaternion fvec3 fvec3 quaternion
+  {:malli/schema [:=> [:cat [:map [::vfov :double] [::cloud-subsampling :int]] N N fvec3 quaternion fvec3 fvec3 quaternion
                             :double :double :double :double]
                       render-vars]}
   [render-config window-width window-height camera-position camera-orientation light-direction object-position object-orientation
    z-near z-far time_ pressure]
-  (let [fov                (::fov render-config)
+  (let [vfov               (::vfov render-config)
         cloud-subsampling  (::cloud-subsampling render-config)
         overlay-width      (quot ^long window-width ^long cloud-subsampling)
         overlay-height     (quot ^long window-height ^long cloud-subsampling)
@@ -865,12 +865,12 @@
         camera-to-object   (mulm world-to-object camera-to-world)
         object-origin      (get-translation camera-to-object)
         z-offset           1.0
-        projection         (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) fov)
-        overlay-projection (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) fov)]
+        projection         (projection-matrix window-width window-height z-near (+ ^double z-far ^double z-offset) vfov)
+        overlay-projection (projection-matrix overlay-width overlay-height z-near (+ ^double z-far ^double z-offset) vfov)]
     {::origin camera-position
      ::z-near z-near
      ::z-far z-far
-     ::fov fov
+     ::vfov vfov
      ::window-width window-width
      ::window-height window-height
      ::overlay-width overlay-width
@@ -890,7 +890,7 @@
   "Create hash map with render variables using joined z-range of input render variables"
   {:malli/schema [:=> [:cat render-vars render-vars] render-vars]}
   [vars-first vars-second]
-  (let [fov                (::fov vars-first)
+  (let [vfov               (::vfov vars-first)
         window-width       (::window-width vars-first)
         window-height      (::window-height vars-first)
         object-origin      (::object-origin vars-first)
@@ -902,13 +902,13 @@
         light-direction    (::light-direction vars-first)
         camera-to-world    (::camera-to-world vars-first)
         z-offset           1.0
-        projection         (projection-matrix window-width window-height z-near (+ z-far z-offset) fov)
+        projection         (projection-matrix window-width window-height z-near (+ z-far z-offset) vfov)
         time_              (::time vars-first)
         pressure           (::pressure vars-first)]
     {::origin position
      ::z-near z-near
      ::z-far z-far
-     ::fov fov
+     ::vfov vfov
      ::window-width window-width
      ::window-height window-height
      ::object-origin object-origin

@@ -6,7 +6,6 @@
                                      :window-height 720
                                      ; :window-width 1920
                                      ; :window-height 1080
-                                     :fov 1.0471975511965976  ; 60 degrees
                                      :vfov 0.6280287671649805  ; 60 degrees horizontal fov, 35.98 degrees vertical fov
                                      ; :window-width 720
                                      ; :window-height 1280

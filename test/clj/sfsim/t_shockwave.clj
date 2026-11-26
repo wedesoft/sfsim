@@ -357,7 +357,7 @@ vec4 sample_shockwave_point(vec3 object_origin, vec3 object_direction, float dis
                                                                     :sfsim.shockwave/minimum-mach 1.1}
                                            :sfsim.atmosphere/luts atmosphere-luts
                                            :sfsim.clouds/data {:sfsim.clouds/bluenoise {:sfsim.texture/width 256}}}
-                     render-config        {:sfsim.render/cloud-subsampling 1 :sfsim.render/fov 1.04 :sfsim.render/min-z-near 0.1}
+                     render-config        {:sfsim.render/cloud-subsampling 1 :sfsim.render/vfov 1.04 :sfsim.render/min-z-near 0.1}
                      planet-render-vars   {:sfsim.render/z-near 0.1 :sfsim.render/z-far 10.0}
                      wind-shadow          nil
                      flood                nil

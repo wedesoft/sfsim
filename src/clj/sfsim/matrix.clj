@@ -116,9 +116,9 @@
 (defn projection-matrix
   "Compute OpenGL projection matrix (frustum)"
   {:malli/schema [:=> [:cat :int :int :double :double :double] fmat4]}
-  [width height near far field-of-view]
-  (let [dx (/ 1.0 (tan (* 0.5 ^double field-of-view)))
-        dy (-> dx (* ^long width) (/ ^long height))
+  [width height near far vertical-field-of-view]
+  (let [dy (/ 1.0 (tan (* 0.5 ^double vertical-field-of-view)))
+        dx (-> dy (* ^long height) (/ ^long width))
         a  (/ (* ^double far ^double near) (- ^double far ^double near))
         b  (/ ^double near (- ^double far ^double near))]
     (fm/mat4x4 dx  0  0  0

@@ -702,8 +702,8 @@
 
 (defn make-atmosphere-render-vars
   "Create atmosphere render variables for rendering full geometry"
-  [width height fov light-direction]
-  {:sfsim.render/projection (projection-matrix width height 1.0 2.0 fov)
+  [width height vfov light-direction]
+  {:sfsim.render/projection (projection-matrix width height 1.0 2.0 vfov)
    :sfsim.render/light-direction light-direction})
 
 

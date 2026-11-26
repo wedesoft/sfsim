@@ -26,25 +26,25 @@
 (defn fragment-size
   "Determine screen size of triangle output of tesselated quad of the world map"
   {:malli/schema [:=> [:cat N0 N :double N :double :double] :double]}
-  [level tilesize radius width distance angle]
-  (/ (* ^double radius ^long width)
-     (* ^double distance (bit-shift-left 1 ^long level) (dec ^long tilesize) (tan (* 0.5 ^double angle)))))
+  [level tilesize radius height distance vfov]
+  (/ (* ^double radius ^long height)
+     (* ^double distance (bit-shift-left 1 ^long level) (dec ^long tilesize) (tan (* 0.5 ^double vfov)))))
 
 
 (defn- fragment-size-for-camera-position
   "Determine screen size of a quad given the camera position"
   {:malli/schema [:=> [:cat N :double N :double fvec3 :keyword N0 fvec3] :double]}
-  [tilesize radius width angle position level center]
+  [tilesize radius height vfov position level center]
   (let [distance (mag (sub position center))]
-    (fragment-size level tilesize radius width distance angle)))
+    (fragment-size level tilesize radius height distance vfov)))
 
 
 (defn increase-level?
   "Decide whether next quad tree level is required"
   {:malli/schema [:=> [:cat N :double N :double N N fvec3 N0 fvec3] :boolean]}
-  [tilesize radius width angle max-size max-level position level center]
+  [tilesize radius height vfov max-size max-level position level center]
   (and (< ^long level ^long max-level)
-       (> ^double (fragment-size-for-camera-position tilesize radius width angle position level center) ^long max-size)))
+       (> ^double (fragment-size-for-camera-position tilesize radius height vfov position level center) ^long max-size)))
 
 
 (def tile
@@ -672,16 +672,16 @@
 
 (defn update-inner-tessellation
   "Select inner tessellation for a tile"
-  [{::keys [level center] :as tile} tilesize max-size radius width angle position]
+  [{::keys [level center] :as tile} tilesize max-size radius height vfov position]
   (let [distance (mag (sub position center))
-        fragment-size (fragment-size level tilesize radius width distance angle)]
+        fragment-size (fragment-size level tilesize radius height distance vfov)]
     (assoc tile ::inner-tessellation (sufficient-tessellation tilesize max-size fragment-size))))
 
 
 (defn update-inner-tessellation-levels
   "Select inner tessellation level for each tile of the tree"
-  [tree tilesize max-size radius width angle position]
-  (quadtree-map tree update-inner-tessellation tilesize max-size radius width angle position))
+  [tree tilesize max-size radius height vfov position]
+  (quadtree-map tree update-inner-tessellation tilesize max-size radius height vfov position))
 
 
 (defn get-in-deepest-existing
