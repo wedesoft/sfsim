@@ -219,10 +219,9 @@
 
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles"
-  {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
-  [{{::keys [tilesize radius level]} ::config} tree width position]
-  (let [fov       (to-radians 60.0)
-        increase? (partial increase-level? tilesize radius width fov 10 level position); TODO: use config
+  {:malli/schema [:=> [:cat :map :map :double N fvec3] :map]}
+  [{{::keys [tilesize radius level]} ::config} tree fov width position]
+  (let [increase? (partial increase-level? tilesize radius width fov 10 level position); TODO: use config
         updates   (update-level-of-detail tree radius increase?)]
     (update updates :tree
             (fn [tree]
@@ -244,13 +243,13 @@
 
 (defn update-tile-tree
   "Schedule background tile tree updates"
-  {:malli/schema [:=> [:cat :map tree N fvec3] :any]}
-  [planet-renderer {:keys [tree changes]} width position]
+  {:malli/schema [:=> [:cat :map tree :double N fvec3] :any]}
+  [planet-renderer {:keys [tree changes]} fov width position]
   (when (realized? @changes)
     (let [data @@changes]
       (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
       (unload-tiles-from-opengl (:drop data))
-      (reset! changes (future (background-tree-update planet-renderer @tree width position))))))
+      (reset! changes (future (background-tree-update planet-renderer @tree fov width position))))))
 
 
 (defn destroy-tile-tree

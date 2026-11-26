@@ -216,7 +216,8 @@
                  (when-let [message (:sfsim.physics/message time-lapse-info)]
                    (swap! state update :gui gui/set-flash-message message))
                  (planet/update-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
-                                                 :sfsim.planet/config config/planet-config) tile-tree window-width
+                                                 :sfsim.planet/config config/planet-config)
+                                          tile-tree (:sfsim.render/fov config/render-config) window-width
                                           (:sfsim.camera/position (camera/get-camera-pose (:camera @state) (:physics @state))))
                  (if (-> @state :input :sfsim.input/menu)
                    (swap! state update-in [:gui :sfsim.gui/menu] #(or % gui/main-dialog))
