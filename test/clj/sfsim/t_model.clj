@@ -7,20 +7,18 @@
 (ns sfsim.t-model
   (:require
     [clojure.math :refer (to-radians sqrt PI)]
-    [comb.template :as template]
     [fastmath.matrix :refer (eye mulm mulv inverse mat4x4 rotation-matrix-3d-x rotation-matrix-3d-y rotation-matrix-3d-z)]
-    [fastmath.vector :refer (vec3 vec4 normalize mag)]
+    [fastmath.vector :refer (vec3 vec4 normalize)]
     [malli.dev.pretty :as pretty]
     [malli.instrument :as mi]
     [midje.sweet :refer :all]
     [sfsim.atmosphere :as atmosphere]
     [sfsim.clouds :as clouds]
     [sfsim.conftest :refer (roughly-matrix roughly-vector roughly-quaternion is-image)]
-    [sfsim.image :refer (floats->image get-vector4 get-float spit-png get-vector3)]
+    [sfsim.image :refer (floats->image get-vector4 get-float)]
     [sfsim.matrix :refer :all]
     [sfsim.model :refer :all :as model]
     [sfsim.lighting :as lighting]
-    [sfsim.plume :as plume]
     [sfsim.quaternion :refer (->Quaternion) :as q]
     [sfsim.render :refer :all]
     [sfsim.shaders :as shaders]
@@ -639,7 +637,7 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
                                           :sfsim.render/fragment lighting-fog-fragment-shaders)]
       (render-geometry geometry-buffers
                        (clear)
-                       (render-scene-geometry2 geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                       (render-scene-geometry2 geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 46.82644889274108))
                                                {:sfsim.render/camera-to-world camera-to-world} moved-scene))
       (render-to-image 160 120 false
                        (render-lighting geometry-buffers lighting-program 0
@@ -684,7 +682,7 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
 
 
 (facts "Create hashmap with render variables for rendering a scene outside the atmosphere"
-       (let [render-config   #:sfsim.render{:fov 0.5 :min-z-near 1.0 :cloud-subsampling 2 }
+       (let [render-config   #:sfsim.render{:vfov 0.5 :min-z-near 1.0 :cloud-subsampling 2 }
              pos1            (vec3 0 0 0)
              pos2            (vec3 0 0 -20)
              pos3            (vec3 0 0 -100)
@@ -809,7 +807,7 @@ vec4 cloud_overlay(float depth)
                                                       :sfsim.render/fragment lighting-shadow-fragment-shaders)]
                (render-geometry geometry-buffers
                                 (clear)
-                                (render-scene-geometry2 geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                (render-scene-geometry2 geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 46.82644889274108))
                                                         {:sfsim.render/camera-to-world camera-to-world} opengl-scene))
                (render-to-image 160 120 false
                                 (render-lighting geometry-buffers lighting-program 1
@@ -888,7 +886,7 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
                                                       :sfsim.render/fragment lighting-fragment-shaders)]
                (render-geometry geometry-buffers
                                 (clear)
-                                (render-scene-geometry2 geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+                                (render-scene-geometry2 geometry-renderer (projection-matrix 160 120 0.1 10.0 (to-radians 46.82644889274108))
                                                         {:sfsim.render/camera-to-world camera-to-world} moved-scene))
                (render-to-image 160 120 false
                                 (render-lighting geometry-buffers lighting-program 1
@@ -985,7 +983,7 @@ vec3 attenuation_outer(vec3 light_direction, vec3 origin, vec3 direction, float 
         (let [renderer        (make-scene-geometry-renderer false)
               opengl-scene    (load-scene-into-opengl (comp (:sfsim.model/programs renderer) material-type) cube)
               camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))
-              projection      (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+              projection      (projection-matrix 160 120 0.1 10.0 (to-radians 46.82644889274108))
               render-vars     {:sfsim.render/camera-to-world camera-to-world
                                :sfsim.render/overlay-projection projection}
               geometry        (clouds/render-cloud-geometry 160 120 (render-scene-geometry2 renderer projection

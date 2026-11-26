@@ -789,7 +789,7 @@ void main()
 (facts "Create hashmap with render variables for rendering current frame of planet"
        (let [planet {:sfsim.planet/radius 1000.0}
              cloud  {:sfsim.clouds/cloud-top 100.0}
-             render #:sfsim.render{:fov 0.5 :min-z-near 1.0 :cloud-subsampling 2}
+             render #:sfsim.render{:vfov 0.37843099429943355 :min-z-near 1.0 :cloud-subsampling 2}
              pos1   (vec3 (+ 1000 150) 0 0)
              pos2   (vec3 (+ 1000 75) 0 0)
              opos   (vec3 0 0 0)
@@ -799,11 +799,12 @@ void main()
          (with-redefs [planet/render-depth render-depth-mock
                        matrix/quaternion->matrix (fn [orientation] (fact [orientation] orientation => o) :rotation-matrix)
                        matrix/transformation-matrix (fn [rot _pos] (fact rot => :rotation-matrix) (eye 4))
-                       matrix/projection-matrix (fn [w h _near _far fov]
-                                                    (fact [w h fov] => #(contains? #{[320 240 0.5] [640 480 0.5]} %))
+                       matrix/projection-matrix (fn [w h _near _far vfov]
+                                                    (fact [w h vfov] => #(contains? #{[320 240 0.37843099429943355]
+                                                                                      [640 480 0.37843099429943355]} %))
                                                     (diagonal 1 2 3 4))]
            (:sfsim.render/origin (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => pos1
-           (:sfsim.render/z-near (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => (roughly 47.549 1e-3)
+           (:sfsim.render/z-near (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => (roughly 47.633 1e-3)
            (:sfsim.render/z-near (make-planet-render-vars2 planet cloud render 640 480 pos2 o light)) => 1.0
            (:sfsim.render/z-far (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => 300.0
            (:sfsim.render/camera-to-world (make-planet-render-vars2 planet cloud render 640 480 pos1 o light)) => (eye 4)
@@ -817,7 +818,7 @@ void main()
                                                        :sfsim.planet/color-tilesize 3
                                                        :sfsim.planet/worley-data "test/clj/sfsim/fixtures/clouds/worley-cover.raw"
                                                        :sfsim.planet/worley-size 8}}
-               render-vars      #:sfsim.render{:projection (projection-matrix 160 120 0.1 10.0 (to-radians 60))
+               render-vars      #:sfsim.render{:projection (projection-matrix 160 120 0.1 10.0 (to-radians 46.82644889274108))
                                                :camera-to-world (transformation-matrix (eye 3) (vec3 0 0 5))}
                renderer         (make-planet-geometry-renderer data false 0 [])
                indices          [0 2 3 1]
@@ -957,7 +958,7 @@ void main()
         (let [point-texture    (make-empty-texture-2d :sfsim.texture/nearest :sfsim.texture/clamp GL30/GL_RGBA32F 320 240)
               indices          [0 1 3 2]
               vertices         [-1.0 -1.0 0.0, +1.0 -1.0 0.0, -1.0  1.0 0.0, +1.0  1.0 0.0]
-              projection       (projection-matrix 320 240 0.1 10.0 (to-radians -45))
+              projection       (projection-matrix 320 240 0.1 10.0 (to-radians -34.5158770189817))
               object-to-camera (transformation-matrix (rotation-matrix-3d-x (to-radians 60.0)) (vec3 0 0 -4))
               program-geometry (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-plane])
               program-plane    (make-program :sfsim.render/vertex [vertex-plane] :sfsim.render/fragment [fragment-darkgrey])

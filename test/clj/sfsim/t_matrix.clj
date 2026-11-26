@@ -74,7 +74,7 @@
 
 
 (facts "OpenGL projection matrix"
-       (let [m (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))]
+       (let [m (projection-matrix 640 480 5.0 1000.0 (* 0.40966552939826684 PI))]
          (project (fm/mulv m (fv/vec4    0    0    -5 1))) => (roughly-vector (fv/vec3 0 0 1) 1e-6)
          (project (fm/mulv m (fv/vec4    0    0 -1000 1))) => (roughly-vector (fv/vec3 0 0 0) 1e-6)
          (project (fm/mulv m (fv/vec4 1000    0 -1000 1))) => (roughly-vector (fv/vec3 1 0 0) 1e-6)
@@ -165,7 +165,7 @@
 
 
 (facts "Choose NDC and texture coordinate matrices for shadow mapping"
-       (let [projection         (projection-matrix 640 480 5.0 1000.0 (* 0.5 PI))
+       (let [projection         (projection-matrix 640 480 5.0 1000.0 (* 0.40966552939826684 PI))
              camera-to-world-1 (fm/eye 4)
              camera-to-world-2 (transformation-matrix (fm/rotation-matrix-3d-x (/ PI 2)) (fv/vec3 0 0 0))
              light-direction   (fv/vec3 0 1 0)]
@@ -222,7 +222,7 @@
 (facts "Cascade of shadow matrices"
        (let [z-near          10.0
              z-far           40.0
-             projection      (projection-matrix 640 480 z-near z-far (* 0.5 PI))
+             projection      (projection-matrix 640 480 z-near z-far (* 0.40966552939826684 PI))
              camera-to-world      (fm/eye 4)
              light-direction (fv/vec3 0 1 0)
              render-vars     #:sfsim.render{:projection projection :camera-to-world camera-to-world :light-direction light-direction

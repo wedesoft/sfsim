@@ -55,13 +55,13 @@
 (tabular "Load normals, scale factors and colors for a tile"
          (fact (?k (load-tile-data :sfsim.cubemap/face3 2 2 1 6378000.0)) => ?result
                (provided
-                 (quadtree/access-cube-tar "data/globe/3/2/1.tar")     => "1.tar"
-                 (image/slurp-image-tar    "1.tar" "2.jpg")            => "3/2/1/2.jpg"
-                 (image/slurp-image-tar    "1.tar" "2.night.jpg")      => "3/2/1/2.night.jpg"
-                 (util/slurp-floats-gz-tar "1.tar" "2.surf.gz")        => "3/2/1/2.surf"
-                 (image/slurp-normals-tar  "1.tar" "2.png")            => "3/2/1/2.png"
-                 (util/slurp-bytes-gz-tar  "1.tar" "2.water.gz")       => "3/2/1/2.water"
-                 (cubemap/tile-center :sfsim.cubemap/face3 2 2 1 6378000.0)           => :tile-center))
+                 (quadtree/access-cube-tar :load-tile-data "data/globe/3/2/1.tar") => "1.tar"
+                 (image/slurp-image-tar    "1.tar" "2.jpg")                        => "3/2/1/2.jpg"
+                 (image/slurp-image-tar    "1.tar" "2.night.jpg")                  => "3/2/1/2.night.jpg"
+                 (util/slurp-floats-gz-tar "1.tar" "2.surf.gz")                    => "3/2/1/2.surf"
+                 (image/slurp-normals-tar  "1.tar" "2.png")                        => "3/2/1/2.png"
+                 (util/slurp-bytes-gz-tar  "1.tar" "2.water.gz")                   => "3/2/1/2.water"
+                 (cubemap/tile-center :sfsim.cubemap/face3 2 2 1 6378000.0)        => :tile-center))
          ?k       ?result
          :sfsim.planet/day      "3/2/1/2.jpg"
          :sfsim.planet/night    "3/2/1/2.night.jpg"
@@ -378,7 +378,7 @@
                     quadtree/tile-coordinates (fn [^double j ^double i ^long level ^long tilesize]
                                                 (facts j => 0.75, i => 0.25, level => 6, tilesize => 65)
                                                 #:sfsim.quadtree{:row 32 :column 40 :tile-y 3 :tile-x 5 :dy 7.0 :dx 11.0})
-                    quadtree/access-cube-tar (fn [tar-name] (fact tar-name => "data/globe/2/6/31.tar") "31.tar")
+                    quadtree/access-cube-tar (fn [_client-id tar-name] (fact tar-name => "data/globe/2/6/31.tar") "31.tar")
                     util/cube-tar (fn [prefix face level x]
                                     (fact prefix => "data/globe", face => 2, level => 6, x => 40)
                                     "data/globe/2/6/31.tar")

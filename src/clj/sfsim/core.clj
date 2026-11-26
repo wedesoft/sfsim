@@ -45,8 +45,6 @@
       GLFWVidMode
       GLFWErrorCallback
       GLFWErrorCallbackI)
-    (org.lwjgl.system
-      MemoryStack)
     (org.lwjgl.nuklear
       Nuklear)
     (com.newrelic.api.agent
@@ -79,9 +77,6 @@
       (reify GLFWErrorCallbackI
              (invoke [_ _error description]
                (log/error (GLFWErrorCallback/getDescription description)))))
-
-    ;; Create a stack object for LWJGL
-    (MemoryStack/stackPush)
 
     ;; Initialise GLFW
     (when-not (GLFW/glfwInit)
@@ -219,7 +214,8 @@
                  (when-let [message (:sfsim.physics/message time-lapse-info)]
                    (swap! state update :gui gui/set-flash-message message))
                  (planet/update-tile-tree (assoc (:sfsim.graphics/planet-geometry-renderer graphics)
-                                                 :sfsim.planet/config config/planet-config) tile-tree window-width
+                                                 :sfsim.planet/config config/planet-config)
+                                          tile-tree (:sfsim.render/vfov config/render-config) window-height
                                           (:sfsim.camera/position (camera/get-camera-pose (:camera @state) (:physics @state))))
                  (if (-> @state :input :sfsim.input/menu)
                    (swap! state update-in [:gui :sfsim.gui/menu] #(or % gui/main-dialog))
@@ -322,7 +318,6 @@
         (jolt/jolt-destroy)
         (GLFW/glfwTerminate)
         (when user-stats (steam/destroy))))
-        (MemoryStack/stackPop)
   (catch Throwable e
          (log/error e "Throwable in main function")
          (NewRelic/noticeError e)

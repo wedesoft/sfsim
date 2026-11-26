@@ -231,6 +231,17 @@
        @destruct => 9.0)
 
 
+(reset! destruct nil)
+(def plus-cache (make-lru-cache 2 + (fn [x] (reset! destruct x))))
+(facts "Test LRU cache with two arguments"
+       (plus-cache 2 3) => 5
+       (plus-cache 3 5) => 8
+       (plus-cache 2 3) => 5
+       @destruct => nil
+       (plus-cache 5 7) => 12
+       @destruct => 8)
+
+
 (facts "Convert byte buffer to byte array"
        (let [buf (BufferUtils/createByteBuffer 3)]
          (.put buf (byte 2))

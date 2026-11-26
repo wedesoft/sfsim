@@ -346,8 +346,8 @@
   "Compute level of detail offset for sampling cloud textures"
   {:malli/schema [:=> [:cat :map :map :map] :double]}
   [render-config cloud-data render-vars]
-  (/ (log (/ (tan (* 0.5 ^double (:sfsim.render/fov render-config)))
-             (* 0.5 ^long (:sfsim.render/window-width render-vars))
+  (/ (log (/ (tan (* 0.5 ^double (:sfsim.render/vfov render-config)))
+             (* 0.5 ^long (:sfsim.render/window-height render-vars))
              (/ ^double (::detail-scale cloud-data) ^long worley-size))) (log 2.0)))
 
 
@@ -481,7 +481,7 @@
 
 (defn make-cloud-render-vars
   [render-config planet-render-vars width height camera-position camera-orientation light-direction object-position object-orientation]
-  (let [fov                (:sfsim.render/fov render-config)
+  (let [vfov               (:sfsim.render/vfov render-config)
         min-z-near         (:sfsim.render/min-z-near render-config)
         amplification      (:sfsim.render/amplification render-config)
         cloud-subsampling  (:sfsim.render/cloud-subsampling render-config)
@@ -493,7 +493,7 @@
         object-origin      (get-translation camera-to-object)
         z-far              (:sfsim.render/z-far planet-render-vars)
         z-offset           1.0
-        overlay-projection (projection-matrix overlay-width overlay-height min-z-near (+ ^double z-far ^double z-offset) fov)]
+        overlay-projection (projection-matrix overlay-width overlay-height min-z-near (+ ^double z-far ^double z-offset) vfov)]
     {:sfsim.render/window-width width
      :sfsim.render/window-height height
      :sfsim.render/overlay-width overlay-width

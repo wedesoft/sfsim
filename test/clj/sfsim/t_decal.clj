@@ -108,7 +108,7 @@ void main()
               scene             (model/load-scene-into-opengl (model/geometry-program-selection geometry-renderer) plane)
               object-to-camera  (matrix/transformation-matrix (rotation-matrix-3d-x (to-radians 45)) (vec3 0 0 -3))
               camera-to-world   (inverse object-to-camera)
-              projection        (matrix/projection-matrix 160 120 0.1 10.0 (to-radians 60))
+              projection        (matrix/projection-matrix 160 120 0.1 10.0 (to-radians 46.82644889274108))
               lighting-program  (render/make-program :sfsim.render/vertex [shaders/vertex-passthrough]
                                                      :sfsim.render/fragment [fragment-lighting-mock])
               program-decal     (render/make-program :sfsim.render/vertex [vertex-decal] :sfsim.render/fragment [fragment-decal])

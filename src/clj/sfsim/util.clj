@@ -469,17 +469,17 @@
   [cache-size fun destructor]
   (let [state (atom (cache/lru-cache-factory {} :threshold cache-size))]
     (fn lru-wrapper
-        [arg]
-        (if-let [result (cache/lookup @state arg)]
-          (do
-            (swap! state (memfn ^LRUCache hit arg) arg)
-            result)
-          (let [result  (fun arg)
-                old     @state
-                updated (swap! state cache/miss arg result)
-                evicted (remove (set (keys updated)) (keys old))]
-            (doseq [x evicted] (destructor (cache/lookup old x)))
-            result)))))
+      [& args]
+      (if-let [result (cache/lookup @state args)]
+        (do
+          (swap! state (memfn ^LRUCache hit args) args)
+          result)
+        (let [result  (apply fun args)
+              old     @state
+              updated (swap! state cache/miss args result)
+              evicted (remove (set (keys updated)) (keys old))]
+          (doseq [x evicted] (destructor (cache/lookup old x)))
+          result)))))
 
 
 (defn byte-buffer->byte-array

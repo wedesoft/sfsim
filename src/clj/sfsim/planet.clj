@@ -7,7 +7,7 @@
 (ns sfsim.planet
   "Module with functionality to render a planet"
   (:require
-    [clojure.math :refer (sqrt cos to-radians)]
+    [clojure.math :refer (sqrt cos)]
     [comb.template :as template]
     [fastmath.matrix :refer (mulm eye inverse)]
     [fastmath.vector :refer (mag)]
@@ -219,15 +219,14 @@
 
 (defn background-tree-update
   "Method to call in a backround thread for loading tiles"
-  {:malli/schema [:=> [:cat :map :map N fvec3] :map]}
-  [{{::keys [tilesize radius level]} ::config} tree width position]
-  (let [fov       (to-radians 60.0)
-        increase? (partial increase-level? tilesize radius width fov 10 level position); TODO: use config
+  {:malli/schema [:=> [:cat :map :map :double N fvec3] :map]}
+  [{{::keys [tilesize radius level]} ::config} tree vfov height position]
+  (let [increase? (partial increase-level? tilesize radius height vfov 10 level position); TODO: use config
         updates   (update-level-of-detail tree radius increase?)]
     (update updates :tree
             (fn [tree]
                 (-> tree
-                    (update-inner-tessellation-levels tilesize 40 radius width fov position); TODO: use config
+                    (update-inner-tessellation-levels tilesize 40 radius height vfov position); TODO: use config
                     update-outer-tessellation-levels)))))
 
 
@@ -244,13 +243,13 @@
 
 (defn update-tile-tree
   "Schedule background tile tree updates"
-  {:malli/schema [:=> [:cat :map tree N fvec3] :any]}
-  [planet-renderer {:keys [tree changes]} width position]
+  {:malli/schema [:=> [:cat :map tree :double N fvec3] :any]}
+  [planet-renderer {:keys [tree changes]} vfov height position]
   (when (realized? @changes)
     (let [data @@changes]
       (reset! tree (load-tiles-into-opengl planet-renderer (:tree data) (:load data)))
       (unload-tiles-from-opengl (:drop data))
-      (reset! changes (future (background-tree-update planet-renderer @tree width position))))))
+      (reset! changes (future (background-tree-update planet-renderer @tree vfov height position))))))
 
 
 (defn destroy-tile-tree
@@ -279,15 +278,15 @@
 (defn make-planet-render-vars2
   "Create hash map with render variables for rendering current frame of planet"
   {:malli/schema [:=> [:cat [:map [::radius :double]] [:map [:sfsim.clouds/cloud-top :double]]
-                       [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3] render-vars]}
+                       [:map [:sfsim.render/vfov :double]] N N fvec3 quaternion fvec3] render-vars]}
   [planet-config cloud-data render-config window-width window-height camera-position camera-orientation light-direction]
   (let [distance        (mag camera-position)
         radius          (::radius planet-config)
         cloud-top       (:sfsim.clouds/cloud-top cloud-data)
-        fov             (:sfsim.render/fov render-config)
+        vfov            (:sfsim.render/vfov render-config)
         min-z-near      (:sfsim.render/min-z-near render-config)
         height          (- ^double distance ^double radius)
-        diagonal-fov    (diagonal-field-of-view window-width window-height fov)
+        diagonal-fov    (diagonal-field-of-view window-width window-height vfov)
         z-near          (max (* (- height ^double cloud-top) (cos (* 0.5 diagonal-fov))) ^double min-z-near)
         z-far           (render-depth radius height cloud-top)]
     (make-render-vars2 render-config window-width window-height camera-position camera-orientation light-direction z-near z-far)))

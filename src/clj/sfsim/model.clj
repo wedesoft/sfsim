@@ -702,7 +702,7 @@
 
 (defn make-scene-render-vars
   "Create hashmap with render variables for rendering a scene outside the atmosphere"
-  {:malli/schema [:=> [:cat [:map [:sfsim.render/fov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion
+  {:malli/schema [:=> [:cat [:map [:sfsim.render/vfov :double]] N N fvec3 quaternion fvec3 fvec3 quaternion
                        model-data model-vars] render-vars]}
   [render-config window-width window-height camera-position camera-orientation light-direction object-position object-orientation
    model-data model-vars]
