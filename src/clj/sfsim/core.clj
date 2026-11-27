@@ -110,6 +110,14 @@
        (- 3.0 ^double gear)])))
 
 
+(defn sunlight-direction
+  "Determine vector to sun"
+  [earth-sun jd-ut]
+  (let [icrs-to-earth (inverse (astro/earth-to-icrs jd-ut))
+        sun-pos       (earth-sun jd-ut)]
+    (normalize (mulv icrs-to-earth sun-pos))))
+
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -282,9 +290,7 @@
                        mach               (/ (mag velocity) speed-of-sound)
                        shockwave-strength (:sfsim.physics/shockwave-strength (:physics @state))
                        jd-ut              (physics/get-julian-date-ut (:physics @state))
-                       icrs-to-earth      (inverse (astro/earth-to-icrs jd-ut))
-                       sun-pos            (earth-sun jd-ut)
-                       light-direction    (normalize (mulv icrs-to-earth sun-pos))
+                       light-direction    (sunlight-direction earth-sun jd-ut)
                        model-vars         (model/make-model-vars (:sfsim.physics/offset-seconds (:physics @state)) pressure
                                                                  (:sfsim.physics/throttle (:physics @state)))
                        wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
