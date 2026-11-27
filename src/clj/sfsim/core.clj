@@ -67,6 +67,13 @@
         (assoc-in [:gui :sfsim.gui/window-height] (aget height 0)))))
 
 
+(defn update-menu [state]
+  (update-in state [:gui :sfsim.gui/menu]
+             (fn [menu]
+                 (when (-> state :input :sfsim.input/menu)
+                   (or menu gui/main-dialog)))))
+
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -222,9 +229,7 @@
                                                  :sfsim.planet/config config/planet-config)
                                           tile-tree (:sfsim.render/vfov config/render-config) window-height
                                           (:sfsim.camera/position (camera/get-camera-pose (:camera @state) (:physics @state))))
-                 (if (-> @state :input :sfsim.input/menu)
-                   (swap! state update-in [:gui :sfsim.gui/menu] #(or % gui/main-dialog))
-                   (swap! state assoc-in [:gui :sfsim.gui/menu] nil))
+                 (swap! state update-menu)
                  (when (not (-> @state :input :sfsim.input/pause))
                    (swap! state update :physics physics/simulation-step
                           (-> @state :input :sfsim.input/controls)
