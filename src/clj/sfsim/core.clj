@@ -58,6 +58,15 @@
 (def uptime              (atom 0.0))
 
 
+(defn update-window-size [state window]
+  (let [width (int-array 1)
+        height (int-array 1)]
+    (GLFW/glfwGetWindowSize ^long window ^ints width ^ints height)
+    (-> state
+        (assoc-in [:gui :sfsim.gui/window-width] (aget width 0))
+        (assoc-in [:gui :sfsim.gui/window-height] (aget height 0)))))
+
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -195,11 +204,7 @@
                        (reset! gui (gui/make-navball (gui/make-nuklear-gui-with-font 1.0)))))
                    (gui/nuklear-dark-style @gui)
                    (swap! state assoc-in [:gui :sfsim.gui/fullscreen] fullscreen)))
-               (let [w (int-array 1)
-                     h (int-array 1)]
-                 (GLFW/glfwGetWindowSize ^long window ^ints w ^ints h)
-                 (swap! state assoc-in [:gui :sfsim.gui/window-width] (aget w 0))
-                 (swap! state assoc-in [:gui :sfsim.gui/window-height] (aget h 0)))
+               (swap! state update-window-size window)
                (let [dt              (elapsed-time)
                      time-lapse-info (-> @state
                                          :input
