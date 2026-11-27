@@ -58,7 +58,19 @@
 (def uptime              (atom 0.0))
 
 
-(defn update-window-size [state window]
+(defn register-input-callbacks!
+  "Register GLFW callbacks"
+  [window event-buffer]
+  (GLFW/glfwSetCharCallback window (char-callback event-buffer))
+  (GLFW/glfwSetKeyCallback window (key-callback event-buffer))
+  (GLFW/glfwSetCursorPosCallback window (cursor-pos-callback event-buffer))
+  (GLFW/glfwSetMouseButtonCallback window (mouse-button-callback event-buffer))
+  (GLFW/glfwSetScrollCallback window (scroll-callback event-buffer)))
+
+
+(defn update-window-size
+  "Update state variable with window size"
+  [state window]
   (let [width (int-array 1)
         height (int-array 1)]
     (GLFW/glfwGetWindowSize ^long window ^ints width ^ints height)
@@ -67,14 +79,18 @@
         (assoc-in [:gui :sfsim.gui/window-height] (aget height 0)))))
 
 
-(defn update-menu [state]
+(defn update-menu
+  "Update state variable with window method"
+  [state]
   (update-in state [:gui :sfsim.gui/menu]
              (fn [menu]
                  (when (-> state :input :sfsim.input/menu)
                    (or menu gui/main-dialog)))))
 
 
-(defn gear-animation [physics-state]
+(defn gear-animation
+  "Get vector with animation timings to animate gear deployment and suspension"
+  [physics-state]
   (let [gear (:sfsim.physics/gear physics-state)]
     (if (= ^double gear 1.0)
       (let [suspension (physics/get-suspension physics-state)]
@@ -155,11 +171,7 @@
       ;   (steam/debug-reset-all-achievements! user-stats))
 
       ;; Register GLFW callbacks
-      (GLFW/glfwSetCharCallback window (char-callback event-buffer))
-      (GLFW/glfwSetKeyCallback window (key-callback event-buffer))
-      (GLFW/glfwSetCursorPosCallback window (cursor-pos-callback event-buffer))
-      (GLFW/glfwSetMouseButtonCallback window (mouse-button-callback event-buffer))
-      (GLFW/glfwSetScrollCallback window (scroll-callback event-buffer))
+      (register-input-callbacks! window event-buffer)
 
       (let [frametime           (atom 0.25)
             spk                 (astro/make-spk-document "data/astro/de430_1850-2150.bsp")  ; Spacecraft and Planet Kernel (SPK)
