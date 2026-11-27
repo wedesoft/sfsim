@@ -79,6 +79,14 @@
         (assoc-in [:gui :sfsim.gui/window-height] (aget height 0)))))
 
 
+(defn make-gui
+  "Set up GUI object with desired scale"
+  [scale]
+  (let [gui (-> scale gui/make-nuklear-gui-with-font gui/make-navball)]
+    (gui/nuklear-dark-style gui)
+    gui))
+
+
 (defn update-menu
   "Update state variable with window method"
   [state]
@@ -197,7 +205,7 @@
                                  :sfsim.gui/fullscreen false
                                  :sfsim.gui/message-time 0.0
                                  :sfsim.gui/message-text nil}
-            gui                 (atom (gui/make-navball (gui/make-nuklear-gui-with-font 1.0)))
+            gui                 (atom (make-gui 1.0))
             audio-state         (audio/make-audio-state)
             state               (atom {:gui gui-state
                                        :input input-state
@@ -213,7 +221,6 @@
         (jolt/set-friction body 0.8)
         (jolt/set-restitution body 0.25)
         (jolt/optimize-broad-phase)
-        (gui/nuklear-dark-style @gui)
         (while (not (GLFW/glfwWindowShouldClose window))
                (when (not= (-> @state :input :sfsim.input/fullscreen) (-> @state :gui :sfsim.gui/fullscreen))
                  (let [fullscreen     (-> @state :input :sfsim.input/fullscreen)
@@ -226,14 +233,13 @@
                    (if fullscreen
                      (let [scale (double (/ desktop-height ^long window-height))]
                        (GLFW/glfwSetWindowMonitor window 0 0 0 desktop-width desktop-height GLFW/GLFW_DONT_CARE)
-                       (reset! gui (gui/make-navball (gui/make-nuklear-gui-with-font scale))))
+                       (reset! gui (make-gui scale)))
                      (do
                        (GLFW/glfwSetWindowMonitor window 0
                                                   (quot (- desktop-width ^long window-width) 2)
                                                   (quot (- desktop-height ^long window-height) 2)
                                                   window-width window-height GLFW/GLFW_DONT_CARE)
-                       (reset! gui (gui/make-navball (gui/make-nuklear-gui-with-font 1.0)))))
-                   (gui/nuklear-dark-style @gui)
+                       (reset! gui (make-gui 1.0))))
                    (swap! state assoc-in [:gui :sfsim.gui/fullscreen] fullscreen)))
                (swap! state update-window-size window)
                (let [dt              (elapsed-time)
