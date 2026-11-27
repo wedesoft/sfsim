@@ -74,6 +74,18 @@
                    (or menu gui/main-dialog)))))
 
 
+(defn gear-animation [physics-state]
+  (let [gear (:sfsim.physics/gear physics-state)]
+    (if (= ^double gear 1.0)
+      (let [suspension (physics/get-suspension physics-state)]
+        [(/ (- ^double (nth suspension 0) 0.8) 0.8128)
+         (/ (- ^double (nth suspension 1) 0.8) 0.8128)
+         (+ 1.0 (/ (- ^double (nth suspension 2) 0.5) 0.5419))])
+      [(- 2.0 ^double gear)
+       (- 2.0 ^double gear)
+       (- 3.0 ^double gear)])))
+
+
 (defn -main
   "Space flight simulator main function"
   [& _args]
@@ -259,14 +271,7 @@
                                                                  (:sfsim.physics/throttle (:physics @state)))
                        wheels-scene       (let [wheel-animation (map #(mod (/ ^double % (* 2.0 PI)) 1.0)
                                                                      (physics/get-wheel-angles (:physics @state)))
-                                                gear-animation
-                                                (let [gear (:sfsim.physics/gear (:physics @state))]
-                                                  (if (= ^double gear 1.0)
-                                                    (let [suspension (physics/get-suspension (:physics @state))]
-                                                      [(/ (- ^double (nth suspension 0) 0.8) 0.8128)
-                                                       (/ (- ^double (nth suspension 1) 0.8) 0.8128)
-                                                       (+ 1.0 (/ (- ^double (nth suspension 2) 0.5) 0.5419))])
-                                                    [(- 2.0 ^double gear) (- 2.0 ^double gear) (- 3.0 ^double gear)]))]
+                                                gear-animation (gear-animation (:physics @state))]
                                             (model/apply-transforms
                                               (first (:sfsim.graphics/scenes graphics))
                                               (model/animations-frame
